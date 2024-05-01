@@ -26,7 +26,7 @@ build:
     #   if [ -n "$(git diff --name-only $CI_COMMIT_BEFORE_SHA $CI_COMMIT_SHA | grep 'package-lock.json')" ]; then
     #     npm install
     #   fi
-    - npm i
+    - npm ci #install dependencies from package-lock.json
   script:
     - npm run build
   allow_failure: false
