@@ -1,20 +1,40 @@
-stages:
-  - Build
-  - Lint
-  - Test
+# Reference: https://stackoverflow.com/questions/55359804/gitlab-ci-npm-doesnt-like-the-cached-node-modules
 
+stages:
+  - build
+  - lint
+  - test
+
+# global cache settings for all jobs
+# Ensure compatibility with the install job
+# goal: the install job loads the cache and
+# all other jobs can only use it
 .node_modules_cached:
   cache:
-    key: npm-install
-    paths:
-      - node_modules/
-      - lib/
-      - .npmrc
-      - out/
-    policy: pull
+    - &cache_config
+      key:
+        files:
+          - package-lock.json
+      paths:
+        - node_modules/
+      policy: pull  # prevent subsequent jobs from modifying cache
 
-build:
-  stage: Build
+install:
+  image: node:14
+  stage: .pre   # always first, no matter if it is listed in stages
+  cache:
+    # Mimic &cache_config config but override policy
+    # to allow this job to update the cache at the end of the job
+    # and only update if it was a successful job
+    - <<: *cache_config
+      when: on_success
+      policy: pull-push
+
+  script:
+    - npm ci --cache .npm --prefer-offline
+
+build-output:
+  stage: build
   image: node:14
   extends:
     - .node_modules_cached
@@ -23,7 +43,7 @@ build:
   allow_failure: false
 
 eslint:
-  stage: Lint
+  stage: lint
   image: node:14
   extends:
     - .node_modules_cached
@@ -32,7 +52,7 @@ eslint:
   allow_failure: true
 
 jest:
-  stage: Test
+  stage: test
   image: node:14
   extends:
     - .node_modules_cached
