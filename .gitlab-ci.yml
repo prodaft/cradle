@@ -1,0 +1,49 @@
+stages:
+  - Build
+  - Lint
+  - Test
+
+.node_modules_cached:
+  cache:  # Cache modules using lock file
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - node_modules/
+      - lib/
+      - .npmrc
+      - out/
+    policy: pull
+
+build:
+  stage: Build
+  image: ubuntu:22.04
+  extends:
+    - .node_modules_cached
+  before_script:
+    # Conditionally run npm install only if package-lock.json has changed
+    - |
+      if [ -n "$(git diff --name-only $CI_COMMIT_BEFORE_SHA $CI_COMMIT_SHA | grep 'package-lock.json')" ]; then
+        npm install
+      fi
+  script:
+    - npm run build
+  allow_failure: false
+
+eslint:
+  stage: Lint
+  image: ubuntu:22.04
+  extends:
+    - .node_modules_cached
+  script:
+    - npx eslint ./
+  allow_failure: true
+
+jest:
+  stage: Test
+  image: ubuntu:22.04
+  extends:
+    - .node_modules_cached
+  script:
+    - npm run test
+  allow_failure: false
