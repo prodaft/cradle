@@ -3,20 +3,8 @@ stages:
   - Lint
   - Test
 
-# .node_modules_cached:
-#   cache:  # Cache modules using lock file
-#     key:
-#       files:
-#         - package-lock.json
-#     paths:
-#       - node_modules/
-#       - lib/
-#       - .npmrc
-#       - out/
-#     policy: pull
-
 .node_modules_cached:
-  cache:  # Cache modules using lock file
+  cache:
     key: npm-install
     paths:
       - node_modules/
@@ -24,19 +12,12 @@ stages:
       - .npmrc
       - out/
     policy: pull
-    
+
 build:
   stage: Build
   image: node:14
   extends:
     - .node_modules_cached
-  before_script:
-    # Conditionally run npm install only if package-lock.json has changed
-    # - |
-    #   if [ -n "$(git diff --name-only $CI_COMMIT_BEFORE_SHA $CI_COMMIT_SHA | grep 'package-lock.json')" ]; then
-    #     npm install
-    #   fi
-    - npm install
   script:
     - npm run build
   allow_failure: false
@@ -47,7 +28,6 @@ eslint:
   extends:
     - .node_modules_cached
   script:
-    - npm install
     - npx eslint ./
   allow_failure: true
 
@@ -57,6 +37,5 @@ jest:
   extends:
     - .node_modules_cached
   script:
-    - npm install
     - npm run test
   allow_failure: false
