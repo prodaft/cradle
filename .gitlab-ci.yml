@@ -21,7 +21,7 @@ cache:
 
 
 install:
-  image: node:20
+  image: node:20.12.2
   stage: .pre
   cache:
     # Mimic &global_cache_node_mods config but override policy
@@ -46,7 +46,7 @@ install:
 
 build:
   stage: build
-  image: node:20
+  image: node:20.12.2
   script:
     - npm run build
   artifacts:
@@ -55,7 +55,7 @@ build:
 
 eslint:
   stage: lint
-  image: node:20
+  image: node:20.12.2
   needs:
     - job: build
       artifacts: true 
@@ -65,7 +65,7 @@ eslint:
 
 jest:
   stage: test
-  image: node:20
+  image: node:20.12.2
   needs:
     - job: build
       artifacts: true
