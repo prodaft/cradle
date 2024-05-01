@@ -17,7 +17,7 @@ stages:
 
 build:
   stage: Build
-  image: ubuntu:22.04
+  image: node:14
   extends:
     - .node_modules_cached
   before_script:
@@ -32,16 +32,16 @@ build:
 
 eslint:
   stage: Lint
-  image: ubuntu:22.04
+  image: node:14
   extends:
     - .node_modules_cached
   script:
     - npx eslint ./
-  allow_failure: true
+  allow_failure: false
 
 jest:
   stage: Test
-  image: ubuntu:22.04
+  image: node:14
   extends:
     - .node_modules_cached
   script:
