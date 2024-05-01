@@ -47,7 +47,7 @@ eslint:
   extends:
     - .node_modules_cached
   script:
-    - npm i eslint
+    - npm install
     - npx eslint ./
   allow_failure: true
 
@@ -57,6 +57,6 @@ jest:
   extends:
     - .node_modules_cached
   script:
-    - npm i jest
+    - npm install
     - npm run test
   allow_failure: false
