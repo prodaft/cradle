@@ -1,6 +1,5 @@
 "use strict";
 const electron = require("electron");
-require("path");
 let mainWindow;
 function createWindow() {
   mainWindow = new electron.BrowserWindow({});

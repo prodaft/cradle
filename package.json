@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "electron-vite dev -w",
     "build": "electron-vite build",
-    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint . --max-warnings 0",
     "preview": "electron-vite preview",
     "test": "jest",
     "tailwind": "npx tailwindcss -i ./src/renderer/src/assets/input.css -o ./src/renderer/src/assets/output.css"
@@ -20,6 +20,7 @@
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react": "^4.2.1",
+    "axios": "^1.6.8",
     "electron": "^30.0.1",
     "electron-vite": "^2.2.0",
     "eslint": "^8.57.0",
