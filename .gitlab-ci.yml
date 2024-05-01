@@ -40,7 +40,6 @@ install:
 
 build:
   stage: build
-  image: node:20.12.2
   script:
     # - npm ls --depth=0 # for debugging
     - npm run build
@@ -51,7 +50,6 @@ build:
 
 eslint:
   stage: lint
-  image: node:20.12.2
   needs:
     - job: build
       artifacts: true 
@@ -62,7 +60,6 @@ eslint:
 
 jest:
   stage: test
-  image: node:20.12.2
   needs:
     - job: build
       artifacts: true
