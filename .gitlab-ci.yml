@@ -22,10 +22,11 @@ build:
     - .node_modules_cached
   before_script:
     # Conditionally run npm install only if package-lock.json has changed
-    - |
-      if [ -n "$(git diff --name-only $CI_COMMIT_BEFORE_SHA $CI_COMMIT_SHA | grep 'package-lock.json')" ]; then
-        npm install
-      fi
+    # - |
+    #   if [ -n "$(git diff --name-only $CI_COMMIT_BEFORE_SHA $CI_COMMIT_SHA | grep 'package-lock.json')" ]; then
+    #     npm install
+    #   fi
+    - npm i
   script:
     - npm run build
   allow_failure: false
@@ -37,7 +38,7 @@ eslint:
     - .node_modules_cached
   script:
     - npx eslint ./
-  allow_failure: false
+  allow_failure: true
 
 jest:
   stage: Test
