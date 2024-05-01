@@ -41,8 +41,7 @@ install:
       policy: pull-push
 
   script:
-    # - npm ci --cache .npm --prefer-offline
-    - npm i
+    - npm i --cache .npm --prefer-offline
 
 
 build:
