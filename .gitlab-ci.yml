@@ -38,7 +38,7 @@ install:
     - npm ci --cache .npm --prefer-offline
 
 
-build:
+run-build:
   stage: build
   script:
     # - npm ls --depth=0 # for debugging
@@ -48,20 +48,20 @@ build:
     paths:
       - out/
 
-eslint:
+run-lint:
   stage: lint
   needs:
-    - job: build
+    - job: run-build
       artifacts: true 
   script:
     # - npm ls --depth=0 # for debugging
     - npx eslint ./
   allow_failure: true
 
-jest:
+run-test:
   stage: test
   needs:
-    - job: build
+    - job: run-build
       artifacts: true
   script:
     - npm ls --depth=0 # for debugging
