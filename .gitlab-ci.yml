@@ -2,8 +2,9 @@
 
 stages:
   - build
-  - lint
   - test
+  - lint
+  
 
 cache:
   - &global_cache_node_mods
