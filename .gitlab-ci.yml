@@ -1,5 +1,7 @@
 # Reference: https://stackoverflow.com/questions/55359804/gitlab-ci-npm-doesnt-like-the-cached-node-modules
 
+image: node:20.12.2
+
 stages:
   - build
   - lint
@@ -16,7 +18,6 @@ cache:
 
 
 install:
-  image: node:20.12.2
   stage: .pre
   cache:
     # Mimic &global_cache_node_mods config but override policy
@@ -33,7 +34,7 @@ install:
       policy: pull-push
 
   script:
-    - npm ls --depth=0 # for debugging
+    # - npm ls --depth=0 # for debugging
     - npm ci --cache .npm --prefer-offline
 
 
@@ -41,7 +42,7 @@ build:
   stage: build
   image: node:20.12.2
   script:
-    - npm ls --depth=0 # for debugging
+    # - npm ls --depth=0 # for debugging
     - npm run build
     - npm run tailwind
   artifacts:
@@ -55,7 +56,7 @@ eslint:
     - job: build
       artifacts: true 
   script:
-    - npm ls --depth=0 # for debugging
+    # - npm ls --depth=0 # for debugging
     - npx eslint ./
   allow_failure: true
 
