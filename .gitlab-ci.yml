@@ -65,6 +65,5 @@ jest:
     - job: build
       artifacts: true
   script:
-    - npm i
     - npm ls --depth=0 # for debugging
     - npm test
