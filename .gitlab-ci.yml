@@ -42,7 +42,7 @@ install:
 
   script:
     # - npm ci --cache .npm --prefer-offline
-    - npm ci
+    - npm i
 
 
 build:
