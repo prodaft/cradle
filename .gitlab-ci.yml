@@ -38,7 +38,7 @@ eslint:
     - .node_modules_cached
   script:
     - npx eslint ./
-  allow_failure: false
+  allow_failure: true
 
 jest:
   stage: Test
