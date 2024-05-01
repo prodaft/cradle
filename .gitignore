@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+#Tailwind CSS
+src/renderer/src/assets/output.css
