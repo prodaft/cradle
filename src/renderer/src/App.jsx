@@ -17,7 +17,11 @@ function App() {
 
   const updateNumber = async () => {
     try {
+<<<<<<< HEAD
       await axios.post('http://localhost:8000/counter/increase/', {});
+=======
+      const response = await axios.post('http://localhost:8000/counter/increase/', {});
+>>>>>>> template-project-no-vite
       fetchNumber();
     } catch (error) {
       console.error('Error creating data:', error);

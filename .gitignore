@@ -28,4 +28,4 @@ out
 *.sw?
 
 #Tailwind CSS
-src/renderer/src/assets/output.css
+src/renderer/src/styles/output.css
