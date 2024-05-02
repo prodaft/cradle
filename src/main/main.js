@@ -7,6 +7,7 @@ let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({});
+  // mainWindow.loadURL('http://localhost:5173');
   mainWindow.loadFile(path.join(rendererDirectory, 'index.html'));
   mainWindow.webContents.openDevTools();
   mainWindow.on('closed', () => mainWindow = null);
