@@ -4,6 +4,8 @@
   "version": "0.0.0",
   "main": "./out/main/main.js",
   "scripts": {
+    "build_run": "electron-vite build && electron .",
+    "electron": "electron .",
     "dev": "electron-vite dev -w",
     "build": "electron-vite build",
     "lint": "eslint . --max-warnings 0",
