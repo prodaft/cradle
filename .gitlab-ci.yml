@@ -43,6 +43,9 @@ install:
 
 run-build:
   stage: build
+  needs:
+    - job: install
+      artifacts: true
   script:
     # - npm ls --depth=0 # for debugging
     - npm run build
