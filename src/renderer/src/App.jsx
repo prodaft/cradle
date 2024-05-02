@@ -7,7 +7,7 @@ function App() {
 
   const fetchNumber = async () => {
     try {
-      const response = await axios.get('http://localhost:3010/counter');
+      const response = await axios.get('http://localhost:8000/read');
       setCount(response.data.count);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -16,7 +16,7 @@ function App() {
 
   const updateNumber = async () => {
     try {
-      const response = await axios.post('http://localhost:3010/increment',  count + 1);
+      const response = await axios.post('http://localhost:8000/increase',  count + 1);
       setCount(response.data.count);
     } catch (error) {
       console.error('Error creating data:', error);
