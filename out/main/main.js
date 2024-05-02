@@ -1,11 +1,11 @@
 "use strict";
 const { app, BrowserWindow } = require("electron");
 const path = require("path");
-const rendererDirectory = path.join(__dirname, "..", "renderer");
+path.join(__dirname, "..", "renderer");
 let mainWindow;
 function createWindow() {
   mainWindow = new BrowserWindow({});
-  mainWindow.loadFile(path.join(rendererDirectory, "index.html"));
+  mainWindow.loadURL("http://localhost:5173");
   mainWindow.webContents.openDevTools();
   mainWindow.on("closed", () => mainWindow = null);
 }
