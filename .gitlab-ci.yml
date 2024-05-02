@@ -35,7 +35,7 @@ install:
   script:
     # - npm ls --depth=0 # for debugging
     - npm ci --cache .npm --prefer-offline
-    
+
   artifacts:
     paths:
       # Artifact node_modules for subsequent jobs
@@ -54,6 +54,8 @@ run-build:
 run-lint:
   stage: lint
   needs:
+    - job: install
+      artifacts: true
     - job: run-build
       artifacts: true 
   script:
@@ -64,6 +66,8 @@ run-lint:
 run-test:
   stage: test
   needs:
+    - job: install
+      artifacts: true
     - job: run-build
       artifacts: true
   script:
