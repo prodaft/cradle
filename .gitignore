@@ -29,3 +29,5 @@ out
 
 #Tailwind CSS
 src/renderer/src/styles/output.css
+
+.env
