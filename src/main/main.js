@@ -4,7 +4,7 @@ let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({});
-  mainWindow.setMenuBarVisibility(false)
+  // mainWindow.setMenuBarVisibility(false)
   mainWindow.loadURL('http://localhost:5173');
   mainWindow.on('closed', () => mainWindow = null);
 }

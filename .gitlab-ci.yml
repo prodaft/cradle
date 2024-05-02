@@ -16,7 +16,6 @@ cache:
       - node_modules/
     policy: pull  # prevent subsequent jobs from modifying cache
 
-
 install:
   stage: .pre
   cache:
@@ -37,9 +36,16 @@ install:
     # - npm ls --depth=0 # for debugging
     - npm ci --cache .npm --prefer-offline
 
+  artifacts:
+    paths:
+      # Artifact node_modules for subsequent jobs
+      - node_modules/
 
 run-build:
   stage: build
+  needs:
+    - job: install
+      artifacts: true
   script:
     # - npm ls --depth=0 # for debugging
     - npm run build
@@ -51,18 +57,22 @@ run-build:
 run-lint:
   stage: lint
   needs:
+    - job: install
+      artifacts: true
     - job: run-build
       artifacts: true 
   script:
-    # - npm ls --depth=0 # for debugging
+  # - npm ls --depth=0 # for debugging
     - npx eslint ./
   allow_failure: true
 
 run-test:
   stage: test
   needs:
+    - job: install
+      artifacts: true
     - job: run-build
       artifacts: true
   script:
-    - npm ls --depth=0 # for debugging
+    # - npm ls --depth=0 # for debugging
     - npm test
