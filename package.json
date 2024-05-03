@@ -11,7 +11,7 @@
     "lint": "eslint . --max-warnings 0",
     "preview": "electron-vite preview",
     "test": "jest",
-    "tailwind": "npx tailwindcss -i ./src/renderer/src/assets/input.css -o ./src/renderer/src/assets/output.css"
+    "tailwind": "npx tailwindcss -i ./src/renderer/src/styles/input.css -o ./src/renderer/src/styles/output.css"
   },
   "dependencies": {
     "react": "^18.2.0",
