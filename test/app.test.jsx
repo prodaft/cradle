@@ -4,18 +4,20 @@
 import React from 'react';
 import {render, userEvent, screen} from '@testing-library/react'
 import App from '../src/renderer/src/App.jsx';
-import axios from 'axios';
 import '@testing-library/jest-dom'
+import { fetchNumber, updateNumber } from '../src/renderer/src/services/apiService.js';
 
-jest.mock('axios');
 
-test('test initial request', async () => {
-    // Mock response data to match the structure of the actual response
-    axios.get.mockResolvedValue({ data: [{ id: 1, value: 1 }] });
+jest.mock('../src/renderer/src/services/apiService.js', () => {
+    return {
+        fetchNumber: () => 1,
+        updateNumber: () => undefined
+    }
+});
 
+test('test initial', async () => {
     render(<App />);
 
-    // Find the text corresponding to the value rendered in the component
     const count = await screen.findByText('count is 1');
 
     expect(count).toBeInTheDocument();
