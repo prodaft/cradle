@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "main": "./out/main/main.js",
   "scripts": {
-    "build_run": "electron-vite build && electron .",
+    "build-run": "npm run build && electron .",
     "electron": "electron .",
     "dev": "electron-vite dev -w",
-    "build": "electron-vite build",
+    "build": "npm run tailwind && electron-vite build",
     "lint": "eslint . --max-warnings 0",
     "preview": "electron-vite preview",
     "test": "jest",
