@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import {render, userEvent, screen} from '@testing-library/react'
-import App from '../renderer/src/App.jsx';
+import App from '../src/renderer/src/App.jsx';
 import axios from 'axios';
 import '@testing-library/jest-dom'
 
