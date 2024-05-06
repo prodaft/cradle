@@ -1,93 +1,68 @@
-# Backend
+# CRADLE (Back-end)
 
+**This is the back-end server for CRADLE. The front-end client can be found [here](https://gitlab.ewi.tudelft.nl/cse2000-software-project/2023-2024/cluster-j/08b/frontend).**
 
+Cyber Threat Intelligence is data that is collected, processed and analyzed to understand a threat agent’s motives, targets and attack behaviours. The job of a threat analyst is multifaceted.
 
-## Getting started
+On the one hand, analysts need to investigate the cyber activity of threat agents and make notes which can be quickly shared among peers. The notes taken will reference different entries of interest to agents or cases. Analysts need to visualize data in a way which can aid them in making connections between agents and entries.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+On the other hand, analysts need to aggregate the intelligence gathered to compile reports on the cases they investigate. Analysts need to quickly access their relevant notes to improve effectiveness and decrease the time taken for unnecessary labor.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+**CRADLE** is an open-source web application that will aid the Cyber-Threat Intelligence (CTI) field by providing a collaborative, domain-specific environment. The application will allow analysts to easily conduct their investigations which can then be exported in a publishable format.
 
-## Add your files
+CRADLE is be a web application structured with a client-server architecture. Its design is modular to allow for other features and improvements to be added later on.
+CRADLE's frontend is built using mainly [Electron](https://www.electronjs.org/) and [React](https://react.dev/), aided by technologies such as [Tailwind CSS](https://tailwindcss.com/) and [Vite](https://vitejs.dev/). The backend is built mainly using the [Django](https://www.djangoproject.com/) web framework and [PostgreSQL](https://www.postgresql.org/) for data storage. For more information about the frontend visit its [page](https://gitlab.ewi.tudelft.nl/cse2000-software-project/2023-2024/cluster-j/08b/frontend).
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab.ewi.tudelft.nl/cse2000-software-project/2023-2024/cluster-j/08b/backend.git
-git branch -M main
-git push -uf origin main
-```
-
-## Integrate with your tools
-
-- [ ] [Set up project integrations](https://gitlab.ewi.tudelft.nl/cse2000-software-project/2023-2024/cluster-j/08b/backend/-/settings/integrations)
-
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
+<!-- 
 ## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method. --> 
 
 ## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+1. Clone the project:
+```
+$ git clone git@gitlab.ewi.tudelft.nl:cse2000-software-project/2023-2024/cluster-j/08b/backend.git
+```
+2. Install [PostgreSQL](https://www.postgresql.org/). You will need to ensure you have created a user with its associated password (the default is ```postgres```).
+3. Run the server (usually this might happen automatically after install). Use a client such as ```psql``` to communicate with it:
+```
+$ psql -U [your-username]
+```
+4. Once in the interactive section, create a new database:
+```
+postgres=# CREATE DATABASE cradledb;
+```
+5. Our Django database configuration requires you to create **environment variables** which should be mapped to details regarding the PostgreSQL connection.
+```
+export POSTGRES_DB=[name of database]
+export POSTGRES_USER=[username]
+export POSTGRES_PASSWORD=[the password associated with the username]
+export POSTGRES_HOST=[the location where the PostgreSQL server is running]
+```
+6. Install [Pipenv](https://pipenv.pypa.io/en/latest/) (Note: Your [Python](https://www.python.org/downloads/release/python-3110/) version should be 3.11):
+```
+$ pip install pipenv
+```
+7. Navigate to the projects root project. Migrate the database schema:
+```
+$ pipenv run python manage.py makemigrations
+$ pipenv run python manage.py migrate
+```
 
 ## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+- To run the server, use:
+```
+$ pipenv run python manage.py runserver
+```
+- To run tests, use:
+```
+$ pipenv run python manage.py test
+```
 
 ## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+Right now only the designated team can contribute. Later on the project will be open sourced. The client will determine this aspect.
 
 ## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+**This section will grow as we develop**
 
 ## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+**To be determined. The client will choose this.**
