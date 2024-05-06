@@ -1,0 +1,1077 @@
+openapi: 3.0.3
+info:
+  title: CRADLE Backend API
+  version: 1.0.0
+  description: API for handling requests for the backend of the CRADLE project
+servers:
+  # Added by API Auto Mocking Plugin
+  # Added by API Auto Mocking Plugin
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/diacicov.calin/CRADLE/1.0.0
+  - description: Localhost
+    url: 'https://localhost:8000'
+tags:
+  - name: User
+    description: Operations targeting a user's account.
+  - name: Admin
+    description: Administrative operations.
+  - name: Entity
+    description: Operations targeting Entities.
+  - name: Note
+    description: Operations targeting Notes.
+  - name: Fleeting Note
+    description: Operations targeting Fleeting Notes.
+  - name: Knowledge Graph
+    description: Operations targeting the Knowledge Graph.
+  
+paths:
+  /users:
+    post:
+      security: []
+      tags:
+        - User
+      summary: Create account
+      description: Allows a user to create a new account, by sending a request with their username and password. This will be checked for validity and, if accepted, this new account will be added to the database, allowing the user to connect using the same credentials in the future
+      operationId: createAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Operation was successful.
+        '400':
+          description: The request does not match the specified format.
+
+    get:
+      tags:
+        - Admin
+        - User
+      
+      summary: Read list of all users
+      description: Allow an admin to view a list including all users of the application. # Do we want filters here?
+     
+      responses:
+        '200':
+          description: Returns a list of all users.
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          description: User is not authenticated.
+        '403':
+          description: User is not an admin.
+
+
+  /users/{userId}:
+    delete:
+      tags:
+        - User
+        - Admin
+      summary: Delete a user
+      description: The admin can use this to delete the account with id userId
+      operationId: deleteAccount
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          examples:
+            userIdExample:
+              value: "1296348"
+      responses:
+        '200':
+          description: Requested user account was deleted.
+        '401':
+          description: User is not authenticated.
+        '403':
+          description: User is not an admin.
+        '404':
+          description: There is no user with specified ID.
+
+  /users/login:
+    post:
+      tags:
+        - User
+      security: []
+      summary: Log into account
+      description: Allows a user to log into their account, by sending a request with their username and password. This will be checked for validity and, if accepted, this user will be logged in and a session will be created
+      operationId: accountLogin
+      requestBody:
+        required: true
+        content:
+          'application/json':
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: >
+            Successfully authenticated.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: sessionid=thisissecret;
+        '400': 
+          description: >
+            The request does not match the specified format. 
+        '401':
+          description: >
+            The credentials given are invalid. 
+            
+
+  /users/logout:
+    post:
+      tags:
+        - User
+      summary: Log out of account
+      description: Allows a user to log out of their account
+      operationId: accountLogout
+      responses:
+        '200':
+          description: The User was logged out successfully.
+        '401':
+          description: The User is not authenticated. 
+
+  /notifications/{userId}:
+    get:
+      tags:
+        - Notification
+      summary: Get user's notifications
+      description: Checks if there are any new notifications. Can be implemented with polling, web sockets etc.
+      operationId: getNotifications
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          examples:
+            userIdExample:
+              value: "12341124"
+      responses:
+        '200':
+          description: Returns a list of all notifications.
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+        '401':
+          description: User is not authenticated.
+        '403':
+          description: User cannot access other user's notifications.
+        '404':
+          description: User is not found. # maybe
+
+  /entities/agents:
+    get:
+      tags:
+        - Entity
+        - Admin
+      summary: Read details of all Agents
+      description: Allow a user to retrieve the details of all Agents
+      operationId: getAgents
+      responses:
+        '200':
+          description: Request is successful.
+          content: 
+            'application/json':
+              schema: 
+                type: array
+                items: 
+                  $ref: '#/components/schemas/Agent'
+        '401':
+          description: User is not authenticated.
+        '403':
+          description: User is not an admin.
+
+    post:
+      tags:
+        - Entity
+        - Admin
+      summary: Create Agent
+      description: Allow an admin to create a new Agent by specifying its name
+      operationId: createAgent
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                description: 
+                  type: string
+      responses:
+        '200': 
+          description: Agent has been added. 
+          content: 
+            'application/json':
+              schema: 
+                $ref: '#/components/schemas/Agent'
+        '401': 
+          description: User is not authenticated.
+        '403': 
+          description: User is not an admin.
+            
+
+  /entities/cases:
+    get:
+      tags:
+        - Admin
+        - Entity
+      summary: Read details of all Cases
+      description: Allow a user to retrieve the details of all Cases
+      operationId: getCases
+      responses:
+        '200': 
+          description: Agent has been added. 
+          content: 
+            'application/json':
+              schema: 
+                type: array
+                items: 
+                  $ref: '#/components/schemas/Case'
+        '401': 
+          description: User is not authenticated.
+        '403': 
+          description: User is not an admin.
+    post:
+      tags:
+        - Entity
+        - Admin
+      summary: Create Case
+      description: Allow an admin to create a new Case by specifying its name
+      operationId: createCase
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '200': 
+          description: Agent has been added. 
+          content: 
+            'application/json':
+              schema: 
+                $ref: '#/components/schemas/Case'
+        '401': 
+          description: User is not authenticated.
+        '403': 
+          description: User is not an admin.
+
+  /users/{userId}/access:
+    put:
+      tags:
+        - User
+        - Admin
+      summary: Update access of a user
+      description: Allow an admin to change the access privileges of a user by specifying its id
+      operationId: updateUserAccess
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          examples:
+            userIdExample:
+              value: 1234521
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - access
+              properties:
+                access:
+                  $ref: "#/components/schemas/Access"
+      responses:
+        '200': 
+          description: Access was updated. 
+        '401': 
+          description: User is not authenticated. 
+        '403': 
+          description: User is not an admin. 
+            
+
+  /entities/agents/{agentId}:
+    delete:
+      tags:
+        - Entity
+        - Admin
+      summary: Delete Agent
+      description: Allow an admin to delete an Agent by specifying its id
+      operationId: deleteAgent
+      parameters:
+        - in: path
+          name: agentId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          examples:
+            agentIdExample:
+              value: "29423461"
+      responses:
+        '200':
+          description: Requested agent was deleted.
+        '401':
+          description: User is not authenticated.
+        '403':
+          description: User is not an admin.
+        '404':
+          description: There is no agent with specified ID.
+    get:
+      tags: 
+        - Entity
+      summary: Read details of an Agent
+      description: Allow a user to retrieve the details of an Agent by specifying its id
+      operationId: getAgent
+      parameters:
+        - in: path
+          name: agentId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          examples:
+            agentIdExample:
+              value: "2341641124"
+      responses:
+        '200': 
+          description: Request was successful. 
+          content: 
+            'application/json':
+              schema: 
+                $ref: '#/components/schemas/Agent'
+        '401': 
+          description: User is not authenticated.
+        '404':
+          description: Agent not found.
+            
+
+
+  /entities/cases/{caseId}:
+    delete:
+      tags:
+        - Entity
+        - Admin
+      summary: Delete Case
+      description: Allow an admin to delete a Case by specifying its id
+      operationId: deleteCase
+      parameters:
+        - in: path
+          name: caseId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          examples:
+            caseIdExample:
+              value: 2341963112
+      responses:
+        '200':
+          description: Requested case was deleted.
+        '401':
+          description: User is not authenticated.
+        '403':
+          description: User is not an admin.
+        '404':
+          description: There is no case with specified ID.
+    get:
+      tags:
+        - Entity
+      summary: Read details of a Case
+      description: Allow a user to retrieve the details of a Case by specifying its id
+      operationId: getCase
+      parameters:
+        - in: path
+          name: caseId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          examples:
+            caseIdExample:
+              value: 1234163
+      responses:
+        '200': 
+          description: Request was successful. 
+          content: 
+            'application/json':
+              schema: 
+                $ref: '#/components/schemas/Case'
+        '401': 
+          description: User is not authenticated.
+        '404':
+          description: Agent not found.
+
+  /entities/entries/{entryId}:
+    get:
+      tags:
+        - Entity
+      summary: Read details of an Entry
+      description: Allow a user to retrieve the details of an Entry by specifying its id
+      operationId: getEntry
+      parameters:
+        - in: path
+          name: entryId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          examples:
+            entryIdExample:
+              value: "2916459"
+      responses:
+        '200': 
+          description: Request was successful. 
+          content: 
+            'application/json':
+              schema: 
+                $ref: '#/components/schemas/Entry'
+        '401': 
+          description: User is not authenticated.
+        '404':
+          description: Entry not found.
+        
+
+  /entities/entries:
+    get:
+      tags:
+        - Entity
+      summary: Read details of all Entries
+      description: Allow a user to retrieve the details of all Entries
+      operationId: getEntries
+      responses:
+        '200': 
+          description: Entry has been added. 
+          content: 
+            'application/json':
+              schema: 
+                type: array
+                items: 
+                  $ref: '#/components/schemas/Entry'
+        '401': 
+          description: User is not authenticated.
+        '403': 
+          description: User is not an admin.
+
+  # /entities/metadata/{metadataId}:
+  #   get:
+  #     tags: 
+  #       - Entity
+  #     summary: Read details of a Metadata
+  #     description: Allow a user to retrieve the details of a Metadata by specifying its id
+  #     operationId: getMetadata
+  #     parameters:
+  #       - in: path
+  #         name: metadataId
+  #         required: true
+  #         schema:
+  #           type: integer
+  #           format: int64
+  #         examples:
+  #           metadataIdExample:
+  #             value: "2341641124"
+  #     responses:
+  #       '200': 
+  #         description: Request was successful. 
+  #         content: 
+  #           'application/json':
+  #             schema: 
+  #               $ref: '#/components/schemas/Metadata'
+  #       '401': 
+  #         description: User is not authenticated.
+  #       '404':
+  #         description: Metadata not found.
+
+  /notes:
+    post:
+      tags:
+        - Note
+      summary: Create a new Note
+      description: Allow a user to create a new note, by sending the text itself. This text should be validated to meet the requirements (i.e. reference at least two Entities, one of which must be a Case).
+      operationId: createNote
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200': 
+          description: Note was created. 
+          content: 
+            'application/json':
+              schema: 
+               $ref: '#/components/schemas/Note'
+        '400': 
+          description: Note does not reference at least one Case and two Entities. 
+        '401': 
+          description: User is not authenticated.
+        '403': 
+          description: User does not have Read-Write access to a referenced Case.
+
+  /notes/{noteId}/publishable:
+    put:
+      tags:
+        - Note
+      summary: Update a Note's publishable status
+      description: Allow a user to change a Note's publishable status, from publishable to not publishable or vice versa
+      operationId: updateNoteIsPublishable
+      parameters:
+        - in: path
+          name: noteId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          examples:
+            caseIdExample:
+              value: 1234163
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - publishable
+              properties:
+                publishable:
+                  type: boolean
+      responses:
+        '200':  
+          description: Note was made publishable.
+        '401': 
+          description: User is not authenticated.
+        '403': 
+          description: User cannot make a Note he does not own publishable.
+        '404':
+          description: Note not found. 
+
+  /notes/{noteId}/:
+    delete:
+      tags:
+        - Note
+      summary: Delete Note
+      description: Allow a user to delete a Note by specifying its id
+      operationId: deleteNote
+      parameters:
+        - in: path
+          name: noteId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          examples:
+            caseIdExample:
+              value: 12643969
+      responses:
+        '200':  
+          description: Note was deleted.
+        '401': 
+          description: User is not authenticated.
+        '403': 
+          description: User cannot delete a Note he does not own.
+        '404':
+          description: Note not found.
+    get:
+      tags:
+        - Note
+      summary: Read note
+      description: Allow the user the get data about a note, by specifying its id
+      operationId: publishPreview
+      parameters:
+        - in: path
+          name: noteId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          examples:
+            entryIdExample:
+              value: 31249691
+      responses:
+        '200':  
+          description: Request was successful.
+          content: 
+            'application/json':
+              schema: 
+               $ref: '#/components/schemas/Note'
+        '401': 
+          description: User is not authenticated.
+        '403': 
+          description: User does not have accessed to the requested note.
+
+  /notes/request/case/{caseId}/entity/{entityId}:
+    get:
+      tags:
+        - Note
+      summary: Request access to a Note
+      description: Allow a user to request access to a Note by specifying two id's, one of a Case and one of another Entity
+      operationId: requestAccessToNote
+      parameters:
+        - in: path
+          name: caseId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          examples:
+            caseIdExample:
+              value: 12341223
+        - in: path
+          name: entityId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          examples:
+            entityIdExample:
+              value: 4124018
+      responses:
+        '200':
+          description: Access was requested. 
+        '400': 
+          description: Request has invalid format. 
+        '401': 
+          description: User is not authenticated.
+
+  /notes/allow/user/{userId}/note/{noteId}:
+    get:
+      tags:
+        - Note
+      summary: Allow access to a Note
+      description: Allow a user to give another user access to a Note by specifying two id's, one of that user and one of the Note
+      operationId: allowAccessToNote
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          examples:
+            userIdExample:
+              value: 24124112
+        - in: path
+          name: noteId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          examples:
+            noteIdExample:
+              value: 410287
+      responses:
+        '200': 
+          description: Access was granted. 
+        '401': 
+          description: User is not authenticated. 
+        '403': 
+          description: A User cannot grant access to a note it does not own. 
+        
+
+  /fleeting-notes:
+    get:
+      tags:
+        - Fleeting Note
+      summary: Get all fleeting notes of the user
+      description: Allow a user to see all of his fleeting notes
+      operationId: getAllFleetingNotes
+      responses: 
+        '200': 
+          description: Request was successful. 
+          content:
+            'application/json': 
+              schema: 
+                type: array
+                items: 
+                  $ref: "#/components/schemas/FleetingNote"
+        '401': 
+          description: User is not authenticated.
+        
+
+    post:
+      tags:
+        - Fleeting Note
+      summary: Create a Fleeting Note
+      description: Allow a user to create a Fleeting Note by providing its text
+      operationId: createFleetingNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+      responses:
+        '200': 
+          description: Fleeting note was created. 
+          content:
+            'application/json': 
+              schema: 
+                $ref: "#/components/schemas/FleetingNote"
+        '400': 
+          description: The request does not respect the specified format. 
+        '401':
+          description: User is not authenticated.
+        
+  /fleeting-notes/{fleetingNoteId}:
+    get:
+      tags:
+        - Fleeting Note
+      summary: Get the content of a fleeting note
+      description: Allow  user to visualize a specific fleeting note
+      operationId: getFleetingNote
+      parameters:
+        - in: path
+          name: fleetingNoteId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          examples:
+            fleetingNoteIdExample:
+              value: 234196123
+      responses:
+        '200': 
+          description: Request was successful. 
+          content: 
+            'application/json':
+              schema: 
+                $ref: '#/components/schemas/FleetingNote'
+        '401': 
+          description: User is not authenticated.
+        '403':
+          description: User cannot access fleeting notes he does not own. 
+        '404':
+          description: Fleeting note not found.
+    delete:
+      tags:
+        - Fleeting Note
+      summary: Delete a certain fleeting note
+      description: Allow a user to delete the fleeting note with id fleetingNoteId
+      operationId: deleteFleetingNote
+      parameters:
+        - in: path
+          name: fleetingNoteId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          examples:
+            fleetingNoteIdExample:
+              value: 12341123
+      responses:
+        '200':  
+          description: Fleeting Note was deleted.
+        '401': 
+          description: User is not authenticated.
+        '403': 
+          description: User cannot delete a Fleeting Note he does not own.
+        '404':
+          description: Fleeting Note not found.  
+    put:
+      tags:
+        - Fleeting Note
+      summary: Update a Fleeting Note
+      description: Allow a user to edit a Fleeting Note by providing its text and id
+      operationId: updateFleetingNote
+      parameters:
+        - in: path
+          name: fleetingNoteId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          examples:
+            fleetingNoteIdExample:
+              value: 2324169
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+      responses:
+        '200':  
+          description: Fleeting Note was updated.
+        '401': 
+          description: User is not authenticated.
+        '403': 
+          description: User cannot edit a Fleeting Note he does not own.
+        '404':
+          description: Fleeting Note not found. 
+          
+  /fleeting-notes/{fleetingNoteId}/final: 
+    put:
+      tags:
+          - Fleeting Note
+      summary: Transform a Fleeting Note to a Note. 
+      description: Allow a user to save a FleetingNote into a normal Note. 
+      operationId: finalizeNote
+      parameters:
+        - in: path
+          name: fleetingNoteId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          examples:
+            fleetingNoteIdExample:
+              value: 2324169
+      responses:
+        '200': 
+          description: Fleeting Note was transformed. 
+          content: 
+            'application/json':
+              schema: 
+               $ref: '#/components/schemas/Note'
+        '400': 
+          description: Note does not reference at least one Case and two Entities. 
+        '401': 
+          description: User is not authenticated. 
+        '403': 
+          description: User does not have Read-Write access to a referenced Case or User does not own the Fleeting Note. 
+    
+  
+  /entities:
+    get:
+      tags:
+        - Entity
+      summary: Search for entities
+      description: Allow a user to query for any entity they have access, by providing a name and, if it is an Entry, its type
+      operationId: searchEntity
+      parameters:
+        - in: query
+          name: searchAgent
+          required: false
+          schema:
+            type: boolean
+          examples:
+            boolTrue:
+              value: "false"
+        - in: query
+          name: searchCase
+          required: false
+          schema:
+            type: boolean
+          examples:
+            boolTrue:
+              value: "false"
+        - in: query
+          name: searchEntry
+          required: false
+          schema:
+            type: boolean
+          examples:
+            boolTrue:
+              value: "true"
+        - in: query
+          name: name
+          required: false
+          schema:
+            type: string
+          examples:
+            nameExample:
+              value: "127.0.0.1"
+        - in: query
+          name: entryType
+          required: false
+          schema:
+            type: string
+          examples:
+            typeExample:
+              value: "IP"
+      responses:
+        '200': 
+          description: Request was succesful.
+        '401':
+          description: User is not authenticated.
+
+  /graph:
+    get:
+      tags:
+        - Knowledge Graph
+      summary: Show Knowledge Graph
+      description: Allow a user to view the Knowledge Graph containing all Entities they can access
+      operationId: showKnowledgeGraph
+      responses:
+        '200': 
+          description: Request is successful.
+        '401': 
+          description: User is not authenticated. 
+            
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+
+  schemas:
+    User:
+      type: object
+      properties:
+        ID:
+          type: integer
+          format: int64
+        username:
+          type: string
+        password:
+          type: string
+        cases:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Case"
+
+    Agent:
+      type: object
+      properties:
+        ID:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description: 
+          type: string
+
+    Case:
+      type: object
+      properties:
+        ID:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+
+    Entry:
+      type: object
+      properties:
+        ID:
+          type: integer
+          format: int64
+        name:
+          type: string
+        type: 
+          type: string
+        
+
+    Metadata:
+      type: object
+      properties:
+        ID:
+          type: integer
+          format: int64
+        name:
+          type: string
+        type: 
+          type: string
+        
+
+    Access:
+      type: string
+      enum:
+        - none
+        - read
+        - read-write
+    
+    Note:
+      type: object
+      properties:
+        ID:
+          type: integer
+          format: int64
+        contents: 
+          type: string
+        timestamp: 
+          type: string
+          format: date-time
+
+    FleetingNote:
+      type: object
+      properties:
+        ID:
+          type: integer
+          format: int64
+        contents: 
+          type: string
+
+    Notification: 
+      type: object
+      properties: 
+        ID: 
+          type: integer
+          format: int64
+        text:
+          type: string
+
+    ExportType:
+      type: string
+      enum:
+        - pdf
+        - html
+        - json
+
+security:
+  - cookieAuth: []
