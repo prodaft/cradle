@@ -1,0 +1,55 @@
+stages: 
+  - build
+  - linting
+  - test
+
+variables:
+  # DJANGO_CONFIG: "test"
+  POSTGRES_DB: "cradledb"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "postgres"
+  POSTGRES_HOST_AUTH_METHOD: trust
+  POSTGRES_HOST: "postgres"
+  PIPENV_CACHE_DIR: "$CI_PROJECT_DIR/.cache/packages"
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+default:
+  image: python:3.11
+  services:
+    - name: postgres:16.2
+  cache:
+    paths:
+      - $CI_PROJECT_DIR/.cache/packages
+      - $CI_PROJECT_DIR/.cache/pip
+  before_script:
+    - pip install pipenv
+    - pipenv lock 
+    - pipenv sync
+
+# Static analysis
+flake8: 
+  stage: linting
+  script:  
+    - pipenv run python3 -m flake8 --verbose .
+
+# Make migrations 
+migrations:
+  stage: build
+  script:
+    - pipenv run python3 manage.py makemigrations
+    - pipenv run python3 manage.py migrate
+    - pipenv run python3 manage.py check
+  artifacts: 
+    paths: 
+      - $CI_PROJECT_DIR/*/migrations/*
+    expire_in: 2 days
+    
+# Testing
+django-tests:
+  stage: test
+  script:
+    - pipenv run python3 manage.py migrate
+    - pipenv run coverage run manage.py test
+    - pipenv run coverage report
+  coverage: "/TOTAL.+ ([0-9]{1,3}%)/"
+
