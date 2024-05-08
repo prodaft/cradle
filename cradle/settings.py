@@ -32,6 +32,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    "user.apps.UserConfig",
     "counter.apps.CounterConfig",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -124,6 +125,7 @@ USE_I18N = True
 
 USE_TZ = True
 
+LOGIN_URL = "/users/unauthorized/"
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
