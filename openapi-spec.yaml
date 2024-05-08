@@ -53,6 +53,8 @@ paths:
           description: Operation was successful.
         '400':
           description: The request does not match the specified format.
+        '409':
+          description: User already exists
 
     get:
       tags:
