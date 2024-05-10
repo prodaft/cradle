@@ -3,23 +3,28 @@ import LoginRegisterField from "../LoginRegisterField/LoginRegisterField";
 import LoginRegisterButton from "../LoginRegisterButton/LoginRegisterButton";
 import {Link} from "react-router-dom"
 import { registerReq } from "../../services/AuthService";
+import AuthAlert from "../AuthAlert/AuthAlert";
+import { useNavigate } from "react-router-dom";
+
 
 
 export default function Register(props){
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [error, setError] = useState(false);
+    const naviagate = useNavigate();
 
     const handleSubmit = async (e) => {
       e.preventDefault();
       const data = new FormData(e.target);
       
       registerReq(data).then(function (response) {
-        //handle success
-        console.log(response);
+        naviagate("/login")
       })
-      .catch(function (response) {
-        //handle error
-        console.log(response);
+      .catch(function (err) {
+        if(err.response.status === 409){
+          setError(true);
+        }
       });
     };
 
@@ -36,6 +41,7 @@ export default function Register(props){
                 <form className="space-y-6" onSubmit={handleSubmit}>
                 <LoginRegisterField name="username" labelText="Username" type="text" handleInput={setUsername}/>
                 <LoginRegisterField name="password" labelText="Password" type="password" handleInput={setPassword}/>
+                {error && (<AuthAlert title ="Username already in use" text=""/>)}
                 <LoginRegisterButton labelText="Register"/>
                 </form>
                 <p className="mt-10 text-center text-sm text-gray-500">
