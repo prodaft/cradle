@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import user_circle from "../../assets/user_circle.svg";
+import { UserCircle } from "iconoir-react";
 import LoginRegisterField from "../LoginRegisterField/LoginRegisterField";
 import LoginRegisterButton from "../LoginRegisterButton/LoginRegisterButton";
 import {Link} from "react-router-dom"
@@ -41,11 +41,9 @@ export default function Login(props) {
       <div className="bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 md:h-fit xl:w-1/3">
         <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8 text-gray-500">
           <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-            <img
-              className="mx-auto h-40 w-auto"
-              src={user_circle}
-              alt="Account icon"
-            />
+            <div className="flex flex-row  items-center justify-center">
+              <UserCircle color="#f68d2e" height={120} width={120}/>
+            </div>
             <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-cradle2">
               Welcome to CRADLE!
             </h2>
@@ -56,7 +54,7 @@ export default function Login(props) {
 
           <div name="login-form" className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
             <form className="space-y-6" onSubmit={handleSubmit}>
-              <LoginRegisterField name="username" labelText="User name" type="text" handleInput={setUsername}/>
+              <LoginRegisterField name="username" labelText="Username" type="text" handleInput={setUsername}/>
               <LoginRegisterField name="password" labelText="Password" type="password" handleInput={setPassword}/>
               <LoginRegisterButton labelText="Login"/>
             </form>

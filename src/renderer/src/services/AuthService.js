@@ -22,3 +22,12 @@ export async function logOutReq(authData) {
         }
       })
 }
+
+export async function registerReq(data) {
+  return await axios({
+    method: "post",
+    url: "/users/",
+    data: data,
+    headers: { "Content-Type": "multipart/form-data" },
+  })
+}

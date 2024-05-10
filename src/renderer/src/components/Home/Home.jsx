@@ -14,10 +14,10 @@ export default function Home(){
             if(res.status === 200){
               auth.logOut();
             }
-            navigate("/login");
           }).catch(function (res) {
             console.log("Error happened");
           });
+          navigate("/login");
     };
     return (
     <>
