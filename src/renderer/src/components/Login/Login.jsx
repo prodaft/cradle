@@ -6,6 +6,7 @@ import {Link} from "react-router-dom"
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../utils/Auth/AuthProvider";
 import { logInReq } from "../../services/AuthService";
+import AuthAlert from "../AuthAlert/AuthAlert";
 
 
 
@@ -13,6 +14,7 @@ import { logInReq } from "../../services/AuthService";
 export default function Login(props) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState(false);
 
   const auth = useAuth();
 
@@ -26,12 +28,12 @@ export default function Login(props) {
     logInReq(data).then((res)=>{
         if(res.status === 200){
           auth.logIn(res.headers["sessionid"],res.headers["csrftoken"])
-        }else{
-          console.log("Login failed with response" + res)
         }
         navigate("/");
-    }).catch(function (res) {
-      console.log("Login threw an error")
+    }).catch(function (err) {
+      if(err.response.status === 401){
+        setError(true);
+      }
       auth.logOut();
     });
   };
@@ -51,14 +53,13 @@ export default function Login(props) {
               Login
             </h3>
           </div>
-
           <div name="login-form" className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
             <form className="space-y-6" onSubmit={handleSubmit}>
               <LoginRegisterField name="username" labelText="Username" type="text" handleInput={setUsername}/>
               <LoginRegisterField name="password" labelText="Password" type="password" handleInput={setPassword}/>
+              {error && (<AuthAlert title ="Invalid credentials" text=""/>)}
               <LoginRegisterButton labelText="Login"/>
             </form>
-
             <p className="mt-10 text-center text-sm text-gray-500">
               <Link to="/register" className="font-semibold leading-6 text-cradle2 hover:opacity-90 hover:shadow-gray-400">
                 Register

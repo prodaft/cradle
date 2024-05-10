@@ -36,4 +36,26 @@ describe('Register component', () => {
       expect(registerReq).toHaveBeenCalledWith(expect.any(FormData));
     });
   });
+
+    it('should show error message when registration fails', async () => {
+        registerReq.mockRejectedValueOnce({ response: { status: 409 } });
+    
+        const { getByLabelText, getByTestId } = render(
+            <MemoryRouter>
+            <Register />
+        </MemoryRouter>
+        );
+    
+        const usernameInput = getByLabelText('Username');
+        const passwordInput = getByLabelText('Password');
+        const registerButton = getByTestId('login-register-button');
+    
+        fireEvent.change(usernameInput, { target: { value: 'testuser' } });
+        fireEvent.change(passwordInput, { target: { value: 'testpassword' } });
+        fireEvent.click(registerButton);
+    
+        await waitFor(() => {
+        expect(getByTestId('auth-err-alert')).toBeInTheDocument();
+        });
+    });
 });
