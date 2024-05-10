@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import LoginRegisterField from "../LoginRegisterField/LoginRegisterField";
 import LoginRegisterButton from "../LoginRegisterButton/LoginRegisterButton";
 import {Link} from "react-router-dom"
-import axios from "axios";
+import { registerReq } from "../../services/AuthService";
 
 
 export default function Register(props){
@@ -12,20 +12,15 @@ export default function Register(props){
     const handleSubmit = async (e) => {
       e.preventDefault();
       const data = new FormData(e.target);
-      axios({
-        method: "post",
-        url: "http://127.0.0.1:8000/users/",
-        data: data,
-        headers: { "Content-Type": "multipart/form-data" },
+      
+      registerReq(data).then(function (response) {
+        //handle success
+        console.log(response);
       })
-        .then(function (response) {
-          //handle success
-          console.log(response);
-        })
-        .catch(function (response) {
-          //handle error
-          console.log(response);
-        });
+      .catch(function (response) {
+        //handle error
+        console.log(response);
+      });
     };
 
     return (
@@ -39,7 +34,7 @@ export default function Register(props){
               </div>
               <div name="register-form" className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
                 <form className="space-y-6" onSubmit={handleSubmit}>
-                <LoginRegisterField name="username" labelText="User name" type="text" handleInput={setUsername}/>
+                <LoginRegisterField name="username" labelText="Username" type="text" handleInput={setUsername}/>
                 <LoginRegisterField name="password" labelText="Password" type="password" handleInput={setPassword}/>
                 <LoginRegisterButton labelText="Register"/>
                 </form>
