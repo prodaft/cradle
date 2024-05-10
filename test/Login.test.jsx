@@ -20,7 +20,7 @@ describe('Login component', () => {
   it('should submit login form with correct data and redirect to dashboard', async () => {
     const MockHome = () => <div data-testid="mock-home">Mock Home</div>;
 
-    logInReq.mockResolvedValueOnce({ status: 200, headers: { sessionid: 'session123', csrftoken: 'csrf123' } });
+    logInReq.mockResolvedValueOnce({ status: 200, data: { access : 'session123', refresh: 'csrf123' } });
 
     const { getByLabelText, getByTestId } = render(
       <AuthProvider>

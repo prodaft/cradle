@@ -38,7 +38,7 @@ describe('Register component', () => {
   });
 
     it('should show error message when registration fails', async () => {
-        registerReq.mockRejectedValueOnce({ response: { status: 409 } });
+        registerReq.mockRejectedValueOnce({ response: { status: 400 } });
     
         const { getByLabelText, getByTestId } = render(
             <MemoryRouter>
