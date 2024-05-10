@@ -1,4 +1,4 @@
-import { logInReq, logOutReq, registerReq } from '../src/renderer/src/services/AuthService';
+import { logInReq, registerReq } from '../src/renderer/src/services/AuthService';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 
@@ -28,26 +28,6 @@ describe('AuthService', () => {
 
     try {
       await logInReq(data);
-    } catch (error) {
-      expect(error.response.status).toBe(500);
-    }
-  });
-
-  it('should make a successful logout request', async () => {
-    const authData = { csrftoken: 'test' };
-    mock.onPost('/users/logout/').reply(200, { data: 'success' });
-
-    const response = await logOutReq(authData);
-    expect(response.status).toBe(200);
-    expect(response.data).toEqual({ data: 'success' });
-  });
-
-  it('should handle failed logout request', async () => {
-    const authData = { csrftoken: 'test' };
-    mock.onPost('/users/logout/').reply(500);
-
-    try {
-      await logOutReq(authData);
     } catch (error) {
       expect(error.response.status).toBe(500);
     }

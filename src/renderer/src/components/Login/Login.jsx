@@ -27,7 +27,7 @@ export default function Login(props) {
 
     logInReq(data).then((res)=>{
         if(res.status === 200){
-          auth.logIn(res.headers["sessionid"],res.headers["csrftoken"])
+          auth.logIn(res.data["access"],res.data["refresh"])
         }
         navigate("/");
     }).catch(function (err) {

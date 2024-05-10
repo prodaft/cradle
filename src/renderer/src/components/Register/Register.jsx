@@ -22,7 +22,7 @@ export default function Register(props){
         naviagate("/login")
       })
       .catch(function (err) {
-        if(err.response.status === 409){
+        if(err.response.status === 400){
           setError(true);
         }
       });

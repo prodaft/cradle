@@ -10,20 +10,14 @@ export default function Home(){
     const auth = useAuth();
 
     const handleLogout = () => {
-        logOutReq(auth).then((res)=>{
-            if(res.status === 200){
-              auth.logOut();
-            }
-          }).catch(function (res) {
-            console.log("Error happened");
-          });
-          navigate("/login");
+      auth.logOut();  
+      navigate("/login");
     };
     return (
     <>
         <h1>Home</h1>
-        <h2>Session: {auth.sessionid}</h2>
-        <h2>CSRF Token: {auth.csrftoken}</h2>
+        <h2>Access: {auth.access}</h2>
+        <h2>Refresh: {auth.refresh}</h2>
         <button onClick={handleLogout}>
             Logout
         </button>
