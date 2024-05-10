@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../utils/Auth/AuthProvider";
-import { logOutReq } from "../../services/AuthService";
 
 
 
