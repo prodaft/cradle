@@ -78,4 +78,4 @@ run-test:
   script:
     # - npm ls --depth=0 # for debugging
     - npm test
-  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  # coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
