@@ -3,9 +3,9 @@ import user_circle from "../../assets/user_circle.svg";
 import LoginRegisterField from "../LoginRegisterField/LoginRegisterField";
 import LoginRegisterButton from "../LoginRegisterButton/LoginRegisterButton";
 import {Link} from "react-router-dom"
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../utils/Auth/AuthProvider";
+import { logInReq } from "../../services/AuthService";
 
 
 
@@ -23,15 +23,7 @@ export default function Login(props) {
 
     const data = new FormData(e.target);
 
-    axios({
-      method: "post",
-      url: "http://127.0.0.1:8000/users/login/",
-      data: data,
-      withCredentials:true,
-      headers: { "Content-Type": "multipart/form-data; charset=UTF-8" },
-    }).then((res)=>{
-        console.log(res.headers["csrftoken"]);
-        console.log(res.headers["sessionid"]);
+    logInReq(data).then((res)=>{
         if(res.status === 200){
           auth.logIn(res.headers["sessionid"],res.headers["csrftoken"])
         }else{
@@ -41,7 +33,6 @@ export default function Login(props) {
     }).catch(function (res) {
       console.log("Login threw an error")
       auth.logOut();
-      navigate("/");
     });
   };
 
