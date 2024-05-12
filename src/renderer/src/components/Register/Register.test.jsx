@@ -3,15 +3,17 @@
  */
 import React from 'react';
 import { render, fireEvent, waitFor} from '@testing-library/react';
-import Register from '../src/renderer/src/components/Register/Register';
+import Register from './Register';
 import { MemoryRouter} from 'react-router-dom';
-import { registerReq } from '../src/renderer/src/services/AuthService';
+import { registerReq } from '../../services/authReqService/authReqService';
 import '@testing-library/jest-dom'
 
 
-jest.mock('../src/renderer/src/services/AuthService', () => ({
+jest.mock('../../services/authReqService/authReqService', () => ({
   registerReq: jest.fn(),
 }));
+
+jest.mock('../../assets/ripple-ui-alert-icon.svg', () => 'data:image/svg+xml,<svg>Mocked SVG</svg>');
 
 describe('Register component', () => {
 
