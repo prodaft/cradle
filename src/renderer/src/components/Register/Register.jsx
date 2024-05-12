@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import LoginRegisterField from "../LoginRegisterField/LoginRegisterField";
 import LoginRegisterButton from "../LoginRegisterButton/LoginRegisterButton";
 import {Link} from "react-router-dom"
-import { registerReq } from "../../services/AuthService";
+import { registerReq } from "../../services/authReqService/authReqService";
 import AuthAlert from "../AuthAlert/AuthAlert";
 import { useNavigate } from "react-router-dom";
 

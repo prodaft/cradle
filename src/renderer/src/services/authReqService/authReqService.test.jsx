@@ -1,4 +1,4 @@
-import { logInReq, registerReq } from '../src/renderer/src/services/AuthService';
+import { logInReq, registerReq } from './authReqService';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 

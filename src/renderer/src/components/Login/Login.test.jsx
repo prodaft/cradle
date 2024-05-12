@@ -2,18 +2,19 @@
  * @jest-environment jsdom
  */
 import React from 'react';
-import { render, fireEvent, waitFor, getByDisplayValue} from '@testing-library/react';
+import { render, fireEvent, waitFor} from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import Login from '../src/renderer/src/components/Login/Login';
-import AuthProvider  from '../src/renderer/src/utils/Auth/AuthProvider';
-import { logInReq } from '../src/renderer/src/services/AuthService';
+import Login from "./Login";
+import AuthProvider  from '../../utils/Auth/AuthProvider';
+import { logInReq } from '../../services/authReqService/authReqService';
 import '@testing-library/jest-dom'
-import { Expand } from 'iconoir-react';
 
 
-jest.mock('../src/renderer/src/services/AuthService', () => ({
+jest.mock('../../services/authReqService/authReqService', () => ({
   logInReq: jest.fn(),
 }));
+
+jest.mock('../../assets/ripple-ui-alert-icon.svg', () => 'data:image/svg+xml,<svg>Mocked SVG</svg>');
 
 describe('Login component', () => {
 
