@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import LoginRegisterField from "../LoginRegisterField/LoginRegisterField";
-import LoginRegisterButton from "../LoginRegisterButton/LoginRegisterButton";
 import {Link} from "react-router-dom"
 import { registerReq } from "../../services/authReqService/authReqService";
 import AuthAlert from "../AuthAlert/AuthAlert";
@@ -11,19 +10,21 @@ import { useNavigate } from "react-router-dom";
 export default function Register(props){
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState(false);
-    const naviagate = useNavigate();
+    const [error, setError] = useState("");
+    const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
       e.preventDefault();
       const data = new FormData(e.target);
       
       registerReq(data).then(function (response) {
-        naviagate("/login")
+        navigate("/login")
       })
       .catch(function (err) {
-        if(err.response.status === 400){
-          setError(true);
+        if(err.response && err.response.status === 400){
+          setError("Username already in use");
+        }else{
+            setError("Network error");
         }
       });
     };
@@ -38,15 +39,23 @@ export default function Register(props){
                 </h1>
               </div>
               <div name="register-form" className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-                <form className="space-y-6" onSubmit={handleSubmit}>
-                <LoginRegisterField name="username" labelText="Username" type="text" handleInput={setUsername}/>
-                <LoginRegisterField name="password" labelText="Password" type="password" handleInput={setPassword}/>
-                {error && (<AuthAlert title ="Username already in use" text=""/>)}
-                <LoginRegisterButton labelText="Register"/>
-                </form>
-                <p className="mt-10 text-center text-sm text-gray-500">
-                  <Link to="/login" className="font-semibold leading-6 text-cradle2 hover:opacity-90 hover:shadow-gray-400">
-                    Login
+                  <form className="space-y-6" onSubmit={handleSubmit}>
+                      <LoginRegisterField name="username" labelText="Username" type="text" handleInput={setUsername}/>
+                      <LoginRegisterField name="password" labelText="Password" type="password"
+                                          handleInput={setPassword}/>
+                      {error && (<AuthAlert title={error} text=""/>)}
+                      <button
+                          type="submit"
+                          data-testid="login-register-button"
+                          className="btn btn-primary btn-block"
+                      >
+                          Register
+                      </button>
+                  </form>
+                  <p className="mt-10 text-center text-sm text-gray-500">
+                      <Link to="/login"
+                            className="font-semibold leading-6 text-cradle2 hover:opacity-90 hover:shadow-gray-400">
+                      Login
                   </Link>
                 </p>
               </div>
