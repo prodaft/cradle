@@ -45,7 +45,7 @@ describe('Login component', () => {
     fireEvent.click(loginButton);
 
     await waitFor(() => {
-      expect(logInReq).toHaveBeenCalledWith(expect.any(FormData));
+      expect(logInReq).toHaveBeenCalledWith({'username':'testuser','password':'testpassword'});
       const homePage = getByTestId('mock-home');
       expect(homePage).toBeInTheDocument();
     });
