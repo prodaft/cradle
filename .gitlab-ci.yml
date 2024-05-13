@@ -49,8 +49,8 @@ run-build:
       artifacts: true
   script:
     # - npm ls --depth=0 # for debugging
-    - npm run build
     - npm run tailwind
+    - npm run build
   artifacts:
     paths:
       - out/
