@@ -15,16 +15,18 @@ jest.mock('../../services/authReqService/authReqService', () => ({
 
 jest.mock('../../assets/ripple-ui-alert-icon.svg', () => 'data:image/svg+xml,<svg>Mocked SVG</svg>');
 
+const setupTestComponent = () => render(
+    <MemoryRouter>
+        <Register />
+    </MemoryRouter>
+);
+
 describe('Register component', () => {
 
   it('should submit login form with correct data and redirect to dashboard', async () => {
     registerReq.mockResolvedValueOnce({ status: 200 });
 
-    const { getByLabelText, getByTestId } = render(
-        <MemoryRouter>
-        <Register />
-      </MemoryRouter>
-    );
+    const { getByLabelText, getByTestId } = setupTestComponent();
 
     const usernameInput = getByLabelText('Username');
     const passwordInput = getByLabelText('Password');
@@ -42,11 +44,7 @@ describe('Register component', () => {
     it('should show error message when registration fails', async () => {
         registerReq.mockRejectedValueOnce({ response: { status: 400 } });
     
-        const { getByLabelText, getByTestId } = render(
-            <MemoryRouter>
-            <Register />
-        </MemoryRouter>
-        );
+        const { getByLabelText, getByTestId } = setupTestComponent();
     
         const usernameInput = getByLabelText('Username');
         const passwordInput = getByLabelText('Password');

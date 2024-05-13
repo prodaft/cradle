@@ -16,25 +16,28 @@ jest.mock('../../services/authReqService/authReqService', () => ({
 
 jest.mock('../../assets/ripple-ui-alert-icon.svg', () => 'data:image/svg+xml,<svg>Mocked SVG</svg>');
 
-describe('Login component', () => {
+const MockHome = () => <div data-testid="mock-home">Mock Home</div>;
 
-  it('should submit login form with correct data and redirect to dashboard', async () => {
-    const MockHome = () => <div data-testid="mock-home">Mock Home</div>;
-
-    logInReq.mockResolvedValueOnce({ status: 200, data: { access : 'session123', refresh: 'csrf123' } });
-
-    const { getByLabelText, getByTestId } = render(
-      <AuthProvider>
+const setupTestComponent = () => render(
+    <AuthProvider>
         <MemoryRouter initialEntries={['/login']}>
             <Routes>
-                <Route path="/login" element={<Login />}> 
+                <Route path="/login" element={<Login />}>
                 </Route>
                 <Route path="/" element={<MockHome/>}>
                 </Route>`
             </Routes>
         </MemoryRouter>
-      </AuthProvider>
-    );
+    </AuthProvider>
+);
+
+describe('Login component', () => {
+
+  it('should submit login form with correct data and redirect to dashboard', async () => {
+
+    logInReq.mockResolvedValueOnce({ status: 200, data: { access : 'token123', refresh: 'refresh123' } });
+
+    const { getByLabelText, getByTestId } = setupTestComponent();
 
     const usernameInput = getByLabelText('Username');
     const passwordInput = getByLabelText('Password');
@@ -55,16 +58,7 @@ describe('Login component', () => {
     //make this an axios error  with response status 401 
     logInReq.mockRejectedValueOnce({ response: { status: 401 } });
 
-    const { getByLabelText, getByTestId } = render(
-      <AuthProvider>
-        <MemoryRouter initialEntries={['/login']}>
-            <Routes>
-                <Route path="/login" element={<Login />}> 
-                </Route>
-            </Routes>
-        </MemoryRouter>
-      </AuthProvider>
-    );
+    const { getByLabelText, getByTestId } = setupTestComponent();
 
     const usernameInput = getByLabelText('Username');
     const passwordInput = getByLabelText('Password');
