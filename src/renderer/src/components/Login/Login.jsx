@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { UserCircle } from "iconoir-react";
-import FormField from "../LoginRegisterField/FormField";
+import FormField from "../FormField/FormField";
 import {Link} from "react-router-dom"
 import { useNavigate } from "react-router-dom";
 import { logInReq } from "../../services/authReqService/authReqService";
