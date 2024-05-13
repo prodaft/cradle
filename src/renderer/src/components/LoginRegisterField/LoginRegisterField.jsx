@@ -15,7 +15,7 @@ export default function LoginRegisterField(props) {
                 autoComplete={props.name}
                 onChange={(e) => props.handleInput(e.target.value)}
                 required
-                className="block w-full text-gray-900 dark:text-gray-100 rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-400 placeholder:text-gray-400 focus:ring-3 focus:ring-inset focus:ring-cradle2 sm:text-sm sm:leading-6 bg-inherit"
+                className="input-ghost-primary input focus:ring-0"
                 />
             </div>
         </div>

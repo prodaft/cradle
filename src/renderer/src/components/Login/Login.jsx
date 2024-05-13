@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { UserCircle } from "iconoir-react";
 import LoginRegisterField from "../LoginRegisterField/LoginRegisterField";
-import LoginRegisterButton from "../LoginRegisterButton/LoginRegisterButton";
 import {Link} from "react-router-dom"
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../utils/Auth/AuthProvider";
@@ -14,7 +13,7 @@ import AuthAlert from "../AuthAlert/AuthAlert";
 export default function Login(props) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(false);
+  const [error, setError] = useState("");
 
   const auth = useAuth();
 
@@ -31,8 +30,10 @@ export default function Login(props) {
         }
         navigate("/");
     }).catch(function (err) {
-      if(err.response.status === 401){
-        setError(true);
+      if(err.response && err.response.status === 401){
+        setError("Invalid credentials");
+      }else{
+        setError("Network error");
       }
       auth.logOut();
     });
@@ -57,11 +58,18 @@ export default function Login(props) {
             <form className="space-y-6" onSubmit={handleSubmit}>
               <LoginRegisterField name="username" labelText="Username" type="text" handleInput={setUsername}/>
               <LoginRegisterField name="password" labelText="Password" type="password" handleInput={setPassword}/>
-              {error && (<AuthAlert title ="Invalid credentials" text=""/>)}
-              <LoginRegisterButton labelText="Login"/>
+              {error && (<AuthAlert title={error} text=""/>)}
+              <button
+                  type="submit"
+                  data-testid="login-register-button"
+                  className="btn btn-primary btn-block"
+              >
+                Login
+              </button>
             </form>
             <p className="mt-10 text-center text-sm text-gray-500">
-              <Link to="/register" className="font-semibold leading-6 text-cradle2 hover:opacity-90 hover:shadow-gray-400">
+              <Link to="/register"
+                    className="font-semibold leading-6 text-cradle2 hover:opacity-90 hover:shadow-gray-400">
                 Register
               </Link>
             </p>
