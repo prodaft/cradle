@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import FormField from "../LoginRegisterField/FormField";
+import FormField from "../FormField/FormField";
 import {Link} from "react-router-dom"
 import { registerReq } from "../../services/authReqService/authReqService";
 import AlertBox from "../AuthAlert/AlertBox";
