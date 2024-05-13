@@ -3,9 +3,9 @@ import { UserCircle } from "iconoir-react";
 import LoginRegisterField from "../LoginRegisterField/LoginRegisterField";
 import {Link} from "react-router-dom"
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../utils/Auth/AuthProvider";
 import { logInReq } from "../../services/authReqService/authReqService";
 import AuthAlert from "../AuthAlert/AuthAlert";
+import {useAuth} from "../../hooks/useAuth";
 
 
 

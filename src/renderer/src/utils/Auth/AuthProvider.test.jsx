@@ -3,7 +3,8 @@
  */
 import React from 'react';
 import { render, act } from '@testing-library/react';
-import AuthProvider, { useAuth } from './AuthProvider.jsx';
+import AuthProvider from './AuthProvider.jsx';
+import {useAuth} from "../../hooks/useAuth";
 
 describe('useAuth hook', () => {
   it('should return access and refresh as empty strings by default', () => {
