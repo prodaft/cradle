@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 
 def create_test_user(test_case):
     response_post = test_case.client.post(
-        reverse("create"), {"username": "test", "password": "secret"}
+        reverse("create/get-all"), {"username": "test", "password": "secret"}
     )
     test_case.assertEqual(response_post.status_code, 200)
 
@@ -42,7 +42,7 @@ class UserTest(TestCase):
 
     def test_user_is_not_logged(self):
         response_get = self.client.post(reverse("logout"))
-        self.assertEqual(response_get.status_code, 302)
+        self.assertEqual(response_get.status_code, 401)
 
     def test_user_is_logged_out(self):
         create_test_user(self)
@@ -55,21 +55,18 @@ class UserTest(TestCase):
         self.assertEqual(response_logout.status_code, 200)
 
         response_protected = self.client.get(reverse("logout"))
-        self.assertEqual(response_protected.status_code, 302)
-
-    def test_login_failed_view(self):
-        create_test_user(self)
-
-        response_unauthorized = self.client.get(reverse("unauthorized"))
-
-        self.assertEqual(response_unauthorized.status_code, 401)
+        self.assertEqual(response_protected.status_code, 401)
 
     def test_password_not_provided_create(self):
-        response_create = self.client.post(reverse("create"), {"username": "test"})
+        response_create = self.client.post(
+            reverse("create/get-all"), {"username": "test"}
+        )
         self.assertEqual(response_create.status_code, 400)
 
     def test_username_not_provided_create(self):
-        response_create = self.client.post(reverse("create"), {"password": "test"})
+        response_create = self.client.post(
+            reverse("create/get-all"), {"password": "test"}
+        )
         self.assertEqual(response_create.status_code, 400)
 
     def test_password_not_provided_login(self):
@@ -84,6 +81,6 @@ class UserTest(TestCase):
         create_test_user(self)
 
         response_post = self.client.post(
-            reverse("create"), {"username": "test", "password": "secret"}
+            reverse("create/get-all"), {"username": "test", "password": "secret"}
         )
         self.assertEqual(response_post.status_code, 409)
