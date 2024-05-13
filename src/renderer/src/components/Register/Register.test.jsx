@@ -35,7 +35,7 @@ describe('Register component', () => {
     fireEvent.click(registerButton);
 
     await waitFor(() => {
-      expect(registerReq).toHaveBeenCalledWith(expect.any(FormData));
+      expect(registerReq).toHaveBeenCalledWith({'username':'testuser','password':'testpassword'});
     });
   });
 
