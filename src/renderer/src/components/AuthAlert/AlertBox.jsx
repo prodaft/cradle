@@ -1,6 +1,6 @@
 import rippleUiAlertIcon from '../../assets/ripple-ui-alert-icon.svg';
 
-export default function AuthAlert(props) {
+export default function AlertBox(props) {
     return (
         <div className="alert alert-error" data-testid="auth-err-alert">
             <img src={rippleUiAlertIcon} alt="alert icon" className="w-6 h-6"/>
