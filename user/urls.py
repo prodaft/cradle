@@ -1,10 +1,14 @@
-from django.urls import path
+from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .views import user_views, admin_views, router_views
+from django.urls import path
+from .views import user_view
 
 urlpatterns = [
-    path("login/", user_views.login_user, name="login"),
-    path("logout/", user_views.logout_user, name="logout"),
-    path("", router_views.route_users, name="create/get-all"),
-    path("<int:user_id>/", admin_views.delete_user, name="delete"),
+    path("login/", TokenObtainPairView.as_view(), name="user_login"),
+    path("", user_view.UserList.as_view(), name="user_list"),
+    path(
+        "<int:user_id>/",
+        user_view.UserDetail.as_view(),
+        name="user_detail",
+    ),
 ]
