@@ -57,9 +57,13 @@ MIDDLEWARE = [
 ROOT_URLCONF = "cradle.urls"
 
 CORS_ALLOW_HEADERS = ["*"]
-CORS_ALLOW_ALL_ORIGINS = (
-    True  # If this is used then `CORS_ALLOWED_ORIGINS` will not have any effect
-)
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SAMESITE = "None"
 
 TEMPLATES = [
     {
@@ -125,7 +129,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-LOGIN_URL = "/users/unauthorized/"
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
