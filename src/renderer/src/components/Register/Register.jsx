@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import LoginRegisterField from "../LoginRegisterField/LoginRegisterField";
+import FormField from "../LoginRegisterField/FormField";
 import {Link} from "react-router-dom"
 import { registerReq } from "../../services/authReqService/authReqService";
-import AuthAlert from "../AuthAlert/AuthAlert";
+import AlertBox from "../AuthAlert/AlertBox";
 import { useNavigate } from "react-router-dom";
 
 
@@ -15,7 +15,8 @@ export default function Register(props){
 
     const handleSubmit = async (e) => {
       e.preventDefault();
-      const data = new FormData(e.target);
+
+      const data = {username: username, password: password};
       
       registerReq(data).then(function (response) {
         navigate("/login")
@@ -40,10 +41,10 @@ export default function Register(props){
               </div>
               <div name="register-form" className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
                   <form className="space-y-6" onSubmit={handleSubmit}>
-                      <LoginRegisterField name="username" labelText="Username" type="text" handleInput={setUsername}/>
-                      <LoginRegisterField name="password" labelText="Password" type="password"
-                                          handleInput={setPassword}/>
-                      {error && (<AuthAlert title={error} text=""/>)}
+                      <FormField name="username" labelText="Username" type="text" handleInput={setUsername}/>
+                      <FormField name="password" labelText="Password" type="password"
+                                 handleInput={setPassword}/>
+                      {error && (<AlertBox title={error} text=""/>)}
                       <button
                           type="submit"
                           data-testid="login-register-button"

@@ -1,6 +1,6 @@
 
 
-export default function LoginRegisterField(props) {
+export default function FormField(props) {
     return (
         <div className="w-full">
             <label htmlFor={props.name} className="block text-sm font-medium leading-6">
@@ -8,7 +8,6 @@ export default function LoginRegisterField(props) {
             </label>
             <div className="mt-2">
                 <input
-                placeholder="Type here"
                 id={props.name}
                 name={props.name}
                 type={props.type}
