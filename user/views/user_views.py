@@ -1,13 +1,14 @@
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_http_methods
 from django.middleware.csrf import get_token
 
+from ..decorators import user_login_required
 
-@login_required
+
+@user_login_required()
 @require_http_methods(["POST"])
 def logout_user(request):
     """Allows a user to log out of their account
@@ -62,19 +63,6 @@ def create_user(request):
         return HttpResponse(status=200)
 
     return HttpResponse("User already exists", status=409)
-
-
-def login_failed_user(request):
-    """Endpoints with @login_required will redirect not logged in users here.
-
-    Args:
-        request: The request that was sent.
-
-    Returns:
-        HttpResponse("Not logged in", status=401): if the user was not logged in
-    """
-
-    return HttpResponse("Not Logged in", status=401)
 
 
 @csrf_exempt

@@ -1,10 +1,10 @@
 from django.urls import path
 
-from . import views
+from .views import user_views, admin_views, router_views
 
 urlpatterns = [
-    path("unauthorized/", views.login_failed_user, name="unauthorized"),
-    path("login/", views.login_user, name="login"),
-    path("logout/", views.logout_user, name="logout"),
-    path("", views.create_user, name="create"),
+    path("login/", user_views.login_user, name="login"),
+    path("logout/", user_views.logout_user, name="logout"),
+    path("", router_views.route_users, name="create/get-all"),
+    path("<int:user_id>/", admin_views.delete_user, name="delete"),
 ]
