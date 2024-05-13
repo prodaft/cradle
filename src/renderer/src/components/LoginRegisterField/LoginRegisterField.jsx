@@ -2,7 +2,7 @@
 
 export default function LoginRegisterField(props) {
     return (
-        <div>
+        <div className="w-full">
             <label htmlFor={props.name} className="block text-sm font-medium leading-6">
                 {props.labelText}
             </label>
@@ -15,7 +15,7 @@ export default function LoginRegisterField(props) {
                 autoComplete={props.name}
                 onChange={(e) => props.handleInput(e.target.value)}
                 required
-                className="input-ghost-primary input focus:ring-0"
+                className="input-ghost-primary input-block input focus:ring-0"
                 />
             </div>
         </div>
