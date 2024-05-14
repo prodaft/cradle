@@ -5,7 +5,7 @@ import {Link} from "react-router-dom"
 import { useNavigate } from "react-router-dom";
 import { logInReq } from "../../services/authReqService/authReqService";
 import AlertBox from "../AuthAlert/AlertBox";
-import {useAuth} from "../../hooks/useAuth";
+import {useAuth} from "../../hooks/useAuth/useAuth";
 
 
 
