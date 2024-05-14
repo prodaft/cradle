@@ -1,16 +1,23 @@
 module.exports = {
-    content: ["./src/**/*.{html,js,jsx}"],
+    content: [
+        "./src/**/*.{html,js,jsx,ts,tsx}",
+        "./src/index.html"
+    ],
     theme: {
-    extend: {colors: {
-      cradle2: '#f68d2e',
-      cradle1: '#02111a',
-      cradle3: '#253746', 
-    },},
+        extend: {
+            colors: {
+                cradle1: '#02111a',
+                cradle2: '#f68d2e',
+                cradle3: '#253746', 
+            },
+        }, 
     },
     plugins: [
+        require('@tailwindcss/typography'),
+        require('tailwind-scrollbar'),
         require('@tailwindcss/forms'),
         require("rippleui")
-      ],
+    ],
     rippleui: {
       themes: [
         {
