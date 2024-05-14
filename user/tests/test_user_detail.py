@@ -1,14 +1,16 @@
 from django.test import TestCase
 from django.urls import reverse
-from django.contrib.auth.models import User
+from ..models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 
 
 class DeleteUserTest(TestCase):
 
     def setUp(self):
-        self.user = User.objects.create_user(username="user", password="user")
-        self.admin = User.objects.create_superuser(username="admin", password="admin")
+        self.user = CradleUser.objects.create_user(username="user", password="user")
+        self.admin = CradleUser.objects.create_superuser(
+            username="admin", password="admin"
+        )
         self.token_admin = str(AccessToken.for_user(self.admin))
         self.token_normal = str(AccessToken.for_user(self.user))
         self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}

@@ -1,5 +1,6 @@
 from rest_framework.views import APIView
-from django.http import HttpResponse, JsonResponse
+from rest_framework.response import Response
+from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
@@ -30,7 +31,7 @@ class ActorList(APIView):
         actors = Actor.objects.all()
         serializer = ActorSerializer(actors, many=True)
 
-        return JsonResponse(serializer.data, safe=False)
+        return Response(serializer.data)
 
     def post(self, request, format=None):
         """Allow an admin to create a new Actor by specifying its name
@@ -53,9 +54,9 @@ class ActorList(APIView):
 
         if serializer.is_valid():
             serializer.save()
-            return JsonResponse(serializer.data, safe=False)
+            return Response(serializer.data)
 
-        return HttpResponse("Bad request", status=404)
+        return Response("Bad request", status=status.HTTP_404_NOT_FOUND)
 
 
 class ActorDetail(APIView):
@@ -68,7 +69,7 @@ class ActorDetail(APIView):
 
         Args:
             request: The request that was sent
-            case_id: The id of the actor that will be deleted
+            actor_id: The id of the actor that will be deleted
 
         Returns:
             JsonResponse: A JSON response containing the created actor
@@ -85,7 +86,9 @@ class ActorDetail(APIView):
         try:
             actor = Actor.objects.get(pk=actor_id)
         except Actor.DoesNotExist:
-            return HttpResponse("There is no actor with specified ID", status=404)
+            return Response(
+                "There is no actor with specified ID", status=status.HTTP_404_NOT_FOUND
+            )
 
         actor.delete()
-        return HttpResponse("Requested actor was deleted", status=200)
+        return Response("Requested actor was deleted", status=status.HTTP_200_OK)
