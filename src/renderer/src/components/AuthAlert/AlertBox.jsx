@@ -1,12 +1,19 @@
 import rippleUiAlertIcon from '../../assets/ripple-ui-alert-icon.svg';
 
-export default function AlertBox(props) {
+/**
+ * AlertBox component - a styled alert box with an icon and text
+ * @param title - title
+ * @param text - optional information text
+ * @returns {JSX.Element}
+ * @constructor
+ */
+export default function AlertBox({title,text}) {
     return (
         <div className="alert alert-error" data-testid="auth-err-alert">
             <img src={rippleUiAlertIcon} alt="alert icon" className="w-6 h-6"/>
             <div className="flex flex-col">
-                <span>{props.title}</span>
-                <span className="text-content2">{props.text}</span>
+                <span>{title}</span>
+                <span className="text-content2">{text}</span>
             </div>
         </div>
     );

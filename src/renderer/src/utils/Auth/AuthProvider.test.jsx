@@ -103,7 +103,6 @@ it('should not update access and refresh after logging in if already logged in',
         getByTestId('login-button').click();
     });
 
-    // Attempt to log in again
     act(() => {
         getByTestId('login-button').click();
     });
@@ -134,7 +133,6 @@ it('should not clear access and refresh after logging out if already logged out'
         getByTestId('logout-button').click();
     });
 
-    // Attempt to log out again
     act(() => {
         getByTestId('logout-button').click();
     });

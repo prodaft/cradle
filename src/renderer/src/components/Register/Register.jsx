@@ -6,8 +6,15 @@ import AlertBox from "../AuthAlert/AlertBox";
 import { useNavigate } from "react-router-dom";
 
 
-
-export default function Register(props){
+/**
+ * Register component - renders the registration form.
+ * Register new user in the system.
+ * On successful registration, user is redirected to the login page.
+ * On error, displays an error message.
+ * @returns {Element}
+ * @constructor
+ */
+export default function Register(){
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");

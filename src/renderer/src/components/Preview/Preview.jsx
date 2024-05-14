@@ -11,9 +11,8 @@ export default function Preview({ htmlContent }) {
     const sanitizedContent = DOMPurify.sanitize(htmlContent);
 
     return (
-        <div className="h-[90vh] bg-cradle1 p-6 prose w-full !max-w-none prose-invert prose-img:w-fit break-all
-            scrollbar-thumb-rounded-full scrollbar-track-rounded-full scrollbar scrollbar-thumb-cradle3
-            scrollbar-track-cradle1 overflow-hidden overflow-y-scroll" dangerouslySetInnerHTML={{__html: sanitizedContent}}
+        <div className="h-full p-2 bg-gray-3 prose w-full !max-w-none prose-invert prose-img:w-fit break-all
+             overflow-hidden overflow-y-scroll rounded-lg" dangerouslySetInnerHTML={{__html: sanitizedContent}}
             data-testid="preview">
         </div>
     )

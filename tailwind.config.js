@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-undef
 module.exports = {
     content: [
         "./src/**/*.{html,js,jsx,ts,tsx}",
@@ -13,6 +14,7 @@ module.exports = {
         }, 
     },
     plugins: [
+
         require('@tailwindcss/typography'),
         require('tailwind-scrollbar'),
         require('@tailwindcss/forms'),
