@@ -1,5 +1,6 @@
 from rest_framework.views import APIView
-from django.http import HttpResponse, JsonResponse
+from rest_framework.response import Response
+from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
@@ -30,7 +31,7 @@ class CaseList(APIView):
         cases = Case.objects.all()
         serializer = CaseSerializer(cases, many=True)
 
-        return JsonResponse(serializer.data, safe=False)
+        return Response(serializer.data)
 
     def post(self, request, format=None):
         """Allow an admin to create a new Case by specifying its name
@@ -53,9 +54,9 @@ class CaseList(APIView):
 
         if serializer.is_valid():
             serializer.save()
-            return JsonResponse(serializer.data, safe=False)
+            return Response(serializer.data)
 
-        return HttpResponse("Bad request", status=404)
+        return Response("Bad request", status=status.HTTP_404_NOT_FOUND)
 
 
 class CaseDetail(APIView):
@@ -85,6 +86,8 @@ class CaseDetail(APIView):
         try:
             case = Case.objects.get(pk=case_id)
         except Case.DoesNotExist:
-            return HttpResponse("There is no case with specified ID", status=404)
+            return Response(
+                "There is no case with specified ID", status=status.HTTP_404_NOT_FOUND
+            )
         case.delete()
-        return HttpResponse("Requested case was deleted", status=200)
+        return Response("Requested case was deleted", status=status.HTTP_200_OK)

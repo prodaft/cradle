@@ -1,5 +1,5 @@
 from django.test import TestCase
-from django.contrib.auth.models import User
+from user.models import CradleUser
 from django.urls import reverse
 from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
@@ -17,10 +17,10 @@ class DeleteActorDetailsTest(TestCase):
 
     def setUp(self):
         self.client = APIClient()
-        self.admin_user = User.objects.create_user(
+        self.admin_user = CradleUser.objects.create_user(
             username="admin", password="password", is_staff=True
         )
-        self.normal_user = User.objects.create_user(
+        self.normal_user = CradleUser.objects.create_user(
             username="user", password="password", is_staff=False
         )
         self.token_admin = str(AccessToken.for_user(self.admin_user))

@@ -298,7 +298,7 @@ paths:
         '403': 
           description: User is not an admin.
 
-  /users/{userId}/access:
+  /users/{userId}/access/{caseId}:
     put:
       tags:
         - User
@@ -316,6 +316,15 @@ paths:
           examples:
             userIdExample:
               value: 1234521
+        - in: path
+          name: caseId
+          required: true
+          schema: 
+            type: integer
+            format: int64
+          examples: 
+            caseIdExample:
+              value: 123412
       requestBody:
         content:
           application/json:

@@ -70,6 +70,11 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    "DEFAULT_PARSER_CLASSES": (
+        "rest_framework.parsers.FormParser",
+        "rest_framework.parsers.MultiPartParser",
+        "rest_framework.parsers.JSONParser",
+    ),
 }
 
 SIMPLE_JWT = {
@@ -109,7 +114,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "cradle.wsgi.application"
 
-
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
@@ -143,6 +147,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTH_USER_MODEL = "user.CradleUser"
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
