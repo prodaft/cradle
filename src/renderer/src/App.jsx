@@ -1,3 +1,4 @@
+import TextEditor from './components/TextEditor/TextEditor.jsx';
 import { Route, Routes } from "react-router-dom";
 import Login from './components/Login/Login.jsx';
 import Register from './components/Register/Register.jsx';
@@ -13,7 +14,7 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route element={<PrivateRoute fallback={"/login"}/>}>
-            <Route path="/" element={<Home/>} />
+            <Route path="/" element={<TextEditor />} />
           </Route>
           <Route path="/login" element={<Login />}></Route>
           <Route path="/register" element={<Register/>}></Route>
