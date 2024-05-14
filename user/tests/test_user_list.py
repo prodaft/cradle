@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
-from django.contrib.auth.models import User
+from ..models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.parsers import JSONParser
 from ..serializers import UserRetrieveSerializer
@@ -21,7 +21,7 @@ class CreateUserTest(TestCase):
     def test_user_create_successfully(self):
         response = self.create_user_request("user", "user")
         self.assertEqual(response.status_code, 200)
-        self.assertIsNotNone(User.objects.get(username="user"))
+        self.assertIsNotNone(CradleUser.objects.get(username="user"))
 
     def test_user_create_no_username(self):
         response = self.create_user_request(username=None, password="user")
@@ -69,8 +69,10 @@ def bytes_to_json(data):
 class GetAllUsersTest(TestCase):
 
     def setUp(self):
-        self.user = User.objects.create_user(username="user", password="user")
-        self.admin = User.objects.create_superuser(username="admin", password="admin")
+        self.user = CradleUser.objects.create_user(username="user", password="user")
+        self.admin = CradleUser.objects.create_superuser(
+            username="admin", password="admin"
+        )
         self.token_admin = str(AccessToken.for_user(self.admin))
         self.token_normal = str(AccessToken.for_user(self.user))
         self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}

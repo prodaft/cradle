@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from ..serializers import UserCreateSerializer, UserRetrieveSerializer
 
-from django.contrib.auth.models import User
+from ..models import CradleUser
 
 
 class UserList(APIView):
@@ -34,7 +34,7 @@ class UserList(APIView):
                 if the authenticated user is not an admin
         """
 
-        users = User.objects.all()
+        users = CradleUser.objects.all()
         serializer = UserRetrieveSerializer(users, many=True)
         return Response(serializer.data)
 
@@ -90,8 +90,8 @@ class UserDetail(APIView):
 
         removed_user = None
         try:
-            removed_user = User.objects.get(id=user_id)
-        except User.DoesNotExist:
+            removed_user = CradleUser.objects.get(id=user_id)
+        except CradleUser.DoesNotExist:
             return Response(
                 "There is no user with the specified ID.",
                 status=status.HTTP_404_NOT_FOUND,
