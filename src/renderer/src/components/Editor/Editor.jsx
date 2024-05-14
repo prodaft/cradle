@@ -13,7 +13,7 @@ import { vscodeDark } from '@uiw/codemirror-theme-vscode';
  */
 export default function Editor({ markdownContent, setMarkdownContent }) {
     return (
-        <div className="border-r-2 h-[92vh] border-gray-300 overflow-hidden p-2">
+        <div className="h-full overflow-hidden rounded-lg w-full">
             <CodeMirror 
                 name="markdown-input"   
                 id="markdown-input" 

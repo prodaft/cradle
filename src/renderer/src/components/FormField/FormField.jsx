@@ -1,5 +1,9 @@
-
-
+/**
+ * FormField component - a styled form field with a label and input
+ * @param props
+ * @returns {JSX.Element}
+ * @constructor
+ */
 export default function FormField(props) {
     return (
         <div className="w-full">
