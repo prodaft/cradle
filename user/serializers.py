@@ -1,13 +1,12 @@
 from rest_framework import serializers
 from rest_framework.exceptions import APIException
-from django.contrib.auth.models import User
+from .models import CradleUser, Access
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(required=True)
 
     class Meta:
-        model = User
+        model = CradleUser
         fields = ["username", "password"]
         extra_kwargs = {"username": {"validators": []}}
 
@@ -25,7 +24,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
                 which returns error code 409.
         """
 
-        user_exists = User.objects.filter(username=data["username"]).exists()
+        user_exists = CradleUser.objects.filter(username=data["username"]).exists()
         if user_exists:
             raise DuplicateUserException()
         return super().validate(data)
@@ -41,7 +40,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             The created User entity
         """
 
-        return User.objects.create_user(**validated_data)
+        return CradleUser.objects.create_user(**validated_data)
 
 
 class DuplicateUserException(APIException):
@@ -52,5 +51,11 @@ class DuplicateUserException(APIException):
 
 class UserRetrieveSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
+        model = CradleUser
         fields = ["id", "username"]
+
+
+class AccessSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Access
+        fields = ["access_type"]
