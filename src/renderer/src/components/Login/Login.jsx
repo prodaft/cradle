@@ -8,9 +8,14 @@ import AlertBox from "../AuthAlert/AlertBox";
 import {useAuth} from "../../hooks/useAuth/useAuth";
 
 
-
-
-export default function Login(props) {
+/**
+ * Login component - renders the login form.
+ * Sets the username and password states for the AuthProvider when successfully logged in with the server
+ * On error, displays an error message.
+ * @returns {Element}
+ * @constructor
+ */
+export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");

@@ -55,7 +55,7 @@ describe('Login component', () => {
   });
 
   it('should show error message when login fails', async () => {
-    //make this an axios error  with response status 401 
+
     logInReq.mockRejectedValueOnce({ response: { status: 401 } });
 
     const { getByLabelText, getByTestId } = setupTestComponent();
@@ -72,4 +72,23 @@ describe('Login component', () => {
       expect(getByTestId('auth-err-alert')).toBeInTheDocument();
     });
   });
+
+    it('should show error message when unexpected error occurs', async () => {
+        logInReq.mockRejectedValueOnce({ response: { status: 500 } });
+
+        const { getByLabelText, getByTestId } = setupTestComponent();
+
+        const usernameInput = getByLabelText('Username');
+        const passwordInput = getByLabelText('Password');
+        const loginButton = getByTestId('login-register-button');
+
+        fireEvent.change(usernameInput, { target: { value: 'testuser' } });
+        fireEvent.change(passwordInput, { target: { value: 'testpassword' } });
+        fireEvent.click(loginButton);
+
+        await waitFor(() => {
+            expect(getByTestId('auth-err-alert')).toBeInTheDocument();
+        });
+    });
+
 });

@@ -58,4 +58,22 @@ describe('Register component', () => {
         expect(getByTestId('auth-err-alert')).toBeInTheDocument();
         });
     });
+
+    it('should show error message when unexpected error occurs', async () => {
+        registerReq.mockRejectedValueOnce({ response: { status: 500 } });
+
+        const { getByLabelText, getByTestId } = setupTestComponent();
+
+        const usernameInput = getByLabelText('Username');
+        const passwordInput = getByLabelText('Password');
+        const registerButton = getByTestId('login-register-button');
+
+        fireEvent.change(usernameInput, { target: { value: 'testuser' } });
+        fireEvent.change(passwordInput, { target: { value: 'testpassword' } });
+        fireEvent.click(registerButton);
+
+        await waitFor(() => {
+            expect(getByTestId('auth-err-alert')).toBeInTheDocument();
+        });
+    });
 });

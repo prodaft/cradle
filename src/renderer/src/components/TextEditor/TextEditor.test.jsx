@@ -6,6 +6,8 @@ import '@testing-library/jest-dom'
 import TextEditor from './TextEditor';
 import { saveNote } from "../../services/textEditorService/textEditorService";
 
+jest.mock('../../hooks/useNavbarContents/useNavbarContents', () => () => {});
+
 beforeEach(() => {
     localStorage.clear();
 });

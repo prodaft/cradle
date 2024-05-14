@@ -9,8 +9,6 @@ let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
     webPreferences: {
       nodeIntegration: true,
       enableRemoteModule: true,
@@ -20,9 +18,7 @@ function createWindow() {
   if (isDevelopment) {
     mainWindow.loadURL('http://localhost:5173')
   } else {
-    // mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
     mainWindow.loadURL(`file://${path.join(__dirname, '../renderer/index.html')}`)
-    // mainWindow.loadURL("https://www.google.com")
   }
 
   mainWindow.setMenuBarVisibility(false);
@@ -35,6 +31,7 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
+  // eslint-disable-next-line no-undef
   if (process.platform !== 'darwin') {
     app.quit();
   }
