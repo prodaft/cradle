@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from rest_framework.exceptions import APIException
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import Token
 from .models import CradleUser, Access
 
 
@@ -54,8 +56,25 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
         model = CradleUser
         fields = ["id", "username"]
 
-
 class AccessSerializer(serializers.ModelSerializer):
     class Meta:
         model = Access
         fields = ["access_type"]
+
+class TokenObtainSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user : CradleUser) -> Token:
+        """Retrieves a JWT token for a given CradleUser instance.
+
+        Args:
+            user: an instance of the CradleUser object.
+
+        Returns:
+            A JWT token to be used for validating further requests. 
+        """
+
+        token = super().get_token(user)
+
+        token["is_admin"] = user.is_superuser
+
+        return token
