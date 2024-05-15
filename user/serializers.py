@@ -56,21 +56,23 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
         model = CradleUser
         fields = ["id", "username"]
 
+
 class AccessSerializer(serializers.ModelSerializer):
     class Meta:
         model = Access
         fields = ["access_type"]
 
+
 class TokenObtainSerializer(TokenObtainPairSerializer):
     @classmethod
-    def get_token(cls, user : CradleUser) -> Token:
+    def get_token(cls, user: CradleUser) -> Token:
         """Retrieves a JWT token for a given CradleUser instance.
 
         Args:
             user: an instance of the CradleUser object.
 
         Returns:
-            A JWT token to be used for validating further requests. 
+            A JWT token to be used for validating further requests.
         """
 
         token = super().get_token(user)
