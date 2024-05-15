@@ -40,11 +40,11 @@ export default function Home(){
             width: '1.7em',
             height: '1.7em',
         }}>
-            <div className="flex flex-row w-full">
+            <div className="flex flex-row w-full overflow-hidden">
                 <Sidebar handleLogout={handleLogout} handleNewNote={handleNewNote} handleGraphView={() => handleNotImplemented()} />
-            <div className="flex flex-col w-full">
+            <div className="w-full overflow-hidden overflow-y-hidden">
                 <Navbar handleFleetingNotes={() => handleNotImplemented()} contents={navbarContents}/>
-                <div className="w-full h-full">
+                <div className="w-full h-full overflow-x-hidden overflow-y-hidden">
                     <Outlet context={{setNavbarContents}}/>
                 </div>
             </div>
