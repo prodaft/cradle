@@ -24,7 +24,7 @@ export default function TextEditor() {
 
 
     return (
-        <div className="w-full h-[90vh] md:h-[94vh] lg:h-[95vh] xl:h-[95vh] rounded-md flex flex-1 flex-col p-1.5 gap-1.5 sm:flex-row overflow-y-hidden">
+        <div className="w-full h-[90vh] md:h-[93vh] lg:h-[95vh] xl:h-[95vh] rounded-md flex flex-1 flex-col p-1.5 gap-1.5 sm:flex-row overflow-y-hidden">
             <Editor markdownContent={markdownContent} setMarkdownContent={setMarkdownContentCallback} />
             <Preview htmlContent={parsedContent} /> 
         </div>

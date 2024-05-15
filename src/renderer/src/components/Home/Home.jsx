@@ -28,6 +28,10 @@ export default function Home(){
         navigate("/not-implemented");
     }
 
+    const handleAdminPanel = () => {
+        navigate("/admin");
+    }
+
     const handleNewNote = () => {
         navigate("/editor");
     }
@@ -41,7 +45,7 @@ export default function Home(){
             height: '1.7em',
         }}>
             <div className="flex flex-row w-full overflow-hidden">
-                <Sidebar handleLogout={handleLogout} handleNewNote={handleNewNote} handleGraphView={() => handleNotImplemented()} />
+                <Sidebar handleLogout={handleLogout} handleAdminPanel={handleAdminPanel} handleNewNote={handleNewNote} handleGraphView={() => handleNotImplemented()} />
             <div className="w-full overflow-hidden overflow-y-hidden">
                 <Navbar handleFleetingNotes={() => handleNotImplemented()} contents={navbarContents}/>
                 <div className="w-full h-full overflow-x-hidden overflow-y-hidden">
