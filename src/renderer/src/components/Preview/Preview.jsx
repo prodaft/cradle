@@ -12,7 +12,7 @@ export default function Preview({ htmlContent }) {
 
     return (
         <div className="h-full p-2 bg-gray-3 prose w-full !max-w-none prose-invert prose-img:w-fit break-all
-             overflow-hidden overflow-y-scroll rounded-lg" dangerouslySetInnerHTML={{__html: sanitizedContent}}
+             overflow-y-scroll rounded-lg" dangerouslySetInnerHTML={{__html: sanitizedContent}}
             data-testid="preview">
         </div>
     )
