@@ -6,7 +6,8 @@ from rest_framework.test import APIClient
 import io
 from rest_framework_simplejwt.tokens import AccessToken
 
-from ..models import Actor
+from ..models import Entity
+from ..enums import EntityType
 
 
 def bytes_to_json(data):
@@ -29,7 +30,9 @@ class DeleteActorDetailsTest(TestCase):
         self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
 
     def test_delete_actor_admin(self):
-        actor = Actor.objects.create(name="Actor1", description="Description1")
+        actor = Entity.objects.create(
+            name="Actor1", description="Description1", type=EntityType.ACTOR
+        )
 
         response = self.client.delete(
             reverse("actor_detail", kwargs={"actor_id": actor.pk}), **self.headers_admin
@@ -38,7 +41,9 @@ class DeleteActorDetailsTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_delete_actor_authenticated_not_admin(self):
-        actor = Actor.objects.create(name="Actor1", description="Description1")
+        actor = Entity.objects.create(
+            name="Actor1", description="Description1", type=EntityType.ACTOR
+        )
 
         response = self.client.delete(
             reverse("actor_detail", kwargs={"actor_id": actor.pk}),
@@ -48,7 +53,9 @@ class DeleteActorDetailsTest(TestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_delete_actor_not_authenticated(self):
-        actor = Actor.objects.create(name="Actor1", description="Description1")
+        actor = Entity.objects.create(
+            name="Actor1", description="Description1", type=EntityType.ACTOR
+        )
 
         response = self.client.delete(
             reverse("actor_detail", kwargs={"actor_id": actor.pk})
@@ -57,7 +64,9 @@ class DeleteActorDetailsTest(TestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_delete_actor_admin_wrong_id(self):
-        actor = Actor.objects.create(name="Actor1", description="Description1")
+        actor = Entity.objects.create(
+            name="Actor1", description="Description1", type=EntityType.ACTOR
+        )
 
         response = self.client.delete(
             reverse("actor_detail", kwargs={"actor_id": actor.pk + 1}),

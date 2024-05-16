@@ -1,8 +1,8 @@
 from rest_framework import serializers
-from rest_framework.exceptions import APIException
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
 from .models import CradleUser, Access
+from .exceptions import DuplicateUserException
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -43,12 +43,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
         """
 
         return CradleUser.objects.create_user(**validated_data)
-
-
-class DuplicateUserException(APIException):
-    status_code = 409
-    default_detail = "There exists another user with the same username."
-    default_code = "unique"
 
 
 class UserRetrieveSerializer(serializers.ModelSerializer):
