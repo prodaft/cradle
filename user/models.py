@@ -29,7 +29,9 @@ class Access(models.Model):
 
     user = models.ForeignKey(CradleUser, on_delete=models.CASCADE, to_field="id")
     case = models.ForeignKey(Entity, on_delete=models.CASCADE, to_field="id", null=True)
-    access_type = models.CharField(max_length=20, choices=AccessType.choices, default=AccessType.NONE)
+    access_type = models.CharField(
+        max_length=20, choices=AccessType.choices, default=AccessType.NONE
+    )
 
     def __str__(self):
         return str(self.case) + " " + self.access_type

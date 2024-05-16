@@ -3,14 +3,13 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from django.db.models import FilteredRelation, Q
 from django.http import HttpRequest
 
-from ..models import Access, CradleUser, AccessType
+from ..models import Access, CradleUser
 from entities.models import Entity
 
 from ..serializers import AccessSerializer, AccessCaseSerializer
-from entities.serializers import CaseAccessAdminSerializer
+
 
 class AccessList(APIView):
 
@@ -18,7 +17,7 @@ class AccessList(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
     serializer_class = AccessCaseSerializer
 
-    def get(self, request : HttpRequest, user_id: int, format=None) -> Response:
+    def get(self, request: HttpRequest, user_id: int, format=None) -> Response:
         """Allows an admin to get the access priviliges of a User
             on all Cases.
 
@@ -42,11 +41,18 @@ class AccessList(APIView):
             return Response("User does not exist", status=status.HTTP_404_NOT_FOUND)
 
         cases_with_access = Entity.cases.raw(
-            "SELECT * FROM entities_entity LEFT OUTER JOIN user_access ON entities_entity.id = user_access.case_id WHERE (user_access.user_id=%s OR user_access.user_id IS NULL) AND entities_entity.type = 'case'", 
-                [user.id]
-            )
+            """
+            SELECT * FROM entities_entity LEFT OUTER JOIN
+            user_access ON entities_entity.id = user_access.case_id
+            WHERE (user_access.user_id=%s OR user_access.user_id IS NULL)
+            AND entities_entity.type = 'case'
+            """,
+            [user.id],
+        )
 
-        serializer = AccessCaseSerializer(cases_with_access, context={"is_admin" : user.is_superuser}, many=True)
+        serializer = AccessCaseSerializer(
+            cases_with_access, context={"is_admin": user.is_superuser}, many=True
+        )
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -75,6 +81,8 @@ class UpdateAccess(APIView):
                 if the user was not authenticated.
             HttpResponse("User is not an admin", status=403):
                 if the user was not an admin.
+            HttpResponse("Cannot modify the access of an admin.", status=403):
+                if the update request is for an admin user.
             HttpResponse("User does not exist.", status=404):
                 if the user does not exist.
             HttpResponse("Case does not exist.", status=404):
@@ -90,6 +98,9 @@ class UpdateAccess(APIView):
             updated_case = Entity.cases.get(id=case_id)
         except Entity.DoesNotExist:
             return Response("Case does not exist.", status=status.HTTP_404_NOT_FOUND)
+
+        if updated_user.is_superuser:
+            return Response("User is not an admin.", status=status.HTTP_403_FORBIDDEN)
 
         updated_access, created = Access.objects.get_or_create(
             user=updated_user, case=updated_case
