@@ -3,19 +3,22 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from django.db.models import FilteredRelation, Q
+from django.http import HttpRequest
 
 from ..models import Access, CradleUser
 from entities.models import Entity
 
-from ..serializers import AccessSerializer
+from ..serializers import AccessSerializer, AccessCaseSerializer
 
 
 class AccessList(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdminUser]
+    serializer_class = AccessCaseSerializer
 
-    def get(self, request, user_id: int, format=None):
+    def get(self, request : HttpRequest, user_id: int, format=None) -> Response:
         """Allows an admin to get the access priviliges of a User
             on all Cases.
 
@@ -26,8 +29,6 @@ class AccessList(APIView):
         Returns:
             HttpResponse("Access was updated", status=200):
                 if the request was successful
-            HttpResponse("Request is invalid", status=400):
-                if the request body is not valid
             HttpResponse("User is not authenticated", status=401):
                 if the user was not authenticated.
             HttpResponse("User is not an admin", status=403):
@@ -40,7 +41,14 @@ class AccessList(APIView):
         except CradleUser.DoesNotExist:
             return Response("User does not exist", status=status.HTTP_404_NOT_FOUND)
 
-        return Response(status=status.HTTP_200_OK)
+        cases_with_access = Entity.cases.raw(
+            "SELECT * FROM entities_entity LEFT OUTER JOIN user_access ON entities_entity.id = user_access.case_id WHERE (user_access.user_id=%s OR user_access.user_id IS NULL) AND entities_entity.type = 'case'", 
+                [user.id]
+            )
+
+        serializer = AccessCaseSerializer(cases_with_access, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class UpdateAccess(APIView):
