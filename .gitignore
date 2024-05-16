@@ -5,3 +5,4 @@ db.sqlite3
 .vscode
 env
 Pipfile.lock
+.coverage

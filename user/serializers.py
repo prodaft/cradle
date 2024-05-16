@@ -1,6 +1,8 @@
 from rest_framework import serializers
-from rest_framework.exceptions import APIException
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import Token
 from .models import CradleUser, Access
+from .exceptions import DuplicateUserException
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -43,12 +45,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return CradleUser.objects.create_user(**validated_data)
 
 
-class DuplicateUserException(APIException):
-    status_code = 409
-    default_detail = "There exists another user with the same username."
-    default_code = "unique"
-
-
 class UserRetrieveSerializer(serializers.ModelSerializer):
     class Meta:
         model = CradleUser
@@ -60,8 +56,29 @@ class AccessSerializer(serializers.ModelSerializer):
         model = Access
         fields = ["access_type"]
 
+
 class AccessCaseSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=200)
+
     class Meta:
         model = Access
         fields = ["case_id", "access_type"]
+
+
+class TokenObtainSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user: CradleUser) -> Token:
+        """Retrieves a JWT token for a given CradleUser instance.
+
+        Args:
+            user: an instance of the CradleUser object.
+
+        Returns:
+            A JWT token to be used for validating further requests.
+        """
+
+        token = super().get_token(user)
+
+        token["is_admin"] = user.is_superuser
+
+        return token
