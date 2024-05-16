@@ -1,5 +1,20 @@
 import React from "react";
 
+/**
+ * ConfirmationDialog component - This component is used to display a confirmation dialog.
+ * The dialog will display a title and a description.
+ * The dialog will have two buttons:
+ * - Cancel
+ * - Confirm
+ * When the confirm button is clicked the handleConfirm function will be called.
+ * @param open
+ * @param setOpen
+ * @param handleConfirm
+ * @param title
+ * @param description
+ * @returns {Element}
+ * @constructor
+ */
 export function ConfirmationDialog({ open, setOpen, handleConfirm, title, description }) {
     const handleOpen = () => setOpen(!open);
 

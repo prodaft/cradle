@@ -9,6 +9,7 @@ import AuthProvider from "./utils/Auth/AuthProvider.jsx";
 import FeatureNotImplemented from "./components/FeatureNotImplemented/FeatureNotImplemented";
 import AdminPanel from "./components/AdminPanel/AdminPanel";
 import AdminPanelAdd from "./components/AdminPanelAdd/AdminPanelAdd";
+import AdminPanelUserPermissions from "./components/AdminPanelUserPermissions/AdminPanelUserPermissions";
 
 /**
  * The App component is the entry point of the application. It wraps the entire application in the AuthProvider
@@ -32,6 +33,7 @@ function App() {
                     <Route index element={<AdminPanel/>}></Route>
                     <Route path="/admin/add-actor" element={<AdminPanelAdd type="Actor"/>}></Route>
                     <Route path="/admin/add-case" element={<AdminPanelAdd type="Case"/>}></Route>
+                    <Route path={"/admin/user-permissions/:username/:id"} element={<AdminPanelUserPermissions/>}></Route>
                 </Route>
             </Route>
               {/* Add any routes for components that DO NOT KEEP the sidebar and navbar here */}

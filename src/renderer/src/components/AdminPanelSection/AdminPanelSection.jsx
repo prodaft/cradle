@@ -1,6 +1,18 @@
 import { PlusCircle } from "iconoir-react";
 import { useState, useEffect } from "react";
 
+/**
+ * AdminPanelSection component - This component is used to display a section in the AdminPanel.
+ * The section contains the following elements:
+ * - Title
+ * - Add button
+ * - Search bar
+ * - Children (cards)
+ * The component will filter the children based on the search input.
+ * @param props
+ * @returns {JSX.Element}
+ * @constructor
+ */
 export default function AdminPanelSection(props) {
     const [searchVal, setSearchVal] = useState("");
     const [filteredChildren, setFilteredChildren] = useState(props.children);

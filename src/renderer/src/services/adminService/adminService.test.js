@@ -1,4 +1,13 @@
-import { createActor, createCase, getActors, getCases, getUsers, deleteEntity } from './adminService';
+import {
+    createActor,
+    createCase,
+    getActors,
+    getCases,
+    getUsers,
+    deleteEntity,
+    getPermissions,
+    changeAccess
+} from './adminService';
 import axios from 'axios';
 jest.mock('axios');
 
@@ -7,6 +16,10 @@ describe('Admin Service', () => {
     const data = { name: 'test' };
     const id = 1;
     const type = 'entities';
+    const accessLevel = 'read';
+    const userId = '1';
+    const caseId = '1';
+
 
     afterEach(() => {
         jest.clearAllMocks();
@@ -70,6 +83,27 @@ describe('Admin Service', () => {
         expect(axios).toHaveBeenCalledWith({
             method: "delete",
             url: `/${type}/${id}/`,
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+    });
+
+    it('changes access level successfully', async () => {
+        axios.mockResolvedValue({ data: {} });
+        await changeAccess(token, userId, caseId, accessLevel);
+        expect(axios).toHaveBeenCalledWith({
+            method: "put",
+            url: `/users/${userId}/access/${caseId}/`,
+            data: { "access": accessLevel },
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+    });
+
+    it('gets permissions successfully', async () => {
+        axios.mockResolvedValue({ data: {} });
+        await getPermissions(token, userId);
+        expect(axios).toHaveBeenCalledWith({
+            method: "get",
+            url: `/users/${userId}/access/`,
             headers: { "Authorization": `Bearer ${token}` }
         });
     });

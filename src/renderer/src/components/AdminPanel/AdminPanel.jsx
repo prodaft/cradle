@@ -5,6 +5,20 @@ import {getActors, getCases, getUsers} from "../../services/adminService/adminSe
 import AdminPanelCard from "../AdminPanelCard/AdminPanelCard";
 import {useEffect, useState} from "react";
 
+/**
+ * AdminPanel component - This component is used to display the AdminPanel.
+ * Displays the AdminPanel with the following sections:
+ * - Actors
+ * - Cases
+ * - Users
+ * Each section contains a list of cards with the respective information and actions.
+ * The actions are:
+ * - Create new entity
+ * - Delete entity
+ * When deleting an entity a dialog will be displayed to confirm the deletion.
+ * @returns {JSX.Element}
+ * @constructor
+ */
 export default function AdminPanel() {
     const auth = useAuth();
     const [agents, setAgents] = useState([]);
@@ -18,7 +32,7 @@ export default function AdminPanel() {
                 let actors = response.data;
                 setAgents(actors.map((actor) => {
                     return (
-                        <AdminPanelCard id={actor.id} name={actor.name} description={actor.description} type={"entities/actors"} onDelete={displayAgents}/>
+                        <AdminPanelCard id={actor.id} name={actor.name} description={actor.description} type={"entities/actors"} onDelete={displayAgents} link="/not-implemented"/>
                     );
                 }));
             }
@@ -33,7 +47,7 @@ export default function AdminPanel() {
                 let cases = response.data;
                 setCases(cases.map((aCase) => {
                     return (
-                        <AdminPanelCard id={aCase.id} name={aCase.name} description={aCase.description} type={"entities/cases"} onDelete={displayCases} />
+                        <AdminPanelCard id={aCase.id} name={aCase.name} description={aCase.description} type={"entities/cases"} onDelete={displayCases} link="/not-implemented"/>
                     );
                 }));
             }
@@ -48,7 +62,7 @@ export default function AdminPanel() {
                 let users = response.data;
                 setUsers(users.map((user) => {
                     return (
-                        <AdminPanelCard id={user.id} name={user.username} type={"users"} onDelete={displayUsers}/>
+                        <AdminPanelCard id={user.id} name={user.username} type={"users"} onDelete={displayUsers} link={`/admin/user-permissions/${user.username}/${user.id}`}/>
                     );
                 }));
             }
@@ -64,7 +78,7 @@ export default function AdminPanel() {
     }, []);
 
     return (
-        <div className="w-full h-[90vh] md:h-[93vh] lg:h-[95vh] xl:h-[95vh] rounded-md flex flex-row p-1.5 gap-1.5 overflow-x-hidden overflow-y-scroll">
+        <div className="w-full h-full rounded-md flex flex-row p-1.5 gap-1.5 overflow-x-hidden overflow-y-scroll">
             <AdminPanelSection title={"Actors"} addEnabled={true} addTooltipText={"Add Actor"} handleAdd={() => navigate("/admin/add-actor")}>
                 {agents}
             </AdminPanelSection>
