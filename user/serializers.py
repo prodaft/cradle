@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
-from .models import CradleUser, Access
+from .models import CradleUser, Access, AccessType
 from .exceptions import DuplicateUserException
 
 
@@ -57,12 +57,15 @@ class AccessSerializer(serializers.ModelSerializer):
         fields = ["access_type"]
 
 
-class AccessCaseSerializer(serializers.ModelSerializer):
+class AccessCaseSerializer(serializers.Serializer):
+    id = serializers.CharField(max_length=200)
     name = serializers.CharField(max_length=200)
+    access_type = serializers.CharField(max_length=200, default=AccessType.NONE)
 
-    class Meta:
-        model = Access
-        fields = ["case_id", "access_type"]
+    def to_representation(self, obj : Access) -> dict:
+        data = super(AccessCaseSerializer, self).to_representation(obj)
+        data["access_type"] = AccessType.NONE if data["access_type"] is None else data["access_type"]
+        return data
 
 
 class TokenObtainSerializer(TokenObtainPairSerializer):
