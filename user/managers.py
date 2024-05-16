@@ -1,6 +1,8 @@
 from django.contrib.auth.base_user import BaseUserManager
 from django.utils.translation import gettext_lazy as _
 
+from entities.models import Case
+from .models import Access, AccessType
 
 class CradleUserManager(BaseUserManager):
 
@@ -25,6 +27,7 @@ class CradleUserManager(BaseUserManager):
         user = self.model(username=username, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
+
         return user
 
     def create_superuser(self, username, password, **extra_fields):

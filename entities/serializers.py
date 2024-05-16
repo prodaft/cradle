@@ -7,7 +7,6 @@ class CaseSerializer(serializers.HyperlinkedModelSerializer):
         model = Case
         fields = ["name", "description"]
 
-
 class ActorSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Actor
