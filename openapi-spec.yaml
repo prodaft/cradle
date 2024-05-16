@@ -192,14 +192,14 @@ paths:
         '404':
           description: User is not found. # maybe
 
-  /entities/agents:
+  /entities/actors/:
     get:
       tags:
         - Entity
         - Admin
-      summary: Read details of all Agents
-      description: Allow a user to retrieve the details of all Agents
-      operationId: getAgents
+      summary: Read details of all Actors
+      description: Allow a user to retrieve the details of all Actors
+      operationId: getActors
       responses:
         '200':
           description: Request is successful.
@@ -218,9 +218,9 @@ paths:
       tags:
         - Entity
         - Admin
-      summary: Create Agent
-      description: Allow an admin to create a new Agent by specifying its name
-      operationId: createAgent
+      summary: Create Actor
+      description: Allow an admin to create a new Actor by specifying its name
+      operationId: createActor
       requestBody:
         content:
           'application/json':
@@ -244,6 +244,10 @@ paths:
           description: User is not authenticated.
         '403': 
           description: User is not an admin.
+        '404':
+          description: Invalid data provided
+        '409':
+          description: Actor already exists.
             
 
   /entities/cases:
@@ -267,6 +271,7 @@ paths:
           description: User is not authenticated.
         '403': 
           description: User is not an admin.
+
     post:
       tags:
         - Entity
@@ -288,7 +293,7 @@ paths:
                   type: string
       responses:
         '200': 
-          description: Agent has been added. 
+          description: Case has been added. 
           content: 
             'application/json':
               schema: 
@@ -297,6 +302,10 @@ paths:
           description: User is not authenticated.
         '403': 
           description: User is not an admin.
+        '404':
+          description: Invalid data provided
+        '409':
+          description: Case already exists.
 
   /users/{userId}/access/{caseId}:
     put:
@@ -344,14 +353,14 @@ paths:
           description: User is not an admin. 
             
 
-  /entities/agents/{agentId}:
+  /entities/actors/{actorId}:
     delete:
       tags:
         - Entity
         - Admin
-      summary: Delete Agent
-      description: Allow an admin to delete an Agent by specifying its id
-      operationId: deleteAgent
+      summary: Delete Actor
+      description: Allow an admin to delete an Actor by specifying its id
+      operationId: deleteActor
       parameters:
         - in: path
           name: agentId
@@ -374,9 +383,9 @@ paths:
     get:
       tags: 
         - Entity
-      summary: Read details of an Agent
-      description: Allow a user to retrieve the details of an Agent by specifying its id
-      operationId: getAgent
+      summary: Read details of an Actor
+      description: Allow a user to retrieve the details of an Actor by specifying its id
+      operationId: getActor
       parameters:
         - in: path
           name: agentId
@@ -397,7 +406,7 @@ paths:
         '401': 
           description: User is not authenticated.
         '404':
-          description: Agent not found.
+          description: Actor not found.
             
 
 

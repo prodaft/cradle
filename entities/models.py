@@ -1,13 +1,24 @@
 from django.db import models
 
-field_length = 200
+from .managers import CaseManager, ActorManager, MetadataManager, EntryManager
+from .enums import EntityType, EntitySubtype
 
 
-class Case(models.Model):
-    name = models.CharField(max_length=field_length)
-    description = models.CharField(max_length=field_length)
+class Entity(models.Model):
+    name = models.CharField()
+    description = models.TextField(null=True, blank=True)
+    type = models.CharField(max_length=20, choices=EntityType.choices)
+    subtype = models.CharField(max_length=20, choices=EntitySubtype.choices, blank=True)
 
+    objects = models.Manager()
+    actors = ActorManager()
+    cases = CaseManager()
+    entries = EntryManager()
+    metadata = MetadataManager()
 
-class Actor(models.Model):
-    name = models.CharField(max_length=field_length)
-    description = models.CharField(max_length=field_length)
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["name", "type", "subtype"], name="unique_name_type_subtype"
+            )
+        ]
