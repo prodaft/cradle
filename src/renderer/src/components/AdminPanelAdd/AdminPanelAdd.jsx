@@ -4,6 +4,16 @@ import AlertBox from "../AuthAlert/AlertBox";
 import {createActor, createCase} from "../../services/adminService/adminService";
 import {useAuth} from "../../hooks/useAuth/useAuth";
 
+/**
+ * AdminPanelAdd component - This component is used to display the form for adding a new Actor or Case.
+ * The component contains the following fields:
+ * - Name
+ * - Description
+ * When canceling or confirming the addition the user will be redirected to the AdminPanel.
+ * @param props
+ * @returns {Element}
+ * @constructor
+ */
 export default function AdminPanelAdd(props){
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");

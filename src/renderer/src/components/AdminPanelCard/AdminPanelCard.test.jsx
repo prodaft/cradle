@@ -25,7 +25,7 @@ describe('AdminPanelCard', () => {
         const { getByRole, getByText } = render(
             <AuthProvider>
                 <MemoryRouter>
-                    <AdminPanelCard name="Test" id="1" description="Test description" type="testType" onDelete={() => {}} />
+                    <AdminPanelCard name="Test" id="1" description="Test description" type="testType" onDelete={() => {}} link="/not-implemented"/>
                 </MemoryRouter>
             </AuthProvider>
         );
@@ -38,7 +38,7 @@ describe('AdminPanelCard', () => {
         const onDelete = jest.fn();
         const { getByRole, getByText } = render( <AuthProvider>
             <MemoryRouter>
-                <AdminPanelCard name="Test" id="1" description="Test description" type="testType" onDelete={onDelete} />
+                <AdminPanelCard name="Test" id="1" description="Test description" type="testType" onDelete={onDelete} link="/not-implemented"/>
             </MemoryRouter>
         </AuthProvider>
         );
@@ -52,7 +52,7 @@ describe('AdminPanelCard', () => {
         deleteEntity.mockRejectedValue(new Error('Failed to delete'));
         const { getByRole, getByText, findByText } = render( <AuthProvider>
             <MemoryRouter>
-                <AdminPanelCard name="Test" id="1" description="Test description" type="testType" onDelete={() => {}} />
+                <AdminPanelCard name="Test" id="1" description="Test description" type="testType" onDelete={() => {}} link="/not-implemented"/>
             </MemoryRouter>
         </AuthProvider>);
         fireEvent.click(getByRole('button'));

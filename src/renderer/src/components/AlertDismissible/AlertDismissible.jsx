@@ -1,5 +1,14 @@
 import React from "react";
 
+/**
+ * AlertDismissible component - This component is used to display an alert that can be dismissed.
+ * The component has an absolute position at the bottom right of the screen.
+ * @param open
+ * @param setOpen
+ * @param content
+ * @returns {Element}
+ * @constructor
+ */
 export function AlertDismissible({ open, setOpen, content }) {
     return (
         <>
