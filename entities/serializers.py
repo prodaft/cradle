@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from .models import Entity
-from user.models import AccessType
 from .exceptions import (
     DuplicateActorException,
     DuplicateCaseException,
@@ -102,11 +101,13 @@ class CaseSerializer(serializers.ModelSerializer):
         validated_data["type"] = "case"
         return super().create(validated_data)
 
+
 class CaseAccessAdminSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Entity
         fields = ["id", "name"]
+
 
 class CaseResponseSerializer(serializers.ModelSerializer):
 
