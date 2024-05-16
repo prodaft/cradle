@@ -1,7 +1,5 @@
-import {Link, useNavigate} from "react-router-dom";
+import {useNavigate} from "react-router-dom";
 import React, {useState} from "react";
-import {registerReq} from "../../services/authReqService/authReqService";
-import FormField from "../FormField/FormField";
 import AlertBox from "../AuthAlert/AlertBox";
 import {createActor, createCase} from "../../services/adminService/adminService";
 import {useAuth} from "../../hooks/useAuth/useAuth";
@@ -25,7 +23,7 @@ export default function AdminPanelAdd(props){
             navigate("/admin");
         }catch (err) {
             if(err.response && err.response.status === 401){
-                setError("Unauthorized");
+                setError("Error");
             }else{
                 setError("Network error");
             }
