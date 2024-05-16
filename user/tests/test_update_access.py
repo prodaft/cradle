@@ -1,8 +1,10 @@
 from django.test import TestCase
 from django.urls import reverse
 from ..models import CradleUser, AccessType, Access
-from entities.models import Case
+from entities.models import Entity
 from rest_framework_simplejwt.tokens import AccessToken
+
+from entities.enums import EntityType
 
 
 class UpdateAccessTest(TestCase):
@@ -16,8 +18,8 @@ class UpdateAccessTest(TestCase):
         self.token_normal = str(AccessToken.for_user(self.user))
         self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
         self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
-        self.case, created = Case.objects.get_or_create(
-            name="Case 1", description="Cool case"
+        self.case, created = Entity.objects.get_or_create(
+            name="Case 1", description="Cool case", type=EntityType.CASE
         )
 
     def test_update_access_successfully(self):
