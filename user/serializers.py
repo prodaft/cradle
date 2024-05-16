@@ -59,3 +59,9 @@ class AccessSerializer(serializers.ModelSerializer):
     class Meta:
         model = Access
         fields = ["access_type"]
+
+class AccessCaseSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(max_length=200)
+    class Meta:
+        model = Access
+        fields = ["case_id", "access_type"]

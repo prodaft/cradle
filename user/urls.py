@@ -16,4 +16,9 @@ urlpatterns = [
         access_view.UpdateAccess.as_view(),
         name="update_access",
     ),
+    path(
+        "<int:user_id>/access/",
+        access_view.AccessList.as_view(),
+        name="access_list"
+    )
 ]
