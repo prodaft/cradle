@@ -5,7 +5,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 from ..models import Access, CradleUser
-from entities.models import Case
+from entities.models import Entity
 
 from ..serializers import AccessSerializer
 
@@ -46,8 +46,8 @@ class UpdateAccess(APIView):
             return Response("User does not exist.", status=status.HTTP_404_NOT_FOUND)
 
         try:
-            updated_case = Case.objects.get(id=case_id)
-        except Case.DoesNotExist:
+            updated_case = Entity.cases.get(id=case_id)
+        except Entity.DoesNotExist:
             return Response("Case does not exist.", status=status.HTTP_404_NOT_FOUND)
 
         updated_access, created = Access.objects.get_or_create(
