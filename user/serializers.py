@@ -64,7 +64,10 @@ class AccessCaseSerializer(serializers.Serializer):
 
     def to_representation(self, obj : Access) -> dict:
         data = super(AccessCaseSerializer, self).to_representation(obj)
-        data["access_type"] = AccessType.NONE if data["access_type"] is None else data["access_type"]
+        if self.context["is_admin"]:
+            data["access_type"] = AccessType.READ_WRITE
+        else:
+            data["access_type"] = AccessType.NONE if data["access_type"] is None else data["access_type"]
         return data
 
 

@@ -6,11 +6,11 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.db.models import FilteredRelation, Q
 from django.http import HttpRequest
 
-from ..models import Access, CradleUser
+from ..models import Access, CradleUser, AccessType
 from entities.models import Entity
 
 from ..serializers import AccessSerializer, AccessCaseSerializer
-
+from entities.serializers import CaseAccessAdminSerializer
 
 class AccessList(APIView):
 
@@ -46,7 +46,7 @@ class AccessList(APIView):
                 [user.id]
             )
 
-        serializer = AccessCaseSerializer(cases_with_access, many=True)
+        serializer = AccessCaseSerializer(cases_with_access, context={"is_admin" : user.is_superuser}, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
