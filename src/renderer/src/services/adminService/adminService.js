@@ -1,10 +1,15 @@
 import axios from 'axios';
 
 axios.defaults.withCredentials = true;
-axios.defaults.baseURL = "http://127.0.0.1:8000";
+axios.defaults.baseURL = "http://localhost:8000";
 
-
-export async function createActor(data,token) {
+/**
+ * Sends a POST to create an actor
+ * @param data - actor data : {name, description}
+ * @param token
+ * @returns {Promise<Promise<AxiosResponse<any>> | *>}
+ */
+export async function createActor(data, token) {
     return axios({
         method: "post",
         url: "/entities/actors/",
@@ -13,6 +18,12 @@ export async function createActor(data,token) {
     });
 }
 
+/**
+ * Sends a POST to create a case
+ * @param data - case data : {name, description}
+ * @param token
+ * @returns {Promise<Promise<AxiosResponse<any>> | *>}
+ */
 export async function createCase(data, token) {
     return axios({
         method: "post",
@@ -22,6 +33,11 @@ export async function createCase(data, token) {
     });
 }
 
+/**
+ * Sends a GET request to get all actors
+ * @param token
+ * @returns {Promise<Promise<AxiosResponse<any>> | *>}
+ */
 export async function getActors(token) {
     return axios({
         method: "get",
@@ -30,6 +46,11 @@ export async function getActors(token) {
     });
 }
 
+/**
+ * Sends a GET request to get all cases
+ * @param token
+ * @returns {Promise<Promise<AxiosResponse<any>> | *>}
+ */
 export async function getCases(token) {
     return axios({
         method: "get",
@@ -38,6 +59,11 @@ export async function getCases(token) {
     });
 }
 
+/**
+ * Sends a GET request to get all users
+ * @param token
+ * @returns {Promise<Promise<AxiosResponse<any>> | *>}
+ */
 export async function getUsers(token) {
     return axios({
         method: "get",
@@ -46,7 +72,14 @@ export async function getUsers(token) {
     });
 }
 
-export async function deleteEntity(token,type ,id){
+/**
+ * Sends a DELETE request to delete an entity
+ * @param token
+ * @param type - entity type : actors, cases, users (please use plural form)
+ * @param id - entity id
+ * @returns {Promise<Promise<AxiosResponse<any>> | *>}
+ */
+export async function deleteEntity(token, type, id){
     return axios({
         method: "delete",
         url: `/${type}/${id}/`,
@@ -54,10 +87,15 @@ export async function deleteEntity(token,type ,id){
     })
 }
 
+/**
+ * Sends a PUT request to change access level of a user
+ * @param token
+ * @param userId - user id
+ * @param caseId - case id
+ * @param accessLevel - access level : none, read, read-write
+ * @returns {Promise<Promise<AxiosResponse<any>> | *>}
+ */
 export async function changeAccess(token, userId, caseId, accessLevel) {
-    console.log(accessLevel);
-    console.log(userId);
-    console.log(caseId);
     return axios({
         method: "put",
         url: `/users/${userId}/access/${caseId}/`,
@@ -66,6 +104,12 @@ export async function changeAccess(token, userId, caseId, accessLevel) {
     });
 }
 
+/**
+ * Sends a GET request to get permissions for a user
+ * @param token
+ * @param userId - user id
+ * @returns {Promise<Promise<AxiosResponse<any>> | *>}
+ */
 export async function getPermissions(token, userId) {
     return axios({
         method: "get",

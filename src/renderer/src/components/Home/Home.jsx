@@ -10,7 +10,7 @@ import {IconoirProvider} from "iconoir-react";
  * Home component - the main component for the application.
  * Provides the main layout for the application - sidebar, navbar, and main content.
  * Sets default style for all icons in the application - any component that needs to change style of icons should ovverride the settings
- * @returns {JSX.Element}
+ * @returns {Home}
  * @constructor
  */
 export default function Home(){

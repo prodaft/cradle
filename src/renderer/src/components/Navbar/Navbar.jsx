@@ -6,7 +6,7 @@ import {Notes} from 'iconoir-react';
  * @param props - contents and handlers for the navbar
  * @param props.contents - the contents of the navbar set by other components
  * @param props.handleFleetingNotes - handler for the Fleeting Notes action
- * @returns {JSX.Element}
+ * @returns {Navbar}
  * @constructor
  */
 export default function Navbar(props){

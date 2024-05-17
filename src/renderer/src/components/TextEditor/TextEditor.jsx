@@ -10,7 +10,7 @@ import useNavbarContents from "../../hooks/useNavbarContents/useNavbarContents";
 /**
  * The text editor is composed of two sub-components, the Editor and the Preview. View their documentation for more details
  * 
- * @returns {Component.TextEditor}
+ * @returns {TextEditor}
  */
 export default function TextEditor() {
     const [markdownContent, setMarkdownContentCallback] = useLocalStorageMarkdown();

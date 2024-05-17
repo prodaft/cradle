@@ -12,7 +12,7 @@ import React from "react";
  * @param handleConfirm
  * @param title
  * @param description
- * @returns {Element}
+ * @returns {ConfirmationDialog}
  * @constructor
  */
 export function ConfirmationDialog({ open, setOpen, handleConfirm, title, description }) {
