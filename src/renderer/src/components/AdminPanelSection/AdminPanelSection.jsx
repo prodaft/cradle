@@ -1,5 +1,6 @@
 import { PlusCircle } from "iconoir-react";
 import { useState, useEffect } from "react";
+import useFrontendSearch from "../../hooks/useFrontendSearch/useFrontendSearch";
 
 /**
  * AdminPanelSection component - This component is used to display a section in the AdminPanel.
@@ -14,19 +15,7 @@ import { useState, useEffect } from "react";
  * @constructor
  */
 export default function AdminPanelSection(props) {
-    const [searchVal, setSearchVal] = useState("");
-    const [filteredChildren, setFilteredChildren] = useState(props.children);
-
-    useEffect(() => {
-        if (searchVal === "") {
-            setFilteredChildren(props.children);
-        } else {
-            const filtered = props.children.filter((child) =>
-                child.props.name.toLowerCase().includes(searchVal.toLowerCase())
-            );
-            setFilteredChildren(filtered);
-        }
-    }, [searchVal, props.children]);
+    const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(props.children);
 
     return (
         <div className="w-full h-fit bg-gray-2 rounded-md p-3">

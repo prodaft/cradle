@@ -32,7 +32,15 @@ export default function AdminPanel() {
                 let actors = response.data;
                 setAgents(actors.map((actor) => {
                     return (
-                        <AdminPanelCard id={actor.id} name={actor.name} description={actor.description} type={"entities/actors"} onDelete={displayAgents} link="/not-implemented"/>
+                        <AdminPanelCard
+                            id={actor.id}
+                            name={actor.name}
+                            searchKey={actor.name}
+                            description={actor.description}
+                            type={"entities/actors"}
+                            onDelete={displayAgents}
+                            link="/not-implemented"
+                        />
                     );
                 }));
             }
@@ -47,7 +55,15 @@ export default function AdminPanel() {
                 let cases = response.data;
                 setCases(cases.map((aCase) => {
                     return (
-                        <AdminPanelCard id={aCase.id} name={aCase.name} description={aCase.description} type={"entities/cases"} onDelete={displayCases} link="/not-implemented"/>
+                        <AdminPanelCard
+                            id={aCase.id}
+                            name={aCase.name}
+                            searchKey={aCase.name}
+                            description={aCase.description}
+                            type={"entities/cases"}
+                            onDelete={displayCases}
+                            link="/not-implemented"
+                        />
                     );
                 }));
             }
@@ -62,7 +78,14 @@ export default function AdminPanel() {
                 let users = response.data;
                 setUsers(users.map((user) => {
                     return (
-                        <AdminPanelCard id={user.id} name={user.username} type={"users"} onDelete={displayUsers} link={`/admin/user-permissions/${user.username}/${user.id}`}/>
+                        <AdminPanelCard
+                            id={user.id}
+                            name={user.username}
+                            searchKey={user.username}
+                            type={"users"}
+                            onDelete={displayUsers}
+                            link={`/admin/user-permissions/${user.username}/${user.id}`}
+                        />
                     );
                 }));
             }

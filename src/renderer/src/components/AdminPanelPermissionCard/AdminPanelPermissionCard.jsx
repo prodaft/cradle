@@ -18,7 +18,7 @@ import {AlertDismissible} from "../AlertDismissible/AlertDismissible";
  * @returns {JSX.Element}
  * @constructor
  */
-export default function AdminPanelUserPermissions({userId, caseName, caseId, accessLevel }) {
+export default function AdminPanelPermissionCard({userId, caseName, caseId, accessLevel, searchKey}) {
     const [currentAccess, setCurrentAccess] = useState(accessLevel);
     const [dialog, setDialog] = useState(false);
     const [alert, setAlert] = useState(false);

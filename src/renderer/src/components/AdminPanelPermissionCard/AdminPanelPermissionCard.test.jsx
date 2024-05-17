@@ -17,7 +17,7 @@ jest.mock('../../hooks/useAuth/useAuth', () => ({
 
 jest.mock('../../services/adminService/adminService');
 
-describe('AdminPanelUserPermissions', () => {
+describe('AdminPanelPermissionCard', () => {
     it('should display current access level', () => {
         const { getByTestId,getByText } = render(<AdminPanelPermissionCard userId="1" caseName="Test Case" caseId="1" accessLevel="read" />);
         expect(getByTestId('accessLevelDisplay')).toBeInTheDocument();
