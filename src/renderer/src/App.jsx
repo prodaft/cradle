@@ -20,18 +20,18 @@ function App() {
     <Router>
       <AuthProvider>
         <Routes>
-          <Route element={<PrivateRoute fallback={"/login"}/>}>
-              {/* Add any routes for components that DO NOT NEED authentication here*/}
-            <Route path="/" element={<Home/>}>
-                {/* Add any routes for components that keep the sidebar and navbar here */}
-                <Route path="/not-implemented" element={<FeatureNotImplemented/>} />
-                <Route path="/editor" element={<TextEditor/>} />
-            </Route>
-              {/* Add any routes for components that DO NOT KEEP the sidebar and navbar here */}
-          </Route>
+          <Route element={<PrivateRoute fallback={"/login"} />}>
             {/* Add any routes for components that DO NOT NEED authentication here*/}
+            <Route path="/" element={<Home />}>
+              {/* Add any routes for components that keep the sidebar and navbar here */}
+              <Route path="/not-implemented" element={<FeatureNotImplemented />} />
+              <Route path="/editor" element={<TextEditor />} />
+            </Route>
+            {/* Add any routes for components that DO NOT KEEP the sidebar and navbar here */}
+          </Route>
+          {/* Add any routes for components that DO NOT NEED authentication here*/}
           <Route path="/login" element={<Login />}></Route>
-          <Route path="/register" element={<Register/>}></Route>
+          <Route path="/register" element={<Register />}></Route>
         </Routes>
       </AuthProvider>
     </Router>
