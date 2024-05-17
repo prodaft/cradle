@@ -307,6 +307,31 @@ paths:
         '409':
           description: Case already exists.
 
+  /users/{userId}/access:
+    get:
+      tags:
+        - User
+        - Admin
+      summary: Get access privileges of a users.
+      responses:
+        '200': 
+          description: Request was successful.
+          content:
+            'application/json':
+              schema:
+                type: array
+                items: 
+                  $ref: "#/components/schemas/CaseAccess"
+        '400':
+          description: Request is invalid
+        '401':
+          description: User is not authenticated.
+        '403': 
+          description: User is not an admin.
+        '404':
+          description: User not found.
+
+
   /users/{userId}/access/{caseId}:
     put:
       tags:
@@ -1024,6 +1049,22 @@ components:
           type: string
         description:
           type: string
+
+    CaseAccess:
+      type: object
+      properties:
+        ID: 
+          type: integer
+          format: int64
+        name: 
+          type: string
+        access_type:
+          type: string
+          enum:
+          - none
+          - read
+          - read-write
+          
 
     Entry:
       type: object
