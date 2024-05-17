@@ -22,3 +22,16 @@ class Entity(models.Model):
                 fields=["name", "type", "subtype"], name="unique_name_type_subtype"
             )
         ]
+
+    def __eq__(self, other):
+        if isinstance(other, Entity):
+            return (
+                self.name == other.name
+                and self.description == other.description
+                and self.type == other.type
+                and self.subtype == other.subtype
+            )
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self.name, self.description, self.type, self.subtype))
