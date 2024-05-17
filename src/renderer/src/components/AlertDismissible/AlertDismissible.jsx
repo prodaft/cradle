@@ -1,4 +1,5 @@
 import React from "react";
+import {Xmark} from "iconoir-react";
 
 /**
  * AlertDismissible component - This component is used to display an alert that can be dismissed.
@@ -19,7 +20,7 @@ export function AlertDismissible({ open, setOpen, content }) {
                         className="bg-error hover:opacity-90 text-white font-bold py-2 px-4 rounded-xl"
                         onClick={() => setOpen(false)}
                     >
-                        Close
+                        <Xmark />
                     </button>
                 </div>
             )}

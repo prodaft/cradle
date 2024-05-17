@@ -17,6 +17,8 @@
   "dependencies": {
     "@codemirror/lang-markdown": "^6.2.5",
     "@codemirror/language-data": "^6.5.1",
+    "@codemirror/view": "^6.26.3",
+    "@replit/codemirror-vim": "^6.2.1",
     "@tailwindcss/forms": "^0.5.7",
     "@uiw/codemirror-theme-vscode": "^4.22.0",
     "@uiw/react-codemirror": "^4.22.0",
@@ -26,6 +28,7 @@
     "jwt-decode": "^4.0.0",
     "marked": "^12.0.2",
     "marked-highlight": "^2.1.1",
+    "minio": "^8.0.0",
     "prismjs": "^1.29.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

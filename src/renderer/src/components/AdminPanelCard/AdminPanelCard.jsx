@@ -1,4 +1,4 @@
-import {Bin} from "iconoir-react/regular";
+import {Trash} from "iconoir-react/regular";
 import {useState} from "react";
 import {ConfirmationDialog} from "../ConfirmationDialog/ConfirmationDialog";
 import {deleteEntity} from "../../services/adminService/adminService";
@@ -49,7 +49,7 @@ export default function AdminPanelCard({name,id,description,type,onDelete,link,s
                 <h2 className="card-header w-full"><Link to={link}>{name}</Link></h2>
                     <div className="w-full flex flex-row justify-end">
                         <button className="btn btn-ghost w-fit h-full p-1" onClick={() => setDialog(!dialog)}>
-                            <Bin/>
+                            <Trash/>
                         </button>
                     </div>
             </div>
