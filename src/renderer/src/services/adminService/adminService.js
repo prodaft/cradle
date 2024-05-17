@@ -61,7 +61,7 @@ export async function changeAccess(token, userId, caseId, accessLevel) {
     return axios({
         method: "put",
         url: `/users/${userId}/access/${caseId}/`,
-        data: { "access": accessLevel },
+        data: { "access_type": accessLevel },
         headers: {"Authorization": `Bearer ${token}`}
     });
 }

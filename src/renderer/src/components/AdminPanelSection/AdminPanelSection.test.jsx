@@ -15,8 +15,8 @@ describe('AdminPanelSection', () => {
     it('filters children based on search value', () => {
         const { getByPlaceholderText, queryByText } = render(
             <AdminPanelSection title="Test" addEnabled={true} addTooltipText="Add" handleAdd={mockHandleAdd}>
-                <div name="Test Child 1">Test Child 1</div>
-                <div name="Test Child 2">Test Child 2</div>
+                <div name="Test Child 1" searchKey="Test Child 1" >Test Child 1</div>
+                <div name="Test Child 2" searchKey="Test Child 2" >Test Child 2</div>
             </AdminPanelSection>
         );
 

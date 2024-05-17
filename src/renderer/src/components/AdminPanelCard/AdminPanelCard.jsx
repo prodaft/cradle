@@ -22,7 +22,7 @@ import {AlertDismissible} from "../AlertDismissible/AlertDismissible";
  * @returns {JSX.Element}
  * @constructor
  */
-export default function AdminPanelCard({name,id,description,type,onDelete, link}) {
+export default function AdminPanelCard({name,id,description,type,onDelete,link,searchKey}) {
     const [dialog, setDialog] = useState(false);
     const [alert, setAlert] = useState(false);
     const auth = useAuth();

@@ -93,7 +93,7 @@ describe('Admin Service', () => {
         expect(axios).toHaveBeenCalledWith({
             method: "put",
             url: `/users/${userId}/access/${caseId}/`,
-            data: { "access": accessLevel },
+            data: { "access_type": accessLevel },
             headers: { "Authorization": `Bearer ${token}` }
         });
     });
