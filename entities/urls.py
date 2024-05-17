@@ -7,6 +7,6 @@ urlpatterns = [
     path("cases/<int:case_id>/", case_views.CaseDetail.as_view(), name="case_detail"),
     path("actors/", actor_views.ActorList.as_view(), name="actor_list"),
     path(
-        "actors/<int:actor_id>", actor_views.ActorDetail.as_view(), name="actor_detail"
+        "actors/<int:actor_id>/", actor_views.ActorDetail.as_view(), name="actor_detail"
     ),
 ]
