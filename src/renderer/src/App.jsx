@@ -24,23 +24,23 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route element={<PrivateRoute fallback={"/login"}/>}>
-              {/* Add any routes for components that DO NOT NEED authentication here*/}
-            <Route path="/" element={<Home/>}>
-                {/* Add any routes for components that keep the sidebar and navbar here */}
-                <Route path="/not-implemented" element={<FeatureNotImplemented/>} />
-                <Route path="/editor" element={<TextEditor/>} />
-                <Route path="/admin" element={<Outlet />}>
-                    <Route index element={<AdminPanel/>}></Route>
-                    <Route path="/admin/add-actor" element={<AdminPanelAdd type="Actor"/>}></Route>
-                    <Route path="/admin/add-case" element={<AdminPanelAdd type="Case"/>}></Route>
-                    <Route path={"/admin/user-permissions/:username/:id"} element={<AdminPanelUserPermissions/>}></Route>
+              {/* Add any routes for components that NEED authentication here*/}
+                <Route path="/" element={<Home/>}>
+                    {/* Add any routes for components that keep the sidebar and navbar here */}
+                    <Route path="/not-implemented" element={<FeatureNotImplemented/>} />
+                    <Route path="/editor" element={<TextEditor/>} />
+                    <Route path="/admin" element={<Outlet />}>
+                        <Route index element={<AdminPanel/>}></Route>
+                        <Route path="/admin/add-actor" element={<AdminPanelAdd type="Actor"/>}></Route>
+                        <Route path="/admin/add-case" element={<AdminPanelAdd type="Case"/>}></Route>
+                        <Route path={"/admin/user-permissions/:username/:id"} element={<AdminPanelUserPermissions/>}></Route>
+                    </Route>
                 </Route>
-            </Route>
               {/* Add any routes for components that DO NOT KEEP the sidebar and navbar here */}
           </Route>
-            {/* Add any routes for components that DO NOT NEED authentication here*/}
+          {/* Add any routes for components that DO NOT NEED authentication here*/}
           <Route path="/login" element={<Login />}></Route>
-          <Route path="/register" element={<Register/>}></Route>
+          <Route path="/register" element={<Register />}></Route>
         </Routes>
       </AuthProvider>
     </Router>
