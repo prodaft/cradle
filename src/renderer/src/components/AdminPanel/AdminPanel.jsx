@@ -4,6 +4,7 @@ import {useNavigate} from "react-router-dom";
 import {getActors, getCases, getUsers} from "../../services/adminService/adminService";
 import AdminPanelCard from "../AdminPanelCard/AdminPanelCard";
 import {useEffect, useState} from "react";
+import {AlertDismissible} from "../AlertDismissible/AlertDismissible";
 
 /**
  * AdminPanel component - This component is used to display the AdminPanel.
@@ -16,7 +17,7 @@ import {useEffect, useState} from "react";
  * - Create new entity
  * - Delete entity
  * When deleting an entity a dialog will be displayed to confirm the deletion.
- * @returns {JSX.Element}
+ * @returns {AdminPanel}
  * @constructor
  */
 export default function AdminPanel() {
@@ -24,7 +25,15 @@ export default function AdminPanel() {
     const [agents, setAgents] = useState([]);
     const [cases, setCases] = useState([]);
     const [users, setUsers] = useState([]);
+    const [alert, setAlert] = useState("");
     const navigate = useNavigate();
+
+    const handleError = (error) => {
+        if(error.response && error.response.status === 401){
+            setAlert("Invalid token. Please login again.")
+        }
+        setAlert("Error fetching data")
+    }
 
     const displayAgents = async () => {
         getActors(auth.access).then((response) => {
@@ -44,9 +53,7 @@ export default function AdminPanel() {
                     );
                 }));
             }
-        }).catch((error) => {
-            console.log(error);
-        });
+        }).catch(handleError);
     }
 
     const displayCases = async () => {
@@ -67,9 +74,7 @@ export default function AdminPanel() {
                     );
                 }));
             }
-        }).catch((error) => {
-            console.log(error);
-        });
+        }).catch(handleError);
     }
 
     const displayUsers = async () => {
@@ -89,9 +94,7 @@ export default function AdminPanel() {
                     );
                 }));
             }
-        }).catch((error) => {
-            console.log(error);
-        });
+        }).catch(handleError);
     }
 
     useEffect(() => {
@@ -101,16 +104,19 @@ export default function AdminPanel() {
     }, []);
 
     return (
-        <div className="w-full h-full rounded-md flex flex-row p-1.5 gap-1.5 overflow-x-hidden overflow-y-scroll">
-            <AdminPanelSection title={"Actors"} addEnabled={true} addTooltipText={"Add Actor"} handleAdd={() => navigate("/admin/add-actor")}>
-                {agents}
-            </AdminPanelSection>
-            <AdminPanelSection title={"Cases"} addEnabled={true} addTooltipText={"Add Case"} handleAdd={() => navigate("/admin/add-case")}>
-                {cases}
-            </AdminPanelSection>
-            <AdminPanelSection title={"Users"} addEnabled={false}>
-                {users}
-            </AdminPanelSection>
-        </div>
+        <>
+            <AlertDismissible alert={alert} setAlert={setAlert} />
+            <div className="w-full h-full rounded-md flex flex-row p-1.5 gap-1.5 overflow-x-hidden overflow-y-scroll">
+                <AdminPanelSection title={"Actors"} addEnabled={true} addTooltipText={"Add Actor"} handleAdd={() => navigate("/admin/add-actor")}>
+                    {agents}
+                </AdminPanelSection>
+                <AdminPanelSection title={"Cases"} addEnabled={true} addTooltipText={"Add Case"} handleAdd={() => navigate("/admin/add-case")}>
+                    {cases}
+                </AdminPanelSection>
+                <AdminPanelSection title={"Users"} addEnabled={false}>
+                    {users}
+                </AdminPanelSection>
+            </div>
+        </>
     );
 }

@@ -2,6 +2,8 @@ import {useState} from "react";
 import {useAuth} from "../../hooks/useAuth/useAuth";
 import {changeAccess} from "../../services/adminService/adminService";
 import {AlertDismissible} from "../AlertDismissible/AlertDismissible";
+import {NavArrowDown} from "iconoir-react";
+import {useNavigate} from "react-router-dom";
 
 /**
  * AdminPanelUserPermissions component - This component is used to display the permissions for a user.
@@ -15,13 +17,12 @@ import {AlertDismissible} from "../AlertDismissible/AlertDismissible";
  * @param caseName
  * @param caseId
  * @param accessLevel
- * @returns {JSX.Element}
+ * @returns {AdminPanelPermissionCard}
  * @constructor
  */
 export default function AdminPanelPermissionCard({userId, caseName, caseId, accessLevel, searchKey}) {
     const [currentAccess, setCurrentAccess] = useState(accessLevel);
-    const [dialog, setDialog] = useState(false);
-    const [alert, setAlert] = useState(false);
+    const [alert, setAlert] = useState("");
     const auth = useAuth();
 
     const handleChange = async (newAccess) => {
@@ -31,19 +32,23 @@ export default function AdminPanelPermissionCard({userId, caseName, caseId, acce
                     setCurrentAccess(newAccess);
                 }
             }).catch((error) => {
-                setAlert(true);
+                if(error.response && error.response.status === 401){
+                    setAlert("Invalid token. Please login again.");
+                }else {
+                    setAlert("Error changing access level");
+                }
             });
         }
     }
 
     return (
         <>
-            <AlertDismissible open={alert} setOpen={setAlert} content={"Error changing access level"}/>
-            <div className="h-fit w-full bg-gray-3 p-2 flex flex-row justify-start border-b-gray-2 border-b-2">
-                <h2 className="card-header w-full">{caseName}</h2>
+            <AlertDismissible alert={alert} setAlert={setAlert}/>
+            <div className="h-fit w-full bg-gray-3 p-2 flex flex-row justify-start border-b-gray-2 border-b-2 rounded-t-lg">
+                <h2 className="card-header w-full mx-2">{caseName}</h2>
                 <div className="w-full flex flex-row justify-end">
                     <div className="dropdown">
-                        <label className="btn btn-ghost my-2" tabIndex="0" data-testid="accessLevelDisplay">{currentAccess}</label>
+                        <label className="btn btn-ghost my-2" tabIndex="0" data-testid="accessLevelDisplay">{currentAccess} <NavArrowDown color="gray-12" height="1.5em" width="1.5em"/></label>
                         <div className="dropdown-menu">
                             <a className="dropdown-item text-sm" onClick={() => handleChange("none")}>none</a>
                             <a tabIndex="-1" className="dropdown-item text-sm"

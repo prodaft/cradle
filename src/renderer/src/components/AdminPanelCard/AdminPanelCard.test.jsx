@@ -6,7 +6,7 @@ import AdminPanelCard from '../AdminPanelCard/AdminPanelCard';
 import { useAuth } from '../../hooks/useAuth/useAuth';
 import { deleteEntity } from '../../services/adminService/adminService';
 import React from 'react';
-import AuthProvider from "../../utils/Auth/AuthProvider";
+import AuthProvider from "../../utils/AuthProvider/AuthProvider";
 import {MemoryRouter} from "react-router-dom";
 import '@testing-library/jest-dom';
 
@@ -29,7 +29,9 @@ describe('AdminPanelCard', () => {
                 </MemoryRouter>
             </AuthProvider>
         );
+
         fireEvent.click(getByRole('button'));
+
         expect(getByText("Confirm Deletion")).toBeInTheDocument();
     });
 
@@ -42,8 +44,10 @@ describe('AdminPanelCard', () => {
             </MemoryRouter>
         </AuthProvider>
         );
+
         fireEvent.click(getByRole('button'));
         fireEvent.click(getByText('Confirm'));
+
         await waitFor(() => expect(deleteEntity).toHaveBeenCalledWith('testToken', 'testType', '1'));
         expect(onDelete).toHaveBeenCalled();
     });
@@ -55,9 +59,11 @@ describe('AdminPanelCard', () => {
                 <AdminPanelCard name="Test" id="1" description="Test description" type="testType" onDelete={() => {}} link="/not-implemented"/>
             </MemoryRouter>
         </AuthProvider>);
+
         fireEvent.click(getByRole('button'));
         fireEvent.click(getByText('Confirm'));
-        const errorMessage = await findByText('Error deleting entity');
+
+        const errorMessage = await findByText("Error deleting entity: " + "Test");
         expect(errorMessage).toBeInTheDocument();
     });
 });

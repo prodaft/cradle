@@ -11,7 +11,7 @@ import {useAuth} from "../../hooks/useAuth/useAuth";
  * @param props.handleNewNote - handler for the new note action
  * @param props.handleGrapView - handler for the graph view action
  *
- * @returns {JSX.Element}
+ * @returns {Sidebar}
  * @constructor
  */
 export default function Sidebar(props) {

@@ -11,7 +11,7 @@ import useFrontendSearch from "../../hooks/useFrontendSearch/useFrontendSearch";
  * - Children (cards)
  * The component will filter the children based on the search input.
  * @param props
- * @returns {JSX.Element}
+ * @returns {AdminPanelSection}
  * @constructor
  */
 export default function AdminPanelSection(props) {

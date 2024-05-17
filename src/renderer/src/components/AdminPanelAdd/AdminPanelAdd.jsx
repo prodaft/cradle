@@ -1,6 +1,6 @@
 import {useNavigate} from "react-router-dom";
 import React, {useState} from "react";
-import AlertBox from "../AuthAlert/AlertBox";
+import AlertBox from "../AlertBox/AlertBox";
 import {createActor, createCase} from "../../services/adminService/adminService";
 import {useAuth} from "../../hooks/useAuth/useAuth";
 
@@ -11,7 +11,7 @@ import {useAuth} from "../../hooks/useAuth/useAuth";
  * - Description
  * When canceling or confirming the addition the user will be redirected to the AdminPanel.
  * @param props
- * @returns {Element}
+ * @returns {AdminPanelAdd}
  * @constructor
  */
 export default function AdminPanelAdd(props){
@@ -33,7 +33,7 @@ export default function AdminPanelAdd(props){
             navigate("/admin");
         }catch (err) {
             if(err.response && err.response.status === 401){
-                setError("Error");
+                setError("Invalid token. Please login again.");
             }else{
                 setError("Network error");
             }
