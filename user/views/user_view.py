@@ -26,11 +26,11 @@ class UserList(APIView):
             request: The request that was sent
 
         Returns:
-            JsonResponse: A JSON response contained the list of all users
+            Response(status=200): A JSON response containing the list of all users
             if the request was successful.
-            HttpResponse("User is not authenticated.", status=401):
+            Response("User is not authenticated.", status=401):
                 if the user is not authenticated
-            HttpResponse("User is not an admin.", status=403):
+            Response("User is not an admin.", status=403):
                 if the authenticated user is not an admin
         """
 
@@ -50,10 +50,10 @@ class UserList(APIView):
                 The body must contain a "username" and a "password" field.
 
         Returns:
-            HttpResponse(status=200): if the request was successful
-            HttpResponse("Requested parameters not provided", status=400):
+            Response(status=200): if the request was successful
+            Response("Requested parameters not provided", status=400):
                 if username or password was not provided
-            HttpResponse("User already exists", status=409): if user already exists
+            Response("User already exists", status=409): if user already exists
         """
 
         serializer = UserCreateSerializer(data=request.data)
@@ -76,15 +76,15 @@ class UserDetail(APIView):
             request: The request that was sent
 
         Returns:
-            HttpResponse("Requested user account was deleted.", status=200):
+            Response("Requested user account was deleted.", status=200):
                 if the request was successful
-            HttpResponse("User is not authenticated.", status=401):
+            Response("User is not authenticated.", status=401):
                 if the user is not authenticated
-            HttpResponse("User is not an admin.", status=403):
+            Response("User is not an admin.", status=403):
                 if the authenticated user is not an admin
-            HttpResponse("You are not allowed to remove an admin.", status=403):
+            Response("You are not allowed to remove an admin.", status=403):
                 if the admin tried to remove an admin account
-            HttpResponse("There is no user with specified ID.", status=200):
+            Response("There is no user with specified ID.", status=200):
                 if the user specified in path does not exist
         """
 
