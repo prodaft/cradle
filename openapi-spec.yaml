@@ -554,7 +554,7 @@ paths:
       operationId: createNote
       requestBody:
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
               properties:
@@ -576,8 +576,8 @@ paths:
           description: Note does not reference at least one Case and two Entities. 
         '401': 
           description: User is not authenticated.
-        '403': 
-          description: User does not have Read-Write access to a referenced Case.
+        '404': 
+          description: User does not have Read-Write access to a referenced Case or not all Cases exist.
 
   /notes/{noteId}/publishable:
     put:
