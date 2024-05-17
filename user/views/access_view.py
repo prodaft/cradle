@@ -18,7 +18,7 @@ class AccessList(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
     serializer_class = AccessCaseSerializer
 
-    def get(self, request: HttpRequest, user_id: int, format=None) -> Response:
+    def get(self, request: HttpRequest, user_id: int) -> Response:
         """Allows an admin to get the access priviliges of a User
             on all Cases.
 
@@ -27,13 +27,16 @@ class AccessList(APIView):
             user_id: Id of the user whose access is updated
 
         Returns:
-            HttpResponse("Access was updated", status=200):
-                if the request was successful
-            HttpResponse("User is not authenticated", status=401):
+            Response(body, status=200):
+                if the request was successful. The body will contain a JSON
+                representation of a list of all cases with an additional "access_type"
+                attribute.
+                Example: [{"id" : 2, "name" : "Case 1", "access_type" : "none"}]
+            Response("User is not authenticated", status=401):
                 if the user was not authenticated.
-            HttpResponse("User is not an admin", status=403):
+            Response("User is not an admin", status=403):
                 if the user was not an admin.
-            HttpResponse("User does not exist.", status=404):
+            Response("User does not exist.", status=404):
                 if the user does not exist.
         """
         try:
@@ -66,19 +69,19 @@ class UpdateAccess(APIView):
             case_id: Id of the case to which access is updated
 
         Returns:
-            HttpResponse("Access was updated", status=200):
+            Response("Access was updated", status=200):
                 if the request was successful
-            HttpResponse("Request is invalid", status=400):
+            Response("Request is invalid", status=400):
                 if the request body is not valid
-            HttpResponse("User is not authenticated", status=401):
+            Response("User is not authenticated", status=401):
                 if the user was not authenticated.
-            HttpResponse("User is not an admin", status=403):
+            Response("User is not an admin", status=403):
                 if the user was not an admin.
-            HttpResponse("Cannot modify the access of an admin.", status=403):
+            Response("Cannot modify the access of an admin.", status=403):
                 if the update request is for an admin user.
-            HttpResponse("User does not exist.", status=404):
+            Response("User does not exist.", status=404):
                 if the user does not exist.
-            HttpResponse("Case does not exist.", status=404):
+            Response("Case does not exist.", status=404):
                 if the case does not exist.
         """
 
