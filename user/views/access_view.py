@@ -5,6 +5,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.http import HttpRequest
 
+
 from ..models import Access, CradleUser
 from entities.models import Entity
 
@@ -40,15 +41,7 @@ class AccessList(APIView):
         except CradleUser.DoesNotExist:
             return Response("User does not exist", status=status.HTTP_404_NOT_FOUND)
 
-        cases_with_access = Entity.cases.raw(
-            """
-            SELECT * FROM entities_entity LEFT OUTER JOIN
-            user_access ON entities_entity.id = user_access.case_id
-            WHERE (user_access.user_id=%s OR user_access.user_id IS NULL)
-            AND entities_entity.type = 'case'
-            """,
-            [user.id],
-        )
+        cases_with_access = Entity.cases.get_accesses(user)
 
         serializer = AccessCaseSerializer(
             cases_with_access, context={"is_admin": user.is_superuser}, many=True
