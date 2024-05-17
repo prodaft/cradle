@@ -32,34 +32,33 @@ export default function Editor({ markdownContent, setMarkdownContent }) {
     }
 
     return (
-        <div className="h-full overflow-hidden rounded-lg w-full">
-            <CodeMirror
-                name="markdown-input"
-                id="markdown-input"
-                data-testid="markdown-input"
-                theme={vscodeDark}
-                height="100%"
-                extensions={extensions}
-                className="w-full h-full resize-none"
-                onChange={setMarkdownContent}
-                value={markdownContent}
-            >
-                <div className="flex flex-row justify-between items-center space-x-2">
-                    <div className="ml-auto flex flex-row p-1 space-x-3">
-                        <label htmlFor="vim-toggle" className="flex items-center cursor-pointer">
-                            Vim Mode:
-                        </label>
-                        <input
-                            data-testid="vim-toggle"
-                            name="vim-toggle"
-                            type="checkbox"
-                            className="switch switch-ghost-primary my-1"
-                            checked={enableVim}
-                            onChange={() => setEnableVim(!enableVim)}
-                        />
-                    </div>
-                </div>
-            </CodeMirror>
+        <div className="h-1/2 sm:h-full w-full flex flex-col ">
+            <div className="flex flex-row justify-between items-center p-2">
+                <label htmlFor="vim-toggle" className="flex items-center cursor-pointer">
+                    Vim Mode:
+                </label>
+                <input
+                    data-testid="vim-toggle"
+                    name="vim-toggle"
+                    type="checkbox"
+                    className="switch switch-ghost-primary my-1"
+                    checked={enableVim}
+                    onChange={() => setEnableVim(!enableVim)}
+                />
+            </div>
+            <div className="flex-grow overflow-hidden rounded-lg">
+                <CodeMirror
+                    name="markdown-input"
+                    id="markdown-input"
+                    data-testid="markdown-input"
+                    theme={vscodeDark}
+                    height="100%"
+                    extensions={extensions}
+                    className="w-full h-full resize-none"
+                    onChange={setMarkdownContent}
+                    value={markdownContent}
+                />
+            </div>
         </div>
     )
 }
