@@ -22,7 +22,7 @@ import {AlertDismissible} from "../AlertDismissible/AlertDismissible";
  */
 export default function AdminPanel() {
     const auth = useAuth();
-    const [agents, setAgents] = useState([]);
+    const [actors, setActors] = useState([]);
     const [cases, setCases] = useState([]);
     const [users, setUsers] = useState([]);
     const [alert, setAlert] = useState("");
@@ -35,11 +35,11 @@ export default function AdminPanel() {
         setAlert("Error fetching data")
     }
 
-    const displayAgents = async () => {
+    const displayActors = async () => {
         getActors(auth.access).then((response) => {
             if(response.status === 200){
                 let actors = response.data;
-                setAgents(actors.map((actor) => {
+                setActors(actors.map((actor) => {
                     return (
                         <AdminPanelCard
                             id={actor.id}
@@ -47,7 +47,7 @@ export default function AdminPanel() {
                             searchKey={actor.name}
                             description={actor.description}
                             type={"entities/actors"}
-                            onDelete={displayAgents}
+                            onDelete={displayActors}
                             link="/not-implemented"
                         />
                     );
@@ -60,13 +60,13 @@ export default function AdminPanel() {
         getCases(auth.access).then((response) => {
             if(response.status === 200){
                 let cases = response.data;
-                setCases(cases.map((aCase) => {
+                setCases(cases.map((c) => {
                     return (
                         <AdminPanelCard
-                            id={aCase.id}
-                            name={aCase.name}
-                            searchKey={aCase.name}
-                            description={aCase.description}
+                            id={c.id}
+                            name={c.name}
+                            searchKey={c.name}
+                            description={c.description}
                             type={"entities/cases"}
                             onDelete={displayCases}
                             link="/not-implemented"
@@ -98,7 +98,7 @@ export default function AdminPanel() {
     }
 
     useEffect(() => {
-       displayAgents();
+       displayActors();
        displayUsers();
        displayCases();
     }, []);
@@ -108,7 +108,7 @@ export default function AdminPanel() {
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className="w-full h-full rounded-md flex flex-row p-1.5 gap-1.5 overflow-x-hidden overflow-y-scroll">
                 <AdminPanelSection title={"Actors"} addEnabled={true} addTooltipText={"Add Actor"} handleAdd={() => navigate("/admin/add-actor")}>
-                    {agents}
+                    {actors}
                 </AdminPanelSection>
                 <AdminPanelSection title={"Cases"} addEnabled={true} addTooltipText={"Add Case"} handleAdd={() => navigate("/admin/add-case")}>
                     {cases}
