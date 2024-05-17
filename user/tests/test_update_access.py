@@ -111,3 +111,17 @@ class UpdateAccessTest(TestCase):
             AccessType.READ,
         )
         self.assertEqual(response.status_code, 200)
+
+    def test_update_access_no_access_type_mentioned(self):
+
+        response = self.client.put(
+            reverse(
+                "update_access",
+                kwargs={"user_id": self.user.id, "case_id": self.case.id},
+            ),
+            {"access": "read"},
+            content_type="application/json",
+            **self.headers_admin,
+        )
+
+        self.assertEqual(response.status_code, 400)
