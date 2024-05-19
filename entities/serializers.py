@@ -102,6 +102,13 @@ class CaseSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+class CaseAccessAdminSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Entity
+        fields = ["id", "name"]
+
+
 class CaseResponseSerializer(serializers.ModelSerializer):
 
     description = serializers.CharField(required=False, allow_blank=True)

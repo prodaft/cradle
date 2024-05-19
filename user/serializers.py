@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
-from .models import CradleUser, Access
+from .models import CradleUser, Access, AccessType
 from .exceptions import DuplicateUserException
 
 
@@ -52,9 +52,50 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
 
 
 class AccessSerializer(serializers.ModelSerializer):
+    access_type = serializers.ChoiceField(choices=AccessType, required=True)
+
     class Meta:
         model = Access
         fields = ["access_type"]
+
+
+class AccessCaseSerializer(serializers.Serializer):
+    id = serializers.CharField(max_length=200)
+    name = serializers.CharField(max_length=200)
+    access_type = serializers.CharField(max_length=200, default=AccessType.NONE)
+
+    def to_representation(self, obj: dict) -> dict:
+        """Takes a Case with access object dictionary and fills in
+        values where the access_type is not defined.
+
+        Args:
+            obj: a dictionary which describes a Case with access privileges.
+            An example is:
+            {
+                "id" :  2,
+                "name" : "Case 1",
+                "access_type" : AccessType.NONE
+            }
+            The "access_type" field can have None values.
+
+        Returns:
+            The same dictionary which fills in the None fields with either
+            AccessType.NONE or AccessType.READ_WRITE, based on the priviliges
+            of the user.
+
+            For example, if obj = {"id" : 2, "name" : "Case 1", "access_type" : None},
+            then the function will return the dictionary
+            {"id" : 2, "name" : "Case 1", "access_type" : AccessType.NONE}
+            if the user whose access is shown is not an admin.
+        """
+        data = super(AccessCaseSerializer, self).to_representation(obj)
+        if self.context["is_admin"]:
+            data["access_type"] = AccessType.READ_WRITE
+        else:
+            data["access_type"] = (
+                AccessType.NONE if data["access_type"] is None else data["access_type"]
+            )
+        return data
 
 
 class TokenObtainSerializer(TokenObtainPairSerializer):
