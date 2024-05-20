@@ -1,28 +1,8 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
-from django.utils.translation import gettext_lazy as _
-
 from entities.models import Entity
-
-from .managers import CradleUserManager
-
-
-class AccessType(models.TextChoices):
-
-    NONE = "none", _("No access")
-    READ = "read", _("Read access")
-    READ_WRITE = "read-write", _("Read-write access")
-
-
-class CradleUser(AbstractUser):
-
-    USERNAME_FIELD = "username"
-    REQUIRED_FIELDS = ["password"]
-
-    objects = CradleUserManager()
-
-    def __str__(self):
-        return self.username
+from ..managers.access_manager import AccessManager
+from ..enums import AccessType
+from .cradle_user_model import CradleUser
 
 
 class Access(models.Model):
@@ -32,6 +12,8 @@ class Access(models.Model):
     access_type = models.CharField(
         max_length=20, choices=AccessType.choices, default=AccessType.NONE
     )
+
+    objects = AccessManager()
 
     def __str__(self):
         return str(self.case) + " " + self.access_type
