@@ -1,6 +1,8 @@
 from django.test import TestCase
 from django.urls import reverse
-from ..models import CradleUser, AccessType, Access
+from ..models.cradle_user_model import CradleUser
+from ..models.access_model import Access
+from ..enums import AccessType
 from entities.models import Entity
 from rest_framework.parsers import JSONParser
 from rest_framework_simplejwt.tokens import AccessToken

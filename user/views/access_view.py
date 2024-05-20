@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.http import HttpRequest
 
 
-from ..models import Access, CradleUser
+from ..models.access_model import Access, CradleUser
 from entities.models import Entity
 
 from ..serializers import AccessSerializer, AccessCaseSerializer
