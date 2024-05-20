@@ -10,7 +10,7 @@ import useNavbarContents from "../../hooks/useNavbarContents/useNavbarContents";
 /**
  * The text editor is composed of two sub-components, the Editor and the Preview. View their documentation for more details
  * 
- * @returns {Component.TextEditor}
+ * @returns {TextEditor}
  */
 export default function TextEditor() {
     const [markdownContent, setMarkdownContentCallback] = useLocalStorageMarkdown();
@@ -22,7 +22,7 @@ export default function TextEditor() {
         [<Editor />, <Preview />])
 
     return (
-        <div className="w-full h-full rounded-md flex flex-1 flex-col p-1.5 gap-1.5 sm:flex-row overflow-y-hidden">
+        <div className="w-full h-[90vh] md:h-[93vh] lg:h-[95vh] xl:h-[95vh] rounded-md flex flex-1 flex-col p-1.5 gap-1.5 sm:flex-row overflow-y-hidden">
             <Editor markdownContent={markdownContent} setMarkdownContent={setMarkdownContentCallback} />
             <Preview htmlContent={parsedContent} /> 
         </div>

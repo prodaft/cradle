@@ -3,7 +3,7 @@
  * @param props
  * @param props.icon - the icon to display in the button
  * @param props.onClick - the handler for the button
- * @returns {JSX.Element}
+ * @returns {NavbarItem}
  * @constructor
  */
 export default function NavbarItem(props){

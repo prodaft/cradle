@@ -1,7 +1,8 @@
 import React from 'react';
-import { Edit, Network, LogOut} from 'iconoir-react';
+import {Edit, Network, LogOut, UserCrown} from 'iconoir-react';
 import SidebarItem from "../SidebarItem/SidebarItem";
 import SidebarSection from "../SidebarSection/SidebarSection";
+import {useAuth} from "../../hooks/useAuth/useAuth";
 
 /**
  * Sidebar component - the main sidebar for the application.
@@ -10,10 +11,11 @@ import SidebarSection from "../SidebarSection/SidebarSection";
  * @param props.handleNewNote - handler for the new note action
  * @param props.handleGrapView - handler for the graph view action
  *
- * @returns {JSX.Element}
+ * @returns {Sidebar}
  * @constructor
  */
 export default function Sidebar(props) {
+    const auth = useAuth();
     return (
         <div className="w-fit h-screen sticky top-0">
                 <aside className="sidebar justify-start w-fit group/sidebar" data-testid="sidebar-test">
@@ -22,7 +24,7 @@ export default function Sidebar(props) {
                         <SidebarItem handleClick={props.handleGraphView} icon={<Network />} text="Graph View" />
                     </SidebarSection>
                     <SidebarSection type="content" height='full' justify='start'>
-
+                        {auth.isAdmin && <SidebarItem handleClick={props.handleAdminPanel} icon={<UserCrown />} text="Admin" />}
                     </SidebarSection>
                     <SidebarSection type="footer" height='fit' justify='end'>
                         <SidebarItem handleClick={props.handleLogout} icon={<LogOut/>} text="Logout"/>

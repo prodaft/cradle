@@ -5,7 +5,7 @@ import React from "react";
  * @param icon - icon to display in the button
  * @param text - text to display in the button (not shown unless hovered)
  * @param handleClick - handler for the button
- * @returns {Element}
+ * @returns {SidebarItem}
  * @constructor
  */
 export default function SidebarItem({icon,text,handleClick}){

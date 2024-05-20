@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import FormField from "../FormField/FormField";
 import {Link} from "react-router-dom"
 import { registerReq } from "../../services/authReqService/authReqService";
-import AlertBox from "../AuthAlert/AlertBox";
+import AlertBox from "../AlertBox/AlertBox";
 import { useNavigate } from "react-router-dom";
 
 
@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
  * Register new user in the system.
  * On successful registration, user is redirected to the login page.
  * On error, displays an error message.
- * @returns {Element}
+ * @returns {Register}
  * @constructor
  */
 export default function Register(){

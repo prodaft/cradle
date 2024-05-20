@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 /**
  * FeatureNotImplemented component - a placeholder component for features that are not yet implemented.
- * @returns {JSX.Element}
+ * @returns {FeatureNotImplemented}
  * @constructor
  */
 const FeatureNotImplemented = () => {
