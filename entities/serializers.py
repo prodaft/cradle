@@ -5,6 +5,7 @@ from .exceptions import (
     DuplicateCaseException,
     DuplicateEntryException,
 )
+from .enums import EntityType, EntitySubtype
 
 
 class ActorSerializer(serializers.ModelSerializer):
@@ -184,3 +185,24 @@ class MetadataSerializer(serializers.ModelSerializer):
         """
         validated_data["type"] = "metadata"
         return super().create(validated_data)
+
+
+class EntityQuerySerializer(serializers.Serializer):
+    name = serializers.CharField(required=False, default="")
+    entityType = serializers.ListField(
+        child=serializers.ChoiceField(choices=EntityType.choices),
+        required=False,
+        default=EntityType.values,
+    )
+    entitySubtype = serializers.ListField(
+        child=serializers.ChoiceField(choices=EntitySubtype.choices),
+        required=False,
+        default=EntitySubtype.values,
+    )
+
+
+class EntitySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Entity
+        fields = ["name", "type", "subtype"]

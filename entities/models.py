@@ -1,6 +1,12 @@
 from django.db import models
 
-from .managers import CaseManager, ActorManager, MetadataManager, EntryManager
+from .managers import (
+    CaseManager,
+    ActorManager,
+    MetadataManager,
+    EntryManager,
+    EntityManager,
+)
 from .enums import EntityType, EntitySubtype
 
 
@@ -10,7 +16,7 @@ class Entity(models.Model):
     type = models.CharField(max_length=20, choices=EntityType.choices)
     subtype = models.CharField(max_length=20, choices=EntitySubtype.choices, blank=True)
 
-    objects = models.Manager()
+    objects = EntityManager()
     actors = ActorManager()
     cases = CaseManager()
     entries = EntryManager()
