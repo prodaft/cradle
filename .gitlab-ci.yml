@@ -50,7 +50,6 @@ run-build:
   script:
     # - npm ls --depth=0 # for debugging
     - npm run build
-    - npm run tailwind
   artifacts:
     paths:
       - out/
