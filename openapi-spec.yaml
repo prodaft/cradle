@@ -942,33 +942,46 @@ paths:
       tags:
         - Entity
       summary: Search for entities
-      description: Allow a user to query for any entity they have access, by providing a name and, if it is an Entry, its type
+      description: Allow a user to query for any entity they have access, by providing a name, its type and, if it is an Entry, its subtype
       operationId: searchEntity
       parameters:
         - in: query
-          name: searchAgent
+          name: entityType
           required: false
+          style: form
+          explode: true
           schema:
-            type: boolean
+            type: string
+            enum: 
+            - actor
+            - case
+            - metadata
+            - entry
           examples:
-            boolTrue:
-              value: "false"
+            typeExample:
+              value: "ip"
         - in: query
-          name: searchCase
+          name: entitySubtype
           required: false
+          style: form
+          explode: true
           schema:
-            type: boolean
+            type: string
+            enum: 
+            - ip
+            - domain
+            - url
+            - username
+            - password
+            - person
+            - social-media
+            - hash
+            - tool 
+            - cve
+            - ttp 
           examples:
-            boolTrue:
-              value: "false"
-        - in: query
-          name: searchEntry
-          required: false
-          schema:
-            type: boolean
-          examples:
-            boolTrue:
-              value: "true"
+            typeExample:
+              value: "ip"
         - in: query
           name: name
           required: false
@@ -977,17 +990,11 @@ paths:
           examples:
             nameExample:
               value: "127.0.0.1"
-        - in: query
-          name: entryType
-          required: false
-          schema:
-            type: string
-          examples:
-            typeExample:
-              value: "IP"
       responses:
         '200': 
           description: Request was succesful.
+        '400':
+          description: Query parameters are invalid.
         '401':
           description: User is not authenticated.
 
