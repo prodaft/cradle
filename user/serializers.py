@@ -1,8 +1,9 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
-from .models import CradleUser, Access, AccessType
+from .models.access_model import CradleUser, Access
 from .exceptions import DuplicateUserException
+from .enums import AccessType
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
