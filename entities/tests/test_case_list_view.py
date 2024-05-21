@@ -7,7 +7,7 @@ import io
 from rest_framework_simplejwt.tokens import AccessToken
 
 from ..models import Entity
-from ..serializers import CaseResponseSerializer
+from ..serializers.entity_serializers import CaseResponseSerializer
 from ..enums import EntityType
 
 

@@ -3,6 +3,7 @@ from ..models.cradle_user_model import CradleUser
 from ..models.access_model import Access
 from ..enums import AccessType
 from entities.models import Entity
+from entities.enums import EntityType
 
 
 class AccessManagerTest(TestCase):
@@ -72,3 +73,63 @@ class AccessManagerTest(TestCase):
                     user=self.users[2], case_id=query_result[i]["case_id"]
                 ).access_type
                 self.assertNotEqual(access_type, AccessType.NONE)
+
+
+class CaseUtilsHasAccessTest(TestCase):
+
+    def create_user(self):
+        self.admin_user = CradleUser.objects.create_superuser(
+            username="admin", password="password", is_staff=True
+        )
+        self.normal_user = CradleUser.objects.create_user(
+            username="user", password="password", is_staff=False
+        )
+        self.user2 = CradleUser.objects.create_user(
+            username="user2", password="password", is_staff=False
+        )
+
+    def crete_cases(self):
+        self.case1 = Entity.objects.create(
+            name="Case1", description="Description1", type=EntityType.CASE
+        )
+
+        self.case2 = Entity.objects.create(
+            name="Case2", description="Description2", type=EntityType.CASE
+        )
+
+    def crete_access(self):
+        self.access1 = Access.objects.create(
+            user=self.normal_user, case=self.case1, access_type="read-write"
+        )
+
+        self.access2 = Access.objects.create(
+            user=self.normal_user, case=self.case2, access_type="none"
+        )
+
+        self.access3 = Access.objects.create(
+            user=self.user2, case=self.case1, access_type="read"
+        )
+
+    def setUp(self):
+        self.create_user()
+
+        self.crete_cases()
+        self.crete_access()
+
+    def test_user_admin(self):
+        self.assertTrue(Access.objects.has_access_to_case(self.admin_user, self.case1))
+        self.assertTrue(Access.objects.has_access_to_case(self.admin_user, self.case2))
+
+    def test_user_no_access(self):
+        self.assertFalse(
+            Access.objects.has_access_to_case(self.normal_user, self.case2)
+        )
+
+    def test_user_read_write_access(self):
+        self.assertTrue(Access.objects.has_access_to_case(self.normal_user, self.case1))
+
+    def test_user_read_access(self):
+        self.assertTrue(Access.objects.has_access_to_case(self.user2, self.case1))
+
+    def test_access_not_existing(self):
+        self.assertFalse(Access.objects.has_access_to_case(self.user2, self.case2))
