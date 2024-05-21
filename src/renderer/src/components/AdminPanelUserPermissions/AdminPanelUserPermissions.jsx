@@ -24,9 +24,6 @@ export default function AdminPanelUserPermissions() {
     const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(cases);
 
     useEffect(() => {
-        // Fetch cases for user
-        // Use the id to fetch the cases for the user
-        // Display the cases in the component
         getPermissions(auth.access,id).then((response) => {
             if(response.status === 200){
                 let permissions = response.data;
@@ -49,7 +46,7 @@ export default function AdminPanelUserPermissions() {
         <>
         <AlertDismissible alert={alert} setAlert={setAlert}/>
         <div className="w-full h-full overflow-x-hidden overflow-y-scroll">
-            <div className="container w-[70%] h-full mx-auto my-4 center bg-gray-2 p-10 rounded-md">
+            <div className="container w-[70%] h-fit mx-auto my-4 center bg-gray-2 p-10 rounded-md">
                 <h1 className="text-3xl font-bold">User Permissions</h1>
                 <h2 className="text-xl font-bold mt-5">User: {username}</h2>
                 <div className="w-full h-12 my-2">
@@ -60,7 +57,7 @@ export default function AdminPanelUserPermissions() {
                         onChange={(e) => setSearchVal(e.target.value)}
                     />
                 </div>
-                <div className="w-full h-fit bg-gray-3 rounded-lg my-2">
+                <div className="w-full h-fit rounded-lg my-2">
                     {filteredChildren}
                 </div>
             </div>
