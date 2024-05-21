@@ -44,7 +44,7 @@ export default function AdminPanelPermissionCard({userId, caseName, caseId, acce
     return (
         <>
             <AlertDismissible alert={alert} setAlert={setAlert}/>
-            <div className="h-fit w-full bg-gray-3 p-2 flex flex-row justify-start border-b-gray-2 border-b-2 rounded-t-lg">
+            <div className="h-fit w-full bg-cradle3 p-4 my-1 bg-opacity-20 rounded-xl flex flex-row justify-start">
                 <h2 className="card-header w-full mx-2">{caseName}</h2>
                 <div className="w-full flex flex-row justify-end">
                     <div className="dropdown">
