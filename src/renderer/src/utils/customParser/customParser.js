@@ -2,30 +2,10 @@ import Prism from 'prismjs';
 import { markedHighlight } from "marked-highlight";
 import { Marked } from "marked";
 import "prismjs/themes/prism-tomorrow.css";
+import {entryTypes, metadataTypes} from "../entityDefinitions/entityDefinitions";
 
 const baseUrl = 'https://localhost:8000'; // TODO
 
-// Define what url extension each entry type should have
-const entryTypes = new Set([
-    "ip",
-    "domain",
-    "url",
-    "username",
-    "password",
-    "person",
-    "social-media",
-    "hash", 
-    "tool",
-    "cve",
-    "ttp",
-])
-
-const metadataTypes = new Set([
-    "crime",
-    "industry",
-    "country",
-    "company",
-])
     
 const styleClasses = {
     actors: "text-purple-700",

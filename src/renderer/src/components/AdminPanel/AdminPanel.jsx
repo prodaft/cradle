@@ -31,8 +31,9 @@ export default function AdminPanel() {
     const handleError = (error) => {
         if(error.response && error.response.status === 401){
             setAlert("Invalid token. Please login again.")
+        }else{
+            setAlert("Error fetching data")
         }
-        setAlert("Error fetching data")
     }
 
     const displayActors = async () => {
