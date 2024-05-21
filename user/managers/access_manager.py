@@ -4,6 +4,7 @@ from ..enums import AccessType
 from ..models.cradle_user_model import CradleUser
 
 from django.db.models import Q
+from entities.models import Entity
 
 
 class AccessManager(models.Manager):
@@ -51,3 +52,24 @@ class AccessManager(models.Manager):
             .values("case_id")
             .distinct()
         )
+
+    def has_access_to_case(self, user: CradleUser, case: Entity) -> bool:
+        """Check if the user has access to the case
+
+        Args:
+            user: The user whose access is being checked.
+            case: The case whose access is being checked.
+
+        Returns:
+            bool: True if the user has access to the case, False otherwise.
+        """
+
+        if user.is_superuser:
+            return True
+
+        try:
+            access = self.get_queryset().get(user=user, case=case)
+        except models.ObjectDoesNotExist:
+            return False
+
+        return access.access_type in [AccessType.READ_WRITE, AccessType.READ]

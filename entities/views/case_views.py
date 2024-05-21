@@ -5,8 +5,12 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.http import HttpRequest
 
-from ..serializers import CaseSerializer, CaseResponseSerializer
+from ..serializers.entity_serializers import CaseSerializer, CaseResponseSerializer
+from ..serializers.dashboard_serializers import CaseDashboardSerializer
 from ..models import Entity
+from ..enums import EntityType
+from ..utils.case_utils import CaseUtils
+from user.models import Access
 
 
 class CaseList(APIView):
@@ -21,7 +25,7 @@ class CaseList(APIView):
             request: The request that was sent
 
         Returns:
-        Response: A JSON response contained the list of all cases
+        Response(status=200): A JSON response contained the list of all cases
             if the request was successful.
         Response("User is not authenticated.", status=401):
             if the user is not authenticated
@@ -41,7 +45,7 @@ class CaseList(APIView):
             request: The request that was sent
 
         Returns:
-            Response: A JSON response containing the created case
+            Response(status=200): A JSON response containing the created case
                 if the request was successful
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
@@ -75,7 +79,7 @@ class CaseDetail(APIView):
             case_id: The id of the case that will be deleted
 
         Returns:
-            Response: A JSON response containing the created case
+            Response(status=200): A JSON response containing the created case
                 if the request was successful
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
@@ -93,3 +97,54 @@ class CaseDetail(APIView):
             )
         case.delete()
         return Response("Requested case was deleted", status=status.HTTP_200_OK)
+
+
+class CaseDashboard(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: HttpRequest, case_name: str) -> Response:
+        """Allow a user to retrieve the dashboars of a Case by specifying its name.
+
+        Args:
+            request: The request that was sent
+            case_name: The name of the case that will be retrieved
+
+        Returns:
+            Response(status=200): A JSON response containing the dashboard of the case
+                if the request was successful
+            Response("User is not authenticated.", status=401):
+                if the user is not authenticated
+            Response("There is no case with specified name", status=404):
+                if there is no case with the provided name
+                or the user does not have access to it
+        """
+
+        user = request.user
+
+        try:
+            case = Entity.cases.get(name=case_name)
+        except Entity.DoesNotExist:
+            return Response(
+                "There is no case with specified name", status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not Access.objects.has_access_to_case(user, case):
+            return Response(
+                "There is no case with specified name", status=status.HTTP_404_NOT_FOUND
+            )
+
+        notes = CaseUtils.get_accessible_notes(user, case.id)
+        actors = Entity.objects.get_entities_of_type(case.id, EntityType.ACTOR)
+        metadata = Entity.objects.get_entities_of_type(case.id, EntityType.METADATA)
+        cases = Entity.objects.get_entities_of_type(case.id, EntityType.CASE)
+        entries = Entity.objects.get_entities_of_type(case.id, EntityType.ENTRY)
+
+        dashboard = CaseUtils.get_dashboard_json(
+            case, notes, actors, cases, metadata, entries, user
+        )
+
+        serializer = CaseDashboardSerializer(dashboard)
+
+        return Response(serializer.data)

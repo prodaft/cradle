@@ -490,6 +490,34 @@ paths:
         '404':
           description: Agent not found.
 
+  /entities/cases/{case_name}/:
+    get:
+      tags:
+        - Entity
+      summary: Get the dashboard of a Case
+      description: Allow a user to retrieve the dashboars of a Case by specifying its name
+      operationId: getCaseByName
+      parameters:
+        - in: path
+          name: case_name
+          required: true
+          schema:
+            type: string
+          examples:
+            caseNameExample:
+              value: "Case1"
+      responses:
+        '200': 
+          description: Request was successful. 
+          content: 
+            'application/json':
+              schema: 
+                $ref: '#/components/schemas/CaseDashboard'
+        '401': 
+          description: User is not authenticated.
+        '404':
+          description: Case not found or User doesn't have access.
+
   /entities/entries/{entryId}:
     get:
       tags:
@@ -583,7 +611,7 @@ paths:
             schema:
               type: object
               properties:
-                text:
+                content:
                   type: string
                 files:
                   type: array
@@ -1020,6 +1048,50 @@ components:
       name: sessionid
 
   schemas:
+    CaseDashboard:
+      type: object
+      properties:
+        case:
+          type: object
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+        notes:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Note"
+        actors:
+          type: array
+          items: 
+            type: object
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+        cases:
+          type: array
+          items: 
+            type: object
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+              access:
+                type: boolean
+        metadata:
+          type: array
+          items: 
+            type: object
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+    
     User:
       type: object
       properties:
@@ -1115,6 +1187,17 @@ components:
         timestamp: 
           type: string
           format: date-time
+        entities:
+          type: array
+          items: 
+            type: object
+            properties:
+              name:
+                type: string
+              type:
+                type: string
+              subtype:
+                type: string
 
     FleetingNote:
       type: object
