@@ -12,16 +12,21 @@ class EntityType(models.TextChoices):
 
 class EntitySubtype(models.TextChoices):
 
-    IPV4 = "ip_v4", _("IP V4")
-    IPV6 = "ip_v6", _("IP V6")
-    DOMAIN_NAME = "domain_name", _("Domain Name")
+    # Entry subtypes
+    IP = "ip", _("IP Address")
+    DOMAIN = "domain", _("Domain Name")
     URL = "url", _("URL")
-    HASH = "hash", _("Hash")
-    TOOL_NAME = "tool_name", _("Tool Name")
     USERNAME = "username", _("Username")
     PASSWORD = "password", _("Password")
-    VULNERABILITY = "vulnerability", _("Vulnerability CVE")
+    PERSON = "person", _("Person")
+    SOCIAL_MEDIA = "social-media", _("Social Media")
+    HASH = "hash", _("Hash")
+    TOOL = "tool", _("Tool Name")
+    CVE = "cve", _("CVE")
     TTP = "ttp", _("TTP")
+
+    # Metdata subtypes
+    CRIME = "crime", _("Crime Type")
+    INDUSTRY = "industry", _("Industry")
     COUNTRY = "country", _("Country")
-    SECTOR = "sector", _("Sector")
-    CRIME_TYPE = "crime_type", _("Crime Type")
+    COMPANY = "company", _("Company")

@@ -5,6 +5,45 @@ from .enums import EntityType
 
 
 class EntityManager(models.Manager):
+
+    def get_all_notes(self, entity_id: int) -> models.QuerySet:
+        """Gets the notes of an entity ordered by timestamp in descending order
+
+        Args:
+            entity_id (int): The id of the entity
+
+        Returns:
+            models.QuerySet: The notes of the entity
+                ordered by timestamp in descending order
+
+        """
+        return (
+            self.get_queryset().get(id=entity_id).note_set.order_by("-timestamp").all()
+        )
+
+    def get_entities_of_type(
+        self,
+        entity_id: int,
+        entity_type: EntityType,
+    ) -> models.QuerySet:
+        """Gets the entities of a entity of a specific type
+            related to the entity through notes
+
+        Args:
+            entity_id (int): The id of the entity
+            entity_type (EntityType): The type of the entity to filter by
+
+        Returns:
+            models.QuerySet: The entities of the case of the specific type
+        """
+        notes = self.get_all_notes(entity_id)
+
+        entities = (
+            self.get_queryset().filter(note__in=notes, type=entity_type).distinct()
+        )
+
+        return entities
+
     def get_filtered_entities(
         self,
         query_set: models.QuerySet,
