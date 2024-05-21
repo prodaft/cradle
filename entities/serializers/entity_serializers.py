@@ -1,11 +1,11 @@
 from rest_framework import serializers
-from .models import Entity
-from .exceptions import (
+from ..models import Entity
+from ..exceptions import (
     DuplicateActorException,
     DuplicateCaseException,
     DuplicateEntryException,
 )
-from .enums import EntityType, EntitySubtype
+from ..enums import EntityType, EntitySubtype
 
 
 class ActorSerializer(serializers.ModelSerializer):
@@ -170,7 +170,7 @@ class MetadataSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Entity
-        fields = ["name", "description"]
+        fields = ["name", "description", "subtype"]
 
     def create(self, validated_data):
         """Creates a new Entity entity based on the validated data.

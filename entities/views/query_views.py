@@ -10,7 +10,7 @@ from ..models import Entity
 
 from user.models.access_model import Access
 
-from ..serializers import EntitySerializer, EntityQuerySerializer
+from ..serializers.entity_serializers import EntitySerializer, EntityQuerySerializer
 
 
 class QueryList(APIView):

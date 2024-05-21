@@ -45,7 +45,7 @@ class QueryListTest(TestCase):
                 name="Entry1",
                 description="1",
                 type=EntityType.ENTRY,
-                subtype=EntitySubtype.IPV4,
+                subtype=EntitySubtype.IP,
             )
         )
         self.entries.append(
@@ -103,7 +103,7 @@ class QueryListTest(TestCase):
             self.assertEqual(response.status_code, 200)
 
     def test_query_filters_entities_based_on_subtype(self):
-        query_params = {"entityType": ["entry"], "entitySubtype": ["ip_v4"]}
+        query_params = {"entityType": ["entry"], "entitySubtype": ["ip"]}
         response = self.client.get(
             reverse("query_list"), query_params, **self.headers_normal
         )
@@ -114,7 +114,7 @@ class QueryListTest(TestCase):
 
         with self.subTest("Correct subtype"):
             for entity in result:
-                self.assertEqual(entity["subtype"], "ip_v4")
+                self.assertEqual(entity["subtype"], "ip")
 
         with self.subTest("Status code"):
             self.assertEqual(response.status_code, 200)

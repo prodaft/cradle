@@ -5,7 +5,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.http import HttpRequest
 
-from ..serializers import ActorResponseSerializer, ActorSerializer
+from ..serializers.entity_serializers import ActorResponseSerializer, ActorSerializer
 from ..models import Entity
 
 
@@ -21,7 +21,7 @@ class ActorList(APIView):
             request: The request that was sent
 
         Returns:
-            Response: A JSON response contained the list of all actors
+            Response(status=200): A JSON response contained the list of all actors
                 if the request was successful.
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
@@ -41,7 +41,7 @@ class ActorList(APIView):
             request: The request that was sent
 
         Returns:
-            Response: A JSON response containing the created actor
+            Response(status=200): A JSON response containing the created actor
                 if the request was successful
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
@@ -75,7 +75,7 @@ class ActorDetail(APIView):
             actor_id: The id of the actor that will be deleted
 
         Returns:
-            Response: A JSON response containing the created actor
+            Response(status=200): A JSON response containing the created actor
                 if the request was successful
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
