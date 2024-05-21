@@ -45,8 +45,8 @@ export default function AdminPanelCard({name,id,description,type,onDelete,link,s
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <ConfirmationDialog open={dialog} setOpen={setDialog} title={"Confirm Deletion"} description={"This is permanent"} handleConfirm={handleDelete} />
-            <div className="h-fit w-full bg-gray-3 p-2 rounded-xl">
-                <h2 className="card-header w-full mx-2"><Link to={link}>{name}</Link></h2>
+            <div className="h-fit w-full bg-cradle3 p-3 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl">
+                <h2 className="card-header w-full mx-2 px-1"><Link to={link}>{name}</Link></h2>
                     <div className="w-full flex flex-row justify-end">
                         <button className="btn btn-ghost w-fit h-full p-1" onClick={() => setDialog(!dialog)}>
                             <Trash/>
