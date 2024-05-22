@@ -13,7 +13,7 @@ import { EditorView } from '@codemirror/view';
  *
  * @param {string} markdownContent - the content inside the Editor
  * @param {(string) => void} setMarkdownContent - callback used when the value of the content changes
- * @returns {Component.Editor}
+ * @returns {Editor}
  */
 export default function Editor({ markdownContent, setMarkdownContent }) {
     const [enableVim, setEnableVim] = useState(false);
