@@ -1,7 +1,7 @@
 import NavbarItem from "../NavbarItem/NavbarItem";
-import {Notes} from 'iconoir-react';
+import { Notes } from 'iconoir-react';
 import SearchDialog from "../SearchDialog/SearchDialog";
-import {useState} from "react";
+import { useState } from "react";
 
 /**
  * Navbar component - the main navigation bar for the application.
@@ -19,7 +19,7 @@ export default function Navbar(props){
             <div className="w-fit h-fit navbar-start">
                 <input className="input-sm input-block input-ghost-primary input focus:border-primary focus:ring-0 w-96"
                        placeholder={"Search"} onClick={() => setIsDialogOpen(true)}/>
-                <SearchDialog isOpen={isDialogOpen} onClose={()=>setIsDialogOpen(false)} />
+                <SearchDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} />
             </div>
             <div className="w-full justify-end h-fit navbar-center">
                 {props.contents}
