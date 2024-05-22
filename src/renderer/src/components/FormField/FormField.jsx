@@ -1,7 +1,7 @@
 /**
  * FormField component - a styled form field with a label and input
  * @param props
- * @returns {JSX.Element}
+ * @returns {FormField}
  * @constructor
  */
 export default function FormField(props) {

@@ -18,7 +18,18 @@ module.exports = {
         require('@tailwindcss/typography'),
         require('tailwind-scrollbar'),
         require('@tailwindcss/forms'),
-        require("rippleui")
+        require("rippleui"),
+        function ({ addUtilities }) {
+            addUtilities({
+                '.no-scrollbar': {
+                    '-ms-overflow-style': 'none',  /* IE and Edge */
+                    'scrollbar-width': 'none',  /* Firefox */
+                },
+                '.no-scrollbar::-webkit-scrollbar': {
+                    display: 'none',  /* Hide scrollbar for WebKit-based browsers */
+                },
+            });
+            },
     ],
     rippleui: {
       themes: [

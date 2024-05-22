@@ -6,7 +6,7 @@ import React from "react";
  * @param props.sectionType - the type of section (header, content, footer)
  * @param props.justify - the alignment of the items in the section
  * @param props.height - the height of the section
- * @returns {Element}
+ * @returns {SidebarSection}
  * @constructor
  */
 export default function SidebarSection(props) {
