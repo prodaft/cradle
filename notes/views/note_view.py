@@ -1,10 +1,14 @@
 from rest_framework.response import Response
+from rest_framework.request import Request
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from ..serializers import NoteCreateSerializer, NoteRetrieveSerializer
-from django.http import HttpRequest
+from ..models import Note
+from ..utils.access_checker_task import AccessCheckerTask
+
+from entities.enums import EntityType
 
 
 class NoteList(APIView):
@@ -12,7 +16,7 @@ class NoteList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def post(self, request: HttpRequest) -> Response:
+    def post(self, request: Request) -> Response:
         """Allow a user to create a new note, by sending the text itself.
         This text should be validated to meet the requirements
         (i.e. reference at least two Entities, one of which must be a Case).
@@ -40,3 +44,51 @@ class NoteList(APIView):
             return Response(json_note, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class NoteDetail(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request: Request, note_id: int) -> Response:
+        """Allow a user to delete a new note, by specifying its id.
+
+        Args:
+            request: The request that was sent
+            note_id: The id of the note to be deleted.
+
+        Returns:
+            Response(status=200): The note was deleted
+            Response("User is not authenticated.",
+                status=401): if the user is not authenticated
+            Response("User cannot delete a Note he does not own.", status=403):
+                if the user is not the author of the note.
+            Response("Note not found", status=404):
+                if the note does not exist.
+        """
+        try:
+            note_to_delete = Note.objects.get(id=note_id)
+
+            if request.user.id != note_to_delete.author.id:
+                return Response(
+                    "User cannot delete a Note he does not own.",
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            AccessCheckerTask(request.user).run(
+                {"case": note_to_delete.entities.filter(type=EntityType.CASE)}
+            )
+
+            # perhaps find a better alternative to this
+            for entity in note_to_delete.entities.filter(
+                type__in=[EntityType.ENTRY, EntityType.METADATA]
+            ).all():
+                if Note.objects.filter(entities__id__contains=entity.id).count() == 1:
+                    entity.delete()
+
+            note_to_delete.delete()
+
+            return Response("Note was deleted.", status=status.HTTP_200_OK)
+        except Note.DoesNotExist:
+            return Response("Note not found.", status=status.HTTP_404_NOT_FOUND)
