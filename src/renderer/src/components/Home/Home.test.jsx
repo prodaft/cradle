@@ -6,7 +6,7 @@ import {render, fireEvent, getByTestId} from '@testing-library/react';
 import {MemoryRouter,Route, Routes} from 'react-router-dom';
 import Home from './Home';
 import { useAuth } from '../../hooks/useAuth/useAuth';
-import AuthProvider from "../../utils/Auth/AuthProvider";
+import AuthProvider from "../../utils/AuthProvider/AuthProvider";
 import '@testing-library/jest-dom';
 
 jest.mock('../../hooks/useAuth/useAuth');
