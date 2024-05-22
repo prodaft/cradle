@@ -1,13 +1,14 @@
 from django.test import TestCase
-from user.models import CradleUser
+from user.models.access_model import CradleUser
 from django.urls import reverse
 from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
 import io
 from rest_framework_simplejwt.tokens import AccessToken
 
-from ..models import Case
-from ..serializers import CaseSerializer
+from ..models import Entity
+from ..serializers.entity_serializers import CaseResponseSerializer
+from ..enums import EntityType
 
 
 def bytes_to_json(data):
@@ -30,11 +31,15 @@ class GetCaseListTest(TestCase):
         self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
 
     def test_get_cases_admin(self):
-        Case.objects.create(name="Case1", description="Description1")
-        Case.objects.create(name="Case2", description="Description2")
-        cases = Case.objects.all()
+        Entity.objects.create(
+            name="Case1", description="Description1", type=EntityType.CASE
+        )
+        Entity.objects.create(
+            name="Case2", description="Description2", type=EntityType.CASE
+        )
+        cases = Entity.cases.all()
 
-        expected = CaseSerializer(cases, many=True).data
+        expected = CaseResponseSerializer(cases, many=True).data
 
         response = self.client.get(reverse("case_list"), **self.headers_admin)
 
@@ -76,18 +81,44 @@ class PostCaseListTest(TestCase):
         self.assertEqual(response_post.status_code, 200)
         self.assertEqual(case_json, bytes_to_json(response_post.content))
 
-        self.assertEqual(Case.objects.count(), 1)
-        self.assertEqual(Case.objects.get().name, "case1")
+        self.assertEqual(Entity.cases.count(), 1)
+        self.assertEqual(Entity.cases.get().name, "case1")
 
-    def test_create_invalid_case(self):
-        case_json = {"name": "case1", "des": "description1"}
+    def test_create_case_no_description_admin(self):
+        case_json = {"name": "case1"}
+        expected_json = {"name": "case1", "description": None}
 
         response_post = self.client.post(
             reverse("case_list"), case_json, **self.headers_admin
         )
-        self.assertEqual(response_post.status_code, 404)
+        self.assertEqual(response_post.status_code, 200)
+        self.assertEqual(expected_json, bytes_to_json(response_post.content))
 
-        self.assertRaises(Case.DoesNotExist, lambda: Case.objects.get(name="case1"))
+        self.assertEqual(Entity.cases.count(), 1)
+        self.assertEqual(Entity.cases.get().name, "case1")
+
+    def test_create_case_duplicate_admin(self):
+        case_json = {"name": "case1", "description": "description1"}
+
+        response_post = self.client.post(
+            reverse("case_list"), case_json, **self.headers_admin
+        )
+        self.assertEqual(response_post.status_code, 200)
+
+        response_post = self.client.post(
+            reverse("case_list"), case_json, **self.headers_admin
+        )
+        self.assertEqual(response_post.status_code, 409)
+
+    def test_create_invalid_case(self):
+        case_json = {"description": "description1"}
+
+        response_post = self.client.post(
+            reverse("case_list"), case_json, **self.headers_admin
+        )
+        self.assertEqual(response_post.status_code, 400)
+
+        self.assertRaises(Entity.DoesNotExist, lambda: Entity.objects.get(name="case1"))
 
     def test_create_case_authenticated_not_admin(self):
         case_json = {"name": "case1", "description": "description1"}

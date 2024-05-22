@@ -192,14 +192,14 @@ paths:
         '404':
           description: User is not found. # maybe
 
-  /entities/agents:
+  /entities/actors/:
     get:
       tags:
         - Entity
         - Admin
-      summary: Read details of all Agents
-      description: Allow a user to retrieve the details of all Agents
-      operationId: getAgents
+      summary: Read details of all Actors
+      description: Allow a user to retrieve the details of all Actors
+      operationId: getActors
       responses:
         '200':
           description: Request is successful.
@@ -218,9 +218,9 @@ paths:
       tags:
         - Entity
         - Admin
-      summary: Create Agent
-      description: Allow an admin to create a new Agent by specifying its name
-      operationId: createAgent
+      summary: Create Actor
+      description: Allow an admin to create a new Actor by specifying its name
+      operationId: createActor
       requestBody:
         content:
           'application/json':
@@ -244,6 +244,10 @@ paths:
           description: User is not authenticated.
         '403': 
           description: User is not an admin.
+        '404':
+          description: Invalid data provided
+        '409':
+          description: Actor already exists.
             
 
   /entities/cases:
@@ -267,6 +271,7 @@ paths:
           description: User is not authenticated.
         '403': 
           description: User is not an admin.
+
     post:
       tags:
         - Entity
@@ -288,7 +293,7 @@ paths:
                   type: string
       responses:
         '200': 
-          description: Agent has been added. 
+          description: Case has been added. 
           content: 
             'application/json':
               schema: 
@@ -297,6 +302,35 @@ paths:
           description: User is not authenticated.
         '403': 
           description: User is not an admin.
+        '404':
+          description: Invalid data provided
+        '409':
+          description: Case already exists.
+
+  /users/{userId}/access:
+    get:
+      tags:
+        - User
+        - Admin
+      summary: Get access privileges of a users.
+      responses:
+        '200': 
+          description: Request was successful.
+          content:
+            'application/json':
+              schema:
+                type: array
+                items: 
+                  $ref: "#/components/schemas/CaseAccess"
+        '400':
+          description: Request is invalid
+        '401':
+          description: User is not authenticated.
+        '403': 
+          description: User is not an admin.
+        '404':
+          description: User not found.
+
 
   /users/{userId}/access/{caseId}:
     put:
@@ -344,14 +378,14 @@ paths:
           description: User is not an admin. 
             
 
-  /entities/agents/{agentId}:
+  /entities/actors/{actorId}:
     delete:
       tags:
         - Entity
         - Admin
-      summary: Delete Agent
-      description: Allow an admin to delete an Agent by specifying its id
-      operationId: deleteAgent
+      summary: Delete Actor
+      description: Allow an admin to delete an Actor by specifying its id
+      operationId: deleteActor
       parameters:
         - in: path
           name: agentId
@@ -374,9 +408,9 @@ paths:
     get:
       tags: 
         - Entity
-      summary: Read details of an Agent
-      description: Allow a user to retrieve the details of an Agent by specifying its id
-      operationId: getAgent
+      summary: Read details of an Actor
+      description: Allow a user to retrieve the details of an Actor by specifying its id
+      operationId: getActor
       parameters:
         - in: path
           name: agentId
@@ -397,7 +431,7 @@ paths:
         '401': 
           description: User is not authenticated.
         '404':
-          description: Agent not found.
+          description: Actor not found.
             
 
 
@@ -455,6 +489,34 @@ paths:
           description: User is not authenticated.
         '404':
           description: Agent not found.
+
+  /entities/cases/{case_name}/:
+    get:
+      tags:
+        - Entity
+      summary: Get the dashboard of a Case
+      description: Allow a user to retrieve the dashboars of a Case by specifying its name
+      operationId: getCaseByName
+      parameters:
+        - in: path
+          name: case_name
+          required: true
+          schema:
+            type: string
+          examples:
+            caseNameExample:
+              value: "Case1"
+      responses:
+        '200': 
+          description: Request was successful. 
+          content: 
+            'application/json':
+              schema: 
+                $ref: '#/components/schemas/CaseDashboard'
+        '401': 
+          description: User is not authenticated.
+        '404':
+          description: Case not found or User doesn't have access.
 
   /entities/entries/{entryId}:
     get:
@@ -545,11 +607,11 @@ paths:
       operationId: createNote
       requestBody:
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
               properties:
-                text:
+                content:
                   type: string
                 files:
                   type: array
@@ -567,8 +629,8 @@ paths:
           description: Note does not reference at least one Case and two Entities. 
         '401': 
           description: User is not authenticated.
-        '403': 
-          description: User does not have Read-Write access to a referenced Case.
+        '404': 
+          description: User does not have Read-Write access to a referenced Case or not all Cases exist.
 
   /notes/{noteId}/publishable:
     put:
@@ -908,33 +970,46 @@ paths:
       tags:
         - Entity
       summary: Search for entities
-      description: Allow a user to query for any entity they have access, by providing a name and, if it is an Entry, its type
+      description: Allow a user to query for any entity they have access, by providing a name, its type and, if it is an Entry, its subtype
       operationId: searchEntity
       parameters:
         - in: query
-          name: searchAgent
+          name: entityType
           required: false
+          style: form
+          explode: true
           schema:
-            type: boolean
+            type: string
+            enum: 
+            - actor
+            - case
+            - metadata
+            - entry
           examples:
-            boolTrue:
-              value: "false"
+            typeExample:
+              value: "ip"
         - in: query
-          name: searchCase
+          name: entitySubtype
           required: false
+          style: form
+          explode: true
           schema:
-            type: boolean
+            type: string
+            enum: 
+            - ip
+            - domain
+            - url
+            - username
+            - password
+            - person
+            - social-media
+            - hash
+            - tool 
+            - cve
+            - ttp 
           examples:
-            boolTrue:
-              value: "false"
-        - in: query
-          name: searchEntry
-          required: false
-          schema:
-            type: boolean
-          examples:
-            boolTrue:
-              value: "true"
+            typeExample:
+              value: "ip"
         - in: query
           name: name
           required: false
@@ -943,17 +1018,11 @@ paths:
           examples:
             nameExample:
               value: "127.0.0.1"
-        - in: query
-          name: entryType
-          required: false
-          schema:
-            type: string
-          examples:
-            typeExample:
-              value: "IP"
       responses:
         '200': 
           description: Request was succesful.
+        '400':
+          description: Query parameters are invalid.
         '401':
           description: User is not authenticated.
 
@@ -979,6 +1048,50 @@ components:
       name: sessionid
 
   schemas:
+    CaseDashboard:
+      type: object
+      properties:
+        case:
+          type: object
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+        notes:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Note"
+        actors:
+          type: array
+          items: 
+            type: object
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+        cases:
+          type: array
+          items: 
+            type: object
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+              access:
+                type: boolean
+        metadata:
+          type: array
+          items: 
+            type: object
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+    
     User:
       type: object
       properties:
@@ -1015,6 +1128,22 @@ components:
           type: string
         description:
           type: string
+
+    CaseAccess:
+      type: object
+      properties:
+        ID: 
+          type: integer
+          format: int64
+        name: 
+          type: string
+        access_type:
+          type: string
+          enum:
+          - none
+          - read
+          - read-write
+          
 
     Entry:
       type: object
@@ -1058,6 +1187,17 @@ components:
         timestamp: 
           type: string
           format: date-time
+        entities:
+          type: array
+          items: 
+            type: object
+            properties:
+              name:
+                type: string
+              type:
+                type: string
+              subtype:
+                type: string
 
     FleetingNote:
       type: object
