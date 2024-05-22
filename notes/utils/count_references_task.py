@@ -1,5 +1,6 @@
 from typing import Dict, Set
 from entities.models import Entity
+from ..exceptions import NotEnoughReferencesException
 
 
 class CountReferencesTask:
@@ -19,8 +20,8 @@ class CountReferencesTask:
             task, the dictionary is not updated.
 
         Raises:
-            ValueError: The note does not reference at least one case and at least
-            two entities.
+            NotEnoughReferencesException: The note does not reference at least one case
+            and at least two entities.
         """
 
         referenced_cases = len(referenced_entities["case"])
@@ -29,8 +30,6 @@ class CountReferencesTask:
         )
 
         if referenced_cases == 0 or reference_count < 2:
-            raise ValueError(
-                "Note does not reference at least one case and at least two entities."
-            )
+            raise NotEnoughReferencesException()
 
         return referenced_entities
