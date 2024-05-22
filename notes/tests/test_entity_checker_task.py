@@ -2,7 +2,7 @@ from django.test import TestCase
 from entities.models import Entity
 from entities.enums import EntityType
 from notes.utils.entity_checker_task import EntityCheckerTask
-from django.http import Http404
+from ..exceptions import EntitiesDoNotExistException
 
 
 class EntityCheckerTaskTest(TestCase):
@@ -47,7 +47,8 @@ class EntityCheckerTaskTest(TestCase):
         self.referenced_entities["case"] = {self.case1, self.case2, self.other_case}
 
         self.assertRaises(
-            Http404, lambda: EntityCheckerTask().run(self.referenced_entities)
+            EntitiesDoNotExistException,
+            lambda: EntityCheckerTask().run(self.referenced_entities),
         )
 
     def test_references_non_existing_actors(self):
@@ -55,7 +56,8 @@ class EntityCheckerTaskTest(TestCase):
         self.referenced_entities["case"] = {self.case1}
 
         self.assertRaises(
-            Http404, lambda: EntityCheckerTask().run(self.referenced_entities)
+            EntitiesDoNotExistException,
+            lambda: EntityCheckerTask().run(self.referenced_entities),
         )
 
     def test_references_non_existing_both(self):
@@ -63,7 +65,8 @@ class EntityCheckerTaskTest(TestCase):
         self.referenced_entities["case"] = {self.other_case}
 
         self.assertRaises(
-            Http404, lambda: EntityCheckerTask().run(self.referenced_entities)
+            EntitiesDoNotExistException,
+            lambda: EntityCheckerTask().run(self.referenced_entities),
         )
 
     def test_references_no_actors_or_cases(self):
