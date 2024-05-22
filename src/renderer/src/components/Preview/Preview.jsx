@@ -1,5 +1,7 @@
 import DOMPurify from "dompurify"
-import { Component } from "react";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { handleLinkClick } from "../../utils/textEditorUtils/textEditorUtils";
 
 /**
  * This Preview component expects a content parameter, which it uses to set as inner HTML to itself.
@@ -10,6 +12,19 @@ import { Component } from "react";
  */
 export default function Preview({ htmlContent }) {
     const sanitizedContent = DOMPurify.sanitize(htmlContent);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        // Handle local and external links using the navigate hook
+        const handleLinkClickNavigate = handleLinkClick(navigate);
+
+        const previewDiv = document.querySelector('[data-testid="preview"]');
+        previewDiv.addEventListener('click', handleLinkClickNavigate);
+
+        return () => {
+            previewDiv.removeEventListener('click', handleLinkClickNavigate);
+        };
+    }, [navigate]);
 
     return (
         <div className="h-1/2 sm:h-full p-4 bg-zinc-800 prose w-full !max-w-none prose-invert prose-img:w-fit break-all

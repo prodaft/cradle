@@ -3,7 +3,8 @@
  */
 import marked from "./customParser";
 
-const baseUrl = 'https://localhost:8000'
+// const baseUrl = 'https://localhost:8000'
+const baseUrl = '';
 
 describe("renderer", () => {
     test('parse actor links no alias', () => {
