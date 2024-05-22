@@ -32,7 +32,9 @@ class NoteList(APIView):
                 to a referenced Case or not all Cases exist.", status=404)
         """
 
-        serializer = NoteCreateSerializer(data=request.data)
+        serializer = NoteCreateSerializer(
+            data=request.data, context={"request": request}
+        )
         if serializer.is_valid():
             note = serializer.save()
 

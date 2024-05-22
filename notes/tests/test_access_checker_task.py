@@ -5,7 +5,7 @@ from notes.utils.access_checker_task import AccessCheckerTask
 from user.models.cradle_user_model import CradleUser
 from user.models.access_model import Access
 from user.enums import AccessType
-from django.http import Http404
+from ..exceptions import NoAccessToEntitiesException
 
 
 class AccessCheckerTaskTest(TestCase):
@@ -42,5 +42,6 @@ class AccessCheckerTaskTest(TestCase):
         self.referenced_entities["case"] = {self.case1, self.case2}
 
         self.assertRaises(
-            Http404, lambda: AccessCheckerTask(self.user).run(self.referenced_entities)
+            NoAccessToEntitiesException,
+            lambda: AccessCheckerTask(self.user).run(self.referenced_entities),
         )

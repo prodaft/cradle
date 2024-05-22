@@ -1,6 +1,7 @@
 from django.test import TestCase
 from entities.models import Entity
 from notes.utils.count_references_task import CountReferencesTask
+from ..exceptions import NotEnoughReferencesException
 
 
 class CountReferencesTaskTest(TestCase):
@@ -33,17 +34,20 @@ class CountReferencesTaskTest(TestCase):
         self.referenced_entities["case"] = {self.case_entity1}
 
         self.assertRaises(
-            ValueError, lambda: CountReferencesTask().run(self.referenced_entities)
+            NotEnoughReferencesException,
+            lambda: CountReferencesTask().run(self.referenced_entities),
         )
 
     def test_references_multiple_entities_no_case(self):
         self.referenced_entities["actor"] = {self.actor_entity1, self.actor_entity2}
 
         self.assertRaises(
-            ValueError, lambda: CountReferencesTask().run(self.referenced_entities)
+            NotEnoughReferencesException,
+            lambda: CountReferencesTask().run(self.referenced_entities),
         )
 
     def test_references_no_references(self):
         self.assertRaises(
-            ValueError, lambda: CountReferencesTask().run(self.referenced_entities)
+            NotEnoughReferencesException,
+            lambda: CountReferencesTask().run(self.referenced_entities),
         )
