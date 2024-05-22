@@ -5,7 +5,20 @@ import { render, fireEvent, screen } from '@testing-library/react';
 import '@testing-library/jest-dom'
 import TextEditor from './TextEditor';
 import { saveNote } from "../../services/textEditorService/textEditorService";
+<<<<<<< HEAD
 import { MemoryRouter } from 'react-router-dom';
+=======
+
+jest.mock('../../hooks/useNavbarContents/useNavbarContents', () => () => {});
+
+beforeEach(() => {
+    localStorage.clear();
+});
+
+afterAll(() => {
+    localStorage.clear();
+});
+>>>>>>> main
 
 const markdownContent =`
 # Hello world!
@@ -33,6 +46,7 @@ console.log("Hello world!");
 | 3| 5| 7 |
 `;
 
+<<<<<<< HEAD
 jest.mock('../../hooks/useNavbarContents/useNavbarContents', () => () => { });
 
 jest.mock('../../hooks/useAuth/useAuth', () => ({
@@ -55,6 +69,14 @@ test('renders as expected', () => {
             <TextEditor />
         </MemoryRouter>
     )
+=======
+jest.mock('../../services/textEditorService/textEditorService', () => ({
+  saveNote: jest.fn()
+}));
+
+test('renders as expected', () => {
+    render(<TextEditor />);
+>>>>>>> main
 
     expect(screen.getByTestId('preview')).toBeInTheDocument();
     expect(screen.getByTestId('markdown-input')).toBeInTheDocument();

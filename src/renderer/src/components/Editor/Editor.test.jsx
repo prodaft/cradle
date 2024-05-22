@@ -1,18 +1,30 @@
 /**
  * @jest-environment jsdom
  */
+<<<<<<< HEAD
+=======
+import React from "react";
+>>>>>>> main
 import { render, fireEvent } from "@testing-library/react";
 import '@testing-library/jest-dom'
 import Editor from "./Editor";
 
+<<<<<<< HEAD
 const markdownContent = `# Hello world!`;
 const setMarkdownContent = jest.fn();
 
 test('render', () => {
+=======
+test("renders", () => {
+  const markdownContent = "Initial markdown content";
+  const setMarkdownContent = jest.fn();
+
+>>>>>>> main
   const { getByTestId } = render(
     <Editor markdownContent={markdownContent} setMarkdownContent={setMarkdownContent} />
   );
 
+<<<<<<< HEAD
   const codeMirrorInput = getByTestId('markdown-input');
   expect(codeMirrorInput).toBeInTheDocument();
 
@@ -33,4 +45,8 @@ test('toggle vim mode', () => {
 
   fireEvent.click(vimToggle);
   expect(vimToggle).not.toBeChecked();
+=======
+  const editor = getByTestId("markdown-input");
+  expect(editor).toBeInTheDocument();
+>>>>>>> main
 });
