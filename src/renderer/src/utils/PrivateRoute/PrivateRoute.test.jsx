@@ -4,7 +4,7 @@
 import React from 'react';
 import { render, act } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import AuthProvider from './AuthProvider.jsx';
+import AuthProvider from '../AuthProvider/AuthProvider.jsx';
 import PrivateRoute from './PrivateRoute.jsx';
 import { useNavigate } from 'react-router-dom';
 import '@testing-library/jest-dom'

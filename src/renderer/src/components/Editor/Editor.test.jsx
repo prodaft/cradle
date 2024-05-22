@@ -1,19 +1,36 @@
 /**
  * @jest-environment jsdom
  */
-import React from "react";
 import { render, fireEvent } from "@testing-library/react";
 import '@testing-library/jest-dom'
 import Editor from "./Editor";
 
-test("renders", () => {
-  const markdownContent = "Initial markdown content";
-  const setMarkdownContent = jest.fn();
+const markdownContent = `# Hello world!`;
+const setMarkdownContent = jest.fn();
 
+test('render', () => {
   const { getByTestId } = render(
     <Editor markdownContent={markdownContent} setMarkdownContent={setMarkdownContent} />
   );
 
-  const editor = getByTestId("markdown-input");
-  expect(editor).toBeInTheDocument();
+  const codeMirrorInput = getByTestId('markdown-input');
+  expect(codeMirrorInput).toBeInTheDocument();
+
+  const vimToggle = getByTestId('vim-toggle');
+  expect(vimToggle).toBeInTheDocument();
+});
+
+test('toggle vim mode', () => {
+  const { getByTestId } = render(
+    <Editor markdownContent={markdownContent} setMarkdownContent={setMarkdownContent} />
+  );
+
+  const vimToggle = getByTestId('vim-toggle');
+  expect(vimToggle).not.toBeChecked();
+
+  fireEvent.click(vimToggle);
+  expect(vimToggle).toBeChecked();
+
+  fireEvent.click(vimToggle);
+  expect(vimToggle).not.toBeChecked();
 });
