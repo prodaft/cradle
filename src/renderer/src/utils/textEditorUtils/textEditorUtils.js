@@ -10,4 +10,26 @@ import marked from "../customParser/customParser"
  */
 const parseContent = (content) => DOMPurify.sanitize(marked.parse(content));
 
-export { parseContent }
+/**
+ * Handles link clicks in the preview component
+ * 
+ * @param {(string) => void} handler - navigate function
+ * @returns {(event: MouseEvent) => void} event handler
+ */
+const handleLinkClick = (handler) => (event) => {
+    const target = event.target;
+    if (target.tagName === 'A' && target.href) {
+        event.preventDefault();
+        const url = new URL(target.href);
+        const path = url.pathname + url.search;
+        if (url.origin === window.location.origin) {
+            // Local links
+            handler(path);
+        } else {
+            // External links
+            window.open(target.href, '_blank');
+        }
+    }
+};
+
+export { parseContent, handleLinkClick }

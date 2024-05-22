@@ -12,7 +12,8 @@ export default function Home() {
     const [navbarContents, setNavbarContents] = useState([]);
 
     const handleLogout = () => {
-        auth.logOut();
+        auth.logOut();  
+        localStorage.clear(); // TODO save unsaved notes as fleeting notes
         navigate("/login");
     };
 
