@@ -78,7 +78,6 @@ const marked = new Marked(
         },
     })
 );
-<<<<<<< HEAD
 
 // Use a customer renderer
 const renderer = {
@@ -93,7 +92,5 @@ const renderer = {
     },
 };
 marked.use({ renderer });
-=======
->>>>>>> main
   
 export default marked;
