@@ -4,7 +4,7 @@ import FormField from "../FormField/FormField";
 import {Link} from "react-router-dom"
 import { useNavigate } from "react-router-dom";
 import { logInReq } from "../../services/authReqService/authReqService";
-import AlertBox from "../AuthAlert/AlertBox";
+import AlertBox from "../AlertBox/AlertBox";
 import {useAuth} from "../../hooks/useAuth/useAuth";
 
 
@@ -12,7 +12,7 @@ import {useAuth} from "../../hooks/useAuth/useAuth";
  * Login component - renders the login form.
  * Sets the username and password states for the AuthProvider when successfully logged in with the server
  * On error, displays an error message.
- * @returns {Element}
+ * @returns {Login}
  * @constructor
  */
 export default function Login() {
