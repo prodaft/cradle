@@ -1,12 +1,13 @@
 from django.test import TestCase
-from user.models import CradleUser
+from user.models.access_model import CradleUser
 from django.urls import reverse
 from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
 import io
 from rest_framework_simplejwt.tokens import AccessToken
 
-from ..models import Case
+from ..models import Entity
+from ..enums import EntityType
 
 
 def bytes_to_json(data):
@@ -29,7 +30,9 @@ class DeleteCaseDetailsTest(TestCase):
         self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
 
     def test_delete_case_admin(self):
-        case = Case.objects.create(name="Case1", description="Description1")
+        case = Entity.objects.create(
+            name="Case1", description="Description1", type=EntityType.CASE
+        )
 
         response = self.client.delete(
             reverse("case_detail", kwargs={"case_id": case.pk}), **self.headers_admin
@@ -38,7 +41,9 @@ class DeleteCaseDetailsTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_delete_case_authenticated_not_admin(self):
-        case = Case.objects.create(name="Case1", description="Description1")
+        case = Entity.objects.create(
+            name="Case1", description="Description1", type=EntityType.CASE
+        )
 
         response = self.client.delete(
             reverse("case_detail", kwargs={"case_id": case.pk}), **self.headers_normal
@@ -47,7 +52,9 @@ class DeleteCaseDetailsTest(TestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_delete_case_not_authenticated(self):
-        case = Case.objects.create(name="Case1", description="Description1")
+        case = Entity.objects.create(
+            name="Case1", description="Description1", type=EntityType.CASE
+        )
 
         response = self.client.delete(
             reverse("case_detail", kwargs={"case_id": case.pk})
@@ -56,7 +63,9 @@ class DeleteCaseDetailsTest(TestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_delete_case_admin_wrong_id(self):
-        case = Case.objects.create(name="Case1", description="Description1")
+        case = Entity.objects.create(
+            name="Case1", description="Description1", type=EntityType.CASE
+        )
 
         response = self.client.delete(
             reverse("case_detail", kwargs={"case_id": case.pk + 1}),
