@@ -1,6 +1,6 @@
 from typing import Dict, Set
 from entities.models import Entity
-from django.http import Http404
+from ..exceptions import EntitiesDoNotExistException
 
 
 class EntityCheckerTask:
@@ -21,7 +21,7 @@ class EntityCheckerTask:
             True iff all referenced entities exist.
 
         Raises:
-            Http404: The referenced agents or cases do not exist.
+            EntitiesDoNotExistException: The referenced agents or cases do not exist.
         """
 
         referenced_names = [e.name for e in referenced_entities]
@@ -30,7 +30,7 @@ class EntityCheckerTask:
         )
 
         if len(existing_entities) != len(referenced_entities):
-            raise Http404("The referenced agents or cases do not exist.")
+            raise EntitiesDoNotExistException()
 
         return existing_entities
 
