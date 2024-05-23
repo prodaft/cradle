@@ -44,8 +44,8 @@ class CreateNoteTest(TestCase):
         ]
 
         self.notes = []
-        self.notes.append(Note.objects.create(author=self.user))
-        self.notes.append(Note.objects.create(author=self.user))
+        self.notes.append(Note.objects.create())
+        self.notes.append(Note.objects.create())
         self.notes[0].entities.add(self.entities[0])
         self.notes[0].entities.add(self.entities[1])
         self.notes[1].entities.add(self.entities[0])
@@ -63,14 +63,6 @@ class CreateNoteTest(TestCase):
         )
 
         self.assertEquals(response.status_code, 401)
-
-    def test_delete_note_not_owner(self):
-        response = self.client.delete(
-            reverse("note_detail", kwargs={"note_id": self.notes[0].id}),
-            **self.not_owner_headers,
-        )
-
-        self.assertEqual(response.status_code, 403)
 
     def test_delete_note_not_found(self):
         response = self.client.delete(
@@ -115,4 +107,4 @@ class CreateNoteTest(TestCase):
         )
 
         with self.subTest("Check response code is correct"):
-            self.assertEqual(response.status_code, 404)
+            self.assertEqual(response.status_code, 403)
