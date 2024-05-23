@@ -70,24 +70,24 @@ class NoteDetail(APIView):
         """
         try:
             note_to_delete = Note.objects.get(id=note_id)
-
-            if not Access.objects.has_access_to_cases(
-                request.user, note_to_delete.entities.filter(type=EntityType.CASE)
-            ):
-                return Response(
-                    "User does not have Read-Write access to all referenced cases",
-                    status=status.HTTP_403_FORBIDDEN,
-                )
-
-            # perhaps find a better alternative to this
-            for entity in note_to_delete.entities.filter(
-                type__in=[EntityType.ENTRY, EntityType.METADATA]
-            ).all():
-                if Note.objects.filter(entities__id__contains=entity.id).count() == 1:
-                    entity.delete()
-
-            note_to_delete.delete()
-
-            return Response("Note was deleted.", status=status.HTTP_200_OK)
         except Note.DoesNotExist:
             return Response("Note not found.", status=status.HTTP_404_NOT_FOUND)
+
+        if not Access.objects.has_access_to_cases(
+            request.user, note_to_delete.entities.filter(type=EntityType.CASE)
+        ):
+            return Response(
+                "User does not have Read-Write access to all referenced cases",
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # perhaps find a better alternative to this
+        for entity in note_to_delete.entities.filter(
+            type__in=[EntityType.ENTRY, EntityType.METADATA]
+        ).all():
+            if Note.objects.filter(entities__id__contains=entity.id).count() == 1:
+                entity.delete()
+
+        note_to_delete.delete()
+
+        return Response("Note was deleted.", status=status.HTTP_200_OK)
