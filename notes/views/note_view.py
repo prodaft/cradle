@@ -6,9 +6,9 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from ..serializers import NoteCreateSerializer, NoteRetrieveSerializer
 from ..models import Note
-from ..utils.access_checker_task import AccessCheckerTask
 
 from entities.enums import EntityType
+from user.models import Access
 
 
 class NoteList(APIView):
@@ -62,7 +62,8 @@ class NoteDetail(APIView):
             Response(status=200): The note was deleted
             Response("User is not authenticated.",
                 status=401): if the user is not authenticated
-            Response("User cannot delete a Note he does not own.", status=403):
+            Response("User does not have Read-Write access to all cases the Note
+                    references.", status=403):
                 if the user is not the author of the note.
             Response("Note not found", status=404):
                 if the note does not exist.
@@ -70,15 +71,13 @@ class NoteDetail(APIView):
         try:
             note_to_delete = Note.objects.get(id=note_id)
 
-            if request.user.id != note_to_delete.author.id:
+            if not Access.objects.has_access_to_cases(
+                request.user, note_to_delete.entities.filter(type=EntityType.CASE)
+            ):
                 return Response(
-                    "User cannot delete a Note he does not own.",
+                    "User does not have Read-Write access to all referenced cases",
                     status=status.HTTP_403_FORBIDDEN,
                 )
-
-            AccessCheckerTask(request.user).run(
-                {"case": note_to_delete.entities.filter(type=EntityType.CASE)}
-            )
 
             # perhaps find a better alternative to this
             for entity in note_to_delete.entities.filter(
