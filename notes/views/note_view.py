@@ -8,6 +8,9 @@ from ..serializers import NoteCreateSerializer, NoteRetrieveSerializer
 from ..models import Note
 
 from entities.enums import EntityType
+
+from ..utils.entity_utils import EntityUtils
+
 from user.models import Access
 
 
@@ -52,7 +55,8 @@ class NoteDetail(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request: Request, note_id: int) -> Response:
-        """Allow a user to delete a new note, by specifying its id.
+        """Allow a user to delete an already existing note,
+        by specifying its id.
 
         Args:
             request: The request that was sent
@@ -73,21 +77,15 @@ class NoteDetail(APIView):
         except Note.DoesNotExist:
             return Response("Note not found.", status=status.HTTP_404_NOT_FOUND)
 
-        if not Access.objects.has_access_to_cases(
-            request.user, note_to_delete.entities.filter(type=EntityType.CASE)
-        ):
+        referenced_cases = note_to_delete.entities.filter(type=EntityType.CASE)
+
+        if not Access.objects.has_access_to_cases(request.user, referenced_cases):
             return Response(
                 "User does not have Read-Write access to all referenced cases",
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # perhaps find a better alternative to this
-        for entity in note_to_delete.entities.filter(
-            type__in=[EntityType.ENTRY, EntityType.METADATA]
-        ).all():
-            if Note.objects.filter(entities__id__contains=entity.id).count() == 1:
-                entity.delete()
-
         note_to_delete.delete()
+        EntityUtils.delete_unreferenced_entities()
 
         return Response("Note was deleted.", status=status.HTTP_200_OK)
