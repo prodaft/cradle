@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from django.http import HttpRequest
+from rest_framework.request import Request
 
 from ..serializers.entity_serializers import ActorResponseSerializer, ActorSerializer
 from ..models import Entity
@@ -14,7 +14,7 @@ class ActorList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdminUser]
 
-    def get(self, request: HttpRequest) -> Response:
+    def get(self, request: Request) -> Response:
         """Allow an admin to retrieve the details of all Actors
 
         Args:
@@ -34,7 +34,7 @@ class ActorList(APIView):
 
         return Response(serializer.data)
 
-    def post(self, request: HttpRequest) -> Response:
+    def post(self, request: Request) -> Response:
         """Allow an admin to create a new Actor by specifying its name
 
         Args:
@@ -67,7 +67,7 @@ class ActorDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdminUser]
 
-    def delete(self, request: HttpRequest, actor_id: int) -> Response:
+    def delete(self, request: Request, actor_id: int) -> Response:
         """Allow an admin to delete an Actor by specifying its id
 
         Args:

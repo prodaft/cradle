@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from ..serializers import NoteCreateSerializer, NoteRetrieveSerializer
-from django.http import HttpRequest
+from rest_framework.request import Request
 
 
 class NoteList(APIView):
@@ -12,7 +12,7 @@ class NoteList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def post(self, request: HttpRequest) -> Response:
+    def post(self, request: Request) -> Response:
         """Allow a user to create a new note, by sending the text itself.
         This text should be validated to meet the requirements
         (i.e. reference at least two Entities, one of which must be a Case).
