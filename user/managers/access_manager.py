@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ObjectDoesNotExist
 from typing import Set
 from ..enums import AccessType
 from ..models.cradle_user_model import CradleUser
@@ -23,7 +24,7 @@ class AccessManager(models.Manager):
             return True
 
         accesses = self.get_queryset().filter(
-            user_id=user.id, case_id__in=case_ids, access_type=AccessType.READ_WRITE
+            user_id=user.pk, case_id__in=case_ids, access_type=AccessType.READ_WRITE
         )
         return accesses.count() == len(case_ids)
 
@@ -69,7 +70,7 @@ class AccessManager(models.Manager):
 
         try:
             access = self.get_queryset().get(user=user, case=case)
-        except models.ObjectDoesNotExist:
+        except ObjectDoesNotExist:
             return False
 
         return access.access_type in [AccessType.READ_WRITE, AccessType.READ]
