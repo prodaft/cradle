@@ -30,7 +30,7 @@ class AccessCheckerTask:
             NoAccessToEntitiesException: The referenced agents or cases do not exist.
         """
 
-        referenced_case_ids = {case.id for case in referenced_entities["case"]}
+        referenced_case_ids = {case.pk for case in referenced_entities["case"]}
 
         if not Access.objects.has_access_to_cases(self.user, referenced_case_ids):
             raise NoAccessToEntitiesException()

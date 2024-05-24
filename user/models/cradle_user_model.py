@@ -7,7 +7,7 @@ class CradleUser(AbstractUser):
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["password"]
 
-    objects = CradleUserManager()
+    objects: CradleUserManager = CradleUserManager()
 
     def __str__(self):
         return self.username
