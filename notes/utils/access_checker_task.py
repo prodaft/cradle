@@ -2,7 +2,7 @@ from typing import Dict, Set
 from entities.models import Entity
 from user.models.access_model import Access
 from user.models.cradle_user_model import CradleUser
-from django.http import Http404
+from ..exceptions import NoAccessToEntitiesException
 
 
 class AccessCheckerTask:
@@ -27,11 +27,11 @@ class AccessCheckerTask:
             case of this task, the old dictionary is returned.
 
         Raises:
-            Http404: The referenced agents or cases do not exist.
+            NoAccessToEntitiesException: The referenced agents or cases do not exist.
         """
 
-        referenced_case_ids = {case.id for case in referenced_entities["case"]}
+        referenced_case_ids = {case.pk for case in referenced_entities["case"]}
 
         if not Access.objects.has_access_to_cases(self.user, referenced_case_ids):
-            raise Http404("The referenced agents or cases do not exist.")
+            raise NoAccessToEntitiesException()
         return referenced_entities

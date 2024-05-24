@@ -4,6 +4,7 @@ from rest_framework_simplejwt.tokens import Token
 from .models.access_model import CradleUser, Access
 from .exceptions import DuplicateUserException
 from .enums import AccessType
+from typing import Dict, List
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -11,7 +12,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CradleUser
         fields = ["username", "password"]
-        extra_kwargs = {"username": {"validators": []}}
+        extra_kwargs: Dict[str, Dict[str, List]] = {"username": {"validators": []}}
 
     def validate(self, data):
         """First checks whether there exists another user with the

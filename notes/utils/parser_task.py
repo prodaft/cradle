@@ -61,18 +61,18 @@ class ParserTask:
                 )
 
                 # create entities that contain attributes specified in the references
-                referenced_entities[entity] = map(
-                    lambda tup: Entity(name=tup[1], type=entity, subtype=tup[0]),
-                    valid_references,
+                referenced_entities[entity] = set(
+                    map(
+                        lambda tup: Entity(name=tup[1], type=entity, subtype=tup[0]),
+                        valid_references,
+                    )
                 )
             else:
                 # each ref is of the form: (name, alias)
 
                 # create entities that contain attributes specified in the references
-                referenced_entities[entity] = map(
-                    lambda tup: Entity(name=tup[0], type=entity), references
+                referenced_entities[entity] = set(
+                    map(lambda tup: Entity(name=tup[0], type=entity), references)
                 )
-
-            referenced_entities[entity] = set(referenced_entities[entity])
 
         return referenced_entities

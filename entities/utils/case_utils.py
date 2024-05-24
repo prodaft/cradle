@@ -1,6 +1,6 @@
 from django.db.models.query import QuerySet
 from typing import Dict
-
+from rest_framework.utils.serializer_helpers import ReturnDict
 from user.models import CradleUser
 from entities.models import Entity
 from entities.serializers.entity_serializers import (
@@ -30,7 +30,7 @@ class CaseUtils:
         metadata: QuerySet,
         entries: QuerySet,
         user: CradleUser,
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Dict[str, ReturnDict]]:
         """Return a dictionary containing the dashboard of the case
 
         Args:

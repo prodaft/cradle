@@ -11,10 +11,12 @@ from .enums import EntityType, EntitySubtype
 
 
 class Entity(models.Model):
-    name = models.CharField()
-    description = models.TextField(null=True, blank=True)
-    type = models.CharField(max_length=20, choices=EntityType.choices)
-    subtype = models.CharField(max_length=20, choices=EntitySubtype.choices, blank=True)
+    name: models.CharField = models.CharField()
+    description: models.TextField = models.TextField(null=True, blank=True)
+    type: models.CharField = models.CharField(max_length=20, choices=EntityType.choices)
+    subtype: models.CharField = models.CharField(
+        max_length=20, choices=EntitySubtype.choices, blank=True
+    )
 
     objects = EntityManager()
     actors = ActorManager()
