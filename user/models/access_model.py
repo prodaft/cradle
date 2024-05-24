@@ -7,9 +7,13 @@ from .cradle_user_model import CradleUser
 
 class Access(models.Model):
 
-    user = models.ForeignKey(CradleUser, on_delete=models.CASCADE, to_field="id")
-    case = models.ForeignKey(Entity, on_delete=models.CASCADE, to_field="id", null=True)
-    access_type = models.CharField(
+    user: models.ForeignKey = models.ForeignKey(
+        CradleUser, on_delete=models.CASCADE, to_field="id"
+    )
+    case: models.ForeignKey = models.ForeignKey(
+        Entity, on_delete=models.CASCADE, to_field="id", null=True
+    )
+    access_type: models.CharField = models.CharField(
         max_length=20, choices=AccessType.choices, default=AccessType.NONE
     )
 
