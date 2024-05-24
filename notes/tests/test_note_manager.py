@@ -2,10 +2,9 @@ from django.test import TestCase
 from entities.models import Entity
 from entities.enums import EntitySubtype, EntityType
 from ..models import Note
-from ..utils.entity_utils import EntityUtils
 
 
-class TestEntityUtils(TestCase):
+class TestNoteManager(TestCase):
     def setUp(self):
         self.case = Entity.objects.create(
             name="Clearly not a case", type=EntityType.CASE
@@ -39,7 +38,7 @@ class TestEntityUtils(TestCase):
         self.note.entities.add(self.metadata[1])
 
     def test_delete_unfiltered_entities(self):
-        EntityUtils.delete_unreferenced_entities()
+        Note.objects.delete_unreferenced_entities()
 
         with self.subTest("Check unreferenced entries are deleted"):
             self.assertEqual(Entity.entries.count(), 2)
