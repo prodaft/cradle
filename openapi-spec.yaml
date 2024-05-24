@@ -692,7 +692,7 @@ paths:
         '401': 
           description: User is not authenticated.
         '403': 
-          description: User cannot delete a Note if he does not have Read-Write access to the referenced case.
+          description: User cannot delete a Note if they do not have Read-Write access to the referenced case.
         '404':
           description: Note not found.
     get:
