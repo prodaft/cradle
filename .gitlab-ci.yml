@@ -44,6 +44,17 @@ migrations:
       - $CI_PROJECT_DIR/*/migrations/*
     expire_in: 2 days
     
+# Code quality
+codequality: 
+  stage: build
+  script:  
+    - pipenv run mypy --no-error-summary > mypy-out.txt || true
+    - pipenv run mypy-gitlab-code-quality < mypy-out.txt > codequality.json
+  artifacts:
+    when: always
+    reports:
+      codequality: codequality.json
+
 # Testing
 django-tests:
   stage: test
@@ -52,4 +63,3 @@ django-tests:
     - pipenv run coverage run manage.py test
     - pipenv run coverage report
   coverage: "/TOTAL.+ ([0-9]{1,3}%)/"
-
