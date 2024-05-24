@@ -1,12 +1,11 @@
+from django.db import models
 from django.db.models import Count
 
 from entities.models import Entity
 from entities.enums import EntityType
 
-
-class EntityUtils:
-    @staticmethod
-    def delete_unreferenced_entities() -> None:
+class NoteManager(models.Manager):
+    def delete_unreferenced_entities(self) -> None:
         """Deletes entities of type ENTRY and METADATA that
         are not referenced by any notes.
 

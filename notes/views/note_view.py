@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework import status
@@ -8,8 +9,6 @@ from ..serializers import NoteCreateSerializer, NoteRetrieveSerializer
 from ..models import Note
 
 from entities.enums import EntityType
-
-from ..utils.entity_utils import EntityUtils
 
 from user.models import Access
 
@@ -85,7 +84,8 @@ class NoteDetail(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        note_to_delete.delete()
-        EntityUtils.delete_unreferenced_entities()
+        with transaction.atomic():
+            note_to_delete.delete()
+            Note.objects.delete_unreferenced_entities()
 
         return Response("Note was deleted.", status=status.HTTP_200_OK)
