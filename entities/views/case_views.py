@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.http import HttpRequest
+from rest_framework.request import Request
 
 from ..serializers.entity_serializers import CaseSerializer, CaseResponseSerializer
 from ..serializers.dashboard_serializers import CaseDashboardSerializer
@@ -18,7 +19,7 @@ class CaseList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdminUser]
 
-    def get(self, request: HttpRequest) -> Response:
+    def get(self, request: Request) -> Response:
         """Allow an admin to retrieve the details of all Cases
 
         Args:
@@ -38,7 +39,7 @@ class CaseList(APIView):
 
         return Response(serializer.data)
 
-    def post(self, request: HttpRequest) -> Response:
+    def post(self, request: Request) -> Response:
         """Allow an admin to create a new Case by specifying its name
 
         Args:
@@ -71,7 +72,7 @@ class CaseDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdminUser]
 
-    def delete(self, request: HttpRequest, case_id: int) -> Response:
+    def delete(self, request: Request, case_id: int) -> Response:
         """Allow an admin to delete a Case by specifying its id
 
         Args:

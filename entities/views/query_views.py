@@ -40,7 +40,7 @@ class QueryList(APIView):
                 "Query parameters are invalid", status=status.HTTP_400_BAD_REQUEST
             )
 
-        accessible_entities = Entity.objects
+        accessible_entities = Entity.objects.all()
         if not request.user.is_superuser:
             accessible_entities = accessible_entities.filter(
                 (~Q(type="case") & ~Q(type="metadata"))
