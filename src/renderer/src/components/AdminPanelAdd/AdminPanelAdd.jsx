@@ -3,6 +3,7 @@ import React, {useState} from "react";
 import AlertBox from "../AlertBox/AlertBox";
 import {createActor, createCase} from "../../services/adminService/adminService";
 import {useAuth} from "../../hooks/useAuth/useAuth";
+import { displayError } from "../../utils/responseUtils/responseUtils";
 
 /**
  * AdminPanelAdd component - This component is used to display the form for adding a new Actor or Case.
@@ -18,6 +19,7 @@ export default function AdminPanelAdd(props){
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [error, setError] = useState("");
+    const [errorColor, setErrorColor] = useState("red");
     const navigate = useNavigate();
     const auth = useAuth();
 
@@ -32,11 +34,7 @@ export default function AdminPanelAdd(props){
             }
             navigate("/admin");
         }catch (err) {
-            if(err.response && err.response.status === 401){
-                setError("Invalid token. Please login again.");
-            }else{
-                setError("Network error");
-            }
+            displayError(setError, setErrorColor)(err);
         }
     };
 
@@ -55,7 +53,7 @@ export default function AdminPanelAdd(props){
                                    placeholder="Name" onChange={(e) => setName(e.target.value)}/>
                             <textarea className="textarea-ghost-primary textarea-block focus:ring-0 textarea"
                                       placeholder="Description" onChange={(e) => setDescription(e.target.value)}/>
-                            {error && (<AlertBox title={error} text=""/>)}
+                            {error && (<AlertBox title={error} color={errorColor} />)}
                             <button
                                 className="btn btn-success btn-block"
                                 onClick={handleSubmit}
