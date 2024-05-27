@@ -7,9 +7,10 @@ import { parseContent } from '../../utils/textEditorUtils/textEditorUtils.js'
 import NavbarItem from "../NavbarItem/NavbarItem";
 import useNavbarContents from "../../hooks/useNavbarContents/useNavbarContents";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth/useAuth.js";
 import { AlertDismissible } from "../AlertDismissible/AlertDismissible.jsx";
+import { displayError } from "../../utils/responseUtils/responseUtils.js";
 
 /**
  * The text editor is composed of two sub-components, the Editor and the Preview. View their documentation for more details
@@ -23,6 +24,20 @@ export default function TextEditor() {
     const [alertColor, setAlertColor] = useState("red");
     const navigate = useNavigate();
     const parsedContent = parseContent(markdownContent);
+
+    // Check if the system theme is light mode
+    const [isLightMode, setIsLightMode] = useState(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
+        const handleChange = (e) => {
+            setIsLightMode(e.matches);
+        };
+        mediaQuery.addEventListener('change', handleChange);
+        return () => {
+            mediaQuery.removeEventListener('change', handleChange);
+        };
+    }, []);
 
     // Attempt to send the note to the server. If successful, clear the local storage. Otherwise, display the error.
     const handleSaveNote = async () => {
@@ -42,15 +57,7 @@ export default function TextEditor() {
                 setAlertColor("green");
                 setAlert("Note saved successfully");
             } 
-        }).catch((err) => {
-            if (err.response && err.response.data && err.response.data.content) {
-                setAlertColor("red");
-                setAlert(`${err.response.status}: ${err.response.data.content}`);
-            } else {
-                setAlertColor("red");
-                setAlert(err.message);
-            }
-        });
+        }).catch(displayError(setAlert, setAlertColor));
     }
 
     useNavbarContents([
@@ -63,8 +70,8 @@ export default function TextEditor() {
     return (
         <div className="w-full h-full rounded-md flex flex-1 flex-col p-1.5 gap-1.5 sm:flex-row overflow-y-hidden">
             <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
-            <Editor markdownContent={markdownContent} setMarkdownContent={setMarkdownContentCallback} />
-            <Preview htmlContent={parsedContent} />
+            <Editor markdownContent={markdownContent} setMarkdownContent={setMarkdownContentCallback} isLightMode={isLightMode} />
+            <Preview htmlContent={parsedContent} isLightMode={isLightMode} />
         </div>
     )
 }

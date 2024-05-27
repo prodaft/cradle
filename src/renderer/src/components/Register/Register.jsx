@@ -4,7 +4,7 @@ import {Link} from "react-router-dom"
 import { registerReq } from "../../services/authReqService/authReqService";
 import AlertBox from "../AlertBox/AlertBox";
 import { useNavigate } from "react-router-dom";
-
+import { displayError } from "../../utils/responseUtils/responseUtils";
 
 /**
  * Register component - renders the registration form.
@@ -18,6 +18,7 @@ export default function Register(){
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+  const [errorColor, setErrorColor] = useState("red");
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -25,16 +26,9 @@ export default function Register(){
 
       const data = {username: username, password: password};
       
-      registerReq(data).then(function (response) {
-        navigate("/login")
-      })
-      .catch(function (err) {
-        if(err.response && err.response.status === 400){
-          setError("Username already in use");
-        }else{
-            setError("Network error");
-        }
-      });
+      registerReq(data)
+        .then((res) => navigate("/login"))
+        .catch(displayError(setError, setErrorColor));
     };
 
     return (
@@ -51,7 +45,7 @@ export default function Register(){
                       <FormField name="username" labelText="Username" type="text" handleInput={setUsername}/>
                       <FormField name="password" labelText="Password" type="password"
                                  handleInput={setPassword}/>
-                      {error && (<AlertBox title={error} text=""/>)}
+                {error && (<AlertBox title={error} color={errorColor} />)}
                       <button
                           type="submit"
                           data-testid="login-register-button"

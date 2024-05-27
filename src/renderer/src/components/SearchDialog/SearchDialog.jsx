@@ -7,6 +7,7 @@ import {useAuth} from "../../hooks/useAuth/useAuth";
 import AlertBox from "../AlertBox/AlertBox";
 import SearchResult from "../SearchResult/SearchResult";
 import {useNavigate} from "react-router-dom";
+import { displayError } from '../../utils/responseUtils/responseUtils';
 
 /**
  * Dialog to search for entities
@@ -28,7 +29,8 @@ export default function SearchDialog({ isOpen, onClose }) {
     const [entityTypeFilters, setEntityTypeFilters] = useState([]);
     const [entitySubtypeFilters, setEntitySubtypeFilters] = useState([]);
     const [results, setResults] = useState([]);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState("");
+    const [errorColor, setErrorColor] = useState("red");
     const dialogRoot = document.getElementById('portal-root');
     const navigate = useNavigate();
 
@@ -60,13 +62,7 @@ export default function SearchDialog({ isOpen, onClose }) {
                     <SearchResult name={result.name} type={result.type} subtype={result.subtype} onClick={handleResultClick("/not-implemented")}/>
                 )));
             })
-            .catch((error) => {
-                if(error.response && error.response.status === 401) {
-                    setError('Invalid token. Please log in again.');
-                }else{
-                    setError('An error occurred. Please try again.');
-                }
-            });
+            .catch(displayError(setError, setErrorColor));
     }
 
     if (!isOpen) return null;
@@ -100,7 +96,7 @@ export default function SearchDialog({ isOpen, onClose }) {
                     showFilters={showFilters} setShowFilters={setShowFilters}
                     entityTypeFilters={entityTypeFilters} setEntityTypeFilters={setEntityTypeFilters}
                     entryTypeFilters={entitySubtypeFilters} setEntryTypeFilters={setEntitySubtypeFilters} />
-                {error && (<AlertBox title="Error" text={error}/>)}
+                {error && (<AlertBox title={error} color={errorColor} />)}
                 <div className="flex-grow overflow-y-auto no-scrollbar space-y-2">
                     {results}
                 </div>

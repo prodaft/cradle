@@ -5,6 +5,7 @@ import {useAuth} from "../../hooks/useAuth/useAuth";
 import AdminPanelPermissionCard from "../AdminPanelPermissionCard/AdminPanelPermissionCard";
 import useFrontendSearch from "../../hooks/useFrontendSearch/useFrontendSearch";
 import {AlertDismissible} from "../AlertDismissible/AlertDismissible";
+import { displayError } from "../../utils/responseUtils/responseUtils";
 
 /**
  * AdminPanelUserPermissions component - This component is used to display the permissions for a specific user.
@@ -19,6 +20,7 @@ export default function AdminPanelUserPermissions() {
     const { username, id } = useParams();
     const [cases, setCases] = useState([]);
     const [alert, setAlert] = useState("");
+    const [alertColor, setAlertColor] = useState("red");
     const auth = useAuth();
 
     const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(cases);
@@ -33,18 +35,12 @@ export default function AdminPanelUserPermissions() {
                     );
                 }));
             }
-        }).catch((error) => {
-            if(error.response && error.response.status === 401){
-                setAlert("Invalid token. Please login again.");
-            }else {
-                setAlert("Error fetching permissions");
-            }
-        });
+        }).catch(displayError(setAlert, setAlertColor));
     }, [id]);
 
     return (
         <>
-        <AlertDismissible alert={alert} setAlert={setAlert}/>
+            <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
         <div className="w-full h-full overflow-x-hidden overflow-y-scroll">
             <div className="container w-[70%] h-fit mx-auto my-4 center bg-gray-2 p-10 rounded-md">
                 <h1 className="text-3xl font-bold">User Permissions</h1>

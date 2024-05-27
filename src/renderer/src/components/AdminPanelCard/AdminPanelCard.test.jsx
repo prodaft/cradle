@@ -54,16 +54,17 @@ describe('AdminPanelCard', () => {
 
     it('should display error alert on deleteEntity failure', async () => {
         deleteEntity.mockRejectedValue(new Error('Failed to delete'));
-        const { getByRole, getByText, findByText } = render( <AuthProvider>
+        const { getByRole, getByText, findByText, findByTestId } = render(<AuthProvider>
             <MemoryRouter>
-                <AdminPanelCard name="Test" id="1" description="Test description" type="testType" onDelete={() => {}} link="/not-implemented"/>
+                <AdminPanelCard name="Test" id="1" description="Test description" type="testType" onDelete={() => { }} link="/not-implemented" />
             </MemoryRouter>
-        </AuthProvider>);
+        </AuthProvider>
+        );
 
         fireEvent.click(getByRole('button'));
         fireEvent.click(getByText('Confirm'));
 
-        const errorMessage = await findByText("Error deleting entity: " + "Test");
+        const errorMessage = await findByText('Failed to delete');
         expect(errorMessage).toBeInTheDocument();
     });
 });
