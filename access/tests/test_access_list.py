@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
-from ..models.cradle_user_model import CradleUser
-from ..models.access_model import Access
+from user.models import CradleUser
+from ..models import Access
 from ..enums import AccessType
 from entities.models import Entity
 from rest_framework.parsers import JSONParser
@@ -16,7 +16,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class UpdateAccessTest(TestCase):
+class AccessListTest(TestCase):
 
     def setUp(self):
         self.user = CradleUser.objects.create_user(username="user", password="pass")

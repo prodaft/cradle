@@ -16,6 +16,8 @@ tags:
     description: Operations targeting a user's account.
   - name: Admin
     description: Administrative operations.
+  - name: Access
+    description: Handles Case-Level Access
   - name: Entity
     description: Operations targeting Entities.
   - name: Note
@@ -145,19 +147,6 @@ paths:
           description: >
             The credentials given are invalid. 
             
-
-  /users/logout:
-    post:
-      tags:
-        - User
-      summary: Log out of account
-      description: Allows a user to log out of their account
-      operationId: accountLogout
-      responses:
-        '200':
-          description: The User was logged out successfully.
-        '401':
-          description: The User is not authenticated. 
 
   /notifications/{userId}:
     get:
@@ -307,10 +296,10 @@ paths:
         '409':
           description: Case already exists.
 
-  /users/{userId}/access:
+  /access/{userId}/:
     get:
       tags:
-        - User
+        - Access
         - Admin
       summary: Get access privileges of a users.
       responses:
@@ -332,10 +321,10 @@ paths:
           description: User not found.
 
 
-  /users/{userId}/access/{caseId}:
+  /access/{userId}/{caseId}:
     put:
       tags:
-        - User
+        - Access
         - Admin
       summary: Update access of a user
       description: Allow an admin to change the access privileges of a user by specifying its id

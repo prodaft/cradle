@@ -11,7 +11,8 @@ from ..serializers.dashboard_serializers import CaseDashboardSerializer
 from ..models import Entity
 from ..enums import EntityType
 from ..utils.case_utils import CaseUtils
-from user.models import Access
+from access.models import Access
+from access.enums import AccessType
 
 
 class CaseList(APIView):
@@ -131,7 +132,9 @@ class CaseDashboard(APIView):
                 "There is no case with specified name", status=status.HTTP_404_NOT_FOUND
             )
 
-        if not Access.objects.has_access_to_case(user, case):
+        if not Access.objects.has_access_to_cases(
+            user, {case}, {AccessType.READ, AccessType.READ_WRITE}
+        ):
             return Response(
                 "There is no case with specified name", status=status.HTTP_404_NOT_FOUND
             )

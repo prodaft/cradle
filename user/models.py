@@ -1,5 +1,5 @@
 from django.contrib.auth.models import AbstractUser
-from ..managers.cradle_user_manager import CradleUserManager
+from .managers import CradleUserManager
 
 
 class CradleUser(AbstractUser):

@@ -8,8 +8,8 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from ..models import Entity
 from ..enums import EntityType, EntitySubtype
-from user.models import Access
-from user.enums import AccessType
+from access.models import Access
+from access.enums import AccessType
 
 
 def bytes_to_json(data):

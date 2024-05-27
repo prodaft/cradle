@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
-from ..models.access_model import CradleUser
+from ..models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 
 

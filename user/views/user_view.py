@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from ..serializers import UserCreateSerializer, UserRetrieveSerializer
 
-from ..models.access_model import CradleUser
+from ..models import CradleUser
 
 
 class UserList(APIView):

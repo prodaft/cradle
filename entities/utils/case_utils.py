@@ -13,8 +13,8 @@ from entities.serializers.dashboard_serializers import (
     NoteDashboardSerializer,
     CaseAccessSerializer,
 )
-from user.models import Access
-from user.enums import AccessType
+from access.models import Access
+from access.enums import AccessType
 from ..enums import EntityType
 from notes.models import Note
 
@@ -49,7 +49,9 @@ class CaseUtils:
 
         for c in cases:
             case_json = CaseSerializer(c).data
-            case_json["access"] = Access.objects.has_access_to_case(user, c)
+            case_json["access"] = Access.objects.has_access_to_cases(
+                user, {c}, {AccessType.READ, AccessType.READ_WRITE}
+            )
             case_list.append(case_json)
 
         note_list = []
