@@ -63,12 +63,14 @@ describe('SearchDialog', () => {
 
     it('displays an error message on query failure', async () => {
         queryEntities.mockRejectedValueOnce({ response: { status: 401 } });
-        render(<SearchDialog isOpen={true} onClose={mockOnClose} />);
+        const { getByTestId } = render(<SearchDialog isOpen={true} onClose={mockOnClose} />);
 
         fireEvent.change(screen.getByPlaceholderText('Search...'), { target: { value: 'test' } });
         fireEvent.click(screen.getByRole('button'));
 
-        await waitFor(() => expect(screen.getByText('Invalid token. Please log in again.')).toBeInTheDocument());
+        await waitFor(() => {
+            expect(getByTestId('auth-err-alert')).toBeInTheDocument();
+        });
     });
 
     it('calls onClose and navigate on result click', async () => {

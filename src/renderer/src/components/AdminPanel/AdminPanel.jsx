@@ -5,6 +5,7 @@ import {getActors, getCases, getUsers} from "../../services/adminService/adminSe
 import AdminPanelCard from "../AdminPanelCard/AdminPanelCard";
 import {useEffect, useState} from "react";
 import {AlertDismissible} from "../AlertDismissible/AlertDismissible";
+import { displayError } from "../../utils/responseUtils/responseUtils";
 
 /**
  * AdminPanel component - This component is used to display the AdminPanel.
@@ -27,14 +28,8 @@ export default function AdminPanel() {
     const [users, setUsers] = useState([]);
     const [alert, setAlert] = useState("");
     const navigate = useNavigate();
-
-    const handleError = (error) => {
-        if(error.response && error.response.status === 401){
-            setAlert("Invalid token. Please login again.")
-        }else{
-            setAlert("Error fetching data")
-        }
-    }
+    const [alertColor, setAlertColor] = useState("red");
+    const handleError = displayError(setAlert, setAlertColor);
 
     const displayActors = async () => {
         getActors(auth.access).then((response) => {
@@ -106,7 +101,7 @@ export default function AdminPanel() {
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
+            <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
             <div className="w-full h-full rounded-md flex flex-row p-1.5 gap-1.5 overflow-x-hidden overflow-y-scroll">
                 <AdminPanelSection title={"Actors"} addEnabled={true} addTooltipText={"Add Actor"} handleAdd={() => navigate("/admin/add-actor")}>
                     {actors}

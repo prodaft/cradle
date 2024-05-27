@@ -3,9 +3,11 @@ import { vim } from "@replit/codemirror-vim";
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
 import { drawSelection } from "@uiw/react-codemirror";
-import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import { useState } from "react";
 import { EditorView } from '@codemirror/view';
+
+import { vscodeDark } from '@uiw/codemirror-theme-vscode';
+import { eclipse } from '@uiw/codemirror-theme-eclipse';
 
 /**
  * This component makes use of a pre-existing code editor component (CodeMirror, see https://github.com/uiwjs/react-codemirror)
@@ -15,7 +17,7 @@ import { EditorView } from '@codemirror/view';
  * @param {(string) => void} setMarkdownContent - callback used when the value of the content changes
  * @returns {Editor}
  */
-export default function Editor({ markdownContent, setMarkdownContent }) {
+export default function Editor({ markdownContent, setMarkdownContent, isLightMode }) {
     const [enableVim, setEnableVim] = useState(false);
 
     // Set extension here
@@ -51,7 +53,7 @@ export default function Editor({ markdownContent, setMarkdownContent }) {
                     name="markdown-input"
                     id="markdown-input"
                     data-testid="markdown-input"
-                    theme={vscodeDark}
+                    theme={isLightMode ? eclipse : vscodeDark}
                     height="100%"
                     extensions={extensions}
                     className="w-full h-full resize-none"

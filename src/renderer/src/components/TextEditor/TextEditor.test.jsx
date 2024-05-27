@@ -35,6 +35,8 @@ console.log("Hello world!");
 
 jest.mock('../../hooks/useNavbarContents/useNavbarContents', () => () => { });
 
+
+
 jest.mock('../../hooks/useAuth/useAuth', () => ({
     useAuth: jest.fn().mockImplementation(() => {
         return { access: 'testToken', isAdmin: false };
@@ -45,9 +47,16 @@ jest.mock('../../services/textEditorService/textEditorService', () => ({
     saveNote: jest.fn()
 }));
 
-beforeEach(() => {
-    localStorage.clear();
-});
+window.matchMedia = jest.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+}));
 
 test('renders as expected', () => {
     render(
