@@ -7,6 +7,8 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from ..serializers import NoteCreateSerializer, NoteRetrieveSerializer
 from ..models import Note
+from user.models import CradleUser
+from typing import cast
 
 from entities.enums import EntityType
 
@@ -80,7 +82,7 @@ class NoteDetail(APIView):
 
         referenced_cases = note_to_delete.entities.filter(type=EntityType.CASE)
 
-        if not Access.objects.has_access_to_cases(request.user, referenced_cases):
+        if not Access.objects.has_access_to_cases(cast(CradleUser, request.user), set(referenced_cases)):
             return Response(
                 "User does not have Read-Write access to all referenced cases",
                 status=status.HTTP_403_FORBIDDEN,
