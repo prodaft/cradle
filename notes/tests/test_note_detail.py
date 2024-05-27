@@ -6,8 +6,8 @@ from rest_framework.parsers import JSONParser
 from ..models import Note
 from entities.models import Entity
 from entities.enums import EntityType, EntitySubtype
-from user.models import Access
-from user.enums import AccessType
+from access.models import Access
+from access.enums import AccessType
 import io
 
 

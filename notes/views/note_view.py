@@ -8,11 +8,12 @@ from rest_framework.permissions import IsAuthenticated
 from ..serializers import NoteCreateSerializer, NoteRetrieveSerializer
 from ..models import Note
 from user.models import CradleUser
+from access.enums import AccessType
 from typing import cast
 
 from entities.enums import EntityType
 
-from user.models import Access
+from access.models import Access
 
 
 class NoteList(APIView):
@@ -83,7 +84,9 @@ class NoteDetail(APIView):
         referenced_cases = note_to_delete.entities.filter(type=EntityType.CASE)
 
         if not Access.objects.has_access_to_cases(
-            cast(CradleUser, request.user), set(referenced_cases)
+            cast(CradleUser, request.user),
+            set(referenced_cases),
+            set([AccessType.READ, AccessType.READ_WRITE]),
         ):
             return Response(
                 "User does not have Read-Write access to all referenced cases",
