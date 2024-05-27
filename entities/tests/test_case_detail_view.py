@@ -1,5 +1,5 @@
 from django.test import TestCase
-from user.models.access_model import CradleUser
+from user.models import CradleUser
 from django.urls import reverse
 from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
