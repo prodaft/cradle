@@ -6,7 +6,7 @@ from unittest.mock import patch, PropertyMock
 
 from ..models import Entity
 from ..enums import EntityType, EntitySubtype
-from user.models import Access
+from access.models import Access
 from notes.models import Note
 from ..utils.case_utils import CaseUtils
 

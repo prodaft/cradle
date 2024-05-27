@@ -1,8 +1,8 @@
 from django.db import models
 from entities.models import Entity
-from ..managers.access_manager import AccessManager
-from ..enums import AccessType
-from .cradle_user_model import CradleUser
+from .managers import AccessManager
+from .enums import AccessType
+from user.models import CradleUser
 
 
 class Access(models.Model):
