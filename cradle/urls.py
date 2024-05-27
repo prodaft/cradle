@@ -21,5 +21,6 @@ urlpatterns = [
     path("users/", include("user.urls")),
     path("entities/", include("entities.urls")),
     path("notes/", include("notes.urls")),
+    path("access/", include("access.urls")),
     path("api-auth/", include("rest_framework.urls")),
 ]

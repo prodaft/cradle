@@ -3,12 +3,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from django.http import HttpRequest
+from rest_framework.request import Request
 
-
-from ..models.access_model import Access, CradleUser
+from user.models import CradleUser
 from entities.models import Entity
-
+from ..models import Access
 from ..serializers import AccessSerializer, AccessCaseSerializer
 
 
@@ -18,7 +17,7 @@ class AccessList(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
     serializer_class = AccessCaseSerializer
 
-    def get(self, request: HttpRequest, user_id: int) -> Response:
+    def get(self, request: Request, user_id: int) -> Response:
         """Allows an admin to get the access priviliges of a User
             on all Cases.
 
@@ -44,7 +43,7 @@ class AccessList(APIView):
         except CradleUser.DoesNotExist:
             return Response("User does not exist", status=status.HTTP_404_NOT_FOUND)
 
-        cases_with_access = Entity.cases.get_accesses(user)
+        cases_with_access = Access.objects.get_accesses(user)
 
         serializer = AccessCaseSerializer(
             cases_with_access, context={"is_admin": user.is_superuser}, many=True

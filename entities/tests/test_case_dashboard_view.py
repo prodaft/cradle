@@ -8,7 +8,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from ..models import Entity
 from ..enums import EntityType
-from user.models import Access
+from access.models import Access
 from notes.models import Note
 from ..serializers.dashboard_serializers import CaseDashboardSerializer
 from ..utils.case_utils import CaseUtils
