@@ -4,7 +4,7 @@ from entities.models import Entity
 from entities.enums import EntityType, EntitySubtype
 
 
-class AccessManagerTest(TestCase):
+class EntityManagerTest(TestCase):
 
     def setUp(self):
         self.cases = [

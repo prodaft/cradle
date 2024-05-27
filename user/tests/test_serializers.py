@@ -1,6 +1,6 @@
 from django.test import TestCase
 from ..serializers import TokenObtainSerializer
-from ..models.access_model import CradleUser
+from ..models import CradleUser
 
 
 class TokenObtainSerializerTest(TestCase):
