@@ -10,7 +10,7 @@ import { handleLinkClick } from "../../utils/textEditorUtils/textEditorUtils";
  * @param {string} content - the (HTML) content to preview
  * @returns {Preview}
  */
-export default function Preview({ htmlContent }) {
+export default function Preview({ htmlContent, isLightMode }) {
     const sanitizedContent = DOMPurify.sanitize(htmlContent);
     const navigate = useNavigate();
 
@@ -27,8 +27,9 @@ export default function Preview({ htmlContent }) {
     }, [navigate]);
 
     return (
-        <div className="h-1/2 sm:h-full p-4 bg-zinc-800 prose w-full !max-w-none prose-invert prose-img:w-fit break-all
-             overflow-y-scroll rounded-lg" dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+        <div className={`h-1/2 sm:h-full p-4 prose w-full !max-w-none bg-gray-2
+            ${isLightMode ? "" : "prose-invert"} prose-img:w-fit break-all
+            overflow-y-scroll rounded-lg`} dangerouslySetInnerHTML={{ __html: sanitizedContent }}
             data-testid="preview">
         </div>
     )

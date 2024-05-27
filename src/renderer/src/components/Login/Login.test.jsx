@@ -74,7 +74,14 @@ describe('Login component', () => {
   });
 
     it('should show error message when unexpected error occurs', async () => {
-        logInReq.mockRejectedValueOnce({ response: { status: 500 } });
+      logInReq.mockRejectedValueOnce({
+        response: {
+          status: 500,
+          data: {
+            detail: 'Internal Server Error',
+          },
+        }
+      });
 
         const { getByLabelText, getByTestId } = setupTestComponent();
 
