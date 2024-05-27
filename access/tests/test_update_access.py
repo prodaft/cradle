@@ -1,10 +1,12 @@
 from django.test import TestCase
 from django.urls import reverse
-from ..models.access_model import CradleUser, AccessType, Access
 from entities.models import Entity
 from rest_framework_simplejwt.tokens import AccessToken
 
 from entities.enums import EntityType
+from user.models import CradleUser
+from ..models import Access
+from ..enums import AccessType
 
 
 class UpdateAccessTest(TestCase):

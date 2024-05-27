@@ -8,7 +8,7 @@ from django.db.models import Q, Subquery
 
 from ..models import Entity
 
-from user.models.access_model import Access
+from access.models import Access
 
 from ..serializers.entity_serializers import EntitySerializer, EntityQuerySerializer
 
