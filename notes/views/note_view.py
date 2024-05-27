@@ -82,7 +82,9 @@ class NoteDetail(APIView):
 
         referenced_cases = note_to_delete.entities.filter(type=EntityType.CASE)
 
-        if not Access.objects.has_access_to_cases(cast(CradleUser, request.user), set(referenced_cases)):
+        if not Access.objects.has_access_to_cases(
+            cast(CradleUser, request.user), set(referenced_cases)
+        ):
             return Response(
                 "User does not have Read-Write access to all referenced cases",
                 status=status.HTTP_403_FORBIDDEN,
