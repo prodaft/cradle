@@ -26,6 +26,8 @@ tags:
     description: Operations targeting Fleeting Notes.
   - name: Knowledge Graph
     description: Operations targeting the Knowledge Graph.
+  - name: Query
+    description: Operations for fetching entities.
   - name: Dashboard
     description: Operations targeting the dashboard.
   
@@ -511,35 +513,6 @@ paths:
         '404':
           description: Entry not found.
 
-  # /entities/metadata/{metadataId}:
-  #   get:
-  #     tags: 
-  #       - Entity
-  #     summary: Read details of a Metadata
-  #     description: Allow a user to retrieve the details of a Metadata by specifying its id
-  #     operationId: getMetadata
-  #     parameters:
-  #       - in: path
-  #         name: metadataId
-  #         required: true
-  #         schema:
-  #           type: integer
-  #           format: int64
-  #         examples:
-  #           metadataIdExample:
-  #             value: "2341641124"
-  #     responses:
-  #       '200': 
-  #         description: Request was successful. 
-  #         content: 
-  #           'application/json':
-  #             schema: 
-  #               $ref: '#/components/schemas/Metadata'
-  #       '401': 
-  #         description: User is not authenticated.
-  #       '404':
-  #         description: Metadata not found.
-
   /notes:
     post:
       tags:
@@ -907,10 +880,10 @@ paths:
           description: User does not have Read-Write access to a referenced Case or User does not own the Fleeting Note. 
     
   
-  /entities:
+  /query:
     get:
       tags:
-        - Entity
+        - Query
       summary: Search for entities
       description: Allow a user to query for any entity they have access, by providing a name, its type and, if it is an Entry, its subtype
       operationId: searchEntity
@@ -925,7 +898,6 @@ paths:
             enum: 
             - actor
             - case
-            - metadata
             - entry
           examples:
             typeExample:
