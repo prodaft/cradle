@@ -10,8 +10,24 @@ import React from "react";
  * @constructor
  */
 export default function SidebarSection(props) {
+    const sectionVariants = {
+        header: 'sidebar-header',
+        content: 'sidebar-content',
+        footer: 'sidebar-footer',
+    }
+
+    const justifyVariants = {
+        start: 'justify-start',
+        end: 'justify-end',
+    }
+
+    const heightVariants = {
+        fit: 'h-fit',
+        full: 'h-full',
+    }
+
     return (
-        <section className={`sidebar-${props.sectionType} justify-${props.justify} h-${props.height}`}>
+        <section className={`${sectionVariants[props.sectionType]} ${justifyVariants[props.justify]} ${heightVariants[props.height]}`}>
             <nav className="menu rounded-md">
                 <section className="menu-section gap-2">
                     <ul className="menu-items">

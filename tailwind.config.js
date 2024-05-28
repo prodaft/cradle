@@ -11,6 +11,21 @@ module.exports = {
                 cradle2: '#f68d2e',
                 cradle3: '#253746', 
             },
+            typography: (theme) => ({
+                DEFAULT: {
+                    css: {
+                        pre: {
+                            padding: theme('padding.4'),
+                            overflow: 'auto !important',
+                            maxWidth: '100% !important',
+                        },
+                        code: {
+                            whiteSpace: 'pre-wrap !important',
+                            wordBreak: 'break-word !important',
+                        },
+                    },
+                },
+            }),
         }, 
     },
     plugins: [
@@ -19,7 +34,7 @@ module.exports = {
         require('tailwind-scrollbar'),
         require('@tailwindcss/forms'),
         require("rippleui"),
-        function ({ addUtilities }) {
+        function ({ addUtilities, addBase }) {
             addUtilities({
                 '.no-scrollbar': {
                     '-ms-overflow-style': 'none',  /* IE and Edge */

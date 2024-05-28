@@ -82,6 +82,6 @@ describe('SearchDialog', () => {
 
         await waitFor(() => fireEvent.click(screen.getByText('Test')));
         expect(mockOnClose).toHaveBeenCalled();
-        expect(mockNavigate).toHaveBeenCalledWith('/not-implemented');
+        expect(mockNavigate).toHaveBeenCalledWith('/entities/Types/Test?subtype=Subtype');
     });
 });
