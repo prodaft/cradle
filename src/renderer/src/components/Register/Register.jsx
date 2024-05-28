@@ -5,6 +5,7 @@ import { registerReq } from "../../services/authReqService/authReqService";
 import AlertBox from "../AlertBox/AlertBox";
 import { useNavigate } from "react-router-dom";
 import { displayError } from "../../utils/responseUtils/responseUtils";
+import {validatePassword} from "../../utils/validatePassword/validatePassword";
 
 /**
  * Register component - renders the registration form.
@@ -17,14 +18,25 @@ import { displayError } from "../../utils/responseUtils/responseUtils";
 export default function Register(){
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [passwordCheck, setPasswordCheck] = useState("");
     const [error, setError] = useState("");
-  const [errorColor, setErrorColor] = useState("red");
+    const [errorColor, setErrorColor] = useState("red");
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
-      e.preventDefault();
+        e.preventDefault();
 
-      const data = {username: username, password: password};
+        if (password !== passwordCheck) {
+            setError("Passwords do not match.");
+            return;
+        }
+
+        if(!validatePassword(password)){
+            setError("Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
+            return;
+        }
+
+        const data = {username: username, password: password};
       
       registerReq(data)
         .then((res) => navigate("/login"))
@@ -32,7 +44,7 @@ export default function Register(){
     };
 
     return (
-        <div className="flex flex-row items-center justify-center h-screen">
+        <div className="flex flex-row items-center justify-center h-screen overflow-y-auto">
           <div className="bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 md:h-fit xl:w-1/3">
             <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
               <div className="sm:mx-auto sm:w-full sm:max-w-sm">
@@ -45,6 +57,8 @@ export default function Register(){
                       <FormField name="username" labelText="Username" type="text" handleInput={setUsername}/>
                       <FormField name="password" labelText="Password" type="password"
                                  handleInput={setPassword}/>
+                      <FormField name="password-check" labelText="Confirm Password" type="password"
+                                 handleInput={setPasswordCheck}/>
                 {error && (<AlertBox title={error} color={errorColor} />)}
                       <button
                           type="submit"
