@@ -1,3 +1,7 @@
+import django_stubs_ext
+
+django_stubs_ext.monkeypatch()
+
 """
 Django settings for cradle project.
 
