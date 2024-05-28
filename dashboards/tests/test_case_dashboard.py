@@ -6,12 +6,12 @@ from rest_framework.test import APIClient
 import io
 from rest_framework_simplejwt.tokens import AccessToken
 
-from ..models import Entity
-from ..enums import EntityType
+from entities.models import Entity
+from entities.enums import EntityType
 from access.models import Access
 from notes.models import Note
 from ..serializers.dashboard_serializers import CaseDashboardSerializer
-from ..utils.case_utils import CaseUtils
+from ..utils.dashboard_utils import DashboardUtils
 
 
 def bytes_to_json(data):
@@ -24,8 +24,8 @@ class GetCaseDashboardTest(TestCase):
         self.admin_user = CradleUser.objects.create_superuser(
             username="admin", password="password", is_staff=True
         )
-        self.normal_user = CradleUser.objects.create_user(
-            username="user", password="password", is_staff=False
+        self.user1 = CradleUser.objects.create_user(
+            username="user1", password="password", is_staff=False
         )
         self.user2 = CradleUser.objects.create_user(
             username="user2", password="password", is_staff=False
@@ -34,9 +34,9 @@ class GetCaseDashboardTest(TestCase):
     def create_tokens(self):
         self.token_user2 = str(AccessToken.for_user(self.user2))
         self.token_admin = str(AccessToken.for_user(self.admin_user))
-        self.token_normal = str(AccessToken.for_user(self.normal_user))
+        self.token_user1 = str(AccessToken.for_user(self.user1))
         self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
-        self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
+        self.headers_user1 = {"HTTP_AUTHORIZATION": f"Bearer {self.token_user1}"}
         self.headers_user2 = {"HTTP_AUTHORIZATION": f"Bearer {self.token_user2}"}
 
     def create_notes(self):
@@ -71,11 +71,11 @@ class GetCaseDashboardTest(TestCase):
 
     def create_access(self):
         self.access1 = Access.objects.create(
-            user=self.normal_user, case=self.case1, access_type="read-write"
+            user=self.user1, case=self.case1, access_type="read-write"
         )
 
         self.access2 = Access.objects.create(
-            user=self.normal_user, case=self.case2, access_type="read"
+            user=self.user1, case=self.case2, access_type="read"
         )
 
         self.access3 = Access.objects.create(
@@ -105,7 +105,7 @@ class GetCaseDashboardTest(TestCase):
 
     def test_get_dashboard_admin(self):
         response = self.client.get(
-            reverse("case_detail_name", kwargs={"case_name": self.case1.name}),
+            reverse("case_dashboard", kwargs={"case_name": self.case1.name}),
             **self.headers_admin,
         )
         self.assertEqual(response.status_code, 200)
@@ -117,7 +117,7 @@ class GetCaseDashboardTest(TestCase):
         entries = Entity.objects.filter(type=EntityType.ENTRY)
 
         expected = CaseDashboardSerializer(
-            CaseUtils.get_dashboard_json(
+            DashboardUtils.get_dashboard_json(
                 self.case1, notes, actors, cases, metadata, entries, self.admin_user
             )
         ).data
@@ -126,7 +126,7 @@ class GetCaseDashboardTest(TestCase):
 
     def test_get_dashboard_user_read_access(self):
         response = self.client.get(
-            reverse("case_detail_name", kwargs={"case_name": self.case1.name}),
+            reverse("case_dashboard", kwargs={"case_name": self.case1.name}),
             **self.headers_user2,
         )
         self.assertEqual(response.status_code, 200)
@@ -138,17 +138,17 @@ class GetCaseDashboardTest(TestCase):
         entries = Entity.objects.filter(type=EntityType.ENTRY)
 
         expected = CaseDashboardSerializer(
-            CaseUtils.get_dashboard_json(
+            DashboardUtils.get_dashboard_json(
                 self.case1, notes, actors, cases, metadata, entries, self.user2
             )
         ).data
 
         self.assertEqual(expected, bytes_to_json(response.content))
 
-    def test_get_dashboard_user_read_wrote_access(self):
+    def test_get_dashboard_user_read_write_access(self):
         response = self.client.get(
-            reverse("case_detail_name", kwargs={"case_name": self.case1.name}),
-            **self.headers_normal,
+            reverse("case_dashboard", kwargs={"case_name": self.case1.name}),
+            **self.headers_user1,
         )
         self.assertEqual(response.status_code, 200)
 
@@ -159,22 +159,22 @@ class GetCaseDashboardTest(TestCase):
         entries = Entity.objects.filter(type=EntityType.ENTRY)
 
         expected = CaseDashboardSerializer(
-            CaseUtils.get_dashboard_json(
-                self.case1, notes, actors, cases, metadata, entries, self.normal_user
+            DashboardUtils.get_dashboard_json(
+                self.case1, notes, actors, cases, metadata, entries, self.user1
             )
         ).data
         self.assertEqual(expected, bytes_to_json(response.content))
 
     def test_get_dashboard_user_no_access(self):
         response = self.client.get(
-            reverse("case_detail_name", kwargs={"case_name": self.case2.name}),
+            reverse("case_dashboard", kwargs={"case_name": self.case2.name}),
             **self.headers_user2,
         )
         self.assertEqual(response.status_code, 404)
 
     def test_get_dashboard_invalid_case(self):
         response = self.client.get(
-            reverse("case_detail_name", kwargs={"case_name": "Case"}),
-            **self.headers_normal,
+            reverse("case_dashboard", kwargs={"case_name": "Case"}),
+            **self.headers_user1,
         )
         self.assertEqual(response.status_code, 404)

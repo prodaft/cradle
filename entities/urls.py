@@ -10,9 +10,4 @@ urlpatterns = [
     path(
         "actors/<int:actor_id>/", actor_views.ActorDetail.as_view(), name="actor_detail"
     ),
-    path(
-        "cases/<str:case_name>/",
-        case_views.CaseDashboard.as_view(),
-        name="case_detail_name",
-    ),
 ]

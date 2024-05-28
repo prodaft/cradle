@@ -26,6 +26,8 @@ tags:
     description: Operations targeting Fleeting Notes.
   - name: Knowledge Graph
     description: Operations targeting the Knowledge Graph.
+  - name: Dashboard
+    description: Operations targeting the dashboard.
   
 paths:
   /users:
@@ -295,6 +297,34 @@ paths:
           description: Invalid data provided
         '409':
           description: Case already exists.
+  
+  /dashboards/cases/{case_name}/:
+    get:
+      tags:
+        - Dashboard
+      summary: Get the dashboard of a Case
+      description: Allow a user to retrieve the dashboars of a Case by specifying its name
+      operationId: getCaseByName
+      parameters:
+        - in: path
+          name: case_name
+          required: true
+          schema:
+            type: string
+          examples:
+            caseNameExample:
+              value: "Case1"
+      responses:
+        '200': 
+          description: Request was successful. 
+          content: 
+            'application/json':
+              schema: 
+                $ref: '#/components/schemas/CaseDashboard'
+        '401': 
+          description: User is not authenticated.
+        '404':
+          description: Case not found or User doesn't have access.
 
   /access/{userId}/:
     get:
@@ -451,61 +481,6 @@ paths:
           description: User is not an admin.
         '404':
           description: There is no case with specified ID.
-    get:
-      tags:
-        - Entity
-      summary: Read details of a Case
-      description: Allow a user to retrieve the details of a Case by specifying its id
-      operationId: getCase
-      parameters:
-        - in: path
-          name: caseId
-          required: true
-          schema:
-            type: integer
-            format: int64
-          examples:
-            caseIdExample:
-              value: 1234163
-      responses:
-        '200': 
-          description: Request was successful. 
-          content: 
-            'application/json':
-              schema: 
-                $ref: '#/components/schemas/Case'
-        '401': 
-          description: User is not authenticated.
-        '404':
-          description: Agent not found.
-
-  /entities/cases/{case_name}/:
-    get:
-      tags:
-        - Entity
-      summary: Get the dashboard of a Case
-      description: Allow a user to retrieve the dashboars of a Case by specifying its name
-      operationId: getCaseByName
-      parameters:
-        - in: path
-          name: case_name
-          required: true
-          schema:
-            type: string
-          examples:
-            caseNameExample:
-              value: "Case1"
-      responses:
-        '200': 
-          description: Request was successful. 
-          content: 
-            'application/json':
-              schema: 
-                $ref: '#/components/schemas/CaseDashboard'
-        '401': 
-          description: User is not authenticated.
-        '404':
-          description: Case not found or User doesn't have access.
 
   /entities/entries/{entryId}:
     get:
@@ -535,28 +510,6 @@ paths:
           description: User is not authenticated.
         '404':
           description: Entry not found.
-        
-
-  /entities/entries:
-    get:
-      tags:
-        - Entity
-      summary: Read details of all Entries
-      description: Allow a user to retrieve the details of all Entries
-      operationId: getEntries
-      responses:
-        '200': 
-          description: Entry has been added. 
-          content: 
-            'application/json':
-              schema: 
-                type: array
-                items: 
-                  $ref: '#/components/schemas/Entry'
-        '401': 
-          description: User is not authenticated.
-        '403': 
-          description: User is not an admin.
 
   # /entities/metadata/{metadataId}:
   #   get:
@@ -1040,13 +993,14 @@ components:
     CaseDashboard:
       type: object
       properties:
-        case:
-          type: object
-          properties:
-            name:
-              type: string
-            description:
-              type: string
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+        subtype:
+          type: string
         notes:
           type: array
           items: 

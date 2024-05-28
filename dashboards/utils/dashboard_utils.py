@@ -1,6 +1,5 @@
 from django.db.models.query import QuerySet
-from typing import Dict
-from rest_framework.utils.serializer_helpers import ReturnDict
+from typing import Dict, Any
 from user.models import CradleUser
 from entities.models import Entity
 from entities.serializers.entity_serializers import (
@@ -9,28 +8,26 @@ from entities.serializers.entity_serializers import (
     MetadataSerializer,
     EntrySerializer,
 )
-from entities.serializers.dashboard_serializers import (
+from ..serializers.dashboard_serializers import (
     NoteDashboardSerializer,
     CaseAccessSerializer,
 )
 from access.models import Access
 from access.enums import AccessType
-from ..enums import EntityType
-from notes.models import Note
 
 
-class CaseUtils:
+class DashboardUtils:
 
     @staticmethod
     def get_dashboard_json(
-        case: Entity,
+        entity: Entity,
         notes: QuerySet,
         actors: QuerySet,
         cases: QuerySet,
         metadata: QuerySet,
         entries: QuerySet,
         user: CradleUser,
-    ) -> Dict[str, Dict[str, ReturnDict]]:
+    ) -> Dict[str, Any]:
         """Return a dictionary containing the dashboard of the case
 
         Args:
@@ -63,46 +60,14 @@ class CaseUtils:
             note_list.append(note_json)
 
         return {
-            "case": CaseSerializer(case).data,
+            "id": entity.id,
+            "name": entity.name,
+            "description": entity.description,
+            "type": entity.type,
+            "subtype": entity.subtype,
             "notes": NoteDashboardSerializer(note_list, many=True).data,
             "actors": ActorSerializer(actors, many=True).data,
             "cases": CaseAccessSerializer(case_list, many=True).data,
             "entries": EntrySerializer(entries, many=True).data,
             "metadata": MetadataSerializer(metadata, many=True).data,
         }
-
-    @staticmethod
-    def get_accessible_notes(user: CradleUser, entity_id: int) -> QuerySet:
-        """Get the notes of a case that the user has access to
-
-        Args:
-            user: The user whose access is being checked
-            entity_id: The id of the entiy whose notes are being retrieved
-
-        Returns:
-            QuerySet: The notes of the case that the user has access to
-        """
-
-        if user.is_superuser:
-            return Entity.objects.get_all_notes(entity_id)
-
-        accessible_cases = Access.objects.filter(
-            user=user, access_type__in=[AccessType.READ_WRITE, AccessType.READ]
-        ).values_list("case_id", flat=True)
-
-        inaccessible_cases = (
-            Entity.objects.filter(type=EntityType.CASE)
-            .exclude(id__in=accessible_cases)
-            .values_list("id", flat=True)
-        )
-
-        inaccessible_notes = Note.objects.filter(
-            entities__id__in=inaccessible_cases, entities__type=EntityType.CASE
-        ).values_list("id", flat=True)
-
-        return (
-            Entity.objects.get(id=entity_id)
-            .note_set.exclude(id__in=inaccessible_notes)
-            .order_by("-timestamp")
-            .distinct()
-        )

@@ -1,9 +1,10 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
+from rest_framework_simplejwt.authentication import AuthUser
 from .models import CradleUser
 from .exceptions import DuplicateUserException
-from typing import Dict, List
+from typing import Dict, List, cast
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -54,7 +55,7 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
 
 class TokenObtainSerializer(TokenObtainPairSerializer):
     @classmethod
-    def get_token(cls, user: CradleUser) -> Token:
+    def get_token(cls, user: AuthUser) -> Token:
         """Retrieves a JWT token for a given CradleUser instance.
 
         Args:
@@ -66,6 +67,6 @@ class TokenObtainSerializer(TokenObtainPairSerializer):
 
         token = super().get_token(user)
 
-        token["is_admin"] = user.is_superuser
+        token["is_admin"] = cast(CradleUser, user).is_superuser
 
         return token
