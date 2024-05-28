@@ -9,7 +9,7 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Note
-        fields = ["content"]
+        fields = ["publishable", "content"]
 
     def validate(self, data):
         """First checks whether the client sent the content of the field
@@ -66,4 +66,12 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 class NoteRetrieveSerializer(serializers.ModelSerializer):
     class Meta:
         model = Note
-        fields = ["id", "content", "timestamp"]
+        fields = ["id", "publishable", "content", "timestamp"]
+
+
+class NotePublishSerializer(serializers.ModelSerializer):
+    publishable = serializers.BooleanField(required=True)
+
+    class Meta:
+        model = Note
+        fields = ["publishable"]
