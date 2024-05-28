@@ -47,7 +47,7 @@ class QueryList(APIView):
                 | Q(
                     type="case",
                     id__in=Subquery(
-                        Access.objects.get_accessible_case_ids(request.user.id)
+                        Access.objects.get_accessible_case_ids(request.user.pk)
                     ),
                 )
             )
