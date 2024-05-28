@@ -4,14 +4,14 @@ from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 from unittest.mock import patch, PropertyMock
 
-from ..models import Entity
-from ..enums import EntityType, EntitySubtype
+from entities.models import Entity
+from entities.enums import EntityType, EntitySubtype
 from access.models import Access
 from notes.models import Note
-from ..utils.case_utils import CaseUtils
+from ..utils.dashboard_utils import DashboardUtils
 
 
-class CaseUtilsDashboardJsonTest(TestCase):
+class DashboardUtilsDashboardJsonTest(TestCase):
 
     def create_users(self):
         self.admin_user = CradleUser.objects.create_superuser(
@@ -105,8 +105,8 @@ class CaseUtilsDashboardJsonTest(TestCase):
         metadata = Entity.objects.filter(type=EntityType.METADATA)
         entries = Entity.objects.filter(type=EntityType.ENTRY)
 
-        dashboard_json = CaseUtils.get_dashboard_json(
-            case=self.case1,
+        dashboard_json = DashboardUtils.get_dashboard_json(
+            entity=self.case1,
             notes=notes,
             actors=actors,
             cases=cases,
@@ -116,7 +116,11 @@ class CaseUtilsDashboardJsonTest(TestCase):
         )
 
         expected_json = {
-            "case": {"name": "Case1", "description": "Description1"},
+            "id": self.case1.id,
+            "name": "Case1",
+            "description": "Description1",
+            "type": "case",
+            "subtype": "",
             "notes": [
                 {
                     "id": self.note1.id,
