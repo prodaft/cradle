@@ -30,6 +30,7 @@ describe('displayError', () => {
         expect(setAlert).toHaveBeenCalledWith('500: Internal Server Error');
     });
 
+
     it('should display the error message from the error object if no server or client error message is available', () => {
         const err = new Error('Network Error');
 

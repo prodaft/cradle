@@ -1,5 +1,9 @@
 // Define what url extension each entry type should have
 
+/**
+ * Comprehensive set of all entry types
+ * @type {Set<string>}
+ */
 export const entryTypes = new Set([
     "ip",
     "domain",
@@ -14,6 +18,10 @@ export const entryTypes = new Set([
     "ttp",
 ])
 
+/**
+ * Comprehensive set of all metadata types
+ * @type {Set<string>}
+ */
 export const metadataTypes = new Set([
     "crime",
     "industry",
@@ -21,6 +29,10 @@ export const metadataTypes = new Set([
     "company",
 ])
 
+/**
+ * Comprehensive set of all entity types
+ * @type {Set<string>}
+ */
 export const entityCategories = new Set([
     "actor",
     "case",
@@ -28,6 +40,10 @@ export const entityCategories = new Set([
     "metadata",
 ]);
 
+/**
+ * Set of all entity types that are not metadata
+ * @type {Set<string>}
+ */
 export const entityCategoriesReduced = new Set([
     "actor",
     "case",

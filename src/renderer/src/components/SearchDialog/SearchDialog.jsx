@@ -8,6 +8,7 @@ import AlertBox from "../AlertBox/AlertBox";
 import SearchResult from "../SearchResult/SearchResult";
 import {useNavigate} from "react-router-dom";
 import { displayError } from '../../utils/responseUtils/responseUtils';
+import pluralize from 'pluralize';
 
 /**
  * Dialog to search for entities
@@ -53,13 +54,14 @@ export default function SearchDialog({ isOpen, onClose }) {
         navigate(link);
     }
 
+
     const performSearch = () => {
         setError("");
         queryEntities(auth.access, searchQuery, entityTypeFilters, entitySubtypeFilters)
             .then((response) => {
                 console.log('Search results:', response.data);
                 setResults(response.data.map((result) => (
-                    <SearchResult name={result.name} type={result.type} subtype={result.subtype} onClick={handleResultClick("/not-implemented")}/>
+                    <SearchResult name={result.name} type={result.type} subtype={result.subtype} onClick={handleResultClick(`/entities/${pluralize(result.type)}/${encodeURIComponent(result.name)}${result.subtype ? `?subtype=${result.subtype}` : ``}`)}/>
                 )));
             })
             .catch(displayError(setError, setErrorColor));
