@@ -68,10 +68,14 @@ export default function TextEditor() {
     )
 
     return (
-        <div className="w-full h-full rounded-md flex flex-1 flex-col p-1.5 gap-1.5 sm:flex-row overflow-y-hidden">
+        <div className="w-full h-full rounded-md flex flex-col p-1.5 gap-1.5 sm:flex-row overflow-y-hidden">
             <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
-            <Editor markdownContent={markdownContent} setMarkdownContent={setMarkdownContentCallback} isLightMode={isLightMode} />
-            <Preview htmlContent={parsedContent} isLightMode={isLightMode} />
+            <div className={"h-1/2 sm:h-full w-full bg-gray-2 rounded-md"}>
+                <Editor markdownContent={markdownContent} setMarkdownContent={setMarkdownContentCallback} isLightMode={isLightMode} />
+            </div>
+            <div className={"h-1/2 sm:h-full w-full bg-gray-2 rounded-md"}>
+                <Preview htmlContent={parsedContent}/>
+            </div>
         </div>
     )
 }

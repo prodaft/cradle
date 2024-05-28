@@ -21,7 +21,7 @@ const handleLinkClick = (handler) => (event) => {
     if (target.tagName === 'A' && target.href) {
         event.preventDefault();
         const url = new URL(target.href);
-        const path = url.pathname + url.search;
+        const path = event.target.dataset.customHref;
         if (url.origin === window.location.origin) {
             // Local links
             handler(path);

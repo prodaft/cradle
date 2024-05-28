@@ -9,7 +9,7 @@ axios.defaults.baseURL = "http://localhost:8000";
  * @returns {Promise<AxiosResponse<any>>}
  */
 export async function logInReq(data) {
-  return await axios({
+  return axios({
     method: "post",
     url: "/users/login/",
     data: data,
@@ -23,7 +23,7 @@ export async function logInReq(data) {
  * @returns {Promise<AxiosResponse<any>>}
  */
 export async function registerReq(data) {
-  return await axios({
+  return axios({
     method: "post",
     url: "/users/",
     data: data,
