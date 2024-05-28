@@ -6,11 +6,10 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q, Subquery
 
-from ..models import Entity
-
+from entities.models import Entity
 from access.models import Access
-
-from ..serializers.entity_serializers import EntitySerializer, EntityQuerySerializer
+from ..serializers import EntityQuerySerializer
+from entities.serializers.entity_serializers import EntitySerializer
 
 
 class QueryList(APIView):
@@ -26,11 +25,13 @@ class QueryList(APIView):
             request: The request that was sent
 
         Returns:
-            Response(body, 200): a JSON response. The JSON response contains all the
-            entities which respect the criteria specified in the query parameters
-            and which are visible to the user.
-            Response("Query parameters are invalid"): if the provided query parameters
-            are not valid.
+            Response(body, status=200): a JSON response. The JSON response contains
+            all the entities which respect the criteria specified in the query
+            parameters and which are visible to the user.
+            Response("Query parameters are invalid", status=400): if the provided
+            query parameters are not valid.
+            Response("User is not authenticated", status=401): if the user making the
+            request is not authenticated.
         """
 
         param_serializer = EntityQuerySerializer(data=request.query_params)
@@ -43,7 +44,7 @@ class QueryList(APIView):
         accessible_entities = Entity.objects.all()
         if not request.user.is_superuser:
             accessible_entities = accessible_entities.filter(
-                (~Q(type="case") & ~Q(type="metadata"))
+                (~Q(type="case"))
                 | Q(
                     type="case",
                     id__in=Subquery(

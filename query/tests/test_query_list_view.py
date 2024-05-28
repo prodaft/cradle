@@ -6,8 +6,8 @@ from rest_framework.test import APIClient
 import io
 from rest_framework_simplejwt.tokens import AccessToken
 
-from ..models import Entity
-from ..enums import EntityType, EntitySubtype
+from entities.models import Entity
+from entities.enums import EntityType, EntitySubtype
 from access.models import Access
 from access.enums import AccessType
 
@@ -65,6 +65,10 @@ class QueryListTest(TestCase):
         )
         Access.objects.create(
             user=self.normal_user, case=self.cases[2], access_type=AccessType.NONE
+        )
+
+        Entity.objects.create(
+            name="Romania", type=EntityType.METADATA, subtype=EntitySubtype.COUNTRY
         )
 
     def test_query_not_authenticated(self):
@@ -139,6 +143,24 @@ class QueryListTest(TestCase):
 
     def test_query_filters_invalid_params(self):
         query_params = {"entityType": ["entr"]}
+        response = self.client.get(
+            reverse("query_list"), query_params, **self.headers_normal
+        )
+
+        with self.subTest("Status code"):
+            self.assertEqual(response.status_code, 400)
+
+    def test_query_filters_invalid_params_contains_metadata(self):
+        query_params = {"entityType": ["metadata", "case"]}
+        response = self.client.get(
+            reverse("query_list"), query_params, **self.headers_normal
+        )
+
+        with self.subTest("Status code"):
+            self.assertEqual(response.status_code, 400)
+
+    def test_query_filters_invalid_params_contains_metadata_subtypes(self):
+        query_params = {"entityType": ["entry"], "entitySubtype": ["ip", "country"]}
         response = self.client.get(
             reverse("query_list"), query_params, **self.headers_normal
         )
