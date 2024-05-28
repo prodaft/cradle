@@ -3,9 +3,11 @@ import { vim } from "@replit/codemirror-vim";
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
 import { drawSelection } from "@uiw/react-codemirror";
-import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import { useState } from "react";
 import { EditorView } from '@codemirror/view';
+
+import { vscodeDark } from '@uiw/codemirror-theme-vscode';
+import { eclipse } from '@uiw/codemirror-theme-eclipse';
 
 /**
  * This component makes use of a pre-existing code editor component (CodeMirror, see https://github.com/uiwjs/react-codemirror)
@@ -15,7 +17,7 @@ import { EditorView } from '@codemirror/view';
  * @param {(string) => void} setMarkdownContent - callback used when the value of the content changes
  * @returns {Editor}
  */
-export default function Editor({ markdownContent, setMarkdownContent }) {
+export default function Editor({ markdownContent, setMarkdownContent, isLightMode }) {
     const [enableVim, setEnableVim] = useState(false);
 
     // Set extension here
@@ -32,7 +34,7 @@ export default function Editor({ markdownContent, setMarkdownContent }) {
     }
 
     return (
-        <div className="h-1/2 sm:h-full w-full flex flex-col ">
+        <div className="h-full w-full flex flex-col flex-1">
             <div className="flex flex-row justify-between items-center p-2">
                 <label htmlFor="vim-toggle" className="flex items-center cursor-pointer">
                     Vim Mode:
@@ -46,12 +48,12 @@ export default function Editor({ markdownContent, setMarkdownContent }) {
                     onChange={() => setEnableVim(!enableVim)}
                 />
             </div>
-            <div className="flex-grow overflow-hidden rounded-lg">
+            <div className="overflow-hidden w-full rounded-lg">
                 <CodeMirror
                     name="markdown-input"
                     id="markdown-input"
                     data-testid="markdown-input"
-                    theme={vscodeDark}
+                    theme={isLightMode ? eclipse : vscodeDark}
                     height="100%"
                     extensions={extensions}
                     className="w-full h-full resize-none"

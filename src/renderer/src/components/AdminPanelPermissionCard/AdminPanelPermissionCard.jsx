@@ -4,6 +4,7 @@ import {changeAccess} from "../../services/adminService/adminService";
 import {AlertDismissible} from "../AlertDismissible/AlertDismissible";
 import {NavArrowDown} from "iconoir-react";
 import {useNavigate} from "react-router-dom";
+import { displayError } from "../../utils/responseUtils/responseUtils";
 
 /**
  * AdminPanelUserPermissions component - This component is used to display the permissions for a user.
@@ -23,6 +24,7 @@ import {useNavigate} from "react-router-dom";
 export default function AdminPanelPermissionCard({userId, caseName, caseId, accessLevel, searchKey}) {
     const [currentAccess, setCurrentAccess] = useState(accessLevel);
     const [alert, setAlert] = useState("");
+    const [alertColor, setAlertColor] = useState("red");
     const auth = useAuth();
 
     const handleChange = async (newAccess) => {
@@ -31,19 +33,13 @@ export default function AdminPanelPermissionCard({userId, caseName, caseId, acce
                 if(response.status === 200){
                     setCurrentAccess(newAccess);
                 }
-            }).catch((error) => {
-                if(error.response && error.response.status === 401){
-                    setAlert("Invalid token. Please login again.");
-                }else {
-                    setAlert("Error changing access level");
-                }
-            });
+            }).catch(displayError(setAlert, setAlertColor));
         }
     }
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert}/>
+            <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
             <div className="h-fit w-full bg-cradle3 p-4 my-1 bg-opacity-20 rounded-xl flex flex-row justify-start">
                 <h2 className="card-header w-full mx-2">{caseName}</h2>
                 <div className="w-full flex flex-row justify-end">

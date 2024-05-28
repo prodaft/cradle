@@ -30,14 +30,16 @@ describe('Register component', () => {
 
     const usernameInput = getByLabelText('Username');
     const passwordInput = getByLabelText('Password');
+    const passwordCheckInput = getByLabelText('Confirm Password');
     const registerButton = getByTestId('login-register-button');
 
     fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-    fireEvent.change(passwordInput, { target: { value: 'testpassword' } });
+    fireEvent.change(passwordInput, { target: { value: 'Testpassword@1234' } });
+    fireEvent.change(passwordCheckInput, { target: { value: 'Testpassword@1234' } });
     fireEvent.click(registerButton);
 
     await waitFor(() => {
-      expect(registerReq).toHaveBeenCalledWith({'username':'testuser','password':'testpassword'});
+      expect(registerReq).toHaveBeenCalledWith({'username':'testuser','password':'Testpassword@1234'});
     });
   });
 
@@ -48,10 +50,12 @@ describe('Register component', () => {
     
         const usernameInput = getByLabelText('Username');
         const passwordInput = getByLabelText('Password');
+        const passwordCheckInput = getByLabelText('Confirm Password');
         const registerButton = getByTestId('login-register-button');
     
         fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-        fireEvent.change(passwordInput, { target: { value: 'testpassword' } });
+        fireEvent.change(passwordInput, { target: { value: 'Testpassword@1234' } });
+        fireEvent.change(passwordCheckInput, { target: { value: 'Testpassword@1234' } });
         fireEvent.click(registerButton);
     
         await waitFor(() => {
@@ -66,10 +70,48 @@ describe('Register component', () => {
 
         const usernameInput = getByLabelText('Username');
         const passwordInput = getByLabelText('Password');
+        const passwordCheckInput = getByLabelText('Confirm Password');
+        const registerButton = getByTestId('login-register-button');
+
+        fireEvent.change(usernameInput, { target: { value: 'testuser' } });
+        fireEvent.change(passwordInput, { target: { value: 'Testpassword@1234' } });
+        fireEvent.change(passwordCheckInput, { target: { value: 'Testpassword@1234' } });
+        fireEvent.click(registerButton);
+
+        await waitFor(() => {
+            expect(getByTestId('auth-err-alert')).toBeInTheDocument();
+        });
+    });
+
+    it('should show error message when passwords do not match', async () => {
+        const { getByLabelText, getByTestId } = setupTestComponent();
+
+        const usernameInput = getByLabelText('Username');
+        const passwordInput = getByLabelText('Password');
+        const passwordCheckInput = getByLabelText('Confirm Password');
+        const registerButton = getByTestId('login-register-button');
+
+        fireEvent.change(usernameInput, { target: { value: 'testuser' } });
+        fireEvent.change(passwordInput, { target: { value: 'Testpassword@1' } });
+        fireEvent.change(passwordCheckInput, { target: { value: 'Testpassword@2' } });
+        fireEvent.click(registerButton);
+
+        await waitFor(() => {
+            expect(getByTestId('auth-err-alert')).toBeInTheDocument();
+        });
+    });
+
+    it('should show error message when password is invalid', async () => {
+        const { getByLabelText, getByTestId } = setupTestComponent();
+
+        const usernameInput = getByLabelText('Username');
+        const passwordInput = getByLabelText('Password');
+        const passwordCheckInput = getByLabelText('Confirm Password');
         const registerButton = getByTestId('login-register-button');
 
         fireEvent.change(usernameInput, { target: { value: 'testuser' } });
         fireEvent.change(passwordInput, { target: { value: 'testpassword' } });
+        fireEvent.change(passwordCheckInput, { target: { value: 'testpassword' } });
         fireEvent.click(registerButton);
 
         await waitFor(() => {
