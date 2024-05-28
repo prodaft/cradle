@@ -20,8 +20,8 @@ export function AlertDismissible({ alert, setAlert, color = "red" }) {
     return (
         <>
             {alert && (
-                <div className={`${colorVariants[color]} absolute bottom-2 right-6  text-white h-fit py-6 px-4 w-fit
-                 rounded-md shadow-lg flex items-center space-x-4 break-all max-w-[40%] max-h-full`}>
+                <div className={`${colorVariants[color]} absolute z-50 bottom-2 right-6  text-white h-fit py-6 px-4 w-fit
+                 rounded-md shadow-lg flex items-center space-x-4 break-all max-w-[40%] max-h-full`} data-testid='dismissable-alert'>
                     <div>{alert}</div>
                     <button
                         className={`${colorVariants[color]} hover:opacity-90 text-white font-bold py-2 px-4 rounded-xl`}

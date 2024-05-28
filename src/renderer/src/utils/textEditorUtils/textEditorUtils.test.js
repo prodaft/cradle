@@ -9,7 +9,7 @@ describe('handleLinkClick', () => {
 
     test('local links', () => {
         const handler = jest.fn();
-        const event = { target: { tagName: 'A', href: `${window.location.origin}${relativeLocalPath}` }, preventDefault: jest.fn() };
+        const event = { target: { tagName: 'A', href: `${window.location.origin}${relativeLocalPath}`, dataset: {customHref:relativeLocalPath} }, preventDefault: jest.fn() };
 
         handleLinkClick(handler)(event);
 
@@ -21,7 +21,7 @@ describe('handleLinkClick', () => {
         const handler = jest.fn();
         const openMock = jest.fn();
         window.open = openMock;
-        const event = { target: { tagName: 'A', href: externalLink }, preventDefault: jest.fn() };
+        const event = { target: { tagName: 'A', href: externalLink , dataset: {customHref:relativeLocalPath},}, preventDefault: jest.fn() };
 
         handleLinkClick(handler)(event);
 
@@ -31,7 +31,7 @@ describe('handleLinkClick', () => {
 
     test('should not handle non-link elements', () => {
         const handler = jest.fn();
-        const event = { target: { tagName: 'DIV', href: `${window.location.origin}${relativeLocalPath}` }, preventDefault: jest.fn() };
+        const event = { target: { tagName: 'DIV', href: `${window.location.origin}${relativeLocalPath}`, dataset: {customHref:relativeLocalPath},},  preventDefault: jest.fn() };
 
         handleLinkClick(handler)(event);
 
