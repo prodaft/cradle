@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q, Subquery
+from typing import cast
 
 from entities.models import Entity
 from access.models import Access
@@ -48,7 +49,9 @@ class QueryList(APIView):
                 | Q(
                     type="case",
                     id__in=Subquery(
-                        Access.objects.get_accessible_case_ids(request.user.pk)
+                        Access.objects.get_accessible_case_ids(
+                            cast(int, request.user.pk)
+                        )
                     ),
                 )
             )
