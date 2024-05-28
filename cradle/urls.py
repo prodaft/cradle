@@ -23,4 +23,5 @@ urlpatterns = [
     path("notes/", include("notes.urls")),
     path("dashboards/", include("dashboards.urls")),
     path("access/", include("access.urls")),
+    path("query/", include("query.urls")),
 ]
