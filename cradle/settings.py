@@ -34,6 +34,7 @@ ALLOWED_HOSTS: List[str] = []
 # Application definition
 
 INSTALLED_APPS = [
+    "dashboards.apps.DashboardsConfig",
     "access.apps.AccessConfig",
     "entities.apps.EntitiesConfig",
     "user.apps.UserConfig",
