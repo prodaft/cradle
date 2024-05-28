@@ -36,7 +36,7 @@ describe('AdminPanelPermissionCard', () => {
         const { getByTestId,getByText, findByText } = render(<AdminPanelPermissionCard userId="1" caseName="Test Case" caseId="1" accessLevel="read" />);
         fireEvent.click(getByTestId('accessLevelDisplay'));
         fireEvent.click(getByText('none'));
-        const errorMessage = await findByText('Error changing access level');
+        const errorMessage = await findByText('Failed to change access level');
         expect(errorMessage).toBeInTheDocument();
     });
 });

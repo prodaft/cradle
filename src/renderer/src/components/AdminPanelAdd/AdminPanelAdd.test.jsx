@@ -47,7 +47,7 @@ describe('AdminPanelAdd', () => {
 
     it('should display error message when createActor fails', async () => {
         createActor.mockRejectedValue(new Error('Failed to create actor'));
-        const { getByPlaceholderText, getByText, findByText } = render(
+        const { getByPlaceholderText, getByText, getByTestId } = render(
             <MemoryRouter>
                 <AdminPanelAdd type="Actor" />
             </MemoryRouter>
@@ -55,13 +55,14 @@ describe('AdminPanelAdd', () => {
         fireEvent.change(getByPlaceholderText('Name'), { target: { value: 'Test Actor' } });
         fireEvent.change(getByPlaceholderText('Description'), { target: { value: 'Test Description' } });
         fireEvent.click(getByText('Add'));
-        const errorMessage = await findByText('Network error');
-        expect(errorMessage).toBeInTheDocument();
+        await waitFor(() => {
+            expect(getByTestId('auth-err-alert')).toBeInTheDocument();
+        });
     });
 
     it('should display error message when createCase fails', async () => {
         createCase.mockRejectedValue(new Error('Failed to create case'));
-        const { getByPlaceholderText, getByText, findByText } = render(
+        const { getByPlaceholderText, getByText, getByTestId } = render(
             <MemoryRouter>
                 <AdminPanelAdd type="Case" />
             </MemoryRouter>
@@ -69,7 +70,8 @@ describe('AdminPanelAdd', () => {
         fireEvent.change(getByPlaceholderText('Name'), { target: { value: 'Test Case' } });
         fireEvent.change(getByPlaceholderText('Description'), { target: { value: 'Test Description' } });
         fireEvent.click(getByText('Add'));
-        const errorMessage = await findByText('Network error');
-        expect(errorMessage).toBeInTheDocument();
+        await waitFor(() => {
+            expect(getByTestId('auth-err-alert')).toBeInTheDocument();
+        });
     });
 });

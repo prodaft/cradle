@@ -29,7 +29,7 @@ const handlers = {
             const url = `/entities/actors/${encodeURIComponent(name)}/`
             // If an alias is provided, use it as the displayed name
             const displayedName = alias ? alias : name;
-            return `<a class="${styleClasses.actors}" href="${url}">${displayedName}</a>`;
+            return `<a class="${styleClasses.actors}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
         })
     },
     // Take the user to the case's dashboard
@@ -38,7 +38,7 @@ const handlers = {
             const url = `/entities/cases/${encodeURIComponent(name)}/`
             // If an alias is provided, use it as the displayed name
             const displayedName = alias ? alias : name;
-            return `<a class="${styleClasses.cases}" href="${url}">${displayedName}</a>`;
+            return `<a class="${styleClasses.cases}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
         })
     },
     // Take the user to the entry's dashboard
@@ -48,7 +48,7 @@ const handlers = {
                 const url = `/entities/entries/${encodeURIComponent(name)}?subtype=${encodeURIComponent(type)}`
                 // If an alias is provided, use it as the displayed name
                 const displayedName = alias ? alias : name;
-                return `<a class="${styleClasses.entries}" href="${url}">${displayedName}</a>`;
+                return `<a class="${styleClasses.entries}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
             } 
 
             return matched; 

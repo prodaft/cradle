@@ -26,7 +26,7 @@ export default function Home() {
                 height: "1.7em",
             }}
         >
-            <div className="flex flex-row w-full h-screen overflow-hidden">
+            <div className="flex flex-row w-screen h-screen overflow-hidden">
                 <Sidebar
                     handleLogout={handleLogout}
                     handleAdminPanel={() => {
@@ -46,7 +46,7 @@ export default function Home() {
                         }}
                         contents={navbarContents}
                     />
-                    <div className="flex-grow overflow-y-auto">
+                    <div className="flex-grow overflow-y-auto w-full">
                         <Outlet context={{ setNavbarContents }} />
                     </div>
                 </div>
