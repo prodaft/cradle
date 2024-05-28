@@ -34,7 +34,7 @@ export default function Editor({ markdownContent, setMarkdownContent, isLightMod
     }
 
     return (
-        <div className="h-1/2 sm:h-full w-full flex flex-col ">
+        <div className="h-full w-full flex flex-col flex-1">
             <div className="flex flex-row justify-between items-center p-2">
                 <label htmlFor="vim-toggle" className="flex items-center cursor-pointer">
                     Vim Mode:
@@ -48,7 +48,7 @@ export default function Editor({ markdownContent, setMarkdownContent, isLightMod
                     onChange={() => setEnableVim(!enableVim)}
                 />
             </div>
-            <div className="flex-grow overflow-hidden rounded-lg">
+            <div className="overflow-hidden w-full rounded-lg">
                 <CodeMirror
                     name="markdown-input"
                     id="markdown-input"

@@ -31,6 +31,9 @@ export default function AdminPanel() {
     const [alertColor, setAlertColor] = useState("red");
     const handleError = displayError(setAlert, setAlertColor);
 
+    //TODO -Implement encoding: qs.stringify({ name: c.name }, { encodeValuesOnly: true }).split('=')[1]
+
+
     const displayActors = async () => {
         getActors(auth.access).then((response) => {
             if(response.status === 200){
@@ -44,7 +47,7 @@ export default function AdminPanel() {
                             description={actor.description}
                             type={"entities/actors"}
                             onDelete={displayActors}
-                            link="/not-implemented"
+                            link={`/entities/actors/${encodeURIComponent(actor.name)}`}
                         />
                     );
                 }));
@@ -65,7 +68,7 @@ export default function AdminPanel() {
                             description={c.description}
                             type={"entities/cases"}
                             onDelete={displayCases}
-                            link="/not-implemented"
+                            link={`/entities/cases/${encodeURIComponent(c.name)}`}
                         />
                     );
                 }));
@@ -85,7 +88,7 @@ export default function AdminPanel() {
                             searchKey={user.username}
                             type={"users"}
                             onDelete={displayUsers}
-                            link={`/admin/user-permissions/${user.username}/${user.id}`}
+                            link={`/admin/user-permissions/${encodeURIComponent(user.username)}/${encodeURIComponent(user.id)}`}
                         />
                     );
                 }));
