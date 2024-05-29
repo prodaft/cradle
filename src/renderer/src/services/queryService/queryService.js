@@ -14,7 +14,7 @@ axios.defaults.baseURL = "http://localhost:8000";
  * @returns {Promise<axios.AxiosResponse<any>>}
  */
 export async function queryEntities(token, name, entityTypes, entitySubtype) {
-    const url = `/entities`;
+    const url = `/query`;
 
     const params = {
         entityType: entityTypes,

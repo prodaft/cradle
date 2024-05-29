@@ -14,6 +14,7 @@ import {Trash} from "iconoir-react/regular";
 import {ConfirmationDialog} from "../ConfirmationDialog/ConfirmationDialog";
 import {deleteEntity} from "../../services/adminService/adminService";
 import NotFound from "../NotFound/NotFound";
+import pluralize from "pluralize";
 
 /**
  * Dashboard component
@@ -32,6 +33,12 @@ export default function Dashboard(){
     const navigate = useNavigate();
     const auth = useAuth();
 
+    const navbarContents = [
+        <NavbarItem icon={<Trash />} name={"Delete"} onClick={() => setDialog(true)} />
+    ];
+
+    useNavbarContents(auth.isAdmin && contentObject.id && contentObject.type && contentObject.type !== 'entry' ? navbarContents : [], [contentObject, location]);
+
     useEffect(() => {
         setEntityMissing(false);
         setAlert("");
@@ -40,6 +47,7 @@ export default function Dashboard(){
                 setContentObject(response.data);
             })
             .catch(err => {
+                setContentObject({});
                 if(err.response && err.response.status === 404){
                     setEntityMissing(true);
                 } else {
@@ -50,17 +58,13 @@ export default function Dashboard(){
     }, [location]);
 
     const handleDelete = async () => {
-        deleteEntity(auth.access,'case',contentObject.id).then((response) => {
+        deleteEntity(auth.access, `entities/${pluralize(contentObject.type)}`, contentObject.id).then((response) => {
             if(response.status === 200){
                 navigate('/');
             }
         }).catch(displayError(setAlert, setAlertColor));
     }
-    if(auth.isAdmin){
-        useNavbarContents([
-            <NavbarItem icon={<Trash />} name={"Delete"} onClick={() => setDialog(true)}/>
-        ]);
-    }
+
 
     if(entityMissing){
         return (
@@ -74,17 +78,17 @@ export default function Dashboard(){
             <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor}/>
             <div className="w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll">
                 <div className="w-[95%] h-full flex flex-col p-6 space-y-3">
-                    {contentObject.case && <h1 className="text-5xl font-bold">{contentObject.case.name}</h1>}
-                    {contentObject.case && <p className="text-sm text-zinc-500">Type: Case</p>}
-                    {contentObject.case && <p className="text-sm text-zinc-500">Description: {contentObject.case.description}</p>}
+                    {contentObject.name && <h1 className="text-5xl font-bold">{contentObject.name}</h1>}
+                    {contentObject.type && <p className="text-sm text-zinc-500">{`Type: ${contentObject.type} ${contentObject.subtype ? contentObject.subtype : ''}`}</p>}
+                    {contentObject.description && <p className="text-sm text-zinc-500">{`Description: ${contentObject.description}`}</p>}
                     {contentObject.actors && <DashboardHorizontalSection title={"Related Actors"}>
                         {contentObject.actors.map((actor, index) => (
-                            <DashboardCard name={actor.name} link={`/entities/actors/${encodeURIComponent(actor.name)}`}/>
+                            <DashboardCard name={actor.name} link={`/dashboards/actors/${encodeURIComponent(actor.name)}`}/>
                         ))}
                     </DashboardHorizontalSection>}
                     {contentObject.cases && <DashboardHorizontalSection title={"Related Cases"}>
                         {contentObject.cases.map((c, index) => (
-                            <DashboardCard index={index} name={c.name} link={`/entities/cases/${encodeURIComponent(c.name)}`}/>
+                            <DashboardCard index={index} name={c.name} link={`/dashboards/cases/${encodeURIComponent(c.name)}`}/>
                         ))}
                     </DashboardHorizontalSection>}
                     {contentObject.metadata && <DashboardHorizontalSection title={"Metadata"}>
