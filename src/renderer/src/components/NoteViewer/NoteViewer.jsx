@@ -8,6 +8,13 @@ import useNavbarContents from "../../hooks/useNavbarContents/useNavbarContents";
 import { Code } from "iconoir-react";
 import NavbarItem from "../NavbarItem/NavbarItem";
 
+/**
+ * NoteViewer component
+ * Fetches and displays the content of a note
+ * Adds a button to Navbar to toggle between raw and parsed content
+ * @returns {NoteViewer}
+ * @constructor
+ */
 export default function NoteViewer() {
     const { id } = useParams();
     const [noteContent, setNoteContent] = useState("");
