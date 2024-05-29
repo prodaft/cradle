@@ -17,7 +17,7 @@ import { Link } from "react-router-dom";
  * @constructor
  */
 export default function DashboardNote({ index, note, setAlert, setAlertColor }) {
-    const [isPublishable, setIsPublishable] = useState(false); // todo note.publishable
+    const [isPublishable, setIsPublishable] = useState(note.publishable);
     const navigate = useNavigate();
     const auth = useAuth();
 
@@ -31,7 +31,6 @@ export default function DashboardNote({ index, note, setAlert, setAlertColor }) 
                 }
             })
             .catch(displayError(setAlert, setAlertColor));
-        console.log(isPublishable);
     };
 
     const referenceLinks = note.entities.map(entity => {
