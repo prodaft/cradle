@@ -4,7 +4,7 @@ import {useNavigate} from "react-router-dom";
 import {getActors, getCases, getUsers} from "../../services/adminService/adminService";
 import AdminPanelCard from "../AdminPanelCard/AdminPanelCard";
 import {useEffect, useState} from "react";
-import {AlertDismissible} from "../AlertDismissible/AlertDismissible";
+import AlertDismissible from "../AlertDismissible/AlertDismissible";
 import { displayError } from "../../utils/responseUtils/responseUtils";
 
 /**

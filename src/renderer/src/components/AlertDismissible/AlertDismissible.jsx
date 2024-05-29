@@ -11,7 +11,7 @@ import { Xmark } from "iconoir-react";
  * @returns {AlertDismissible}
  * @constructor
  */
-export function AlertDismissible({ alert, setAlert, color = "red" }) {
+export default function AlertDismissible({ alert, setAlert, color = "red" }) {
     const colorVariants = {
         green: 'bg-success',
         red: 'bg-error',
