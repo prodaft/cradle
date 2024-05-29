@@ -4,8 +4,9 @@ import { useState } from "react";
 import Preview from "../Preview/Preview";
 import { setPublishable } from "../../services/dashboardService/dashboardService";
 import { displayError } from "../../utils/responseUtils/responseUtils";
-import AlertDismissible from "../AlertDismissible/AlertDismissible";
 import { useAuth } from "../../hooks/useAuth/useAuth";
+import { createDashboardLink } from "../../utils/dashboardUtils/dashboardUtils";
+import { Link } from "react-router-dom";
 
 /**
  * DashboardNote component - This component is used to display a note on the dashboard.
@@ -33,14 +34,28 @@ export default function DashboardNote({ index, note, setAlert, setAlertColor }) 
         console.log(isPublishable);
     };
 
+    const referenceLinks = note.entities.map(entity => {
+        const dashboardLink = createDashboardLink(entity);
+        return (
+            <Link
+                key={entity.id}
+                to={dashboardLink}
+                className="text-zinc-500 hover:underline hover:text-cradle2 mr-1"
+            >
+                {entity.name};
+            </Link>
+        )
+    });
+
     return (
         <>
-            <div className="bg-inherit p-1 my-2 backdrop-blur-lg rounded-xl mb-4 shadow-md">
-                <div className="flex flex-row-reverse">
-                    <span className="pb-1 space-x-1">
+            <div className="bg-cradle3 bg-opacity-20 p-4 backdrop-blur-lg rounded-xl m-3 shadow-md">
+                <div className="flex flex-row justify-between">
+                    <div className="text-zinc-500 text-xs w-full">{new Date(note.timestamp).toLocaleString()}</div>
+                    <span className="pb-1 space-x-1 flex flex-row">
                         <label
                             htmlFor={`publishable-switch-${note.id}`}
-                            className="text-xs text-zinc-200 hover:cursor-pointer">
+                            className="text-xs text-zinc-300 hover:cursor-pointer">
                             Publishable
                         </label>
                         <input
@@ -54,15 +69,14 @@ export default function DashboardNote({ index, note, setAlert, setAlertColor }) 
                 </div>
                 <div
                     key={index}
-                    className="bg-cradle3 h-fit p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl mb-4 shadow-md overflow-hidden flex-grow flex space-y-2 flex-col cursor-pointer"
+                    className="bg-transparent h-fit p-2 backdrop-filter mb-4 overflow-hidden flex-grow flex space-y-2 flex-col cursor-pointer"
                     onClick={() => navigate(`/notes/${note.id}`)}>
-                    <div className="text-zinc-500 text-xs w-full">{new Date(note.timestamp).toLocaleString()}</div>
                     <Preview
                         htmlContent={parseContent(note.content)}
                     />
-                    <div className="text-zinc-500 text-xs w-full flex justify-between">
-                        <div>References: {note.entities.map(entity => entity.name).join(', ')}</div>
-                    </div>
+                </div>
+                <div className="text-zinc-300 text-xs w-full flex justify-between">
+                    <span className="break-all w-full">References: {referenceLinks}</span>
                 </div>
             </div>
         </>
