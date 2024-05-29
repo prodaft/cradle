@@ -4,9 +4,6 @@ import { Marked } from "marked";
 import "prismjs/themes/prism-tomorrow.css";
 import {entryTypes, metadataTypes} from "../entityDefinitions/entityDefinitions";
 import { createDashboardLink } from '../dashboardUtils/dashboardUtils';
-
-// const baseUrl = 'https://localhost:8000'; // TODO
-
     
 const styleClasses = {
     actors: "text-purple-700",

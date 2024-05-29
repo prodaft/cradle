@@ -86,7 +86,7 @@ export default function Dashboard(){
 
                     {contentObject.actors && <DashboardHorizontalSection title={"Related Actors"}>
                         {contentObject.actors.map((actor, index) => (
-                            <DashboardCard index={index} name={actor.name} link={createDashboardLink({ ...actor, type: 'actor' })} />
+                            <DashboardCard index={index} name={actor.name} link={createDashboardLink({ ...actor, type: 'actor' })} /> // TODO type should be in the new response
                         ))}
                     </DashboardHorizontalSection>}
 
