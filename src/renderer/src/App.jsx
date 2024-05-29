@@ -31,7 +31,7 @@ function App() {
               {/* Add any routes for components that keep the sidebar and navbar here */}
                     <Route path="/not-implemented" element={<FeatureNotImplemented />} />
                     <Route path="/editor" element={<TextEditor />} />
-                    <Route path={"/entities/*"} element={<Dashboard/>}></Route>
+                    <Route path={"/dashboards/*"} element={<Dashboard/>}></Route>
                     <Route path="/admin" element={<Outlet />}>
                         <Route index element={<AdminPanel />}></Route>
                         <Route path="/admin/add-actor" element={<AdminPanelAdd type="Actor" />}></Route>
