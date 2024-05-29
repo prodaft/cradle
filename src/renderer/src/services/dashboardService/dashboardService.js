@@ -21,3 +21,19 @@ export function getDashboardData(token, path){
         }
     })
 }
+
+// TODO - check openapi, add to checkbox, add to dashboard
+export function setPublishableStatus(token, path, status){
+    return axios({
+        method: "POST",
+        url: path,
+        withCredentials: true,
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+        data: {
+            publishable: status
+        }
+    })
+}

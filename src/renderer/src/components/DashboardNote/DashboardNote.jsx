@@ -17,7 +17,7 @@ export default function DashboardNote({ index, note }) {
 
     const handleCheckboxClick = (event) => {
         event.stopPropagation();
-        //TODO - Implement checkbox click when doing the publish feature
+
     };
 
     return (
