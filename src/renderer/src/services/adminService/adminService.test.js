@@ -92,7 +92,7 @@ describe('Admin Service', () => {
         await changeAccess(token, userId, caseId, accessLevel);
         expect(axios).toHaveBeenCalledWith({
             method: "put",
-            url: `/users/${userId}/access/${caseId}/`,
+            url: `/access/${userId}/${caseId}/`,
             data: { "access_type": accessLevel },
             headers: { "Authorization": `Bearer ${token}` }
         });
@@ -103,7 +103,7 @@ describe('Admin Service', () => {
         await getPermissions(token, userId);
         expect(axios).toHaveBeenCalledWith({
             method: "get",
-            url: `/users/${userId}/access/`,
+            url: `/access/${userId}/`,
             headers: { "Authorization": `Bearer ${token}` }
         });
     });

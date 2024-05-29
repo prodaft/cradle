@@ -61,7 +61,7 @@ export default function SearchDialog({ isOpen, onClose }) {
             .then((response) => {
                 console.log('Search results:', response.data);
                 setResults(response.data.map((result) => (
-                    <SearchResult name={result.name} type={result.type} subtype={result.subtype} onClick={handleResultClick(`/entities/${pluralize(result.type)}/${encodeURIComponent(result.name)}${result.subtype ? `?subtype=${result.subtype}` : ``}`)}/>
+                    <SearchResult name={result.name} type={result.type} subtype={result.subtype} onClick={handleResultClick(`/dashboards/${pluralize(result.type)}/${encodeURIComponent(result.name)}${result.subtype ? `?subtype=${result.subtype}` : ``}`)}/>
                 )));
             })
             .catch(displayError(setError, setErrorColor));
