@@ -47,7 +47,7 @@ export default function AdminPanel() {
                             description={actor.description}
                             type={"entities/actors"}
                             onDelete={displayActors}
-                            link={`/entities/actors/${encodeURIComponent(actor.name)}`}
+                            link={`/dashboards/actors/${encodeURIComponent(actor.name)}`}
                         />
                     );
                 }));
@@ -68,7 +68,7 @@ export default function AdminPanel() {
                             description={c.description}
                             type={"entities/cases"}
                             onDelete={displayCases}
-                            link={`/entities/cases/${encodeURIComponent(c.name)}`}
+                            link={`/dashboards/cases/${encodeURIComponent(c.name)}`}
                         />
                     );
                 }));

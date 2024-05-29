@@ -98,7 +98,7 @@ export async function deleteEntity(token, type, id){
 export async function changeAccess(token, userId, caseId, accessLevel) {
     return axios({
         method: "put",
-        url: `/users/${userId}/access/${caseId}/`,
+        url: `/access/${userId}/${caseId}/`,
         data: { "access_type": accessLevel },
         headers: {"Authorization": `Bearer ${token}`}
     });
@@ -113,7 +113,7 @@ export async function changeAccess(token, userId, caseId, accessLevel) {
 export async function getPermissions(token, userId) {
     return axios({
         method: "get",
-        url: `/users/${userId}/access/`,
+        url: `/access/${userId}/`,
         headers: {"Authorization": `Bearer ${token}`}
     });
 }
