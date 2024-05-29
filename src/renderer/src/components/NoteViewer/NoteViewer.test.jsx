@@ -36,6 +36,6 @@ describe('NoteViewer', () => {
 
         render(<NoteViewer />, { wrapper: MemoryRouter });
 
-        await waitFor(() => expect(console.error).toHaveBeenCalled());
+        await waitFor(() => expect(screen.getByText('Network Error')).toBeInTheDocument());
     });
 });
