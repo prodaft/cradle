@@ -33,6 +33,7 @@ export default function DashboardNote({ index, note, setAlert, setAlertColor }) 
             .catch(displayError(setAlert, setAlertColor));
     };
 
+    // Create a link to the dashboard for each entity that is referenced in the note
     const referenceLinks = note.entities.map(entity => {
         const dashboardLink = createDashboardLink(entity);
         return (

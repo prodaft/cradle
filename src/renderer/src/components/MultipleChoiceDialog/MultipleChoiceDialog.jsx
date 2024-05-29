@@ -15,7 +15,9 @@ import React from "react";
  * @constructor
  */
 export default function MultipleChoiceDialog({ open, setOpen, buttons, title, description }) {
-    const handleOpen = () => setOpen(!open);
+    const handleOpen = () => {
+        setOpen(!open);
+    }
 
     return (
         <>
