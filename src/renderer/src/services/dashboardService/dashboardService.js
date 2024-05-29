@@ -32,10 +32,10 @@ export function getDashboardData(token, path){
  * @returns {Promise<AxiosResponse<string>>}
  */
 export function setPublishable(token, noteId, status){
-    const path = `/notes/${noteId}/publishable`;
+    const path = `/notes/${noteId}/publishable/`;
 
     return axios({
-        method: "POST",
+        method: "PUT",
         url: path,
         withCredentials: true,
         headers: {

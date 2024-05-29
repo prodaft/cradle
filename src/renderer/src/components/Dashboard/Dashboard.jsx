@@ -98,7 +98,7 @@ export default function Dashboard(){
                     {contentObject.notes && <div className="bg-cradle3 p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col flex-1">
                         <h2 className="text-xl font-semibold mb-2">Notes</h2>
                         {contentObject.notes.map((note, index) => (
-                            <DashboardNote index={index} note={note}/>
+                            <DashboardNote index={index} note={note} setAlert={setAlert} setAlertColor={setAlertColor} />
                         ))}
                     </div>}
                 </div>
