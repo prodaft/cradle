@@ -58,7 +58,7 @@ describe('Dashboard Component', () => {
             actors: [{ name: 'Actor 1' }],
             cases: [{ name: 'Case 1' }],
             metadata: [{ name: 'Metadata 1' }],
-            notes: [{ content: 'Note 1', entities: [] }], // Ensure `entities` is an array
+            notes: [{ content: 'Note 1', entities: [] }],
         };
         getDashboardData.mockResolvedValue({ data: mockData });
 

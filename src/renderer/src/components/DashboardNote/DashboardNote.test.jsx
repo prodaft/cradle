@@ -13,6 +13,12 @@ jest.mock('react-router-dom', () => ({
     useNavigate: jest.fn(),
 }));
 
+jest.mock('../../hooks/useAuth/useAuth', () => ({
+    useAuth: jest.fn().mockImplementation(() => {
+        return { access: 'testToken', isAdmin: true };
+    }),
+}));
+
 describe('DashboardNote component', () => {
     const note = {
         id: '1',
@@ -29,7 +35,7 @@ describe('DashboardNote component', () => {
         );
 
         expect(screen.getByText('Test Note')).toBeInTheDocument();
-        expect(screen.getByText('References: Test Entity')).toBeInTheDocument();
+        expect(screen.getByText('Test Entity;')).toBeInTheDocument();
     });
 
 
@@ -78,7 +84,7 @@ describe('DashboardNote component', () => {
             </MemoryRouter>
         );
 
-        expect(screen.getByText('References: Test Entity')).toBeInTheDocument();
+        expect(screen.getByText('Test Entity;')).toBeInTheDocument();
     });
 });
 

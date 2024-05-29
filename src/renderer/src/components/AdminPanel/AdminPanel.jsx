@@ -6,6 +6,7 @@ import AdminPanelCard from "../AdminPanelCard/AdminPanelCard";
 import {useEffect, useState} from "react";
 import AlertDismissible from "../AlertDismissible/AlertDismissible";
 import { displayError } from "../../utils/responseUtils/responseUtils";
+import { createDashboardLink } from "../../utils/dashboardUtils/dashboardUtils";
 
 /**
  * AdminPanel component - This component is used to display the AdminPanel.
@@ -47,7 +48,7 @@ export default function AdminPanel() {
                             description={actor.description}
                             type={"entities/actors"}
                             onDelete={displayActors}
-                            link={`/dashboards/actors/${encodeURIComponent(actor.name)}`}
+                            link={createDashboardLink({ ...actor, type: 'actor' })}
                         />
                     );
                 }));
@@ -68,7 +69,7 @@ export default function AdminPanel() {
                             description={c.description}
                             type={"entities/cases"}
                             onDelete={displayCases}
-                            link={`/dashboards/cases/${encodeURIComponent(c.name)}`}
+                            link={createDashboardLink({ ...c, type: 'case' })}
                         />
                     );
                 }));
