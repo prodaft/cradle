@@ -12,7 +12,7 @@ axios.defaults.baseURL = "http://localhost:8000";
  * @returns {Promise} The response from the server
  * @throws {Error} see the OpenApi specification
  */
-async function saveNote(text, token) {
+async function saveNote(token, text) {
     return axios({
         method: "post",
         url: "/notes/",

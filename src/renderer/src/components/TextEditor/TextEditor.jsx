@@ -38,7 +38,7 @@ export default function TextEditor() {
             return;
         }
 
-        saveNote(storedContent, auth.access).then((res) => {
+        saveNote(auth.access, storedContent).then((res) => {
             if (res.status === 200) {
                 // Clear local storage on success
                 setMarkdownContentCallback('');

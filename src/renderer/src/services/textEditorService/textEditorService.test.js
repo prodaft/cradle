@@ -19,7 +19,7 @@ describe('saveNote', () => {
 
         axios.mockResolvedValue(mockResponse);
 
-        const response = await saveNote(text, token);
+        const response = await saveNote(token, text);
 
         expect(axios).toHaveBeenCalledWith({
             method: "post",
@@ -38,7 +38,7 @@ describe('saveNote', () => {
         axios.mockRejectedValue(mockError);
 
         try {
-            await saveNote(text, token);
+            await saveNote(token, text);
         } catch (error) {
             expect(error).toBe(mockError);
         }
