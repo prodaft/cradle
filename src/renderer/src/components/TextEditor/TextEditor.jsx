@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth/useAuth.js";
 import { AlertDismissible } from "../AlertDismissible/AlertDismissible.jsx";
 import { displayError } from "../../utils/responseUtils/responseUtils.js";
+import useLightMode from "../../hooks/useLightMode/useLightMode.js";
 
 /**
  * The text editor is composed of two sub-components, the Editor and the Preview. View their documentation for more details
@@ -24,20 +25,7 @@ export default function TextEditor() {
     const [alertColor, setAlertColor] = useState("red");
     const navigate = useNavigate();
     const parsedContent = parseContent(markdownContent);
-
-    // Check if the system theme is light mode
-    const [isLightMode, setIsLightMode] = useState(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
-
-    useEffect(() => {
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
-        const handleChange = (e) => {
-            setIsLightMode(e.matches);
-        };
-        mediaQuery.addEventListener('change', handleChange);
-        return () => {
-            mediaQuery.removeEventListener('change', handleChange);
-        };
-    }, []);
+    const isLightMode = useLightMode();
 
     // Attempt to send the note to the server. If successful, clear the local storage. Otherwise, display the error.
     const handleSaveNote = async () => {
