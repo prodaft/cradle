@@ -9,7 +9,7 @@ import useNavbarContents from "../../hooks/useNavbarContents/useNavbarContents";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth/useAuth.js";
-import { AlertDismissible } from "../AlertDismissible/AlertDismissible.jsx";
+import AlertDismissible from "../AlertDismissible/AlertDismissible.jsx";
 import { displayError } from "../../utils/responseUtils/responseUtils.js";
 import useLightMode from "../../hooks/useLightMode/useLightMode.js";
 

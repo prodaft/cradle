@@ -1,7 +1,7 @@
 import {useState} from "react";
 import {useAuth} from "../../hooks/useAuth/useAuth";
 import {changeAccess} from "../../services/adminService/adminService";
-import {AlertDismissible} from "../AlertDismissible/AlertDismissible";
+import AlertDismissible from "../AlertDismissible/AlertDismissible";
 import {NavArrowDown} from "iconoir-react";
 import {useNavigate} from "react-router-dom";
 import { displayError } from "../../utils/responseUtils/responseUtils";
