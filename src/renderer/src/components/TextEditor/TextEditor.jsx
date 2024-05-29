@@ -29,6 +29,7 @@ export default function TextEditor() {
     const isLightMode = useLightMode();
     const [dialog, setDialog] = useState(false);
 
+    // Open the dialog to save the note. If the note is empty, display an error.
     const openDialog = () => {
         const storedContent = localStorage.getItem("md-content");
 
@@ -56,6 +57,7 @@ export default function TextEditor() {
         }).catch(displayError(setAlert, setAlertColor));
     }
 
+    // Buttons for the dialog. Label & handler function
     const dialogButtons = {
         "Save As Publishable": handleSaveNote(true),
         "Save As Not Publishable": handleSaveNote(false),
@@ -70,7 +72,7 @@ export default function TextEditor() {
 
     return (
         <div className="w-full h-full rounded-md flex flex-col p-1.5 gap-1.5 sm:flex-row overflow-y-hidden">
-            <MultipleChoiceDialog open={dialog} setOpen={setDialog} title={"Save note"} description={"How do you want to save this note?"} buttons={dialogButtons} />
+            <MultipleChoiceDialog open={dialog} setOpen={setDialog} title={"Save Note"} description={"How do you want to save this note?"} buttons={dialogButtons} />
             <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
             <div className={"h-1/2 sm:h-full w-full bg-gray-2 rounded-md"}>
                 <Editor markdownContent={markdownContent} setMarkdownContent={setMarkdownContentCallback} isLightMode={isLightMode} />

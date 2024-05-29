@@ -46,7 +46,7 @@ export default function Dashboard(){
         getDashboardData(auth.access, path)
             .then(response => {
                 setContentObject(response.data);
-                // dashboard.current.scrollTo(0, 0); // todo, breaks tests
+                // dashboard.current.scrollTo(0, 0); // TODO, breaks tests
             })
             .catch(err => {
                 setContentObject({});
