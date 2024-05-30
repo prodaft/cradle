@@ -10,7 +10,7 @@ from typing import cast
 from entities.models import Entity
 from access.models import Access
 from ..serializers import EntityQuerySerializer
-from entities.serializers.entity_serializers import EntitySerializer
+from entities.serializers import EntitySerializer
 
 
 class QueryList(APIView):

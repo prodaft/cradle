@@ -1,11 +1,8 @@
 from django.test import TestCase
 from user.models import CradleUser
-from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import AccessToken
-from unittest.mock import patch, PropertyMock
 
 from entities.models import Entity
-from entities.enums import EntityType, EntitySubtype
+from entities.enums import EntityType, MetadataSubtype
 from access.models import Access
 from notes.models import Note
 from ..utils.dashboard_utils import DashboardUtils
@@ -23,14 +20,6 @@ class DashboardUtilsDashboardJsonTest(TestCase):
         self.user2 = CradleUser.objects.create_user(
             username="user2", password="password", is_staff=False
         )
-
-    def create_tokens(self):
-        self.token_user2 = str(AccessToken.for_user(self.user2))
-        self.token_admin = str(AccessToken.for_user(self.admin_user))
-        self.token_normal = str(AccessToken.for_user(self.normal_user))
-        self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
-        self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
-        self.headers_user2 = {"HTTP_AUTHORIZATION": f"Bearer {self.token_user2}"}
 
     def create_notes(self):
         self.note1 = Note.objects.create(content="Note1")
@@ -62,7 +51,7 @@ class DashboardUtilsDashboardJsonTest(TestCase):
             name="Metadata1",
             description="Description1",
             type=EntityType.METADATA,
-            subtype=EntitySubtype.COUNTRY,
+            subtype=MetadataSubtype.COUNTRY,
         )
 
     def create_access(self):
@@ -79,11 +68,8 @@ class DashboardUtilsDashboardJsonTest(TestCase):
         )
 
     def setUp(self):
-        self.client = APIClient()
 
         self.create_users()
-
-        self.create_tokens()
 
         self.create_cases()
 
@@ -95,70 +81,38 @@ class DashboardUtilsDashboardJsonTest(TestCase):
 
         self.create_notes()
 
-    @patch("notes.models.Note.timestamp", new_callable=PropertyMock)
-    def test_get_dashboard_json(self, mock_timestamp):
-        mock_timestamp.return_value = "2024-01-01T00:00:00Z"
+    def test_get_dashboard_json(self):
 
-        notes = Note.objects.all()
-        actors = Entity.objects.filter(type=EntityType.ACTOR)
-        cases = Entity.objects.filter(type=EntityType.CASE)
-        metadata = Entity.objects.filter(type=EntityType.METADATA)
-        entries = Entity.objects.filter(type=EntityType.ENTRY)
+        notes = Note.objects.filter(id=self.note1.id)
+        actors = Entity.objects.filter(id=self.actor1.id)
+        cases = Entity.objects.none()
+        metadata = Entity.objects.filter(id=self.metadata1.id)
+        entries = Entity.objects.none()
 
-        dashboard_json = DashboardUtils.get_dashboard_json(
-            entity=self.case1,
-            notes=notes,
-            actors=actors,
-            cases=cases,
-            metadata=metadata,
-            entries=entries,
-            user=self.normal_user,
+        dashboard_json = DashboardUtils.get_dashboard(
+            user=self.normal_user, entity_id=self.case1.id
         )
 
-        expected_json = {
-            "id": self.case1.id,
-            "name": "Case1",
-            "description": "Description1",
-            "type": "case",
+        self.assertQuerySetEqual(dashboard_json["notes"], notes)
+        self.assertQuerySetEqual(dashboard_json["actors"], actors)
+        self.assertQuerySetEqual(dashboard_json["cases"], cases)
+        self.assertQuerySetEqual(dashboard_json["metadata"], metadata)
+        self.assertQuerySetEqual(dashboard_json["entries"], entries)
+
+
+class AddEntityFieldsTest(TestCase):
+
+    def test_add_entity_fields(self):
+        entity = Entity.objects.create(
+            name="Entity", description="Description", type=EntityType.CASE, subtype=""
+        )
+
+        expected = {
+            "id": entity.id,
+            "name": "Entity",
+            "description": "Description",
+            "type": EntityType.CASE,
             "subtype": "",
-            "notes": [
-                {
-                    "id": self.note1.id,
-                    "content": "Note1",
-                    "timestamp": "2024-01-01T00:00:00Z",
-                    "entities": [
-                        {"name": "Case1", "type": "case", "subtype": ""},
-                        {"name": "Actor1", "type": "actor", "subtype": ""},
-                        {"name": "Metadata1", "type": "metadata", "subtype": "country"},
-                    ],
-                },
-                {
-                    "id": self.note2.id,
-                    "content": "Note2",
-                    "timestamp": "2024-01-01T00:00:00Z",
-                    "entities": [
-                        {"name": "Case1", "type": "case", "subtype": ""},
-                        {"name": "Case2", "type": "case", "subtype": ""},
-                        {"name": "Actor2", "type": "actor", "subtype": ""},
-                    ],
-                },
-            ],
-            "actors": [
-                {"name": "Actor1", "description": "Description1"},
-                {"name": "Actor2", "description": "Description2"},
-            ],
-            "cases": [
-                {"name": "Case1", "description": "Description1", "access": True},
-                {"name": "Case2", "description": "Description2", "access": False},
-            ],
-            "entries": [],
-            "metadata": [
-                {
-                    "name": "Metadata1",
-                    "description": "Description1",
-                    "subtype": "country",
-                }
-            ],
         }
 
-        self.assertEqual(dashboard_json, expected_json)
+        self.assertEqual(DashboardUtils.add_entity_fields(entity, {}), expected)
