@@ -56,7 +56,7 @@ export default function NoteViewer() {
                     </div>
                     <div className="flex-grow">
                         {isRaw ? (
-                            <pre className="prose dark:prose-invert break-all overflow-x-hidden">{noteContent}</pre>
+                            <pre className="prose dark:prose-invert break-all overflow-x-hidden p-4">{noteContent}</pre>
                         ) : (
                             <Preview htmlContent={parseContent(noteContent)} />
                         )}
