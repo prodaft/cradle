@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from ..models import Entity
-from ..exceptions import (
+from .models import Entity
+from .exceptions import (
     DuplicateActorException,
     DuplicateCaseException,
     DuplicateEntryException,
@@ -56,7 +56,7 @@ class ActorResponseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Entity
-        fields = ["id", "name", "description"]
+        fields = ["id", "name", "description", "type", "subtype"]
 
 
 class CaseSerializer(serializers.ModelSerializer):
@@ -115,7 +115,7 @@ class CaseResponseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Entity
-        fields = ["id", "name", "description"]
+        fields = ["id", "name", "description", "type", "subtype"]
 
 
 class EntrySerializer(serializers.ModelSerializer):
@@ -163,6 +163,15 @@ class EntrySerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+class EntryResponseSerializer(serializers.ModelSerializer):
+
+    description = serializers.CharField(required=False, allow_blank=True)
+
+    class Meta:
+        model = Entity
+        fields = ["id", "name", "description", "type", "subtype"]
+
+
 class MetadataSerializer(serializers.ModelSerializer):
 
     description = serializers.CharField(required=False, allow_blank=True)
@@ -186,8 +195,17 @@ class MetadataSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+class MetadataResponseSerializer(serializers.ModelSerializer):
+
+    description = serializers.CharField(required=False, allow_blank=True)
+
+    class Meta:
+        model = Entity
+        fields = ["id", "name", "description", "type", "subtype"]
+
+
 class EntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Entity
-        fields = ["name", "type", "subtype"]
+        fields = ["id", "name", "type", "subtype"]
