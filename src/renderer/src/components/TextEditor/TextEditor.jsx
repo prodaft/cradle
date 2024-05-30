@@ -64,7 +64,6 @@ export default function TextEditor() {
     }
 
     useNavbarContents([
-        <NavbarItem icon={<Upload />} text="Publish" data-testid="publish-btn" onClick={() => navigate('/not-implemented')} />,
         <NavbarItem icon={<FloppyDisk />} text="Save" data-testid="save-btn" onClick={openDialog} />
     ],
         [auth]
