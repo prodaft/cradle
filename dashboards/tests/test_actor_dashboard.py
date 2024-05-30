@@ -16,7 +16,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class GetCaseDashboardTest(TestCase):
+class GetActorDashboardTest(TestCase):
 
     def check_note_ids(self, notes, notes_json):
         for i in range(0, len(notes_json)):
@@ -133,24 +133,20 @@ class GetCaseDashboardTest(TestCase):
 
     def test_get_dashboard_admin(self):
         response = self.client.get(
-            reverse("case_dashboard", kwargs={"case_name": self.case1.name}),
+            reverse("actor_dashboard", kwargs={"actor_name": self.actor1.name}),
             **self.headers_admin,
         )
         self.assertEqual(response.status_code, 200)
 
-        notes = Note.objects.all().order_by("-timestamp")
-        cases = Entity.objects.filter(type=EntityType.CASE).exclude(id=self.case1.id)
-        actors = Entity.objects.filter(type=EntityType.ACTOR)
+        notes = Note.objects.filter(id=self.note1.id)
+        cases = Entity.objects.filter(id=self.case1.id)
+        actors = Entity.objects.none()
         metadata = Entity.objects.filter(type=EntityType.METADATA)
-        entries = Entity.objects.filter(type=EntityType.ENTRY)
 
         json_response = bytes_to_json(response.content)
 
         with self.subTest("Check case id"):
-            self.assertEqual(json_response["id"], self.case1.id)
-
-        with self.subTest("Check case access"):
-            self.assertEqual(json_response["access"], "read-write")
+            self.assertEqual(json_response["id"], self.actor1.id)
 
         self.check_note_ids(notes, json_response["notes"])
 
@@ -160,28 +156,22 @@ class GetCaseDashboardTest(TestCase):
 
         self.check_metadata_ids(metadata, json_response["metadata"])
 
-        self.check_entry_ids(entries, json_response["entries"])
-
     def test_get_dashboard_user_read_access(self):
         response = self.client.get(
-            reverse("case_dashboard", kwargs={"case_name": self.case1.name}),
+            reverse("actor_dashboard", kwargs={"actor_name": self.actor1.name}),
             **self.headers_user2,
         )
         self.assertEqual(response.status_code, 200)
 
         notes = Note.objects.filter(id=self.note1.id)
-        cases = Entity.objects.none()
-        actors = Entity.objects.filter(id=self.actor1.id)
+        cases = Entity.objects.filter(id=self.case1.id)
+        actors = Entity.objects.none()
         metadata = Entity.objects.filter(id=self.metadata1.id)
-        entries = Entity.objects.filter(type=EntityType.ENTRY)
 
         json_response = bytes_to_json(response.content)
 
         with self.subTest("Check case id"):
-            self.assertEqual(json_response["id"], self.case1.id)
-
-        with self.subTest("Check case access"):
-            self.assertEqual(json_response["access"], "read")
+            self.assertEqual(json_response["id"], self.actor1.id)
 
         self.check_note_ids(notes, json_response["notes"])
 
@@ -191,27 +181,22 @@ class GetCaseDashboardTest(TestCase):
 
         self.check_metadata_ids(metadata, json_response["metadata"])
 
-        self.check_entry_ids(entries, json_response["entries"])
-
     def test_get_dashboard_user_read_write_access(self):
         response = self.client.get(
-            reverse("case_dashboard", kwargs={"case_name": self.case1.name}),
+            reverse("actor_dashboard", kwargs={"actor_name": self.actor1.name}),
             **self.headers_user1,
         )
         self.assertEqual(response.status_code, 200)
 
-        notes = Note.objects.all().order_by("-timestamp")
-        cases = Entity.objects.filter(id=self.case2.id)
-        actors = Entity.actors.all()
-        metadata = Entity.metadata.all()
-        entries = Entity.entries.all()
+        notes = Note.objects.filter(id=self.note1.id)
+        cases = Entity.objects.filter(id=self.case1.id)
+        actors = Entity.objects.none()
+        metadata = Entity.objects.filter(id=self.metadata1.id)
 
         json_response = bytes_to_json(response.content)
 
         with self.subTest("Check case id"):
-            self.assertEqual(json_response["id"], self.case1.id)
-
-        self.assertEqual(json_response["access"], "read-write")
+            self.assertEqual(json_response["id"], self.actor1.id)
 
         self.check_note_ids(notes, json_response["notes"])
 
@@ -221,18 +206,9 @@ class GetCaseDashboardTest(TestCase):
 
         self.check_metadata_ids(metadata, json_response["metadata"])
 
-        self.check_entry_ids(entries, json_response["entries"])
-
-    def test_get_dashboard_user_no_access(self):
-        response = self.client.get(
-            reverse("case_dashboard", kwargs={"case_name": self.case2.name}),
-            **self.headers_user2,
-        )
-        self.assertEqual(response.status_code, 404)
-
     def test_get_dashboard_invalid_case(self):
         response = self.client.get(
-            reverse("case_dashboard", kwargs={"case_name": "Case"}),
+            reverse("actor_dashboard", kwargs={"actor_name": "Case"}),
             **self.headers_user1,
         )
         self.assertEqual(response.status_code, 404)

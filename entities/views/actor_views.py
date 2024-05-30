@@ -5,7 +5,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.request import Request
 
-from ..serializers.entity_serializers import ActorResponseSerializer, ActorSerializer
+from ..serializers import ActorResponseSerializer, ActorSerializer
 from ..models import Entity
 
 
