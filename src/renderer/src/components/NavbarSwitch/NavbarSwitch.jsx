@@ -1,3 +1,10 @@
+/**
+ * NavbarSwitch
+ * A switch component for the navbar.
+ * @param props
+ * @returns {NavbarSwitch}
+ * @constructor
+ */
 export default function NavbarSwitch(props){
     return (
         <button className="navbar-item hover:bg-gray-4">
