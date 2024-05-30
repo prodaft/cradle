@@ -4,23 +4,20 @@ from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
+from typing import cast
 
 from entities.models import Entity
 from user.models import CradleUser
-from access.models import Access
 from ..utils.dashboard_utils import DashboardUtils
-from ..serializers import CaseDashboardSerializer
-from access.enums import AccessType
-
-from typing import cast
+from ..serializers import ActorDashboardSerializer
 
 
-class CaseDashboard(APIView):
+class ActorDashboard(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get(self, request: Request, case_name: str) -> Response:
+    def get(self, request: Request, actor_name: str) -> Response:
         """Allow a user to retrieve the dashboars of a Case by specifying its name.
 
         Args:
@@ -40,28 +37,15 @@ class CaseDashboard(APIView):
         user: CradleUser = cast(CradleUser, request.user)
 
         try:
-            case = Entity.cases.get(name=case_name)
+            actor = Entity.actors.get(name=actor_name)
         except Entity.DoesNotExist:
             return Response(
-                "There is no case with specified name", status=status.HTTP_404_NOT_FOUND
+                "There is no actor with specified name",
+                status=status.HTTP_404_NOT_FOUND,
             )
 
-        if not Access.objects.has_access_to_cases(
-            user, {case}, {AccessType.READ, AccessType.READ_WRITE}
-        ):
-            return Response(
-                "There is no case with specified name", status=status.HTTP_404_NOT_FOUND
-            )
+        entities_dict = DashboardUtils.get_dashboard(user, actor.id)
 
-        entities_dict = DashboardUtils.get_dashboard(user, case.id)
+        dashboard = DashboardUtils.add_entity_fields(actor, entities_dict)
 
-        dashboard = DashboardUtils.add_entity_fields(case, entities_dict)
-
-        if user.is_superuser:
-            dashboard["access"] = "read-write"
-        else:
-            dashboard["access"] = Access.objects.get_or_create(user=user, case=case)[
-                0
-            ].access_type
-
-        return Response(CaseDashboardSerializer(dashboard).data)
+        return Response(ActorDashboardSerializer(dashboard).data)

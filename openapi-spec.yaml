@@ -185,7 +185,7 @@ paths:
         '404':
           description: User is not found. # maybe
 
-  /entities/actors/:
+  /entities/actors:
     get:
       tags:
         - Entity
@@ -201,7 +201,7 @@ paths:
               schema: 
                 type: array
                 items: 
-                  $ref: '#/components/schemas/Agent'
+                  $ref: '#/components/schemas/Entity'
         '401':
           description: User is not authenticated.
         '403':
@@ -232,7 +232,7 @@ paths:
           content: 
             'application/json':
               schema: 
-                $ref: '#/components/schemas/Agent'
+                $ref: '#/components/schemas/Entity'
         '401': 
           description: User is not authenticated.
         '403': 
@@ -259,7 +259,7 @@ paths:
               schema: 
                 type: array
                 items: 
-                  $ref: '#/components/schemas/Case'
+                  $ref: '#/components/schemas/Entity'
         '401': 
           description: User is not authenticated.
         '403': 
@@ -290,7 +290,7 @@ paths:
           content: 
             'application/json':
               schema: 
-                $ref: '#/components/schemas/Case'
+                $ref: '#/components/schemas/Entity'
         '401': 
           description: User is not authenticated.
         '403': 
@@ -300,7 +300,7 @@ paths:
         '409':
           description: Case already exists.
   
-  /dashboards/cases/{case_name}/:
+  /dashboards/cases/{case_name}:
     get:
       tags:
         - Dashboard
@@ -327,8 +327,36 @@ paths:
           description: User is not authenticated.
         '404':
           description: Case not found or User doesn't have access.
+  
+  /dashboards/actors/{actor_name}:
+    get:
+      tags:
+        - Dashboard
+      summary: Get the dashboard of an Actor
+      description: Allow a user to retrieve the dashboars of a Case by specifying its name
+      operationId: getActorByName
+      parameters:
+        - in: path
+          name: actor_name
+          required: true
+          schema:
+            type: string
+          examples:
+            caseNameExample:
+              value: "Actor"
+      responses:
+        '200': 
+          description: Request was successful. 
+          content: 
+            'application/json':
+              schema: 
+                $ref: '#/components/schemas/ActorDashboard'
+        '401': 
+          description: User is not authenticated.
+        '404':
+          description: Actor not found.
 
-  /access/{userId}/:
+  /access/{userId}:
     get:
       tags:
         - Access
@@ -426,33 +454,6 @@ paths:
           description: User is not an admin.
         '404':
           description: There is no agent with specified ID.
-    get:
-      tags: 
-        - Entity
-      summary: Read details of an Actor
-      description: Allow a user to retrieve the details of an Actor by specifying its id
-      operationId: getActor
-      parameters:
-        - in: path
-          name: agentId
-          required: true
-          schema:
-            type: integer
-            format: int64
-          examples:
-            agentIdExample:
-              value: "2341641124"
-      responses:
-        '200': 
-          description: Request was successful. 
-          content: 
-            'application/json':
-              schema: 
-                $ref: '#/components/schemas/Agent'
-        '401': 
-          description: User is not authenticated.
-        '404':
-          description: Actor not found.
             
 
 
@@ -507,7 +508,7 @@ paths:
           content: 
             'application/json':
               schema: 
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Entity'
         '401': 
           description: User is not authenticated.
         '404':
@@ -584,7 +585,7 @@ paths:
         '404':
           description: Note not found. 
 
-  /notes/{noteId}/:
+  /notes/{noteId}:
     delete:
       tags:
         - Note
@@ -965,14 +966,31 @@ components:
     CaseDashboard:
       type: object
       properties:
+        ID:
+          type: integer
+          format: int64
         name:
           type: string
         description:
           type: string
         type:
           type: string
+          enum: 
+          - case
         subtype:
           type: string
+          enum: 
+            - ip
+            - domain
+            - url
+            - username
+            - password
+            - person
+            - social-media
+            - hash
+            - tool 
+            - cve
+            - ttp
         notes:
           type: array
           items: 
@@ -980,32 +998,70 @@ components:
         actors:
           type: array
           items: 
-            type: object
-            properties:
-              name:
-                type: string
-              description:
-                type: string
+            $ref: "#/components/schemas/Entity"
         cases:
           type: array
           items: 
-            type: object
-            properties:
-              name:
-                type: string
-              description:
-                type: string
-              access:
-                type: boolean
+            $ref: "#/components/schemas/Entity"
         metadata:
           type: array
           items: 
-            type: object
-            properties:
-              name:
-                type: string
-              description:
-                type: string
+            $ref: "#/components/schemas/Entity"
+        entries:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        access: 
+          type: string
+          enum: 
+          - none
+          - read
+          - read-write
+    
+    ActorDashboard:
+      type: object
+      properties:
+        ID:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: 
+          - actor
+        subtype:
+          type: string
+          enum: 
+            - ip
+            - domain
+            - url
+            - username
+            - password
+            - person
+            - social-media
+            - hash
+            - tool 
+            - cve
+            - ttp
+        notes:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Note"
+        actors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Entity"
+        cases:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        metadata:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
     
     User:
       type: object
@@ -1020,9 +1076,9 @@ components:
         cases:
           type: array
           items: 
-            $ref: "#/components/schemas/Case"
+            $ref: "#/components/schemas/Entity"
 
-    Agent:
+    Entity:
       type: object
       properties:
         ID:
@@ -1032,18 +1088,62 @@ components:
           type: string
         description: 
           type: string
-
-    Case:
+        type:
+          type: string
+          enum: 
+          - actor
+          - case
+          - entry
+          - metadata
+        subtype:
+          type: string
+          enum: 
+            - ip
+            - domain
+            - url
+            - username
+            - password
+            - person
+            - social-media
+            - hash
+            - tool 
+            - cve
+            - ttp
+    Access:
+      type: string
+      enum:
+        - none
+        - read
+        - read-write
+    
+    Note:
       type: object
       properties:
         ID:
           type: integer
           format: int64
-        name:
+        content: 
           type: string
-        description:
+        publishable:
+          type: boolean
+        timestamp: 
           type: string
-
+          format: date-time
+        entities:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: integer
+                format: int64
+              name:
+                type: string
+              type:
+                type: string
+              subtype:
+                type: string
+    
     CaseAccess:
       type: object
       properties:
@@ -1058,61 +1158,6 @@ components:
           - none
           - read
           - read-write
-          
-
-    Entry:
-      type: object
-      properties:
-        ID:
-          type: integer
-          format: int64
-        name:
-          type: string
-        type: 
-          type: string
-        
-
-    Metadata:
-      type: object
-      properties:
-        ID:
-          type: integer
-          format: int64
-        name:
-          type: string
-        type: 
-          type: string
-        
-
-    Access:
-      type: string
-      enum:
-        - none
-        - read
-        - read-write
-    
-    Note:
-      type: object
-      properties:
-        ID:
-          type: integer
-          format: int64
-        contents: 
-          type: string
-        timestamp: 
-          type: string
-          format: date-time
-        entities:
-          type: array
-          items: 
-            type: object
-            properties:
-              name:
-                type: string
-              type:
-                type: string
-              subtype:
-                type: string
 
     FleetingNote:
       type: object

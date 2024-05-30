@@ -23,24 +23,21 @@ class NoteManager(models.Manager):
         """
         return self.get_queryset().filter(entities__id=entity_id).order_by("-timestamp")
 
-    def get_entities_of_type(
+    def get_entities_from_notes(
         self,
-        entity_id: int,
-        entity_type: EntityType,
+        accessible_notes: models.QuerySet,
     ) -> models.QuerySet:
         """Gets the entities of a entity of a specific type
             related to the entity through notes
 
         Args:
-            entity_id (int): The id of the entity
-            entity_type (EntityType): The type of the entity to filter by
+            accessible_notes: The QuerySet containing the accessible notes
+            entity_type: The type of the entity to filter by
 
         Returns:
             models.QuerySet: The entities of the case of the specific type
         """
-        notes = self.get_all_notes(entity_id)
-
-        entities = Entity.objects.filter(note__in=notes, type=entity_type).distinct()
+        entities = Entity.objects.filter(note__in=accessible_notes).distinct()
 
         return entities
 

@@ -7,7 +7,7 @@ import io
 from rest_framework_simplejwt.tokens import AccessToken
 
 from ..models import Entity
-from ..serializers.entity_serializers import ActorResponseSerializer
+from ..serializers import ActorResponseSerializer
 from ..enums import EntityType
 
 
