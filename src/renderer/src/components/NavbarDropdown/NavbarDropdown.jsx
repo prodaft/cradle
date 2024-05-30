@@ -1,3 +1,10 @@
+/**
+ * NavbarDropdown
+ * A dropdown meny component for the navbar.
+ * @param props - the contents of the dropdown and their handlers, icon for the dropdown
+ * @returns {NavbarDropdown
+ * @constructor
+ */
 export default function NavbarDropdown(props){
     return (
         <div className="dropdown">
