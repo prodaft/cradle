@@ -2,9 +2,20 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
 from rest_framework_simplejwt.authentication import AuthUser
+from django.core.exceptions import ValidationError
+from django.contrib.auth import password_validation
+from django.contrib.auth.password_validation import (
+    MinimumLengthValidator,
+)
 from .models import CradleUser
-from .exceptions import DuplicateUserException
-from typing import Dict, List, cast, Any
+from .exceptions import DuplicateUserException, InvalidPasswordException
+from typing import Dict, List, cast, Any, Sequence
+from .utils.validators import (
+    MinimumDigitsValidator,
+    MinimumLowercaseLettersValidator,
+    MinimumSpecialCharacterValidator,
+    MinimumUppercaseLettersValidator,
+)
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -33,6 +44,21 @@ class UserCreateSerializer(serializers.ModelSerializer):
         ).exists()
         if user_exists:
             raise DuplicateUserException()
+
+        password_validators: Sequence = (
+            MinimumLowercaseLettersValidator(1),
+            MinimumDigitsValidator(1),
+            MinimumSpecialCharacterValidator(1),
+            MinimumUppercaseLettersValidator(1),
+            MinimumLengthValidator(12),
+        )
+        try:
+            password_validation.validate_password(
+                data["password"], password_validators=password_validators
+            )
+        except ValidationError:
+            raise InvalidPasswordException()
+
         return super().validate(data)
 
     def create(self, validated_data: Any):
