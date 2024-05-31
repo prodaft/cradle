@@ -113,7 +113,7 @@ export default function Dashboard() {
         (auth.isAdmin && contentObject.type !== 'entry') ?
             <NavbarButton
                 icon={<Trash />}
-                name={"Delete"}
+                text="Delete"
                 onClick={() => setDialog(true)}
                 data-testid="delete-entity-btn"
             /> : null,

@@ -53,17 +53,16 @@ export default function TextEditor() {
     // Buttons for the dialog. Label & handler function
     const dropdownButtons = [
         {
-            label: "Publishable",
+            label: "...Publishable",
             handler: handleSaveNote(true),
         },
         {
-            label: "Not Publishable",
+            label: "...Not Publishable",
             handler: handleSaveNote(false),
         },
     ];
 
     useNavbarContents([
-        <NavbarButton icon={<Upload />} text="Publish" data-testid="publish-btn" onClick={() => navigate('/not-implemented')} />,
         <NavbarDropdown icon={<FloppyDisk />} contents={dropdownButtons} text="Save As..." data-testid="save-btn" />
     ],
         [auth]
