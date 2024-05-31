@@ -12,7 +12,7 @@ import { useAuth } from "../../hooks/useAuth/useAuth.js";
 import AlertDismissible from "../AlertDismissible/AlertDismissible.jsx";
 import { displayError } from "../../utils/responseUtils/responseUtils.js";
 import useLightMode from "../../hooks/useLightMode/useLightMode.js";
-import MultipleChoiceDialog from "../MultipleChoiceDialog/MultipleChoiceDialog.jsx";
+import NavbarDropdown from "../NavbarDropdown/NavbarDropdown.jsx";
 
 /**
  * The text editor is composed of two sub-components, the Editor and the Preview. View their documentation for more details
@@ -58,21 +58,26 @@ export default function TextEditor() {
     }
 
     // Buttons for the dialog. Label & handler function
-    const dialogButtons = {
-        "Save As Publishable": handleSaveNote(true),
-        "Save As Not Publishable": handleSaveNote(false),
-    }
+    const dropdownButtons = [
+        {
+            label: "Save As Publishable",
+            handler: handleSaveNote(true),
+        },
+        {
+            label: "Save As Not Publishable",
+            handler: handleSaveNote(false),
+        },
+    ];
 
     useNavbarContents([
         <NavbarItem icon={<Upload />} text="Publish" data-testid="publish-btn" onClick={() => navigate('/not-implemented')} />,
-        <NavbarItem icon={<FloppyDisk />} text="Save" data-testid="save-btn" onClick={openDialog} />
+        <NavbarDropdown icon={<FloppyDisk />} contents={dropdownButtons} text="Save As..." data-testid="save-btn" />
     ],
         [auth]
     )
 
     return (
         <div className="w-full h-full rounded-md flex flex-col p-1.5 gap-1.5 sm:flex-row overflow-y-hidden">
-            <MultipleChoiceDialog open={dialog} setOpen={setDialog} title={"Save Note"} description={"How do you want to save this note?"} buttons={dialogButtons} />
             <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
             <div className={"h-1/2 sm:h-full w-full bg-gray-2 rounded-md"}>
                 <Editor markdownContent={markdownContent} setMarkdownContent={setMarkdownContentCallback} isLightMode={isLightMode} />

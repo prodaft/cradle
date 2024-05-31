@@ -3,7 +3,7 @@ import { vim } from "@replit/codemirror-vim";
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
 import { drawSelection } from "@uiw/react-codemirror";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { EditorView } from '@codemirror/view';
 
 import { vscodeDark } from '@uiw/codemirror-theme-vscode';
@@ -19,6 +19,7 @@ import { eclipse } from '@uiw/codemirror-theme-eclipse';
  */
 export default function Editor({ markdownContent, setMarkdownContent, isLightMode }) {
     const [enableVim, setEnableVim] = useState(false);
+    const vimModeId = useId();
 
     // Set extension here
     var extensions = [
@@ -36,10 +37,11 @@ export default function Editor({ markdownContent, setMarkdownContent, isLightMod
     return (
         <div className="h-full w-full flex flex-col flex-1">
             <div className="flex flex-row justify-between items-center p-2">
-                <label htmlFor="vim-toggle" className="flex items-center cursor-pointer">
+                <label htmlFor={vimModeId} className="flex items-center cursor-pointer">
                     Vim Mode:
                 </label>
                 <input
+                    id={vimModeId}
                     data-testid="vim-toggle"
                     name="vim-toggle"
                     type="checkbox"
