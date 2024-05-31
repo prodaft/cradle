@@ -19,7 +19,7 @@ class CreateUserTest(TestCase):
         return response
 
     def test_user_create_successfully(self):
-        response = self.create_user_request("user", "user")
+        response = self.create_user_request("user", "userR1#1234112")
         self.assertEqual(response.status_code, 200)
         self.assertIsNotNone(CradleUser.objects.get(username="user"))
 
@@ -31,15 +31,19 @@ class CreateUserTest(TestCase):
         response = self.create_user_request(username="user", password=None)
         self.assertEqual(response.status_code, 400)
 
+    def test_user_create_validation_fails(self):
+        response = self.create_user_request(username="user", password="abcd1234@")
+        self.assertEqual(response.status_code, 400)
+
     def test_user_create_already_exists(self):
-        self.create_user_request(username="user", password="user")
-        response = self.create_user_request(username="user", password="user")
+        self.create_user_request(username="user", password="userR1#1234112")
+        response = self.create_user_request(username="user", password="userR1#1234112")
         self.assertEqual(response.status_code, 409)
 
     def test_user_login_successfully(self):
-        self.create_user_request("user", "user")
+        self.create_user_request("user", "userR1#1234112")
         response = self.client.post(
-            reverse("user_login"), {"username": "user", "password": "user"}
+            reverse("user_login"), {"username": "user", "password": "userR1#1234112"}
         )
 
         self.assertEqual(response.status_code, 200)
