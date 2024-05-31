@@ -1,6 +1,6 @@
 import {Link, useLocation, useNavigate} from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
-import { getDashboardData, getPublishPreview } from "../../services/dashboardService/dashboardService";
+import { getDashboardData } from "../../services/dashboardService/dashboardService";
 import {useAuth} from "../../hooks/useAuth/useAuth";
 import AlertDismissible from "../AlertDismissible/AlertDismissible";
 import DashboardHorizontalSection from "../DashboardHorizontalSection/DashboardHorizontalSection";
@@ -38,14 +38,9 @@ export default function Dashboard(){
 
     // When the publish button is clicked, the user is sent to the publish preview page, 
     // where they can choose how to export the published report
-    const handlePublish = async () => {
-        getPublishPreview(auth.access, publishNoteIds)
-            .then((response) => {
-                if (response.status === 200) {
-                    setPublishMode(false);
-                    navigate('/not-implemented'); // TODO: '/publish-preview'
-                }
-            }).catch(displayError(setAlert, setAlertColor));
+    const handlePublish = () => {
+        setPublishMode(false);
+        navigate(`/publish-preview`, { noteIds: Array.from(publishNoteIds) });
     }
 
     const handleEnterPublishMode = () => {

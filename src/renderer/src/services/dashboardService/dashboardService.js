@@ -56,7 +56,7 @@ export function setPublishable(token, noteId, status){
  * @returns {Promise<AxiosResponse<any>>} - a JSON object containing the related entities, 
  *                                          as well as the notes and their content
  */
-export function getPublishPreview(token, noteIds) {
+export function getPublishData(token, noteIds) {
     const path = `/notes/publish/`;
 
     return axios({
