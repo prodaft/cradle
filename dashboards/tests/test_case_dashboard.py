@@ -19,30 +19,45 @@ def bytes_to_json(data):
 class GetCaseDashboardTest(TestCase):
 
     def check_note_ids(self, notes, notes_json):
+        with self.subTest("Check number of notes"):
+            self.assertEqual(len(notes), len(notes_json))
+
         for i in range(0, len(notes_json)):
             with self.subTest("Check note id"):
                 note = notes_json[i]
                 self.assertEqual(note["id"], notes[i].id)
 
     def check_case_ids(self, cases, cases_json):
+        with self.subTest("Check number of cases"):
+            self.assertEqual(len(cases), len(cases_json))
+
         for i in range(0, len(cases_json)):
             with self.subTest("Check case id"):
                 case = cases_json[i]
                 self.assertEqual(case["id"], cases[i].id)
 
     def check_actor_ids(self, actors, actors_json):
+        with self.subTest("Check number of actors"):
+            self.assertEqual(len(actors), len(actors_json))
+
         for i in range(0, len(actors_json)):
             with self.subTest("Check actor id"):
                 actor = actors_json[i]
                 self.assertEqual(actor["id"], actors[i].id)
 
     def check_metadata_ids(self, metadata, metadata_json):
+        with self.subTest("Check number of metadata"):
+            self.assertEqual(len(metadata), len(metadata_json))
+
         for i in range(0, len(metadata_json)):
             with self.subTest("Check metadata id"):
                 metadata_response = metadata_json[i]
                 self.assertEqual(metadata_response["id"], metadata[i].id)
 
     def check_entry_ids(self, entries, entries_json):
+        with self.subTest("Check number of entries"):
+            self.assertEqual(len(entries), len(entries_json))
+
         for i in range(0, len(entries_json)):
             with self.subTest("Check entry id"):
                 entry = entries_json[i]

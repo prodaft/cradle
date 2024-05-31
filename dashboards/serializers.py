@@ -49,3 +49,13 @@ class ActorDashboardSerializer(serializers.Serializer):
     actors = ActorResponseSerializer(many=True)
     cases = CaseResponseSerializer(many=True)
     metadata = MetadataResponseSerializer(many=True)
+
+
+class EntryDashboardSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    description = serializers.CharField()
+    type = serializers.CharField()
+    subtype = serializers.CharField()
+    notes = NoteDashboardSerializer(many=True)
+    cases = CaseResponseSerializer(many=True)
