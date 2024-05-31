@@ -3,7 +3,7 @@ from django.test import TestCase
 from user.models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.parsers import JSONParser
-from ..models import Note
+from ..models import Note, ArchivedNote
 from entities.models import Entity
 from entities.enums import EntityType, EntitySubtype
 from access.models import Access
@@ -74,6 +74,7 @@ class CreateNoteTest(TestCase):
 
     def test_delete_note_successful(self):
         note_id = self.notes[0].id
+        archive_count = ArchivedNote.objects.count()
         response = self.client.delete(
             reverse("note_detail", kwargs={"note_id": self.notes[0].id}), **self.headers
         )
@@ -83,9 +84,12 @@ class CreateNoteTest(TestCase):
             Note.objects.get(id=note_id)
         with self.assertRaises(Entity.DoesNotExist):
             Entity.objects.get(id=self.entities[1].id)
+        with self.subTest("Check archive count"):
+            self.assertEqual(ArchivedNote.objects.count(), archive_count + 1)
 
     def test_delete_note_keeps_cases(self):
         note_id = self.notes[1].id
+        archive_count = ArchivedNote.objects.count()
         response = self.client.delete(
             reverse("note_detail", kwargs={"note_id": note_id}), **self.headers
         )
@@ -97,6 +101,8 @@ class CreateNoteTest(TestCase):
             Note.objects.get(id=note_id)
         with self.subTest("Check case does not get deleted"):
             self.assertEqual(Entity.objects.get(id=self.case.id).id, self.case.id)
+        with self.subTest("Check archive count"):
+            self.assertEqual(ArchivedNote.objects.count(), archive_count + 1)
 
     def test_delete_note_no_access(self):
         case1 = Entity.objects.create(name="this is a case", type=EntityType.CASE)
