@@ -1,17 +1,17 @@
-import {Link, useLocation, useNavigate} from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
-import {getDashboardData} from "../../services/dashboardService/dashboardService";
-import {useAuth} from "../../hooks/useAuth/useAuth";
+import { getDashboardData } from "../../services/dashboardService/dashboardService";
+import { useAuth } from "../../hooks/useAuth/useAuth";
 import AlertDismissible from "../AlertDismissible/AlertDismissible";
 import DashboardHorizontalSection from "../DashboardHorizontalSection/DashboardHorizontalSection";
 import DashboardCard from "../DashboardCard/DashboardCard";
 import DashboardNote from "../DashboardNote/DashboardNote";
-import {displayError} from "../../utils/responseUtils/responseUtils";
+import { displayError } from "../../utils/responseUtils/responseUtils";
 import useNavbarContents from "../../hooks/useNavbarContents/useNavbarContents";
-import NavbarButton from "../NavbarItem/NavbarButton";
-import {Trash} from "iconoir-react/regular";
-import {ConfirmationDialog} from "../ConfirmationDialog/ConfirmationDialog";
-import {deleteEntity} from "../../services/adminService/adminService";
+import NavbarButton from "../NavbarButton/NavbarButton";
+import { Trash } from "iconoir-react/regular";
+import { ConfirmationDialog } from "../ConfirmationDialog/ConfirmationDialog";
+import { deleteEntity } from "../../services/adminService/adminService";
 import NotFound from "../NotFound/NotFound";
 import pluralize from "pluralize";
 import { createDashboardLink } from "../../utils/dashboardUtils/dashboardUtils";
@@ -22,7 +22,7 @@ import { createDashboardLink } from "../../utils/dashboardUtils/dashboardUtils";
  * @returns {Dashboard}
  * @constructor
  */
-export default function Dashboard(){
+export default function Dashboard() {
     const location = useLocation();
     const path = location.pathname + location.search;
     const [entityMissing, setEntityMissing] = useState(false);
@@ -50,7 +50,7 @@ export default function Dashboard(){
             })
             .catch(err => {
                 setContentObject({});
-                if(err.response && err.response.status === 404){
+                if (err.response && err.response.status === 404) {
                     setEntityMissing(true);
                 } else {
                     const errHandler = displayError(setAlert, setAlertColor);
@@ -61,7 +61,7 @@ export default function Dashboard(){
 
     const handleDelete = async () => {
         deleteEntity(auth.access, `entities/${pluralize(contentObject.type)}`, contentObject.id).then((response) => {
-            if(response.status === 200){
+            if (response.status === 200) {
                 navigate('/');
             }
         }).catch(displayError(setAlert, setAlertColor));
@@ -70,14 +70,14 @@ export default function Dashboard(){
 
     if (entityMissing) {
         return (
-            <NotFound message={"The entity you are looking for does not exist or you do not have access to it. If you believe the entity exists contact an administrator for access"}/>
+            <NotFound message={"The entity you are looking for does not exist or you do not have access to it. If you believe the entity exists contact an administrator for access"} />
         );
     }
 
     return (
         <>
             <ConfirmationDialog open={dialog} setOpen={setDialog} title={"Confirm Deletion"} description={"This is permanent"} handleConfirm={handleDelete} />
-            <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor}/>
+            <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
             <div className="w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll" ref={dashboard}>
                 <div className="w-[95%] h-full flex flex-col p-6 space-y-3">
                     {contentObject.name && <h1 className="text-5xl font-bold">{contentObject.name}</h1>}
@@ -104,7 +104,7 @@ export default function Dashboard(){
 
                     {contentObject.metadata && <DashboardHorizontalSection title={"Metadata"}>
                         {contentObject.metadata.map((data, index) => (
-                            <DashboardCard index={index} name={data.name}/>
+                            <DashboardCard index={index} name={data.name} />
                         ))}
                     </DashboardHorizontalSection>}
 

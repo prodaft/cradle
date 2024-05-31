@@ -6,7 +6,7 @@ import Preview from "../Preview/Preview";
 import { parseContent } from "../../utils/textEditorUtils/textEditorUtils";
 import useNavbarContents from "../../hooks/useNavbarContents/useNavbarContents";
 import { Code } from "iconoir-react";
-import NavbarButton from "../NavbarItem/NavbarButton";
+import NavbarButton from "../NavbarButton/NavbarButton";
 import AlertDismissible from "../AlertDismissible/AlertDismissible";
 import { displayError } from "../../utils/responseUtils/responseUtils";
 
