@@ -8,7 +8,7 @@
  */
 export default function NavbarItem(props){
     return (
-	        <button className="navbar-item" onClick={props.onClick}>
+	        <button className="navbar-item hover:bg-gray-4" onClick={props.onClick}>
                 {props.icon}
             </button>
     );
