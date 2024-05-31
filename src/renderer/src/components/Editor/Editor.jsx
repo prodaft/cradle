@@ -37,7 +37,7 @@ export default function Editor({ markdownContent, setMarkdownContent, isLightMod
     return (
         <div className="h-full w-full flex flex-col flex-1">
             <div className="flex flex-row-reverse p-2">
-                <span className="flex flex-row">
+                <span className="flex flex-row space-x-2">
                     <label htmlFor={vimModeId} className="flex items-center cursor-pointer">
                         Vim Mode:
                     </label>

@@ -41,6 +41,7 @@ export default function NoteViewer() {
 
     useNavbarContents([
         <NavbarButton
+            text="Toggle View"
             icon={<Code />}
             onClick={toggleView}
         />
