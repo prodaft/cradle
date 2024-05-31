@@ -4,7 +4,7 @@ import Preview from "../Preview/Preview";
 import { Upload, FloppyDisk } from "iconoir-react/regular";
 import { saveNote } from '../../services/textEditorService/textEditorService.js';
 import { parseContent } from '../../utils/textEditorUtils/textEditorUtils.js'
-import NavbarButton from "../NavbarItem/NavbarButton";
+import NavbarButton from "../NavbarButton/NavbarButton";
 import useNavbarContents from "../../hooks/useNavbarContents/useNavbarContents";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
