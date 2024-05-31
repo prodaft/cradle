@@ -6,7 +6,7 @@ import Preview from "../Preview/Preview";
 import { parseContent } from "../../utils/textEditorUtils/textEditorUtils";
 import useNavbarContents from "../../hooks/useNavbarContents/useNavbarContents";
 import { Code } from "iconoir-react";
-import NavbarItem from "../NavbarItem/NavbarItem";
+import NavbarButton from "../NavbarItem/NavbarButton";
 import {AlertDismissible} from "../AlertDismissible/AlertDismissible";
 import {displayError} from "../../utils/responseUtils/responseUtils";
 
@@ -40,7 +40,7 @@ export default function NoteViewer() {
     }, []);
 
     useNavbarContents([
-        <NavbarItem
+        <NavbarButton
             icon={<Code />}
             onClick={toggleView}
         />

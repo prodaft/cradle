@@ -1,4 +1,4 @@
-import NavbarItem from "../NavbarItem/NavbarItem";
+import NavbarButton from "../NavbarItem/NavbarButton";
 import { Notes } from 'iconoir-react';
 import SearchDialog from "../SearchDialog/SearchDialog";
 import { useState } from "react";
@@ -27,7 +27,7 @@ export default function Navbar(props){
                 {props.contents}
             </div>
             <div className="w-fit h-fit navbar-end">
-                <NavbarItem text="Fleeting Notes" icon={<Notes/>} onClick={props.handleFleetingNotes}/>
+                <NavbarButton text="Fleeting Notes" icon={<Notes/>} onClick={props.handleFleetingNotes}/>
             </div>
         </div>
     );
