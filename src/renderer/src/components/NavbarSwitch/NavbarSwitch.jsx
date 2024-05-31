@@ -3,7 +3,6 @@ import {useId} from "react";
 /**
  * NavbarSwitch
  * A switch component for the navbar.
- * @param props
  * @param label - the label for the switch
  * @param checked - the checked status of the switch
  * @param onChange - the handler for the switch
