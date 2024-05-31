@@ -50,12 +50,10 @@ export default function DashboardNote({ index, note, setAlert, setAlertColor, pu
         if (includeInPublish) {
             setIncludeInPublish(false);
             publishNoteIds.delete(note.id);
-            console.log(publishNoteIds);
             setPublishNoteIds(new Set(publishNoteIds));
         } else {
             setIncludeInPublish(true);
             publishNoteIds.add(note.id);
-            console.log(publishNoteIds);
             setPublishNoteIds(new Set(publishNoteIds));
         }
     };
