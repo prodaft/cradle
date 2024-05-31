@@ -4,7 +4,7 @@ import { useAuth } from "../../hooks/useAuth/useAuth";
 import Preview from "../Preview/Preview";
 import { parseContent } from "../../utils/textEditorUtils/textEditorUtils";
 import useNavbarContents from "../../hooks/useNavbarContents/useNavbarContents";
-import NavbarItem from "../NavbarItem/NavbarItem";
+import NavbarButton from "../NavbarButton/NavbarButton";
 import AlertDismissible from "../AlertDismissible/AlertDismissible";
 import { displayError } from "../../utils/responseUtils/responseUtils";
 import { getPublishData } from "../../services/dashboardService/dashboardService";
@@ -23,7 +23,48 @@ export default function PublishPreview() {
     const [isJson, setIsJson] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
     const noteIds = searchParams.get("noteIds");
-    const [responseData, setResponseData] = useState({});
+
+    const dummyData = { // TODO remove when API is ready
+        "actors": [
+            {
+                "ID": 0,
+                "name": "string",
+                "type": "actor",
+                "subtype": "",
+            },
+        ],
+        "cases": [
+            {
+                "ID": 0,
+                "name": "string",
+                "type": "case",
+                "subtype": "",
+            },
+        ],
+        "entries": [
+            {
+                "ID": 0,
+                "name": "string",
+                "type": "entry",
+                "subtype": "ip",
+            }
+        ],
+        "metadata": [
+            {
+                "ID": 0,
+                "name": "string",
+                "type": "metadata",
+                "subtype": "",
+            },
+        ],
+        "notes": [
+            {
+                "content": "string",
+                "timestamp": "2024-05-31T12:20:45.286Z",
+            },
+        ],
+    }
+    const [responseData, setResponseData] = useState(dummyData);
 
     useEffect(() => {
         getPublishData(auth.access, noteIds)
@@ -35,10 +76,10 @@ export default function PublishPreview() {
     }, [auth.access, noteIds, location]);
 
     const createMarkdownReportFromJson = (data) => { // TODO extract into utils class
-        // TODO related entites
+        const { actors, cases, entries, metadata, notes } = data;
         let markdown = "";
-        for (const note of data) {
-            markdown += `# ${note.timestamp}\n\n`;
+        for (const note of notes) {
+            markdown += `### ${note.timestamp}\n\n`;
             markdown += `${note.content}\n\n`;
         }
         return markdown;
@@ -55,7 +96,7 @@ export default function PublishPreview() {
 
     useNavbarContents([
         // Publishes the preview in any format provided
-        <NavbarItem
+        <NavbarButton
             icon={<Upload />}
             text="Publish as JSON"
             data-testid="publish-btn"
@@ -63,11 +104,11 @@ export default function PublishPreview() {
         />,
 
         // This will change the view between JSON and HTML
-        isJson ? <NavbarItem
+        isJson ? <NavbarButton
             text="Show HTML"
             icon={<Code />}
             onClick={toggleView}
-        /> : <NavbarItem
+        /> : <NavbarButton
             text="Show JSON"
             icon={<CodeBracketsSquare />}
             onClick={toggleView}
@@ -81,7 +122,7 @@ export default function PublishPreview() {
                 <div className="h-full w-[90%] rounded-md bg-cradle3 bg-opacity-20 backdrop-blur-lg backdrop-filter p-4 overflow-y-auto">
                     <div className="flex-grow">
                         {isJson ? (
-                            <pre className="prose dark:prose-invert break-all overflow-x-hidden">{JSON.stringify(responseData)}</pre>
+                            <pre className="prose dark:prose-invert break-all overflow-x-hidden">{JSON.stringify(createMarkdownReportFromJson(responseData))}</pre>
                         ) : (
                             <Preview htmlContent={parseContent()} />
                         )}

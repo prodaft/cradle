@@ -13,6 +13,7 @@ import AdminPanelUserPermissions from "./components/AdminPanelUserPermissions/Ad
 import Dashboard from "./components/Dashboard/Dashboard";
 import NotFound from './components/NotFound/NotFound.jsx';
 import PublishPreview from './components/PublishPreview/PublishPreview.jsx';
+import NoteViewer from "./components/NoteViewer/NoteViewer";
 
 /**
  * The App component is the entry point of the application. It wraps the entire application in the AuthProvider
@@ -33,6 +34,7 @@ function App() {
               <Route path="/not-implemented" element={<FeatureNotImplemented />} />
               <Route path="/editor" element={<TextEditor />} />
               <Route path="/dashboards/*" element={<Dashboard />} />
+              <Route path="/notes/:id" element={<NoteViewer />} />
               <Route path='/publish-preview' element={<PublishPreview />}></Route>
               <Route path="/admin" element={<Outlet />}>
                 <Route index element={<AdminPanel />}></Route>
@@ -46,6 +48,7 @@ function App() {
           {/* Add any routes for components that DO NOT NEED authentication here*/}
           <Route path="/login" element={<Login />}></Route>
           <Route path="/register" element={<Register />}></Route>
+          <Route path="/not-found" element={<NotFound message={"We can't seem to find the page you are looking for."} />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>
