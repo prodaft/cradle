@@ -4,7 +4,7 @@ import {getPermissions} from "../../services/adminService/adminService";
 import {useAuth} from "../../hooks/useAuth/useAuth";
 import AdminPanelPermissionCard from "../AdminPanelPermissionCard/AdminPanelPermissionCard";
 import useFrontendSearch from "../../hooks/useFrontendSearch/useFrontendSearch";
-import {AlertDismissible} from "../AlertDismissible/AlertDismissible";
+import AlertDismissible from "../AlertDismissible/AlertDismissible";
 import { displayError } from "../../utils/responseUtils/responseUtils";
 
 /**

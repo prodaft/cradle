@@ -8,7 +8,7 @@ import AlertBox from "../AlertBox/AlertBox";
 import SearchResult from "../SearchResult/SearchResult";
 import {useNavigate} from "react-router-dom";
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import pluralize from 'pluralize';
+import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 
 /**
  * Dialog to search for entities
@@ -59,10 +59,12 @@ export default function SearchDialog({ isOpen, onClose }) {
         setError("");
         queryEntities(auth.access, searchQuery, entityTypeFilters, entitySubtypeFilters)
             .then((response) => {
-                console.log('Search results:', response.data);
-                setResults(response.data.map((result) => (
-                    <SearchResult name={result.name} type={result.type} subtype={result.subtype} onClick={handleResultClick(`/dashboards/${pluralize(result.type)}/${encodeURIComponent(result.name)}${result.subtype ? `?subtype=${result.subtype}` : ``}`)}/>
-                )));
+                setResults(response.data.map((result) => {
+                    const dashboardLink = createDashboardLink(result);
+                    return (
+                        <SearchResult name={result.name} type={result.type} subtype={result.subtype} onClick={handleResultClick(dashboardLink)} />
+                    )
+                }));
             })
             .catch(displayError(setError, setErrorColor));
     }
