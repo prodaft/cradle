@@ -86,19 +86,19 @@ export default function Dashboard() {
 
                     {contentObject.actors && <DashboardHorizontalSection title={"Related Actors"}>
                         {contentObject.actors.map((actor, index) => (
-                            <DashboardCard index={index} name={actor.name} link={createDashboardLink({ ...actor, type: 'actor' })} /> // TODO type should be in the new response
+                            <DashboardCard index={index} name={actor.name} link={createDashboardLink(actor)} />
                         ))}
                     </DashboardHorizontalSection>}
 
                     {contentObject.cases && <DashboardHorizontalSection title={"Related Cases"}>
                         {contentObject.cases.map((c, index) => (
-                            <DashboardCard index={index} name={c.name} link={createDashboardLink({ ...c, type: 'case' })} />
+                            <DashboardCard index={index} name={c.name} link={createDashboardLink(c)} />
                         ))}
                     </DashboardHorizontalSection>}
 
                     {contentObject.entries && <DashboardHorizontalSection title={"Related Entries"}>
                         {contentObject.entries.map((entry, index) => (
-                            <DashboardCard index={index} name={entry.name} link={createDashboardLink({ ...entry, type: 'entry' })} />
+                            <DashboardCard index={index} name={entry.name} link={createDashboardLink(entry)} />
                         ))}
                     </DashboardHorizontalSection>}
 
