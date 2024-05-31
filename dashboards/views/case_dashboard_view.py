@@ -21,7 +21,7 @@ class CaseDashboard(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, case_name: str) -> Response:
-        """Allow a user to retrieve the dashboars of a Case by specifying its name.
+        """Allow a user to retrieve the dashboard of a Case by specifying its name.
 
         Args:
             request: The request that was sent
