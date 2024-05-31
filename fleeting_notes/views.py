@@ -6,8 +6,8 @@ from rest_framework.request import Request
 
 from fleeting_notes.models import FleetingNote
 from fleeting_notes.serializers import (
-    FleetingNoteRetrieveSerializer,
     FleetingNoteCreateSerializer,
+    FleetingNoteTruncatedRetrieveSerializer,
 )
 
 
@@ -19,6 +19,8 @@ class FleetingNotesList(APIView):
     def get(self, request: Request) -> Response:
         """
         Get all the FleetingNotes that belong to the authenticated user.
+        FleetingNotes are ordered by last_edited in descending order.
+        FleetingNotes are truncated to 200 characters for preview
 
         Args:
             request: The request that was sent
@@ -29,8 +31,10 @@ class FleetingNotesList(APIView):
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
         """
-        fleeting_notes = FleetingNote.objects.filter(user=request.user)
-        serializer = FleetingNoteRetrieveSerializer(fleeting_notes, many=True)
+        fleeting_notes = FleetingNote.objects.filter(user=request.user).order_by(
+            "-last_edited"
+        )
+        serializer = FleetingNoteTruncatedRetrieveSerializer(fleeting_notes, many=True)
         return Response(serializer.data)
 
     def post(self, request: Request) -> Response:
