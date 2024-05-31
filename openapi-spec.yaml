@@ -305,7 +305,7 @@ paths:
       tags:
         - Dashboard
       summary: Get the dashboard of a Case
-      description: Allow a user to retrieve the dashboars of a Case by specifying its name
+      description: Allow a user to retrieve the dashboard of a Case by specifying its name
       operationId: getCaseByName
       parameters:
         - in: path
@@ -333,7 +333,7 @@ paths:
       tags:
         - Dashboard
       summary: Get the dashboard of an Actor
-      description: Allow a user to retrieve the dashboars of a Case by specifying its name
+      description: Allow a user to retrieve the dashboard of an Actor by specifying its name
       operationId: getActorByName
       parameters:
         - in: path
@@ -355,6 +355,42 @@ paths:
           description: User is not authenticated.
         '404':
           description: Actor not found.
+  
+  /dashboards/entries/{entry_name}:
+    get:
+      tags:
+        - Dashboard
+      summary: Get the dashboard of an Entry
+      description: Allow a user to retrieve the dashboard of an Entry by specifying its name
+      operationId: getEntryByName
+      parameters:
+        - in: path
+          name: entry_name
+          required: true
+          schema:
+            type: string
+          examples:
+            caseNameExample:
+              value: "Entry"
+        - in: query
+          name: subtype
+          required: true
+          schema:
+            type: string
+          examples:
+            caseNameExample:
+              value: "ip"
+      responses:
+        '200': 
+          description: Request was successful. 
+          content: 
+            'application/json':
+              schema: 
+                $ref: '#/components/schemas/EntryDashboard'
+        '401': 
+          description: User is not authenticated.
+        '404':
+          description: Entry not found.
 
   /access/{userId}:
     get:
@@ -484,35 +520,6 @@ paths:
           description: User is not an admin.
         '404':
           description: There is no case with specified ID.
-
-  /entities/entries/{entryId}:
-    get:
-      tags:
-        - Entity
-      summary: Read details of an Entry
-      description: Allow a user to retrieve the details of an Entry by specifying its id
-      operationId: getEntry
-      parameters:
-        - in: path
-          name: entryId
-          required: true
-          schema:
-            type: integer
-            format: int64
-          examples:
-            entryIdExample:
-              value: "2916459"
-      responses:
-        '200': 
-          description: Request was successful. 
-          content: 
-            'application/json':
-              schema: 
-                $ref: '#/components/schemas/Entity'
-        '401': 
-          description: User is not authenticated.
-        '404':
-          description: Entry not found.
 
   /notes:
     post:
@@ -1059,6 +1066,43 @@ components:
           items: 
             $ref: "#/components/schemas/Entity"
         metadata:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+    
+    EntryDashboard:
+      type: object
+      properties:
+        ID:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: 
+          - actor
+        subtype:
+          type: string
+          enum: 
+            - ip
+            - domain
+            - url
+            - username
+            - password
+            - person
+            - social-media
+            - hash
+            - tool 
+            - cve
+            - ttp
+        notes:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Note"
+        cases:
           type: array
           items: 
             $ref: "#/components/schemas/Entity"
