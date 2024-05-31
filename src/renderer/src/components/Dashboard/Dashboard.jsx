@@ -9,7 +9,7 @@ import {parseContent} from "../../utils/textEditorUtils/textEditorUtils";
 import DashboardNote from "../DashboardNote/DashboardNote";
 import {displayError} from "../../utils/responseUtils/responseUtils";
 import useNavbarContents from "../../hooks/useNavbarContents/useNavbarContents";
-import NavbarItem from "../NavbarItem/NavbarItem";
+import NavbarButton from "../NavbarButton/NavbarButton";
 import {Trash} from "iconoir-react/regular";
 import {ConfirmationDialog} from "../ConfirmationDialog/ConfirmationDialog";
 import {deleteEntity} from "../../services/adminService/adminService";
@@ -34,7 +34,7 @@ export default function Dashboard(){
     const auth = useAuth();
 
     const navbarContents = [
-        <NavbarItem icon={<Trash />} name={"Delete"} onClick={() => setDialog(true)} />
+        <NavbarButton icon={<Trash />} name={"Delete"} onClick={() => setDialog(true)} />
     ];
 
     useNavbarContents(auth.isAdmin && contentObject.id && contentObject.type && contentObject.type !== 'entry' ? navbarContents : [], [contentObject, location]);
