@@ -4,7 +4,7 @@ import Preview from "../Preview/Preview";
 import { Upload, FloppyDisk } from "iconoir-react/regular";
 import { saveNote } from '../../services/textEditorService/textEditorService.js';
 import { parseContent } from '../../utils/textEditorUtils/textEditorUtils.js'
-import NavbarItem from "../NavbarItem/NavbarItem";
+import NavbarButton from "../NavbarButton/NavbarButton";
 import useNavbarContents from "../../hooks/useNavbarContents/useNavbarContents";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -61,8 +61,8 @@ export default function TextEditor() {
     }
 
     useNavbarContents([
-        <NavbarItem icon={<Upload />} text="Publish" data-testid="publish-btn" onClick={() => navigate('/not-implemented')} />,
-        <NavbarItem icon={<FloppyDisk />} text="Save" data-testid="save-btn" onClick={handleSaveNote} />
+        <NavbarButton icon={<Upload />} text="Publish" data-testid="publish-btn" onClick={() => navigate('/not-implemented')} />,
+        <NavbarButton icon={<FloppyDisk />} text="Save" data-testid="save-btn" onClick={handleSaveNote} />
     ],
         [auth]
     )
