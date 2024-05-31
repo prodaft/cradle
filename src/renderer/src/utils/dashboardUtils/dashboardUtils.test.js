@@ -1,12 +1,12 @@
 import { createDashboardLink } from "./dashboardUtils";
 
 describe("createDashboardLink", () => {
-    it("should return an empty string if entity is falsy", () => {
-        expect(createDashboardLink(null)).toBe("");
-        expect(createDashboardLink(undefined)).toBe("");
-        expect(createDashboardLink(false)).toBe("");
-        expect(createDashboardLink(0)).toBe("");
-        expect(createDashboardLink("")).toBe("");
+    it("should return '/not-found' if entity is falsy", () => {
+        expect(createDashboardLink(null)).toBe("/not-found");
+        expect(createDashboardLink(undefined)).toBe("/not-found");
+        expect(createDashboardLink(false)).toBe("/not-found");
+        expect(createDashboardLink(0)).toBe("/not-found");
+        expect(createDashboardLink("")).toBe("/not-found");
     });
 
     it("should create a dashboard link with encoded name and type when subtype is not provided", () => {
