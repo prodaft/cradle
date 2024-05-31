@@ -36,19 +36,21 @@ export default function Editor({ markdownContent, setMarkdownContent, isLightMod
 
     return (
         <div className="h-full w-full flex flex-col flex-1">
-            <div className="flex flex-row justify-between items-center p-2">
-                <label htmlFor={vimModeId} className="flex items-center cursor-pointer">
-                    Vim Mode:
-                </label>
-                <input
-                    id={vimModeId}
-                    data-testid="vim-toggle"
-                    name="vim-toggle"
-                    type="checkbox"
-                    className="switch switch-ghost-primary my-1"
-                    checked={enableVim}
-                    onChange={() => setEnableVim(!enableVim)}
-                />
+            <div className="flex flex-row-reverse p-2">
+                <span className="flex flex-row">
+                    <label htmlFor={vimModeId} className="flex items-center cursor-pointer">
+                        Vim Mode:
+                    </label>
+                    <input
+                        id={vimModeId}
+                        data-testid="vim-toggle"
+                        name="vim-toggle"
+                        type="checkbox"
+                        className="switch switch-ghost-primary my-1"
+                        checked={enableVim}
+                        onChange={() => setEnableVim(!enableVim)}
+                    />
+                </span>
             </div>
             <div className="overflow-hidden w-full rounded-lg">
                 <CodeMirror
