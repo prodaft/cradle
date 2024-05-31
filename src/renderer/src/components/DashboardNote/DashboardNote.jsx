@@ -86,20 +86,20 @@ export default function DashboardNote({ index, note, setAlert, setAlertColor, pu
                                 onClick={handleIncludeInPublish}
                             />
                         ) : (
-                                <span className="pb-1 space-x-1 flex flex-row">
-                                    <label
-                                        htmlFor={`publishable-switch-${note.id}`}
-                                        className="text-xs text-zinc-300 hover:cursor-pointer">
-                                        Publishable
-                                    </label>
-                                    <input
-                                        checked={isPublishable}
-                                        id={`publishable-switch-${note.id}`}
-                                        type="checkbox"
-                                        className="switch switch-ghost-primary focus:ring-0"
-                                        onChange={() => handleSetPublishable(note.id)}
-                                    />
-                                </span>
+                            <span className="pb-1 space-x-1 flex flex-row">
+                                <label
+                                    htmlFor={`publishable-switch-${note.id}`}
+                                    className="text-xs text-zinc-300 hover:cursor-pointer">
+                                    Publishable
+                                </label>
+                                <input
+                                    checked={isPublishable}
+                                    id={`publishable-switch-${note.id}`}
+                                    type="checkbox"
+                                    className="switch switch-ghost-primary focus:ring-0"
+                                    onChange={() => handleSetPublishable(note.id)}
+                                />
+                            </span>
                         )}
                     </div>
                     <div
