@@ -114,8 +114,6 @@ describe('useAuth hook', () => {
             getByTestId('login-button').click();
         });
 
-        console.log(jwtDecode(token)["is_admin"])
-
         expect(getByTestId('access').textContent).toBe(token);
         expect(getByTestId('refresh').textContent).toBe('csrf123');
         expect(getByTestId('isAdmin').textContent).toBe('true');
