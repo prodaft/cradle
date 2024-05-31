@@ -1,15 +1,15 @@
 /**
  * NavbarButton - a button in the navbar.
- * @param props
- * @param props.icon - the icon to display in the button
- * @param props.onClick - the handler for the button
+ * @param icon - the icon to display in the button
+ * @param text - the tooltip text for the button
+ * @param onClick - the handler for the button
  * @returns {NavbarButton}
  * @constructor
  */
-export default function NavbarButton(props){
+export default function NavbarButton({onClick,text,icon}){
     return (
-	        <button className="navbar-item hover:bg-gray-4 tooltip tooltip-bottom tooltip-primary" onClick={props.onClick} data-tooltip={props.text}>
-                {props.icon}
+	        <button className="navbar-item hover:bg-gray-4 tooltip tooltip-bottom tooltip-primary" onClick={onClick} data-tooltip={text}>
+                {icon}
             </button>
     );
 }
