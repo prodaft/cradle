@@ -23,9 +23,9 @@ export default function Navbar(props){
         <div className="navbar p-0.5 sticky top-0 rounded-md bg-gray-2 w-full h-fit z-50 pr-4 pl-2" data-testid="navbar-test">
             <div className="h-fit navbar-start w-full min-w-40">
                 <NavbarButton icon={<ArrowLeft className="text-zinc-500 hover:text-cradle2" width="1em" height="1.1em"
-                                             strokeWidth="1.5"/>} text="Back" onClick={() => navigate(-1)}/>
+                                             strokeWidth="1.5"/>} onClick={() => navigate(-1)}/>
                 <NavbarButton icon={<ArrowRight className="text-zinc-500 hover:text-cradle2" width="1em" height="1.1em"
-                                              strokeWidth="1.5"/>} text="Forward" onClick={() => navigate(1)}/>
+                                              strokeWidth="1.5"/>} onClick={() => navigate(1)}/>
                 <input className="input-sm input-ghost-primary input focus:border-primary focus:ring-0 max-w-96"
                        placeholder={"Search"} onClick={() => setIsDialogOpen(true)}/>
                 <SearchDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)}/>
