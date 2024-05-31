@@ -46,6 +46,7 @@ function App() {
           {/* Add any routes for components that DO NOT NEED authentication here*/}
           <Route path="/login" element={<Login />}></Route>
           <Route path="/register" element={<Register />}></Route>
+          <Route path="/not-found" element={<NotFound message={"We can't seem to find the page you are looking for."} />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>

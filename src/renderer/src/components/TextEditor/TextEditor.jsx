@@ -27,10 +27,10 @@ export default function TextEditor() {
     const navigate = useNavigate();
     const parsedContent = parseContent(markdownContent);
     const isLightMode = useLightMode();
-    const [dialog, setDialog] = useState(false);
 
     // Open the dialog to save the note. If the note is empty, display an error.
-    const openDialog = () => {
+    // Attempt to send the note to the server. If successful, clear the local storage. Otherwise, display the error.
+    const handleSaveNote = (publishable) => () => {
         const storedContent = localStorage.getItem("md-content");
 
         // Don't send unnecessary requests for empty notes
@@ -39,13 +39,6 @@ export default function TextEditor() {
             setAlert("Cannot save empty note");
             return;
         }
-
-        setDialog(true);
-    }
-
-    // Attempt to send the note to the server. If successful, clear the local storage. Otherwise, display the error.
-    const handleSaveNote = (publishable) => () => {
-        const storedContent = localStorage.getItem("md-content");
 
         saveNote(auth.access, storedContent, publishable).then((res) => {
             if (res.status === 200) {
@@ -60,11 +53,11 @@ export default function TextEditor() {
     // Buttons for the dialog. Label & handler function
     const dropdownButtons = [
         {
-            label: "Save As Publishable",
+            label: "Publishable",
             handler: handleSaveNote(true),
         },
         {
-            label: "Save As Not Publishable",
+            label: "Not Publishable",
             handler: handleSaveNote(false),
         },
     ];
