@@ -10,15 +10,22 @@ import pluralize from "pluralize";
  * @returns {string} - the dashboard link
  */
 const createDashboardLink = (entity) => {
-    if (!entity) return '/not-found';
-    const { name, type, subtype } = entity;
-
-    if (subtype) {
-        const queryString = QueryString.stringify({ subtype: subtype });
-        return `/dashboards/${encodeURIComponent(pluralize(type))}/${name}?${queryString}`;
+    if (!entity) {
+        return '/not-found';
     }
 
-    return `/dashboards/${encodeURIComponent(pluralize(type))}/${name}/`;
+    const { name, type, subtype } = entity;
+    
+    if (!name || !type) {
+        return '/not-found';
+    }
+
+    if (subtype) {
+        const queryString = QueryString.stringify({ subtype: subtype }); // qs also encodes the values
+        return `/dashboards/${encodeURIComponent(pluralize(type))}/${encodeURIComponent(name)}?${queryString}`;
+    }
+
+    return `/dashboards/${encodeURIComponent(pluralize(type))}/${encodeURIComponent(name)}/`;
 }
 
 export { createDashboardLink }
