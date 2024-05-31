@@ -8,7 +8,7 @@
  */
 export default function NavbarButton(props){
     return (
-	        <button className="navbar-item hover:bg-gray-4" onClick={props.onClick}>
+	        <button className="navbar-item hover:bg-gray-4 tooltip tooltip-bottom tooltip-primary" onClick={props.onClick} data-tooltip={props.text}>
                 {props.icon}
             </button>
     );
