@@ -748,9 +748,9 @@ paths:
             schema:
               type: object
               required:
-                - text
+                - content
               properties:
-                text:
+                content:
                   type: string
       responses:
         '200': 
@@ -1209,8 +1209,11 @@ components:
         ID:
           type: integer
           format: int64
-        contents: 
+        content:
           type: string
+        last_edited:
+          type: string
+          format: date-time
 
     Notification: 
       type: object
