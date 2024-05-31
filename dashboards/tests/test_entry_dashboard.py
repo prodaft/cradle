@@ -7,7 +7,7 @@ import io
 from rest_framework_simplejwt.tokens import AccessToken
 
 from entities.models import Entity
-from entities.enums import EntityType
+from entities.enums import EntityType, EntrySubtype
 from access.models import Access
 from notes.models import Note
 
@@ -16,7 +16,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class GetActorDashboardTest(TestCase):
+class GetEntryDashboardTest(TestCase):
 
     def check_note_ids(self, notes, notes_json):
         with self.subTest("Check number of notes"):
@@ -35,24 +35,6 @@ class GetActorDashboardTest(TestCase):
             with self.subTest("Check case id"):
                 case = cases_json[i]
                 self.assertEqual(case["id"], cases[i].id)
-
-    def check_actor_ids(self, actors, actors_json):
-        with self.subTest("Check number of actors"):
-            self.assertEqual(len(actors), len(actors_json))
-
-        for i in range(0, len(actors_json)):
-            with self.subTest("Check actor id"):
-                actor = actors_json[i]
-                self.assertEqual(actor["id"], actors[i].id)
-
-    def check_metadata_ids(self, metadata, metadata_json):
-        with self.subTest("Check number of metadata"):
-            self.assertEqual(len(metadata), len(metadata_json))
-
-        for i in range(0, len(metadata_json)):
-            with self.subTest("Check metadata id"):
-                metadata_response = metadata_json[i]
-                self.assertEqual(metadata_response["id"], metadata[i].id)
 
     def create_users(self):
         self.admin_user = CradleUser.objects.create_superuser(
@@ -75,10 +57,12 @@ class GetActorDashboardTest(TestCase):
 
     def create_notes(self):
         self.note1 = Note.objects.create(content="Note1")
-        self.note1.entities.add(self.case1, self.actor1, self.metadata1)
+        self.note1.entities.add(
+            self.case1, self.actor1, self.metadata1, self.entry1, self.entry2
+        )
 
         self.note2 = Note.objects.create(content="Note2")
-        self.note2.entities.add(self.case2, self.actor2, self.case1)
+        self.note2.entities.add(self.case2, self.actor2, self.case1, self.entry1)
 
     def create_cases(self):
         self.case1 = Entity.objects.create(
@@ -101,6 +85,21 @@ class GetActorDashboardTest(TestCase):
     def create_metadata(self):
         self.metadata1 = Entity.objects.create(
             name="Metadata1", description="Description1", type=EntityType.METADATA
+        )
+
+    def create_entries(self):
+        self.entry1 = Entity.objects.create(
+            name="Entry1",
+            description="Description1",
+            type=EntityType.ENTRY,
+            subtype=EntrySubtype.IP,
+        )
+
+        self.entry2 = Entity.objects.create(
+            name="Entry1",
+            description="Description1",
+            type=EntityType.ENTRY,
+            subtype=EntrySubtype.URL,
         )
 
     def create_access(self):
@@ -135,86 +134,102 @@ class GetActorDashboardTest(TestCase):
 
         self.create_access()
 
+        self.create_entries()
+
         self.create_notes()
 
     def test_get_dashboard_admin(self):
         response = self.client.get(
-            reverse("actor_dashboard", kwargs={"actor_name": self.actor1.name}),
+            reverse("entry_dashboard", kwargs={"entry_name": self.entry1.name}),
+            {"subtype": EntrySubtype.IP},
             **self.headers_admin,
         )
         self.assertEqual(response.status_code, 200)
 
-        notes = Note.objects.filter(id=self.note1.id)
-        cases = Entity.objects.filter(id=self.case1.id)
-        actors = Entity.objects.none()
-        metadata = Entity.objects.filter(type=EntityType.METADATA)
+        notes = Note.objects.order_by("-timestamp")
+        cases = Entity.objects.filter(type=EntityType.CASE)
 
         json_response = bytes_to_json(response.content)
 
-        with self.subTest("Check case id"):
-            self.assertEqual(json_response["id"], self.actor1.id)
-
         self.check_note_ids(notes, json_response["notes"])
-
         self.check_case_ids(cases, json_response["cases"])
-
-        self.check_actor_ids(actors, json_response["actors"])
-
-        self.check_metadata_ids(metadata, json_response["metadata"])
 
     def test_get_dashboard_user_read_access(self):
         response = self.client.get(
-            reverse("actor_dashboard", kwargs={"actor_name": self.actor1.name}),
+            reverse("entry_dashboard", kwargs={"entry_name": self.entry1.name}),
+            {"subtype": EntrySubtype.IP},
             **self.headers_user2,
         )
         self.assertEqual(response.status_code, 200)
 
         notes = Note.objects.filter(id=self.note1.id)
         cases = Entity.objects.filter(id=self.case1.id)
-        actors = Entity.objects.none()
-        metadata = Entity.objects.filter(id=self.metadata1.id)
 
         json_response = bytes_to_json(response.content)
 
-        with self.subTest("Check case id"):
-            self.assertEqual(json_response["id"], self.actor1.id)
+        with self.subTest("Check subtype"):
+            self.assertEqual("ip", json_response["subtype"])
 
         self.check_note_ids(notes, json_response["notes"])
-
         self.check_case_ids(cases, json_response["cases"])
-
-        self.check_actor_ids(actors, json_response["actors"])
-
-        self.check_metadata_ids(metadata, json_response["metadata"])
 
     def test_get_dashboard_user_read_write_access(self):
         response = self.client.get(
-            reverse("actor_dashboard", kwargs={"actor_name": self.actor1.name}),
+            reverse("entry_dashboard", kwargs={"entry_name": self.entry1.name}),
+            {"subtype": EntrySubtype.IP},
             **self.headers_user1,
+        )
+        self.assertEqual(response.status_code, 200)
+
+        notes = Note.objects.order_by("-timestamp")
+        cases = Entity.objects.filter(type=EntityType.CASE)
+
+        json_response = bytes_to_json(response.content)
+
+        with self.subTest("Check subtype"):
+            self.assertEqual("ip", json_response["subtype"])
+
+        self.check_note_ids(notes, json_response["notes"])
+        self.check_case_ids(cases, json_response["cases"])
+
+    def test_get_dashboard_user_no_access_to_a_case(self):
+        response = self.client.get(
+            reverse("entry_dashboard", kwargs={"entry_name": self.entry1.name}),
+            {"subtype": EntrySubtype.IP},
+            **self.headers_user2,
         )
         self.assertEqual(response.status_code, 200)
 
         notes = Note.objects.filter(id=self.note1.id)
         cases = Entity.objects.filter(id=self.case1.id)
-        actors = Entity.objects.none()
-        metadata = Entity.objects.filter(id=self.metadata1.id)
 
         json_response = bytes_to_json(response.content)
 
-        with self.subTest("Check case id"):
-            self.assertEqual(json_response["id"], self.actor1.id)
+        with self.subTest("Check subtype"):
+            self.assertEqual("ip", json_response["subtype"])
 
         self.check_note_ids(notes, json_response["notes"])
-
         self.check_case_ids(cases, json_response["cases"])
 
-        self.check_actor_ids(actors, json_response["actors"])
-
-        self.check_metadata_ids(metadata, json_response["metadata"])
-
-    def test_get_dashboard_invalid_actor(self):
+    def test_get_dashboard_invalid_entry(self):
         response = self.client.get(
-            reverse("actor_dashboard", kwargs={"actor_name": "Case"}),
+            reverse("entry_dashboard", kwargs={"entry_name": "Case"}),
+            {"subtype": EntrySubtype.IP},
             **self.headers_user1,
         )
         self.assertEqual(response.status_code, 404)
+
+    def test_get_dashboard_invalid_entry_subtype(self):
+        response = self.client.get(
+            reverse("entry_dashboard", kwargs={"entry_name": self.entry1.name}),
+            {"subtype": "invalid"},
+            **self.headers_user1,
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_get_dashboard_no_subtype_provided(self):
+        response = self.client.get(
+            reverse("entry_dashboard", kwargs={"entry_name": self.entry1.name}),
+            **self.headers_user1,
+        )
+        self.assertEqual(response.status_code, 400)
