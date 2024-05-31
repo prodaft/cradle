@@ -25,7 +25,7 @@ class FleetingNoteSerializerTest(TestCase):
         )
         self.note2 = FleetingNote.objects.create(
             user=self.user,
-            content="This is a very long note " * 10,
+            content="he" * 150,
             last_edited=self.fixed_time,
         )
 
@@ -43,11 +43,7 @@ class FleetingNoteSerializerTest(TestCase):
         serializer = FleetingNoteTruncatedRetrieveSerializer(instance=self.note2)
         data = serializer.data
         self.assertEqual(data["id"], self.note2.id)
-        expected_content = (
-            self.note2.content[:200] + "..."
-            if len(self.note2.content) > 200
-            else self.note2.content
-        )
+        expected_content = "he" * 100 + "..."
         self.assertEqual(data["content"], expected_content)
         self.assertEqual(
             data["last_edited"],
