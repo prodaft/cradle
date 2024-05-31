@@ -4,7 +4,7 @@ import Preview from "../Preview/Preview";
 import { Upload, FloppyDisk } from "iconoir-react/regular";
 import { saveNote } from '../../services/textEditorService/textEditorService.js';
 import { parseContent } from '../../utils/textEditorUtils/textEditorUtils.js'
-import NavbarItem from "../NavbarItem/NavbarItem";
+import NavbarButton from "../NavbarItem/NavbarButton";
 import useNavbarContents from "../../hooks/useNavbarContents/useNavbarContents";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -46,7 +46,7 @@ export default function TextEditor() {
                 setMarkdownContentCallback('');
                 setAlertColor("green");
                 setAlert("Note saved successfully.");
-            } 
+            }
         }).catch(displayError(setAlert, setAlertColor));
     }
 
@@ -63,7 +63,7 @@ export default function TextEditor() {
     ];
 
     useNavbarContents([
-        <NavbarItem icon={<Upload />} text="Publish" data-testid="publish-btn" onClick={() => navigate('/not-implemented')} />,
+        <NavbarButton icon={<Upload />} text="Publish" data-testid="publish-btn" onClick={() => navigate('/not-implemented')} />,
         <NavbarDropdown icon={<FloppyDisk />} contents={dropdownButtons} text="Save As..." data-testid="save-btn" />
     ],
         [auth]
@@ -76,7 +76,7 @@ export default function TextEditor() {
                 <Editor markdownContent={markdownContent} setMarkdownContent={setMarkdownContentCallback} isLightMode={isLightMode} />
             </div>
             <div className={"h-1/2 sm:h-full w-full bg-gray-2 rounded-md"}>
-                <Preview htmlContent={parsedContent}/>
+                <Preview htmlContent={parsedContent} />
             </div>
         </div>
     )

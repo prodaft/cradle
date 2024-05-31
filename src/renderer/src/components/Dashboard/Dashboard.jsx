@@ -8,7 +8,7 @@ import DashboardCard from "../DashboardCard/DashboardCard";
 import DashboardNote from "../DashboardNote/DashboardNote";
 import {displayError} from "../../utils/responseUtils/responseUtils";
 import useNavbarContents from "../../hooks/useNavbarContents/useNavbarContents";
-import NavbarItem from "../NavbarItem/NavbarItem";
+import NavbarButton from "../NavbarItem/NavbarButton";
 import {Trash} from "iconoir-react/regular";
 import {ConfirmationDialog} from "../ConfirmationDialog/ConfirmationDialog";
 import {deleteEntity} from "../../services/adminService/adminService";
@@ -36,7 +36,7 @@ export default function Dashboard(){
 
     // If the user is an admin and the dashboard is not for an entry, add a delete button to the navbar
     const navbarContents = [
-        <NavbarItem icon={<Trash />} name={"Delete"} onClick={() => setDialog(true)} />
+        <NavbarButton icon={<Trash />} name={"Delete"} onClick={() => setDialog(true)} />
     ];
     useNavbarContents(auth.isAdmin && contentObject.id && contentObject.type && contentObject.type !== 'entry' ? navbarContents : [], [contentObject, location]);
 
