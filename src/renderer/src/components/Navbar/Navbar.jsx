@@ -14,7 +14,7 @@ import NavbarButton from "../NavbarButton/NavbarButton";
  * @returns {Navbar}
  * @constructor
  */
-export default function Navbar(props){
+export default function Navbar(props) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const navigate = useNavigate();
 
@@ -34,7 +34,7 @@ export default function Navbar(props){
                 {props.contents}
             </div>
             <div className="w-fit h-fit navbar-end">
-                <NavbarButton text="Fleeting Notes" icon={<Notes/>} onClick={props.handleFleetingNotes}/>
+                <NavbarButton text="Fleeting Notes" icon={<Notes />} onClick={props.handleFleetingNotes} />
             </div>
         </div>
     );
