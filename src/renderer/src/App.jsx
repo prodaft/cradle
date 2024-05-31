@@ -12,6 +12,7 @@ import AdminPanelAdd from "./components/AdminPanelAdd/AdminPanelAdd";
 import AdminPanelUserPermissions from "./components/AdminPanelUserPermissions/AdminPanelUserPermissions";
 import Dashboard from "./components/Dashboard/Dashboard";
 import NotFound from './components/NotFound/NotFound.jsx';
+import NoteViewer from "./components/NoteViewer/NoteViewer";
 
 /**
  * The App component is the entry point of the application. It wraps the entire application in the AuthProvider
@@ -31,7 +32,8 @@ function App() {
               {/* Add any routes for components that keep the sidebar and navbar here */}
                     <Route path="/not-implemented" element={<FeatureNotImplemented />} />
                     <Route path="/editor" element={<TextEditor />} />
-                    <Route path={"/dashboards/*"} element={<Dashboard/>}></Route>
+                    <Route path="/dashboards/*" element={<Dashboard/>} />
+                     <Route path="/notes/:id" element={<NoteViewer />} />
                     <Route path="/admin" element={<Outlet />}>
                         <Route index element={<AdminPanel />}></Route>
                         <Route path="/admin/add-actor" element={<AdminPanelAdd type="Actor" />}></Route>
