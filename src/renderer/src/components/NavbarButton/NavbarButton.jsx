@@ -8,7 +8,7 @@
  */
 export default function NavbarButton({onClick,text,icon}){
     return (
-	        <button className="navbar-item hover:bg-gray-4 tooltip tooltip-bottom tooltip-primary" onClick={onClick} data-tooltip={text}>
+	        <button className={`navbar-item hover:bg-gray-4 ${text?"tooltip tooltip-bottom tooltip-primary":""}`} onClick={onClick} data-tooltip={text}>
                 {icon}
             </button>
     );
