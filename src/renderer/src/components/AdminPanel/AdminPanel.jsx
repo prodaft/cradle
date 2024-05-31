@@ -48,7 +48,7 @@ export default function AdminPanel() {
                             description={actor.description}
                             type={"entities/actors"}
                             onDelete={displayActors}
-                            link={createDashboardLink({ ...actor, type: 'actor' })}
+                            link={createDashboardLink(actor)}
                         />
                     );
                 }));
@@ -69,7 +69,7 @@ export default function AdminPanel() {
                             description={c.description}
                             type={"entities/cases"}
                             onDelete={displayCases}
-                            link={createDashboardLink({ ...c, type: 'case' })}
+                            link={createDashboardLink(c)}
                         />
                     );
                 }));

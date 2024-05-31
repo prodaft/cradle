@@ -1,17 +1,17 @@
-import {Link, useLocation, useNavigate} from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { getDashboardData } from "../../services/dashboardService/dashboardService";
-import {useAuth} from "../../hooks/useAuth/useAuth";
+import { useAuth } from "../../hooks/useAuth/useAuth";
 import AlertDismissible from "../AlertDismissible/AlertDismissible";
 import DashboardHorizontalSection from "../DashboardHorizontalSection/DashboardHorizontalSection";
 import DashboardCard from "../DashboardCard/DashboardCard";
 import DashboardNote from "../DashboardNote/DashboardNote";
-import {displayError} from "../../utils/responseUtils/responseUtils";
+import { displayError } from "../../utils/responseUtils/responseUtils";
 import useNavbarContents from "../../hooks/useNavbarContents/useNavbarContents";
-import NavbarItem from "../NavbarItem/NavbarItem";
+import NavbarButton from "../NavbarButton/NavbarButton";
 import { TaskList, Trash, Upload, Xmark } from "iconoir-react/regular";
-import {ConfirmationDialog} from "../ConfirmationDialog/ConfirmationDialog";
-import {deleteEntity} from "../../services/adminService/adminService";
+import { ConfirmationDialog } from "../ConfirmationDialog/ConfirmationDialog";
+import { deleteEntity } from "../../services/adminService/adminService";
 import NotFound from "../NotFound/NotFound";
 import pluralize from "pluralize";
 import { createDashboardLink } from "../../utils/dashboardUtils/dashboardUtils";
@@ -22,7 +22,7 @@ import { createDashboardLink } from "../../utils/dashboardUtils/dashboardUtils";
  * @returns {Dashboard}
  * @constructor
  */
-export default function Dashboard(){
+export default function Dashboard() {
     const location = useLocation();
     const path = location.pathname + location.search;
     const [entityMissing, setEntityMissing] = useState(false);
@@ -77,7 +77,7 @@ export default function Dashboard(){
 
     const handleDelete = async () => {
         deleteEntity(auth.access, `entities/${pluralize(contentObject.type)}`, contentObject.id).then((response) => {
-            if(response.status === 200){
+            if (response.status === 200) {
                 navigate('/');
             }
         }).catch(displayError(setAlert, setAlertColor));
@@ -86,7 +86,7 @@ export default function Dashboard(){
     const navbarContents = [
         // A button to enter publish mode. Here the user can choose which notes they want to view in the publish preview
         // This is only visible while the user is not in publish preview mode
-        publishMode ? null : <NavbarItem
+        publishMode ? null : <NavbarButton
             icon={<TaskList />}
             text="Enter Publish Mode"
             data-testid="publish-mode-btn"
@@ -95,13 +95,13 @@ export default function Dashboard(){
 
         // If the dashboard is in publish preview mode, add a button to exit it and another to move to the publish preview
         publishMode ? [
-            <NavbarItem
+            <NavbarButton
                 icon={<Xmark />}
                 text="Cancel"
                 data-testid="cancel-publish-btn"
                 onClick={handleCancelPublishMode}
             />,
-            <NavbarItem
+            <NavbarButton
                 icon={<Upload />}
                 text="Publish"
                 data-testid="publish-btn"
@@ -111,7 +111,7 @@ export default function Dashboard(){
 
         // If the user is an admin and the dashboard is not for an entry, add a delete button to the navbar
         (auth.isAdmin && contentObject.type !== 'entry') ?
-            <NavbarItem
+            <NavbarButton
                 icon={<Trash />}
                 name={"Delete"}
                 onClick={() => setDialog(true)}
@@ -122,14 +122,14 @@ export default function Dashboard(){
 
     if (entityMissing) {
         return (
-            <NotFound message={"The entity you are looking for does not exist or you do not have access to it. If you believe the entity exists contact an administrator for access"}/>
+            <NotFound message={"The entity you are looking for does not exist or you do not have access to it. If you believe the entity exists contact an administrator for access"} />
         );
     }
 
     return (
         <>
             <ConfirmationDialog open={dialog} setOpen={setDialog} title={"Confirm Deletion"} description={"This is permanent"} handleConfirm={handleDelete} />
-            <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor}/>
+            <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
             <div className="w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll" ref={dashboard}>
                 <div className="w-[95%] h-full flex flex-col p-6 space-y-3">
                     {contentObject.name && <h1 className="text-5xl font-bold">{contentObject.name}</h1>}
@@ -138,25 +138,25 @@ export default function Dashboard(){
 
                     {!publishMode && contentObject.actors && <DashboardHorizontalSection title={"Related Actors"}>
                         {contentObject.actors.map((actor, index) => (
-                            <DashboardCard index={index} name={actor.name} link={createDashboardLink({ ...actor, type: 'actor' })} /> // TODO type should be in the new response
+                            <DashboardCard index={index} name={actor.name} link={createDashboardLink(actor)} />
                         ))}
                     </DashboardHorizontalSection>}
 
                     {!publishMode && contentObject.cases && <DashboardHorizontalSection title={"Related Cases"}>
                         {contentObject.cases.map((c, index) => (
-                            <DashboardCard index={index} name={c.name} link={createDashboardLink({ ...c, type: 'case' })} />
+                            <DashboardCard index={index} name={c.name} link={createDashboardLink(c)} />
                         ))}
                     </DashboardHorizontalSection>}
 
                     {!publishMode && contentObject.entries && <DashboardHorizontalSection title={"Related Entries"}>
                         {contentObject.entries.map((entry, index) => (
-                            <DashboardCard index={index} name={entry.name} link={createDashboardLink({ ...entry, type: 'entry' })} />
+                            <DashboardCard index={index} name={entry.name} link={createDashboardLink(entry)} />
                         ))}
                     </DashboardHorizontalSection>}
 
                     {!publishMode && contentObject.metadata && <DashboardHorizontalSection title={"Metadata"}>
                         {contentObject.metadata.map((data, index) => (
-                            <DashboardCard index={index} name={data.name}/>
+                            <DashboardCard index={index} name={data.name} />
                         ))}
                     </DashboardHorizontalSection>}
 
