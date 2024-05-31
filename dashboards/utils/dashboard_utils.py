@@ -31,7 +31,7 @@ class DashboardUtils:
 
     @staticmethod
     def get_dashboard(user: CradleUser, entity_id: int) -> Dict[str, QuerySet]:
-        """Get the entities of a case that the user has access to
+        """Get the entities related to the specified entity that the user has access to
 
         Args:
             user: The user whose access is being checked

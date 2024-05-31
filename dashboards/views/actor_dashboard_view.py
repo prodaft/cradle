@@ -18,20 +18,19 @@ class ActorDashboard(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, actor_name: str) -> Response:
-        """Allow a user to retrieve the dashboars of a Case by specifying its name.
+        """Allow a user to retrieve the dashboard of an Actor by specifying its name.
 
         Args:
             request: The request that was sent
-            case_name: The name of the case that will be retrieved
+            case_name: The name of the actor that will be retrieved
 
         Returns:
-            Response(status=200): A JSON response containing the dashboard of the case
+            Response(status=200): A JSON response containing the dashboard of the actor
                 if the request was successful
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
             Response("There is no case with specified name", status=404):
-                if there is no case with the provided name
-                or the user does not have access to it
+                if there is no actor with the provided name
         """
 
         user: CradleUser = cast(CradleUser, request.user)
