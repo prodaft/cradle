@@ -15,6 +15,7 @@ import { deleteEntity } from "../../services/adminService/adminService";
 import NotFound from "../NotFound/NotFound";
 import pluralize from "pluralize";
 import { createDashboardLink } from "../../utils/dashboardUtils/dashboardUtils";
+import QueryString from "qs";
 
 /**
  * Dashboard component
@@ -31,7 +32,6 @@ export default function Dashboard() {
     const [alertColor, setAlertColor] = useState("red");
     const [dialog, setDialog] = useState(false);
     const navigate = useNavigate();
-    const [searchParams, setSearchParams] = useSearchParams();
     const auth = useAuth();
     const dashboard = useRef(null);
     const [publishMode, setPublishMode] = useState(false);
@@ -41,8 +41,11 @@ export default function Dashboard() {
     // where they can choose how to export the published report
     const handlePublish = () => {
         setPublishMode(false);
-        setSearchParams({ noteIds: Array.from(publishNoteIds), entityName: contentObject.name });
-        navigate(`/publish-preview`, searchParams);
+        const queryParams = QueryString.stringify({
+            noteIds: Array.from(publishNoteIds),
+            entityName: contentObject.name
+        });
+        navigate(`/publish-preview?${queryParams}`);
     }
 
     const handleEnterPublishMode = () => {
