@@ -1,4 +1,5 @@
 import mime from 'mime';
+// import template from './reportTemplate.html?raw';
 
 /**
  * Function to create a markdown section from an array of objects.
@@ -52,8 +53,8 @@ const createMarkdownReportFromJson = (data) => {
     if (notes) {
         markdown += '## Notes\n\n';
         notes.forEach((note) => {
-            markdown += `### ${note.timestamp}\n\n`;
-            markdown += `${note.content}\n\n`;
+            markdown += `### ${new Date(note.timestamp).toLocaleString()}\n\n`;
+            markdown += `${note.content}\n\n---\n\n`;
         });
     }
 
@@ -101,6 +102,8 @@ const downloadFile = (content, extension) => {
  * 
  * Uses the tailwind config from the root of this project.
  * 
+ * Also attempts to disable most internal links in the report. External links (e.g. https://google.com) are not affected.
+ * 
  * @param {string} title - the title of the report. Default is "Report"
  * @param {string} htmlContent - the HTML content of the report
  * @returns {string} the HTML report
@@ -134,15 +137,35 @@ const createHtmlReport = (title, htmlContent) => {
         },
     };
 
+    // TODO - move this into an html file. configure jest to handle importing raw html
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${reportTitle}</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
+
+    <!-- TailwindCSS CDN -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
+
+    <!-- TailwindCSS config -->
     <script>
         tailwind.config = ${JSON.stringify(tailwindConfig)};
+    </script>
+    
+    <!-- Disable internal links -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const anchors = document.querySelectorAll('a[href]');
+            anchors.forEach(function(anchor) {
+                const href = anchor.getAttribute('href');
+                if (href && (href.startsWith('/') || href.startsWith('#') || !href.includes(':'))) {
+                    anchor.addEventListener('click', function(event) {
+                        event.preventDefault();
+                    });
+                }
+            });
+        });
     </script>
 </head>
 <body class="bg-gray-100">

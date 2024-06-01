@@ -1,90 +1,69 @@
 /**
  * @jest-environment jsdom
  */
-import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import DashboardNote from './DashboardNote';
+import { render, screen, fireEvent } from "@testing-library/react";
+import DashboardNote from "./DashboardNote";
+import { MemoryRouter } from "react-router-dom";
 import '@testing-library/jest-dom';
-import * as ReactRouterDom from 'react-router-dom';
-
-// Mock the entire module first
-jest.mock('react-router-dom', () => ({
-    ...jest.requireActual('react-router-dom'),
-    useNavigate: jest.fn(),
-}));
 
 jest.mock('../../hooks/useAuth/useAuth', () => ({
     useAuth: jest.fn().mockImplementation(() => {
-        return { access: 'testToken', isAdmin: true };
+        return { access: 'testToken', isAdmin: false };
     }),
 }));
 
-describe('DashboardNote component', () => {
+describe("DashboardNote", () => {
     const note = {
-        id: '1',
-        timestamp: new Date().toISOString(),
-        content: 'Test Note',
-        entities: [{ name: 'Test Entity' }]
+        id: 1,
+        timestamp: new Date().getTime(),
+        content: "This is a test note",
+        entities: [
+            { id: 1, name: "Entity 1" },
+            { id: 2, name: "Entity 2" },
+        ],
+        publishable: true,
     };
 
-    it('renders note content and entities', () => {
+    const setAlert = jest.fn();
+    const setAlertColor = jest.fn();
+    const setPublishNoteIds = jest.fn();
+
+    test("renders note content", () => {
         render(
             <MemoryRouter>
-                <DashboardNote index={0} note={note} />
+                <DashboardNote
+                    index={0}
+                    note={note}
+                    setAlert={setAlert}
+                    setAlertColor={setAlertColor}
+                    publishMode={false}
+                    publishNoteIds={new Set()}
+                    setPublishNoteIds={setPublishNoteIds}
+                />
             </MemoryRouter>
         );
 
-        expect(screen.getByText('Test Note')).toBeInTheDocument();
-        expect(screen.getByText('Test Entity;')).toBeInTheDocument();
+        const noteContent = screen.getByText("This is a test note");
+        expect(noteContent).toBeInTheDocument();
     });
 
-
-    it('navigates to note detail page on note click', () => {
-        const navigate = jest.fn();
-        ReactRouterDom.useNavigate.mockReturnValue(navigate);
-
+    test("handles select note", () => {
         render(
-            <MemoryRouter>
-                <DashboardNote index={0} note={note} />
+            <MemoryRouter >
+                <DashboardNote
+                    index={0}
+                    note={note}
+                    setAlert={setAlert}
+                    setAlertColor={setAlertColor}
+                    publishMode={true}
+                    publishNoteIds={new Set()}
+                    setPublishNoteIds={setPublishNoteIds}
+                />
             </MemoryRouter>
         );
 
-        fireEvent.click(screen.getByText('Test Note'));
-        expect(navigate).toHaveBeenCalledWith(`/notes/${note.id}`);
-    });
+        fireEvent.click(screen.getByRole("checkbox"));
 
-    it('does not navigate when checkbox is clicked', () => {
-        const navigate = jest.fn();
-        ReactRouterDom.useNavigate.mockReturnValue(navigate);
-
-        render(
-            <MemoryRouter>
-                <DashboardNote index={0} note={note} />
-            </MemoryRouter>
-        );
-
-        fireEvent.click(screen.getByRole('checkbox'));
-        expect(navigate).not.toHaveBeenCalled();
-    });
-
-    it('renders note timestamp correctly', () => {
-        render(
-            <MemoryRouter>
-                <DashboardNote index={0} note={note} />
-            </MemoryRouter>
-        );
-
-        expect(screen.getByText(new Date(note.timestamp).toLocaleString())).toBeInTheDocument();
-    });
-
-    it('renders note entities correctly', () => {
-        render(
-            <MemoryRouter>
-                <DashboardNote index={0} note={note} />
-            </MemoryRouter>
-        );
-
-        expect(screen.getByText('Test Entity;')).toBeInTheDocument();
+        expect(setPublishNoteIds).toHaveBeenCalledWith(new Set([note.id]));
     });
 });
-

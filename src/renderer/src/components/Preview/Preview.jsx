@@ -25,7 +25,7 @@ export default function Preview({ htmlContent, isLightMode }) {
         return () => {
             previewDiv.removeEventListener('click', handleLinkClickNavigate);
         };
-    }, [sanitizedContent,navigate]);
+    }, [sanitizedContent, navigate]);
 
     return (
         <div className="h-full w-full p-4 bg-transparent prose max-w-none dark:prose-invert break-all

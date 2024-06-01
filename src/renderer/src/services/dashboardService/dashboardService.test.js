@@ -105,13 +105,13 @@ describe('getPublishData', () => {
 
         expect(axios).toHaveBeenCalledWith({
             method: "GET",
-            url: "/notes/publish/",
+            url: "/notes/publish",
             withCredentials: true,
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${token}`,
             },
-            params: QueryString.stringify({ note_id: noteIds }),
+            params: { note_ids: noteIds },
             paramsSerializer: expect.any(Function)
         });
     });

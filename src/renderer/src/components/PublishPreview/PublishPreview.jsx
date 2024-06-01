@@ -25,55 +25,15 @@ import QueryString from "qs";
  * @constructor
  */
 export default function PublishPreview() {
-    const location = useLocation();
-    const queryParams = QueryString.parse(location.search, { ignoreQueryPrefix: true });
-    const { noteIds, entityName } = queryParams;
     const [alert, setAlert] = useState("");
     const [alertColor, setAlertColor] = useState("red");
     const auth = useAuth();
     const [isJson, setIsJson] = useState(false);
+    const [responseData, setResponseData] = useState({});
 
-    const dummyData = { // TODO remove when API is ready
-        "actors": [
-            {
-                "ID": 0,
-                "name": "string",
-                "type": "actor",
-                "subtype": "",
-            },
-        ],
-        "cases": [
-            {
-                "ID": 0,
-                "name": "string",
-                "type": "case",
-                "subtype": "",
-            },
-        ],
-        "entries": [
-            {
-                "ID": 0,
-                "name": "string",
-                "type": "entry",
-                "subtype": "ip",
-            }
-        ],
-        "metadata": [
-            {
-                "ID": 0,
-                "name": "string",
-                "type": "metadata",
-                "subtype": "",
-            },
-        ],
-        "notes": [
-            {
-                "content": "string",
-                "timestamp": "2024-05-31T12:20:45.286Z",
-            },
-        ],
-    }
-    const [responseData, setResponseData] = useState(dummyData);
+    const location = useLocation();
+    const queryParams = QueryString.parse(location.search, { ignoreQueryPrefix: true });
+    const { noteIds, entityName } = queryParams;
 
     useEffect(() => {
         getPublishData(auth.access, noteIds)
@@ -82,10 +42,10 @@ export default function PublishPreview() {
                     setResponseData(response.data);
                 }
             }).catch(displayError(setAlert, setAlertColor));
-    }, [auth.access, noteIds, location]);
+    }, [location, auth.access]);
 
     // Publishes the preview in the provided format.
-    const handlePublish = () => {
+    const handlePublish = useCallback(() => {
         try {
             if (isJson) {
                 const content = JSON.stringify(responseData, null, 2);
@@ -98,7 +58,7 @@ export default function PublishPreview() {
         } catch (err) {
             displayError(setAlert, setAlertColor)(err);
         }
-    };
+    }, [isJson, responseData, entityName]);
 
 
     const toggleView = useCallback(() => {
@@ -125,7 +85,7 @@ export default function PublishPreview() {
             icon={<CodeBracketsSquare />}
             onClick={toggleView}
         />
-    ], [isJson, toggleView]);
+    ], [isJson, toggleView, handlePublish]);
 
     return (
         <>
@@ -134,7 +94,7 @@ export default function PublishPreview() {
                 <div className="h-full w-[90%] rounded-md bg-cradle3 bg-opacity-20 backdrop-blur-lg backdrop-filter p-4 overflow-y-auto">
                     <div className="flex-grow">
                         {isJson ? (
-                            <pre className="prose dark:prose-invert break-all overflow-x-hidden">{JSON.stringify(responseData, null, 2)}</pre>
+                            <pre className="prose !max-w-none dark:prose-invert !break-all flex-1">{JSON.stringify(responseData, null, 2)}</pre>
                         ) : (
                             <Preview htmlContent={parseContent(createMarkdownReportFromJson(responseData))} />
                         )}
