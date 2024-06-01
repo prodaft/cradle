@@ -632,7 +632,7 @@ paths:
             type: integer
             format: int64
           examples:
-            entryIdExample:
+            noteIdExample:
               value: 31249691
       responses:
         '200':  
@@ -643,8 +643,8 @@ paths:
                $ref: '#/components/schemas/Note'
         '401': 
           description: User is not authenticated.
-        '403': 
-          description: User does not have accessed to the requested note.
+        '404': 
+          description: User does not have read access to the requested note or the requested note does not exist.
 
   /notes/request/case/{caseId}/entity/{entityId}:
     get:
