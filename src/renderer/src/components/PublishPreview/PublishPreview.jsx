@@ -10,6 +10,7 @@ import { displayError } from "../../utils/responseUtils/responseUtils";
 import { getPublishData } from "../../services/dashboardService/dashboardService";
 import { Code, CodeBracketsSquare, Upload } from "iconoir-react/regular";
 import { createMarkdownReportFromJson, downloadFile, createHtmlReport } from "../../utils/publishUtils/publishUtils";
+import QueryString from "qs";
 
 /**
  * Fetches and displays the data to be published in a report. 
@@ -25,13 +26,12 @@ import { createMarkdownReportFromJson, downloadFile, createHtmlReport } from "..
  */
 export default function PublishPreview() {
     const location = useLocation();
+    const queryParams = QueryString.parse(location.search, { ignoreQueryPrefix: true });
+    const { noteIds, entityName } = queryParams;
     const [alert, setAlert] = useState("");
     const [alertColor, setAlertColor] = useState("red");
     const auth = useAuth();
     const [isJson, setIsJson] = useState(false);
-    const [searchParams, setSearchParams] = useSearchParams();
-    const noteIds = searchParams.get("noteIds");
-    const entityName = searchParams.get("entityName");
 
     const dummyData = { // TODO remove when API is ready
         "actors": [
@@ -106,7 +106,6 @@ export default function PublishPreview() {
     }, []);
 
     useNavbarContents([
-        // Publishes the preview in any format provided
         <NavbarButton
             icon={<Upload />}
             text={`Publish as ${isJson ? "JSON" : "HTML"}`}

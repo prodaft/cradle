@@ -4,10 +4,33 @@
 import { createMarkdownSection, createMarkdownReportFromJson, downloadFile, createHtmlReport } from "./publishUtils";
 
 describe("createMarkdownSection", () => {
+    it("should return an empty string if the array is null", () => {
+        const array = null;
+        const sectionTitle = "Test Section";
+        const result = createMarkdownSection(array, sectionTitle);
+        expect(result).toBe("");
+    });
+
+    it("should return an empty string if the array is undefined", () => {
+        const array = undefined;
+        const sectionTitle = "Test Section";
+        const result = createMarkdownSection(array, sectionTitle);
+        expect(result).toBe("");
+    });
+
     it("should return an empty string if the array is empty", () => {
         const array = [];
         const sectionTitle = "Test Section";
         const result = createMarkdownSection(array, sectionTitle);
+        expect(result).toBe("");
+    });
+
+
+    it("should return an empty string if the array is empty", () => {
+        const array = [];
+        const sectionTitle = "Test Section";
+        const result = createMarkdownSection(array, sectionTitle);
+
         expect(result).toBe("");
     });
 
@@ -20,6 +43,7 @@ describe("createMarkdownSection", () => {
         const sectionTitle = "Test Section";
         const result = createMarkdownSection(array, sectionTitle);
         const expected = "## Test Section\n\n##### Item 1; Item 2; Item 3; \n\n---\n\n";
+
         expect(result).toBe(expected);
     });
 
@@ -32,6 +56,8 @@ describe("createMarkdownSection", () => {
         const sectionTitle = "Test Section";
         const result = createMarkdownSection(array, sectionTitle);
         const expected = "## Test Section\n\n##### Item 1; Item 2; \n\n---\n\n";
+
+        expect(result).not.toContain("Item 3");
         expect(result).toBe(expected);
     });
 });
@@ -145,5 +171,15 @@ describe("createHtmlReport", () => {
 
         expect(result).toContain("Report");
         expect(result).toContain(htmlContent);
+    });
+
+    it("should contain the cradle themes", () => {
+        const title = "This is the title!";
+        const htmlContent = "<div>This is the content!!!</div>";
+        const result = createHtmlReport(title, htmlContent);
+
+        expect(result).toContain("cradle1");
+        expect(result).toContain("cradle2");
+        expect(result).toContain("cradle3");
     });
 });
