@@ -1,6 +1,7 @@
 from django.urls import reverse
 from django.test import TestCase
 from user.models import CradleUser
+from unittest.mock import patch
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.parsers import JSONParser
 from ..models import Note, ArchivedNote
@@ -13,6 +14,69 @@ import io
 
 def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
+
+
+class GetNoteTest(TestCase):
+    def setUp(self):
+        self.user = CradleUser.objects.create_user(username="user", password="user")
+        self.user_token = str(AccessToken.for_user(self.user))
+        self.not_owner = CradleUser.objects.create_user(
+            username="not_owner", password="pass"
+        )
+        self.not_owner_token = AccessToken.for_user(self.not_owner)
+        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
+        self.not_owner_headers = {
+            "HTTP_AUTHORIZATION": f"Bearer {self.not_owner_token}"
+        }
+
+    def test_get_note_not_authenticated(self):
+        response = self.client.get(
+            reverse("note_detail", kwargs={"note_id": 2}),
+        )
+
+        with self.subTest("Check correct response code."):
+            self.assertEqual(response.status_code, 401)
+
+    @patch("notes.models.Note.objects.get")
+    def test_get_note_not_in_database(self, mock_get):
+        mock_get.side_effect = Note.DoesNotExist
+
+        response = self.client.get(
+            reverse("note_detail", kwargs={"note_id": 2}),
+            **self.headers,
+        )
+
+        with self.subTest("Check correct response code."):
+            self.assertEqual(response.status_code, 404)
+
+    @patch("notes.models.Note.objects.get")
+    @patch("access.models.Access.objects.has_access_to_cases")
+    def test_get_note_no_access(self, mock_access, mock_get):
+        note = Note(id=1)
+        mock_get.return_value = note
+        mock_access.return_value = False
+        response = self.client.get(
+            reverse("note_detail", kwargs={"note_id": 1}), **self.headers
+        )
+
+        with self.subTest("Check correct response code."):
+            self.assertEqual(response.status_code, 404)
+
+    @patch("notes.models.Note.objects.get")
+    @patch("access.models.Access.objects.has_access_to_cases")
+    def test_get_note_successful(self, mock_access, mock_get):
+        note = Note(id=1)
+        mock_get.return_value = note
+        mock_access.return_value = True
+        response = self.client.get(
+            reverse("note_detail", kwargs={"note_id": 1}), **self.headers
+        )
+
+        with self.subTest("Check correct response code."):
+            self.assertEqual(response.status_code, 200)
+
+        with self.subTest("Correct note"):
+            self.assertEqual(bytes_to_json(response.content)["id"], 1)
 
 
 class CreateNoteTest(TestCase):
