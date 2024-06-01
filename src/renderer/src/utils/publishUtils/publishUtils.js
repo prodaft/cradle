@@ -1,4 +1,4 @@
-import * as mime from 'mime-types';
+import mime from 'mime';
 
 /**
  * Function to create a markdown section from an array of objects.
@@ -64,17 +64,19 @@ const createMarkdownReportFromJson = (data) => {
  * Function to download a file given its content and type.
  * 
  * The extension should be a valid extension corresponding to a MIME type.
- * 
+ * If the extension is not valid, an error is thrown.
+ *  
  * @param {string} content - the content of the file
  * @param {string} extension - the extension of the file
+ * @throws {Error} if the extension is invalid
  * @returns {void}
  */
 const downloadFile = (content, extension) => {
-    if (!mime.lookup(extension)) {
-        throw new Error(`Invalid file type: ${extension}`);
-    }
+    const fileType = mime.getType(extension);
 
-    const fileType = mime.lookup(extension);
+    if (!fileType) {
+        throw new Error(`Invalid file extension: ${extension}`);
+    }    
 
     const blob = new Blob([content], { type: fileType });
     const url = URL.createObjectURL(blob);
@@ -92,4 +94,70 @@ const downloadFile = (content, extension) => {
     URL.revokeObjectURL(url);
 };
 
-export { createMarkdownSection, createMarkdownReportFromJson, downloadFile };
+/**
+ * Function to create an HTML report from a title and some HTML content.
+ * It returns a report with a given template, using [TailwindCSS](https://tailwindcss.com/).
+ * Imports the TailwindCSS CDN.
+ * 
+ * Uses the tailwind config from the root of this project.
+ * 
+ * @param {string} title - the title of the report. Default is "Report"
+ * @param {string} htmlContent - the HTML content of the report
+ * @returns {string} the HTML report
+ */
+const createHtmlReport = (title, htmlContent) => {
+    const reportTitle = title || "Report";
+    const tailwindConfig = {
+        theme: {
+            extend: {
+                colors: {
+                    cradle1: '#02111a',
+                    cradle2: '#f68d2e',
+                    cradle3: '#253746', 
+                },
+                typography: (theme) => ({
+                    DEFAULT: {
+                        css: {
+                            pre: {
+                                padding: theme('padding.4'),
+                                overflow: 'auto !important',
+                                maxWidth: '100% !important',
+                            },
+                            code: {
+                                whiteSpace: 'pre-wrap !important',
+                                wordBreak: 'break-word !important',
+                            },
+                        },
+                    },
+                }),
+            }, 
+        },
+    };
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${reportTitle}</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
+    <script>
+        tailwind.config = ${JSON.stringify(tailwindConfig)};
+    </script>
+</head>
+<body class="bg-gray-100">
+    <div class="max-w-4xl mx-auto mt-10 p-8 bg-white rounded-lg shadow-lg">
+        <div class="border-b-2 pb-4 mb-6 text-center">
+            <h1 class="text-2xl font-bold text-gray-800">${reportTitle}</h1>
+        </div>
+        <div class="prose prose-lg">
+            ${htmlContent}
+        </div>
+    </div>
+</body>
+</html>
+
+`
+}
+
+export { createMarkdownSection, createMarkdownReportFromJson, downloadFile, createHtmlReport };

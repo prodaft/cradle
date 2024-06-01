@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { getDashboardData } from "../../services/dashboardService/dashboardService";
 import { useAuth } from "../../hooks/useAuth/useAuth";
@@ -31,6 +31,7 @@ export default function Dashboard() {
     const [alertColor, setAlertColor] = useState("red");
     const [dialog, setDialog] = useState(false);
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const auth = useAuth();
     const dashboard = useRef(null);
     const [publishMode, setPublishMode] = useState(false);
@@ -40,7 +41,8 @@ export default function Dashboard() {
     // where they can choose how to export the published report
     const handlePublish = () => {
         setPublishMode(false);
-        navigate(`/publish-preview`, { noteIds: Array.from(publishNoteIds) });
+        setSearchParams({ noteIds: Array.from(publishNoteIds), entityName: contentObject.name });
+        navigate(`/publish-preview`, searchParams);
     }
 
     const handleEnterPublishMode = () => {
@@ -122,7 +124,7 @@ export default function Dashboard() {
 
     if (entityMissing) {
         return (
-            <NotFound message={"The entity you are looking for does not exist or you do not have access to it. If you believe the entity exists contact an administrator for access"} />
+            <NotFound message={"The entity you are looking for does not exist or you do not have access to it. If you believe the entity exists contact an administrator for access."} />
         );
     }
 

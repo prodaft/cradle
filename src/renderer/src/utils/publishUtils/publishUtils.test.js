@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import { createMarkdownSection, createMarkdownReportFromJson, downloadFile } from "./publishUtils";
+import { createMarkdownSection, createMarkdownReportFromJson, downloadFile, createHtmlReport } from "./publishUtils";
 
 describe("createMarkdownSection", () => {
     it("should return an empty string if the array is empty", () => {
@@ -91,10 +91,10 @@ describe("createMarkdownReportFromJson", () => {
 });
 
 describe("downloadFile", () => {
-    it("should throw an error for an invalid file type", () => {
+    it("should throw an error for an invalid file extension", () => {
         const content = "This is the file content";
         const extension = "invalid";
-        expect(() => downloadFile(content, extension)).toThrowError("Invalid file type: invalid");
+        expect(() => downloadFile(content, extension)).toThrowError("Invalid file extension: invalid");
     });
 
     it("should create a download link with the correct file name and content", () => {
@@ -128,3 +128,22 @@ describe("downloadFile", () => {
     });
 });
 
+describe("createHtmlReport", () => {
+    it("should return an html report with the given contents", () => {
+        const title = "This is the title!";
+        const htmlContent = "<div>This is the content!!!</div>";
+        const result = createHtmlReport(title, htmlContent);
+
+        expect(result).toContain(title);
+        expect(result).toContain(htmlContent);
+    });
+
+    it("should use the default title if there is not given title", () => {
+        const title = "";
+        const htmlContent = "<div>This is the content!!!</div>";
+        const result = createHtmlReport(title, htmlContent);
+
+        expect(result).toContain("Report");
+        expect(result).toContain(htmlContent);
+    });
+});

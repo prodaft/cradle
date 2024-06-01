@@ -9,7 +9,7 @@ import AlertDismissible from "../AlertDismissible/AlertDismissible";
 import { displayError } from "../../utils/responseUtils/responseUtils";
 import { getPublishData } from "../../services/dashboardService/dashboardService";
 import { Code, CodeBracketsSquare, Upload } from "iconoir-react/regular";
-import { createMarkdownReportFromJson, downloadFile } from "../../utils/publishUtils/publishUtils";
+import { createMarkdownReportFromJson, downloadFile, createHtmlReport } from "../../utils/publishUtils/publishUtils";
 
 /**
  * Fetches and displays the data to be published in a report. 
@@ -31,6 +31,7 @@ export default function PublishPreview() {
     const [isJson, setIsJson] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
     const noteIds = searchParams.get("noteIds");
+    const entityName = searchParams.get("entityName");
 
     const dummyData = { // TODO remove when API is ready
         "actors": [
@@ -83,14 +84,22 @@ export default function PublishPreview() {
             }).catch(displayError(setAlert, setAlertColor));
     }, [auth.access, noteIds, location]);
 
+    // Publishes the preview in the provided format.
     const handlePublish = () => {
-        const content = isJson ? JSON.stringify(responseData, null, 2) : parseContent(createMarkdownReportFromJson(responseData));
         try {
-            downloadFile(content, isJson ? "json" : "html");
-        } catch (e) {
-            displayError(setAlert, setAlertColor)(e);
+            if (isJson) {
+                const content = JSON.stringify(responseData, null, 2);
+                downloadFile(content, "json");
+            } else {
+                const htmlContent = parseContent(createMarkdownReportFromJson(responseData));
+                const report = createHtmlReport(entityName, htmlContent);
+                downloadFile(report, "html");
+            }
+        } catch (err) {
+            displayError(setAlert, setAlertColor)(err);
         }
     };
+
 
     const toggleView = useCallback(() => {
         setIsJson(prevIsJson => !prevIsJson);
