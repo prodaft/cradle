@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { getDashboardData } from "../../services/dashboardService/dashboardService";
 import { useAuth } from "../../hooks/useAuth/useAuth";
 import AlertDismissible from "../AlertDismissible/AlertDismissible";
@@ -35,28 +35,7 @@ export default function Dashboard() {
     const auth = useAuth();
     const dashboard = useRef(null);
     const [publishMode, setPublishMode] = useState(false);
-    const [publishNoteIds, setPublishNoteIds] = useState(new Set());
-
-    // When the publish button is clicked, the user is sent to the publish preview page, 
-    // where they can choose how to export the published report
-    const handlePublish = () => {
-        setPublishMode(false);
-        const queryParams = QueryString.stringify({
-            noteIds: Array.from(publishNoteIds),
-            entityName: contentObject.name
-        });
-        navigate(`/publish-preview?${queryParams}`);
-    }
-
-    const handleEnterPublishMode = () => {
-        setPublishMode(true);
-        setPublishNoteIds(new Set(contentObject.notes.filter(note => note.publishable).map(note => note.id)));
-    }
-
-    const handleCancelPublishMode = () => {
-        setPublishMode(false);
-        setPublishNoteIds(new Set(contentObject.notes.map(note => note.id)));
-    }
+    const [noteIds, setNoteIds] = useState(new Set());
 
     // On load, fetch the dashboard data for the entity
     useEffect(() => {
@@ -78,15 +57,53 @@ export default function Dashboard() {
                     errHandler(err);
                 }
             });
-    }, [location]);
+
+    }, [location, publishMode, auth.access, path]);
+
+    const handleEnterPublishMode = useCallback(() => {
+        const newPublishNoteIds = new Set(contentObject.notes.filter(note => note.publishable).map(note => note.id));
+
+        if (newPublishNoteIds.size === 0) {
+            setAlertColor("red");
+            setAlert("There are no publishable notes available.");
+            return;
+        }
+
+        setNoteIds(newPublishNoteIds);
+        setPublishMode(true);
+    }, [contentObject.notes, noteIds]);
+
+    const handleCancelPublishMode = useCallback(() => {
+        setPublishMode(false);
+        setNoteIds(new Set());
+    }, [noteIds]);
 
     const handleDelete = async () => {
-        deleteEntity(auth.access, `entities/${pluralize(contentObject.type)}`, contentObject.id).then((response) => {
-            if (response.status === 200) {
-                navigate('/');
-            }
-        }).catch(displayError(setAlert, setAlertColor));
+        deleteEntity(auth.access, `entities/${pluralize(contentObject.type)}`, contentObject.id)
+            .then((response) => {
+                if (response.status === 200) {
+                    navigate('/');
+                }
+            }).catch(displayError(setAlert, setAlertColor));
     }
+
+
+    // When the publish button is clicked, the user is sent to the publish preview page, 
+    // where they can choose how to export the published report
+    const handlePublish = useCallback(() => {
+        if (noteIds.size === 0) {
+            setAlertColor("red");
+            setAlert("Please select at least one note to publish");
+            return;
+        }
+
+        setPublishMode(false);
+        const queryParams = QueryString.stringify({
+            noteIds: Array.from(noteIds),
+            entityName: contentObject.name
+        });
+        navigate(`/publish-preview?${queryParams}`);
+    }, [noteIds, contentObject.name, navigate]);
 
     const navbarContents = [
         // A button to enter publish mode. Here the user can choose which notes they want to view in the publish preview
@@ -123,7 +140,7 @@ export default function Dashboard() {
                 data-testid="delete-entity-btn"
             /> : null,
     ];
-    useNavbarContents(navbarContents, [contentObject, location, publishMode]);
+    useNavbarContents(navbarContents, [contentObject, location, publishMode, noteIds]);
 
     if (entityMissing) {
         return (
@@ -168,7 +185,7 @@ export default function Dashboard() {
                     {contentObject.notes && <div className="bg-cradle3 p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col flex-1">
                         <h2 className="text-xl font-semibold mb-2">Notes</h2>
                         {contentObject.notes.map((note, index) => (
-                            <DashboardNote index={index} note={note} setAlert={setAlert} setAlertColor={setAlertColor} publishMode={publishMode} publishNoteIds={publishNoteIds} setPublishNoteIds={setPublishNoteIds} />
+                            <DashboardNote index={index} note={note} setAlert={setAlert} setAlertColor={setAlertColor} publishMode={publishMode} publishNoteIds={noteIds} setPublishNoteIds={setNoteIds} />
                         ))}
                     </div>}
                 </div>

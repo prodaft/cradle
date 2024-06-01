@@ -1,1 +1,0 @@
-module.exports = {} // Needed to make jest ignore imported css, see jest config 
