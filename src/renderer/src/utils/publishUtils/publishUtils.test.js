@@ -63,6 +63,15 @@ describe("createMarkdownSection", () => {
 });
 
 describe("createMarkdownReportFromJson", () => {
+
+    beforeEach(() => {
+        jest.spyOn(Date.prototype, "toLocaleString").mockReturnValue("01/01/2022, 01:00:00");
+    });
+
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+
     it("should return an empty string if any required field is missing", () => {
         const data = {
             actors: [],
@@ -91,7 +100,7 @@ describe("createMarkdownReportFromJson", () => {
                        + '## Cases\n\n##### Case 1; Case 2; \n\n---\n\n'
                        + '## Entries\n\n##### Entry 1; Entry 2; \n\n---\n\n'
                        + '## Metadata\n\n##### Metadata 1; Metadata 2; \n\n---\n\n'
-                       + '## Notes\n\n### 01/01/2022, 01:00:00\n\nNote 1\n\n---\n\n### 02/01/2022, 01:00:00\n\nNote 2\n\n---\n\n';
+                       + '## Notes\n\n### 01/01/2022, 01:00:00\n\nNote 1\n\n---\n\n### 01/01/2022, 01:00:00\n\nNote 2\n\n---\n\n';
 
         expect(result).toBe(expected);
     });
@@ -110,7 +119,7 @@ describe("createMarkdownReportFromJson", () => {
         const result = createMarkdownReportFromJson(data);
         const expected = '## Cases\n\n##### Case 1; Case 2; \n\n---\n\n'
                        + '## Metadata\n\n##### Metadata 1; Metadata 2; \n\n---\n\n'
-                       + '## Notes\n\n### 01/01/2022, 01:00:00\n\nNote 1\n\n---\n\n### 02/01/2022, 01:00:00\n\nNote 2\n\n---\n\n';
+                       + '## Notes\n\n### 01/01/2022, 01:00:00\n\nNote 1\n\n---\n\n### 01/01/2022, 01:00:00\n\nNote 2\n\n---\n\n';
 
         expect(result).toBe(expected);
     });
