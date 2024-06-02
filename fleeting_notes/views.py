@@ -16,7 +16,6 @@ from user.models import CradleUser
 
 
 class FleetingNotesList(APIView):
-
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -63,3 +62,33 @@ class FleetingNotesList(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FleetingNotesDetail(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, pk: int) -> Response:
+        """
+        Get a FleetingNote entity based on the primary key.
+
+        Args:
+            request: The request that was sent
+            pk: The primary key of the FleetingNote entity
+
+        Returns:
+            Response(serializer.data, status=200):
+                The FleetingNote entity
+            Response("User is not authenticated.", status=401):
+                if the user is not authenticated
+            Response("FleetingNote does not exist.", status=404):
+                if the FleetingNote entity does not exist or does not belong to the user
+        """
+        try:
+            fleeting_note = FleetingNote.objects.get(pk=pk)
+            if fleeting_note.user != request.user:
+                return Response("FleetingNote does not exist", status=404)
+        except FleetingNote.DoesNotExist:
+            return Response("FleetingNote does not exist.", status=404)
+        serializer = FleetingNoteCreateSerializer(fleeting_note)
+        return Response(serializer.data)
