@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.response import Response
 from rest_framework.request import Request
+from rest_framework import status
 
 from fleeting_notes.models import FleetingNote
 from fleeting_notes.serializers import (
@@ -31,7 +32,7 @@ class FleetingNotesList(APIView):
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
         """
-        fleeting_notes = FleetingNote.objects.filter(user=request.user).order_by(
+        fleeting_notes = FleetingNote.objects.filter(user_id=request.user.id).order_by(
             "-last_edited"
         )
         serializer = FleetingNoteTruncatedRetrieveSerializer(fleeting_notes, many=True)
@@ -57,5 +58,5 @@ class FleetingNotesList(APIView):
         )
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=200)
-        return Response(serializer.errors, status=400)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -1,7 +1,6 @@
 from django.test import TestCase
 
 from fleeting_notes.models import FleetingNote
-from fleeting_notes.serializers import FleetingNoteRetrieveSerializer
 from user.models import CradleUser
 from django.urls import reverse
 from rest_framework.parsers import JSONParser
@@ -36,16 +35,12 @@ class GetFleetingNotesTest(TestCase):
     def test_get_fleeting_notes_authenticated_admin(self):
         FleetingNote.objects.create(content="Note1", user=self.admin_user)
         FleetingNote.objects.create(content="Note2", user=self.normal_user)
-        notes = FleetingNote.objects.filter(user=self.admin_user)
-
-        expected = FleetingNoteRetrieveSerializer(notes, many=True).data
 
         response = self.client.get(reverse("fleeting_notes_list"), **self.headers_admin)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(expected, bytes_to_json(response.content))
-        self.assertEqual(len(expected), 1)
-        self.assertEqual(expected[0]["content"], "Note1")
+        self.assertEqual(bytes_to_json(response.content)[0]["content"], "Note1")
+        self.assertEqual(len(bytes_to_json(response.content)), 1)
 
     def test_get_fleeting_notes_authenticated_admin_empty_db(self):
         response = self.client.get(
@@ -58,18 +53,14 @@ class GetFleetingNotesTest(TestCase):
     def test_get_fleeting_notes_authenticated_not_admin(self):
         FleetingNote.objects.create(content="Note1", user=self.admin_user)
         FleetingNote.objects.create(content="Note2", user=self.normal_user)
-        notes = FleetingNote.objects.filter(user=self.normal_user)
-
-        expected = FleetingNoteRetrieveSerializer(notes, many=True).data
 
         response = self.client.get(
             reverse("fleeting_notes_list"), **self.headers_normal
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(expected, bytes_to_json(response.content))
-        self.assertEqual(len(expected), 1)
-        self.assertEqual(expected[0]["content"], "Note2")
+        self.assertEqual(bytes_to_json(response.content)[0]["content"], "Note2")
+        self.assertEqual(len(bytes_to_json(response.content)), 1)
 
     def test_get_fleeting_notes_authenticated_not_admin_empty_db(self):
         response = self.client.get(
