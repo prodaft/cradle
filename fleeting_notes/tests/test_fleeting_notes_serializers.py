@@ -6,6 +6,7 @@ from fleeting_notes.serializers import (
     FleetingNoteRetrieveSerializer,
     FleetingNoteTruncatedRetrieveSerializer,
     FleetingNoteCreateSerializer,
+    FleetingNoteUpdateSerializer,
 )
 from django.contrib.auth import get_user_model
 
@@ -58,3 +59,18 @@ class FleetingNoteSerializerTest(TestCase):
         note = serializer.save()
         self.assertEqual(note.content, "New note content")
         self.assertEqual(note.user, self.user)
+
+    def test_fleeting_note_update_serializer(self):
+        data = {"content": "Updated note content"}
+        context = {"request": type("Request", (object,), {"user": self.user})}
+        fleeting_note = FleetingNote.objects.create(
+            user=self.user, content="Old note content"
+        )
+        serializer = FleetingNoteUpdateSerializer(
+            fleeting_note, data=data, context=context
+        )
+        self.assertTrue(serializer.is_valid())
+        note = serializer.save()
+        self.assertEqual(note.content, "Updated note content")
+        self.assertEqual(note.user, self.user)
+        self.assertEqual(note.id, fleeting_note.id)
