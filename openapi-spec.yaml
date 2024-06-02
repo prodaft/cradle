@@ -790,8 +790,6 @@ paths:
                 $ref: '#/components/schemas/FleetingNote'
         '401': 
           description: User is not authenticated.
-        '403':
-          description: User cannot access fleeting notes he does not own. 
         '404':
           description: Fleeting note not found.
     delete:
