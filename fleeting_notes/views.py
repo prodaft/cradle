@@ -1,3 +1,5 @@
+from typing import cast
+
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -10,6 +12,7 @@ from fleeting_notes.serializers import (
     FleetingNoteCreateSerializer,
     FleetingNoteTruncatedRetrieveSerializer,
 )
+from user.models import CradleUser
 
 
 class FleetingNotesList(APIView):
@@ -32,9 +35,9 @@ class FleetingNotesList(APIView):
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
         """
-        fleeting_notes = FleetingNote.objects.filter(user_id=request.user.id).order_by(
-            "-last_edited"
-        )
+        fleeting_notes = FleetingNote.objects.filter(
+            user=cast(CradleUser, request.user)
+        ).order_by("-last_edited")
         serializer = FleetingNoteTruncatedRetrieveSerializer(fleeting_notes, many=True)
         return Response(serializer.data)
 
