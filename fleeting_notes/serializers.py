@@ -54,3 +54,26 @@ class FleetingNoteCreateSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         validated_data["user"] = user
         return super().create(validated_data)
+
+
+class FleetingNoteUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FleetingNote
+        fields = ["id", "content", "last_edited"]
+
+    def update(self, instance, validated_data):
+        """
+        Updates the content field of the FleetingNote entity based on the
+        validated data.
+
+        Args:
+            instance: the FleetingNote entity to be updated
+            validated_data: a dictionary containing the attributes of
+                the FleetingNote entity
+
+        Returns:
+            The updated FleetingNote entity
+        """
+        instance.content = validated_data.get("content", instance.content)
+        instance.save()
+        return instance
