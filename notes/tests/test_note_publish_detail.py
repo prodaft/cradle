@@ -68,6 +68,7 @@ class NotePublishableDetailTest(TestCase):
         response = self.client.put(
             reverse("note_publish_detail", kwargs={"note_id": self.notes[1].id + 1}),
             {"publishable": "true"},
+            content_type="application/json",
             **self.headers,
         )
 
