@@ -24,7 +24,7 @@ class FleetingNotesList(APIView):
         """
         Get all the FleetingNotes that belong to the authenticated user.
         FleetingNotes are ordered by last_edited in descending order.
-        FleetingNotes are truncated to 200 characters for preview
+        FleetingNotes are truncated to 200 characters for preview.
 
         Args:
             request: The request that was sent
@@ -43,7 +43,8 @@ class FleetingNotesList(APIView):
 
     def post(self, request: Request) -> Response:
         """
-        Create a new FleetingNote entity based on the validated data.
+        Create a new FleetingNote entity based on the request data.
+        The user field is set to correspond to the authenticated user.
 
         Args:
             request: The request that was sent
