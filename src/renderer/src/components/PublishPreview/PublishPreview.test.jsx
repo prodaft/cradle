@@ -15,7 +15,7 @@ jest.mock('../../hooks/useAuth/useAuth', () => ({
 jest.mock('react-router-dom', () => ({
     ...jest.requireActual('react-router-dom'),
     useLocation: jest.fn().mockImplementation(() => {
-        return { location: '/publish-preview', search: '?noteIds=1&entityName=Test' };
+        return { location: '/publish', search: '?noteIds=1&entityName=Test' };
     }),
 }));
 

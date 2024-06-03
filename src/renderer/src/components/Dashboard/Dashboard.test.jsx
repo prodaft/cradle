@@ -20,6 +20,8 @@ jest.mock('../../services/dashboardService/dashboardService');
 jest.mock('../../hooks/useAuth/useAuth');
 jest.mock('../../hooks/useNavbarContents/useNavbarContents');
 
+window.HTMLElement.prototype.scrollTo = () => { };
+
 describe('Dashboard Component', () => {
     beforeEach(() => {
         useLocation.mockReturnValue({ pathname: '/dashboard', search: '' });
