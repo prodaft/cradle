@@ -126,7 +126,7 @@ class CreateNoteTest(TestCase):
             reverse("note_detail", kwargs={"note_id": self.notes[0].id})
         )
 
-        self.assertEquals(response.status_code, 401)
+        self.assertEqual(response.status_code, 401)
 
     def test_delete_note_not_found(self):
         response = self.client.delete(

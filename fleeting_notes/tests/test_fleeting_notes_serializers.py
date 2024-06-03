@@ -57,4 +57,18 @@ class FleetingNoteSerializerTest(TestCase):
         self.assertTrue(serializer.is_valid())
         note = serializer.save()
         self.assertEqual(note.content, "New note content")
+        self.assertIsNotNone(note.id)
+        self.assertIsNotNone(note.last_edited)
+        self.assertEqual(note.user, self.user)
+
+    def test_fleeting_note_create_serializer_with_id(self):
+        data = {"id": 123456789, "content": "New note content"}
+        context = {"request": type("Request", (object,), {"user": self.user})}
+        serializer = FleetingNoteCreateSerializer(data=data, context=context)
+        self.assertTrue(serializer.is_valid())
+        note = serializer.save()
+        self.assertEqual(note.content, "New note content")
+        self.assertIsNotNone(note.id)
+        self.assertNotEqual(note.id, 123456789)
+        self.assertIsNotNone(note.last_edited)
         self.assertEqual(note.user, self.user)
