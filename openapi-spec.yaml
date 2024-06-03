@@ -772,7 +772,8 @@ paths:
       tags:
         - Fleeting Note
       summary: Get the content of a fleeting note
-      description: Allow  user to visualize a specific fleeting note
+      description: Get a FleetingNote entity by its primary key.
+        Only the owner of the FleetingNote entity can access it.
       operationId: getFleetingNote
       parameters:
         - in: path
@@ -799,7 +800,8 @@ paths:
       tags:
         - Fleeting Note
       summary: Delete a certain fleeting note
-      description: Allow a user to delete the fleeting note with id fleetingNoteId
+      description: Delete a FleetingNote entity by its primary key.
+        Only the owner of the FleetingNote entity can delete it.
       operationId: deleteFleetingNote
       parameters:
         - in: path
@@ -822,7 +824,8 @@ paths:
       tags:
         - Fleeting Note
       summary: Update a Fleeting Note
-      description: Allow a user to edit a Fleeting Note by providing its text and id
+      description: Update a FleetingNote entity by its primary key.
+        Only the owner of the FleetingNote entity can update it.
       operationId: updateFleetingNote
       parameters:
         - in: path

@@ -74,6 +74,7 @@ class FleetingNotesDetail(APIView):
     def get(self, request: Request, pk: int) -> Response:
         """
         Get a FleetingNote entity by its primary key.
+        Only the owner of the FleetingNote entity can access it.
 
         Args:
             request: The request that was sent
@@ -103,6 +104,7 @@ class FleetingNotesDetail(APIView):
     def put(self, request: Request, pk: int) -> Response:
         """
         Update a FleetingNote entity by its primary key.
+        Only the owner of the FleetingNote entity can update it.
 
         Args:
             request: The request that was sent
@@ -137,6 +139,7 @@ class FleetingNotesDetail(APIView):
     def delete(self, request: Request, pk: int) -> Response:
         """
         Delete a FleetingNote entity by its primary key.
+        Only the owner of the FleetingNote entity can delete it.
 
         Args:
             request: The request that was sent

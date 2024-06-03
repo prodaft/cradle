@@ -32,6 +32,11 @@ class GetFleetingNoteByIdTest(TestCase):
         FleetingNote.objects.all().delete()
         CradleUser.objects.all().delete()
 
+    def test_get_not_authenticated(self):
+        response = self.client.get(reverse("fleeting_notes_list"))
+
+        self.assertEqual(response.status_code, 401)
+
     def test_get_fleeting_note_by_id_authenticated_admin(self):
         note = FleetingNote.objects.create(content="Note1", user=self.admin_user)
         FleetingNote.objects.create(content="Note2", user=self.normal_user)
@@ -43,6 +48,11 @@ class GetFleetingNoteByIdTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(bytes_to_json(response.content)["content"], "Note1")
+        self.assertEqual(
+            bytes_to_json(response.content)["last_edited"],
+            note.last_edited.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+        )
+        self.assertEqual(bytes_to_json(response.content)["id"], note.pk)
 
     def test_get_fleeting_note_by_id_authenticated_admin_empty_db(self):
         response = self.client.get(
@@ -62,6 +72,11 @@ class GetFleetingNoteByIdTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(bytes_to_json(response.content)["content"], "Note2")
+        self.assertEqual(
+            bytes_to_json(response.content)["last_edited"],
+            note.last_edited.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+        )
+        self.assertEqual(bytes_to_json(response.content)["id"], note.pk)
 
     def test_get_fleeting_note_by_id_authenticated_not_admin_not_own_note(self):
         note = FleetingNote.objects.create(content="Note1", user=self.admin_user)
@@ -105,6 +120,11 @@ class PutFleetingNotesByIdTest(TestCase):
         FleetingNote.objects.all().delete()
         CradleUser.objects.all().delete()
 
+    def test_put_not_authenticated(self):
+        response = self.client.put(reverse("fleeting_notes_detail", kwargs={"pk": 1}))
+
+        self.assertEqual(response.status_code, 401)
+
     def test_put_fleeting_note_by_id_authenticated_admin(self):
         note = FleetingNote.objects.create(content="Note1", user=self.admin_user)
 
@@ -116,6 +136,11 @@ class PutFleetingNotesByIdTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(bytes_to_json(response.content)["content"], "New content")
+        self.assertNotEqual(
+            bytes_to_json(response.content)["last_edited"],
+            note.last_edited.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+        )
+        self.assertEqual(bytes_to_json(response.content)["id"], note.pk)
 
     def test_put_fleeting_note_by_id_authenticated_admin_empty_db(self):
         response = self.client.put(
@@ -127,7 +152,7 @@ class PutFleetingNotesByIdTest(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_put_fleeting_note_by_id_authenticated_not_admin(self):
-        note = FleetingNote.objects.create(content="Note1", user=self.admin_user)
+        note = FleetingNote.objects.create(content="Note1", user=self.normal_user)
 
         response = self.client.put(
             reverse("fleeting_notes_detail", kwargs={"pk": note.pk}),
@@ -135,7 +160,13 @@ class PutFleetingNotesByIdTest(TestCase):
             **self.headers_normal,
         )
 
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(bytes_to_json(response.content)["content"], "New content")
+        self.assertNotEqual(
+            bytes_to_json(response.content)["last_edited"],
+            note.last_edited.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+        )
+        self.assertEqual(bytes_to_json(response.content)["id"], note.pk)
 
     def test_put_fleeting_note_by_id_authenticated_not_admin_not_own_note(self):
         note = FleetingNote.objects.create(content="Note1", user=self.admin_user)
@@ -179,8 +210,15 @@ class DeleteFleetingNotesByIdTest(TestCase):
         FleetingNote.objects.all().delete()
         CradleUser.objects.all().delete()
 
+    def test_delete_not_authenticated(self):
+        response = self.client.delete(reverse("fleeting_notes_detail", kwargs={"pk": 1}))
+
+        self.assertEqual(response.status_code, 401)
+
     def test_delete_fleeting_note_by_id_authenticated_admin(self):
         note = FleetingNote.objects.create(content="Note1", user=self.admin_user)
+
+        self.assertEqual(FleetingNote.objects.count(), 1)
 
         response = self.client.delete(
             reverse("fleeting_notes_detail", kwargs={"pk": note.pk}),
@@ -188,6 +226,7 @@ class DeleteFleetingNotesByIdTest(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(FleetingNote.objects.count(), 0)
 
     def test_delete_fleeting_note_by_id_authenticated_admin_empty_db(self):
         response = self.client.delete(
