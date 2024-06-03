@@ -88,9 +88,13 @@ class FleetingNotesDetail(APIView):
                 or the user does not own the FleetingNote entity
         """
         try:
-            fleeting_note = FleetingNote.objects.get(pk=pk, user=cast(CradleUser, request.user))
+            fleeting_note = FleetingNote.objects.get(
+                pk=pk, user=cast(CradleUser, request.user)
+            )
         except FleetingNote.DoesNotExist:
-            return Response("FleetingNote does not exist.", status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                "FleetingNote does not exist.", status=status.HTTP_404_NOT_FOUND
+            )
 
         serializer = FleetingNoteRetrieveSerializer(fleeting_note)
         return Response(serializer.data)
@@ -115,9 +119,13 @@ class FleetingNotesDetail(APIView):
                 or the user does not own the FleetingNote entity
         """
         try:
-            fleeting_note = FleetingNote.objects.get(pk=pk, user=cast(CradleUser, request.user))
+            fleeting_note = FleetingNote.objects.get(
+                pk=pk, user=cast(CradleUser, request.user)
+            )
         except FleetingNote.DoesNotExist:
-            return Response("FleetingNote does not exist.", status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                "FleetingNote does not exist.", status=status.HTTP_404_NOT_FOUND
+            )
 
         serializer = FleetingNoteUpdateSerializer(fleeting_note, data=request.data)
         if serializer.is_valid():
@@ -143,9 +151,13 @@ class FleetingNotesDetail(APIView):
                 or the user does not own the FleetingNote entity
         """
         try:
-            fleeting_note = FleetingNote.objects.get(pk=pk, user=cast(CradleUser, request.user))
+            fleeting_note = FleetingNote.objects.get(
+                pk=pk, user=cast(CradleUser, request.user)
+            )
         except FleetingNote.DoesNotExist:
-            return Response("FleetingNote does not exist.", status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                "FleetingNote does not exist.", status=status.HTTP_404_NOT_FOUND
+            )
 
         fleeting_note.delete()
         return Response(status=status.HTTP_200_OK)
