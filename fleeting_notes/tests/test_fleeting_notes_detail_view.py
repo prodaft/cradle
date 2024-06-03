@@ -211,7 +211,9 @@ class DeleteFleetingNotesByIdTest(TestCase):
         CradleUser.objects.all().delete()
 
     def test_delete_not_authenticated(self):
-        response = self.client.delete(reverse("fleeting_notes_detail", kwargs={"pk": 1}))
+        response = self.client.delete(
+            reverse("fleeting_notes_detail", kwargs={"pk": 1})
+        )
 
         self.assertEqual(response.status_code, 401)
 
