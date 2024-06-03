@@ -7,7 +7,7 @@ import useNavbarContents from "../../hooks/useNavbarContents/useNavbarContents";
 import NavbarButton from "../NavbarButton/NavbarButton";
 import AlertDismissible from "../AlertDismissible/AlertDismissible";
 import { displayError } from "../../utils/responseUtils/responseUtils";
-import { getPublishData } from "../../services/dashboardService/dashboardService";
+import { getPublishData } from "../../services/publishService/publishService";
 import { Code, CodeBracketsSquare, Upload } from "iconoir-react/regular";
 import { createMarkdownReportFromJson, downloadFile, createHtmlReport } from "../../utils/publishUtils/publishUtils";
 import QueryString from "qs";

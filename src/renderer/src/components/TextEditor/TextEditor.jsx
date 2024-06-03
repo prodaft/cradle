@@ -53,11 +53,11 @@ export default function TextEditor() {
     // Buttons for the dialog. Label & handler function
     const dropdownButtons = [
         {
-            label: "...Publishable",
+            label: "Publishable",
             handler: handleSaveNote(true),
         },
         {
-            label: "...Not Publishable",
+            label: "Not Publishable",
             handler: handleSaveNote(false),
         },
     ];

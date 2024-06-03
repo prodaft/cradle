@@ -14,6 +14,7 @@ import Dashboard from "./components/Dashboard/Dashboard";
 import NotFound from './components/NotFound/NotFound.jsx';
 import PublishPreview from './components/PublishPreview/PublishPreview.jsx';
 import NoteViewer from "./components/NoteViewer/NoteViewer";
+import NoteSelector from './components/NoteSelector/NoteSelector.jsx';
 
 /**
  * The App component is the entry point of the application. It wraps the entire application in the AuthProvider
@@ -35,7 +36,8 @@ function App() {
               <Route path="/editor" element={<TextEditor />} />
               <Route path="/dashboards/*" element={<Dashboard />} />
               <Route path="/notes/:id" element={<NoteViewer />} />
-              <Route path='/publish-preview' element={<PublishPreview />}></Route>
+              <Route path="/notes" element={<NoteSelector />} />
+              <Route path='/publish' element={<PublishPreview />}></Route>
               <Route path="/admin" element={<Outlet />}>
                 <Route index element={<AdminPanel />}></Route>
                 <Route path="/admin/add-actor" element={<AdminPanelAdd type="Actor" />}></Route>

@@ -20,7 +20,7 @@ import { Link } from "react-router-dom";
  * @param setAlert - Function to set an alert
  * @param setAlertColor - Function to set the color of the alert
  * @param {boolean} publishMode - determine if the dashboard is in publish mode
- * @param {Set<number>} publishNoteIds - a set of note ids - used to keep track of notes to publish
+ * @param {Array<number>} publishNoteIds - an array of note ids - used to keep track of notes to publish
  * @param setPublishNoteIds - Function to set the note ids
  * @returns {DashboardNote}
  * @constructor
@@ -46,20 +46,17 @@ export default function DashboardNote({ index, note, setAlert, setAlertColor, pu
     // If the note is to be included in the report and the button is clicked, remove it from the list of notes to publish.
     // If it's not selected and it is clicked, add it to the list of notes to publish.
     const handleSelectNote = () => {
-        const newPublishNoteIds = new Set(publishNoteIds)
-
-        if (newPublishNoteIds.has(note.id)) {
-            newPublishNoteIds.delete(note.id);
-        } else {
-            newPublishNoteIds.add(note.id);
-        }
-
-        setPublishNoteIds(newPublishNoteIds);
+        setPublishNoteIds(prevNoteIds => {
+            const noteIdx = prevNoteIds.indexOf(note.id);
+            if (noteIdx !== -1) {
+                setIsSelected(false);
+                return prevNoteIds.filter(id => id !== note.id);
+            } else {
+                setIsSelected(true);
+                return [...prevNoteIds, note.id];
+            }
+        });
     };
-
-    useEffect(() => {
-        setIsSelected(publishNoteIds.has(note.id));
-    }, [publishNoteIds, note]);
 
     useEffect(() => {
         note.publishable = isPublishable;
@@ -87,7 +84,9 @@ export default function DashboardNote({ index, note, setAlert, setAlertColor, pu
                         <div className="text-zinc-500 text-xs w-full">{new Date(note.timestamp).toLocaleString()}</div>
                         {publishMode ? (
                             <input
+                                data-testid='select-btn'
                                 type="checkbox"
+                                defaultChecked={true}
                                 checked={isSelected}
                                 className="checkbox checkbox-primary"
                                 onClick={handleSelectNote}

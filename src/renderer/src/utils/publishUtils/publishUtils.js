@@ -138,6 +138,9 @@ const createHtmlReport = (title, htmlContent) => {
     };
 
     // TODO - move this into an html file. configure jest to handle importing raw html
+    // return template.replace(/{{reportTitle}}/g, reportTitle)
+    //                .replace(/{{htmlContent}}/g, htmlContent);
+
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
