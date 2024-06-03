@@ -7,10 +7,10 @@ from rest_framework.permissions import IsAuthenticated
 from ..models import Note
 from ..serializers import NotePublishSerializer
 
-from entities.enums import EntityType
-from user.models import CradleUser
 from access.models import Access
+from user.models import CradleUser
 from access.enums import AccessType
+from entities.enums import EntityType
 
 from typing import cast
 

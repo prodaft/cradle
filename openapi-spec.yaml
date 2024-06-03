@@ -632,7 +632,7 @@ paths:
             type: integer
             format: int64
           examples:
-            entryIdExample:
+            noteIdExample:
               value: 31249691
       responses:
         '200':  
@@ -643,8 +643,8 @@ paths:
                $ref: '#/components/schemas/Note'
         '401': 
           description: User is not authenticated.
-        '403': 
-          description: User does not have accessed to the requested note.
+        '404': 
+          description: User does not have read access to the requested note or the requested note does not exist.
 
   /notes/request/case/{caseId}/entity/{entityId}:
     get:
@@ -720,7 +720,9 @@ paths:
       tags:
         - Fleeting Note
       summary: Get all fleeting notes of the user
-      description: Allow a user to see all of their fleeting notes
+      description: Get all the FleetingNotes that belong to the authenticated user.
+        FleetingNotes are ordered by last_edited in descending order.
+        FleetingNotes are truncated to 200 characters for preview.
       operationId: getAllFleetingNotes
       responses: 
         '200': 
@@ -739,7 +741,8 @@ paths:
       tags:
         - Fleeting Note
       summary: Create a Fleeting Note
-      description: Allow a user to create a Fleeting Note by providing its text
+      description: Create a new FleetingNote entity based on the request data.
+        The user field is set to correspond to the authenticated user.
       operationId: createFleetingNote
       requestBody:
         required: true

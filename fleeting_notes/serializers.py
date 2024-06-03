@@ -36,7 +36,7 @@ class FleetingNoteTruncatedRetrieveSerializer(serializers.ModelSerializer):
 class FleetingNoteCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = FleetingNote
-        fields = ["content"]
+        fields = ["id", "content", "last_edited"]
 
     def create(self, validated_data):
         """
@@ -51,8 +51,7 @@ class FleetingNoteCreateSerializer(serializers.ModelSerializer):
         Returns:
             The created FleetingNote entity
         """
-        user = self.context["request"].user
-        validated_data["user"] = user
+        validated_data["user"] = self.context["request"].user
         return super().create(validated_data)
 
 

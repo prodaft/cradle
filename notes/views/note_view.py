@@ -8,12 +8,10 @@ from rest_framework.permissions import IsAuthenticated
 from ..serializers import NoteCreateSerializer, NoteRetrieveSerializer
 from ..models import Note
 from user.models import CradleUser
-from access.enums import AccessType
-from typing import cast
-
-from entities.enums import EntityType
-
 from access.models import Access
+from access.enums import AccessType
+from entities.enums import EntityType
+from typing import cast
 
 
 class NoteList(APIView):
@@ -58,6 +56,38 @@ class NoteDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    def get(self, request: Request, note_id: int) -> Response:
+        """Allow a user to get an already existing note, by specifying
+        its id. A user should be able to retrieve the id only if he has
+        READ access an all the cases it references.
+
+        Args:
+            request: The request that was sent.
+            note_id: The id of the note.
+
+        Returns:
+            Response(status=200): A JSON response containing note
+                if the request was successful
+            Response("User is not authenticated.", status=401):
+                if the user is not authenticated.
+            Response("Note with given id does not exist.", status=404):
+                if the user does not have at least READ access on all
+                referenced cases, or the note does not exist.
+        """
+        try:
+            note: Note = Note.objects.get(id=note_id)
+        except Note.DoesNotExist:
+            return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
+
+        if not Access.objects.has_access_to_cases(
+            cast(CradleUser, request.user),
+            set(note.entities.filter(type=EntityType.CASE)),
+            {AccessType.READ, AccessType.READ_WRITE},
+        ):
+            return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
+
+        return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
+
     def delete(self, request: Request, note_id: int) -> Response:
         """Allow a user to delete an already existing note,
         by specifying its id.
@@ -81,12 +111,10 @@ class NoteDetail(APIView):
         except Note.DoesNotExist:
             return Response("Note not found.", status=status.HTTP_404_NOT_FOUND)
 
-        referenced_cases = note_to_delete.entities.filter(type=EntityType.CASE)
-
         if not Access.objects.has_access_to_cases(
             cast(CradleUser, request.user),
-            set(referenced_cases),
-            set([AccessType.READ, AccessType.READ_WRITE]),
+            set(note_to_delete.entities.filter(type=EntityType.CASE)),
+            {AccessType.READ, AccessType.READ_WRITE},
         ):
             return Response(
                 "User does not have Read-Write access to all referenced cases",
