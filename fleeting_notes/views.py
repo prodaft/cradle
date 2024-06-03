@@ -88,9 +88,9 @@ class FleetingNotesDetail(APIView):
                 or the user does not own the FleetingNote entity
         """
         try:
-            fleeting_note = FleetingNote.objects.get(pk=pk, user=request.user)
+            fleeting_note = FleetingNote.objects.get(pk=pk, user=cast(CradleUser, request.user))
         except FleetingNote.DoesNotExist:
-            return Response("FleetingNote does not exist.", status=404)
+            return Response("FleetingNote does not exist.", status=status.HTTP_404_NOT_FOUND)
 
         serializer = FleetingNoteRetrieveSerializer(fleeting_note)
         return Response(serializer.data)
@@ -104,7 +104,7 @@ class FleetingNotesDetail(APIView):
             pk: The primary key of the FleetingNote entity
 
         Returns:
-            Response(serializer.data):
+            Response(serializer.data, status=200):
                 The updated FleetingNote entity
             Response(serializer.errors, status=400):
                 if the request was unsuccessful
@@ -115,15 +115,15 @@ class FleetingNotesDetail(APIView):
                 or the user does not own the FleetingNote entity
         """
         try:
-            fleeting_note = FleetingNote.objects.get(pk=pk, user=request.user)
+            fleeting_note = FleetingNote.objects.get(pk=pk, user=cast(CradleUser, request.user))
         except FleetingNote.DoesNotExist:
-            return Response("FleetingNote does not exist.", status=404)
+            return Response("FleetingNote does not exist.", status=status.HTTP_404_NOT_FOUND)
 
         serializer = FleetingNoteUpdateSerializer(fleeting_note, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
+            return Response(serializer.data, status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request: Request, pk: int) -> Response:
         """
@@ -143,9 +143,9 @@ class FleetingNotesDetail(APIView):
                 or the user does not own the FleetingNote entity
         """
         try:
-            fleeting_note = FleetingNote.objects.get(pk=pk, user=request.user)
+            fleeting_note = FleetingNote.objects.get(pk=pk, user=cast(CradleUser, request.user))
         except FleetingNote.DoesNotExist:
-            return Response("FleetingNote does not exist.", status=404)
+            return Response("FleetingNote does not exist.", status=status.HTTP_404_NOT_FOUND)
 
         fleeting_note.delete()
-        return Response(status=200)
+        return Response(status=status.HTTP_200_OK)

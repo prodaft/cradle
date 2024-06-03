@@ -720,7 +720,7 @@ paths:
       tags:
         - Fleeting Note
       summary: Get all fleeting notes of the user
-      description: Allow a user to see all of his fleeting notes
+      description: Allow a user to see all of their fleeting notes
       operationId: getAllFleetingNotes
       responses: 
         '200': 
@@ -813,10 +813,8 @@ paths:
           description: Fleeting Note was deleted.
         '401': 
           description: User is not authenticated.
-        '403': 
-          description: User cannot delete a Fleeting Note he does not own.
         '404':
-          description: Fleeting Note not found.  
+          description: Fleeting Note not found or not owned by user.
     put:
       tags:
         - Fleeting Note
@@ -840,21 +838,19 @@ paths:
             schema:
               type: object
               required:
-                - text
+                - content
               properties:
-                text:
+                content:
                   type: string
       responses:
         '200':  
           description: Fleeting Note was updated.
         '401': 
           description: User is not authenticated.
-        '403': 
-          description: User cannot edit a Fleeting Note he does not own.
         '404':
-          description: Fleeting Note not found. 
+          description: Fleeting Note not found or not owned by user.
           
-  /fleeting-notes/{fleetingNoteId}/final: 
+  /fleeting-notes/finalize/{fleetingNoteId}:
     put:
       tags:
           - Fleeting Note
