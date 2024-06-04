@@ -1,5 +1,5 @@
 import mime from 'mime';
-// import template from './reportTemplate.html?raw';
+import template from './reportTemplate.js';
 
 /**
  * Function to create a markdown section from an array of objects.
@@ -137,53 +137,8 @@ const createHtmlReport = (title, htmlContent) => {
         },
     };
 
-    // TODO - move this into an html file. configure jest to handle importing raw html
-    // return template.replace(/{{reportTitle}}/g, reportTitle)
-    //                .replace(/{{htmlContent}}/g, htmlContent);
-
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${reportTitle}</title>
-
-    <!-- TailwindCSS CDN -->
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
-
-    <!-- TailwindCSS config -->
-    <script>
-        tailwind.config = ${JSON.stringify(tailwindConfig)};
-    </script>
-    
-    <!-- Disable internal links -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const anchors = document.querySelectorAll('a[href]');
-            anchors.forEach(function(anchor) {
-                const href = anchor.getAttribute('href');
-                if (href && (href.startsWith('/') || href.startsWith('#') || !href.includes(':'))) {
-                    anchor.addEventListener('click', function(event) {
-                        event.preventDefault();
-                    });
-                }
-            });
-        });
-    </script>
-</head>
-<body class="bg-gray-100">
-    <div class="max-w-4xl mx-auto mt-10 p-8 bg-white rounded-lg shadow-lg">
-        <div class="border-b-2 pb-4 mb-6 text-center">
-            <h1 class="text-2xl font-bold text-gray-800">${reportTitle}</h1>
-        </div>
-        <div class="prose prose-lg">
-            ${htmlContent}
-        </div>
-    </div>
-</body>
-</html>
-
-`
+    return template.replace(/{{reportTitle}}/g, reportTitle)
+                   .replace(/{{htmlContent}}/g, htmlContent);
 }
 
 export { createMarkdownSection, createMarkdownReportFromJson, downloadFile, createHtmlReport };
