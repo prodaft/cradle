@@ -12,13 +12,13 @@ export default function FormField(props) {
             </label>
             <div className="mt-2">
                 <input
-                id={props.name}
-                name={props.name}
-                type={props.type}
-                autoComplete={props.name}
-                onChange={(e) => props.handleInput(e.target.value)}
-                required
-                className="input-ghost-primary input-block input focus:ring-0"
+                    id={props.name}
+                    name={props.name}
+                    type={props.type}
+                    autoComplete={props.name}
+                    onChange={(e) => props.handleInput(e.target.value)}
+                    required
+                    className="form-input input-ghost-primary input-block input focus:ring-0"
                 />
             </div>
         </div>

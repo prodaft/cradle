@@ -106,7 +106,7 @@ export default function NoteSelector() {
                             <input
                                 type="checkbox"
                                 id="select-all-btn"
-                                className="checkbox checkbox-primary"
+                                className="form-checkbox checkbox checkbox-primary"
                                 onClick={handleSelectAll}
                                 checked={selectAll}
                             />

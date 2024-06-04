@@ -33,7 +33,7 @@ export default function AdminPanelSection(props) {
                 <input
                     type="text"
                     placeholder="Search"
-                    className="input input-rounded input-md input-block input-ghost-primary focus:ring-0 w-full"
+                    className="form-input input input-rounded input-md input-block input-ghost-primary focus:ring-0 w-full"
                     onChange={(e) => setSearchVal(e.target.value)}
                 />
             </div>
