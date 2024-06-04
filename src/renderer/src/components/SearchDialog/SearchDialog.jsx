@@ -81,7 +81,7 @@ export default function SearchDialog({ isOpen, onClose }) {
                     <input
                         ref={inputRef}
                         type="text"
-                        className="input input-block input-ghost-primary focus:ring-0 pr-10"
+                        className="form-input input input-block input-ghost-primary focus:ring-0 pr-10"
                         placeholder="Search..."
                         value={searchQuery}
                         onChange={(event) => {
