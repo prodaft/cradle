@@ -21,7 +21,6 @@ jest.mock('../../hooks/useAuth/useAuth', () => ({
 
 describe("DashboardNote", () => {
     const publishNoteIds = new Array();
-    const includesSpy = jest.spyOn(publishNoteIds, 'includes').mockReturnValue(true);
     const note = {
         id: 1,
         timestamp: new Date().getTime(),
@@ -53,7 +52,6 @@ describe("DashboardNote", () => {
         );
 
         const noteContent = screen.getByText("This is a test note");
-        // expect(includesSpy).toHaveBeenCalled();
         expect(noteContent).toBeInTheDocument();
     });
 
@@ -72,7 +70,6 @@ describe("DashboardNote", () => {
             </MemoryRouter>
         );
 
-        // expect(includesSpy).toHaveBeenCalled();
         expect(screen.getByText('This is a test note')).toBeInTheDocument();
         expect(screen.getByText('Entity 1;')).toBeInTheDocument();
         expect(screen.getByText('Entity 2;')).toBeInTheDocument();
@@ -98,7 +95,6 @@ describe("DashboardNote", () => {
         );
 
         fireEvent.click(screen.getByText('This is a test note'));
-        // expect(includesSpy).toHaveBeenCalled();
         expect(navigate).toHaveBeenCalledWith(`/notes/${note.id}`);
     });
 
@@ -121,7 +117,6 @@ describe("DashboardNote", () => {
         );
 
         fireEvent.click(screen.getByRole('checkbox'));
-        // expect(includesSpy).toHaveBeenCalled();
         expect(navigate).not.toHaveBeenCalled();
     });
 
@@ -140,7 +135,6 @@ describe("DashboardNote", () => {
             </MemoryRouter>
         );
 
-        // expect(includesSpy).toHaveBeenCalled();
         expect(screen.getByText(new Date(note.timestamp).toLocaleString())).toBeInTheDocument();
     });
 
@@ -159,7 +153,6 @@ describe("DashboardNote", () => {
             </MemoryRouter>
         );
 
-        // expect(includesSpy).toHaveBeenCalled();
         expect(screen.getByText('Entity 1;')).toBeInTheDocument();
         expect(screen.getByText('Entity 2;')).toBeInTheDocument();
     });
