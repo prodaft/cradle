@@ -4,7 +4,7 @@ import AlertDismissible from "../AlertDismissible/AlertDismissible";
 import DashboardNote from "../DashboardNote/DashboardNote";
 import useNavbarContents from "../../hooks/useNavbarContents/useNavbarContents";
 import NavbarButton from "../NavbarButton/NavbarButton";
-import { Upload, Xmark } from "iconoir-react/regular";
+import { OpenNewWindow, Upload, Xmark } from "iconoir-react/regular";
 import { createDashboardLink } from "../../utils/dashboardUtils/dashboardUtils";
 import QueryString from "qs";
 
@@ -83,7 +83,7 @@ export default function NoteSelector() {
             onClick={handleCancelPublishMode}
         />,
         <NavbarButton
-            icon={<Upload />}
+            icon={<OpenNewWindow />}
             text="Publish"
             data-testid="publish-btn"
             onClick={handlePublish}

@@ -5,10 +5,11 @@ import Preview from "../Preview/Preview";
 import { parseContent } from "../../utils/textEditorUtils/textEditorUtils";
 import useNavbarContents from "../../hooks/useNavbarContents/useNavbarContents";
 import NavbarButton from "../NavbarButton/NavbarButton";
+import NavbarDropdown from "../NavbarDropdown/NavbarDropdown";
 import AlertDismissible from "../AlertDismissible/AlertDismissible";
 import { displayError } from "../../utils/responseUtils/responseUtils";
 import { getPublishData } from "../../services/publishService/publishService";
-import { Code, CodeBracketsSquare, Upload } from "iconoir-react/regular";
+import { Code, CodeBracketsSquare, Download } from "iconoir-react/regular";
 import { createMarkdownReportFromJson, downloadFile, createHtmlReport } from "../../utils/publishUtils/publishUtils";
 import QueryString from "qs";
 
@@ -45,15 +46,22 @@ export default function PublishPreview() {
     }, [location, auth.access]);
 
     // Publishes the preview in the provided format.
-    const handlePublish = useCallback(() => {
+    const handlePublish = useCallback((extension) => {
         try {
-            if (isJson) {
-                const content = JSON.stringify(responseData, null, 2);
-                downloadFile(content, "json");
-            } else {
-                const htmlContent = parseContent(createMarkdownReportFromJson(responseData));
-                const report = createHtmlReport(entityName, htmlContent);
-                downloadFile(report, "html");
+            switch (extension) {
+                case "html": {
+                    const content = parseContent(createMarkdownReportFromJson(responseData));
+                    const report = createHtmlReport(entityName, content);
+                    downloadFile(report, extension);
+                    break;
+                }
+                case "json": {
+                    const content = JSON.stringify(responseData, null, 2);
+                    downloadFile(content, extension);
+                    break;
+                }
+                default:
+                    throw new Error(`Invalid format: ${extension}`);
             }
         } catch (err) {
             displayError(setAlert, setAlertColor)(err);
@@ -65,14 +73,18 @@ export default function PublishPreview() {
         setIsJson(prevIsJson => !prevIsJson);
     }, []);
 
-    useNavbarContents([
-        <NavbarButton
-            icon={<Upload />}
-            text={`Publish as ${isJson ? "JSON" : "HTML"}`}
-            data-testid="publish-btn"
-            onClick={handlePublish}
-        />,
+    const publishDropdownButtons = [
+        {
+            label: "JSON",
+            handler: () => handlePublish("json")
+        },
+        {
+            label: "HTML",
+            handler: () => handlePublish("html")
+        },
+    ]
 
+    useNavbarContents([
         // This will change the view between JSON and HTML
         isJson ? <NavbarButton
             text="Show HTML"
@@ -84,7 +96,14 @@ export default function PublishPreview() {
             data-testid="show-json-btn"
             icon={<CodeBracketsSquare />}
             onClick={toggleView}
-        />
+        />,
+
+        <NavbarDropdown
+            icon={<Download />}
+            text="Download Report As..."
+            data-testid="publish-btn"
+            contents={publishDropdownButtons}
+        />,
     ], [isJson, toggleView, handlePublish]);
 
     return (
@@ -92,9 +111,9 @@ export default function PublishPreview() {
             <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} onClose={() => setAlert("")} />
             <div className="w-full h-full overflow-hidden flex flex-col items-center p-4" data-testid="publish-preview">
                 <div className="h-full w-[90%] rounded-md bg-cradle3 bg-opacity-20 backdrop-blur-lg backdrop-filter p-4 overflow-y-auto">
-                    <div className="flex-grow">
+                    <div className="flex-grow !max-w-[70%]">
                         {isJson ? (
-                            <pre className="prose !max-w-none dark:prose-invert !break-all flex-1">{JSON.stringify(responseData, null, 2)}</pre>
+                            <pre className="prose dark:prose-invert !break-all flex-1">{JSON.stringify(responseData, null, 2)}</pre>
                         ) : (
                             <Preview htmlContent={parseContent(createMarkdownReportFromJson(responseData))} />
                         )}
