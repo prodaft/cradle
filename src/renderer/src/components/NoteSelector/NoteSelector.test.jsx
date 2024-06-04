@@ -51,19 +51,6 @@ const mockData = {
     notes: notes,
 };
 
-// const queryParams = "contentObject%5Bname%5D=Sample%20Name&contentObject%5Btype%5D=Sample%20Type&contentObject%5Bsubtype%5D=Sample%20Subtype&contentObject%5Bdescription%5D=Sample%20Description&contentObject%5Bnotes%5D%5B0%5D%5Bid%5D=1&contentObject%5Bnotes%5D%5B0%5D%5Bpublishable%5D=true&contentObject%5Bnotes%5D%5B1%5D%5Bid%5D=2&contentObject%5Bnotes%5D%5B1%5D%5Bpublishable%5D=true&contentObject%5Bnotes%5D%5B2%5D%5Bid%5D=3&contentObject%5Bnotes%5D%5B2%5D%5Bpublishable%5D=true";
-
-// jest.mock('react-router-dom', () => ({
-//     ...jest.requireActual('react-router-dom'),
-//     useSearchParams: jest.fn().mockImplementation(() => [
-//         {
-//             get: jest.fn().mockReturnValue(),
-//         },
-//         jest.fn(),
-//     ]),
-// }));
-
-
 jest.mock('react-router-dom', () => ({
     ...jest.requireActual('react-router-dom'),
     useLocation: jest.fn().mockImplementation(() => {
