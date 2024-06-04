@@ -77,15 +77,6 @@ export default function Dashboard() {
     }
 
     const navbarContents = [
-        // A button to enter publish mode. Here the user can choose which notes they want to view in the publish preview
-        // This is only visible while the user is not in publish preview mode
-        <NavbarButton
-            icon={<TaskList />}
-            text="Enter Publish Mode"
-            data-testid="publish-mode-btn"
-            onClick={handleEnterPublishMode}
-        />,
-
         // If the user is an admin and the dashboard is not for an entry, add a delete button to the navbar
         (auth.isAdmin && contentObject.type !== 'entry')
         && <NavbarButton
@@ -93,6 +84,15 @@ export default function Dashboard() {
             text="Delete"
             onClick={() => setDialog(true)}
             data-testid="delete-entity-btn"
+        />,
+
+        // A button to enter publish mode. Here the user can choose which notes they want to view in the publish preview
+        // This is only visible while the user is not in publish preview mode
+        <NavbarButton
+            icon={<TaskList />}
+            text="Enter Publish Mode"
+            data-testid="publish-mode-btn"
+            onClick={handleEnterPublishMode}
         />,
     ];
     useNavbarContents(!entityMissing && navbarContents, [contentObject, location, auth.access, entityMissing, handleEnterPublishMode, setDialog]);
