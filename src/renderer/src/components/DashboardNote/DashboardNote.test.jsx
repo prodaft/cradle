@@ -20,7 +20,7 @@ jest.mock('../../hooks/useAuth/useAuth', () => ({
 }));
 
 describe("DashboardNote", () => {
-    const publishNoteIds = new Array();
+    const selectedNoteIds = new Array();
     const note = {
         id: 1,
         timestamp: new Date().getTime(),
@@ -34,7 +34,7 @@ describe("DashboardNote", () => {
 
     const setAlert = jest.fn();
     const setAlertColor = jest.fn();
-    const setPublishNoteIds = jest.fn();
+    const setSelectedNoteIds = jest.fn();
 
     test("renders note content", () => {
         render(
@@ -45,8 +45,8 @@ describe("DashboardNote", () => {
                     setAlert={setAlert}
                     setAlertColor={setAlertColor}
                     publishMode={false}
-                    publishNoteIds={publishNoteIds}
-                    setPublishNoteIds={setPublishNoteIds}
+                    selectedNoteIds={selectedNoteIds}
+                    setSelectedNoteIds={setSelectedNoteIds}
                 />
             </MemoryRouter>
         );
@@ -64,8 +64,8 @@ describe("DashboardNote", () => {
                     setAlert={setAlert}
                     setAlertColor={setAlertColor}
                     publishMode={true}
-                    publishNoteIds={publishNoteIds}
-                    setPublishNoteIds={setPublishNoteIds}
+                    selectedNoteIds={selectedNoteIds}
+                    setSelectedNoteIds={setSelectedNoteIds}
                 />
             </MemoryRouter>
         );
@@ -88,8 +88,8 @@ describe("DashboardNote", () => {
                     setAlert={setAlert}
                     setAlertColor={setAlertColor}
                     publishMode={true}
-                    publishNoteIds={publishNoteIds}
-                    setPublishNoteIds={setPublishNoteIds}
+                    selectedNoteIds={selectedNoteIds}
+                    setSelectedNoteIds={setSelectedNoteIds}
                 />
             </MemoryRouter>
         );
@@ -110,8 +110,8 @@ describe("DashboardNote", () => {
                     setAlert={setAlert}
                     setAlertColor={setAlertColor}
                     publishMode={true}
-                    publishNoteIds={publishNoteIds}
-                    setPublishNoteIds={setPublishNoteIds}
+                    selectedNoteIds={selectedNoteIds}
+                    setSelectedNoteIds={setSelectedNoteIds}
                 />
             </MemoryRouter>
         );
@@ -129,8 +129,8 @@ describe("DashboardNote", () => {
                     setAlert={setAlert}
                     setAlertColor={setAlertColor}
                     publishMode={true}
-                    publishNoteIds={publishNoteIds}
-                    setPublishNoteIds={setPublishNoteIds}
+                    selectedNoteIds={selectedNoteIds}
+                    setSelectedNoteIds={setSelectedNoteIds}
                 />
             </MemoryRouter>
         );
@@ -147,8 +147,8 @@ describe("DashboardNote", () => {
                     setAlert={setAlert}
                     setAlertColor={setAlertColor}
                     publishMode={true}
-                    publishNoteIds={publishNoteIds}
-                    setPublishNoteIds={setPublishNoteIds}
+                    selectedNoteIds={selectedNoteIds}
+                    setSelectedNoteIds={setSelectedNoteIds}
                 />
             </MemoryRouter>
         );

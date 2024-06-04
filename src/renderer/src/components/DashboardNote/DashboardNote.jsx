@@ -20,12 +20,12 @@ import { Link } from "react-router-dom";
  * @param setAlert - Function to set an alert
  * @param setAlertColor - Function to set the color of the alert
  * @param {boolean} publishMode - determine if the dashboard is in publish mode
- * @param {Array<number>} publishNoteIds - an array of note ids - used to keep track of notes to publish
- * @param setPublishNoteIds - Function to set the note ids
+ * @param {Array<number>} selectedNoteIds - an array of note ids - used to keep track of notes to publish
+ * @param setSelectedNoteIds - Function to set the note ids
  * @returns {DashboardNote}
  * @constructor
  */
-export default function DashboardNote({ index, note, setAlert, setAlertColor, publishMode, publishNoteIds, setPublishNoteIds }) {
+export default function DashboardNote({ index, note, setAlert, setAlertColor, publishMode, selectedNoteIds, setSelectedNoteIds }) {
     const [isPublishable, setIsPublishable] = useState(note.publishable);
     const [isSelected, setIsSelected] = useState(true);
     const navigate = useNavigate();
@@ -41,12 +41,12 @@ export default function DashboardNote({ index, note, setAlert, setAlertColor, pu
                 }
             })
             .catch(displayError(setAlert, setAlertColor));
-    }, [auth.access, isPublishable, setPublishable, setIsPublishable, displayError, setAlert, setAlertColor]);
+    }, [auth.access, isPublishable, setIsPublishable, setAlert, setAlertColor]);
 
     // If the note is to be included in the report and the button is clicked, remove it from the list of notes to publish.
     // If it's not selected and it is clicked, add it to the list of notes to publish.
     const handleSelectNote = () => {
-        setPublishNoteIds(prevNoteIds => {
+        setSelectedNoteIds(prevNoteIds => {
             const noteIdx = prevNoteIds.indexOf(note.id);
             if (noteIdx !== -1) {
                 setIsSelected(false);
@@ -61,6 +61,12 @@ export default function DashboardNote({ index, note, setAlert, setAlertColor, pu
     useEffect(() => {
         note.publishable = isPublishable;
     }, [isPublishable]);
+
+    useEffect(() => {
+        if (selectedNoteIds) {
+            setIsSelected(selectedNoteIds.includes(note.id));
+        }
+    }, [selectedNoteIds]);
 
     // Create a link to the dashboard for each entity that is referenced in the note
     const referenceLinks = note.entities.map(entity => {

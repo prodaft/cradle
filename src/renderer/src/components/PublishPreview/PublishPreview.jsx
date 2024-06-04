@@ -11,7 +11,6 @@ import { displayError } from "../../utils/responseUtils/responseUtils";
 import { getPublishData } from "../../services/publishService/publishService";
 import { Code, CodeBracketsSquare, Download } from "iconoir-react/regular";
 import { createMarkdownReportFromJson, downloadFile, createHtmlReport } from "../../utils/publishUtils/publishUtils";
-import QueryString from "qs";
 
 /**
  * Fetches and displays the data to be published in a report. 
@@ -33,8 +32,7 @@ export default function PublishPreview() {
     const [responseData, setResponseData] = useState({});
 
     const location = useLocation();
-    const queryParams = QueryString.parse(location.search, { ignoreQueryPrefix: true });
-    const { noteIds, entityName } = queryParams;
+    const { noteIds, entityName } = location.state;
 
     useEffect(() => {
         getPublishData(auth.access, noteIds)

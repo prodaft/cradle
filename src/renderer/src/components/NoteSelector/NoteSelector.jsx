@@ -24,55 +24,54 @@ export default function NoteSelector() {
     const [selectAll, setSelectAll] = useState(true);
 
     const { name, type, subtype, description, notes } = location.state;
-    const publishableNotes = notes ? notes.filter(note => note.publishable) : [];
+    const publishableNoteIds = notes ? notes.filter(note => note.publishable).map(note => note.id) : [];
 
-    const [publishNoteIds, setPublishNoteIds] = useState([]);
+    const [selectedNoteIds, setSelectedNoteIds] = useState([]);
 
     // On entering the page, all notes are selected by default
     useEffect(() => {
-        setPublishNoteIds(notes.filter(note => note.publishable).map((note) => note.id));
+        setSelectedNoteIds(publishableNoteIds);
         setSelectAll(true);
 
         return () => {
-            setPublishNoteIds([]);
+            setSelectedNoteIds([]);
         };
-    }, [notes, setPublishNoteIds, setSelectAll]);
+    }, [notes]);
 
     // When all notes are selected, the "select all" checkbox is automatically checked
     useEffect(() => {
-        const selectedNotes = publishableNotes.filter(note => publishNoteIds.includes(note.id));
-        setSelectAll(selectedNotes.length > 0 && selectedNotes.length === publishableNotes.length);
-    }, [notes, publishNoteIds]);
+        setSelectAll(selectedNoteIds.length > 0 && selectedNoteIds.length === publishableNoteIds.length);
+    }, [notes, selectedNoteIds]);
 
     const handleSelectAll = useCallback(() => {
         setSelectAll((prevSelectAll) => !prevSelectAll);
         if (!selectAll) {
-            setPublishNoteIds(notes.filter(note => note.publishable).map((note) => note.id));
+            setSelectedNoteIds(publishableNoteIds);
         } else {
-            setPublishNoteIds([]);
+            setSelectedNoteIds([]);
         }
-    }, [notes, setPublishNoteIds, selectAll]);
+    }, [notes, setSelectedNoteIds, selectAll]);
 
     const handleCancelPublishMode = useCallback(() => {
-        setPublishNoteIds([]);
+        setSelectedNoteIds([]);
         navigate(createDashboardLink({ name, type, subtype })); // return to the dashboard
-    }, [publishNoteIds]);
+    }, [selectedNoteIds]);
 
     // When the publish button is clicked, the user is sent to the publish preview page, 
     // where they can choose how to export the published report
     const handlePublish = useCallback(() => {
-        if (publishNoteIds.length === 0) {
+        if (selectedNoteIds.length === 0) {
             setAlertColor("red");
             setAlert("Please select at least one note to publish");
             return;
         }
 
-        const queryParams = QueryString.stringify({
-            noteIds: publishNoteIds.sort((a, b) => b - a), // TODO remove sort() when any order will be possible (e.g. with drag and drop). See Array.splice()
-            entityName: name,
-        });
-        navigate(`/publish?${queryParams}`);
-    }, [publishNoteIds, name, navigate]);
+        // TODO remove sort when any order will be possible (e.g. with drag and drop). See Array.splice()
+        const noteIds = notes.filter(note => selectedNoteIds.includes(note.id))
+            .sort((note1, note2) => note2.timestamp - note1.timestamp)
+            .map(note => note.id);
+        navigate(`/publish`, { state: { noteIds: noteIds, entityName: name } });
+    }, [selectedNoteIds, name, navigate]);
 
     const navbarContents = [
         // If the dashboard is in publish preview mode, add a button to exit it and another to move to the publish preview
@@ -89,7 +88,7 @@ export default function NoteSelector() {
             onClick={handlePublish}
         />,
     ];
-    useNavbarContents(navbarContents, [location, publishNoteIds]);
+    useNavbarContents(navbarContents, [location, selectedNoteIds]);
 
     return (
         <>
@@ -113,7 +112,7 @@ export default function NoteSelector() {
                             />
                         </span>
                         {notes.map((note, index) => (
-                            <DashboardNote index={index} note={note} setAlert={setAlert} setAlertColor={setAlertColor} publishMode={true} publishNoteIds={publishNoteIds} setPublishNoteIds={setPublishNoteIds} />
+                            <DashboardNote index={index} note={note} setAlert={setAlert} setAlertColor={setAlertColor} publishMode={true} selectedNoteIds={selectedNoteIds} setSelectedNoteIds={setSelectedNoteIds} />
                         ))}
                     </div>}
                 </div>
