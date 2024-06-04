@@ -59,6 +59,7 @@ export default function Editor({ markdownContent, setMarkdownContent, isLightMod
                     data-testid="markdown-input"
                     theme={isLightMode ? eclipse : vscodeDark}
                     height="100%"
+                    width="100%"
                     extensions={extensions}
                     className="w-full h-full resize-none"
                     onChange={setMarkdownContent}
