@@ -109,7 +109,7 @@ export default function PublishPreview() {
             <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} onClose={() => setAlert("")} />
             <div className="w-full h-full overflow-hidden flex flex-col items-center p-4" data-testid="publish-preview">
                 <div className="h-full w-[90%] rounded-md bg-cradle3 bg-opacity-20 backdrop-blur-lg backdrop-filter p-4 overflow-y-auto">
-                    <div className="flex-grow !max-w-[70%]">
+                    <div className="flex-grow">
                         {isJson ? (
                             <pre className="prose dark:prose-invert !break-all flex-1">{JSON.stringify(responseData, null, 2)}</pre>
                         ) : (

@@ -54,11 +54,11 @@ export default `<!DOCTYPE html>
     </script>
 </head>
 <body class="bg-gray-100">
-    <div class="max-w-4xl mx-auto mt-10 p-8 bg-white rounded-lg shadow-lg">
+    <div class="max-w-4xl print:max-w-none mx-auto mt-10 p-8 bg-white rounded-lg shadow-lg break-all hyphens-auto">
         <div class="border-b-2 pb-4 mb-6 text-center">
             <h1 class="text-2xl font-bold text-gray-800">{{reportTitle}}</h1>
         </div>
-        <div class="prose prose-lg">
+        <div class="prose prose-lg !max-w-none">
             {{htmlContent}}
         </div>
     </div>
