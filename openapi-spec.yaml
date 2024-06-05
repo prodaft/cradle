@@ -4,9 +4,6 @@ info:
   version: 1.0.0
   description: API for handling requests for the backend of the CRADLE project
 servers:
-  # Added by API Auto Mocking Plugin
-  # Added by API Auto Mocking Plugin
-  # Added by API Auto Mocking Plugin
   - description: SwaggerHub API Auto Mocking
     url: https://virtserver.swaggerhub.com/diacicov.calin/CRADLE/1.0.0
   - description: Localhost
@@ -30,6 +27,8 @@ tags:
     description: Operations for fetching entities.
   - name: Dashboard
     description: Operations targeting the dashboard.
+  - name: File Transfer
+    description: Operations targeting the transfer of files.
   
 paths:
   /users:
@@ -713,7 +712,87 @@ paths:
           description: User is not authenticated. 
         '403': 
           description: A User cannot grant access to a note it does not own. 
-        
+  
+  /file-transfer/upload:
+    get:
+      tags:
+        - File Transfer
+      summary: Generates a link for uploading files to Minio.
+      description: Generate a new UUID which concatenated with the original file name describe the path where the user should upload a new file. Provides a presigned put URL that allows the client to make this transfer without requiring the Minio credentials.
+      operationId: fileUpload
+      parameters:
+        - in: query
+          name: fileName
+          required: true
+          schema:
+            type: string
+          examples:
+            fileNameExample:
+              value: "evidence.png"
+      responses:
+        '200':  
+          description: Request was succesful.
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  bucketName:
+                    type: string
+                    example: "admin"
+                  minioFileName:
+                    type: string
+                    example: "be0b24ad-ae54-4952-ae87-00011ed9df27-evidence.png"
+                  presigned:
+                    type: string
+                    example: "http://127.0.0.1:9000/admin/be0b24ad-ae54-4952-ae87-00011ed9df27-evidence.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20240601%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240601T140856Z&X-Amz-Expires=180&X-Amz-SignedHeaders=host&X-Amz-Signature=4e4a63377975d20947da99ec8d9ca97f1ece9fc713f4e11d1e982391492b4a4b"
+        '400': 
+          description: Query parameters are invalid.
+        '401': 
+          description: User is not authenticated.
+
+  /file-transfer/download:
+    get:
+      tags:
+        - File Transfer
+      summary: Generates a link for downloading files from Minio.
+      description: Provides a presigned download URL that allows clients to download files from Minio without requiring the credentials.
+      operationId: fileDownload
+      parameters:
+        - in: query
+          name: bucketName
+          required: true
+          schema:
+            type: string
+          examples:
+            bucketNameExample:
+              value: "admin"
+        - in: query
+          name: minioFileName
+          required: true
+          schema:
+            type: string
+          examples:
+            minioFileNameExample:
+              value: "be0b24ad-ae54-4952-ae87-00011ed9df27-evidence.png"
+      responses:
+        '200':  
+          description: Request was succesful.
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  presigned:
+                    type: string
+                    example: "http://127.0.0.1:9000/admin/be0b24ad-ae54-4952-ae87-00011ed9df27-evidence.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20240601%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240601T140856Z&X-Amz-Expires=180&X-Amz-SignedHeaders=host&X-Amz-Signature=4e4a63377975d20947da99ec8d9ca97f1ece9fc713f4e11d1e982391492b4a4b"
+        '400': 
+          description: Query parameters are invalid.
+        '401': 
+          description: User is not authenticated.
+        '404':
+          description: The requested resource does not exist.
+
 
   /fleeting-notes:
     get:

@@ -1,4 +1,3 @@
-from django.test import TestCase
 from user.models import CradleUser
 
 from entities.models import Entity
@@ -6,9 +5,10 @@ from entities.enums import EntityType, MetadataSubtype
 from access.models import Access
 from notes.models import Note
 from ..utils.dashboard_utils import DashboardUtils
+from .utils import DashboardsTestCase
 
 
-class DashboardUtilsDashboardJsonTest(TestCase):
+class DashboardUtilsDashboardJsonTest(DashboardsTestCase):
 
     def create_users(self):
         self.admin_user = CradleUser.objects.create_superuser(
@@ -68,6 +68,7 @@ class DashboardUtilsDashboardJsonTest(TestCase):
         )
 
     def setUp(self):
+        super().setUp()
 
         self.create_users()
 
@@ -100,7 +101,7 @@ class DashboardUtilsDashboardJsonTest(TestCase):
         self.assertQuerySetEqual(dashboard_json["entries"], entries)
 
 
-class AddEntityFieldsTest(TestCase):
+class AddEntityFieldsTest(DashboardsTestCase):
 
     def test_add_entity_fields(self):
         entity = Entity.objects.create(
