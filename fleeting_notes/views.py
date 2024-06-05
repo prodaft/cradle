@@ -18,6 +18,7 @@ from user.models import CradleUser
 
 
 class FleetingNotesList(APIView):
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
