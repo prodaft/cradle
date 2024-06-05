@@ -1,10 +1,10 @@
-from django.test import TestCase
 from django.utils.translation import gettext_lazy as _
 from django.db import models
 from ..enums import concatenate_enums
+from .utils import EntitiesTestCase
 
 
-class TextChoicesConcatenationTest(TestCase):
+class TextChoicesConcatenationTest(EntitiesTestCase):
 
     def test_concatenate_enums(self):
 

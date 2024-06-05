@@ -1,13 +1,15 @@
-from django.test import TestCase
 from entities.models import Entity
 from entities.enums import EntityType
 from notes.utils.entity_checker_task import EntityCheckerTask
 from ..exceptions import EntitiesDoNotExistException
+from .utils import NotesTestCase
 
 
-class EntityCheckerTaskTest(TestCase):
+class EntityCheckerTaskTest(NotesTestCase):
 
     def setUp(self):
+        super().setUp()
+
         self.saved_actor1 = Entity.objects.create(name="actor1", type=EntityType.ACTOR)
         self.actor1 = Entity(name="actor1", type=EntityType.ACTOR)
         self.saved_actor2 = Entity.objects.create(name="actor2", type=EntityType.ACTOR)

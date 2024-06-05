@@ -1,4 +1,3 @@
-from django.test import TestCase
 from django.urls import reverse
 from user.models import CradleUser
 from ..models import Access
@@ -6,6 +5,7 @@ from ..enums import AccessType
 from entities.models import Entity
 from rest_framework.parsers import JSONParser
 from rest_framework_simplejwt.tokens import AccessToken
+from .utils import AccessTestCase
 
 import io
 
@@ -16,9 +16,11 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class AccessListTest(TestCase):
+class AccessListTest(AccessTestCase):
 
     def setUp(self):
+        super().setUp()
+
         self.user = CradleUser.objects.create_user(username="user", password="pass")
         self.admin = CradleUser.objects.create_superuser(
             username="admin", password="pass"
