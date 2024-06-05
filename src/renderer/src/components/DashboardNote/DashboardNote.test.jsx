@@ -1,9 +1,9 @@
 /**
  * @jest-environment jsdom
  */
-import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import DashboardNote from './DashboardNote';
+import { render, screen, fireEvent } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import DashboardNote from "./DashboardNote";
 import '@testing-library/jest-dom';
 import * as ReactRouterDom from 'react-router-dom';
 
@@ -13,23 +13,66 @@ jest.mock('react-router-dom', () => ({
     useNavigate: jest.fn(),
 }));
 
-describe('DashboardNote component', () => {
+jest.mock('../../hooks/useAuth/useAuth', () => ({
+    useAuth: jest.fn().mockImplementation(() => {
+        return { access: 'testToken', isAdmin: true };
+    }),
+}));
+
+describe("DashboardNote", () => {
+    const selectedNoteIds = new Array();
     const note = {
-        id: '1',
-        timestamp: new Date().toISOString(),
-        content: 'Test Note',
-        entities: [{ name: 'Test Entity' }]
+        id: 1,
+        timestamp: new Date().getTime(),
+        content: "This is a test note",
+        entities: [
+            { id: 1, name: "Entity 1" },
+            { id: 2, name: "Entity 2" },
+        ],
+        publishable: true,
     };
+
+    const setAlert = jest.fn();
+    const setAlertColor = jest.fn();
+    const setSelectedNoteIds = jest.fn();
+
+    test("renders note content", () => {
+        render(
+            <MemoryRouter>
+                <DashboardNote
+                    index={0}
+                    note={note}
+                    setAlert={setAlert}
+                    setAlertColor={setAlertColor}
+                    publishMode={false}
+                    selectedNoteIds={selectedNoteIds}
+                    setSelectedNoteIds={setSelectedNoteIds}
+                />
+            </MemoryRouter>
+        );
+
+        const noteContent = screen.getByText("This is a test note");
+        expect(noteContent).toBeInTheDocument();
+    });
 
     it('renders note content and entities', () => {
         render(
             <MemoryRouter>
-                <DashboardNote index={0} note={note} />
+                <DashboardNote
+                    index={0}
+                    note={note}
+                    setAlert={setAlert}
+                    setAlertColor={setAlertColor}
+                    publishMode={true}
+                    selectedNoteIds={selectedNoteIds}
+                    setSelectedNoteIds={setSelectedNoteIds}
+                />
             </MemoryRouter>
         );
 
-        expect(screen.getByText('Test Note')).toBeInTheDocument();
-        expect(screen.getByText('References: Test Entity')).toBeInTheDocument();
+        expect(screen.getByText('This is a test note')).toBeInTheDocument();
+        expect(screen.getByText('Entity 1;')).toBeInTheDocument();
+        expect(screen.getByText('Entity 2;')).toBeInTheDocument();
     });
 
 
@@ -39,11 +82,19 @@ describe('DashboardNote component', () => {
 
         render(
             <MemoryRouter>
-                <DashboardNote index={0} note={note} />
+                <DashboardNote
+                    index={0}
+                    note={note}
+                    setAlert={setAlert}
+                    setAlertColor={setAlertColor}
+                    publishMode={true}
+                    selectedNoteIds={selectedNoteIds}
+                    setSelectedNoteIds={setSelectedNoteIds}
+                />
             </MemoryRouter>
         );
 
-        fireEvent.click(screen.getByText('Test Note'));
+        fireEvent.click(screen.getByText('This is a test note'));
         expect(navigate).toHaveBeenCalledWith(`/notes/${note.id}`);
     });
 
@@ -53,7 +104,15 @@ describe('DashboardNote component', () => {
 
         render(
             <MemoryRouter>
-                <DashboardNote index={0} note={note} />
+                <DashboardNote
+                    index={0}
+                    note={note}
+                    setAlert={setAlert}
+                    setAlertColor={setAlertColor}
+                    publishMode={true}
+                    selectedNoteIds={selectedNoteIds}
+                    setSelectedNoteIds={setSelectedNoteIds}
+                />
             </MemoryRouter>
         );
 
@@ -64,7 +123,15 @@ describe('DashboardNote component', () => {
     it('renders note timestamp correctly', () => {
         render(
             <MemoryRouter>
-                <DashboardNote index={0} note={note} />
+                <DashboardNote
+                    index={0}
+                    note={note}
+                    setAlert={setAlert}
+                    setAlertColor={setAlertColor}
+                    publishMode={true}
+                    selectedNoteIds={selectedNoteIds}
+                    setSelectedNoteIds={setSelectedNoteIds}
+                />
             </MemoryRouter>
         );
 
@@ -74,11 +141,19 @@ describe('DashboardNote component', () => {
     it('renders note entities correctly', () => {
         render(
             <MemoryRouter>
-                <DashboardNote index={0} note={note} />
+                <DashboardNote
+                    index={0}
+                    note={note}
+                    setAlert={setAlert}
+                    setAlertColor={setAlertColor}
+                    publishMode={true}
+                    selectedNoteIds={selectedNoteIds}
+                    setSelectedNoteIds={setSelectedNoteIds}
+                />
             </MemoryRouter>
         );
 
-        expect(screen.getByText('References: Test Entity')).toBeInTheDocument();
+        expect(screen.getByText('Entity 1;')).toBeInTheDocument();
+        expect(screen.getByText('Entity 2;')).toBeInTheDocument();
     });
 });
-

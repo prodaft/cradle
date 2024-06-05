@@ -18,6 +18,9 @@ jest.mock('react-router-dom', () => ({
 
 jest.mock('../../services/dashboardService/dashboardService');
 jest.mock('../../hooks/useAuth/useAuth');
+jest.mock('../../hooks/useNavbarContents/useNavbarContents');
+
+window.HTMLElement.prototype.scrollTo = () => { };
 
 describe('Dashboard Component', () => {
     beforeEach(() => {
@@ -51,11 +54,13 @@ describe('Dashboard Component', () => {
 
     it('displays case data correctly when fetched successfully', async () => {
         const mockData = {
-            case: { name: 'Test Case', description: 'This is a test case.' },
+            name: 'Test Case',
+            description: 'This is a test case.',
+            type: 'case',
             actors: [{ name: 'Actor 1' }],
             cases: [{ name: 'Case 1' }],
             metadata: [{ name: 'Metadata 1' }],
-            notes: [{ content: 'Note 1', entities: [] }], // Ensure `entities` is an array
+            notes: [{ content: 'Note 1', entities: [] }],
         };
         getDashboardData.mockResolvedValue({ data: mockData });
 
@@ -68,6 +73,7 @@ describe('Dashboard Component', () => {
         await waitFor(() => expect(getDashboardData).toHaveBeenCalledTimes(1));
 
         expect(screen.getByText('Test Case')).toBeInTheDocument();
+        expect(screen.getByText('Type: case')).toBeInTheDocument();
         expect(screen.getByText('Description: This is a test case.')).toBeInTheDocument();
         expect(screen.getByText('Actor 1')).toBeInTheDocument();
         expect(screen.getByText('Case 1')).toBeInTheDocument();

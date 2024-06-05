@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import {NavArrowDown, Search} from 'iconoir-react';
+import { NavArrowDown, Search } from 'iconoir-react';
 import SearchFilterSection from "../SearchFilterSection/SearchFilterSection";
-import {queryEntities} from "../../services/queryService/queryService";
-import {useAuth} from "../../hooks/useAuth/useAuth";
+import { queryEntities } from "../../services/queryService/queryService";
+import { useAuth } from "../../hooks/useAuth/useAuth";
 import AlertBox from "../AlertBox/AlertBox";
 import SearchResult from "../SearchResult/SearchResult";
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import pluralize from 'pluralize';
+import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 
 /**
  * Dialog to search for entities
@@ -59,10 +59,12 @@ export default function SearchDialog({ isOpen, onClose }) {
         setError("");
         queryEntities(auth.access, searchQuery, entityTypeFilters, entitySubtypeFilters)
             .then((response) => {
-                console.log('Search results:', response.data);
-                setResults(response.data.map((result) => (
-                    <SearchResult name={result.name} type={result.type} subtype={result.subtype} onClick={handleResultClick(`/entities/${pluralize(result.type)}/${encodeURIComponent(result.name)}${result.subtype ? `?subtype=${result.subtype}` : ``}`)}/>
-                )));
+                setResults(response.data.map((result) => {
+                    const dashboardLink = createDashboardLink(result);
+                    return (
+                        <SearchResult name={result.name} type={result.type} subtype={result.subtype} onClick={handleResultClick(dashboardLink)} />
+                    )
+                }));
             })
             .catch(displayError(setError, setErrorColor));
     }
@@ -70,7 +72,7 @@ export default function SearchDialog({ isOpen, onClose }) {
     if (!isOpen) return null;
 
     return createPortal(
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={()=>{setError(""); onClose();}}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => { setError(""); onClose(); }}>
             <div
                 className="w-11/12 md:w-3/4 lg:w-1/2 h-4/5 bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col relative"
                 onClick={(e) => e.stopPropagation()}
@@ -88,10 +90,10 @@ export default function SearchDialog({ isOpen, onClose }) {
                         onKeyDown={handleKeyDown}
                     />
                     <button
-                        onClick={()=>performSearch()}
+                        onClick={() => performSearch()}
                         className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-transparent border-none cursor-pointer"
                     >
-                        <Search/>
+                        <Search />
                     </button>
                 </div>
                 <SearchFilterSection
