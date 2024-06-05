@@ -1,12 +1,14 @@
-from django.test import TestCase
 from entities.models import Entity
 from notes.utils.count_references_task import CountReferencesTask
 from ..exceptions import NotEnoughReferencesException
+from .utils import NotesTestCase
 
 
-class CountReferencesTaskTest(TestCase):
+class CountReferencesTaskTest(NotesTestCase):
 
     def setUp(self):
+        super().setUp()
+
         self.actor_entity1 = Entity(name="actor1", type="actor")
         self.actor_entity2 = Entity(name="actor2", type="actor")
         self.case_entity1 = Entity(name="case1", type="case")

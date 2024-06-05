@@ -1,10 +1,10 @@
-from django.test import TestCase
 from user.models import CradleUser
 from django.urls import reverse
 from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
 import io
 from rest_framework_simplejwt.tokens import AccessToken
+from .utils import DashboardsTestCase
 
 from entities.models import Entity
 from entities.enums import EntityType
@@ -16,7 +16,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class GetActorDashboardTest(TestCase):
+class GetActorDashboardTest(DashboardsTestCase):
 
     def check_note_ids(self, notes, notes_json):
         with self.subTest("Check number of notes"):
@@ -121,6 +121,8 @@ class GetActorDashboardTest(TestCase):
         )
 
     def setUp(self):
+        super().setUp()
+
         self.client = APIClient()
 
         self.create_users()

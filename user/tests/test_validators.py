@@ -1,4 +1,4 @@
-from django.test import TestCase
+from .utils import UserTestCase
 from ..utils.validators import (
     MinimumUppercaseLettersValidator,
     MinimumDigitsValidator,
@@ -9,7 +9,7 @@ from ..utils.validators import (
 from django.core.exceptions import ValidationError
 
 
-class MinimumUppercaseLettersValidatorTest(TestCase):
+class MinimumUppercaseLettersValidatorTest(UserTestCase):
 
     def test_uppercase_validator_successful(self):
         tests = [
@@ -45,7 +45,7 @@ class MinimumUppercaseLettersValidatorTest(TestCase):
                 MinimumUppercaseLettersValidator(tests[i][1]).validate(tests[i][0])
 
 
-class MinimumLowercaseLettersValidatorTest(TestCase):
+class MinimumLowercaseLettersValidatorTest(UserTestCase):
 
     def test_lowercase_validator_successful(self):
         tests = [
@@ -77,7 +77,7 @@ class MinimumLowercaseLettersValidatorTest(TestCase):
                 MinimumLowercaseLettersValidator(tests[i][1]).validate(tests[i][0])
 
 
-class MinimumDigitsValidatorTest(TestCase):
+class MinimumDigitsValidatorTest(UserTestCase):
 
     def test_digits_validator_successful(self):
         tests = [
@@ -109,7 +109,7 @@ class MinimumDigitsValidatorTest(TestCase):
                 MinimumDigitsValidator(tests[i][1]).validate(tests[i][0])
 
 
-class MinimumSpecialCharactersValidatorTest(TestCase):
+class MinimumSpecialCharactersValidatorTest(UserTestCase):
 
     def test_special_validator_successful(self):
         tests = [

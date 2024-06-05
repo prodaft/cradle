@@ -1,4 +1,3 @@
-from django.test import TestCase
 from user.models import CradleUser
 from django.urls import reverse
 from rest_framework.parsers import JSONParser
@@ -10,15 +9,18 @@ from entities.models import Entity
 from entities.enums import EntityType, EntitySubtype
 from access.models import Access
 from access.enums import AccessType
+from .utils import QueryTestCase
 
 
 def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class QueryListTest(TestCase):
+class QueryListTest(QueryTestCase):
 
     def setUp(self):
+        super().setUp()
+
         self.client = APIClient()
         self.admin_user = CradleUser.objects.create_superuser(
             username="admin", password="password"
