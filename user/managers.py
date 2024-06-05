@@ -1,11 +1,14 @@
 from django.contrib.auth.base_user import BaseUserManager
 from django.utils.translation import gettext_lazy as _
+from file_transfer.utils import MinioClient
+from django.db import transaction
 
 
 class CradleUserManager(BaseUserManager):
 
     def create_user(self, username, password, **extra_fields):
-        """Create a user with given username and password
+        """Create a user with given username and password. Additionally,
+        create a bucket on the Minio instance for that specific user.
 
         Args:
             username: The username of the user.
@@ -24,7 +27,10 @@ class CradleUserManager(BaseUserManager):
 
         user = self.model(username=username, **extra_fields)
         user.set_password(password)
-        user.save(using=self._db)
+
+        with transaction.atomic():
+            user.save(using=self._db)
+            MinioClient().create_user_bucket(user.username)
 
         return user
 

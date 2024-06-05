@@ -1,4 +1,3 @@
-from django.test import TestCase
 from unittest.mock import patch, PropertyMock
 
 from entities.models import Entity
@@ -10,9 +9,10 @@ from ..serializers import (
     ActorDashboardSerializer,
     EntryDashboardSerializer,
 )
+from .utils import DashboardsTestCase
 
 
-class NoteDashboardSerializersTest(TestCase):
+class NoteDashboardSerializersTest(DashboardsTestCase):
 
     def create_notes(self):
         self.note1 = Note.objects.create(content="a" * 1000)
@@ -45,6 +45,8 @@ class NoteDashboardSerializersTest(TestCase):
         )
 
     def setUp(self):
+        super().setUp()
+
         self.create_cases()
 
         self.create_actors()
@@ -108,7 +110,7 @@ class NoteDashboardSerializersTest(TestCase):
         self.assertEqual(expected, NoteDashboardSerializer(self.note2).data)
 
 
-class CaseDashboardSerializerTest(TestCase):
+class CaseDashboardSerializerTest(DashboardsTestCase):
 
     def create_notes(self):
         self.note1 = Note.objects.create(content="Note1")
@@ -141,6 +143,8 @@ class CaseDashboardSerializerTest(TestCase):
         )
 
     def setUp(self):
+        super().setUp()
+
         self.create_cases()
 
         self.create_actors()
@@ -283,7 +287,7 @@ class CaseDashboardSerializerTest(TestCase):
         self.assertEqual(expected_json, dashboard_json)
 
 
-class ActorDashboardSerializerTest(TestCase):
+class ActorDashboardSerializerTest(DashboardsTestCase):
 
     def create_notes(self):
         self.note1 = Note.objects.create(content="Note1")
@@ -316,6 +320,8 @@ class ActorDashboardSerializerTest(TestCase):
         )
 
     def setUp(self):
+        super().setUp()
+
         self.create_cases()
 
         self.create_actors()
@@ -408,7 +414,7 @@ class ActorDashboardSerializerTest(TestCase):
         self.assertEqual(expected_json, dashboard_json)
 
 
-class EntryDashboardSerializerTest(TestCase):
+class EntryDashboardSerializerTest(DashboardsTestCase):
 
     def create_notes(self):
         self.note1 = Note.objects.create(content="Note1")
@@ -449,6 +455,8 @@ class EntryDashboardSerializerTest(TestCase):
         )
 
     def setUp(self):
+        super().setUp()
+
         self.create_cases()
 
         self.create_actors()

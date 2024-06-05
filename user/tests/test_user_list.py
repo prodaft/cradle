@@ -1,13 +1,13 @@
-from django.test import TestCase
 from django.urls import reverse
 from ..models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.parsers import JSONParser
 from ..serializers import UserRetrieveSerializer
 import io
+from .utils import UserTestCase
 
 
-class CreateUserTest(TestCase):
+class CreateUserTest(UserTestCase):
     def create_user_request(self, username=None, password=None):
         create_user_dict = {}
         if username is not None:
@@ -22,6 +22,8 @@ class CreateUserTest(TestCase):
         response = self.create_user_request("user", "userR1#1234112")
         self.assertEqual(response.status_code, 200)
         self.assertIsNotNone(CradleUser.objects.get(username="user"))
+
+        self.mocked_create_user_bucket.assert_called_once()
 
     def test_user_create_no_username(self):
         response = self.create_user_request(username=None, password="user")
@@ -70,9 +72,11 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class GetAllUsersTest(TestCase):
+class GetAllUsersTest(UserTestCase):
 
     def setUp(self):
+        super().setUp()
+
         self.user = CradleUser.objects.create_user(username="user", password="user")
         self.admin = CradleUser.objects.create_superuser(
             username="admin", password="admin"
