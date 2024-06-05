@@ -135,12 +135,24 @@ class PutFleetingNotesByIdTest(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
+
         self.assertEqual(bytes_to_json(response.content)["content"], "New content")
         self.assertNotEqual(
             bytes_to_json(response.content)["last_edited"],
             note.last_edited.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         )
         self.assertEqual(bytes_to_json(response.content)["id"], note.pk)
+
+        updated_note = FleetingNote.objects.get(pk=note.pk)
+
+        self.assertEqual(updated_note.content, "New content")
+        self.assertNotEqual(updated_note.last_edited, note.last_edited)
+        self.assertEqual(updated_note.user, self.admin_user)
+
+        self.assertEqual(
+            bytes_to_json(response.content)["last_edited"],
+            updated_note.last_edited.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+        )
 
     def test_put_fleeting_note_by_id_authenticated_admin_empty_db(self):
         response = self.client.put(
@@ -161,12 +173,24 @@ class PutFleetingNotesByIdTest(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
+
         self.assertEqual(bytes_to_json(response.content)["content"], "New content")
         self.assertNotEqual(
             bytes_to_json(response.content)["last_edited"],
             note.last_edited.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         )
         self.assertEqual(bytes_to_json(response.content)["id"], note.pk)
+
+        updated_note = FleetingNote.objects.get(pk=note.pk)
+
+        self.assertEqual(updated_note.content, "New content")
+        self.assertNotEqual(updated_note.last_edited, note.last_edited)
+        self.assertEqual(updated_note.user, self.normal_user)
+
+        self.assertEqual(
+            bytes_to_json(response.content)["last_edited"],
+            updated_note.last_edited.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+        )
 
     def test_put_fleeting_note_by_id_authenticated_not_admin_not_own_note(self):
         note = FleetingNote.objects.create(content="Note1", user=self.admin_user)
