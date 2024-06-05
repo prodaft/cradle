@@ -61,9 +61,7 @@ class GetFleetingNotesTest(TestCase):
         self.assertEqual(len(bytes_to_json(response.content)), 1)
 
     def test_get_fleeting_notes_authenticated_admin_empty_db(self):
-        response = self.client.get(
-            reverse("fleeting_notes_list"), **self.headers_normal
-        )
+        response = self.client.get(reverse("fleeting_notes_list"), **self.headers_admin)
 
         self.assertEqual(response.status_code, 200)
 
