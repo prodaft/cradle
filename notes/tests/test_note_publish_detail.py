@@ -62,7 +62,7 @@ class NotePublishableDetailTest(TestCase):
             reverse("note_publish_detail", kwargs={"note_id": self.notes[0].id})
         )
 
-        self.assertEquals(response.status_code, 401)
+        self.assertEqual(response.status_code, 401)
 
     def test_update_note_publishable_not_found(self):
         response = self.client.put(
