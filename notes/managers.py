@@ -6,6 +6,9 @@ from entities.models import Entity
 from user.models import CradleUser
 from access.models import Access
 from access.enums import AccessType
+from django.db.models import Case, When
+
+from typing import List
 
 
 class NoteManager(models.Manager):
@@ -97,3 +100,17 @@ class NoteManager(models.Manager):
         Entity.objects.filter(
             type__in=[EntityType.ENTRY, EntityType.METADATA]
         ).annotate(note_count=Count("note")).filter(note_count=0).delete()
+
+    def get_in_order(self, note_ids: List) -> models.QuerySet:
+        """Gets the notes in the order specified by the given list of note IDs.
+
+        Args:
+            note_ids (List[int]): A list of note IDs specifying the order in
+                which the notes should be fetched.
+
+        Returns:
+            models.QuerySet: A QuerySet of Note objects ordered according to
+                the specified list of note IDs.
+        """
+        ordering = Case(*[When(id=id, then=pos) for pos, id in enumerate(note_ids)])
+        return self.get_queryset().filter(id__in=note_ids).order_by(ordering)

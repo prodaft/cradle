@@ -712,6 +712,48 @@ paths:
           description: User is not authenticated. 
         '403': 
           description: A User cannot grant access to a note it does not own. 
+        
+  /notes/publish:
+    get:
+      tags:
+        - Note
+      summary: Publish a list of notes. 
+      description: Allows a user to publish a list of notes, in the specified order.
+      operationId: publishNotes
+      parameters:
+        - in: query
+          name: note_ids
+          required: true
+          style: form
+          explode: true
+          schema:
+            type: array
+            items: 
+              type: integer
+              format: int64
+          examples:
+            single-note:
+              summary: Single note ID
+              value: [1]
+            multiple-notes:
+              summary: Multiple note IDs
+              value: [1, 2, 3]
+              
+      responses:
+        '200': 
+          description: Request was succesful.
+          content:
+            'application/json':
+              schema: 
+                $ref: '#/components/schemas/Report'
+        '400': 
+          description: The format is invalid.
+        '401': 
+          description: The user is not authenticated. 
+        '403': 
+          description: The user tries to publish unpublishable notes. 
+        '404': 
+          description: The user does not have read access to all the provided notes or some of the notes do not exist.
   
   /file-transfer/upload:
     get:
@@ -1235,6 +1277,7 @@ components:
             - tool 
             - cve
             - ttp
+
     Access:
       type: string
       enum:
@@ -1312,6 +1355,30 @@ components:
         - pdf
         - html
         - json
+
+    Report: 
+      type: object
+      properties: 
+        actors: 
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        cases: 
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        entries: 
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        metadata: 
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        notes:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Note"
 
 security:
   - cookieAuth: []
