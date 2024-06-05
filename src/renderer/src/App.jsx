@@ -12,6 +12,9 @@ import AdminPanelAdd from "./components/AdminPanelAdd/AdminPanelAdd";
 import AdminPanelUserPermissions from "./components/AdminPanelUserPermissions/AdminPanelUserPermissions";
 import Dashboard from "./components/Dashboard/Dashboard";
 import NotFound from './components/NotFound/NotFound.jsx';
+import PublishPreview from './components/PublishPreview/PublishPreview.jsx';
+import NoteViewer from "./components/NoteViewer/NoteViewer";
+import NoteSelector from './components/NoteSelector/NoteSelector.jsx';
 
 /**
  * The App component is the entry point of the application. It wraps the entire application in the AuthProvider
@@ -27,23 +30,27 @@ function App() {
         <Routes>
           <Route element={<PrivateRoute fallback={"/login"} />}>
             {/* Add any routes for components that NEED authentication here*/}
-                 <Route path="/" element={<Home />}>
+            <Route path="/" element={<Home />}>
               {/* Add any routes for components that keep the sidebar and navbar here */}
-                    <Route path="/not-implemented" element={<FeatureNotImplemented />} />
-                    <Route path="/editor" element={<TextEditor />} />
-                    <Route path={"/entities/*"} element={<Dashboard/>}></Route>
-                    <Route path="/admin" element={<Outlet />}>
-                        <Route index element={<AdminPanel />}></Route>
-                        <Route path="/admin/add-actor" element={<AdminPanelAdd type="Actor" />}></Route>
-                        <Route path="/admin/add-case" element={<AdminPanelAdd type="Case" />}></Route>
-                        <Route path={"/admin/user-permissions/:username/:id"} element={<AdminPanelUserPermissions />}></Route>
-                    </Route>
-                </Route>
+              <Route path="/not-implemented" element={<FeatureNotImplemented />} />
+              <Route path="/editor" element={<TextEditor />} />
+              <Route path="/dashboards/*" element={<Dashboard />} />
+              <Route path="/notes/:id" element={<NoteViewer />} />
+              <Route path="/notes" element={<NoteSelector />} />
+              <Route path='/publish' element={<PublishPreview />}></Route>
+              <Route path="/admin" element={<Outlet />}>
+                <Route index element={<AdminPanel />}></Route>
+                <Route path="/admin/add-actor" element={<AdminPanelAdd type="Actor" />}></Route>
+                <Route path="/admin/add-case" element={<AdminPanelAdd type="Case" />}></Route>
+                <Route path={"/admin/user-permissions/:username/:id"} element={<AdminPanelUserPermissions />}></Route>
+              </Route>
+            </Route>
             {/* Add any routes for components that DO NOT KEEP the sidebar and navbar here */}
           </Route>
           {/* Add any routes for components that DO NOT NEED authentication here*/}
           <Route path="/login" element={<Login />}></Route>
           <Route path="/register" element={<Register />}></Route>
+          <Route path="/not-found" element={<NotFound message={"We can't seem to find the page you are looking for."} />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>

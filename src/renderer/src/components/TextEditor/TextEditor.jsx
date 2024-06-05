@@ -4,13 +4,15 @@ import Preview from "../Preview/Preview";
 import { Upload, FloppyDisk } from "iconoir-react/regular";
 import { saveNote } from '../../services/textEditorService/textEditorService.js';
 import { parseContent } from '../../utils/textEditorUtils/textEditorUtils.js'
-import NavbarItem from "../NavbarItem/NavbarItem";
+import NavbarButton from "../NavbarButton/NavbarButton";
 import useNavbarContents from "../../hooks/useNavbarContents/useNavbarContents";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth/useAuth.js";
-import { AlertDismissible } from "../AlertDismissible/AlertDismissible.jsx";
+import AlertDismissible from "../AlertDismissible/AlertDismissible.jsx";
 import { displayError } from "../../utils/responseUtils/responseUtils.js";
+import useLightMode from "../../hooks/useLightMode/useLightMode.js";
+import NavbarDropdown from "../NavbarDropdown/NavbarDropdown.jsx";
 
 /**
  * The text editor is composed of two sub-components, the Editor and the Preview. View their documentation for more details
@@ -24,23 +26,11 @@ export default function TextEditor() {
     const [alertColor, setAlertColor] = useState("red");
     const navigate = useNavigate();
     const parsedContent = parseContent(markdownContent);
+    const isLightMode = useLightMode();
 
-    // Check if the system theme is light mode
-    const [isLightMode, setIsLightMode] = useState(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
-
-    useEffect(() => {
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
-        const handleChange = (e) => {
-            setIsLightMode(e.matches);
-        };
-        mediaQuery.addEventListener('change', handleChange);
-        return () => {
-            mediaQuery.removeEventListener('change', handleChange);
-        };
-    }, []);
-
+    // Open the dialog to save the note. If the note is empty, display an error.
     // Attempt to send the note to the server. If successful, clear the local storage. Otherwise, display the error.
-    const handleSaveNote = async () => {
+    const handleSaveNote = (publishable) => () => {
         const storedContent = localStorage.getItem("md-content");
 
         // Don't send unnecessary requests for empty notes
@@ -50,19 +40,30 @@ export default function TextEditor() {
             return;
         }
 
-        saveNote(storedContent, auth.access).then((res) => {
+        saveNote(auth.access, storedContent, publishable).then((res) => {
             if (res.status === 200) {
                 // Clear local storage on success
                 setMarkdownContentCallback('');
                 setAlertColor("green");
-                setAlert("Note saved successfully");
-            } 
+                setAlert("Note saved successfully.");
+            }
         }).catch(displayError(setAlert, setAlertColor));
     }
 
+    // Buttons for the dialog. Label & handler function
+    const dropdownButtons = [
+        {
+            label: "Publishable",
+            handler: handleSaveNote(true),
+        },
+        {
+            label: "Not Publishable",
+            handler: handleSaveNote(false),
+        },
+    ];
+
     useNavbarContents([
-        <NavbarItem icon={<Upload />} text="Publish" data-testid="publish-btn" onClick={() => navigate('/not-implemented')} />,
-        <NavbarItem icon={<FloppyDisk />} text="Save" data-testid="save-btn" onClick={handleSaveNote} />
+        <NavbarDropdown icon={<FloppyDisk />} contents={dropdownButtons} text="Save As..." data-testid="save-btn" />
     ],
         [auth]
     )
@@ -74,7 +75,7 @@ export default function TextEditor() {
                 <Editor markdownContent={markdownContent} setMarkdownContent={setMarkdownContentCallback} isLightMode={isLightMode} />
             </div>
             <div className={"h-1/2 sm:h-full w-full bg-gray-2 rounded-md"}>
-                <Preview htmlContent={parsedContent}/>
+                <Preview htmlContent={parsedContent} />
             </div>
         </div>
     )

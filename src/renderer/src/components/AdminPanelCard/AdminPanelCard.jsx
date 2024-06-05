@@ -4,7 +4,7 @@ import {ConfirmationDialog} from "../ConfirmationDialog/ConfirmationDialog";
 import {deleteEntity} from "../../services/adminService/adminService";
 import {useAuth} from "../../hooks/useAuth/useAuth";
 import {Link, useNavigate} from "react-router-dom";
-import {AlertDismissible} from "../AlertDismissible/AlertDismissible";
+import AlertDismissible from "../AlertDismissible/AlertDismissible";
 import { displayError } from "../../utils/responseUtils/responseUtils";
 
 /**

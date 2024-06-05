@@ -3,9 +3,7 @@ import { markedHighlight } from "marked-highlight";
 import { Marked } from "marked";
 import "prismjs/themes/prism-tomorrow.css";
 import {entryTypes, metadataTypes} from "../entityDefinitions/entityDefinitions";
-
-// const baseUrl = 'https://localhost:8000'; // TODO
-
+import { createDashboardLink } from '../dashboardUtils/dashboardUtils';
     
 const styleClasses = {
     actors: "text-purple-700",
@@ -26,7 +24,7 @@ const handlers = {
     // Take the user to the actor's dashboard
     actors: (text) => {
         return text.replace(regexes.actors, (matched, name, alias) => {
-            const url = `/entities/actors/${encodeURIComponent(name)}/`
+            const url = createDashboardLink({ name: name, type: 'actor' })
             // If an alias is provided, use it as the displayed name
             const displayedName = alias ? alias : name;
             return `<a class="${styleClasses.actors}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
@@ -35,7 +33,7 @@ const handlers = {
     // Take the user to the case's dashboard
     cases: (text) => {
         return text.replace(regexes.cases, (matched, name, alias) => {
-            const url = `/entities/cases/${encodeURIComponent(name)}/`
+            const url = createDashboardLink({ name: name, type: 'case' })
             // If an alias is provided, use it as the displayed name
             const displayedName = alias ? alias : name;
             return `<a class="${styleClasses.cases}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
@@ -45,7 +43,7 @@ const handlers = {
     entries: (text) => {
         return text.replace(regexes.entries, (matched, type, name, alias) => {
             if (entryTypes.has(type)) {
-                const url = `/entities/entries/${encodeURIComponent(name)}?subtype=${encodeURIComponent(type)}`
+                const url = createDashboardLink({ name: name, type: 'entry', subtype: type })
                 // If an alias is provided, use it as the displayed name
                 const displayedName = alias ? alias : name;
                 return `<a class="${styleClasses.entries}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;

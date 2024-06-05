@@ -21,3 +21,29 @@ export function getDashboardData(token, path){
         }
     })
 }
+
+/**
+ * Function to set the publishable status of a note
+ * Passes the token, path, and status to the API
+ * 
+ * @param {string} token - The (JWT) token to authenticate the request
+ * @param {number} noteId - The id of the note to set the publishable status of
+ * @param {boolean} status - The status to set the note to
+ * @returns {Promise<AxiosResponse<string>>}
+ */
+export function setPublishable(token, noteId, status){
+    const path = `/notes/${noteId}/publishable/`;
+
+    return axios({
+        method: "PUT",
+        url: path,
+        withCredentials: true,
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+        data: {
+            publishable: status
+        }
+    })
+}
