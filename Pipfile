@@ -18,6 +18,7 @@ djangorestframework-stubs = "3.15.0"
 django-stubs = "*"
 django-stubs-ext = "*"
 minio = "*"
+tblib = "*"
 
 [dev-packages]
 
