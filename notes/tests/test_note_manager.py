@@ -447,3 +447,33 @@ class GetRelatedAccessibleEntitiesTest(NotesTestCase):
         )
 
         self.assertQuerySetEqual(entities, expected)
+
+
+class GetInOrderTest(NotesTestCase):
+    def setUp(self):
+        super().setUp()
+        self.notes = []
+        for i in range(0, 4):
+            self.notes.append(Note.objects.create(content=f"Note{i}"))
+
+    def test_get_notes_in_order_ascending(self):
+        ids = [self.notes[0].id, self.notes[1].id]
+        notes = list(Note.objects.get_in_order(ids))
+
+        self.assertEqual(notes[0].id, self.notes[0].id)
+        self.assertEqual(notes[1].id, self.notes[1].id)
+
+    def test_get_notes_in_order_descending(self):
+        ids = [self.notes[1].id, self.notes[0].id]
+        notes = list(Note.objects.get_in_order(ids))
+
+        self.assertEqual(notes[0].id, self.notes[1].id)
+        self.assertEqual(notes[1].id, self.notes[0].id)
+
+    def test_get_notes_in_order_random_order(self):
+        ids = [self.notes[1].id, self.notes[0].id, self.notes[2].id]
+        notes = list(Note.objects.get_in_order(ids))
+
+        self.assertEqual(notes[0].id, self.notes[1].id)
+        self.assertEqual(notes[1].id, self.notes[0].id)
+        self.assertEqual(notes[2].id, self.notes[2].id)

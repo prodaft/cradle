@@ -24,7 +24,7 @@ class CreateNoteTest(NotesTestCase):
         response = self.client.post(reverse("note_list"), {}, **self.headers)
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json()["detail"], "The note should not be empty")
+        self.assertEqual(response.json()["detail"], "The note should not be empty.")
 
     def test_create_note_empty_content(self):
         response = self.client.post(
@@ -32,7 +32,7 @@ class CreateNoteTest(NotesTestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json()["detail"], "The note should not be empty")
+        self.assertEqual(response.json()["detail"], "The note should not be empty.")
 
     def test_create_note_not_authenticated(self):
         Access.objects.create(
