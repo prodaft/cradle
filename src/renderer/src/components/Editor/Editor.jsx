@@ -5,7 +5,6 @@ import { languages } from '@codemirror/language-data';
 import { drawSelection } from "@uiw/react-codemirror";
 import { useId, useState } from "react";
 import { EditorView } from '@codemirror/view';
-
 import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import { eclipse } from '@uiw/codemirror-theme-eclipse';
 

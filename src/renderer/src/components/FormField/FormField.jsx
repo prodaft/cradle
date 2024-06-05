@@ -1,24 +1,30 @@
 /**
  * FormField component - a styled form field with a label and input
- * @param props
+ * 
+ * @param {string} name - the name of the input field
+ * @param {string} type - the type of the input field
+ * @param {string} labelText - the text of the label
+ * @param {(string) => void} handleInput - callback used when the value of the input changes
+ * @param {boolean} autofocus - whether the input should be autofocused
  * @returns {FormField}
  * @constructor
  */
-export default function FormField(props) {
+export default function FormField({ name, type, labelText, handleInput, autofocus }) {
     return (
         <div className="w-full">
-            <label htmlFor={props.name} className="block text-sm font-medium leading-6">
-                {props.labelText}
+            <label htmlFor={name} className="block text-sm font-medium leading-6">
+                {labelText}
             </label>
             <div className="mt-2">
                 <input
-                    id={props.name}
-                    name={props.name}
-                    type={props.type}
-                    autoComplete={props.name}
-                    onChange={(e) => props.handleInput(e.target.value)}
+                    id={name}
+                    name={name}
+                    type={type}
+                    autoComplete={name}
+                    onChange={(e) => handleInput(e.target.value)}
                     required
                     className="form-input input-ghost-primary input-block input focus:ring-0"
+                    autoFocus={autofocus}
                 />
             </div>
         </div>
