@@ -1,11 +1,13 @@
-from django.test import TestCase
 from ..serializers import TokenObtainSerializer
-from ..models.access_model import CradleUser
+from ..models import CradleUser
+from .utils import UserTestCase
 
 
-class TokenObtainSerializerTest(TestCase):
+class TokenObtainSerializerTest(UserTestCase):
 
     def setUp(self):
+        super().setUp()
+
         self.token_serializer = TokenObtainSerializer()
         self.normal_user = CradleUser.objects.create_user(
             username="user", password="pass1"

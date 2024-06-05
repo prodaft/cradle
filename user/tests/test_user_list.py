@@ -1,13 +1,13 @@
-from django.test import TestCase
 from django.urls import reverse
-from ..models.access_model import CradleUser
+from ..models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.parsers import JSONParser
 from ..serializers import UserRetrieveSerializer
 import io
+from .utils import UserTestCase
 
 
-class CreateUserTest(TestCase):
+class CreateUserTest(UserTestCase):
     def create_user_request(self, username=None, password=None):
         create_user_dict = {}
         if username is not None:
@@ -19,9 +19,11 @@ class CreateUserTest(TestCase):
         return response
 
     def test_user_create_successfully(self):
-        response = self.create_user_request("user", "user")
+        response = self.create_user_request("user", "userR1#1234112")
         self.assertEqual(response.status_code, 200)
         self.assertIsNotNone(CradleUser.objects.get(username="user"))
+
+        self.mocked_create_user_bucket.assert_called_once()
 
     def test_user_create_no_username(self):
         response = self.create_user_request(username=None, password="user")
@@ -31,15 +33,19 @@ class CreateUserTest(TestCase):
         response = self.create_user_request(username="user", password=None)
         self.assertEqual(response.status_code, 400)
 
+    def test_user_create_validation_fails(self):
+        response = self.create_user_request(username="user", password="abcd1234@")
+        self.assertEqual(response.status_code, 400)
+
     def test_user_create_already_exists(self):
-        self.create_user_request(username="user", password="user")
-        response = self.create_user_request(username="user", password="user")
+        self.create_user_request(username="user", password="userR1#1234112")
+        response = self.create_user_request(username="user", password="userR1#1234112")
         self.assertEqual(response.status_code, 409)
 
     def test_user_login_successfully(self):
-        self.create_user_request("user", "user")
+        self.create_user_request("user", "userR1#1234112")
         response = self.client.post(
-            reverse("user_login"), {"username": "user", "password": "user"}
+            reverse("user_login"), {"username": "user", "password": "userR1#1234112"}
         )
 
         self.assertEqual(response.status_code, 200)
@@ -66,9 +72,11 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class GetAllUsersTest(TestCase):
+class GetAllUsersTest(UserTestCase):
 
     def setUp(self):
+        super().setUp()
+
         self.user = CradleUser.objects.create_user(username="user", password="user")
         self.admin = CradleUser.objects.create_superuser(
             username="admin", password="admin"

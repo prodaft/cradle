@@ -1,10 +1,10 @@
-from django.test import TestCase
-from user.models.access_model import CradleUser
+from user.models import CradleUser
 from django.urls import reverse
 from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
 import io
 from rest_framework_simplejwt.tokens import AccessToken
+from .utils import EntitiesTestCase
 
 from ..models import Entity
 from ..enums import EntityType
@@ -14,9 +14,11 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class DeleteActorDetailsTest(TestCase):
+class DeleteActorDetailsTest(EntitiesTestCase):
 
     def setUp(self):
+        super().setUp()
+
         self.client = APIClient()
         self.admin_user = CradleUser.objects.create_user(
             username="admin", password="password", is_staff=True

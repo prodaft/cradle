@@ -1,10 +1,17 @@
+from django.db import transaction
 from rest_framework.response import Response
+from rest_framework.request import Request
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from ..serializers import NoteCreateSerializer, NoteRetrieveSerializer
-from django.http import HttpRequest
+from ..models import Note
+from user.models import CradleUser
+from access.models import Access
+from access.enums import AccessType
+from entities.enums import EntityType
+from typing import cast
 
 
 class NoteList(APIView):
@@ -12,7 +19,7 @@ class NoteList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def post(self, request: HttpRequest) -> Response:
+    def post(self, request: Request) -> Response:
         """Allow a user to create a new note, by sending the text itself.
         This text should be validated to meet the requirements
         (i.e. reference at least two Entities, one of which must be a Case).
@@ -42,3 +49,80 @@ class NoteList(APIView):
             return Response(json_note, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class NoteDetail(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, note_id: int) -> Response:
+        """Allow a user to get an already existing note, by specifying
+        its id. A user should be able to retrieve the id only if he has
+        READ access an all the cases it references.
+
+        Args:
+            request: The request that was sent.
+            note_id: The id of the note.
+
+        Returns:
+            Response(status=200): A JSON response containing note
+                if the request was successful
+            Response("User is not authenticated.", status=401):
+                if the user is not authenticated.
+            Response("Note with given id does not exist.", status=404):
+                if the user does not have at least READ access on all
+                referenced cases, or the note does not exist.
+        """
+        try:
+            note: Note = Note.objects.get(id=note_id)
+        except Note.DoesNotExist:
+            return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
+
+        if not Access.objects.has_access_to_cases(
+            cast(CradleUser, request.user),
+            set(note.entities.filter(type=EntityType.CASE)),
+            {AccessType.READ, AccessType.READ_WRITE},
+        ):
+            return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
+
+        return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
+
+    def delete(self, request: Request, note_id: int) -> Response:
+        """Allow a user to delete an already existing note,
+        by specifying its id.
+
+        Args:
+            request: The request that was sent
+            note_id: The id of the note to be deleted.
+
+        Returns:
+            Response(status=200): The note was deleted
+            Response("User is not authenticated.",
+                status=401): if the user is not authenticated
+            Response("User does not have Read-Write access to all cases the Note
+                    references.", status=403):
+                if the user is not the author of the note.
+            Response("Note not found", status=404):
+                if the note does not exist.
+        """
+        try:
+            note_to_delete = Note.objects.get(id=note_id)
+        except Note.DoesNotExist:
+            return Response("Note not found.", status=status.HTTP_404_NOT_FOUND)
+
+        if not Access.objects.has_access_to_cases(
+            cast(CradleUser, request.user),
+            set(note_to_delete.entities.filter(type=EntityType.CASE)),
+            {AccessType.READ, AccessType.READ_WRITE},
+        ):
+            return Response(
+                "User does not have Read-Write access to all referenced cases",
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        with transaction.atomic():
+            note_to_delete.delete()
+            Note.objects.delete_unreferenced_entities()
+
+        return Response("Note was deleted.", status=status.HTTP_200_OK)

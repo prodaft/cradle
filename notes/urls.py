@@ -1,4 +1,14 @@
-from .views.note_view import NoteList
+from .views.note_publish_view import NotePublishDetail, NotePublishList
+from .views.note_view import NoteList, NoteDetail
 from django.urls import path
 
-urlpatterns = [path("", NoteList.as_view(), name="note_list")]
+urlpatterns = [
+    path("", NoteList.as_view(), name="note_list"),
+    path(
+        "<int:note_id>/publishable/",
+        NotePublishDetail.as_view(),
+        name="note_publish_detail",
+    ),
+    path("<int:note_id>/", NoteDetail.as_view(), name="note_detail"),
+    path("publish/", NotePublishList.as_view(), name="note_publish_list"),
+]

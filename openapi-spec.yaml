@@ -4,9 +4,6 @@ info:
   version: 1.0.0
   description: API for handling requests for the backend of the CRADLE project
 servers:
-  # Added by API Auto Mocking Plugin
-  # Added by API Auto Mocking Plugin
-  # Added by API Auto Mocking Plugin
   - description: SwaggerHub API Auto Mocking
     url: https://virtserver.swaggerhub.com/diacicov.calin/CRADLE/1.0.0
   - description: Localhost
@@ -16,6 +13,8 @@ tags:
     description: Operations targeting a user's account.
   - name: Admin
     description: Administrative operations.
+  - name: Access
+    description: Handles Case-Level Access
   - name: Entity
     description: Operations targeting Entities.
   - name: Note
@@ -24,6 +23,12 @@ tags:
     description: Operations targeting Fleeting Notes.
   - name: Knowledge Graph
     description: Operations targeting the Knowledge Graph.
+  - name: Query
+    description: Operations for fetching entities.
+  - name: Dashboard
+    description: Operations targeting the dashboard.
+  - name: File Transfer
+    description: Operations targeting the transfer of files.
   
 paths:
   /users:
@@ -146,19 +151,6 @@ paths:
             The credentials given are invalid. 
             
 
-  /users/logout:
-    post:
-      tags:
-        - User
-      summary: Log out of account
-      description: Allows a user to log out of their account
-      operationId: accountLogout
-      responses:
-        '200':
-          description: The User was logged out successfully.
-        '401':
-          description: The User is not authenticated. 
-
   /notifications/{userId}:
     get:
       tags:
@@ -192,7 +184,7 @@ paths:
         '404':
           description: User is not found. # maybe
 
-  /entities/actors/:
+  /entities/actors:
     get:
       tags:
         - Entity
@@ -208,7 +200,7 @@ paths:
               schema: 
                 type: array
                 items: 
-                  $ref: '#/components/schemas/Agent'
+                  $ref: '#/components/schemas/Entity'
         '401':
           description: User is not authenticated.
         '403':
@@ -239,7 +231,7 @@ paths:
           content: 
             'application/json':
               schema: 
-                $ref: '#/components/schemas/Agent'
+                $ref: '#/components/schemas/Entity'
         '401': 
           description: User is not authenticated.
         '403': 
@@ -266,7 +258,7 @@ paths:
               schema: 
                 type: array
                 items: 
-                  $ref: '#/components/schemas/Case'
+                  $ref: '#/components/schemas/Entity'
         '401': 
           description: User is not authenticated.
         '403': 
@@ -297,7 +289,7 @@ paths:
           content: 
             'application/json':
               schema: 
-                $ref: '#/components/schemas/Case'
+                $ref: '#/components/schemas/Entity'
         '401': 
           description: User is not authenticated.
         '403': 
@@ -306,11 +298,103 @@ paths:
           description: Invalid data provided
         '409':
           description: Case already exists.
-
-  /users/{userId}/access:
+  
+  /dashboards/cases/{case_name}:
     get:
       tags:
-        - User
+        - Dashboard
+      summary: Get the dashboard of a Case
+      description: Allow a user to retrieve the dashboard of a Case by specifying its name
+      operationId: getCaseByName
+      parameters:
+        - in: path
+          name: case_name
+          required: true
+          schema:
+            type: string
+          examples:
+            caseNameExample:
+              value: "Case1"
+      responses:
+        '200': 
+          description: Request was successful. 
+          content: 
+            'application/json':
+              schema: 
+                $ref: '#/components/schemas/CaseDashboard'
+        '401': 
+          description: User is not authenticated.
+        '404':
+          description: Case not found or User doesn't have access.
+  
+  /dashboards/actors/{actor_name}:
+    get:
+      tags:
+        - Dashboard
+      summary: Get the dashboard of an Actor
+      description: Allow a user to retrieve the dashboard of an Actor by specifying its name
+      operationId: getActorByName
+      parameters:
+        - in: path
+          name: actor_name
+          required: true
+          schema:
+            type: string
+          examples:
+            caseNameExample:
+              value: "Actor"
+      responses:
+        '200': 
+          description: Request was successful. 
+          content: 
+            'application/json':
+              schema: 
+                $ref: '#/components/schemas/ActorDashboard'
+        '401': 
+          description: User is not authenticated.
+        '404':
+          description: Actor not found.
+  
+  /dashboards/entries/{entry_name}:
+    get:
+      tags:
+        - Dashboard
+      summary: Get the dashboard of an Entry
+      description: Allow a user to retrieve the dashboard of an Entry by specifying its name
+      operationId: getEntryByName
+      parameters:
+        - in: path
+          name: entry_name
+          required: true
+          schema:
+            type: string
+          examples:
+            caseNameExample:
+              value: "Entry"
+        - in: query
+          name: subtype
+          required: true
+          schema:
+            type: string
+          examples:
+            caseNameExample:
+              value: "ip"
+      responses:
+        '200': 
+          description: Request was successful. 
+          content: 
+            'application/json':
+              schema: 
+                $ref: '#/components/schemas/EntryDashboard'
+        '401': 
+          description: User is not authenticated.
+        '404':
+          description: Entry not found.
+
+  /access/{userId}:
+    get:
+      tags:
+        - Access
         - Admin
       summary: Get access privileges of a users.
       responses:
@@ -332,10 +416,10 @@ paths:
           description: User not found.
 
 
-  /users/{userId}/access/{caseId}:
+  /access/{userId}/{caseId}:
     put:
       tags:
-        - User
+        - Access
         - Admin
       summary: Update access of a user
       description: Allow an admin to change the access privileges of a user by specifying its id
@@ -405,33 +489,6 @@ paths:
           description: User is not an admin.
         '404':
           description: There is no agent with specified ID.
-    get:
-      tags: 
-        - Entity
-      summary: Read details of an Actor
-      description: Allow a user to retrieve the details of an Actor by specifying its id
-      operationId: getActor
-      parameters:
-        - in: path
-          name: agentId
-          required: true
-          schema:
-            type: integer
-            format: int64
-          examples:
-            agentIdExample:
-              value: "2341641124"
-      responses:
-        '200': 
-          description: Request was successful. 
-          content: 
-            'application/json':
-              schema: 
-                $ref: '#/components/schemas/Agent'
-        '401': 
-          description: User is not authenticated.
-        '404':
-          description: Actor not found.
             
 
 
@@ -462,141 +519,6 @@ paths:
           description: User is not an admin.
         '404':
           description: There is no case with specified ID.
-    get:
-      tags:
-        - Entity
-      summary: Read details of a Case
-      description: Allow a user to retrieve the details of a Case by specifying its id
-      operationId: getCase
-      parameters:
-        - in: path
-          name: caseId
-          required: true
-          schema:
-            type: integer
-            format: int64
-          examples:
-            caseIdExample:
-              value: 1234163
-      responses:
-        '200': 
-          description: Request was successful. 
-          content: 
-            'application/json':
-              schema: 
-                $ref: '#/components/schemas/Case'
-        '401': 
-          description: User is not authenticated.
-        '404':
-          description: Agent not found.
-
-  /entities/cases/{case_name}/:
-    get:
-      tags:
-        - Entity
-      summary: Get the dashboard of a Case
-      description: Allow a user to retrieve the dashboars of a Case by specifying its name
-      operationId: getCaseByName
-      parameters:
-        - in: path
-          name: case_name
-          required: true
-          schema:
-            type: string
-          examples:
-            caseNameExample:
-              value: "Case1"
-      responses:
-        '200': 
-          description: Request was successful. 
-          content: 
-            'application/json':
-              schema: 
-                $ref: '#/components/schemas/CaseDashboard'
-        '401': 
-          description: User is not authenticated.
-        '404':
-          description: Case not found or User doesn't have access.
-
-  /entities/entries/{entryId}:
-    get:
-      tags:
-        - Entity
-      summary: Read details of an Entry
-      description: Allow a user to retrieve the details of an Entry by specifying its id
-      operationId: getEntry
-      parameters:
-        - in: path
-          name: entryId
-          required: true
-          schema:
-            type: integer
-            format: int64
-          examples:
-            entryIdExample:
-              value: "2916459"
-      responses:
-        '200': 
-          description: Request was successful. 
-          content: 
-            'application/json':
-              schema: 
-                $ref: '#/components/schemas/Entry'
-        '401': 
-          description: User is not authenticated.
-        '404':
-          description: Entry not found.
-        
-
-  /entities/entries:
-    get:
-      tags:
-        - Entity
-      summary: Read details of all Entries
-      description: Allow a user to retrieve the details of all Entries
-      operationId: getEntries
-      responses:
-        '200': 
-          description: Entry has been added. 
-          content: 
-            'application/json':
-              schema: 
-                type: array
-                items: 
-                  $ref: '#/components/schemas/Entry'
-        '401': 
-          description: User is not authenticated.
-        '403': 
-          description: User is not an admin.
-
-  # /entities/metadata/{metadataId}:
-  #   get:
-  #     tags: 
-  #       - Entity
-  #     summary: Read details of a Metadata
-  #     description: Allow a user to retrieve the details of a Metadata by specifying its id
-  #     operationId: getMetadata
-  #     parameters:
-  #       - in: path
-  #         name: metadataId
-  #         required: true
-  #         schema:
-  #           type: integer
-  #           format: int64
-  #         examples:
-  #           metadataIdExample:
-  #             value: "2341641124"
-  #     responses:
-  #       '200': 
-  #         description: Request was successful. 
-  #         content: 
-  #           'application/json':
-  #             schema: 
-  #               $ref: '#/components/schemas/Metadata'
-  #       '401': 
-  #         description: User is not authenticated.
-  #       '404':
-  #         description: Metadata not found.
 
   /notes:
     post:
@@ -669,7 +591,7 @@ paths:
         '404':
           description: Note not found. 
 
-  /notes/{noteId}/:
+  /notes/{noteId}:
     delete:
       tags:
         - Note
@@ -692,7 +614,7 @@ paths:
         '401': 
           description: User is not authenticated.
         '403': 
-          description: User cannot delete a Note he does not own.
+          description: User cannot delete a Note if they do not have Read-Write access to the referenced case.
         '404':
           description: Note not found.
     get:
@@ -709,7 +631,7 @@ paths:
             type: integer
             format: int64
           examples:
-            entryIdExample:
+            noteIdExample:
               value: 31249691
       responses:
         '200':  
@@ -720,8 +642,8 @@ paths:
                $ref: '#/components/schemas/Note'
         '401': 
           description: User is not authenticated.
-        '403': 
-          description: User does not have accessed to the requested note.
+        '404': 
+          description: User does not have read access to the requested note or the requested note does not exist.
 
   /notes/request/case/{caseId}/entity/{entityId}:
     get:
@@ -791,13 +713,137 @@ paths:
         '403': 
           description: A User cannot grant access to a note it does not own. 
         
+  /notes/publish:
+    get:
+      tags:
+        - Note
+      summary: Publish a list of notes. 
+      description: Allows a user to publish a list of notes, in the specified order.
+      operationId: publishNotes
+      parameters:
+        - in: query
+          name: note_ids
+          required: true
+          style: form
+          explode: true
+          schema:
+            type: array
+            items: 
+              type: integer
+              format: int64
+          examples:
+            single-note:
+              summary: Single note ID
+              value: [1]
+            multiple-notes:
+              summary: Multiple note IDs
+              value: [1, 2, 3]
+              
+      responses:
+        '200': 
+          description: Request was succesful.
+          content:
+            'application/json':
+              schema: 
+                $ref: '#/components/schemas/Report'
+        '400': 
+          description: The format is invalid.
+        '401': 
+          description: The user is not authenticated. 
+        '403': 
+          description: The user tries to publish unpublishable notes. 
+        '404': 
+          description: The user does not have read access to all the provided notes or some of the notes do not exist.
+  
+  /file-transfer/upload:
+    get:
+      tags:
+        - File Transfer
+      summary: Generates a link for uploading files to Minio.
+      description: Generate a new UUID which concatenated with the original file name describe the path where the user should upload a new file. Provides a presigned put URL that allows the client to make this transfer without requiring the Minio credentials.
+      operationId: fileUpload
+      parameters:
+        - in: query
+          name: fileName
+          required: true
+          schema:
+            type: string
+          examples:
+            fileNameExample:
+              value: "evidence.png"
+      responses:
+        '200':  
+          description: Request was succesful.
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  bucketName:
+                    type: string
+                    example: "admin"
+                  minioFileName:
+                    type: string
+                    example: "be0b24ad-ae54-4952-ae87-00011ed9df27-evidence.png"
+                  presigned:
+                    type: string
+                    example: "http://127.0.0.1:9000/admin/be0b24ad-ae54-4952-ae87-00011ed9df27-evidence.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20240601%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240601T140856Z&X-Amz-Expires=180&X-Amz-SignedHeaders=host&X-Amz-Signature=4e4a63377975d20947da99ec8d9ca97f1ece9fc713f4e11d1e982391492b4a4b"
+        '400': 
+          description: Query parameters are invalid.
+        '401': 
+          description: User is not authenticated.
+
+  /file-transfer/download:
+    get:
+      tags:
+        - File Transfer
+      summary: Generates a link for downloading files from Minio.
+      description: Provides a presigned download URL that allows clients to download files from Minio without requiring the credentials.
+      operationId: fileDownload
+      parameters:
+        - in: query
+          name: bucketName
+          required: true
+          schema:
+            type: string
+          examples:
+            bucketNameExample:
+              value: "admin"
+        - in: query
+          name: minioFileName
+          required: true
+          schema:
+            type: string
+          examples:
+            minioFileNameExample:
+              value: "be0b24ad-ae54-4952-ae87-00011ed9df27-evidence.png"
+      responses:
+        '200':  
+          description: Request was succesful.
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  presigned:
+                    type: string
+                    example: "http://127.0.0.1:9000/admin/be0b24ad-ae54-4952-ae87-00011ed9df27-evidence.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20240601%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240601T140856Z&X-Amz-Expires=180&X-Amz-SignedHeaders=host&X-Amz-Signature=4e4a63377975d20947da99ec8d9ca97f1ece9fc713f4e11d1e982391492b4a4b"
+        '400': 
+          description: Query parameters are invalid.
+        '401': 
+          description: User is not authenticated.
+        '404':
+          description: The requested resource does not exist.
+
 
   /fleeting-notes:
     get:
       tags:
         - Fleeting Note
       summary: Get all fleeting notes of the user
-      description: Allow a user to see all of his fleeting notes
+      description: Get all the FleetingNotes that belong to the authenticated user.
+        FleetingNotes are ordered by last_edited in descending order.
+        FleetingNotes are truncated to 200 characters for preview.
       operationId: getAllFleetingNotes
       responses: 
         '200': 
@@ -816,7 +862,8 @@ paths:
       tags:
         - Fleeting Note
       summary: Create a Fleeting Note
-      description: Allow a user to create a Fleeting Note by providing its text
+      description: Create a new FleetingNote entity based on the request data.
+        The user field is set to correspond to the authenticated user.
       operationId: createFleetingNote
       requestBody:
         required: true
@@ -825,9 +872,9 @@ paths:
             schema:
               type: object
               required:
-                - text
+                - content
               properties:
-                text:
+                content:
                   type: string
       responses:
         '200': 
@@ -965,10 +1012,10 @@ paths:
           description: User does not have Read-Write access to a referenced Case or User does not own the Fleeting Note. 
     
   
-  /entities:
+  /query:
     get:
       tags:
-        - Entity
+        - Query
       summary: Search for entities
       description: Allow a user to query for any entity they have access, by providing a name, its type and, if it is an Entry, its subtype
       operationId: searchEntity
@@ -983,7 +1030,6 @@ paths:
             enum: 
             - actor
             - case
-            - metadata
             - entry
           examples:
             typeExample:
@@ -1051,13 +1097,31 @@ components:
     CaseDashboard:
       type: object
       properties:
-        case:
-          type: object
-          properties:
-            name:
-              type: string
-            description:
-              type: string
+        ID:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: 
+          - case
+        subtype:
+          type: string
+          enum: 
+            - ip
+            - domain
+            - url
+            - username
+            - password
+            - person
+            - social-media
+            - hash
+            - tool 
+            - cve
+            - ttp
         notes:
           type: array
           items: 
@@ -1065,32 +1129,107 @@ components:
         actors:
           type: array
           items: 
-            type: object
-            properties:
-              name:
-                type: string
-              description:
-                type: string
+            $ref: "#/components/schemas/Entity"
         cases:
           type: array
           items: 
-            type: object
-            properties:
-              name:
-                type: string
-              description:
-                type: string
-              access:
-                type: boolean
+            $ref: "#/components/schemas/Entity"
         metadata:
           type: array
           items: 
-            type: object
-            properties:
-              name:
-                type: string
-              description:
-                type: string
+            $ref: "#/components/schemas/Entity"
+        entries:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        access: 
+          type: string
+          enum: 
+          - none
+          - read
+          - read-write
+    
+    ActorDashboard:
+      type: object
+      properties:
+        ID:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: 
+          - actor
+        subtype:
+          type: string
+          enum: 
+            - ip
+            - domain
+            - url
+            - username
+            - password
+            - person
+            - social-media
+            - hash
+            - tool 
+            - cve
+            - ttp
+        notes:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Note"
+        actors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Entity"
+        cases:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        metadata:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+    
+    EntryDashboard:
+      type: object
+      properties:
+        ID:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: 
+          - actor
+        subtype:
+          type: string
+          enum: 
+            - ip
+            - domain
+            - url
+            - username
+            - password
+            - person
+            - social-media
+            - hash
+            - tool 
+            - cve
+            - ttp
+        notes:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Note"
+        cases:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
     
     User:
       type: object
@@ -1105,9 +1244,9 @@ components:
         cases:
           type: array
           items: 
-            $ref: "#/components/schemas/Case"
+            $ref: "#/components/schemas/Entity"
 
-    Agent:
+    Entity:
       type: object
       properties:
         ID:
@@ -1117,57 +1256,27 @@ components:
           type: string
         description: 
           type: string
-
-    Case:
-      type: object
-      properties:
-        ID:
-          type: integer
-          format: int64
-        name:
+        type:
           type: string
-        description:
+          enum: 
+          - actor
+          - case
+          - entry
+          - metadata
+        subtype:
           type: string
-
-    CaseAccess:
-      type: object
-      properties:
-        ID: 
-          type: integer
-          format: int64
-        name: 
-          type: string
-        access_type:
-          type: string
-          enum:
-          - none
-          - read
-          - read-write
-          
-
-    Entry:
-      type: object
-      properties:
-        ID:
-          type: integer
-          format: int64
-        name:
-          type: string
-        type: 
-          type: string
-        
-
-    Metadata:
-      type: object
-      properties:
-        ID:
-          type: integer
-          format: int64
-        name:
-          type: string
-        type: 
-          type: string
-        
+          enum: 
+            - ip
+            - domain
+            - url
+            - username
+            - password
+            - person
+            - social-media
+            - hash
+            - tool 
+            - cve
+            - ttp
 
     Access:
       type: string
@@ -1182,8 +1291,10 @@ components:
         ID:
           type: integer
           format: int64
-        contents: 
+        content: 
           type: string
+        publishable:
+          type: boolean
         timestamp: 
           type: string
           format: date-time
@@ -1192,12 +1303,30 @@ components:
           items: 
             type: object
             properties:
+              ID:
+                type: integer
+                format: int64
               name:
                 type: string
               type:
                 type: string
               subtype:
                 type: string
+    
+    CaseAccess:
+      type: object
+      properties:
+        ID: 
+          type: integer
+          format: int64
+        name: 
+          type: string
+        access_type:
+          type: string
+          enum:
+          - none
+          - read
+          - read-write
 
     FleetingNote:
       type: object
@@ -1205,8 +1334,11 @@ components:
         ID:
           type: integer
           format: int64
-        contents: 
+        content:
           type: string
+        last_edited:
+          type: string
+          format: date-time
 
     Notification: 
       type: object
@@ -1223,6 +1355,30 @@ components:
         - pdf
         - html
         - json
+
+    Report: 
+      type: object
+      properties: 
+        actors: 
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        cases: 
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        entries: 
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        metadata: 
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        notes:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Note"
 
 security:
   - cookieAuth: []

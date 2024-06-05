@@ -1,3 +1,7 @@
+import django_stubs_ext
+
+django_stubs_ext.monkeypatch()
+
 """
 Django settings for cradle project.
 
@@ -13,6 +17,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 import os
 from datetime import timedelta
+from typing import List
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,13 +32,18 @@ SECRET_KEY = "django-insecure-0in+njnc5mjf3xuh$yjy+$s@78-!9rh$qjzv@aqw+*c$zh&d*&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS: List[str] = []
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    "file_transfer.apps.FileTransferConfig",
+    "query.apps.QueryConfig",
+    "dashboards.apps.DashboardsConfig",
+    "access.apps.AccessConfig",
     "entities.apps.EntitiesConfig",
+    "fleeting_notes.apps.FleetingNotesConfig",
     "user.apps.UserConfig",
     "notes.apps.NotesConfig",
     "django.contrib.admin",
