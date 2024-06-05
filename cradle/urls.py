@@ -24,4 +24,5 @@ urlpatterns = [
     path("dashboards/", include("dashboards.urls")),
     path("access/", include("access.urls")),
     path("query/", include("query.urls")),
+    path("fleeting-notes/", include("fleeting_notes.urls")),
 ]
