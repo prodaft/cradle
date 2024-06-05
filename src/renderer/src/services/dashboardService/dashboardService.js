@@ -27,7 +27,7 @@ export function getDashboardData(token, path){
  * Passes the token, path, and status to the API
  * 
  * @param {string} token - The (JWT) token to authenticate the request
- * @param {integer} noteId - The id of the note to set the publishable status of
+ * @param {number} noteId - The id of the note to set the publishable status of
  * @param {boolean} status - The status to set the note to
  * @returns {Promise<AxiosResponse<string>>}
  */
