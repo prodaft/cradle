@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { UserCircle } from "iconoir-react";
 import FormField from "../FormField/FormField";
-import {Link} from "react-router-dom"
+import { Link } from "react-router-dom"
 import { useNavigate } from "react-router-dom";
 import { logInReq } from "../../services/authReqService/authReqService";
 import AlertBox from "../AlertBox/AlertBox";
-import {useAuth} from "../../hooks/useAuth/useAuth";
+import { useAuth } from "../../hooks/useAuth/useAuth";
 import { displayError } from "../../utils/responseUtils/responseUtils";
 import useWindowSize from "../../hooks/useWindowSize/useWindowSize";
 
@@ -22,6 +22,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [errorColor, setErrorColor] = useState("red");
   const windowSize = useWindowSize();
+  const usernameField = useRef(null);
 
   const auth = useAuth();
 
@@ -30,13 +31,13 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const data = {'username': username, 'password': password};
+    const data = { 'username': username, 'password': password };
 
-    logInReq(data).then((res)=>{
-        if(res.status === 200){
-          auth.logIn(res.data["access"],res.data["refresh"])
-        }
-        navigate("/");
+    logInReq(data).then((res) => {
+      if (res.status === 200) {
+        auth.logIn(res.data["access"], res.data["refresh"])
+      }
+      navigate("/");
     }).catch(displayError(setError, setErrorColor));
   };
 
@@ -60,13 +61,13 @@ export default function Login() {
           </div>
           <div name="login-form" className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
             <form className="space-y-6" onSubmit={handleSubmit}>
-              <FormField name="username" labelText="Username" type="text" handleInput={setUsername}/>
-              <FormField name="password" labelText="Password" type="password" handleInput={setPassword}/>
+              <FormField name="username" labelText="Username" type="text" handleInput={setUsername} autofocus={true} />
+              <FormField name="password" labelText="Password" type="password" handleInput={setPassword} />
               {error && (<AlertBox title={error} color={errorColor} />)}
               <button
-                  type="submit"
-                  data-testid="login-register-button"
-                  className="btn btn-primary btn-block"
+                type="submit"
+                data-testid="login-register-button"
+                className="btn btn-primary btn-block"
               >
                 Login
               </button>
