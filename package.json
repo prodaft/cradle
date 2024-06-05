@@ -12,7 +12,8 @@
     "preview": "electron-vite preview",
     "test": "jest",
     "tailwind": "npx tailwindcss -i ./src/renderer/src/styles/input.css -o ./src/renderer/src/styles/output.css",
-    "tailwind-w": "npx tailwindcss -i ./src/renderer/src/styles/input.css -o ./src/renderer/src/styles/output.css --watch"
+    "tailwind-w": "npx tailwindcss -i ./src/renderer/src/styles/input.css -o ./src/renderer/src/styles/output.css --watch",
+    "jsdoc": "npx jsdoc -r src/renderer"
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.2.5",
