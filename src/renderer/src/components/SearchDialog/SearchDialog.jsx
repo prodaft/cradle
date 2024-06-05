@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import {NavArrowDown, Search} from 'iconoir-react';
+import { NavArrowDown, Search } from 'iconoir-react';
 import SearchFilterSection from "../SearchFilterSection/SearchFilterSection";
-import {queryEntities} from "../../services/queryService/queryService";
-import {useAuth} from "../../hooks/useAuth/useAuth";
+import { queryEntities } from "../../services/queryService/queryService";
+import { useAuth } from "../../hooks/useAuth/useAuth";
 import AlertBox from "../AlertBox/AlertBox";
 import SearchResult from "../SearchResult/SearchResult";
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 
@@ -72,7 +72,7 @@ export default function SearchDialog({ isOpen, onClose }) {
     if (!isOpen) return null;
 
     return createPortal(
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={()=>{setError(""); onClose();}}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => { setError(""); onClose(); }}>
             <div
                 className="w-11/12 md:w-3/4 lg:w-1/2 h-4/5 bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col relative"
                 onClick={(e) => e.stopPropagation()}
@@ -90,10 +90,10 @@ export default function SearchDialog({ isOpen, onClose }) {
                         onKeyDown={handleKeyDown}
                     />
                     <button
-                        onClick={()=>performSearch()}
+                        onClick={() => performSearch()}
                         className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-transparent border-none cursor-pointer"
                     >
-                        <Search/>
+                        <Search />
                     </button>
                 </div>
                 <SearchFilterSection
