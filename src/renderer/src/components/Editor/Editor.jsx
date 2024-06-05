@@ -3,11 +3,11 @@ import { vim } from "@replit/codemirror-vim";
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
 import { drawSelection } from "@uiw/react-codemirror";
-import { useId, useState } from "react";
+import { useId, useState, useRef } from "react";
 import { EditorView } from '@codemirror/view';
-
 import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import { eclipse } from '@uiw/codemirror-theme-eclipse';
+import FileInput from "../FileInput/FileInput";
 
 /**
  * This component makes use of a pre-existing code editor component (CodeMirror, see https://github.com/uiwjs/react-codemirror)
@@ -20,6 +20,7 @@ import { eclipse } from '@uiw/codemirror-theme-eclipse';
 export default function Editor({ markdownContent, setMarkdownContent, isLightMode }) {
     const [enableVim, setEnableVim] = useState(false);
     const vimModeId = useId();
+    const editorRef = useRef(null);
 
     // Set extension here
     var extensions = [
@@ -36,7 +37,10 @@ export default function Editor({ markdownContent, setMarkdownContent, isLightMod
 
     return (
         <div className="h-full w-full flex flex-col flex-1">
-            <div className="flex flex-row-reverse p-2">
+            <div className="flex flex-row justify-between p-2">
+                <span className="max-w-[50%]">
+                    <FileInput />
+                </span>
                 <span className="flex flex-row space-x-2">
                     <label htmlFor={vimModeId} className="flex items-center cursor-pointer">
                         Vim Mode:
@@ -63,6 +67,7 @@ export default function Editor({ markdownContent, setMarkdownContent, isLightMod
                     className="w-full h-full resize-none"
                     onChange={setMarkdownContent}
                     value={markdownContent}
+                    ref={editorRef}
                 />
             </div>
         </div>
