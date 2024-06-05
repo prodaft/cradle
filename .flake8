@@ -1,5 +1,5 @@
 [flake8]
-exclude = .git,__pycache__,.vscode,cradle,manage.py,env,counter/migrations,user/migrations
+exclude = .git,__pycache__,.vscode,cradle,manage.py,env,counter/migrations,user/migrations,venv
 
 max-line-length = 88
 extend-ignore =

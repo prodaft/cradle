@@ -1,8 +1,9 @@
 from typing import Dict, Set
 from entities.models import Entity
-from user.models.access_model import Access
-from user.models.cradle_user_model import CradleUser
+from access.models import Access
+from user.models import CradleUser
 from ..exceptions import NoAccessToEntitiesException
+from access.enums import AccessType
 
 
 class AccessCheckerTask:
@@ -30,8 +31,10 @@ class AccessCheckerTask:
             NoAccessToEntitiesException: The referenced agents or cases do not exist.
         """
 
-        referenced_case_ids = {case.id for case in referenced_entities["case"]}
+        required_access = {AccessType.READ_WRITE}
 
-        if not Access.objects.has_access_to_cases(self.user, referenced_case_ids):
+        if not Access.objects.has_access_to_cases(
+            self.user, referenced_entities["case"], required_access
+        ):
             raise NoAccessToEntitiesException()
         return referenced_entities

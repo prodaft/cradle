@@ -1,10 +1,12 @@
-from django.test import TestCase
 from notes.utils.parser_task import ParserTask
 from entities.models import Entity
+from .utils import NotesTestCase
 
 
-class ParserTaskTest(TestCase):
+class ParserTaskTest(NotesTestCase):
     def setUp(self):
+        super().setUp()
+
         self.actor_pattern = "[[actor:actor|alias]]"
         self.case_pattern = "[[case:case|alias]]"
         self.entry_pattern = "[[ip:127.0.0.1|alias]]"

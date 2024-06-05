@@ -21,5 +21,9 @@ urlpatterns = [
     path("users/", include("user.urls")),
     path("entities/", include("entities.urls")),
     path("notes/", include("notes.urls")),
-    path("api-auth/", include("rest_framework.urls")),
+    path("dashboards/", include("dashboards.urls")),
+    path("access/", include("access.urls")),
+    path("query/", include("query.urls")),
+    path("file-transfer/", include("file_transfer.urls")),
+    path("fleeting-notes/", include("fleeting_notes.urls")),
 ]

@@ -11,7 +11,14 @@ django-cors-headers = "4.3.1"
 flake8 = "7.0.0"
 coverage = "7.5.0"
 black = "24.4.2"
-djangorestframework-simplejwt = "*"
+djangorestframework-simplejwt = "5.3.1"
+mypy = "1.10.0"
+mypy-gitlab-code-quality = "1.1.0"
+djangorestframework-stubs = "3.15.0"
+django-stubs = "*"
+django-stubs-ext = "*"
+minio = "*"
+tblib = "*"
 
 [dev-packages]
 

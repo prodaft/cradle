@@ -1,16 +1,18 @@
-from django.test import TestCase
 from entities.models import Entity
 from entities.enums import EntityType
 from notes.utils.access_checker_task import AccessCheckerTask
-from user.models.cradle_user_model import CradleUser
-from user.models.access_model import Access
-from user.enums import AccessType
+from user.models import CradleUser
+from access.models import Access
+from access.enums import AccessType
 from ..exceptions import NoAccessToEntitiesException
+from .utils import NotesTestCase
 
 
-class AccessCheckerTaskTest(TestCase):
+class AccessCheckerTaskTest(NotesTestCase):
 
     def setUp(self):
+        super().setUp()
+
         self.user = CradleUser.objects.create_user(username="user", password="user")
 
         self.case1 = Entity.objects.create(name="case1", type=EntityType.CASE)

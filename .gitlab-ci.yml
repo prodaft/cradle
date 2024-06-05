@@ -10,6 +10,9 @@ variables:
   POSTGRES_PASSWORD: "postgres"
   POSTGRES_HOST_AUTH_METHOD: trust
   POSTGRES_HOST: "postgres"
+  MINIO_ENDPOINT: "" # placeholder
+  MINIO_ROOT_USER: "" # placeholder
+  MINIO_ROOT_PASSWORD: "" # placeholder
   PIPENV_CACHE_DIR: "$CI_PROJECT_DIR/.cache/packages"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
@@ -44,6 +47,17 @@ migrations:
       - $CI_PROJECT_DIR/*/migrations/*
     expire_in: 2 days
     
+# Code quality
+codequality: 
+  stage: build
+  script:  
+    - pipenv run mypy --no-error-summary > mypy-out.txt || true
+    - pipenv run mypy-gitlab-code-quality < mypy-out.txt > codequality.json
+  artifacts:
+    when: always
+    reports:
+      codequality: codequality.json
+
 # Testing
 django-tests:
   stage: test
@@ -52,4 +66,3 @@ django-tests:
     - pipenv run coverage run manage.py test
     - pipenv run coverage report
   coverage: "/TOTAL.+ ([0-9]{1,3}%)/"
-

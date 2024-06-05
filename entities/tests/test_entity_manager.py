@@ -1,12 +1,14 @@
-from django.test import TestCase
 from entities.models import Entity
+from .utils import EntitiesTestCase
 
 from entities.enums import EntityType, EntitySubtype
 
 
-class AccessManagerTest(TestCase):
+class EntityManagerTest(EntitiesTestCase):
 
     def setUp(self):
+        super().setUp()
+
         self.cases = [
             Entity.objects.create(
                 name=f"Case {i}", description=f"{i}", type=EntityType.CASE
