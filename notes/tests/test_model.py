@@ -1,12 +1,14 @@
-from django.test import TestCase
 from notes.models import Note, ArchivedNote
 from entities.models import Entity
 from entities.enums import EntityType
+from .utils import NotesTestCase
 
 
-class DeleteNoteTest(TestCase):
+class DeleteNoteTest(NotesTestCase):
 
     def setUp(self):
+        super().setUp()
+
         self.case1 = Entity.objects.create(
             name="Case1", description="Description", type=EntityType.CASE
         )

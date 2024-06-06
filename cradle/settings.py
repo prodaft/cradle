@@ -38,6 +38,7 @@ ALLOWED_HOSTS: List[str] = []
 # Application definition
 
 INSTALLED_APPS = [
+    "file_transfer.apps.FileTransferConfig",
     "query.apps.QueryConfig",
     "dashboards.apps.DashboardsConfig",
     "access.apps.AccessConfig",

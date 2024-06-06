@@ -1,5 +1,3 @@
-from django.test import TestCase
-
 from fleeting_notes.models import FleetingNote
 from user.models import CradleUser
 from django.urls import reverse
@@ -7,14 +5,17 @@ from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
 import io
 from rest_framework_simplejwt.tokens import AccessToken
+from .utils import FleetingNotesTestCase
 
 
 def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class GetFleetingNotesTest(TestCase):
+class GetFleetingNotesTest(FleetingNotesTestCase):
     def setUp(self):
+        super().setUp()
+
         self.client = APIClient()
         self.admin_user = CradleUser.objects.create_user(
             username="admin", password="password", is_staff=True
@@ -94,8 +95,10 @@ class GetFleetingNotesTest(TestCase):
         self.assertEqual(response.status_code, 401)
 
 
-class PostFleetingNotesTest(TestCase):
+class PostFleetingNotesTest(FleetingNotesTestCase):
     def setUp(self):
+        super().setUp()
+
         self.client = APIClient()
         self.admin_user = CradleUser.objects.create_user(
             username="admin", password="password", is_staff=True

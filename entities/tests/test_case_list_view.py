@@ -1,10 +1,10 @@
-from django.test import TestCase
 from user.models import CradleUser
 from django.urls import reverse
 from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
 import io
 from rest_framework_simplejwt.tokens import AccessToken
+from .utils import EntitiesTestCase
 
 from ..models import Entity
 from ..serializers import CaseResponseSerializer
@@ -15,9 +15,11 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class GetCaseListTest(TestCase):
+class GetCaseListTest(EntitiesTestCase):
 
     def setUp(self):
+        super().setUp()
+
         self.client = APIClient()
         self.admin_user = CradleUser.objects.create_user(
             username="admin", password="password", is_staff=True
@@ -57,9 +59,11 @@ class GetCaseListTest(TestCase):
         self.assertEqual(response.status_code, 401)
 
 
-class PostCaseListTest(TestCase):
+class PostCaseListTest(EntitiesTestCase):
 
     def setUp(self):
+        super().setUp()
+
         self.client = APIClient()
         self.admin_user = CradleUser.objects.create_user(
             username="admin", password="password", is_staff=True

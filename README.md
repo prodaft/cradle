@@ -38,24 +38,27 @@ export POSTGRES_USER=[username]
 export POSTGRES_PASSWORD=[the password associated with the username]
 export POSTGRES_HOST=[the location where the PostgreSQL server is running]
 ```
-6. Install [Pipenv](https://pipenv.pypa.io/en/latest/) (Note: Your [Python](https://www.python.org/downloads/release/python-3110/) version should be 3.11):
+6. Install [Minio](https://min.io/) and run an instance of it. This will be used for file storage. Define the **environment variables** which are described in `file_transfer/config.py`. 
+7. Install [Pipenv](https://pipenv.pypa.io/en/latest/) (Note: Your [Python](https://www.python.org/downloads/release/python-3110/) version should be 3.11):
 ```
 $ pip install pipenv
 ```
-7. Navigate to the projects root project. Migrate the database schema:
+8. Navigate to the projects root project. Migrate the database schema:
 ```
-$ pipenv run python manage.py makemigrations
-$ pipenv run python manage.py migrate
+pipenv run python manage.py makemigrations
+```
+```
+pipenv run python manage.py migrate
 ```
 
 ## Usage
 - To run the server, use:
 ```
-$ pipenv run python manage.py runserver
+pipenv run python manage.py runserver
 ```
 - To run tests, use:
 ```
-$ pipenv run python manage.py test
+pipenv run python manage.py test
 ```
 
 ## Contributing

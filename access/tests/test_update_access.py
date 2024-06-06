@@ -1,4 +1,3 @@
-from django.test import TestCase
 from django.urls import reverse
 from entities.models import Entity
 from rest_framework_simplejwt.tokens import AccessToken
@@ -7,11 +6,14 @@ from entities.enums import EntityType
 from user.models import CradleUser
 from ..models import Access
 from ..enums import AccessType
+from .utils import AccessTestCase
 
 
-class UpdateAccessTest(TestCase):
+class UpdateAccessTest(AccessTestCase):
 
     def setUp(self):
+        super().setUp()
+
         self.user = CradleUser.objects.create_user(username="user", password="pass")
         self.admin = CradleUser.objects.create_superuser(
             username="admin", password="pass"

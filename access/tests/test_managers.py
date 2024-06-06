@@ -1,12 +1,12 @@
-from django.test import TestCase
 from ..models import Access
 from ..enums import AccessType
 from entities.models import Entity
 from entities.enums import EntityType
 from user.models import CradleUser
+from .utils import AccessTestCase
 
 
-class AccessManagerHasAccessTest(TestCase):
+class AccessManagerHasAccessTest(AccessTestCase):
 
     def create_users(self):
         self.user = CradleUser.objects.create_user(username="user", password="user")
@@ -32,6 +32,8 @@ class AccessManagerHasAccessTest(TestCase):
         )
 
     def setUp(self):
+        super().setUp()
+
         self.create_users()
         self.create_cases()
         self.create_access()
@@ -95,9 +97,11 @@ class AccessManagerHasAccessTest(TestCase):
         )
 
 
-class AccessManagerGetAccessibleTest(TestCase):
+class AccessManagerGetAccessibleTest(AccessTestCase):
 
     def setUp(self):
+        super().setUp()
+
         self.users = [
             CradleUser.objects.create_user(f"u{i}", "abcd") for i in range(0, 3)
         ]
