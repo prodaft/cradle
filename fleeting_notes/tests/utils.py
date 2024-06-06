@@ -26,6 +26,13 @@ class FleetingNotesTestCase(TestCase):
         self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
         self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
 
+        self.note_admin = FleetingNote.objects.create(
+            content="Note1", user=self.admin_user
+        )
+        self.note_user = FleetingNote.objects.create(
+            content="Note2", user=self.normal_user
+        )
+
     def tearDown(self):
         self.patcher.stop()
         FleetingNote.objects.all().delete()
