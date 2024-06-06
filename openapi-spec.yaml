@@ -893,7 +893,8 @@ paths:
       tags:
         - Fleeting Note
       summary: Get the content of a fleeting note
-      description: Allow  user to visualize a specific fleeting note
+      description: Get a FleetingNote entity by its primary key.
+        Only the owner of the FleetingNote entity can access it.
       operationId: getFleetingNote
       parameters:
         - in: path
@@ -914,15 +915,14 @@ paths:
                 $ref: '#/components/schemas/FleetingNote'
         '401': 
           description: User is not authenticated.
-        '403':
-          description: User cannot access fleeting notes he does not own. 
         '404':
           description: Fleeting note not found.
     delete:
       tags:
         - Fleeting Note
       summary: Delete a certain fleeting note
-      description: Allow a user to delete the fleeting note with id fleetingNoteId
+      description: Delete a FleetingNote entity by its primary key.
+        Only the owner of the FleetingNote entity can delete it.
       operationId: deleteFleetingNote
       parameters:
         - in: path
@@ -939,15 +939,14 @@ paths:
           description: Fleeting Note was deleted.
         '401': 
           description: User is not authenticated.
-        '403': 
-          description: User cannot delete a Fleeting Note he does not own.
         '404':
-          description: Fleeting Note not found.  
+          description: Fleeting Note not found or not owned by user.
     put:
       tags:
         - Fleeting Note
       summary: Update a Fleeting Note
-      description: Allow a user to edit a Fleeting Note by providing its text and id
+      description: Update a FleetingNote entity by its primary key.
+        Only the owner of the FleetingNote entity can update it.
       operationId: updateFleetingNote
       parameters:
         - in: path
@@ -966,26 +965,27 @@ paths:
             schema:
               type: object
               required:
-                - text
+                - content
               properties:
-                text:
+                content:
                   type: string
       responses:
         '200':  
           description: Fleeting Note was updated.
         '401': 
           description: User is not authenticated.
-        '403': 
-          description: User cannot edit a Fleeting Note he does not own.
         '404':
-          description: Fleeting Note not found. 
+          description: Fleeting Note not found or not owned by user.
           
-  /fleeting-notes/{fleetingNoteId}/final: 
+  /fleeting-notes/{fleetingNoteId}/finalize/:
     put:
       tags:
           - Fleeting Note
       summary: Transform a Fleeting Note to a Note. 
-      description: Allow a user to save a FleetingNote into a normal Note. 
+      description: Allow a user to save the contents of a fleeting note as a normal note. 
+        The user must be the owner of the Fleeting Note.
+        Optionally the user can specify if the note is publishable. If not specified, the note is not publishable.
+        The fleeting note is deleted after the transformation.
       operationId: finalizeNote
       parameters:
         - in: path
@@ -997,6 +997,15 @@ paths:
           examples:
             fleetingNoteIdExample:
               value: 2324169
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                publishable:
+                  type: boolean
       responses:
         '200': 
           description: Fleeting Note was transformed. 
