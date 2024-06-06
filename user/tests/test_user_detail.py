@@ -1,12 +1,14 @@
-from django.test import TestCase
 from django.urls import reverse
 from ..models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
+from .utils import UserTestCase
 
 
-class DeleteUserTest(TestCase):
+class DeleteUserTest(UserTestCase):
 
     def setUp(self):
+        super().setUp()
+
         self.user = CradleUser.objects.create_user(username="user", password="user")
         self.admin = CradleUser.objects.create_superuser(
             username="admin", password="admin"

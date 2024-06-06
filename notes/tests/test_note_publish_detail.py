@@ -1,5 +1,4 @@
 from django.urls import reverse
-from django.test import TestCase
 from user.models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.parsers import JSONParser
@@ -9,15 +8,18 @@ from entities.enums import EntityType, EntitySubtype
 from access.models import Access
 from access.enums import AccessType
 import io
+from .utils import NotesTestCase
 
 
 def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class NotePublishableDetailTest(TestCase):
+class NotePublishableDetailTest(NotesTestCase):
 
     def setUp(self):
+        super().setUp()
+
         self.user = CradleUser.objects.create_user(username="user", password="user")
         self.user_token = str(AccessToken.for_user(self.user))
         self.not_owner = CradleUser.objects.create_user(

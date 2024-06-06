@@ -1,4 +1,4 @@
-from django.test import TestCase
+from .utils import NotesTestCase
 from user.models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -8,8 +8,10 @@ from access.models import Access
 from notes.models import Note
 
 
-class DeleteUnfilteredEntitiesTest(TestCase):
+class DeleteUnfilteredEntitiesTest(NotesTestCase):
     def setUp(self):
+        super().setUp()
+
         self.case = Entity.objects.create(
             name="Clearly not a case", type=EntityType.CASE
         )
@@ -61,7 +63,7 @@ class DeleteUnfilteredEntitiesTest(TestCase):
             Entity.objects.get(id=self.metadata[2].id)
 
 
-class AccessibleNotesTest(TestCase):
+class AccessibleNotesTest(NotesTestCase):
 
     def create_users(self):
         self.admin_user = CradleUser.objects.create_superuser(
@@ -129,6 +131,7 @@ class AccessibleNotesTest(TestCase):
         )
 
     def setUp(self):
+        super().setUp()
 
         self.create_users()
 
@@ -165,7 +168,7 @@ class AccessibleNotesTest(TestCase):
         self.assertQuerySetEqual(notes, expected)
 
 
-class GetAllNotesTest(TestCase):
+class GetAllNotesTest(NotesTestCase):
 
     def create_notes(self):
         self.note1 = Note.objects.create(content="Note1")
@@ -208,6 +211,7 @@ class GetAllNotesTest(TestCase):
         )
 
     def setUp(self):
+        super().setUp()
 
         self.create_cases()
 
@@ -233,7 +237,7 @@ class GetAllNotesTest(TestCase):
         self.assertQuerySetEqual(notes, expected)
 
 
-class GetEntitiesOfTypeTest(TestCase):
+class GetEntitiesOfTypeTest(NotesTestCase):
     def create_users(self):
         self.admin_user = CradleUser.objects.create_superuser(
             username="admin", password="password", is_staff=True
@@ -303,6 +307,8 @@ class GetEntitiesOfTypeTest(TestCase):
         )
 
     def setUp(self):
+        super().setUp()
+
         self.create_users()
 
         self.create_cases()
@@ -334,7 +340,7 @@ class GetEntitiesOfTypeTest(TestCase):
         self.assertQuerySetEqual(notes, expected)
 
 
-class GetRelatedAccessibleEntitiesTest(TestCase):
+class GetRelatedAccessibleEntitiesTest(NotesTestCase):
     def create_users(self):
         self.admin_user = CradleUser.objects.create_superuser(
             username="admin", password="password", is_staff=True
@@ -404,6 +410,8 @@ class GetRelatedAccessibleEntitiesTest(TestCase):
         )
 
     def setUp(self):
+        super().setUp()
+
         self.create_users()
 
         self.create_cases()
@@ -439,3 +447,33 @@ class GetRelatedAccessibleEntitiesTest(TestCase):
         )
 
         self.assertQuerySetEqual(entities, expected)
+
+
+class GetInOrderTest(NotesTestCase):
+    def setUp(self):
+        super().setUp()
+        self.notes = []
+        for i in range(0, 4):
+            self.notes.append(Note.objects.create(content=f"Note{i}"))
+
+    def test_get_notes_in_order_ascending(self):
+        ids = [self.notes[0].id, self.notes[1].id]
+        notes = list(Note.objects.get_in_order(ids))
+
+        self.assertEqual(notes[0].id, self.notes[0].id)
+        self.assertEqual(notes[1].id, self.notes[1].id)
+
+    def test_get_notes_in_order_descending(self):
+        ids = [self.notes[1].id, self.notes[0].id]
+        notes = list(Note.objects.get_in_order(ids))
+
+        self.assertEqual(notes[0].id, self.notes[1].id)
+        self.assertEqual(notes[1].id, self.notes[0].id)
+
+    def test_get_notes_in_order_random_order(self):
+        ids = [self.notes[1].id, self.notes[0].id, self.notes[2].id]
+        notes = list(Note.objects.get_in_order(ids))
+
+        self.assertEqual(notes[0].id, self.notes[1].id)
+        self.assertEqual(notes[1].id, self.notes[0].id)
+        self.assertEqual(notes[2].id, self.notes[2].id)

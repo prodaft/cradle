@@ -10,6 +10,9 @@ variables:
   POSTGRES_PASSWORD: "postgres"
   POSTGRES_HOST_AUTH_METHOD: trust
   POSTGRES_HOST: "postgres"
+  MINIO_ENDPOINT: "" # placeholder
+  MINIO_ROOT_USER: "" # placeholder
+  MINIO_ROOT_PASSWORD: "" # placeholder
   PIPENV_CACHE_DIR: "$CI_PROJECT_DIR/.cache/packages"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 

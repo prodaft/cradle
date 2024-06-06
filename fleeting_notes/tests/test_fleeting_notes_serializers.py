@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from django.test import TestCase
+from .utils import FleetingNotesTestCase
 from fleeting_notes.models import FleetingNote
 from fleeting_notes.serializers import (
     FleetingNoteRetrieveSerializer,
@@ -15,8 +15,9 @@ from user.models import CradleUser
 User = get_user_model()
 
 
-class FleetingNoteSerializerTest(TestCase):
+class FleetingNoteSerializerTest(FleetingNotesTestCase):
     def setUp(self):
+        super().setUp()
         self.user = CradleUser.objects.create_user(
             username="user", password="password", is_staff=False
         )

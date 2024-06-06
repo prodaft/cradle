@@ -1,5 +1,4 @@
 from django.urls import reverse
-from django.test import TestCase
 from user.models import CradleUser
 from access.models import Access
 from access.enums import AccessType
@@ -7,11 +6,14 @@ from rest_framework_simplejwt.tokens import AccessToken
 from ..models import Note
 from entities.models import Entity
 from entities.enums import EntityType, EntitySubtype
+from .utils import NotesTestCase
 
 
-class CreateNoteTest(TestCase):
+class CreateNoteTest(NotesTestCase):
 
     def setUp(self):
+        super().setUp()
+
         self.user = CradleUser.objects.create_user(username="user", password="user")
         self.user_token = str(AccessToken.for_user(self.user))
         self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
@@ -22,7 +24,7 @@ class CreateNoteTest(TestCase):
         response = self.client.post(reverse("note_list"), {}, **self.headers)
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json()["detail"], "The note should not be empty")
+        self.assertEqual(response.json()["detail"], "The note should not be empty.")
 
     def test_create_note_empty_content(self):
         response = self.client.post(
@@ -30,7 +32,7 @@ class CreateNoteTest(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json()["detail"], "The note should not be empty")
+        self.assertEqual(response.json()["detail"], "The note should not be empty.")
 
     def test_create_note_not_authenticated(self):
         Access.objects.create(

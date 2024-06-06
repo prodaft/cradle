@@ -1,12 +1,14 @@
-from django.test import TestCase
 from entities.models import Entity
 from entities.enums import EntityType, EntitySubtype
 from notes.utils.entity_creation_task import EntityCreationTask
+from .utils import NotesTestCase
 
 
-class EntityCreationTaskTest(TestCase):
+class EntityCreationTaskTest(NotesTestCase):
 
     def setUp(self):
+        super().setUp()
+
         self.saved_actor = Entity.objects.create(name="actor", type=EntityType.ACTOR)
         self.saved_case = Entity.objects.create(name="case", type=EntityType.CASE)
 
