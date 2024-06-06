@@ -44,7 +44,7 @@ class GetFleetingNotesTest(FleetingNotesTestCase):
         self.assertEqual(bytes_to_json(response.content)[0]["content"], "Note2")
         self.assertEqual(
             bytes_to_json(response.content)[0]["last_edited"],
-            self.note_admin.last_edited.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            self.note_user.last_edited.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         )
         self.assertEqual(len(bytes_to_json(response.content)), 1)
 
