@@ -1,10 +1,7 @@
 from fleeting_notes.models import FleetingNote
-from user.models import CradleUser
 from django.urls import reverse
 from rest_framework.parsers import JSONParser
-from rest_framework.test import APIClient
 import io
-from rest_framework_simplejwt.tokens import AccessToken
 from .utils import FleetingNotesTestCase
 
 
@@ -13,26 +10,6 @@ def bytes_to_json(data):
 
 
 class GetFleetingNotesTest(FleetingNotesTestCase):
-    def setUp(self):
-        super().setUp()
-
-        self.client = APIClient()
-        self.admin_user = CradleUser.objects.create_user(
-            username="admin", password="password", is_staff=True
-        )
-        self.normal_user = CradleUser.objects.create_user(
-            username="user", password="password", is_staff=False
-        )
-        self.token_admin = str(AccessToken.for_user(self.admin_user))
-        self.token_normal = str(AccessToken.for_user(self.normal_user))
-        self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
-        self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
-
-    def tearDown(self):
-        # Clean up created objects
-        FleetingNote.objects.all().delete()
-        CradleUser.objects.all().delete()
-
     def test_delete_user_cascades_fleeting_notes(self):
         FleetingNote.objects.create(content="Note1", user=self.admin_user)
         note = FleetingNote.objects.create(content="Note2", user=self.normal_user)
@@ -96,25 +73,6 @@ class GetFleetingNotesTest(FleetingNotesTestCase):
 
 
 class PostFleetingNotesTest(FleetingNotesTestCase):
-    def setUp(self):
-        super().setUp()
-
-        self.client = APIClient()
-        self.admin_user = CradleUser.objects.create_user(
-            username="admin", password="password", is_staff=True
-        )
-        self.normal_user = CradleUser.objects.create_user(
-            username="user", password="password", is_staff=False
-        )
-        self.token_admin = str(AccessToken.for_user(self.admin_user))
-        self.token_normal = str(AccessToken.for_user(self.normal_user))
-        self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
-        self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
-
-    def tearDown(self):
-        # Clean up created objects
-        FleetingNote.objects.all().delete()
-        CradleUser.objects.all().delete()
 
     def test_post_not_authenticated(self):
         response_post = self.client.post(

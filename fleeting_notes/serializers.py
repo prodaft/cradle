@@ -2,12 +2,6 @@ from fleeting_notes.models import FleetingNote
 from rest_framework import serializers
 
 
-class FleetingNoteRetrieveSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FleetingNote
-        fields = ["id", "content", "last_edited"]
-
-
 class FleetingNoteTruncatedRetrieveSerializer(serializers.ModelSerializer):
     class Meta:
         model = FleetingNote
@@ -33,29 +27,7 @@ class FleetingNoteTruncatedRetrieveSerializer(serializers.ModelSerializer):
         return representation
 
 
-class FleetingNoteCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FleetingNote
-        fields = ["id", "content", "last_edited"]
-
-    def create(self, validated_data):
-        """
-        Creates a new FleetingNote entity based on the validated data.
-        Moreover, it sets the user field to correspond to the
-        authenticated user.
-
-        Args:
-            validated_data: a dictionary containing the attributes of
-                the FleetingNote entity
-
-        Returns:
-            The created FleetingNote entity
-        """
-        validated_data["user"] = self.context["request"].user
-        return super().create(validated_data)
-
-
-class FleetingNoteUpdateSerializer(serializers.ModelSerializer):
+class FleetingNoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = FleetingNote
         fields = ["id", "content", "last_edited"]
@@ -76,3 +48,19 @@ class FleetingNoteUpdateSerializer(serializers.ModelSerializer):
         instance.content = validated_data.get("content", instance.content)
         instance.save()
         return instance
+
+    def create(self, validated_data):
+        """
+        Creates a new FleetingNote entity based on the validated data.
+        Moreover, it sets the user field to correspond to the
+        authenticated user.
+
+        Args:
+            validated_data: a dictionary containing the attributes of
+                the FleetingNote entity
+
+        Returns:
+            The created FleetingNote entity
+        """
+        validated_data["user"] = self.context["request"].user
+        return super().create(validated_data)

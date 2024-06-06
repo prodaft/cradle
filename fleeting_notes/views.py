@@ -9,10 +9,8 @@ from rest_framework import status
 
 from fleeting_notes.models import FleetingNote
 from fleeting_notes.serializers import (
-    FleetingNoteCreateSerializer,
     FleetingNoteTruncatedRetrieveSerializer,
-    FleetingNoteUpdateSerializer,
-    FleetingNoteRetrieveSerializer,
+    FleetingNoteSerializer,
 )
 from user.models import CradleUser
 
@@ -59,7 +57,7 @@ class FleetingNotesList(APIView):
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
         """
-        serializer = FleetingNoteCreateSerializer(
+        serializer = FleetingNoteSerializer(
             data=request.data, context={"request": request}
         )
         if serializer.is_valid():
@@ -99,7 +97,7 @@ class FleetingNotesDetail(APIView):
                 "FleetingNote does not exist.", status=status.HTTP_404_NOT_FOUND
             )
 
-        serializer = FleetingNoteRetrieveSerializer(fleeting_note)
+        serializer = FleetingNoteSerializer(fleeting_note)
         return Response(serializer.data)
 
     def put(self, request: Request, pk: int) -> Response:
@@ -122,6 +120,11 @@ class FleetingNotesDetail(APIView):
                 if the user is not authenticated
                 or the user does not own the FleetingNote entity
         """
+        data = request.data
+        if "content" not in data or not data.get("content"):
+            return Response(
+                "Content cannot be empty", status=status.HTTP_400_BAD_REQUEST
+            )
         try:
             fleeting_note = FleetingNote.objects.get(
                 pk=pk, user=cast(CradleUser, request.user)
@@ -131,7 +134,7 @@ class FleetingNotesDetail(APIView):
                 "FleetingNote does not exist.", status=status.HTTP_404_NOT_FOUND
             )
 
-        serializer = FleetingNoteUpdateSerializer(fleeting_note, data=request.data)
+        serializer = FleetingNoteSerializer(fleeting_note, data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status.HTTP_200_OK)

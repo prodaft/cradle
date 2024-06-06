@@ -1,36 +1,15 @@
-from django.test import TestCase
-
 from fleeting_notes.models import FleetingNote
-from user.models import CradleUser
+from fleeting_notes.tests.utils import FleetingNotesTestCase
 from django.urls import reverse
 from rest_framework.parsers import JSONParser
-from rest_framework.test import APIClient
 import io
-from rest_framework_simplejwt.tokens import AccessToken
 
 
 def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class GetFleetingNoteByIdTest(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.admin_user = CradleUser.objects.create_user(
-            username="admin", password="password", is_staff=True
-        )
-        self.normal_user = CradleUser.objects.create_user(
-            username="user", password="password", is_staff=False
-        )
-        self.token_admin = str(AccessToken.for_user(self.admin_user))
-        self.token_normal = str(AccessToken.for_user(self.normal_user))
-        self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
-        self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
-
-    def tearDown(self):
-        # Clean up created objects
-        FleetingNote.objects.all().delete()
-        CradleUser.objects.all().delete()
+class GetFleetingNoteByIdTest(FleetingNotesTestCase):
 
     def test_get_not_authenticated(self):
         response = self.client.get(reverse("fleeting_notes_list"))
@@ -101,24 +80,7 @@ class GetFleetingNoteByIdTest(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
-class PutFleetingNotesByIdTest(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.admin_user = CradleUser.objects.create_user(
-            username="admin", password="password", is_staff=True
-        )
-        self.normal_user = CradleUser.objects.create_user(
-            username="user", password="password", is_staff=False
-        )
-        self.token_admin = str(AccessToken.for_user(self.admin_user))
-        self.token_normal = str(AccessToken.for_user(self.normal_user))
-        self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
-        self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
-
-    def tearDown(self):
-        # Clean up created objects
-        FleetingNote.objects.all().delete()
-        CradleUser.objects.all().delete()
+class PutFleetingNotesByIdTest(FleetingNotesTestCase):
 
     def test_put_not_authenticated(self):
         response = self.client.put(reverse("fleeting_notes_detail", kwargs={"pk": 1}))
@@ -214,25 +176,39 @@ class PutFleetingNotesByIdTest(TestCase):
 
         self.assertEqual(response.status_code, 404)
 
+    def test_put_fleeting_note_by_id_invalid_content(self):
+        note = FleetingNote.objects.create(content="Note1", user=self.admin_user)
 
-class DeleteFleetingNotesByIdTest(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.admin_user = CradleUser.objects.create_user(
-            username="admin", password="password", is_staff=True
+        response = self.client.put(
+            reverse("fleeting_notes_detail", kwargs={"pk": note.pk}),
+            {"content": ""},
+            **self.headers_admin,
         )
-        self.normal_user = CradleUser.objects.create_user(
-            username="user", password="password", is_staff=False
-        )
-        self.token_admin = str(AccessToken.for_user(self.admin_user))
-        self.token_normal = str(AccessToken.for_user(self.normal_user))
-        self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
-        self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
 
-    def tearDown(self):
-        # Clean up created objects
-        FleetingNote.objects.all().delete()
-        CradleUser.objects.all().delete()
+        self.assertEqual(response.status_code, 400)
+
+    def test_put_fleeting_note_by_id_invalid_content_and_not_own_note(self):
+        note = FleetingNote.objects.create(content="Note1", user=self.admin_user)
+
+        response = self.client.put(
+            reverse("fleeting_notes_detail", kwargs={"pk": note.pk}),
+            {"content": ""},
+            **self.headers_normal,
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_put_fleeting_note_by_id_invalid_content_and_note_does_not_exist(self):
+        response = self.client.put(
+            reverse("fleeting_notes_detail", kwargs={"pk": 1}),
+            {"content": ""},
+            **self.headers_admin,
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+
+class DeleteFleetingNotesByIdTest(FleetingNotesTestCase):
 
     def test_delete_not_authenticated(self):
         response = self.client.delete(
