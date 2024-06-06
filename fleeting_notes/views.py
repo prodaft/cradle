@@ -9,8 +9,8 @@ from rest_framework import status
 
 from fleeting_notes.models import FleetingNote
 from fleeting_notes.serializers import (
-    FleetingNoteCreateSerializer,
     FleetingNoteTruncatedRetrieveSerializer,
+    FleetingNoteSerializer,
 )
 from user.models import CradleUser
 
@@ -57,10 +57,115 @@ class FleetingNotesList(APIView):
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
         """
-        serializer = FleetingNoteCreateSerializer(
+        serializer = FleetingNoteSerializer(
             data=request.data, context={"request": request}
         )
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FleetingNotesDetail(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, pk: int) -> Response:
+        """
+        Get a FleetingNote entity by its primary key.
+        Only the owner of the FleetingNote entity can access it.
+
+        Args:
+            request: The request that was sent
+            pk: The primary key of the FleetingNote entity
+
+        Returns:
+            Response(serializer.data, status=200):
+                The FleetingNote entity
+            Response("FleetingNote does not exist.", status=404):
+                if the FleetingNote entity does not exist
+            Response("User is not authenticated.", status=401):
+                if the user is not authenticated
+                or the user does not own the FleetingNote entity
+        """
+        try:
+            fleeting_note = FleetingNote.objects.get(
+                pk=pk, user=cast(CradleUser, request.user)
+            )
+        except FleetingNote.DoesNotExist:
+            return Response(
+                "FleetingNote does not exist.", status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = FleetingNoteSerializer(fleeting_note)
+        return Response(serializer.data)
+
+    def put(self, request: Request, pk: int) -> Response:
+        """
+        Update a FleetingNote entity by its primary key.
+        Only the owner of the FleetingNote entity can update it.
+
+        Args:
+            request: The request that was sent
+            pk: The primary key of the FleetingNote entity
+
+        Returns:
+            Response(serializer.data, status=200):
+                The updated FleetingNote entity
+            Response(serializer.errors, status=400):
+                if the request was unsuccessful
+            Response("FleetingNote does not exist.", status=404):
+                if the FleetingNote entity does not exist
+            Response("User is not authenticated.", status=401):
+                if the user is not authenticated
+                or the user does not own the FleetingNote entity
+        """
+        data = request.data
+        if "content" not in data or not data.get("content"):
+            return Response(
+                "Content cannot be empty", status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            fleeting_note = FleetingNote.objects.get(
+                pk=pk, user=cast(CradleUser, request.user)
+            )
+        except FleetingNote.DoesNotExist:
+            return Response(
+                "FleetingNote does not exist.", status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = FleetingNoteSerializer(fleeting_note, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request: Request, pk: int) -> Response:
+        """
+        Delete a FleetingNote entity by its primary key.
+        Only the owner of the FleetingNote entity can delete it.
+
+        Args:
+            request: The request that was sent
+            pk: The primary key of the FleetingNote entity
+
+        Returns:
+            Response(status=200):
+                if the FleetingNote entity was successfully deleted
+            Response("FleetingNote does not exist.", status=404):
+                if the FleetingNote entity does not exist
+            Response("User is not authenticated.", status=401):
+                if the user is not authenticated
+                or the user does not own the FleetingNote entity
+        """
+        try:
+            fleeting_note = FleetingNote.objects.get(
+                pk=pk, user=cast(CradleUser, request.user)
+            )
+        except FleetingNote.DoesNotExist:
+            return Response(
+                "FleetingNote does not exist.", status=status.HTTP_404_NOT_FOUND
+            )
+
+        fleeting_note.delete()
+        return Response(status=status.HTTP_200_OK)
