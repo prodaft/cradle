@@ -45,11 +45,10 @@ describe('Home Component', () => {
         expect(useAuth().logOut).toHaveBeenCalled();
     });
 
-    test('navigates to "/not-implemented" when clicking a not implemented action', () => {
-        const { getByText } = setupTestComponent()
+    test('display fleeting notes panel when clicking fleeting notes button', () => {
+        const { getByTestId } = setupTestComponent()
 
-        fireEvent.click(getByText('New Note'));
-        expect(window.location.pathname).toEqual('/');
-        expect(getByText('Not implemented')).toBeInTheDocument();
+        fireEvent.click(getByTestId('fleeting-notes-button'));
+        expect(getByTestId("fleeting-notes-panel")).toBeInTheDocument();
     });
 });
