@@ -16,21 +16,21 @@ describe('NavbarDropdown', () => {
     const text = 'Dropdown';
 
     it('renders the dropdown button with the provided icon', () => {
-        const { getByTestId } = render(<NavbarDropdown contents={contents} icon={icon} text={text} />);
+        const { getByTestId } = render(<NavbarDropdown contents={contents} icon={icon} text={text} testid={"dropdown-button"} />);
         const dropdownButton = getByTestId('dropdown-button');
         expect(dropdownButton).toBeInTheDocument();
         expect(dropdownButton).toContainHTML('<i class="fa fa-bars"></i>');
     });
 
     it('renders the dropdown menu with the provided contents', () => {
-        const { getByTestId } = render(<NavbarDropdown contents={contents} icon={icon} text={text} />);
+        const { getByTestId } = render(<NavbarDropdown contents={contents} icon={icon} text={text} testid={"dropdown-button"} />);
         const dropdownMenu = getByTestId('dropdown-menu');
         expect(dropdownMenu).toBeInTheDocument();
         expect(dropdownMenu.children.length).toBe(contents.length);
     });
 
     it('calls the handler function when a dropdown item is clicked', () => {
-        const { getByText } = render(<NavbarDropdown contents={contents} icon={icon} text={text} />);
+        const { getByText } = render(<NavbarDropdown contents={contents} icon={icon} text={text} testid={"dropdown-button"} />);
         const dropdownItem = getByText('Option 1');
         fireEvent.click(dropdownItem);
         expect(contents[0].handler).toHaveBeenCalled();
