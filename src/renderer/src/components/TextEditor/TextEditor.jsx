@@ -1,4 +1,3 @@
-import useLocalStorageMarkdown from "../../hooks/useMarkdownContent/useMarkdownContent.js";
 import Editor from "../Editor/Editor";
 import Preview from "../Preview/Preview";
 import { FloppyDisk } from "iconoir-react/regular";
@@ -14,6 +13,7 @@ import useLightMode from "../../hooks/useLightMode/useLightMode.js";
 import NavbarDropdown from "../NavbarDropdown/NavbarDropdown.jsx";
 import { addFleetingNote } from "../../services/fleetingNotesService/fleetingNotesService";
 import { useChangeFlexDirectionBySize } from "../../hooks/useChangeFlexDirectionBySize/useChangeFlexDirectionBySize";
+import { useLocalStorage } from "@uidotdev/usehooks";
 
 /**
  * The text editor is composed of two subcomponents, the Editor and the Preview. View their documentation for more details
@@ -30,7 +30,7 @@ import { useChangeFlexDirectionBySize } from "../../hooks/useChangeFlexDirection
  * @returns {TextEditor}
  */
 export default function TextEditor() {
-    const [markdownContent, setMarkdownContentCallback] = useLocalStorageMarkdown();
+    const [markdownContent, setMarkdownContentCallback] = useLocalStorage("md-content", "");
     const markdownContentRef = useRef(markdownContent);
     const auth = useAuth();
     const [alert, setAlert] = useState("");
@@ -38,7 +38,7 @@ export default function TextEditor() {
     const navigate = useNavigate();
     const parsedContent = parseContent(markdownContent);
     const isLightMode = useLightMode();
-    const [fileData, setFileData] = useState([]); // TODO remove this when the backend is implemented. Fetch the note and the 
+    const [fileData, setFileData] = useLocalStorage("file-data", []);
     const textEditorRef = useRef(null);
     const { refreshFleetingNotes } = useOutletContext();
 

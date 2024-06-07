@@ -58,7 +58,7 @@ export default function AlertDismissible({ alert, setAlert, color = "red", durat
                         <progress
                             value={timeLeft}
                             max={duration}
-                            className="h-[0.3em] progress progress-flat-secondary w-full !rounded-md"
+                            className="h-[0.3em] progress progress-flat-secondary w-full !rounded-md opacity-75"
                         />
                     </div>
                 </div>
