@@ -29,7 +29,7 @@ export default function SearchDialog({ isOpen, onClose }) {
     const [showFilters, setShowFilters] = useState(false);
     const [entityTypeFilters, setEntityTypeFilters] = useState([]);
     const [entitySubtypeFilters, setEntitySubtypeFilters] = useState([]);
-    const [results, setResults] = useState([]);
+    const [results, setResults] = useState(null);
     const [error, setError] = useState("");
     const [errorColor, setErrorColor] = useState("red");
     const dialogRoot = document.getElementById('portal-root');
@@ -38,6 +38,7 @@ export default function SearchDialog({ isOpen, onClose }) {
     useEffect(() => {
         if (isOpen && inputRef.current) {
             inputRef.current.focus();
+            performSearch();
         }
     }, [isOpen]);
 
@@ -102,7 +103,9 @@ export default function SearchDialog({ isOpen, onClose }) {
                     entryTypeFilters={entitySubtypeFilters} setEntryTypeFilters={setEntitySubtypeFilters} />
                 {error && (<AlertBox title={error} color={errorColor} />)}
                 <div className="flex-grow overflow-y-auto no-scrollbar space-y-2">
-                    {results}
+                    {results && results.length > 0 ? results
+                        : <div className="w-full text-center text-zinc-500">No results found</div>
+                    }
                 </div>
             </div>
         </div>,

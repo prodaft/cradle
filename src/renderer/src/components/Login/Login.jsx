@@ -1,12 +1,12 @@
-import React, { useRef, useState } from "react";
-import { UserCircle } from "iconoir-react";
+import React, {useRef, useState} from "react";
+import {UserCircle} from "iconoir-react";
 import FormField from "../FormField/FormField";
-import { Link } from "react-router-dom"
-import { useNavigate } from "react-router-dom";
-import { logInReq } from "../../services/authReqService/authReqService";
+import {Link} from "react-router-dom"
+import {useNavigate} from "react-router-dom";
+import {logInReq} from "../../services/authReqService/authReqService";
 import AlertBox from "../AlertBox/AlertBox";
-import { useAuth } from "../../hooks/useAuth/useAuth";
-import { displayError } from "../../utils/responseUtils/responseUtils";
+import {useAuth} from "../../hooks/useAuth/useAuth";
+import {displayError} from "../../utils/responseUtils/responseUtils";
 import useWindowSize from "../../hooks/useWindowSize/useWindowSize";
 
 /**
@@ -17,69 +17,73 @@ import useWindowSize from "../../hooks/useWindowSize/useWindowSize";
  * @constructor
  */
 export default function Login() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [errorColor, setErrorColor] = useState("red");
-  const windowSize = useWindowSize();
-  const usernameField = useRef(null);
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const [errorColor, setErrorColor] = useState("red");
+    const windowSize = useWindowSize();
+    const usernameField = useRef(null);
 
-  const auth = useAuth();
+    const auth = useAuth();
 
-  const navigate = useNavigate();
+    const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-    const data = { 'username': username, 'password': password };
+        const data = {'username': username, 'password': password};
 
-    logInReq(data).then((res) => {
-      if (res.status === 200) {
-        auth.logIn(res.data["access"], res.data["refresh"])
-      }
-      navigate("/");
-    }).catch(displayError(setError, setErrorColor));
-  };
 
-  return (
-    <div className="flex flex-row items-center justify-center h-screen overflow-y-auto">
-      <div className="bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 xl:w-1/3">
-        <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8 text-gray-500">
-          <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-            {windowSize.height > 800 && (
-              <div>
-                <div className="flex flex-row  items-center justify-center">
-                  <UserCircle color="#f68d2e" height={120} width={120} />
+        logInReq(data).then((res) => {
+            if (res.status === 200) {
+                auth.logIn(res.data["access"], res.data["refresh"])
+            }
+            navigate("/");
+        }).catch(displayError(setError, setErrorColor));
+    };
+
+    return (
+        <div className="flex flex-row items-center justify-center h-screen overflow-y-auto">
+            <div
+                className="bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 xl:w-1/3">
+                <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8 text-gray-500">
+                    <div className="sm:mx-auto sm:w-full sm:max-w-sm">
+                        {windowSize.height > 800 && (
+                            <div>
+                                <div className="flex flex-row  items-center justify-center">
+                                    <UserCircle color="#f68d2e" height={120} width={120}/>
+                                </div>
+                                <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-cradle2">
+                                    Welcome to CRADLE!
+                                </h2>
+                            </div>)}
+                        <h3 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight ">
+                            Login
+                        </h3>
+                    </div>
+                    <div name="login-form" className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+                        <form className="space-y-6" onSubmit={handleSubmit}>
+                            <FormField name="username" labelText="Username" type="text" handleInput={setUsername}
+                                       autofocus={true}/>
+                            <FormField name="password" labelText="Password" type="password" handleInput={setPassword}/>
+                            {error && (<AlertBox title={error} color={errorColor}/>)}
+                            <button
+                                type="submit"
+                                data-testid="login-register-button"
+                                className="btn btn-primary btn-block"
+                            >
+                                Login
+                            </button>
+                        </form>
+                        <p className="mt-10 text-center text-sm text-gray-500">
+                            <Link to="/register"
+                                  className="font-semibold leading-6 text-cradle2 hover:opacity-90 hover:shadow-gray-400">
+                                Register
+                            </Link>
+                        </p>
+                    </div>
                 </div>
-                <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-cradle2">
-                  Welcome to CRADLE!
-                </h2>
-              </div>)}
-            <h3 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight ">
-              Login
-            </h3>
-          </div>
-          <div name="login-form" className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              <FormField name="username" labelText="Username" type="text" handleInput={setUsername} autofocus={true} />
-              <FormField name="password" labelText="Password" type="password" handleInput={setPassword} />
-              {error && (<AlertBox title={error} color={errorColor} />)}
-              <button
-                type="submit"
-                data-testid="login-register-button"
-                className="btn btn-primary btn-block"
-              >
-                Login
-              </button>
-            </form>
-            <p className="mt-10 text-center text-sm text-gray-500">
-              <Link to="/register" className="font-semibold leading-6 text-cradle2 hover:opacity-90 hover:shadow-gray-400">
-                Register
-              </Link>
-            </p>
-          </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }
