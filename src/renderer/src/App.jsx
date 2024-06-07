@@ -14,7 +14,9 @@ import Dashboard from "./components/Dashboard/Dashboard";
 import NotFound from './components/NotFound/NotFound.jsx';
 import PublishPreview from './components/PublishPreview/PublishPreview.jsx';
 import NoteViewer from "./components/NoteViewer/NoteViewer";
+import FleetingNoteEditor from "./components/FleetingNoteEditor/FleetingNoteEditor";
 import NoteSelector from './components/NoteSelector/NoteSelector.jsx';
+
 
 /**
  * The App component is the entry point of the application. It wraps the entire application in the AuthProvider
@@ -34,6 +36,7 @@ function App() {
               {/* Add any routes for components that keep the sidebar and navbar here */}
               <Route path="/not-implemented" element={<FeatureNotImplemented />} />
               <Route path="/editor" element={<TextEditor />} />
+              <Route path="/fleeting-editor/:id" element={<FleetingNoteEditor/>} />
               <Route path="/dashboards/*" element={<Dashboard />} />
               <Route path="/notes/:id" element={<NoteViewer />} />
               <Route path="/notes" element={<NoteSelector />} />

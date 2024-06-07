@@ -5,7 +5,8 @@ import { render, fireEvent, screen } from '@testing-library/react';
 import '@testing-library/jest-dom'
 import TextEditor from './TextEditor';
 import { saveNote } from "../../services/textEditorService/textEditorService";
-import { MemoryRouter } from 'react-router-dom';
+import {MemoryRouter, Route, Routes} from 'react-router-dom';
+import Home from "../Home/Home";
 
 const markdownContent =`
 # Hello world!
@@ -34,7 +35,17 @@ console.log("Hello world!");
 `;
 
 jest.mock('../../hooks/useNavbarContents/useNavbarContents', () => () => { });
+jest.mock('react-router-dom', () => ({
+    ...jest.requireActual('react-router-dom'),
+    useNavigate: () => jest.fn(),
+    useOutletContext: () => jest.fn(),
+}));
 
+global.ResizeObserver = jest.fn().mockImplementation(() => ({
+    observe: jest.fn(),
+    unobserve: jest.fn(),
+    disconnect: jest.fn(),
+}));
 
 
 jest.mock('../../hooks/useAuth/useAuth', () => ({
@@ -58,13 +69,16 @@ window.matchMedia = jest.fn().mockImplementation(query => ({
     dispatchEvent: jest.fn(),
 }));
 
-test('renders as expected', () => {
-    render(
-        <MemoryRouter>
-            <TextEditor />
-        </MemoryRouter>
-    )
+describe('TextEditor', () => {
+    test('renders as expected', () => {
+        render(
+            <MemoryRouter>
+                <TextEditor />
+            </MemoryRouter>
+        )
 
-    expect(screen.getByTestId('preview')).toBeInTheDocument();
-    expect(screen.getByTestId('markdown-input')).toBeInTheDocument();
+        expect(screen.getByTestId('preview')).toBeInTheDocument();
+        expect(screen.getByTestId('markdown-input')).toBeInTheDocument();
+    });
 });
+
