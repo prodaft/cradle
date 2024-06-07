@@ -16,6 +16,7 @@ export default function AlertDismissible({ alert, setAlert, color = "red", durat
     const colorVariants = {
         green: 'bg-success',
         red: 'bg-error',
+        gray: 'bg-zinc-600',
     };
 
     const [timeLeft, setTimeLeft] = useState(duration);

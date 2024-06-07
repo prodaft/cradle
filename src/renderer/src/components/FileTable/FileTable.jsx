@@ -30,10 +30,11 @@ export default function FileTable({ files, setFiles }) {
             .catch(displayError(setAlert, setAlertColor));
     };
 
+    // Removes a file from the table only. The file is not deleted from the server.
     const handleDelete = (file) => {
-        console.log("Delete file with name " + file.name);
-        setAlert("Not implemented yet."); // TODO only from note files
-        setAlertColor("red");
+        setFiles(files.filter(f => f.name !== file.name));
+        setAlert(`Removed "${file.name}".`);
+        setAlertColor("gray");
     };
 
     return (
@@ -60,12 +61,16 @@ export default function FileTable({ files, setFiles }) {
                                 </div>
                                 <div className="text-zinc-200 flex items-center">
                                     <button
+                                        id={`copy-${index}`}
+                                        data-testid={`copy-${index}`}
                                         className="px-2 py-1 rounded hover:opacity-60 bg-zinc-3"
                                         onClick={() => copyToClipboard(`[${file.name}][${file.tag}]`)}
                                     >
                                         <PasteClipboard width="20px" />
                                     </button>
                                     <button
+                                        id={`delete-${index}`}
+                                        data-testid={`delete-${index}`}
                                         className="px-2 py-1 rounded hover:opacity-60 bg-zinc-3"
                                         onClick={() => handleDelete(file)}
                                     >
