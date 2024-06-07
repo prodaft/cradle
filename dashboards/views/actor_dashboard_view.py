@@ -10,6 +10,7 @@ from entities.models import Entity
 from user.models import CradleUser
 from ..utils.dashboard_utils import DashboardUtils
 from ..serializers import ActorDashboardSerializer
+from logs.decorators import log_failed_responses
 
 
 class ActorDashboard(APIView):
@@ -17,6 +18,7 @@ class ActorDashboard(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @log_failed_responses
     def get(self, request: Request, actor_name: str) -> Response:
         """Allow a user to retrieve the dashboard of an Actor by specifying its name.
 

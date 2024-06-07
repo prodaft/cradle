@@ -13,6 +13,7 @@ from fleeting_notes.serializers import (
     FleetingNoteSerializer,
 )
 from user.models import CradleUser
+from logs.decorators import log_failed_responses
 
 
 class FleetingNotesList(APIView):
@@ -20,6 +21,7 @@ class FleetingNotesList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @log_failed_responses
     def get(self, request: Request) -> Response:
         """
         Get all the FleetingNotes that belong to the authenticated user.
@@ -41,6 +43,7 @@ class FleetingNotesList(APIView):
         serializer = FleetingNoteTruncatedRetrieveSerializer(fleeting_notes, many=True)
         return Response(serializer.data)
 
+    @log_failed_responses
     def post(self, request: Request) -> Response:
         """
         Create a new FleetingNote entity based on the request data.
