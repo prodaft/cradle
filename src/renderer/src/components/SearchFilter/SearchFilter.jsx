@@ -9,7 +9,7 @@ import React from "react";
  * @returns {SearchFilter}
  * @constructor
  */
-export default function SearchFilter({option, filters, setFilters}) {
+export default function SearchFilter({ option, filters, setFilters }) {
 
     const updatePrevState = (prevState, name, checked) => {
         if (checked) {
@@ -26,7 +26,7 @@ export default function SearchFilter({option, filters, setFilters}) {
 
     return (
         <label key={option} className="flex items-center space-x-3 w-36">
-            <input type="checkbox" className="checkbox focus:ring-0" name={option} checked={filters.includes(option)} onChange={handleCheckboxChange}/>
+            <input type="checkbox" className="form-checkbox checkbox focus:ring-0" name={option} checked={filters.includes(option)} onChange={handleCheckboxChange} />
             <span>{option}</span>
         </label>
     );

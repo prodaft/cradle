@@ -32,7 +32,9 @@ module.exports = {
 
         require('@tailwindcss/typography'),
         require('tailwind-scrollbar'),
-        require('@tailwindcss/forms'),
+        require('@tailwindcss/forms')({
+          strategy: 'class',
+        }),
         require("rippleui"),
         function ({ addUtilities, addBase }) {
             addUtilities({

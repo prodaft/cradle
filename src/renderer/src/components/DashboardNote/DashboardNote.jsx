@@ -94,7 +94,7 @@ export default function DashboardNote({ index, note, setAlert, setAlertColor, pu
                                 type="checkbox"
                                 defaultChecked={true}
                                 checked={isSelected}
-                                className="checkbox checkbox-primary"
+                                className="form-checkbox checkbox checkbox-primary"
                                 onClick={handleSelectNote}
                             />
                         ) : (
@@ -108,7 +108,7 @@ export default function DashboardNote({ index, note, setAlert, setAlertColor, pu
                                     checked={isPublishable}
                                     id={`publishable-switch-${note.id}`}
                                     type="checkbox"
-                                    className="switch switch-ghost-primary focus:ring-0"
+                                    className="switch switch-ghost-primary"
                                     onChange={() => handleTogglePublishable(note.id)}
                                 />
                             </span>
