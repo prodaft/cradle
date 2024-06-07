@@ -47,19 +47,6 @@ export default function Editor({ markdownContent, setMarkdownContent, fileData, 
         extensions = extensions.concat(vim())
     }
 
-    // TODO remove this when the backend is implemented
-    const dummyFiles = [
-        { tag: '200f2376-ea07-4ed7-8161-53344a0a6553-file1.txt', name: 'file1.txt' },
-        { tag: '36b8f84d-df4e-4d49-b662-bcde71a8764f-file2.jpg', name: 'file2.jpg' },
-        { tag: '140a555b-815f-452f-85ca-b9ddd341ec63-file3.pdf', name: 'file3.pdf' },
-        { tag: 'e9e694f5-cc18-416e-be87-34d6554b93c8-file4.txt', name: 'file4.txt' },
-        { tag: 'e7eac395-01bc-435d-8e5f-1689d0d591e7-file5.jpg', name: 'file5.jpg' },
-        { tag: '379ab7ef-a928-4844-955f-9c7e66bc293f-file6.pdf', name: 'file6.pdf' },
-        { tag: 'a26b5ab4-6017-4e37-9aca-dd1fcc0ebff0-file7.txt', name: 'file7.txt' },
-        { tag: '082b4031-68dc-41b5-a084-5be15f632bf7-file8.jpg', name: 'file8.jpg' },
-        { tag: 'cbf7b0a5-6b07-44f6-b568-3db30e4b3427-file9.pdf', name: 'file9.pdf' },
-    ];
-
     const toggleFileList = useCallback(() => {
         setShowFileList(!showFileList);
     }, [showFileList]);
