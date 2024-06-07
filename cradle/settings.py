@@ -32,12 +32,19 @@ SECRET_KEY = "django-insecure-0in+njnc5mjf3xuh$yjy+$s@78-!9rh$qjzv@aqw+*c$zh&d*&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS: List[str] = []
+ALLOWED_HOSTS: List[str] = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(
+    ","
+)
+
+# CORS_ALLOW_HEADERS = ["*"]
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_ALLOW_ALL = True
 
 
 # Application definition
-
 INSTALLED_APPS = [
+    "corsheaders",
     "logs.apps.LogsConfig",
     "file_transfer.apps.FileTransferConfig",
     "query.apps.QueryConfig",
@@ -53,15 +60,14 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt",
 ]
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -119,10 +125,6 @@ SIMPLE_JWT = {
 }
 
 ROOT_URLCONF = "cradle.urls"
-
-CORS_ALLOW_HEADERS = ["*"]
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_CREDENTIALS = True
 
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
