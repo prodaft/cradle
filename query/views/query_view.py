@@ -11,6 +11,7 @@ from entities.models import Entity
 from access.models import Access
 from ..serializers import EntityQuerySerializer
 from entities.serializers import EntitySerializer
+from logs.decorators import log_failed_responses
 
 
 class QueryList(APIView):
@@ -18,6 +19,7 @@ class QueryList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @log_failed_responses
     def get(self, request: Request) -> Response:
         """Allow a user to query for any entity they have access, by providing a name,
         a list of possible types and, if it is an Entry, a list of possible subtypes

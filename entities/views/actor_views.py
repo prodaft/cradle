@@ -7,6 +7,8 @@ from rest_framework.request import Request
 
 from ..serializers import ActorResponseSerializer, ActorSerializer
 from ..models import Entity
+from logs.utils import LoggingUtils
+from logs.decorators import log_failed_responses
 
 
 class ActorList(APIView):
@@ -14,6 +16,7 @@ class ActorList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdminUser]
 
+    @log_failed_responses
     def get(self, request: Request) -> Response:
         """Allow an admin to retrieve the details of all Actors
 
@@ -34,6 +37,7 @@ class ActorList(APIView):
 
         return Response(serializer.data)
 
+    @log_failed_responses
     def post(self, request: Request) -> Response:
         """Allow an admin to create a new Actor by specifying its name
 
@@ -57,6 +61,7 @@ class ActorList(APIView):
 
         if serializer.is_valid():
             serializer.save()
+            LoggingUtils.log_entity_creation(request)
             return Response(serializer.data)
 
         return Response("Bad request", status=status.HTTP_400_BAD_REQUEST)
@@ -67,6 +72,7 @@ class ActorDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdminUser]
 
+    @log_failed_responses
     def delete(self, request: Request, actor_id: int) -> Response:
         """Allow an admin to delete an Actor by specifying its id
 
@@ -92,5 +98,6 @@ class ActorDetail(APIView):
                 "There is no actor with specified ID", status=status.HTTP_404_NOT_FOUND
             )
 
+        LoggingUtils.log_entity_deletion(request)
         actor.delete()
         return Response("Requested actor was deleted", status=status.HTTP_200_OK)
