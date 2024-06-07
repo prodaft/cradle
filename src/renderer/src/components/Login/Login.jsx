@@ -1,13 +1,14 @@
-import React, {useRef, useState} from "react";
-import {UserCircle} from "iconoir-react";
+import React, { useRef, useState } from "react";
+import { UserCircle } from "iconoir-react";
 import FormField from "../FormField/FormField";
-import {Link} from "react-router-dom"
-import {useNavigate} from "react-router-dom";
-import {logInReq} from "../../services/authReqService/authReqService";
+import { Link } from "react-router-dom"
+import { useNavigate } from "react-router-dom";
+import { logInReq } from "../../services/authReqService/authReqService";
 import AlertBox from "../AlertBox/AlertBox";
-import {useAuth} from "../../hooks/useAuth/useAuth";
-import {displayError} from "../../utils/responseUtils/responseUtils";
-import useWindowSize from "../../hooks/useWindowSize/useWindowSize";
+import { useAuth } from "../../hooks/useAuth/useAuth";
+import { displayError } from "../../utils/responseUtils/responseUtils";
+import { useWindowSize } from "@uidotdev/usehooks";
+
 
 /**
  * Login component - renders the login form.
@@ -31,7 +32,7 @@ export default function Login() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const data = {'username': username, 'password': password};
+        const data = { 'username': username, 'password': password };
 
 
         logInReq(data).then((res) => {
@@ -51,7 +52,7 @@ export default function Login() {
                         {windowSize.height > 800 && (
                             <div>
                                 <div className="flex flex-row  items-center justify-center">
-                                    <UserCircle color="#f68d2e" height={120} width={120}/>
+                                    <UserCircle color="#f68d2e" height={120} width={120} />
                                 </div>
                                 <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-cradle2">
                                     Welcome to CRADLE!
@@ -64,9 +65,9 @@ export default function Login() {
                     <div name="login-form" className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
                         <form className="space-y-6" onSubmit={handleSubmit}>
                             <FormField name="username" labelText="Username" type="text" handleInput={setUsername}
-                                       autofocus={true}/>
-                            <FormField name="password" labelText="Password" type="password" handleInput={setPassword}/>
-                            {error && (<AlertBox title={error} color={errorColor}/>)}
+                                autofocus={true} />
+                            <FormField name="password" labelText="Password" type="password" handleInput={setPassword} />
+                            {error && (<AlertBox title={error} color={errorColor} />)}
                             <button
                                 type="submit"
                                 data-testid="login-register-button"
@@ -77,7 +78,7 @@ export default function Login() {
                         </form>
                         <p className="mt-10 text-center text-sm text-gray-500">
                             <Link to="/register"
-                                  className="font-semibold leading-6 text-cradle2 hover:opacity-90 hover:shadow-gray-400">
+                                className="font-semibold leading-6 text-cradle2 hover:opacity-90 hover:shadow-gray-400">
                                 Register
                             </Link>
                         </p>

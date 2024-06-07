@@ -40,13 +40,12 @@ export default function FileInput({ fileData, setFileData }) {
 
         // Attempt to upload all files and remember which files succeed and which fail
         setIsUploading(true);
-        const succeededFileData = new Array();
+        const succeededFileData = [];
         const failedFiles = new DataTransfer();
         const fileUploadPromises = Array.from(pendingFiles).map(file => getUploadLink(auth.access, file.name)
             .then(async (res) => {
                 const uploadUrl = res.data.presigned;
                 const tag = res.data.minio_file_name;
-                console.log(res.data)
                 await uploadFile(uploadUrl, file);
                 return tag;
             })
@@ -64,10 +63,7 @@ export default function FileInput({ fileData, setFileData }) {
         Promise.all(fileUploadPromises)
             .then(() => {
                 // Add the files that succeeded to the list of files
-                console.log("file data", fileData)
-                console.log("succeeded", succeededFileData)
-                const concatFileData = fileData.concat(succeededFileData);
-                setFileData(concatFileData);
+                setFileData(fileData.concat(succeededFileData));
             })
             .then(() => {
                 // All other files are kept in the input fields and the user is alerted
