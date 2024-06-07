@@ -38,6 +38,7 @@ ALLOWED_HOSTS: List[str] = []
 # Application definition
 
 INSTALLED_APPS = [
+    "logs.apps.LogsConfig",
     "file_transfer.apps.FileTransferConfig",
     "query.apps.QueryConfig",
     "dashboards.apps.DashboardsConfig",
@@ -66,6 +67,35 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "success_file": {
+            "level": "WARNING",
+            "class": "logging.FileHandler",
+            "filename": "var/log/success.log",
+        },
+        "error_file": {
+            "level": "WARNING",
+            "class": "logging.FileHandler",
+            "filename": "var/log/error.log",
+        },
+    },
+    "loggers": {
+        "django.success": {
+            "handlers": ["success_file"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "django.error": {
+            "handlers": ["error_file"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+    },
+}
 
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),

@@ -11,6 +11,7 @@ from entities.enums import EntrySubtype
 from user.models import CradleUser
 from ..utils.dashboard_utils import DashboardUtils
 from ..serializers import EntryDashboardSerializer
+from logs.decorators import log_failed_responses
 
 
 class EntryDashboard(APIView):
@@ -18,6 +19,7 @@ class EntryDashboard(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @log_failed_responses
     def get(self, request: Request, entry_name: str) -> Response:
         """Allow a user to retrieve the dashboard of an Entry by specifying its name.
 

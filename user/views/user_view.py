@@ -6,6 +6,7 @@ from rest_framework import status
 from ..serializers import UserCreateSerializer, UserRetrieveSerializer
 
 from ..models import CradleUser
+from logs.decorators import log_failed_responses
 
 
 class UserList(APIView):
@@ -19,6 +20,7 @@ class UserList(APIView):
             self.permission_classes = []
         return super().get_permissions()
 
+    @log_failed_responses
     def get(self, request):
         """Allow an admin to view a list including all users of the application.
 
@@ -38,6 +40,7 @@ class UserList(APIView):
         serializer = UserRetrieveSerializer(users, many=True)
         return Response(serializer.data)
 
+    @log_failed_responses
     def post(self, request):
         """Allows a user to create a new account,
         by sending a request with their username and password.
@@ -69,6 +72,7 @@ class UserDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdminUser]
 
+    @log_failed_responses
     def delete(self, request, user_id):
         """The admin can use this to delete the account with id userId.
 
