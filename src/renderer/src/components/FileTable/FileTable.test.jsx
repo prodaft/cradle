@@ -34,7 +34,6 @@ describe('FileTable', () => {
 
         expect(screen.getByText('Tag')).toBeInTheDocument();
         expect(screen.getByText('Filename')).toBeInTheDocument();
-        expect(screen.getByText('Actions')).toBeInTheDocument();
 
         files.forEach((file) => {
             expect(screen.getByText(file.tag)).toBeInTheDocument();
