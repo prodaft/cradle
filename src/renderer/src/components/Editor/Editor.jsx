@@ -88,19 +88,21 @@ export default function Editor({ markdownContent, setMarkdownContent, fileData, 
                     />
                 </div>
             </div>
-            <div className="max-h-[25%] rounded-md flex flex-col justify-end">
-                <div className="bg-gray-3 text-zinc-200 px-4 py-[2px] my-1 rounded-md hover:cursor-pointer flex flex-row space-x-2" onClick={toggleFileList}>
-                    <span>
-                        {showFileList ? <NavArrowDown width="20px" /> : <NavArrowUp width="20px" />}
-                    </span>
-                    <span>
-                        {showFileList ? "Hide Uploaded Files" : "Show Uploaded Files"}
-                    </span>
+            {fileData && fileData.length > 0 && (
+                <div className="max-h-[25%] rounded-md flex flex-col justify-end">
+                    <div className="bg-gray-3 text-zinc-200 px-4 py-[2px] my-1 rounded-md hover:cursor-pointer flex flex-row space-x-2" onClick={toggleFileList}>
+                        <span>
+                            {showFileList ? <NavArrowDown width="20px" /> : <NavArrowUp width="20px" />}
+                        </span>
+                        <span>
+                            {showFileList ? "Hide Uploaded Files" : "Show Uploaded Files"}
+                        </span>
+                    </div>
+                    <div className="overflow-auto h-full rounded-md">
+                        {showFileList && <FileTable files={fileData} setFiles={setFileData} />}
+                    </div>
                 </div>
-                <div className="overflow-auto h-full rounded-md">
-                    {showFileList && <FileTable files={fileData} setFiles={setFileData} />}
-                </div>
-            </div>
+            )}
         </div>
     );
 }

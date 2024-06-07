@@ -67,4 +67,4 @@ const getDownloadLink = async (token, bucketName, minioFileName) => {
     })
 }
 
-export { getUploadLink, uploadFile }
+export { getUploadLink, uploadFile, getDownloadLink }
