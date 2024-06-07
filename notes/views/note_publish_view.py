@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from ..models import Note
 from ..serializers import NotePublishSerializer, ReportSerializer, ReportQuerySerializer
 
+from logs.decorators import log_failed_responses
 from ..exceptions import (
     NoAccessToEntitiesException,
 )
@@ -27,6 +28,7 @@ class NotePublishDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @log_failed_responses
     def put(self, request: Request, note_id: int) -> Response:
         """Allow a user to change a Note's publishable status,
         from publishable to not publishable or vice versa.

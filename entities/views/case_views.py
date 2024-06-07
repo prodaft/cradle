@@ -7,6 +7,8 @@ from rest_framework.request import Request
 
 from ..serializers import CaseSerializer, CaseResponseSerializer
 from ..models import Entity
+from logs.utils import LoggingUtils
+from logs.decorators import log_failed_responses
 
 
 class CaseList(APIView):
@@ -14,6 +16,7 @@ class CaseList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdminUser]
 
+    @log_failed_responses
     def get(self, request: Request) -> Response:
         """Allow an admin to retrieve the details of all Cases
 
@@ -34,6 +37,7 @@ class CaseList(APIView):
 
         return Response(serializer.data)
 
+    @log_failed_responses
     def post(self, request: Request) -> Response:
         """Allow an admin to create a new Case by specifying its name
 
@@ -57,6 +61,7 @@ class CaseList(APIView):
 
         if serializer.is_valid():
             serializer.save()
+            LoggingUtils.log_entity_creation(request)
             return Response(serializer.data)
 
         return Response("Bad request", status=status.HTTP_400_BAD_REQUEST)
@@ -67,6 +72,7 @@ class CaseDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdminUser]
 
+    @log_failed_responses
     def delete(self, request: Request, case_id: int) -> Response:
         """Allow an admin to delete a Case by specifying its id
 
@@ -92,4 +98,5 @@ class CaseDetail(APIView):
                 "There is no case with specified ID", status=status.HTTP_404_NOT_FOUND
             )
         case.delete()
+        LoggingUtils.log_entity_deletion(request)
         return Response("Requested case was deleted", status=status.HTTP_200_OK)
