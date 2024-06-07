@@ -33,8 +33,6 @@ export default function FileTable({ files, setFiles }) {
     // Removes a file from the table only. The file is not deleted from the server.
     const handleDelete = (file) => {
         setFiles(files.filter(f => f.name !== file.name));
-        setAlert(`Removed "${file.name}".`);
-        setAlertColor("gray");
     };
 
     return (

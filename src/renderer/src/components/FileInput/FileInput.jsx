@@ -73,7 +73,7 @@ export default function FileInput({ fileData, setFileData }) {
                 // All other files are kept in the input fields and the user is alerted
                 if (failedFiles.files.length > 0) {
                     setPendingFiles(failedFiles.files);
-                    throw new Error("failedFiles to upload files: "
+                    throw new Error("Failed to upload files: "
                         + Array.from(failedFiles.files).map(file => file.name).join(", "));
                 } else {
                     setPendingFiles(EMPTY_FILE_LIST);
