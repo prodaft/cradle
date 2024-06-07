@@ -9,7 +9,6 @@ import { useAuth } from "../../hooks/useAuth/useAuth";
 import { displayError } from "../../utils/responseUtils/responseUtils";
 import { useWindowSize } from "@uidotdev/usehooks";
 
-
 /**
  * Login component - renders the login form.
  * Sets the username and password states for the AuthProvider when successfully logged in with the server
@@ -23,7 +22,6 @@ export default function Login() {
     const [error, setError] = useState("");
     const [errorColor, setErrorColor] = useState("red");
     const windowSize = useWindowSize();
-    const usernameField = useRef(null);
 
     const auth = useAuth();
 
