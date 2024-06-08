@@ -49,27 +49,27 @@ export default function TextEditor() {
         markdownContentRef.current = markdownContent;
     }, [markdownContent]);
 
-    const isValidContent = () => {
+    const isEmptyNote = () => {
         if (!markdownContentRef.current) {
             setAlertColor("red");
             setAlert("Cannot save empty note");
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
 
     // Open the dialog to save the note. If the note is empty, display an error.
     // Attempt to send the note to the server. If successful, clear the local storage. Otherwise, display the error.
     const handleSaveNote = (publishable) => () => {
-        if (!isValidContent()) return;
+        if (isEmptyNote()) return;
 
         const storedContent = markdownContentRef.current;
 
-        // Don't send unnecessary requests for empty notes
         saveNote(auth.access, storedContent, publishable).then((res) => {
             if (res.status === 200) {
                 // Clear local storage on success
                 setMarkdownContentCallback('');
+                setFileData([]);
                 setAlertColor("green");
                 setAlert("Note saved successfully.");
             }
@@ -77,7 +77,7 @@ export default function TextEditor() {
     }
 
     const handleSaveFleetingNote = () => {
-        if (!isValidContent()) return;
+        if (isEmptyNote()) return;
 
         const storedContent = markdownContentRef.current;
 
@@ -86,6 +86,7 @@ export default function TextEditor() {
                 // Clear local storage on success
                 refreshFleetingNotes();
                 setMarkdownContentCallback('');
+                setFileData([]);
                 setAlertColor("green");
                 setAlert("Fleeting note saved successfully.");
                 navigate(`/fleeting-editor/${res.data.id}`);
