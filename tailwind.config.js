@@ -56,6 +56,8 @@ module.exports = {
           colors: {
             primary: "#f68d2e",
             backgroundPrimary: "#f1f2f4",
+            secondary: "#ffffff",
+            backgroundSecondary: "#555161",
           },
         },
         {
@@ -64,6 +66,8 @@ module.exports = {
           colors: {
             primary: "#f68d2e",
             backgroundPrimary: "#1a1a1a",
+            secondary: "#ffffff",
+            backgroundSecondary: "#555161",
           },
         },
         {
@@ -72,6 +76,7 @@ module.exports = {
           colors: {
             primary: "#f68d2e",
             backgroundPrimary: "#02111a",
+            secondary: "#ffffff",
             backgroundSecondary: "#253746",
           },
         },
