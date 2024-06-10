@@ -940,7 +940,7 @@ paths:
         '401': 
           description: User is not authenticated.
         '404':
-          description: Fleeting Note not found or not owned by user.
+          description: The Fleeting Note does not exist or is not owned by user.
     put:
       tags:
         - Fleeting Note
@@ -977,7 +977,7 @@ paths:
         '404':
           description: Fleeting Note not found or not owned by user.
           
-  /fleeting-notes/{fleetingNoteId}/finalize/:
+  /fleeting-notes/{fleetingNoteId}/final/:
     put:
       tags:
           - Fleeting Note
@@ -1017,8 +1017,8 @@ paths:
           description: Note does not reference at least one Case and two Entities. 
         '401': 
           description: User is not authenticated. 
-        '403': 
-          description: User does not have Read-Write access to a referenced Case or User does not own the Fleeting Note. 
+        '404': 
+          description: User does not have Read-Write access to a referenced Case or not all Cases and Actors exist / The Fleeting Note does not exist or was not written by the user 
     
   
   /query:
