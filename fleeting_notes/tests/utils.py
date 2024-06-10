@@ -36,7 +36,7 @@ class FleetingNotesTestCase(TestCase):
             content="Note1", user=self.admin_user
         )
         self.note_user = FleetingNote.objects.create(
-            content="Note2", user=self.normal_user
+            content="[[actor:actor]] [[case:case]]", user=self.normal_user
         )
 
     def tearDown(self):

@@ -73,6 +73,7 @@ class FleetingNotesDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @log_failed_responses
     def get(self, request: Request, pk: int) -> Response:
         """
         Get a FleetingNote entity by its primary key.
@@ -85,7 +86,7 @@ class FleetingNotesDetail(APIView):
         Returns:
             Response(serializer.data, status=200):
                 The FleetingNote entity
-            Response("FleetingNote does not exist.", status=404):
+            Response("The Fleeting Note does not exist", status=404):
                 if the FleetingNote entity does not exist
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
@@ -97,12 +98,13 @@ class FleetingNotesDetail(APIView):
             )
         except FleetingNote.DoesNotExist:
             return Response(
-                "FleetingNote does not exist.", status=status.HTTP_404_NOT_FOUND
+                "The Fleeting Note does not exist", status=status.HTTP_404_NOT_FOUND
             )
 
         serializer = FleetingNoteSerializer(fleeting_note)
         return Response(serializer.data)
 
+    @log_failed_responses
     def put(self, request: Request, pk: int) -> Response:
         """
         Update a FleetingNote entity by its primary key.
@@ -143,6 +145,7 @@ class FleetingNotesDetail(APIView):
             return Response(serializer.data, status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @log_failed_responses
     def delete(self, request: Request, pk: int) -> Response:
         """
         Delete a FleetingNote entity by its primary key.
