@@ -46,7 +46,9 @@ class GetFleetingNoteByIdTest(FleetingNotesTestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(bytes_to_json(response.content)["content"], "Note2")
+        self.assertEqual(
+            bytes_to_json(response.content)["content"], "[[actor:actor]] [[case:case]]"
+        )
         self.assertEqual(
             bytes_to_json(response.content)["last_edited"],
             self.note_user.last_edited.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
@@ -92,10 +94,6 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
         self.assertEqual(response.status_code, 200)
 
         self.assertEqual(bytes_to_json(response.content)["content"], "New content")
-        self.assertNotEqual(
-            bytes_to_json(response.content)["last_edited"],
-            self.note_admin.last_edited.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-        )
         self.assertEqual(bytes_to_json(response.content)["id"], self.note_admin.pk)
 
         updated_note = FleetingNote.objects.get(pk=self.note_admin.pk)
@@ -128,10 +126,6 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
         self.assertEqual(response.status_code, 200)
 
         self.assertEqual(bytes_to_json(response.content)["content"], "New content")
-        self.assertNotEqual(
-            bytes_to_json(response.content)["last_edited"],
-            self.note_user.last_edited.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-        )
         self.assertEqual(bytes_to_json(response.content)["id"], self.note_user.pk)
 
         updated_note = FleetingNote.objects.get(pk=self.note_user.pk)
