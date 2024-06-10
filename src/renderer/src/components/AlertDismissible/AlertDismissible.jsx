@@ -28,7 +28,10 @@ export default function AlertDismissible({ alert, setAlert, color = "red", durat
                 setAlert("");
             }, duration);
 
-            const updateInterval = 1000.0 / 120;
+            // Update at 120Hz
+            const secondInMiliseconds = 1000.0;
+            const refreshRate = 120.0;
+            const updateInterval = secondInMiliseconds / refreshRate;
             const interval = setInterval(() => {
                 setTimeLeft((prevTimeLeft) => prevTimeLeft - updateInterval);
             }, updateInterval);
