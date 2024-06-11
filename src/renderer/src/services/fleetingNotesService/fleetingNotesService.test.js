@@ -1,5 +1,10 @@
 import axios from 'axios';
-import {getFleetingNotes, addFleetingNote, updateFleetingNote, deleteFleetingNote} from './fleetingNotesService';
+import {
+    getFleetingNotes,
+    addFleetingNote,
+    updateFleetingNote,
+    deleteFleetingNote,
+} from './fleetingNotesService';
 
 jest.mock('axios');
 
@@ -12,19 +17,24 @@ describe('Fleeting Notes Service', () => {
     });
 
     it('fetches fleeting notes successfully', async () => {
-        const response = { data: [{ id: 1, content: 'Note 1' }, { id: 2, content: 'Note 2' }] };
+        const response = {
+            data: [
+                { id: 1, content: 'Note 1' },
+                { id: 2, content: 'Note 2' },
+            ],
+        };
         axios.mockResolvedValue(response);
 
         const result = await getFleetingNotes(token);
 
         expect(axios).toHaveBeenCalledWith({
-            method: "GET",
-            url: "/fleeting-notes/",
+            method: 'GET',
+            url: '/fleeting-notes/',
             withCredentials: true,
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
-            }
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
         });
         expect(result).toEqual(response);
     });
@@ -43,14 +53,14 @@ describe('Fleeting Notes Service', () => {
         const result = await addFleetingNote(token, content);
 
         expect(axios).toHaveBeenCalledWith({
-            method: "POST",
-            url: "/fleeting-notes/",
+            method: 'POST',
+            url: '/fleeting-notes/',
             withCredentials: true,
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
             },
-            data: { content: content }
+            data: { content: content },
         });
         expect(result).toEqual(response);
     });
@@ -70,14 +80,14 @@ describe('Fleeting Notes Service', () => {
         const result = await updateFleetingNote(token, id, content);
 
         expect(axios).toHaveBeenCalledWith({
-            method: "PUT",
+            method: 'PUT',
             url: `/fleeting-notes/${id}/`,
             withCredentials: true,
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
             },
-            data: { content: content }
+            data: { content: content },
         });
         expect(result).toEqual(response);
     });
@@ -87,7 +97,9 @@ describe('Fleeting Notes Service', () => {
         const error = new Error('Network Error');
         axios.mockRejectedValue(error);
 
-        await expect(updateFleetingNote(token, id, content)).rejects.toThrow('Network Error');
+        await expect(updateFleetingNote(token, id, content)).rejects.toThrow(
+            'Network Error',
+        );
     });
 
     it('deletes a fleeting note successfully', async () => {
@@ -98,13 +110,13 @@ describe('Fleeting Notes Service', () => {
         const result = await deleteFleetingNote(token, id);
 
         expect(axios).toHaveBeenCalledWith({
-            method: "DELETE",
+            method: 'DELETE',
             url: `/fleeting-notes/${id}/`,
             withCredentials: true,
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
-            }
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
         });
         expect(result).toEqual(response);
     });
@@ -117,14 +129,14 @@ describe('Fleeting Notes Service', () => {
         const result = await updateFleetingNote(token, id, content);
 
         expect(axios).toHaveBeenCalledWith({
-            method: "PUT",
+            method: 'PUT',
             url: `/fleeting-notes/${id}/`,
             withCredentials: true,
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
             },
-            data: { content: content }
+            data: { content: content },
         });
         expect(result).toEqual(response);
     });
@@ -134,6 +146,8 @@ describe('Fleeting Notes Service', () => {
         const error = new Error('Network Error');
         axios.mockRejectedValue(error);
 
-        await expect(updateFleetingNote(token, id, content)).rejects.toThrow('Network Error');
+        await expect(updateFleetingNote(token, id, content)).rejects.toThrow(
+            'Network Error',
+        );
     });
 });

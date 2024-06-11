@@ -22,7 +22,7 @@ describe('queryEntities', () => {
         expect(axios.get).toHaveBeenCalledWith('/query', {
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
+                Authorization: `Bearer ${token}`,
             },
             params: {
                 entityType: entityTypes,
@@ -45,11 +45,16 @@ describe('queryEntities', () => {
             name: name,
         });
 
-        expect(serializedParams).toBe(qs.stringify({
-            entityType: entityTypes,
-            entitySubtype: entryTypes,
-            name: name,
-        }, { arrayFormat: 'repeat' }));
+        expect(serializedParams).toBe(
+            qs.stringify(
+                {
+                    entityType: entityTypes,
+                    entitySubtype: entryTypes,
+                    name: name,
+                },
+                { arrayFormat: 'repeat' },
+            ),
+        );
     });
 
     it('should return the response data', async () => {
@@ -65,6 +70,8 @@ describe('queryEntities', () => {
         const error = new Error('testError');
         axios.get.mockRejectedValue(error);
 
-        await expect(queryEntities(token, name, entityTypes, entryTypes)).rejects.toThrow(error);
+        await expect(
+            queryEntities(token, name, entityTypes, entryTypes),
+        ).rejects.toThrow(error);
     });
 });

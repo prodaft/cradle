@@ -1,14 +1,15 @@
 import {
+    changeAccess,
     createActor,
     createCase,
+    deleteEntity,
     getActors,
     getCases,
-    getUsers,
-    deleteEntity,
     getPermissions,
-    changeAccess
+    getUsers,
 } from './adminService';
 import axios from 'axios';
+
 jest.mock('axios');
 
 describe('Admin Service', () => {
@@ -20,7 +21,6 @@ describe('Admin Service', () => {
     const userId = '1';
     const caseId = '1';
 
-
     afterEach(() => {
         jest.clearAllMocks();
     });
@@ -29,10 +29,13 @@ describe('Admin Service', () => {
         axios.mockResolvedValue({ data: {} });
         await createActor(data, token);
         expect(axios).toHaveBeenCalledWith({
-            method: "post",
-            url: "/entities/actors/",
+            method: 'post',
+            url: '/entities/actors/',
             data: data,
-            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
         });
     });
 
@@ -40,10 +43,13 @@ describe('Admin Service', () => {
         axios.mockResolvedValue({ data: {} });
         await createCase(data, token);
         expect(axios).toHaveBeenCalledWith({
-            method: "post",
-            url: "/entities/cases/",
+            method: 'post',
+            url: '/entities/cases/',
             data: data,
-            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
         });
     });
 
@@ -51,9 +57,9 @@ describe('Admin Service', () => {
         axios.mockResolvedValue({ data: {} });
         await getActors(token);
         expect(axios).toHaveBeenCalledWith({
-            method: "get",
-            url: "/entities/actors/",
-            headers: { "Authorization": `Bearer ${token}` }
+            method: 'get',
+            url: '/entities/actors/',
+            headers: { Authorization: `Bearer ${token}` },
         });
     });
 
@@ -61,9 +67,9 @@ describe('Admin Service', () => {
         axios.mockResolvedValue({ data: {} });
         await getCases(token);
         expect(axios).toHaveBeenCalledWith({
-            method: "get",
-            url: "/entities/cases/",
-            headers: { "Authorization": `Bearer ${token}` }
+            method: 'get',
+            url: '/entities/cases/',
+            headers: { Authorization: `Bearer ${token}` },
         });
     });
 
@@ -71,9 +77,9 @@ describe('Admin Service', () => {
         axios.mockResolvedValue({ data: {} });
         await getUsers(token);
         expect(axios).toHaveBeenCalledWith({
-            method: "get",
-            url: "/users/",
-            headers: { "Authorization": `Bearer ${token}` }
+            method: 'get',
+            url: '/users/',
+            headers: { Authorization: `Bearer ${token}` },
         });
     });
 
@@ -81,9 +87,9 @@ describe('Admin Service', () => {
         axios.mockResolvedValue({ data: {} });
         await deleteEntity(token, type, id);
         expect(axios).toHaveBeenCalledWith({
-            method: "delete",
+            method: 'delete',
             url: `/${type}/${id}/`,
-            headers: { "Authorization": `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` },
         });
     });
 
@@ -91,10 +97,10 @@ describe('Admin Service', () => {
         axios.mockResolvedValue({ data: {} });
         await changeAccess(token, userId, caseId, accessLevel);
         expect(axios).toHaveBeenCalledWith({
-            method: "put",
+            method: 'put',
             url: `/access/${userId}/${caseId}/`,
-            data: { "access_type": accessLevel },
-            headers: { "Authorization": `Bearer ${token}` }
+            data: { access_type: accessLevel },
+            headers: { Authorization: `Bearer ${token}` },
         });
     });
 
@@ -102,9 +108,9 @@ describe('Admin Service', () => {
         axios.mockResolvedValue({ data: {} });
         await getPermissions(token, userId);
         expect(axios).toHaveBeenCalledWith({
-            method: "get",
+            method: 'get',
             url: `/access/${userId}/`,
-            headers: { "Authorization": `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` },
         });
     });
 });

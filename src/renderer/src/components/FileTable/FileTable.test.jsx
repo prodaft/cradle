@@ -22,7 +22,7 @@ describe('FileTable', () => {
     });
 
     beforeAll(() => {
-        navigator.clipboard.writeText.mockResolvedValue(undefined)
+        navigator.clipboard.writeText.mockResolvedValue(undefined);
     });
 
     afterEach(() => {
@@ -30,7 +30,7 @@ describe('FileTable', () => {
     });
 
     test('renders table with files', () => {
-        render(<FileTable files={files} setFiles={() => { }} />);
+        render(<FileTable files={files} setFiles={() => {}} />);
 
         expect(screen.getByText('Tag')).toBeInTheDocument();
         expect(screen.getByText('Filename')).toBeInTheDocument();
@@ -42,13 +42,13 @@ describe('FileTable', () => {
     });
 
     test('displays "No files uploaded yet." message when no files are provided', () => {
-        render(<FileTable files={[]} setFiles={() => { }} />);
+        render(<FileTable files={[]} setFiles={() => {}} />);
 
         expect(screen.getByText('No files uploaded yet.')).toBeInTheDocument();
     });
 
     test('checks the contents of the clipboard after clicking the copy button', async () => {
-        render(<FileTable files={files} setFiles={() => { }} />);
+        render(<FileTable files={files} setFiles={() => {}} />);
 
         fireEvent.click(screen.getByTestId('copy-0'));
 

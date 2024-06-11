@@ -1,7 +1,7 @@
-import axios from "axios";
+import axios from 'axios';
 
-axios.defaults.withCredentials = true;
-axios.defaults.baseURL = "http://localhost:8000";
+axios.defaults.withCredentials = false;
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
 
 /**
  * Function to get notes from the API
@@ -10,10 +10,10 @@ axios.defaults.baseURL = "http://localhost:8000";
  * @param id - note id
  * @returns {Promise<AxiosResponse<any>> | *}
  */
-export function getNote(token,id) {
+export function getNote(token, id) {
     return axios({
-        method: "get",
+        method: 'get',
         url: `/notes/${id}`,
-        headers: {"Authorization": `Bearer ${token}`}
+        headers: { Authorization: `Bearer ${token}` },
     });
 }

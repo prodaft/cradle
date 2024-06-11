@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-axios.defaults.withCredentials = true;
-axios.defaults.baseURL = "http://localhost:8000";
+axios.defaults.withCredentials = false;
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
 
 /**
  * Function to get fleeting notes from the API
@@ -10,15 +10,15 @@ axios.defaults.baseURL = "http://localhost:8000";
  * @param token - The (JWT) token to authenticate the request
  * @returns {Promise<AxiosResponse<any>> | *}
  */
-export function getFleetingNotes(token){
+export function getFleetingNotes(token) {
     return axios({
-        method: "GET",
-        url: "/fleeting-notes/",
+        method: 'GET',
+        url: '/fleeting-notes/',
         withCredentials: true,
         headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-        }
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+        },
     });
 }
 
@@ -30,18 +30,17 @@ export function getFleetingNotes(token){
  * @param content - The content of the note to add (String)
  * @returns {Promise<AxiosResponse<any>> | *}
  */
-export function addFleetingNote(token, content){
+export function addFleetingNote(token, content) {
     return axios({
-        method: "POST",
-        url: "/fleeting-notes/",
+        method: 'POST',
+        url: '/fleeting-notes/',
         withCredentials: true,
         headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
         },
-        data: {content:content}
+        data: { content: content },
     });
-
 }
 
 /**
@@ -50,15 +49,15 @@ export function addFleetingNote(token, content){
  * @param id
  * @returns {Promise<AxiosResponse<any>> | *}
  */
-export function deleteFleetingNote(token, id){
+export function deleteFleetingNote(token, id) {
     return axios({
-        method: "DELETE",
+        method: 'DELETE',
         url: `/fleeting-notes/${id}/`,
         withCredentials: true,
         headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-        }
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+        },
     });
 }
 
@@ -69,16 +68,16 @@ export function deleteFleetingNote(token, id){
  * @param content
  * @returns {Promise<AxiosResponse<any>> | *}
  */
-export function updateFleetingNote(token, id, content){
+export function updateFleetingNote(token, id, content) {
     return axios({
-        method: "PUT",
+        method: 'PUT',
         url: `/fleeting-notes/${id}/`,
         withCredentials: true,
         headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
         },
-        data: {content:content}
+        data: { content: content },
     });
 }
 
@@ -88,27 +87,27 @@ export function updateFleetingNote(token, id, content){
  * @param id
  * @returns {Promise<AxiosResponse<any>> | *}
  */
-export function getFleetingNoteById(token, id){
+export function getFleetingNoteById(token, id) {
     return axios({
-        method: "GET",
+        method: 'GET',
         url: `/fleeting-notes/${id}/`,
         withCredentials: true,
         headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-        }
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+        },
     });
 }
 
-export function saveFleetingNoteAsFinal(token, id, publishable){
+export function saveFleetingNoteAsFinal(token, id, publishable) {
     return axios({
-        method: "PUT",
-        url: `/fleeting-notes/${id}/finalize/`,
+        method: 'PUT',
+        url: `/fleeting-notes/${id}/final/`,
         withCredentials: true,
         headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
         },
-        data: {publishable:publishable}
+        data: { publishable: publishable },
     });
 }

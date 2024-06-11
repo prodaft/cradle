@@ -1,13 +1,15 @@
-import {useEffect, useState} from "react";
+import { useEffect, useState } from 'react';
 
 export function useChangeFlexDirectionBySize(containerRef) {
     const [flexDirection, setFlexDirection] = useState('flex-col');
     useEffect(() => {
         const containerElement = containerRef.current;
 
-        const resizeObserver = new ResizeObserver(entries => {
+        const resizeObserver = new ResizeObserver((entries) => {
             for (let entry of entries) {
-                setFlexDirection(entry.contentRect.width > 500 ? 'flex-row' : 'flex-col');
+                setFlexDirection(
+                    entry.contentRect.width > 500 ? 'flex-row' : 'flex-col',
+                );
             }
         });
 
