@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-axios.defaults.withCredentials = true;
-axios.defaults.baseURL = "http://localhost:8000";
+axios.defaults.withCredentials = false;
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
 
 /**
  * Sends a POST to create an actor
@@ -11,10 +11,13 @@ axios.defaults.baseURL = "http://localhost:8000";
  */
 export async function createActor(data, token) {
     return axios({
-        method: "post",
-        url: "/entities/actors/",
+        method: 'post',
+        url: '/entities/actors/',
         data: data,
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}`}
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+        },
     });
 }
 
@@ -26,10 +29,13 @@ export async function createActor(data, token) {
  */
 export async function createCase(data, token) {
     return axios({
-        method: "post",
-        url: "/entities/cases/",
+        method: 'post',
+        url: '/entities/cases/',
         data: data,
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+        },
     });
 }
 
@@ -40,9 +46,9 @@ export async function createCase(data, token) {
  */
 export async function getActors(token) {
     return axios({
-        method: "get",
-        url: "/entities/actors/",
-        headers: {"Authorization": `Bearer ${token}`}
+        method: 'get',
+        url: '/entities/actors/',
+        headers: { Authorization: `Bearer ${token}` },
     });
 }
 
@@ -53,9 +59,9 @@ export async function getActors(token) {
  */
 export async function getCases(token) {
     return axios({
-        method: "get",
-        url: "/entities/cases/",
-        headers: {"Authorization": `Bearer ${token}`}
+        method: 'get',
+        url: '/entities/cases/',
+        headers: { Authorization: `Bearer ${token}` },
     });
 }
 
@@ -66,9 +72,9 @@ export async function getCases(token) {
  */
 export async function getUsers(token) {
     return axios({
-        method: "get",
-        url: "/users/",
-        headers: {"Authorization": `Bearer ${token}`}
+        method: 'get',
+        url: '/users/',
+        headers: { Authorization: `Bearer ${token}` },
     });
 }
 
@@ -79,12 +85,12 @@ export async function getUsers(token) {
  * @param id - entity id
  * @returns {Promise<Promise<AxiosResponse<any>> | *>}
  */
-export async function deleteEntity(token, type, id){
+export async function deleteEntity(token, type, id) {
     return axios({
-        method: "delete",
+        method: 'delete',
         url: `/${type}/${id}/`,
-        headers: {"Authorization": `Bearer ${token}`}
-    })
+        headers: { Authorization: `Bearer ${token}` },
+    });
 }
 
 /**
@@ -97,10 +103,10 @@ export async function deleteEntity(token, type, id){
  */
 export async function changeAccess(token, userId, caseId, accessLevel) {
     return axios({
-        method: "put",
+        method: 'put',
         url: `/access/${userId}/${caseId}/`,
-        data: { "access_type": accessLevel },
-        headers: {"Authorization": `Bearer ${token}`}
+        data: { access_type: accessLevel },
+        headers: { Authorization: `Bearer ${token}` },
     });
 }
 
@@ -112,11 +118,8 @@ export async function changeAccess(token, userId, caseId, accessLevel) {
  */
 export async function getPermissions(token, userId) {
     return axios({
-        method: "get",
+        method: 'get',
         url: `/access/${userId}/`,
-        headers: {"Authorization": `Bearer ${token}`}
+        headers: { Authorization: `Bearer ${token}` },
     });
 }
-
-
-

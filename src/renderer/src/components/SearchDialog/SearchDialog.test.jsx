@@ -40,7 +40,6 @@ describe('SearchDialog', () => {
         expect(screen.getByText('Filters')).toBeInTheDocument();
     });
 
-
     it('focuses the input when opened', () => {
         queryEntities.mockResolvedValueOnce({ data: [] });
         render(<SearchDialog isOpen={true} onClose={mockOnClose} />);
@@ -51,21 +50,31 @@ describe('SearchDialog', () => {
         queryEntities.mockResolvedValueOnce({ data: [] });
         render(<SearchDialog isOpen={true} onClose={mockOnClose} />);
 
-        queryEntities.mockResolvedValueOnce({ data: [{ name: 'Test', type: 'Type', subtype: 'Subtype' }] });
-        fireEvent.change(screen.getByPlaceholderText('Search...'), { target: { value: 'test' } });
+        queryEntities.mockResolvedValueOnce({
+            data: [{ name: 'Test', type: 'Type', subtype: 'Subtype' }],
+        });
+        fireEvent.change(screen.getByPlaceholderText('Search...'), {
+            target: { value: 'test' },
+        });
         fireEvent.click(screen.getByRole('button'));
 
         expect(queryEntities).toHaveBeenCalledWith(mockAuth.access, 'test', [], []);
         await waitFor(() => expect(screen.getByText('Test')).toBeInTheDocument());
-        await waitFor(() => expect(screen.getByText('Type: Subtype')).toBeInTheDocument());
+        await waitFor(() =>
+            expect(screen.getByText('Type: Subtype')).toBeInTheDocument(),
+        );
     });
 
     it('displays an error message on query failure', async () => {
         queryEntities.mockRejectedValueOnce({ data: [] });
-        const { getByTestId } = render(<SearchDialog isOpen={true} onClose={mockOnClose} />);
+        const { getByTestId } = render(
+            <SearchDialog isOpen={true} onClose={mockOnClose} />,
+        );
 
         queryEntities.mockRejectedValueOnce({ response: { status: 401 } });
-        fireEvent.change(screen.getByPlaceholderText('Search...'), { target: { value: 'test' } });
+        fireEvent.change(screen.getByPlaceholderText('Search...'), {
+            target: { value: 'test' },
+        });
         fireEvent.click(screen.getByRole('button'));
 
         await waitFor(() => {
@@ -77,21 +86,31 @@ describe('SearchDialog', () => {
         queryEntities.mockResolvedValueOnce({ data: [] });
         render(<SearchDialog isOpen={true} onClose={mockOnClose} />);
 
-        queryEntities.mockResolvedValueOnce({ data: [{ name: 'Test', type: 'Type', subtype: 'Subtype' }] });
-        fireEvent.change(screen.getByPlaceholderText('Search...'), { target: { value: 'test' } });
+        queryEntities.mockResolvedValueOnce({
+            data: [{ name: 'Test', type: 'Type', subtype: 'Subtype' }],
+        });
+        fireEvent.change(screen.getByPlaceholderText('Search...'), {
+            target: { value: 'test' },
+        });
         fireEvent.click(screen.getByRole('button'));
 
         await waitFor(() => fireEvent.click(screen.getByText('Test')));
         expect(mockOnClose).toHaveBeenCalled();
-        expect(mockNavigate).toHaveBeenCalledWith('/dashboards/Types/Test?subtype=Subtype');
+        expect(mockNavigate).toHaveBeenCalledWith(
+            '/dashboards/Types/Test?subtype=Subtype',
+        );
     });
 
     it('queryes result on open', async () => {
-        queryEntities.mockResolvedValueOnce({ data: [{ name: 'Test', type: 'Type', subtype: 'Subtype' }] });
+        queryEntities.mockResolvedValueOnce({
+            data: [{ name: 'Test', type: 'Type', subtype: 'Subtype' }],
+        });
         render(<SearchDialog isOpen={true} onClose={mockOnClose} />);
 
         expect(queryEntities).toHaveBeenCalledWith(mockAuth.access, '', [], []);
         await waitFor(() => expect(screen.getByText('Test')).toBeInTheDocument());
-        await waitFor(() => expect(screen.getByText('Type: Subtype')).toBeInTheDocument());
+        await waitFor(() =>
+            expect(screen.getByText('Type: Subtype')).toBeInTheDocument(),
+        );
     });
 });

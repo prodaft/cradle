@@ -1,7 +1,7 @@
-import React from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import React from 'react';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
-import {useAuth} from "../../hooks/useAuth/useAuth";
+import { useAuth } from '../../hooks/useAuth/useAuth';
 
 /**
  * PrivateRoute component - route that requires authentication to access
@@ -10,13 +10,20 @@ import {useAuth} from "../../hooks/useAuth/useAuth";
  * @returns {Element}
  * @constructor
  */
-const PrivateRoute = ({fallback}) => {
-  const user = useAuth();
-  if(!user.isAuthenticated()) {
-    console.log("User tried accessing private route without being allowed");
-    return <Navigate to={fallback} replace = {true}/>;
-  }
-  return <Outlet />; 
+const PrivateRoute = ({ fallback }) => {
+    const user = useAuth();
+    const location = useLocation();
+    if (!user.isAuthenticated()) {
+        console.log('User tried accessing private route without being allowed');
+        return (
+            <Navigate
+                to={fallback}
+                state={{ from: location, state: location.state }}
+                replace={true}
+            />
+        );
+    }
+    return <Outlet />;
 };
 
 export default PrivateRoute;

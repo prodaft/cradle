@@ -17,13 +17,13 @@ describe('getDashboardData', () => {
         await getDashboardData(token, path);
 
         expect(axios).toHaveBeenCalledWith({
-            method: "GET",
+            method: 'GET',
             url: path,
             withCredentials: true,
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
-            }
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
         });
     });
 
@@ -59,16 +59,16 @@ describe('setPublishable', () => {
         await setPublishable(token, noteId, status);
 
         expect(axios).toHaveBeenCalledWith({
-            method: "PUT",
+            method: 'PUT',
             url: `/notes/${noteId}/publishable/`,
             withCredentials: true,
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
             },
             data: {
-                publishable: status
-            }
+                publishable: status,
+            },
         });
     });
 
@@ -88,5 +88,3 @@ describe('setPublishable', () => {
         await expect(setPublishable(token, noteId, status)).rejects.toThrow(error);
     });
 });
-
-

@@ -1,5 +1,5 @@
-import {createContext, useState} from "react";
-import {jwtDecode} from "jwt-decode";
+import { createContext, useState } from 'react';
+import { jwtDecode } from 'jwt-decode';
 
 /**
  * AuthContext - the context for the authentication of the application
@@ -19,37 +19,44 @@ export const AuthContext = createContext();
  * @constructor
  */
 const AuthProvider = ({ children }) => {
-  const [access, setAccess] = useState(localStorage.getItem("access") || "");
-  const [refresh, setRefresh] =  useState(localStorage.getItem("refresh") || "");
-  const [isAdmin, setIsAdmin] = useState(localStorage.getItem("isAdmin") === "true" || false);
+    const [access, setAccess] = useState(localStorage.getItem('access') || '');
+    const [refresh, setRefresh] = useState(localStorage.getItem('refresh') || '');
+    const [isAdmin, setIsAdmin] = useState(
+        localStorage.getItem('isAdmin') === 'true' || false,
+    );
 
-  const isAuthenticated = () => access !== "";
-  const logIn = (acc,ref) => {
-    setAccess(acc);
-    localStorage.setItem("access",acc);
-    setRefresh(ref);
-    localStorage.setItem("refresh",ref);
+    const isAuthenticated = () => access !== '';
+    const logIn = (acc, ref) => {
+        setAccess(acc);
+        localStorage.setItem('access', acc);
+        setRefresh(ref);
+        localStorage.setItem('refresh', ref);
 
-    try {
-      let adm = jwtDecode(acc)["is_admin"];
-      setIsAdmin(adm);
-      localStorage.setItem("isAdmin", adm.toString());
-    } catch (e) {
-      setIsAdmin(false);
-      localStorage.setItem("isAdmin", "false");
-    }
-  }
-  const logOut = () => {
-    setAccess("");
-    localStorage.removeItem("access");
-    setRefresh("");
-    localStorage.removeItem("refresh");
-    setIsAdmin(false);
-    localStorage.removeItem("isAdmin");
-  }
+        try {
+            let adm = jwtDecode(acc)['is_admin'];
+            setIsAdmin(adm);
+            localStorage.setItem('isAdmin', adm.toString());
+        } catch (e) {
+            setIsAdmin(false);
+            localStorage.setItem('isAdmin', 'false');
+        }
+    };
+    const logOut = () => {
+        setAccess('');
+        localStorage.removeItem('access');
+        setRefresh('');
+        localStorage.removeItem('refresh');
+        setIsAdmin(false);
+        localStorage.removeItem('isAdmin');
+    };
 
-  return <AuthContext.Provider value={{access,refresh,isAdmin,logIn,logOut,isAuthenticated}}>{children}</AuthContext.Provider>;
+    return (
+        <AuthContext.Provider
+            value={{ access, refresh, isAdmin, logIn, logOut, isAuthenticated }}
+        >
+            {children}
+        </AuthContext.Provider>
+    );
 };
 
 export default AuthProvider;
-

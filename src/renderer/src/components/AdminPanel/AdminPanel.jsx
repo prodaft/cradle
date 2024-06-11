@@ -1,12 +1,16 @@
-import {useAuth} from "../../hooks/useAuth/useAuth";
-import AdminPanelSection from "../AdminPanelSection/AdminPanelSection";
-import {useNavigate} from "react-router-dom";
-import {getActors, getCases, getUsers} from "../../services/adminService/adminService";
-import AdminPanelCard from "../AdminPanelCard/AdminPanelCard";
-import {useEffect, useState} from "react";
-import AlertDismissible from "../AlertDismissible/AlertDismissible";
-import { displayError } from "../../utils/responseUtils/responseUtils";
-import { createDashboardLink } from "../../utils/dashboardUtils/dashboardUtils";
+import { useAuth } from '../../hooks/useAuth/useAuth';
+import AdminPanelSection from '../AdminPanelSection/AdminPanelSection';
+import { useNavigate } from 'react-router-dom';
+import {
+    getActors,
+    getCases,
+    getUsers,
+} from '../../services/adminService/adminService';
+import AdminPanelCard from '../AdminPanelCard/AdminPanelCard';
+import { useEffect, useState } from 'react';
+import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import { displayError } from '../../utils/responseUtils/responseUtils';
+import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 
 /**
  * AdminPanel component - This component is used to display the AdminPanel.
@@ -27,93 +31,114 @@ export default function AdminPanel() {
     const [actors, setActors] = useState([]);
     const [cases, setCases] = useState([]);
     const [users, setUsers] = useState([]);
-    const [alert, setAlert] = useState("");
+    const [alert, setAlert] = useState('');
     const navigate = useNavigate();
-    const [alertColor, setAlertColor] = useState("red");
+    const [alertColor, setAlertColor] = useState('red');
     const handleError = displayError(setAlert, setAlertColor);
 
     //TODO -Implement encoding: qs.stringify({ name: c.name }, { encodeValuesOnly: true }).split('=')[1]
 
-
     const displayActors = async () => {
-        getActors(auth.access).then((response) => {
-            if(response.status === 200){
-                let actors = response.data;
-                setActors(actors.map((actor) => {
-                    return (
-                        <AdminPanelCard
-                            id={actor.id}
-                            name={actor.name}
-                            searchKey={actor.name}
-                            description={actor.description}
-                            type={"entities/actors"}
-                            onDelete={displayActors}
-                            link={createDashboardLink(actor)}
-                        />
+        getActors(auth.access)
+            .then((response) => {
+                if (response.status === 200) {
+                    let actors = response.data;
+                    setActors(
+                        actors.map((actor) => {
+                            return (
+                                <AdminPanelCard
+                                    id={actor.id}
+                                    name={actor.name}
+                                    searchKey={actor.name}
+                                    description={actor.description}
+                                    type={'entities/actors'}
+                                    onDelete={displayActors}
+                                    link={createDashboardLink(actor)}
+                                />
+                            );
+                        }),
                     );
-                }));
-            }
-        }).catch(handleError);
-    }
+                }
+            })
+            .catch(handleError);
+    };
 
     const displayCases = async () => {
-        getCases(auth.access).then((response) => {
-            if(response.status === 200){
-                let cases = response.data;
-                setCases(cases.map((c) => {
-                    return (
-                        <AdminPanelCard
-                            id={c.id}
-                            name={c.name}
-                            searchKey={c.name}
-                            description={c.description}
-                            type={"entities/cases"}
-                            onDelete={displayCases}
-                            link={createDashboardLink(c)}
-                        />
+        getCases(auth.access)
+            .then((response) => {
+                if (response.status === 200) {
+                    let cases = response.data;
+                    setCases(
+                        cases.map((c) => {
+                            return (
+                                <AdminPanelCard
+                                    id={c.id}
+                                    name={c.name}
+                                    searchKey={c.name}
+                                    description={c.description}
+                                    type={'entities/cases'}
+                                    onDelete={displayCases}
+                                    link={createDashboardLink(c)}
+                                />
+                            );
+                        }),
                     );
-                }));
-            }
-        }).catch(handleError);
-    }
+                }
+            })
+            .catch(handleError);
+    };
 
     const displayUsers = async () => {
-        getUsers(auth.access).then((response) => {
-            if(response.status === 200){
-                let users = response.data;
-                setUsers(users.map((user) => {
-                    return (
-                        <AdminPanelCard
-                            id={user.id}
-                            name={user.username}
-                            searchKey={user.username}
-                            type={"users"}
-                            onDelete={displayUsers}
-                            link={`/admin/user-permissions/${encodeURIComponent(user.username)}/${encodeURIComponent(user.id)}`}
-                        />
+        getUsers(auth.access)
+            .then((response) => {
+                if (response.status === 200) {
+                    let users = response.data;
+                    setUsers(
+                        users.map((user) => {
+                            return (
+                                <AdminPanelCard
+                                    id={user.id}
+                                    name={user.username}
+                                    searchKey={user.username}
+                                    type={'users'}
+                                    onDelete={displayUsers}
+                                    link={`/admin/user-permissions/${encodeURIComponent(user.username)}/${encodeURIComponent(user.id)}`}
+                                />
+                            );
+                        }),
                     );
-                }));
-            }
-        }).catch(handleError);
-    }
+                }
+            })
+            .catch(handleError);
+    };
 
     useEffect(() => {
-       displayActors();
-       displayUsers();
-       displayCases();
+        displayActors();
+        displayUsers();
+        displayCases();
     }, []);
 
     return (
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
-            <div className="w-full h-full rounded-md flex flex-row p-1.5 gap-1.5 overflow-x-hidden overflow-y-scroll">
-                <AdminPanelSection title={"Actors"} addEnabled={true} addTooltipText={"Add Actor"} handleAdd={() => navigate("/admin/add-actor")}>
+            <div className='w-full h-full rounded-md flex flex-row p-1.5 gap-1.5 overflow-x-hidden overflow-y-scroll'>
+                <AdminPanelSection
+                    title={'Actors'}
+                    addEnabled={true}
+                    addTooltipText={'Add Actor'}
+                    handleAdd={() => navigate('/admin/add-actor')}
+                >
                     {actors}
                 </AdminPanelSection>
-                <AdminPanelSection title={"Cases"} addEnabled={true} addTooltipText={"Add Case"} handleAdd={() => navigate("/admin/add-case")}>
+                <AdminPanelSection
+                    title={'Cases'}
+                    addEnabled={true}
+                    addTooltipText={'Add Case'}
+                    handleAdd={() => navigate('/admin/add-case')}
+                >
                     {cases}
                 </AdminPanelSection>
-                <AdminPanelSection title={"Users"} addEnabled={false}>
+                <AdminPanelSection title={'Users'} addEnabled={false}>
                     {users}
                 </AdminPanelSection>
             </div>

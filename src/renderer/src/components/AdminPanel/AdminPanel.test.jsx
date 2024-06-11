@@ -1,10 +1,9 @@
 /**
  * @jest-environment jsdom
  */
-import { render, fireEvent, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import AdminPanel from '../AdminPanel/AdminPanel';
 import { useAuth } from '../../hooks/useAuth/useAuth';
-import { getActors, getCases, getUsers } from '../../services/adminService/adminService';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
@@ -16,9 +15,18 @@ jest.mock('../../hooks/useAuth/useAuth', () => ({
 }));
 
 jest.mock('../../services/adminService/adminService', () => ({
-    getActors: jest.fn().mockResolvedValue({ status: 200, data: [{ id: '1', name: 'Test Actor', description: 'Test Description' }] }),
-    getCases: jest.fn().mockResolvedValue({ status: 200, data: [{ id: '1', name: 'Test Case', description: 'Test Description' }] }),
-    getUsers: jest.fn().mockResolvedValue({ status: 200, data: [{ id: '1', username: 'Test User' }] }),
+    getActors: jest.fn().mockResolvedValue({
+        status: 200,
+        data: [{ id: '1', name: 'Test Actor', description: 'Test Description' }],
+    }),
+    getCases: jest.fn().mockResolvedValue({
+        status: 200,
+        data: [{ id: '1', name: 'Test Case', description: 'Test Description' }],
+    }),
+    getUsers: jest.fn().mockResolvedValue({
+        status: 200,
+        data: [{ id: '1', username: 'Test User' }],
+    }),
 }));
 
 describe('AdminPanel', () => {
@@ -26,7 +34,7 @@ describe('AdminPanel', () => {
         const { findByText } = render(
             <MemoryRouter>
                 <AdminPanel />
-            </MemoryRouter>
+            </MemoryRouter>,
         );
         expect(await findByText('Test Actor')).toBeInTheDocument();
         expect(await findByText('Test Case')).toBeInTheDocument();
@@ -34,11 +42,14 @@ describe('AdminPanel', () => {
     });
 
     it('should not display actors, cases, and users when user is not admin', async () => {
-        useAuth.mockImplementation(() => ({ access: 'testToken', isAdmin: false }));
+        useAuth.mockImplementation(() => ({
+            access: 'testToken',
+            isAdmin: false,
+        }));
         const { queryByText } = render(
             <MemoryRouter>
                 <AdminPanel />
-            </MemoryRouter>
+            </MemoryRouter>,
         );
         expect(queryByText('Test Actor')).not.toBeInTheDocument();
         expect(queryByText('Test Case')).not.toBeInTheDocument();

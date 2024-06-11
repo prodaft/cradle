@@ -16,7 +16,7 @@ jest.mock('../../services/fleetingNotesService/fleetingNotesService', () => ({
 }));
 
 jest.mock('../../hooks/useAuth/useAuth', () => ({
-    useAuth: jest.fn(() => ({ access : 'access-token '}))
+    useAuth: jest.fn(() => ({ access: 'access-token ' })),
 }));
 
 describe('FleetingNoteCard', () => {
@@ -35,7 +35,13 @@ describe('FleetingNoteCard', () => {
     });
 
     it('renders the note content', () => {
-        const { getByText } = render(<FleetingNoteCard note={note} setAlert={setAlert} setAlertColor={setAlertColor} />);
+        const { getByText } = render(
+            <FleetingNoteCard
+                note={note}
+                setAlert={setAlert}
+                setAlertColor={setAlertColor}
+            />,
+        );
         expect(getByText('Test note')).toBeInTheDocument();
     });
 
@@ -43,9 +49,15 @@ describe('FleetingNoteCard', () => {
         const navigate = jest.fn();
         useNavigate.mockReturnValue(navigate);
 
-        const { getByText } = render(<FleetingNoteCard note={note} setAlert={setAlert} setAlertColor={setAlertColor} />);
+        const { getByText } = render(
+            <FleetingNoteCard
+                note={note}
+                setAlert={setAlert}
+                setAlertColor={setAlertColor}
+            />,
+        );
         fireEvent.click(getByText('Test note'));
 
-        expect(navigate).toHaveBeenCalledWith('/fleeting-editor/' + note.id );
+        expect(navigate).toHaveBeenCalledWith('/fleeting-editor/' + note.id);
     });
 });

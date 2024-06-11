@@ -1,15 +1,12 @@
 // eslint-disable-next-line no-undef
 module.exports = {
-    content: [
-        "./src/**/*.{html,js,jsx,ts,tsx}",
-        "./src/index.html"
-    ],
+    content: ['./src/**/*.{html,js,jsx,ts,tsx}', './src/index.html'],
     theme: {
         extend: {
             colors: {
                 cradle1: '#02111a',
                 cradle2: '#f68d2e',
-                cradle3: '#253746', 
+                cradle3: '#253746',
             },
             typography: (theme) => ({
                 DEFAULT: {
@@ -26,60 +23,59 @@ module.exports = {
                     },
                 },
             }),
-        }, 
+        },
     },
     plugins: [
-
         require('@tailwindcss/typography'),
         require('tailwind-scrollbar'),
         require('@tailwindcss/forms')({
-          strategy: 'class',
+            strategy: 'class',
         }),
-        require("rippleui"),
+        require('rippleui'),
         function ({ addUtilities, addBase }) {
             addUtilities({
                 '.no-scrollbar': {
-                    '-ms-overflow-style': 'none',  /* IE and Edge */
-                    'scrollbar-width': 'none',  /* Firefox */
+                    '-ms-overflow-style': 'none' /* IE and Edge */,
+                    'scrollbar-width': 'none' /* Firefox */,
                 },
                 '.no-scrollbar::-webkit-scrollbar': {
-                    display: 'none',  /* Hide scrollbar for WebKit-based browsers */
+                    display: 'none' /* Hide scrollbar for WebKit-based browsers */,
                 },
             });
-            },
+        },
     ],
     rippleui: {
-      themes: [
-        {
-          themeName: "light",
-          colorScheme: "light",
-          colors: {
-            primary: "#f68d2e",
-            backgroundPrimary: "#f1f2f4",
-            secondary: "#ffffff",
-            backgroundSecondary: "#555161",
-          },
-        },
-        {
-          themeName: "dark",
-          colorScheme: "dark",
-          colors: {
-            primary: "#f68d2e",
-            backgroundPrimary: "#1a1a1a",
-            secondary: "#ffffff",
-            backgroundSecondary: "#555161",
-          },
-        },
-        {
-          themeName: "cradle",
-          colorScheme: "dark" | "light",
-          colors: {
-            primary: "#f68d2e",
-            backgroundPrimary: "#02111a",
-            secondary: "#ffffff",
-            backgroundSecondary: "#253746",
-          },
-        },
-      ],
+        themes: [
+            {
+                themeName: 'light',
+                colorScheme: 'light',
+                colors: {
+                    primary: '#f68d2e',
+                    backgroundPrimary: '#e8e8e8',
+                    secondary: '#ffffff',
+                    backgroundSecondary: '#555161',
+                },
+            },
+            {
+                themeName: 'dark',
+                colorScheme: 'dark',
+                colors: {
+                    primary: '#f68d2e',
+                    backgroundPrimary: '#151515',
+                    secondary: '#ffffff',
+                    backgroundSecondary: '#555161',
+                },
+            },
+            {
+                themeName: 'cradle',
+                colorScheme: 'dark' | 'light',
+                colors: {
+                    primary: '#f68d2e',
+                    backgroundPrimary: '#02111a',
+                    secondary: '#ffffff',
+                    backgroundSecondary: '#253746',
+                },
+            },
+        ],
     },
-}
+};

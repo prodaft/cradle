@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import { renderHook } from "@testing-library/react";
+import { renderHook } from '@testing-library/react';
 import { useOutletContext } from 'react-router-dom';
 import useNavbarContents from './useNavbarContents';
 import '@testing-library/jest-dom';

@@ -1,4 +1,4 @@
-import {useId} from "react";
+import { useId } from 'react';
 
 /**
  * NavbarSwitch
@@ -9,14 +9,23 @@ import {useId} from "react";
  * @returns {NavbarSwitch}
  * @constructor
  */
-export default function NavbarSwitch({label,checked, onChange, testid}){
+export default function NavbarSwitch({ label, checked, onChange, testid }) {
     const id = useId();
 
     return (
-        <button className="navbar-item hover:bg-gray-4">
-            <div className="flex flex-row items-center w-fit h-fit">
-                <label htmlFor={id} className="mr-2 text-cradle2">{label}</label>
-                <input type="checkbox" id={id} className="switch focus:ring-0" checked={checked} onChange={onChange} data-testid={testid || ''}/>
+        <button className='navbar-item hover:bg-gray-4'>
+            <div className='flex flex-row items-center w-fit h-fit'>
+                <label htmlFor={id} className='mr-2 text-cradle2'>
+                    {label}
+                </label>
+                <input
+                    type='checkbox'
+                    id={id}
+                    className='switch focus:ring-0'
+                    checked={checked}
+                    onChange={onChange}
+                    data-testid={testid || ''}
+                />
             </div>
         </button>
     );

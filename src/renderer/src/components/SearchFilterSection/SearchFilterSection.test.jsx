@@ -1,10 +1,13 @@
 /**
  * @jest-environment jsdom
  */
-import { render, fireEvent } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import SearchFilterSection from './SearchFilterSection';
 import '@testing-library/jest-dom';
-import {entityCategoriesReduced, entryTypes} from "../../utils/entityDefinitions/entityDefinitions";
+import {
+    entityCategoriesReduced,
+    entryTypes,
+} from '../../utils/entityDefinitions/entityDefinitions';
 
 describe('SearchFilterSection', () => {
     const setShowFilters = jest.fn();
@@ -24,7 +27,7 @@ describe('SearchFilterSection', () => {
                 setEntryTypeFilters={setEntryTypeFilters}
                 entityTypeFilters={entityTypeFilters}
                 setEntityTypeFilters={setEntityTypeFilters}
-            />
+            />,
         );
 
         fireEvent.click(getByText('Filters'));
@@ -40,7 +43,7 @@ describe('SearchFilterSection', () => {
                 setEntryTypeFilters={setEntryTypeFilters}
                 entityTypeFilters={entityTypeFilters}
                 setEntityTypeFilters={setEntityTypeFilters}
-            />
+            />,
         );
 
         entryTypes.forEach((filter) => {
@@ -60,11 +63,11 @@ describe('SearchFilterSection', () => {
                 setEntryTypeFilters={setEntryTypeFilters}
                 entityTypeFilters={entityTypeFilters}
                 setEntityTypeFilters={setEntityTypeFilters}
-            />
+            />,
         );
 
-        fireEvent.click(getByText("actor"));
+        fireEvent.click(getByText('actor'));
         // it will be called with a lambda function taking "actor as param"
-        expect(setEntityTypeFilters).toHaveBeenCalledWith(["actor"]);
+        expect(setEntityTypeFilters).toHaveBeenCalledWith(['actor']);
     });
 });
