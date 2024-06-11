@@ -6,10 +6,15 @@
  * @returns {NavbarButton}
  * @constructor
  */
-export default function NavbarButton({onClick, text, icon, testid}){
+export default function NavbarButton({ onClick, text, icon, testid }) {
     return (
-	        <button className={`navbar-item hover:bg-gray-4 ${text?"tooltip tooltip-bottom tooltip-primary":""}`} onClick={onClick} data-tooltip={text} data-testid={testid || ''}>
-                {icon}
-            </button>
+        <button
+            className={`navbar-item hover:bg-gray-4 ${text ? 'tooltip tooltip-bottom tooltip-primary' : ''}`}
+            onClick={onClick}
+            data-tooltip={text}
+            data-testid={testid || ''}
+        >
+            {icon}
+        </button>
     );
 }

@@ -1,10 +1,10 @@
 /**
  * @jest-environment jsdom
  */
-import { render, screen, fireEvent } from "@testing-library/react";
-import PublishPreview from "./PublishPreview";
-import { MemoryRouter } from "react-router-dom";
-import '@testing-library/jest-dom'
+import { render, screen } from '@testing-library/react';
+import PublishPreview from './PublishPreview';
+import { MemoryRouter } from 'react-router-dom';
+import '@testing-library/jest-dom';
 
 jest.mock('../../hooks/useAuth/useAuth', () => ({
     useAuth: jest.fn().mockImplementation(() => {
@@ -15,7 +15,10 @@ jest.mock('../../hooks/useAuth/useAuth', () => ({
 jest.mock('react-router-dom', () => ({
     ...jest.requireActual('react-router-dom'),
     useLocation: jest.fn().mockImplementation(() => {
-        return { location: '/publish', state: { noteIds: [1], entityName: "Test" } };
+        return {
+            location: '/publish',
+            state: { noteIds: [1], entityName: 'Test' },
+        };
     }),
 }));
 
@@ -25,10 +28,14 @@ jest.mock('../../services/dashboardService/dashboardService', () => ({
 
 jest.mock('../../hooks/useNavbarContents/useNavbarContents');
 
-describe("PublishPreview", () => {
-    test("renders PublishPreview component", () => {
-        render(<MemoryRouter><PublishPreview /></MemoryRouter>);
-        const publishPreviewElement = screen.getByTestId("publish-preview");
+describe('PublishPreview', () => {
+    test('renders PublishPreview component', () => {
+        render(
+            <MemoryRouter>
+                <PublishPreview />
+            </MemoryRouter>,
+        );
+        const publishPreviewElement = screen.getByTestId('publish-preview');
         expect(publishPreviewElement).toBeInTheDocument();
     });
 });

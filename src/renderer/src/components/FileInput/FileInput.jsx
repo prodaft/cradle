@@ -1,5 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { getUploadLink, uploadFile } from '../../services/fileUploadService/fileUploadService';
+import {
+    getUploadLink,
+    uploadFile,
+} from '../../services/fileUploadService/fileUploadService';
 import { useAuth } from '../../hooks/useAuth/useAuth';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
@@ -8,10 +11,10 @@ import { CloudUpload } from 'iconoir-react';
 /**
  * This component is used to upload files to the server.
  * It has an input field for selecting files and a button to upload them.
- * 
- * The user can upload multiple files at once. Each file is uploaded individually. 
+ *
+ * The user can upload multiple files at once. Each file is uploaded individually.
  * If any of the files fail to upload, the user is alerted.
- * 
+ *
  * @param {Array<Object>} fileData - the files uploaded via this instance of the component. This only contains the tag and the name of the file.
  *                                   The tag is a unique identifier used to reference the file in the markdown content.
  * @param {(FileList) => void} setFileData - callback used when the files uploaded via this instance of the component change
@@ -22,8 +25,8 @@ export default function FileInput({ fileData, setFileData }) {
     const EMPTY_FILE_LIST = new DataTransfer().files;
     const [pendingFiles, setPendingFiles] = useState(EMPTY_FILE_LIST);
     const auth = useAuth();
-    const [alert, setAlert] = useState("");
-    const [alertColor, setAlertColor] = useState("red");
+    const [alert, setAlert] = useState('');
+    const [alertColor, setAlertColor] = useState('red');
     const [isUploading, setIsUploading] = useState(false);
     const inputRef = useRef(null);
 
@@ -33,8 +36,8 @@ export default function FileInput({ fileData, setFileData }) {
 
     const handleUpload = () => {
         if (!pendingFiles || pendingFiles.length === 0) {
-            setAlert("No files selected.");
-            setAlertColor("red");
+            setAlert('No files selected.');
+            setAlertColor('red');
             return;
         }
 
@@ -42,22 +45,23 @@ export default function FileInput({ fileData, setFileData }) {
         setIsUploading(true);
         const succeededFileData = [];
         const failedFiles = new DataTransfer();
-        const fileUploadPromises = Array.from(pendingFiles).map(file => getUploadLink(auth.access, file.name)
-            .then(async (res) => {
-                const uploadUrl = res.data.presigned;
-                const tag = res.data.minio_file_name;
-                await uploadFile(uploadUrl, file);
-                return tag;
-            })
-            .then((tag) => {
-                succeededFileData.push({
-                    tag: tag,
-                    name: file.name,
+        const fileUploadPromises = Array.from(pendingFiles).map((file) =>
+            getUploadLink(auth.access, file.name)
+                .then(async (res) => {
+                    const uploadUrl = res.data.presigned;
+                    const tag = res.data.minio_file_name;
+                    await uploadFile(uploadUrl, file);
+                    return tag;
                 })
-            })
-            .catch(() => {
-                failedFiles.items.add(file);
-            })
+                .then((tag) => {
+                    succeededFileData.push({
+                        tag: tag,
+                        name: file.name,
+                    });
+                })
+                .catch(() => {
+                    failedFiles.items.add(file);
+                }),
         );
         // Handle all the failures by alerting the user which uploads failed
         Promise.all(fileUploadPromises)
@@ -69,12 +73,16 @@ export default function FileInput({ fileData, setFileData }) {
                 // All other files are kept in the input fields and the user is alerted
                 if (failedFiles.files.length > 0) {
                     setPendingFiles(failedFiles.files);
-                    throw new Error("Failed to upload files: "
-                        + Array.from(failedFiles.files).map(file => file.name).join(", "));
+                    throw new Error(
+                        'Failed to upload files: ' +
+                            Array.from(failedFiles.files)
+                                .map((file) => file.name)
+                                .join(', '),
+                    );
                 } else {
                     setPendingFiles(EMPTY_FILE_LIST);
-                    setAlert("All files uploaded successfully!");
-                    setAlertColor("green");
+                    setAlert('All files uploaded successfully!');
+                    setAlertColor('green');
                 }
             })
             .catch(displayError(setAlert, setAlertColor)) // Catches the error thrown in the .then block
@@ -86,8 +94,7 @@ export default function FileInput({ fileData, setFileData }) {
     const handleFileChange = useCallback((event) => {
         if (event.target && event.target.files) {
             setPendingFiles(event.target.files);
-        }
-        else {
+        } else {
             setPendingFiles(EMPTY_FILE_LIST);
         }
     }, []);
@@ -97,22 +104,24 @@ export default function FileInput({ fileData, setFileData }) {
             <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
             <div className='flex flex-row space-x-2'>
                 <input
-                    type="file"
-                    className={`input-file input-file-sm ${pendingFiles.length > 0 && "input-file-primary"} hover:border-cradle2`}
+                    type='file'
+                    className={`input-file input-file-sm ${pendingFiles.length > 0 && 'input-file-primary'} hover:border-cradle2`}
                     multiple
                     onChange={handleFileChange}
                     ref={inputRef}
                 />
-                <div className={`${(pendingFiles.length === 0) && "hover:cursor-not-allowed opacity-50"}`}>
+                <div
+                    className={`${pendingFiles.length === 0 && 'hover:cursor-not-allowed opacity-50'}`}
+                >
                     <button
-                        className={`btn btn-sm ${isUploading && "btn-loading"}`}
+                        className={`btn btn-sm ${isUploading && 'btn-loading'}`}
                         onClick={handleUpload}
                         disabled={isUploading || pendingFiles.length === 0}
                     >
-                        <CloudUpload width={"25px"} />
+                        <CloudUpload width={'25px'} />
                     </button>
                 </div>
-            </div >
+            </div>
         </>
     );
-};
+}

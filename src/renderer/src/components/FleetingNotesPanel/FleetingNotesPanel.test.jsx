@@ -1,5 +1,5 @@
 /*
-* @jest-environment jsdom
+ * @jest-environment jsdom
  */
 import { render, waitFor, fireEvent } from '@testing-library/react';
 import FleetingNotesPanel from './FleetingNotesPanel';
@@ -7,10 +7,10 @@ import { getFleetingNotes } from '../../services/fleetingNotesService/fleetingNo
 import '@testing-library/jest-dom';
 
 jest.mock('../../services/fleetingNotesService/fleetingNotesService', () => ({
-    getFleetingNotes: jest.fn()
+    getFleetingNotes: jest.fn(),
 }));
 jest.mock('../../hooks/useAuth/useAuth', () => ({
-    useAuth: jest.fn(() => ({ access: 'access-token' }))
+    useAuth: jest.fn(() => ({ access: 'access-token' })),
 }));
 jest.mock('react-router-dom', () => ({
     ...jest.requireActual('react-router-dom'),
@@ -18,8 +18,7 @@ jest.mock('react-router-dom', () => ({
 }));
 
 describe('FleetingNotesPanel', () => {
-
-    getFleetingNotes.mockResolvedValue({ status: 200,  data: [] });
+    getFleetingNotes.mockResolvedValue({ status: 200, data: [] });
 
     it('renders without crashing', () => {
         render(<FleetingNotesPanel />);
@@ -32,7 +31,13 @@ describe('FleetingNotesPanel', () => {
     });
 
     it('displays notes', async () => {
-        getFleetingNotes.mockResolvedValueOnce({ status: 200 ,data: [{ id: 1, content: 'Note 1' }, { id: 2, content: 'Note 2' }] });
+        getFleetingNotes.mockResolvedValueOnce({
+            status: 200,
+            data: [
+                { id: 1, content: 'Note 1' },
+                { id: 2, content: 'Note 2' },
+            ],
+        });
 
         const { findByText } = render(<FleetingNotesPanel />);
 
@@ -41,7 +46,9 @@ describe('FleetingNotesPanel', () => {
     });
 
     it('fetches notes again when fleetingNotesRefresh prop changes', async () => {
-        const { rerender } = render(<FleetingNotesPanel fleetingNotesRefresh={false} />);
+        const { rerender } = render(
+            <FleetingNotesPanel fleetingNotesRefresh={false} />,
+        );
 
         await waitFor(() => expect(getFleetingNotes).toHaveBeenCalledTimes(1));
 
@@ -52,7 +59,7 @@ describe('FleetingNotesPanel', () => {
 
     it('displays an error message when fetching notes fails', async () => {
         getFleetingNotes.mockRejectedValueOnce(new Error('Failed to fetch notes'));
-        const {findByTestId } = render(<FleetingNotesPanel />);
+        const { findByTestId } = render(<FleetingNotesPanel />);
 
         const alert = await findByTestId('dismissable-alert');
 
@@ -61,7 +68,11 @@ describe('FleetingNotesPanel', () => {
 
     it('calls handleFleetingNotesButton when the button is clicked', () => {
         const handleFleetingNotesButton = jest.fn();
-        const { getByTestId } = render(<FleetingNotesPanel handleFleetingNotesButton={handleFleetingNotesButton} />);
+        const { getByTestId } = render(
+            <FleetingNotesPanel
+                handleFleetingNotesButton={handleFleetingNotesButton}
+            />,
+        );
 
         fireEvent.click(getByTestId('close-fleeting-notes'));
 

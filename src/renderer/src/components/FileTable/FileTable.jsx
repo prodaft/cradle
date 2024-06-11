@@ -17,62 +17,84 @@ import AlertDismissible from '../AlertDismissible/AlertDismissible';
  * @constructor
  */
 export default function FileTable({ files, setFiles }) {
-    const [alert, setAlert] = useState("");
-    const [alertColor, setAlertColor] = useState("red");
+    const [alert, setAlert] = useState('');
+    const [alertColor, setAlertColor] = useState('red');
 
     const copyToClipboard = (text) => {
-        navigator.clipboard.writeText(text)
+        navigator.clipboard
+            .writeText(text)
             .then(() => {
-                setAlert("Copied to clipboard!");
-                setAlertColor("green");
+                setAlert('Copied to clipboard!');
+                setAlertColor('green');
             })
             .catch(displayError(setAlert, setAlertColor));
     };
 
     // Removes a file from the table only. The file is not deleted from the server.
     const handleDelete = (file) => {
-        setFiles(files.filter(f => f.name !== file.name));
+        setFiles(files.filter((f) => f.name !== file.name));
     };
 
     return (
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
-            <div className="w-full h-full mx-auto p-2 bg-transparent rounded-lg overflow-y-auto text-sm z-40">
-                <div className="overflow-x-auto">
-                    <div className="w-full bg-gray-2 rounded-md overflow-x-hidden overflow-y-auto">
+            <div className='w-full h-full mx-auto p-2 bg-transparent rounded-lg overflow-y-auto text-sm z-40'>
+                <div className='overflow-x-auto'>
+                    <div className='w-full bg-gray-2 rounded-md overflow-x-hidden overflow-y-auto'>
                         {(!files || files.length === 0) && (
-                            <p className="ml-4 mt-2 text-zinc-200">No files uploaded yet.</p>
+                            <p className='ml-4 mt-2 text-zinc-200'>
+                                No files uploaded yet.
+                            </p>
                         )}
-                        {files.length > 0 && <div className="grid grid-cols-2 p-2 border-b border-zinc-400 text-base">
-                            <div className="font-bold text-zinc-200">Tag</div>
-                            <div className="font-bold text-zinc-200">Filename</div>
-                        </div>}
+                        {files.length > 0 && (
+                            <div className='grid grid-cols-2 p-2 border-b border-zinc-400 text-base'>
+                                <div className='font-bold text-zinc-200'>Tag</div>
+                                <div className='font-bold text-zinc-200'>Filename</div>
+                            </div>
+                        )}
                         {Array.from(files).map((file, index) => (
-                            <div key={index} className="grid grid-cols-2 py-1 border-b border-zinc-600">
-                                <div className="text-zinc-200 flex items-center">
-                                    <div className="max-w-150px truncate px-3">{file.tag}</div>
+                            <div
+                                key={index}
+                                className='grid grid-cols-2 py-1 border-b border-zinc-600'
+                            >
+                                <div className='text-zinc-200 flex items-center'>
+                                    <div className='max-w-150px truncate px-3'>
+                                        {file.tag}
+                                    </div>
                                 </div>
-                                <div className="text-zinc-200 flex items-center justify-between">
-                                    <div className="max-w-150px truncate pr-3">{file.name}</div>
-                                    <div className="text-zinc-200 flex items-center justify-end pr-4">
-                                        <span className='tooltip tooltip-top' data-tooltip='Copy to clipboard'>
+                                <div className='text-zinc-200 flex items-center justify-between'>
+                                    <div className='max-w-150px truncate pr-3'>
+                                        {file.name}
+                                    </div>
+                                    <div className='text-zinc-200 flex items-center justify-end pr-4'>
+                                        <span
+                                            className='tooltip tooltip-top'
+                                            data-tooltip='Copy to clipboard'
+                                        >
                                             <button
                                                 id={`copy-${index}`}
                                                 data-testid={`copy-${index}`}
-                                                className="px-2 py-1 rounded hover:opacity-60 bg-zinc-3"
-                                                onClick={() => copyToClipboard(`[${file.name}][${file.tag}]`)}
+                                                className='px-2 py-1 rounded hover:opacity-60 bg-zinc-3'
+                                                onClick={() =>
+                                                    copyToClipboard(
+                                                        `[${file.name}][${file.tag}]`,
+                                                    )
+                                                }
                                             >
-                                                <PasteClipboard width="20px" />
+                                                <PasteClipboard width='20px' />
                                             </button>
                                         </span>
-                                        <span className='tooltip tooltip-top' data-tooltip='Remove'>
+                                        <span
+                                            className='tooltip tooltip-top'
+                                            data-tooltip='Remove'
+                                        >
                                             <button
                                                 id={`delete-${index}`}
                                                 data-testid={`delete-${index}`}
-                                                className="px-2 py-1 rounded hover:opacity-60 bg-zinc-3"
+                                                className='px-2 py-1 rounded hover:opacity-60 bg-zinc-3'
                                                 onClick={() => handleDelete(file)}
                                             >
-                                                <Trash width="20px" />
+                                                <Trash width='20px' />
                                             </button>
                                         </span>
                                     </div>
@@ -84,4 +106,4 @@ export default function FileTable({ files, setFiles }) {
             </div>
         </>
     );
-};
+}

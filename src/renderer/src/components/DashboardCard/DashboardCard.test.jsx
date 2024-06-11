@@ -1,11 +1,11 @@
 /**
  * @jest-environment jsdom
  */
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import * as ReactRouterDom from 'react-router-dom';
 import { MemoryRouter } from 'react-router-dom';
 import DashboardCard from './DashboardCard';
 import '@testing-library/jest-dom';
-import * as ReactRouterDom from 'react-router-dom';
 
 // Mock the entire module first
 jest.mock('react-router-dom', () => ({
@@ -23,7 +23,7 @@ describe('DashboardCard component', () => {
         render(
             <MemoryRouter>
                 <DashboardCard name={name} index={index} link={link} type={type} />
-            </MemoryRouter>
+            </MemoryRouter>,
         );
 
         expect(screen.getByText('Test Card')).toBeInTheDocument();
@@ -37,7 +37,7 @@ describe('DashboardCard component', () => {
         render(
             <MemoryRouter>
                 <DashboardCard name={name} index={index} link={link} type={type} />
-            </MemoryRouter>
+            </MemoryRouter>,
         );
 
         fireEvent.click(screen.getByText('Test Card'));
@@ -51,7 +51,7 @@ describe('DashboardCard component', () => {
         render(
             <MemoryRouter>
                 <DashboardCard name={name} index={index} type={type} />
-            </MemoryRouter>
+            </MemoryRouter>,
         );
 
         fireEvent.click(screen.getByText('Test Card'));
@@ -62,7 +62,7 @@ describe('DashboardCard component', () => {
         render(
             <MemoryRouter>
                 <DashboardCard name={name} index={index} link={link} />
-            </MemoryRouter>
+            </MemoryRouter>,
         );
 
         expect(screen.getByText('Test Card')).toBeInTheDocument();

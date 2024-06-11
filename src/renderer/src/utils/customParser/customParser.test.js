@@ -1,12 +1,12 @@
 /**
  * @jest-environment jsdom
  */
-import marked from "./customParser";
+import marked from './customParser';
 
 // const baseUrl = 'https://localhost:8000'
 const baseUrl = '';
 
-describe("renderer", () => {
+describe('renderer', () => {
     test('parse actor links no alias', () => {
         const name = 'John Doe';
         const encodedName = encodeURIComponent(name);
@@ -123,12 +123,11 @@ describe("renderer", () => {
         const actorUrl = `${baseUrl}/dashboards/actors/John%20Doe`;
         const caseUrl = `${baseUrl}/dashboards/cases/Case123`;
         const entryUrl = `${baseUrl}/dashboards/entries/127.0.0.1?subtype=ip`;
-        
+
         expect(parsedHtml).toContain('Germany');
         expect(parsedHtml).not.toContain('country');
         expect(parsedHtml).toContain(actorUrl);
         expect(parsedHtml).toContain(caseUrl);
         expect(parsedHtml).toContain(entryUrl);
     });
-
-})
+});
