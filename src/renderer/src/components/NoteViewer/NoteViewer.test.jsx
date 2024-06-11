@@ -1,7 +1,7 @@
 /*
  * @jest-environment jsdom
  */
-import { render, waitFor, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { getNote } from '../../services/notesService/notesService';
 import NoteViewer from './NoteViewer';
@@ -19,7 +19,9 @@ beforeEach(() => {
 
 describe('NoteViewer', () => {
     it('displays note content and timestamp when fetched successfully', async () => {
-        const mockNote = { data: { content: 'Test Note', timestamp: '2022-01-01T00:00:00Z' } };
+        const mockNote = {
+            data: { content: 'Test Note', timestamp: '2022-01-01T00:00:00Z' },
+        };
         getNote.mockResolvedValueOnce(mockNote);
         const date = new Date('2022-01-01T00:00:00Z').toLocaleString();
 
@@ -36,6 +38,8 @@ describe('NoteViewer', () => {
 
         render(<NoteViewer />, { wrapper: MemoryRouter });
 
-        await waitFor(() => expect(screen.getByText('Network Error')).toBeInTheDocument());
+        await waitFor(() =>
+            expect(screen.getByText('Network Error')).toBeInTheDocument(),
+        );
     });
 });

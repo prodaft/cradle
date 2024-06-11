@@ -1,5 +1,5 @@
-import {useContext} from "react";
-import {AuthContext} from "../../utils/AuthProvider/AuthProvider";
+import { useContext } from 'react';
+import { AuthContext } from '../../utils/AuthProvider/AuthProvider';
 
 /**
  * Hook to use the AuthContext

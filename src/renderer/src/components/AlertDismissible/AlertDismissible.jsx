@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Xmark } from "iconoir-react";
+import React, { useState, useEffect } from 'react';
+import { Xmark } from 'iconoir-react';
 
 /**
  * AlertDismissible component - This component is used to display an alert that can be dismissed.
@@ -12,7 +12,12 @@ import { Xmark } from "iconoir-react";
  * @returns {AlertDismissible}
  * @constructor
  */
-export default function AlertDismissible({ alert, setAlert, color = "red", duration = 3500.0 }) {
+export default function AlertDismissible({
+    alert,
+    setAlert,
+    color = 'red',
+    duration = 3500.0,
+}) {
     const colorVariants = {
         green: 'bg-success',
         red: 'bg-error',
@@ -25,7 +30,7 @@ export default function AlertDismissible({ alert, setAlert, color = "red", durat
         if (alert) {
             setTimeLeft(duration);
             const timer = setTimeout(() => {
-                setAlert("");
+                setAlert('');
             }, duration);
 
             // Update at 120Hz
@@ -46,22 +51,27 @@ export default function AlertDismissible({ alert, setAlert, color = "red", durat
     return (
         <>
             {alert && (
-                <div className={`${colorVariants[color]} fixed z-50 bottom-2 right-6 text-white h-fit py-6 w-fit
-                 rounded-md shadow-lg flex flex-col items-center space-y-4 break-all max-w-[40%] max-h-full`} data-testid='dismissable-alert'>
-                    <div className="flex flex-row items-center justify-between px-4">
+                <div
+                    className={`${colorVariants[color]} fixed z-50 bottom-2 right-6 text-white h-fit py-6 w-fit
+                 rounded-md shadow-lg flex flex-col items-center space-y-4 break-all max-w-[40%] max-h-full`}
+                    data-testid='dismissable-alert'
+                >
+                    <div className='flex flex-row items-center justify-between px-4'>
                         <p>{alert}</p>
                         <button
                             className={`${colorVariants[color]} hover:opacity-90 text-white font-bold py-2 pl-4`}
-                            onClick={() => setAlert("")}
+                            onClick={() => setAlert('')}
                         >
-                            <Xmark color="gray-12" strokeWidth="2" />
+                            <Xmark color='gray-12' strokeWidth='2' />
                         </button>
                     </div>
-                    <div className={`${colorVariants[color]} w-full rounded-md absolute bottom-0 px-2`}>
+                    <div
+                        className={`${colorVariants[color]} w-full rounded-md absolute bottom-0 px-2`}
+                    >
                         <progress
                             value={timeLeft}
                             max={duration}
-                            className="h-[0.3em] progress progress-flat-secondary w-full !rounded-md opacity-75"
+                            className='h-[0.3em] progress progress-flat-secondary w-full !rounded-md opacity-75'
                         />
                     </div>
                 </div>
