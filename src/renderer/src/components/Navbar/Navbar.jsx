@@ -1,18 +1,19 @@
 import { ArrowLeft, ArrowRight, Notes } from 'iconoir-react';
 import SearchDialog from '../SearchDialog/SearchDialog';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NavbarButton from '../NavbarButton/NavbarButton';
 
 /**
  * Navbar component - the main navigation bar for the application.
- * @param props - contents and handlers for the navbar
- * @param props.contents - the contents of the navbar set by other components
- * @param props.handleFleetingNotes - handler for the Fleeting Notes action
+ * 
+ * @param {Array<React.Component>} contents - the contents of the navbar set by other components
+ * @param {() => void} showFleetingNotesButton - determines if the Fleeting Notes button should be displayed
+ * @param {() => void} handleFleetingNotes - handler for the Fleeting Notes action
  * @returns {Navbar}
  * @constructor
  */
-export default function Navbar(props) {
+export default function Navbar({ contents, showFleetingNotesButton, handleFleetingNotesButton }) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const navigate = useNavigate();
 
@@ -55,15 +56,15 @@ export default function Navbar(props) {
                 />
             </div>
             <div className='w-full justify-end h-fit navbar-center'>
-                {props.contents}
+                {contents}
             </div>
             <div className='w-fit h-fit navbar-end'>
-                {props.showFleetingNotesButton && (
+                {showFleetingNotesButton && (
                     <NavbarButton
                         key='fleeting-notes-button'
                         text={'Fleeting Notes'}
                         icon={<Notes />}
-                        onClick={props.handleFleetingNotesButton}
+                        onClick={handleFleetingNotesButton}
                         testid='fleeting-notes-button'
                     />
                 )}

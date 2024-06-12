@@ -2,14 +2,15 @@ import React from 'react';
 
 /**
  * SidebarSection component - section of the sidebar
- * @param props
- * @param props.sectionType - the type of section (header, content, footer)
- * @param props.justify - the alignment of the items in the section
- * @param props.height - the height of the section
+ *
+ * @param {string} sectionType - the type of section (header, content, footer)
+ * @param {string} justify - the alignment of the items in the section
+ * @param {string} height - the height of the section
+ * @param {Array<React.Component} children - the children to display in the section
  * @returns {SidebarSection}
  * @constructor
  */
-export default function SidebarSection(props) {
+export default function SidebarSection({ sectionType, justify, height, children }) {
     const sectionVariants = {
         header: 'sidebar-header',
         content: 'sidebar-content',
@@ -28,11 +29,11 @@ export default function SidebarSection(props) {
 
     return (
         <section
-            className={`${sectionVariants[props.sectionType]} ${justifyVariants[props.justify]} ${heightVariants[props.height]}`}
+            className={`${sectionVariants[sectionType]} ${justifyVariants[justify]} ${heightVariants[height]}`}
         >
             <nav className='menu rounded-md'>
                 <section className='menu-section gap-2'>
-                    <ul className='menu-items'>{props.children}</ul>
+                    <ul className='menu-items'>{children}</ul>
                 </section>
             </nav>
         </section>
