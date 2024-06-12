@@ -7,5 +7,6 @@ env
 Pipfile.lock
 .coverage
 reports
-var
+error.log
+success.log
 .idea

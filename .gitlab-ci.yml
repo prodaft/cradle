@@ -31,7 +31,6 @@ default:
       - $CI_PROJECT_DIR/.cache/packages
       - $CI_PROJECT_DIR/.cache/pip
   before_script:
-    - mkdir -p var/log
     - pip install pipenv
     - pipenv lock 
     - pipenv sync

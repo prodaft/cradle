@@ -74,6 +74,31 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+
+def get_log_directory():
+    """Get the log directory for the application.
+    This is /var/log/cradle/ if /var/log/ exists and is writable,
+    and cradle/ can be created in it. Otherwise, it is the BASE_DIR.
+
+    Args:
+
+    Returns:
+        str: The log directory for the application.
+    """
+    log_dir = "/var/log/"
+    cradle_log_dir = "/var/log/cradle/"
+    if os.path.exists(log_dir) and os.access(log_dir, os.W_OK):
+        if not os.path.exists(cradle_log_dir):
+            try:
+                os.mkdir(cradle_log_dir)
+            except OSError:
+                return str(BASE_DIR)
+        return cradle_log_dir
+    return str(BASE_DIR)
+
+
+log_directory = get_log_directory()
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -81,12 +106,12 @@ LOGGING = {
         "success_file": {
             "level": "WARNING",
             "class": "logging.FileHandler",
-            "filename": "var/log/success.log",
+            "filename": os.path.join(log_directory, "success.log"),
         },
         "error_file": {
             "level": "WARNING",
             "class": "logging.FileHandler",
-            "filename": "var/log/error.log",
+            "filename": os.path.join(log_directory, "error.log"),
         },
     },
     "loggers": {
