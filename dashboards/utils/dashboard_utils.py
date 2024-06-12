@@ -45,18 +45,32 @@ class DashboardUtils:
                 "cases": cases,
                 "metadata": metadata,
                 "entries": entries
+                "inaccessible_cases": inaccessible_cases
             }
 
         """
-        notes = Note.objects.get_accessible_notes(user, entity_id)
-        entities = Note.objects.get_entities_from_notes(notes).exclude(id=entity_id)
+        accessible_notes = Note.objects.get_accessible_notes(user, entity_id)
+        accessible_entities = Note.objects.get_entities_from_notes(
+            accessible_notes
+        ).exclude(id=entity_id)
+
+        inaccessible_notes = Note.objects.get_inaccessible_notes(user, entity_id)
+
+        inaccessible_notes_cases = (
+            Note.objects.get_entities_from_notes(inaccessible_notes)
+            .filter(type=EntityType.CASE)
+            .exclude(id=entity_id)
+        )
+
+        inaccessible_cases = inaccessible_notes_cases.difference(accessible_entities)
 
         return_dict = {}
 
-        return_dict["notes"] = notes
-        return_dict["actors"] = entities.filter(type=EntityType.ACTOR)
-        return_dict["cases"] = entities.filter(type=EntityType.CASE)
-        return_dict["metadata"] = entities.filter(type=EntityType.METADATA)
-        return_dict["entries"] = entities.filter(type=EntityType.ENTRY)
+        return_dict["notes"] = accessible_notes
+        return_dict["actors"] = accessible_entities.filter(type=EntityType.ACTOR)
+        return_dict["cases"] = accessible_entities.filter(type=EntityType.CASE)
+        return_dict["metadata"] = accessible_entities.filter(type=EntityType.METADATA)
+        return_dict["entries"] = accessible_entities.filter(type=EntityType.ENTRY)
+        return_dict["inaccessible_cases"] = inaccessible_cases
 
         return return_dict
