@@ -41,7 +41,7 @@ install:
         paths:
             # Artifact node_modules for subsequent jobs
             - node_modules/
-        expire_in: 2 days
+        expire_in: 6 hours
 
 run-build:
     stage: build
@@ -54,7 +54,7 @@ run-build:
     artifacts:
         paths:
             - out/
-        expire_in: 2 days
+        expire_in: 6 hours
 
 run-lint:
     stage: lint
