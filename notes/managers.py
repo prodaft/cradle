@@ -28,19 +28,18 @@ class NoteManager(models.Manager):
 
     def get_entities_from_notes(
         self,
-        accessible_notes: models.QuerySet,
+        notes: models.QuerySet,
     ) -> models.QuerySet:
-        """Gets the entities of a entity of a specific type
-            related to the entity through notes
+        """Gets the entities from a QuerySet of notes
 
         Args:
-            accessible_notes: The QuerySet containing the accessible notes
+            notes: The QuerySet containing the notes
             entity_type: The type of the entity to filter by
 
         Returns:
-            models.QuerySet: The entities of the case of the specific type
+            models.QuerySet: The entities referenced by the notes
         """
-        entities = Entity.objects.filter(note__in=accessible_notes).distinct()
+        entities = Entity.objects.filter(note__in=notes).distinct()
 
         return entities
 
@@ -58,6 +57,30 @@ class NoteManager(models.Manager):
         if user.is_superuser:
             return self.get_all_notes(entity_id)
 
+        inaccessible_notes = self.get_inaccessible_notes(user, entity_id).values_list(
+            "id", flat=True
+        )
+
+        return (
+            Entity.objects.get(id=entity_id)
+            .note_set.exclude(id__in=inaccessible_notes)
+            .order_by("-timestamp")
+            .distinct()
+        )
+
+    def get_inaccessible_notes(self, user, entity_id):
+        """Get the notes of a case that the user does not have access to
+
+        Args:
+            user: The user whose access is being checked
+            entity_id: The id of the entiy whose notes are being retrieved
+
+        Returns:
+            QuerySet: The notes of the case that the user does not have access to
+        """
+        if user.is_superuser:
+            return self.get_queryset().none()
+
         accessible_cases = Access.objects.filter(
             user=user, access_type__in=[AccessType.READ_WRITE, AccessType.READ]
         ).values_list("case_id", flat=True)
@@ -68,16 +91,13 @@ class NoteManager(models.Manager):
             .values_list("id", flat=True)
         )
 
-        inaccessible_notes = (
-            self.get_queryset()
-            .filter(entities__id__in=inaccessible_cases, entities__type=EntityType.CASE)
-            .values_list("id", flat=True)
+        inaccessible_notes = self.get_queryset().filter(
+            entities__id__in=inaccessible_cases, entities__type=EntityType.CASE
         )
 
         return (
             Entity.objects.get(id=entity_id)
-            .note_set.exclude(id__in=inaccessible_notes)
-            .order_by("-timestamp")
+            .note_set.filter(id__in=inaccessible_notes)
             .distinct()
         )
 

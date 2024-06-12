@@ -1151,6 +1151,10 @@ components:
           type: array
           items: 
             $ref: "#/components/schemas/Entity"
+        inaccessible_cases:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
         access: 
           type: string
           enum: 
@@ -1202,6 +1206,10 @@ components:
           type: array
           items: 
             $ref: "#/components/schemas/Entity"
+        inaccessible_cases:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
     
     EntryDashboard:
       type: object
@@ -1236,6 +1244,10 @@ components:
           items: 
             $ref: "#/components/schemas/Note"
         cases:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        inaccessible_cases:
           type: array
           items: 
             $ref: "#/components/schemas/Entity"

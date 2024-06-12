@@ -14,46 +14,17 @@ from .utils import DashboardsTestCase
 
 class NoteDashboardSerializersTest(DashboardsTestCase):
 
-    def create_notes(self):
+    def update_notes(self):
         self.note1 = Note.objects.create(content="a" * 1000)
         self.note1.entities.add(self.case1, self.actor1)
 
         self.note2 = Note.objects.create(content="Note2")
         self.note2.entities.add(self.case2, self.actor2)
 
-    def create_cases(self):
-        self.case1 = Entity.objects.create(
-            name="Case1", description="Description1", type=EntityType.CASE
-        )
-
-        self.case2 = Entity.objects.create(
-            name="Case2", description="Description2", type=EntityType.CASE
-        )
-
-    def create_actors(self):
-        self.actor1 = Entity.objects.create(
-            name="Actor1", description="Description1", type=EntityType.ACTOR
-        )
-
-        self.actor2 = Entity.objects.create(
-            name="Actor2", description="Description2", type=EntityType.ACTOR
-        )
-
-    def create_metadata(self):
-        self.metadata1 = Entity.objects.create(
-            name="Metadata1", description="Description1", type=EntityType.METADATA
-        )
-
     def setUp(self):
         super().setUp()
 
-        self.create_cases()
-
-        self.create_actors()
-
-        self.create_metadata()
-
-        self.create_notes()
+        self.update_notes()
 
     @patch("notes.models.Note.timestamp", new_callable=PropertyMock)
     def test_note_is_shortened(self, mock_timestamp):
@@ -112,46 +83,8 @@ class NoteDashboardSerializersTest(DashboardsTestCase):
 
 class CaseDashboardSerializerTest(DashboardsTestCase):
 
-    def create_notes(self):
-        self.note1 = Note.objects.create(content="Note1")
-        self.note1.entities.add(self.case1, self.actor1, self.metadata1)
-
-        self.note2 = Note.objects.create(content="Note2")
-        self.note2.entities.add(self.case2, self.actor2, self.case1)
-
-    def create_cases(self):
-        self.case1 = Entity.objects.create(
-            name="Case1", description="Description1", type=EntityType.CASE
-        )
-
-        self.case2 = Entity.objects.create(
-            name="Case2", description="Description2", type=EntityType.CASE
-        )
-
-    def create_actors(self):
-        self.actor1 = Entity.objects.create(
-            name="Actor1", description="Description1", type=EntityType.ACTOR
-        )
-
-        self.actor2 = Entity.objects.create(
-            name="Actor2", description="Description2", type=EntityType.ACTOR
-        )
-
-    def create_metadata(self):
-        self.metadata1 = Entity.objects.create(
-            name="Metadata1", description="Description1", type=EntityType.METADATA
-        )
-
     def setUp(self):
         super().setUp()
-
-        self.create_cases()
-
-        self.create_actors()
-
-        self.create_metadata()
-
-        self.create_notes()
 
     @patch("notes.models.Note.timestamp", new_callable=PropertyMock)
     def test_case_dashboard_serializer(self, mock_timestamp):
@@ -162,6 +95,7 @@ class CaseDashboardSerializerTest(DashboardsTestCase):
         cases = Entity.objects.filter(type=EntityType.CASE)
         metadata = Entity.objects.filter(type=EntityType.METADATA)
         entries = Entity.objects.filter(type=EntityType.ENTRY)
+        inaccessible_cases = Entity.objects.filter(id=self.case2.id)
 
         expected_json = {
             "id": self.case1.id,
@@ -265,6 +199,15 @@ class CaseDashboardSerializerTest(DashboardsTestCase):
                 }
             ],
             "entries": [],
+            "inaccessible_cases": [
+                {
+                    "id": self.case2.id,
+                    "name": "Some Case",
+                    "description": "Some Description",
+                    "type": "case",
+                    "subtype": "",
+                }
+            ],
             "access": "read-write",
         }
 
@@ -279,6 +222,7 @@ class CaseDashboardSerializerTest(DashboardsTestCase):
             "cases": cases,
             "metadata": metadata,
             "entries": entries,
+            "inaccessible_cases": inaccessible_cases,
             "access": "read-write",
         }
 
@@ -289,46 +233,8 @@ class CaseDashboardSerializerTest(DashboardsTestCase):
 
 class ActorDashboardSerializerTest(DashboardsTestCase):
 
-    def create_notes(self):
-        self.note1 = Note.objects.create(content="Note1")
-        self.note1.entities.add(self.case1, self.actor1, self.metadata1)
-
-        self.note2 = Note.objects.create(content="Note2")
-        self.note2.entities.add(self.case2, self.actor2, self.case1)
-
-    def create_cases(self):
-        self.case1 = Entity.objects.create(
-            name="Case1", description="Description1", type=EntityType.CASE
-        )
-
-        self.case2 = Entity.objects.create(
-            name="Case2", description="Description2", type=EntityType.CASE
-        )
-
-    def create_actors(self):
-        self.actor1 = Entity.objects.create(
-            name="Actor1", description="Description1", type=EntityType.ACTOR
-        )
-
-        self.actor2 = Entity.objects.create(
-            name="Actor2", description="Description2", type=EntityType.ACTOR
-        )
-
-    def create_metadata(self):
-        self.metadata1 = Entity.objects.create(
-            name="Metadata1", description="Description1", type=EntityType.METADATA
-        )
-
     def setUp(self):
         super().setUp()
-
-        self.create_cases()
-
-        self.create_actors()
-
-        self.create_metadata()
-
-        self.create_notes()
 
     @patch("notes.models.Note.timestamp", new_callable=PropertyMock)
     def test_actor_dashboard_serializer(self, mock_timestamp):
@@ -339,6 +245,7 @@ class ActorDashboardSerializerTest(DashboardsTestCase):
         cases = Entity.objects.filter(id=self.case1.id)
         metadata = Entity.objects.filter(id=self.metadata1.id)
         entries = Entity.objects.none()
+        inaccessible_cases = Entity.objects.filter(id=self.case2.id)
 
         expected_json = {
             "id": self.actor1.id,
@@ -393,6 +300,15 @@ class ActorDashboardSerializerTest(DashboardsTestCase):
                     "subtype": "",
                 }
             ],
+            "inaccessible_cases": [
+                {
+                    "id": self.case2.id,
+                    "name": "Some Case",
+                    "description": "Some Description",
+                    "type": "case",
+                    "subtype": "",
+                }
+            ],
         }
 
         entities_dict = {
@@ -406,6 +322,7 @@ class ActorDashboardSerializerTest(DashboardsTestCase):
             "cases": cases,
             "metadata": metadata,
             "entries": entries,
+            "inaccessible_cases": inaccessible_cases,
             "access": "read-write",
         }
 
@@ -416,35 +333,8 @@ class ActorDashboardSerializerTest(DashboardsTestCase):
 
 class EntryDashboardSerializerTest(DashboardsTestCase):
 
-    def create_notes(self):
-        self.note1 = Note.objects.create(content="Note1")
-        self.note1.entities.add(self.case1, self.actor1, self.metadata1, self.entry1)
-
-        self.note2 = Note.objects.create(content="Note2")
-        self.note2.entities.add(self.case2, self.actor2, self.case1)
-
-    def create_cases(self):
-        self.case1 = Entity.objects.create(
-            name="Case1", description="Description1", type=EntityType.CASE
-        )
-
-        self.case2 = Entity.objects.create(
-            name="Case2", description="Description2", type=EntityType.CASE
-        )
-
-    def create_actors(self):
-        self.actor1 = Entity.objects.create(
-            name="Actor1", description="Description1", type=EntityType.ACTOR
-        )
-
-        self.actor2 = Entity.objects.create(
-            name="Actor2", description="Description2", type=EntityType.ACTOR
-        )
-
-    def create_metadata(self):
-        self.metadata1 = Entity.objects.create(
-            name="Metadata1", description="Description1", type=EntityType.METADATA
-        )
+    def update_notes(self):
+        self.note1.entities.add(self.entry1)
 
     def create_entries(self):
         self.entry1 = Entity.objects.create(
@@ -457,15 +347,9 @@ class EntryDashboardSerializerTest(DashboardsTestCase):
     def setUp(self):
         super().setUp()
 
-        self.create_cases()
-
-        self.create_actors()
-
-        self.create_metadata()
-
         self.create_entries()
 
-        self.create_notes()
+        self.update_notes()
 
     @patch("notes.models.Note.timestamp", new_callable=PropertyMock)
     def test_actor_dashboard_serializer(self, mock_timestamp):
@@ -476,6 +360,7 @@ class EntryDashboardSerializerTest(DashboardsTestCase):
         cases = Entity.objects.filter(id=self.case1.id)
         metadata = Entity.objects.filter(id=self.metadata1.id)
         entries = Entity.objects.none()
+        inaccessible_cases = Entity.objects.filter(id=self.case2.id)
 
         expected_json = {
             "id": self.entry1.id,
@@ -526,6 +411,15 @@ class EntryDashboardSerializerTest(DashboardsTestCase):
                     "subtype": "",
                 },
             ],
+            "inaccessible_cases": [
+                {
+                    "id": self.case2.id,
+                    "name": "Some Case",
+                    "description": "Some Description",
+                    "type": "case",
+                    "subtype": "",
+                }
+            ],
         }
 
         entities_dict = {
@@ -539,6 +433,7 @@ class EntryDashboardSerializerTest(DashboardsTestCase):
             "cases": cases,
             "metadata": metadata,
             "entries": entries,
+            "inaccessible_cases": inaccessible_cases,
             "access": "read-write",
         }
 
