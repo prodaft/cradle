@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import { useEffect, useState } from 'react';
 
 /**
  * useFrontendSearch hook - This hook is used to filter the children based on the search value.
@@ -14,15 +14,15 @@ import {useEffect, useState} from "react";
  * @returns {{filteredChildren: unknown, searchVal: string, setSearchVal: (value: (((prevState: string) => string) | string)) => void}}
  */
 const useFrontendSearch = (children) => {
-    const [searchVal, setSearchVal] = useState("");
+    const [searchVal, setSearchVal] = useState('');
     const [filteredChildren, setFilteredChildren] = useState(children);
 
     useEffect(() => {
-        if (searchVal === "") {
+        if (searchVal === '') {
             setFilteredChildren(children);
         } else {
             const filtered = children.filter((child) =>
-                child.props.searchKey.toLowerCase().includes(searchVal.toLowerCase())
+                child.props.searchKey.toLowerCase().includes(searchVal.toLowerCase()),
             );
             setFilteredChildren(filtered);
         }

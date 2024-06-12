@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 /**
  * SidebarSection component - section of the sidebar
@@ -14,25 +14,25 @@ export default function SidebarSection(props) {
         header: 'sidebar-header',
         content: 'sidebar-content',
         footer: 'sidebar-footer',
-    }
+    };
 
     const justifyVariants = {
         start: 'justify-start',
         end: 'justify-end',
-    }
+    };
 
     const heightVariants = {
         fit: 'h-fit',
         full: 'h-full',
-    }
+    };
 
     return (
-        <section className={`${sectionVariants[props.sectionType]} ${justifyVariants[props.justify]} ${heightVariants[props.height]}`}>
-            <nav className="menu rounded-md">
-                <section className="menu-section gap-2">
-                    <ul className="menu-items">
-                        {props.children}
-                    </ul>
+        <section
+            className={`${sectionVariants[props.sectionType]} ${justifyVariants[props.justify]} ${heightVariants[props.height]}`}
+        >
+            <nav className='menu rounded-md'>
+                <section className='menu-section gap-2'>
+                    <ul className='menu-items'>{props.children}</ul>
                 </section>
             </nav>
         </section>

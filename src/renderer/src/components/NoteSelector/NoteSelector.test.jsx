@@ -1,8 +1,8 @@
 /**
  * @jest-environment jsdom
  */
-import { render, screen, fireEvent } from "@testing-library/react";
-import NoteSelector from "./NoteSelector";
+import { render, screen } from '@testing-library/react';
+import NoteSelector from './NoteSelector';
 import '@testing-library/jest-dom';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -20,17 +20,17 @@ jest.mock('../../hooks/useAuth/useAuth', () => ({
 jest.mock('../../hooks/useNavbarContents/useNavbarContents');
 
 const noteEntities = [
-    { id: 4, name: "127.0.0.1", type: "entry", subtype: "ip" },
-    { id: 5, name: "Case 1", type: "case", subtype: "" },
-]
+    { id: 4, name: '127.0.0.1', type: 'entry', subtype: 'ip' },
+    { id: 5, name: 'Case 1', type: 'case', subtype: '' },
+];
 
 const contentObject = {
     id: 5,
-    name: "Case 1",
-    type: "case",
-    subtype: "",
+    name: 'Case 1',
+    type: 'case',
+    subtype: '',
     entites: noteEntities,
-    description: "Description",
+    description: 'Description',
     notes: [
         { id: 1, publishable: true, entities: noteEntities },
         { id: 2, publishable: true, entities: noteEntities },
@@ -38,7 +38,17 @@ const contentObject = {
     ],
 };
 
-const notes = [{ id: 10, content: 'Note 1', entities: [{ id: 2, name: 'Actor 1' }, { id: 3, name: 'Case 1' }], timestamp: '2021-10-01T00:00:00Z' },]
+const notes = [
+    {
+        id: 10,
+        content: 'Note 1',
+        entities: [
+            { id: 2, name: 'Actor 1' },
+            { id: 3, name: 'Case 1' },
+        ],
+        timestamp: '2021-10-01T00:00:00Z',
+    },
+];
 
 const mockData = {
     id: 1,
@@ -58,10 +68,13 @@ jest.mock('react-router-dom', () => ({
     }),
 }));
 
-test("displays the name, type, and description of the content object", () => {
-    render(<MemoryRouter><NoteSelector /></MemoryRouter>);
+test('displays the name, type, and description of the content object', () => {
+    render(
+        <MemoryRouter>
+            <NoteSelector />
+        </MemoryRouter>,
+    );
 
-    expect(screen.getByText("Test Case")).toBeInTheDocument();
-    expect(screen.getByText("Description: This is a test case.")).toBeInTheDocument();
+    expect(screen.getByText('Test Case')).toBeInTheDocument();
+    expect(screen.getByText('Description: This is a test case.')).toBeInTheDocument();
 });
-

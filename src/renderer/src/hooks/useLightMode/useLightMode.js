@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 /**
  * Custom hook to determine if the user's system is in light mode
- * 
+ *
  * @returns {boolean} isLightMode
  */
 const useLightMode = () => {
     const [isLightMode, setIsLightMode] = useState(
-        window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches
+        window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches,
     );
 
     useEffect(() => {

@@ -2,14 +2,13 @@
  * @jest-environment jsdom
  */
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import DashboardHorizontalSection from './DashboardHorizontalSection';
 import '@testing-library/jest-dom';
-import { NavArrowDown, NavArrowUp } from 'iconoir-react';
 
 jest.mock('iconoir-react', () => ({
-    NavArrowDown: jest.fn(() => <div data-testid="nav-arrow-down"></div>),
-    NavArrowUp: jest.fn(() => <div data-testid="nav-arrow-up"></div>)
+    NavArrowDown: jest.fn(() => <div data-testid='nav-arrow-down'></div>),
+    NavArrowUp: jest.fn(() => <div data-testid='nav-arrow-up'></div>),
 }));
 
 describe('DashboardHorizontalSection component', () => {
@@ -24,9 +23,8 @@ describe('DashboardHorizontalSection component', () => {
         const title = 'Test Title';
         render(
             <DashboardHorizontalSection title={title}>
-                {[<div>Child 1</div>,
-                <div>Child 2</div>]}
-            </DashboardHorizontalSection>
+                {[<div>Child 1</div>, <div>Child 2</div>]}
+            </DashboardHorizontalSection>,
         );
 
         fireEvent.click(screen.getByText(title));
@@ -44,7 +42,11 @@ describe('DashboardHorizontalSection component', () => {
 
     it('shows the correct arrow icon based on expanded state', () => {
         const title = 'Test Title';
-        render(<DashboardHorizontalSection title={title}><div>Child</div></DashboardHorizontalSection>);
+        render(
+            <DashboardHorizontalSection title={title}>
+                <div>Child</div>
+            </DashboardHorizontalSection>,
+        );
 
         expect(screen.getByTestId('nav-arrow-down')).toBeInTheDocument();
         expect(screen.queryByTestId('nav-arrow-up')).not.toBeInTheDocument();
