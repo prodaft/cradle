@@ -5,9 +5,9 @@
  * If the error is from the server, display the error message from the server.
  * Otherwise, display the error message from the client.
  *
- * @param setAlert - Function to set the alert message (state)
- * @param setAlertColor - Function to set the alert color (state)
- * @returns {function(*): void}
+ * @param {(string) => void} setAlert - Function to set the alert message (state)
+ * @param {(string) => void} setAlertColor - Function to set the alert color (state)
+ * @returns {(err: any) => void} - Function to display error message in an alert box
  */
 const displayError = (setAlert, setAlertColor) => {
     return (err) => {

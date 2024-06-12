@@ -11,8 +11,8 @@ import AlertDismissible from '../AlertDismissible/AlertDismissible';
  * - The Actions column contains two buttons: one to copy the tag to the clipboard and one to delete the file.
  * The tag will be copied with the syntax [<filename>][<tag>]. Deleting a file will remove it from the table.
  *
- * @param {Array<Object>} files - a list of files to be displayed in the table. Each file has a tag and a name.
- * @param {(Array<Object>) => void} setFiles - callback used when the files change
+ * @param {Array<{tag: string, name: string, bucket: string}>} files - a list of files to be displayed in the table. Each file has a tag, a name, and its bucket.
+ * @param {(Array<{tag: string, name: string, bucket: string}>) => void} setFiles - callback used when the files change
  * @returns {FileTable}
  * @constructor
  */
@@ -33,6 +33,11 @@ export default function FileTable({ files, setFiles }) {
     // Removes a file from the table only. The file is not deleted from the server.
     const handleDelete = (file) => {
         setFiles(files.filter((f) => f.name !== file.name));
+        const minioCache = JSON.parse(localStorage.getItem('minio-cache'));
+        if (minioCache) {
+            delete minioCache[createDownloadPath(file)];
+            localStorage.setItem('minio-cache', JSON.stringify(minioCache));
+        }
     };
 
     return (

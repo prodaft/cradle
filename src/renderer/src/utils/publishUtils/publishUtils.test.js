@@ -2,10 +2,10 @@
  * @jest-environment jsdom
  */
 import {
-    createHtmlReport,
-    createMarkdownReportFromJson,
     createMarkdownSection,
+    createMarkdownReportFromJson,
     downloadFile,
+    createHtmlReport,
 } from './publishUtils';
 
 describe('createMarkdownSection', () => {
@@ -48,10 +48,15 @@ describe('createMarkdownSection', () => {
     });
 
     it('should return the markdown section with the correct title and items, with subtypes', () => {
-        const array = [{ name: 'Item 1', subtype: 'Subtype 1' }, { name: 'Item 2', subtype: 'Subtype 2' }, { name: 'Item 3' }];
+        const array = [
+            { name: 'Item 1', subtype: 'Subtype 1' },
+            { name: 'Item 2', subtype: 'Subtype 2' },
+            { name: 'Item 3' },
+        ];
         const sectionTitle = 'Test Section';
         const result = createMarkdownSection(array, sectionTitle);
-        const expected = '## Test Section\n\n##### Subtype 1: Item 1; Subtype 2: Item 2; Item 3; \n\n---\n\n';
+        const expected =
+            '## Test Section\n\n##### Subtype 1: Item 1; Subtype 2: Item 2; Item 3; \n\n---\n\n';
 
         expect(result).toBe(expected);
     });

@@ -49,8 +49,16 @@ export default function FleetingNoteEditor() {
     const [dialog, setDialog] = useState(false);
     const { id } = useParams();
     const [fileData, setFileData] = useLocalStorage(`file-data-${id}`, []);
+    const fileDataRef = useRef(fileData);
+    const [parsedContent, setParsedContent] = useState('');
 
     const flexDirection = useChangeFlexDirectionBySize(textEditorRef);
+
+    useEffect(() => {
+        parseContent(markdownContent, fileData)
+            .then((parsedContent) => setParsedContent(parsedContent))
+            .catch(displayError(setAlert, setAlertColor));
+    }, [markdownContent, fileData]);
 
     useEffect(() => {
         if (id) {
@@ -58,6 +66,7 @@ export default function FleetingNoteEditor() {
             getFleetingNoteById(auth.access, id)
                 .then((response) => {
                     setMarkdownContent(response.data.content);
+                    setFileData(response.data.files);
                 })
                 .catch(displayError(setAlert, setAlertColor));
         }
@@ -66,6 +75,10 @@ export default function FleetingNoteEditor() {
     useEffect(() => {
         markdownContentRef.current = markdownContent;
     }, [markdownContent]);
+
+    useEffect(() => {
+        fileDataRef.current = fileData;
+    }, [fileData]);
 
     const isValidContent = () => {
         if (!markdownContentRef.current) {
@@ -79,7 +92,10 @@ export default function FleetingNoteEditor() {
     const handleSaveNote = () => {
         if (!isValidContent()) return;
         if (id) {
-            updateFleetingNote(auth.access, id, markdownContentRef.current)
+            const storedContent = markdownContentRef.current;
+            const storedFileData = fileDataRef.current;
+
+            updateFleetingNote(auth.access, id, storedContent, storedFileData)
                 .then((response) => {
                     if (response.status === 200) {
                         setAlertColor('green');
@@ -128,7 +144,10 @@ export default function FleetingNoteEditor() {
                 icon={<FloppyDiskArrowIn />}
                 text={'Save As Final'}
                 contents={[
-                    { label: 'Publishable', handler: handleMakeFinal(true) },
+                    {
+                        label: 'Publishable',
+                        handler: handleMakeFinal(true),
+                    },
                     {
                         label: 'Not Publishable',
                         handler: handleMakeFinal(false),
@@ -181,7 +200,7 @@ export default function FleetingNoteEditor() {
                 <div
                     className={`${flexDirection === 'flex-col' ? 'h-1/2' : 'h-full'} w-full bg-gray-2 rounded-md`}
                 >
-                    <Preview htmlContent={parseContent(markdownContent)} />
+                    <Preview htmlContent={parsedContent} />
                 </div>
             </div>
         </>

@@ -22,9 +22,9 @@ import { NavArrowDown, NavArrowUp } from 'iconoir-react/regular';
  *
  * @param {string} markdownContent - the content inside the Editor
  * @param {(string) => void} setMarkdownContent - callback used when the value of the content changes
- * @param {Array<Object>} fileData - the files uploaded by the user. These belong to the note that is being written.
+ * @param {Array<{tag: string, name: string, bucket: string}>} fileData - the files uploaded by the user. These belong to the note that is being written.
  *                                   Each piece of fiele data consists of the `tag` and the `name` of the file
- * @param {(Array<Object>) => void} setFileData - callback used when the files change
+ * @param {(Array<{tag: string, name: string, bucket: string}>) => void} setFileData - callback used when the files change
  * @param {boolean} isLightMode - the current theme of the editor
  * @returns {Editor}
  */
