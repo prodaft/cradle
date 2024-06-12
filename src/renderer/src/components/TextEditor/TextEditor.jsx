@@ -30,20 +30,27 @@ import { useLocalStorage } from '@uidotdev/usehooks';
  * @returns {TextEditor}
  */
 export default function TextEditor() {
+    const [alert, setAlert] = useState('');
+    const [alertColor, setAlertColor] = useState('red');
+    const auth = useAuth();
+    const navigate = useNavigate();
+    const isLightMode = useLightMode();
     const [markdownContent, setMarkdownContentCallback] = useLocalStorage(
         'md-content',
         '',
     );
-    const markdownContentRef = useRef(markdownContent);
-    const auth = useAuth();
-    const [alert, setAlert] = useState('');
-    const [alertColor, setAlertColor] = useState('red');
-    const navigate = useNavigate();
-    const parsedContent = parseContent(markdownContent);
-    const isLightMode = useLightMode();
     const [fileData, setFileData] = useLocalStorage('file-data', []);
+    const markdownContentRef = useRef(markdownContent);
     const textEditorRef = useRef(null);
+    const fileDataRef = useRef(fileData);
     const { refreshFleetingNotes } = useOutletContext();
+    const [parsedContent, setParsedContent] = useState('');
+
+    useEffect(() => {
+        parseContent(markdownContent, fileData)
+            .then((parsedContent) => setParsedContent(parsedContent))
+            .catch(displayError(setAlert, setAlertColor));
+    }, [markdownContent, fileData]);
 
     // Resize the text editor based on the size of the parent container
     const flexDirection = useChangeFlexDirectionBySize(textEditorRef);
@@ -51,6 +58,10 @@ export default function TextEditor() {
     useEffect(() => {
         markdownContentRef.current = markdownContent;
     }, [markdownContent]);
+
+    useEffect(() => {
+        fileDataRef.current = fileData;
+    }, [fileData]);
 
     const isEmptyNote = () => {
         if (!markdownContentRef.current) {
@@ -67,13 +78,15 @@ export default function TextEditor() {
         if (isEmptyNote()) return;
 
         const storedContent = markdownContentRef.current;
+        const storedFileData = fileDataRef.current;
 
-        saveNote(auth.access, storedContent, publishable)
+        saveNote(auth.access, storedContent, publishable, storedFileData)
             .then((res) => {
                 if (res.status === 200) {
                     // Clear local storage on success
                     setMarkdownContentCallback('');
                     setFileData([]);
+                    localStorage.removeItem('minio-cache');
                     setAlertColor('green');
                     setAlert('Note saved successfully.');
                 }
@@ -85,14 +98,16 @@ export default function TextEditor() {
         if (isEmptyNote()) return;
 
         const storedContent = markdownContentRef.current;
+        const storedFileData = fileDataRef.current;
 
-        addFleetingNote(auth.access, storedContent)
+        addFleetingNote(auth.access, storedContent, storedFileData)
             .then((res) => {
                 if (res.status === 200) {
                     // Clear local storage on success
                     refreshFleetingNotes();
                     setMarkdownContentCallback('');
                     setFileData([]);
+                    localStorage.removeItem('minio-cache');
                     setAlertColor('green');
                     setAlert('Fleeting note saved successfully.');
                     navigate(`/fleeting-editor/${res.data.id}`);

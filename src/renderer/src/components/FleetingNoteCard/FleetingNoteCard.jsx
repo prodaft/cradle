@@ -5,7 +5,7 @@ import { Trash } from 'iconoir-react/regular';
 import { deleteFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { useAuth } from '../../hooks/useAuth/useAuth';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 /**
  * FleetingNoteCard is a component that displays a single Fleeting Note. It is used in the FleetingNotesPanel component.
@@ -18,6 +18,13 @@ import { useState } from 'react';
 export default function FleetingNoteCard({ note, setAlert, setAlertColor }) {
     const navigate = useNavigate();
     const auth = useAuth();
+    const [parsedContent, setParsedContent] = useState('');
+
+    useEffect(() => {
+        parseContent(note.content, note.files)
+            .then((parsedContent) => setParsedContent(parsedContent))
+            .catch(displayError(setAlert, setAlertColor));
+    }, [note.content, note.files]);
 
     return (
         <div
@@ -30,7 +37,7 @@ export default function FleetingNoteCard({ note, setAlert, setAlertColor }) {
                 </div>
             </div>
             <div className='bg-transparent h-fit p-2 backdrop-filter mb-4 overflow-hidden flex-grow flex space-y-2 flex-col cursor-pointer'>
-                {note.content && <Preview htmlContent={parseContent(note.content)} />}
+                {note.content && <Preview htmlContent={parsedContent} />}
             </div>
         </div>
     );

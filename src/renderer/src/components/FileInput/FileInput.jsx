@@ -15,7 +15,7 @@ import { CloudUpload } from 'iconoir-react';
  * The user can upload multiple files at once. Each file is uploaded individually.
  * If any of the files fail to upload, the user is alerted.
  *
- * @param {Array<Object>} fileData - the files uploaded via this instance of the component. This only contains the tag and the name of the file.
+ * @param {Array<{tag: string, name: string, bucket: string}>} fileData - the files uploaded via this instance of the component. This only contains the tag and the name of the file.
  *                                   The tag is a unique identifier used to reference the file in the markdown content.
  * @param {(FileList) => void} setFileData - callback used when the files uploaded via this instance of the component change
  * @returns {FileInput}
@@ -49,14 +49,14 @@ export default function FileInput({ fileData, setFileData }) {
             getUploadLink(auth.access, file.name)
                 .then(async (res) => {
                     const uploadUrl = res.data.presigned;
-                    const tag = res.data.minio_file_name;
                     await uploadFile(uploadUrl, file);
-                    return tag;
+                    return res.data;
                 })
-                .then((tag) => {
+                .then((data) => {
                     succeededFileData.push({
-                        tag: tag,
+                        tag: data.minio_file_name,
                         name: file.name,
+                        bucket: data.bucket_name,
                     });
                 })
                 .catch(() => {
