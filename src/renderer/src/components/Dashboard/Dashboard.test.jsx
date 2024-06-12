@@ -3,8 +3,7 @@
  */
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import { BrowserRouter as Router } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, useLocation } from 'react-router-dom';
 import Dashboard from './Dashboard';
 import { getDashboardData } from '../../services/dashboardService/dashboardService';
 import { useAuth } from '../../hooks/useAuth/useAuth';
@@ -20,7 +19,7 @@ jest.mock('../../services/dashboardService/dashboardService');
 jest.mock('../../hooks/useAuth/useAuth');
 jest.mock('../../hooks/useNavbarContents/useNavbarContents');
 
-window.HTMLElement.prototype.scrollTo = () => { };
+window.HTMLElement.prototype.scrollTo = () => {};
 
 describe('Dashboard Component', () => {
     beforeEach(() => {
@@ -34,7 +33,7 @@ describe('Dashboard Component', () => {
         render(
             <Router>
                 <Dashboard />
-            </Router>
+            </Router>,
         );
     });
 
@@ -44,7 +43,7 @@ describe('Dashboard Component', () => {
         render(
             <Router>
                 <Dashboard />
-            </Router>
+            </Router>,
         );
 
         await waitFor(() => expect(getDashboardData).toHaveBeenCalledTimes(1));
@@ -67,18 +66,20 @@ describe('Dashboard Component', () => {
         render(
             <Router>
                 <Dashboard />
-            </Router>
+            </Router>,
         );
 
         await waitFor(() => expect(getDashboardData).toHaveBeenCalledTimes(1));
 
-        expect(screen.getByText('Test Case')).toBeInTheDocument();
-        expect(screen.getByText('Type: case')).toBeInTheDocument();
-        expect(screen.getByText('Description: This is a test case.')).toBeInTheDocument();
-        expect(screen.getByText('Actor 1')).toBeInTheDocument();
-        expect(screen.getByText('Case 1')).toBeInTheDocument();
-        expect(screen.getByText('Metadata 1')).toBeInTheDocument();
-        expect(screen.getByText('Note 1')).toBeInTheDocument();
+        expect(await screen.findByText('Test Case')).toBeInTheDocument();
+        expect(await screen.findByText('Type: case')).toBeInTheDocument();
+        expect(
+            await screen.findByText('Description: This is a test case.'),
+        ).toBeInTheDocument();
+        expect(await screen.findByText('Actor 1')).toBeInTheDocument();
+        expect(await screen.findByText('Case 1')).toBeInTheDocument();
+        expect(await screen.findByText('Metadata 1')).toBeInTheDocument();
+        expect(await screen.findByText('Note 1')).toBeInTheDocument();
     });
 
     it('displays error message when entity is missing', async () => {
@@ -87,9 +88,11 @@ describe('Dashboard Component', () => {
         render(
             <Router>
                 <Dashboard />
-            </Router>
+            </Router>,
         );
 
-        await waitFor(() => expect(screen.getByTestId("not-found")).toBeInTheDocument());
+        await waitFor(() =>
+            expect(screen.getByTestId('not-found')).toBeInTheDocument(),
+        );
     });
 });

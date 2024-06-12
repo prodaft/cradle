@@ -1,6 +1,3 @@
-import {Link} from "react-router-dom";
-import {Trash} from "iconoir-react/regular";
-
 /**
  * Component to show search results
  * @param name - the name of the search result
@@ -10,11 +7,17 @@ import {Trash} from "iconoir-react/regular";
  * @returns {SearchResult}
  * @constructor
  */
-export default function SearchResult({name,onClick,type,subtype}) {
+export default function SearchResult({ name, onClick, type, subtype }) {
     return (
-        <div className="h-fit w-full bg-cradle1 px-3 py-6 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl cursor-pointer" onClick={onClick}>
-            <h2 className="card-header w-full mx-2">{name}</h2>
-            <p className="opacity-50 mx-2">{type}{subtype ? `: ${subtype}` : ''}</p>
+        <div
+            className='h-fit w-full bg-cradle3 px-3 py-6 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl cursor-pointer'
+            onClick={onClick}
+        >
+            <h2 className='card-header w-full mx-2 text-white'>{name}</h2>
+            <p className='text-zinc-300 mx-2'>
+                {type}
+                {subtype ? `: ${subtype}` : ''}
+            </p>
         </div>
     );
 }

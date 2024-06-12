@@ -1,11 +1,11 @@
 /**
  * @jest-environment jsdom
  */
-import { render, screen, fireEvent } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
-import DashboardNote from "./DashboardNote";
-import '@testing-library/jest-dom';
+import { render, screen, fireEvent } from '@testing-library/react';
 import * as ReactRouterDom from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
+import DashboardNote from './DashboardNote';
+import '@testing-library/jest-dom';
 
 // Mock the entire module first
 jest.mock('react-router-dom', () => ({
@@ -19,15 +19,15 @@ jest.mock('../../hooks/useAuth/useAuth', () => ({
     }),
 }));
 
-describe("DashboardNote", () => {
+describe('DashboardNote', () => {
     const selectedNoteIds = new Array();
     const note = {
         id: 1,
         timestamp: new Date().getTime(),
-        content: "This is a test note",
+        content: 'This is a test note',
         entities: [
-            { id: 1, name: "Entity 1" },
-            { id: 2, name: "Entity 2" },
+            { id: 1, name: 'Entity 1' },
+            { id: 2, name: 'Entity 2' },
         ],
         publishable: true,
     };
@@ -36,7 +36,7 @@ describe("DashboardNote", () => {
     const setAlertColor = jest.fn();
     const setSelectedNoteIds = jest.fn();
 
-    test("renders note content", () => {
+    test('renders note content', async () => {
         render(
             <MemoryRouter>
                 <DashboardNote
@@ -48,14 +48,14 @@ describe("DashboardNote", () => {
                     selectedNoteIds={selectedNoteIds}
                     setSelectedNoteIds={setSelectedNoteIds}
                 />
-            </MemoryRouter>
+            </MemoryRouter>,
         );
 
-        const noteContent = screen.getByText("This is a test note");
+        const noteContent = await screen.findByText('This is a test note');
         expect(noteContent).toBeInTheDocument();
     });
 
-    it('renders note content and entities', () => {
+    it('renders note content and entities', async () => {
         render(
             <MemoryRouter>
                 <DashboardNote
@@ -67,16 +67,15 @@ describe("DashboardNote", () => {
                     selectedNoteIds={selectedNoteIds}
                     setSelectedNoteIds={setSelectedNoteIds}
                 />
-            </MemoryRouter>
+            </MemoryRouter>,
         );
 
-        expect(screen.getByText('This is a test note')).toBeInTheDocument();
-        expect(screen.getByText('Entity 1;')).toBeInTheDocument();
-        expect(screen.getByText('Entity 2;')).toBeInTheDocument();
+        expect(await screen.findByText('This is a test note')).toBeInTheDocument();
+        expect(await screen.findByText('Entity 1;')).toBeInTheDocument();
+        expect(await screen.findByText('Entity 2;')).toBeInTheDocument();
     });
 
-
-    it('navigates to note detail page on note click', () => {
+    it('navigates to note detail page on note click', async () => {
         const navigate = jest.fn();
         ReactRouterDom.useNavigate.mockReturnValue(navigate);
 
@@ -91,10 +90,10 @@ describe("DashboardNote", () => {
                     selectedNoteIds={selectedNoteIds}
                     setSelectedNoteIds={setSelectedNoteIds}
                 />
-            </MemoryRouter>
+            </MemoryRouter>,
         );
 
-        fireEvent.click(screen.getByText('This is a test note'));
+        fireEvent.click(await screen.findByText('This is a test note'));
         expect(navigate).toHaveBeenCalledWith(`/notes/${note.id}`);
     });
 
@@ -113,7 +112,7 @@ describe("DashboardNote", () => {
                     selectedNoteIds={selectedNoteIds}
                     setSelectedNoteIds={setSelectedNoteIds}
                 />
-            </MemoryRouter>
+            </MemoryRouter>,
         );
 
         fireEvent.click(screen.getByRole('checkbox'));
@@ -132,10 +131,12 @@ describe("DashboardNote", () => {
                     selectedNoteIds={selectedNoteIds}
                     setSelectedNoteIds={setSelectedNoteIds}
                 />
-            </MemoryRouter>
+            </MemoryRouter>,
         );
 
-        expect(screen.getByText(new Date(note.timestamp).toLocaleString())).toBeInTheDocument();
+        expect(
+            screen.getByText(new Date(note.timestamp).toLocaleString()),
+        ).toBeInTheDocument();
     });
 
     it('renders note entities correctly', () => {
@@ -150,7 +151,7 @@ describe("DashboardNote", () => {
                     selectedNoteIds={selectedNoteIds}
                     setSelectedNoteIds={setSelectedNoteIds}
                 />
-            </MemoryRouter>
+            </MemoryRouter>,
         );
 
         expect(screen.getByText('Entity 1;')).toBeInTheDocument();

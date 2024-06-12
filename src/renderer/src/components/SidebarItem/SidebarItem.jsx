@@ -10,9 +10,14 @@ import React from 'react';
  */
 export default function SidebarItem({ icon, text, handleClick }) {
     return (
-        <li className="menu-item p-4 cursor-pointer group-hover/sidebar:flex items-center" onClick={handleClick}>
-            <div className="icon flex-shrink-0">{icon}</div>
-            <div className="hidden whitespace-nowrap ml-2 group-hover/sidebar:block">{text}</div>
+        <li
+            className='menu-item p-4 cursor-pointer group-hover/sidebar:flex items-center'
+            onClick={handleClick}
+        >
+            <div className='icon flex-shrink-0'>{icon}</div>
+            <div className='hidden whitespace-nowrap ml-2 group-hover/sidebar:block'>
+                {text}
+            </div>
         </li>
     );
 }

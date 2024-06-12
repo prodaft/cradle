@@ -1,4 +1,4 @@
-import {  getPublishData } from './publishService';
+import { getPublishData } from './publishService';
 import axios from 'axios';
 
 jest.mock('axios');
@@ -17,15 +17,15 @@ describe('getPublishData', () => {
         await getPublishData(token, noteIds);
 
         expect(axios).toHaveBeenCalledWith({
-            method: "GET",
-            url: "/notes/publish",
+            method: 'GET',
+            url: '/notes/publish',
             withCredentials: true,
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
             },
             params: { note_ids: noteIds },
-            paramsSerializer: expect.any(Function)
+            paramsSerializer: expect.any(Function),
         });
     });
 

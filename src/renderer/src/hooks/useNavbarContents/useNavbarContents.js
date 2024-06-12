@@ -1,5 +1,5 @@
-import {useOutletContext} from "react-router-dom";
-import {useEffect} from "react";
+import { useOutletContext } from 'react-router-dom';
+import { useEffect } from 'react';
 
 /**
  * useNavbarContents hook - sets the contents of the navbar
@@ -10,13 +10,11 @@ import {useEffect} from "react";
  *                       that uses the hook to avoid errors with React trying to
  *                       render multiple components simultaneously)
  */
-const useNavbarContents = (contents,dependencies) => {
+const useNavbarContents = (contents, dependencies) => {
     const { setNavbarContents } = useOutletContext();
 
     return useEffect(() => {
-        setNavbarContents([
-            contents
-        ]);
+        setNavbarContents([contents]);
 
         return () => {
             setNavbarContents([]);
