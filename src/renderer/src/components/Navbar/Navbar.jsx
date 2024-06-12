@@ -60,6 +60,7 @@ export default function Navbar(props) {
             <div className='w-fit h-fit navbar-end'>
                 {props.showFleetingNotesButton && (
                     <NavbarButton
+                        key='fleeting-notes-button'
                         text={'Fleeting Notes'}
                         icon={<Notes />}
                         onClick={props.handleFleetingNotesButton}

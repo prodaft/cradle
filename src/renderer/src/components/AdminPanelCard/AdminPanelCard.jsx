@@ -1,6 +1,6 @@
 import { Trash } from 'iconoir-react/regular';
 import { useState } from 'react';
-import { ConfirmationDialog } from '../ConfirmationDialog/ConfirmationDialog';
+import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 import { deleteEntity } from '../../services/adminService/adminService';
 import { useAuth } from '../../hooks/useAuth/useAuth';
 import { Link } from 'react-router-dom';

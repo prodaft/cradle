@@ -10,7 +10,7 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import NavbarButton from '../NavbarButton/NavbarButton';
 import { TaskList, Trash } from 'iconoir-react/regular';
-import { ConfirmationDialog } from '../ConfirmationDialog/ConfirmationDialog';
+import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 import { deleteEntity } from '../../services/adminService/adminService';
 import NotFound from '../NotFound/NotFound';
 import pluralize from 'pluralize';
@@ -74,7 +74,7 @@ export default function Dashboard() {
         navigate(`/notes`, { state: contentObject });
     }, [navigate, contentObject, setAlert, setAlertColor]);
 
-    const handleDelete = async () => {
+    const handleDelete = () => {
         deleteEntity(
             auth.access,
             `entities/${pluralize(contentObject.type)}`,

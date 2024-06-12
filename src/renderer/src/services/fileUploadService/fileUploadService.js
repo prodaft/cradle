@@ -15,7 +15,7 @@ axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
  */
 const getUploadLink = (token, fileName) => {
     return axios({
-        url: '/file-transfer/upload',
+        url: '/file-transfer/upload/',
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
