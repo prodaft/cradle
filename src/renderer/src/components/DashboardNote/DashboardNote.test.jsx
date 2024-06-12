@@ -90,7 +90,7 @@ describe('DashboardNote', () => {
         );
 
         fireEvent.click(await screen.findByText('This is a test note'));
-        expect(navigate).toHaveBeenCalledWith(`/notes/${note.id}`);
+        expect(navigate).toHaveBeenCalledWith(`/notes/${note.id}`, expect.any(Object));
     });
 
     it('does not navigate when checkbox is clicked', () => {

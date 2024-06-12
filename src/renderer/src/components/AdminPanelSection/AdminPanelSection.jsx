@@ -9,7 +9,7 @@ import useFrontendSearch from '../../hooks/useFrontendSearch/useFrontendSearch';
  * - Search bar
  * - Children (cards)
  * The component will filter the children based on the search input.
- * 
+ *
  * @param {string} title - The title of the section
  * @param {boolean} addEnabled - Whether the add button is enabled
  * @param {string} addTooltipText - The tooltip text for the add button
@@ -18,10 +18,14 @@ import useFrontendSearch from '../../hooks/useFrontendSearch/useFrontendSearch';
  * @returns {AdminPanelSection}
  * @constructor
  */
-export default function AdminPanelSection({ title, addEnabled, addTooltipText, handleAdd, children }) {
-    const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(
-        children,
-    );
+export default function AdminPanelSection({
+    title,
+    addEnabled,
+    addTooltipText,
+    handleAdd,
+    children,
+}) {
+    const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(children);
 
     return (
         <div className='w-full h-fit bg-gray-2 rounded-md p-3'>

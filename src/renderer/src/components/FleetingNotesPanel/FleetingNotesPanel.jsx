@@ -34,10 +34,7 @@ export default function FleetingNotesPanel({
 
     return (
         <>
-            <AlertDismissible
-                alert={alertText}
-                setAlert={setAlert}
-            />
+            <AlertDismissible alert={alert} setAlert={setAlert} />
             <div
                 className='bg-gray-2 w-full h-full p-4 flex flex-col space-y-2 overflow-hidden'
                 data-testid='fleeting-notes-panel'
@@ -53,10 +50,7 @@ export default function FleetingNotesPanel({
                 <div className='w-full h-full overflow-y-auto'>
                     {notes && notes.length > 0 ? (
                         notes.map((note) => (
-                            <FleetingNoteCard
-                                note={note}
-                                setAlert={setAlert}
-                            />
+                            <FleetingNoteCard note={note} setAlert={setAlert} />
                         ))
                     ) : (
                         <p className='w-full p-2 text-zinc-500 text-center'>

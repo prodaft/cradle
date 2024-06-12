@@ -53,19 +53,16 @@ export default function Dashboard() {
                     errHandler(err);
                 }
             });
-    }, [
-        location,
-        auth.access,
-        path,
-        setAlert,
-        setEntityMissing,
-        setContentObject,
-    ]);
+    }, [location, auth.access, path, setAlert, setEntityMissing, setContentObject]);
 
     const handleEnterPublishMode = useCallback(() => {
         const publishableNotes = contentObject.notes.filter((note) => note.publishable);
         if (publishableNotes.length === 0) {
-            setAlert({ show: true, message: 'There are no publishable notes available.', color: 'green' });
+            setAlert({
+                show: true,
+                message: 'There are no publishable notes available.',
+                color: 'green',
+            });
             return;
         }
         navigate(`/notes`, { state: contentObject });

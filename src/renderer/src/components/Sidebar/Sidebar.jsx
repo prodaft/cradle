@@ -14,7 +14,12 @@ import { useAuth } from '../../hooks/useAuth/useAuth';
  * @returns {Sidebar}
  * @constructor
  */
-export default function Sidebar({ handleAdminPanel, handleGraphView, handleLogout, handleNewNote }) {
+export default function Sidebar({
+    handleAdminPanel,
+    handleGraphView,
+    handleLogout,
+    handleNewNote,
+}) {
     const auth = useAuth();
     return (
         <div className='h-screen sticky top-0' data-testid='sidebar-test'>

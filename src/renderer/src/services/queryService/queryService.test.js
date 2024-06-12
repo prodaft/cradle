@@ -19,7 +19,7 @@ describe('queryEntities', () => {
 
         await queryEntities(token, name, entityTypes, entryTypes);
 
-        expect(axios.get).toHaveBeenCalledWith('/query', {
+        expect(axios.get).toHaveBeenCalledWith('/query/', {
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`,

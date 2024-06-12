@@ -17,7 +17,7 @@ const getNote = (token, id) => {
             Authorization: `Bearer ${token}`,
         },
     });
-}
+};
 
 /**
  * Function to set the publishable status of a note
@@ -43,11 +43,11 @@ const setPublishable = (token, noteId, status) => {
             publishable: status,
         },
     });
-}
+};
 
 /**
  * Function to delete a note
- * 
+ *
  * @param {string} token - The (JWT) token to authenticate the request
  * @param {number} id - The id of the note to delete
  * @returns {Promise<AxiosResponse<string>>}
@@ -56,10 +56,10 @@ const deleteNote = (token, id) => {
     return axios({
         method: 'DELETE',
         url: `/notes/${id}/`,
-        headers: { 
+        headers: {
             Authorization: `Bearer ${token}`,
         },
     });
-}
+};
 
 export { getNote, setPublishable, deleteNote };

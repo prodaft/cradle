@@ -35,7 +35,7 @@ export default function FileInput({ fileData, setFileData }) {
 
     const handleUpload = () => {
         if (!pendingFiles || pendingFiles.length === 0) {
-            setAlert({ show: true, message: 'No files selected.', color: 'red' })
+            setAlert({ show: true, message: 'No files selected.', color: 'red' });
             return;
         }
 
@@ -73,13 +73,17 @@ export default function FileInput({ fileData, setFileData }) {
                     setPendingFiles(failedFiles.files);
                     throw new Error(
                         'Failed to upload files: ' +
-                        Array.from(failedFiles.files)
-                            .map((file) => file.name)
-                            .join(', '),
+                            Array.from(failedFiles.files)
+                                .map((file) => file.name)
+                                .join(', '),
                     );
                 } else {
                     setPendingFiles(EMPTY_FILE_LIST);
-                    setAlert({ show: true, message: 'All files uploaded successfully!', color: 'green' })
+                    setAlert({
+                        show: true,
+                        message: 'All files uploaded successfully!',
+                        color: 'green',
+                    });
                 }
             })
             .catch(displayError(setAlert)) // Catches the error thrown in the .then block

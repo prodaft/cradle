@@ -24,7 +24,11 @@ describe('displayError', () => {
         const setError = displayError(setAlert);
         setError(err);
 
-        expect(setAlert).toHaveBeenCalledWith({ show: true, message: '500: Internal Server Error', color: 'red' });
+        expect(setAlert).toHaveBeenCalledWith({
+            show: true,
+            message: '500: Internal Server Error',
+            color: 'red',
+        });
     });
 
     it('should display the error message from the error object if no server or client error message is available', () => {
@@ -33,6 +37,10 @@ describe('displayError', () => {
         const setError = displayError(setAlert);
         setError(err);
 
-        expect(setAlert).toHaveBeenCalledWith({ show: true, message: 'Network Error', color: 'red' });
+        expect(setAlert).toHaveBeenCalledWith({
+            show: true,
+            message: 'Network Error',
+            color: 'red',
+        });
     });
 });

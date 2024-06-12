@@ -11,7 +11,7 @@
 const displayError = (setAlert) => {
     return (err) => {
         const color = 'red';
-        let message = 'An unknown error occurred.'
+        let message = 'An unknown error occurred.';
 
         if (err.response && err.response.data && err.response.data.detail) {
             message = `${err.response.status}: ${err.response.data.detail}`;

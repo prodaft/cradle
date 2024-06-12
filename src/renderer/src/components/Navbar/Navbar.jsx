@@ -6,14 +6,18 @@ import NavbarButton from '../NavbarButton/NavbarButton';
 
 /**
  * Navbar component - the main navigation bar for the application.
- * 
+ *
  * @param {Array<React.Component>} contents - the contents of the navbar set by other components
  * @param {() => void} showFleetingNotesButton - determines if the Fleeting Notes button should be displayed
  * @param {() => void} handleFleetingNotes - handler for the Fleeting Notes action
  * @returns {Navbar}
  * @constructor
  */
-export default function Navbar({ contents, showFleetingNotesButton, handleFleetingNotesButton }) {
+export default function Navbar({
+    contents,
+    showFleetingNotesButton,
+    handleFleetingNotesButton,
+}) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const navigate = useNavigate();
 
@@ -55,9 +59,7 @@ export default function Navbar({ contents, showFleetingNotesButton, handleFleeti
                     onClose={() => setIsDialogOpen(false)}
                 />
             </div>
-            <div className='w-full justify-end h-fit navbar-center'>
-                {contents}
-            </div>
+            <div className='w-full justify-end h-fit navbar-center'>{contents}</div>
             <div className='w-fit h-fit navbar-end'>
                 {showFleetingNotesButton && (
                     <NavbarButton

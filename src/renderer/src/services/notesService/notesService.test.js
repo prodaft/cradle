@@ -13,7 +13,7 @@ it('fetches note successfully from API', async () => {
 
     expect(axios).toHaveBeenCalledWith({
         method: 'get',
-        url: `/notes/1`,
+        url: `/notes/1/`,
         headers: { Authorization: `Bearer dummy_token` },
     });
 });

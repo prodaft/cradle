@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 
 /**
  * NotFound component - a placeholder component for pages that are not found.
- * 
+ *
  * @param {string} message - An optional message to display in place of the default message.
  * @returns {NotFound}
  * @constructor

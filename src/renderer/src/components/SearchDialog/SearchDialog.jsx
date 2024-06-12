@@ -30,8 +30,7 @@ export default function SearchDialog({ isOpen, onClose }) {
     const [entityTypeFilters, setEntityTypeFilters] = useState([]);
     const [entitySubtypeFilters, setEntitySubtypeFilters] = useState([]);
     const [results, setResults] = useState(null);
-    const [error, setError] = useState('');
-    const [errorColor, setErrorColor] = useState('red');
+    const [error, setError] = useState({ show: false, message: '', color: 'red' });
     const dialogRoot = document.getElementById('portal-root');
     const navigate = useNavigate();
 
@@ -50,13 +49,13 @@ export default function SearchDialog({ isOpen, onClose }) {
     };
 
     const handleResultClick = (link) => () => {
-        setError('');
+        setError({ ...error, show: false });
         onClose();
         navigate(link);
     };
 
     const performSearch = () => {
-        setError('');
+        setError({ ...error, show: false });
         queryEntities(auth.access, searchQuery, entityTypeFilters, entitySubtypeFilters)
             .then((response) => {
                 setResults(
@@ -73,7 +72,7 @@ export default function SearchDialog({ isOpen, onClose }) {
                     }),
                 );
             })
-            .catch(displayError(setError, setErrorColor));
+            .catch(displayError(setError));
     };
 
     if (!isOpen) return null;
@@ -82,7 +81,7 @@ export default function SearchDialog({ isOpen, onClose }) {
         <div
             className='fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50'
             onClick={() => {
-                setError('');
+                setError({ ...error, show: false });
                 onClose();
             }}
         >
@@ -117,7 +116,7 @@ export default function SearchDialog({ isOpen, onClose }) {
                     entryTypeFilters={entitySubtypeFilters}
                     setEntryTypeFilters={setEntitySubtypeFilters}
                 />
-                {error && <AlertBox title={error} color={errorColor} />}
+                <AlertBox error={error} />
                 <div className='flex-grow overflow-y-auto no-scrollbar space-y-2'>
                     {results && results.length > 0 ? (
                         results
