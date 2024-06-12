@@ -6,6 +6,7 @@ import { setPublishable } from '../../services/notesService/notesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { useAuth } from '../../hooks/useAuth/useAuth';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
+import { useLocation } from 'react-router-dom';
 
 /**
  * DashboardNote component - This component is used to display a note on the dashboard.
@@ -36,6 +37,7 @@ export default function DashboardNote({
     const [isPublishable, setIsPublishable] = useState(note.publishable);
     const [isSelected, setIsSelected] = useState(true);
     const navigate = useNavigate();
+    const location = useLocation();
     const auth = useAuth();
     const [parsedContent, setParsedContent] = useState('');
 
@@ -127,6 +129,7 @@ export default function DashboardNote({
                                     Publishable
                                 </label>
                                 <input
+                                    defaultChecked={true}
                                     checked={isPublishable}
                                     id={`publishable-switch-${note.id}`}
                                     type='checkbox'
@@ -139,7 +142,7 @@ export default function DashboardNote({
                     <div
                         key={index}
                         className='bg-transparent h-fit p-2 backdrop-filter mb-4 overflow-hidden flex-grow flex space-y-2 flex-col cursor-pointer'
-                        onClick={() => navigate(`/notes/${note.id}`)}
+                        onClick={() => navigate(`/notes/${note.id}`, { state: { from: location, state: location.state } })}
                     >
                         <Preview htmlContent={parsedContent} />
                     </div>
