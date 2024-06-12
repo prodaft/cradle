@@ -29,6 +29,8 @@ tags:
     description: Operations targeting the dashboard.
   - name: File Transfer
     description: Operations targeting the transfer of files.
+  - name: Notification 
+    description: Operations regarding notifications
   
 paths:
   /users:
@@ -151,38 +153,26 @@ paths:
             The credentials given are invalid. 
             
 
-  /notifications/{userId}:
+  /notifications/:
     get:
       tags:
         - Notification
       summary: Get user's notifications
-      description: Checks if there are any new notifications. Can be implemented with polling, web sockets etc.
+      description: Fetches all of the user's notifications. The notifications are sorted from the newest to the oldest one.
       operationId: getNotifications
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            type: integer
-            format: int64
-          examples:
-            userIdExample:
-              value: "12341124"
       responses:
         '200':
           description: Returns a list of all notifications.
           content:
-            'application/json':
+            application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Notification'
+                  oneOf:
+                    - $ref: '#/components/schemas/MessageNotification'
+                    - $ref: '#/components/schemas/AccessRequestNotification'
         '401':
           description: User is not authenticated.
-        '403':
-          description: User cannot access other user's notifications.
-        '404':
-          description: User is not found. # maybe
 
   /entities/actors:
     get:
@@ -779,10 +769,10 @@ paths:
               schema:
                 type: object
                 properties:
-                  bucketName:
+                  bucket_name:
                     type: string
                     example: "admin"
-                  minioFileName:
+                  minio_file_name:
                     type: string
                     example: "be0b24ad-ae54-4952-ae87-00011ed9df27-evidence.png"
                   presigned:
@@ -1361,14 +1351,41 @@ components:
           type: string
           format: date-time
 
-    Notification: 
+    MessageNotification: 
       type: object
       properties: 
-        ID: 
+        id: 
           type: integer
           format: int64
-        text:
+        message:
           type: string
+        timestamp: 
+          type: string
+          format: date-time
+        notification_type:
+          enum:
+            - message_notification
+
+    AccessRequestNotification: 
+      type: object
+      properties: 
+        id: 
+          type: integer
+          format: int64
+        message:
+          type: string
+        case_id:
+          type: integer
+          format: int64
+        requesting_user_id:
+          type: integer
+          format: int64
+        timestamp: 
+          type: string
+          format: date-time
+        notification_type:
+          enum:
+            - request_access_notification
 
     ExportType:
       type: string
