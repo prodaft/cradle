@@ -35,10 +35,7 @@ describe('FleetingNoteCard', () => {
 
     it('renders the note content', async () => {
         const { findByText } = render(
-            <FleetingNoteCard
-                note={note}
-                setAlert={setAlert}
-            />,
+            <FleetingNoteCard note={note} setAlert={setAlert} />,
         );
         expect(await findByText('Test note')).toBeInTheDocument();
     });
@@ -48,10 +45,7 @@ describe('FleetingNoteCard', () => {
         useNavigate.mockReturnValue(navigate);
 
         const { findByText } = render(
-            <FleetingNoteCard
-                note={note}
-                setAlert={setAlert}
-            />,
+            <FleetingNoteCard note={note} setAlert={setAlert} />,
         );
         fireEvent.click(await findByText('Test note'));
 

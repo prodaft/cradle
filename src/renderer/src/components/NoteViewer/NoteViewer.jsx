@@ -1,7 +1,11 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth/useAuth';
-import { deleteNote, getNote, setPublishable } from '../../services/notesService/notesService';
+import {
+    deleteNote,
+    getNote,
+    setPublishable,
+} from '../../services/notesService/notesService';
 import Preview from '../Preview/Preview';
 import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
@@ -58,7 +62,6 @@ export default function NoteViewer() {
         setNote(newNote);
     }, [isPublishable]);
 
-
     const togglePublishable = useCallback(() => {
         setPublishable(auth.access, id, !isPublishable)
             .then(() => {
@@ -80,21 +83,46 @@ export default function NoteViewer() {
                 }
                 const stateNotes = state.notes.filter((note) => note.id != id); // todo when id's are uuids change to !==
                 const newState = { ...state, notes: stateNotes };
-                navigate(from, { replace: true, state: newState })
+                navigate(from, { replace: true, state: newState });
             })
             .catch(displayError(setAlert));
     }, [auth.access, id, navigate]);
 
     const navbarContents = [
-        <NavbarSwitch key='publishable-btn' text='Publishable' checked={isPublishable} onChange={togglePublishable} testid="publishable-btn" />,
-        <NavbarButton key='delete-btn' text='Delete Note' icon={<Trash />} onClick={() => setDialog(true)} tesid="delete-btn" />,
-        <NavbarButton key='toggle-view-btn' text='Toggle View' icon={<Code />} onClick={toggleView} tesid="toggle-view-btn" />,
+        <NavbarSwitch
+            key='publishable-btn'
+            text='Publishable'
+            checked={isPublishable}
+            onChange={togglePublishable}
+            testid='publishable-btn'
+        />,
+        <NavbarButton
+            key='delete-btn'
+            text='Delete Note'
+            icon={<Trash />}
+            onClick={() => setDialog(true)}
+            tesid='delete-btn'
+        />,
+        <NavbarButton
+            key='toggle-view-btn'
+            text='Toggle View'
+            icon={<Code />}
+            onClick={toggleView}
+            tesid='toggle-view-btn'
+        />,
     ];
 
-    useNavbarContents(
-        navbarContents,
-        [toggleView, id, isPublishable, togglePublishable, handleDelete, dialog, setDialog, alert, setAlert],
-    );
+    useNavbarContents(navbarContents, [
+        toggleView,
+        id,
+        isPublishable,
+        togglePublishable,
+        handleDelete,
+        dialog,
+        setDialog,
+        alert,
+        setAlert,
+    ]);
 
     return (
         <>

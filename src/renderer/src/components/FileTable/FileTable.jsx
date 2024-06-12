@@ -23,7 +23,11 @@ export default function FileTable({ files, setFiles }) {
         navigator.clipboard
             .writeText(text)
             .then(() => {
-                setAlert({ show: true, message: 'Copied to clipboard!', color: 'green' });
+                setAlert({
+                    show: true,
+                    message: 'Copied to clipboard!',
+                    color: 'green',
+                });
             })
             .catch(displayError(setAlert));
     };

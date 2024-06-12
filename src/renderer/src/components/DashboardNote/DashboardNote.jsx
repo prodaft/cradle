@@ -140,7 +140,11 @@ export default function DashboardNote({
                     <div
                         key={index}
                         className='bg-transparent h-fit p-2 backdrop-filter mb-4 overflow-hidden flex-grow flex space-y-2 flex-col cursor-pointer'
-                        onClick={() => navigate(`/notes/${note.id}`, { state: { from: location, state: location.state } })}
+                        onClick={() =>
+                            navigate(`/notes/${note.id}`, {
+                                state: { from: location, state: location.state },
+                            })
+                        }
                     >
                         <Preview htmlContent={parsedContent} />
                     </div>

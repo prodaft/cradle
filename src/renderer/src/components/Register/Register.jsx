@@ -18,8 +18,7 @@ export default function Register() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [passwordCheck, setPasswordCheck] = useState('');
-    const [error, setError] = useState('');
-    const [errorColor, setErrorColor] = useState('red');
+    const [error, setError] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -27,22 +26,25 @@ export default function Register() {
         e.preventDefault();
 
         if (password !== passwordCheck) {
-            setError('Passwords do not match.');
+            setError({ show: true, message: 'Passwords do not match.', color: 'red' });
             return;
         }
 
         if (!validatePassword(password)) {
-            setError(
-                'Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
-            );
+            setError({
+                show: true,
+                message:
+                    'Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
+                color: 'red',
+            });
             return;
         }
 
         const data = { username: username, password: password };
 
         registerReq(data)
-            .then((res) => navigate('/login', { state: location.state, replace: true }))
-            .catch(displayError(setError, setErrorColor));
+            .then(() => navigate('/login', { state: location.state, replace: true }))
+            .catch(displayError(setError));
     };
 
     return (
@@ -78,7 +80,7 @@ export default function Register() {
                                 type='password'
                                 handleInput={setPasswordCheck}
                             />
-                            {error && <AlertBox title={error} color={errorColor} />}
+                            <AlertBox error={error} />
                             <button
                                 type='submit'
                                 data-testid='login-register-button'

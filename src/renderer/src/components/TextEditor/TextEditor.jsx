@@ -85,7 +85,11 @@ export default function TextEditor() {
                     setMarkdownContentCallback('');
                     setFileData([]);
                     localStorage.removeItem('minio-cache');
-                    setAlert({ show: true, message: 'Note saved successfully.', color: 'green' })
+                    setAlert({
+                        show: true,
+                        message: 'Note saved successfully.',
+                        color: 'green',
+                    });
                 }
             })
             .catch(displayError(setAlert));
@@ -105,7 +109,11 @@ export default function TextEditor() {
                     setMarkdownContentCallback('');
                     setFileData([]);
                     localStorage.removeItem('minio-cache');
-                    setAlert({ show: true, message: 'Fleeting note saved successfully.', color: 'green' })
+                    setAlert({
+                        show: true,
+                        message: 'Fleeting note saved successfully.',
+                        color: 'green',
+                    });
                     navigate(`/fleeting-editor/${res.data.id}`);
                 }
             })

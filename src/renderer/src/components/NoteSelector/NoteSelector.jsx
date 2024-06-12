@@ -48,7 +48,7 @@ export default function NoteSelector() {
     useEffect(() => {
         setSelectAll(
             selectedNoteIds.length > 0 &&
-            selectedNoteIds.length === publishableNoteIds.length,
+                selectedNoteIds.length === publishableNoteIds.length,
         );
     }, [notes, selectedNoteIds]);
 
@@ -70,7 +70,11 @@ export default function NoteSelector() {
     // where they can choose how to export the published report
     const handlePublish = useCallback(() => {
         if (selectedNoteIds.length === 0) {
-            setAlert({ show: true, message: 'Please select at least one note to publish', color: 'red' })
+            setAlert({
+                show: true,
+                message: 'Please select at least one note to publish',
+                color: 'red',
+            });
             return;
         }
 

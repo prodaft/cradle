@@ -20,8 +20,7 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 export default function AdminPanelAdd({ type }) {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
-    const [error, setError] = useState('');
-    const [errorColor, setErrorColor] = useState('red');
+    const [error, setError] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
     const auth = useAuth();
 
@@ -36,7 +35,7 @@ export default function AdminPanelAdd({ type }) {
             }
             navigate('/admin');
         } catch (err) {
-            displayError(setError, setErrorColor)(err);
+            displayError(setError)(err);
         }
     };
 
@@ -66,7 +65,7 @@ export default function AdminPanelAdd({ type }) {
                                 placeholder='Description'
                                 onChange={(e) => setDescription(e.target.value)}
                             />
-                            {error && <AlertBox title={error} color={errorColor} />}
+                            <AlertBox error={error} />
                             <button
                                 className='btn btn-primary btn-block'
                                 onClick={handleSubmit}

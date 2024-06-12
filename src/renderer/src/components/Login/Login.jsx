@@ -19,8 +19,7 @@ import { useWindowSize } from '@uidotdev/usehooks';
 export default function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [errorColor, setErrorColor] = useState('red');
+    const [error, setError] = useState({ show: false, message: '', color: 'red' });
     const windowSize = useWindowSize();
     const location = useLocation();
     const { from, state } = location.state || { from: { pathname: '/' } };
@@ -41,7 +40,7 @@ export default function Login() {
                 }
                 navigate(from, { replace: true, state: state });
             })
-            .catch(displayError(setError, setErrorColor));
+            .catch(displayError(setError));
     };
 
     return (
@@ -85,7 +84,7 @@ export default function Login() {
                                 type='password'
                                 handleInput={setPassword}
                             />
-                            {error && <AlertBox title={error} color={errorColor} />}
+                            <AlertBox error={error} />
                             <button
                                 type='submit'
                                 data-testid='login-register-button'

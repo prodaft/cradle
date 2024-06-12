@@ -81,7 +81,7 @@ export default function FleetingNoteEditor() {
 
     const isValidContent = () => {
         if (!markdownContentRef.current) {
-            setAlert({ show: true, message: 'Cannot save empty note', color: 'red' })
+            setAlert({ show: true, message: 'Cannot save empty note', color: 'red' });
             return false;
         }
         return true;
@@ -96,7 +96,11 @@ export default function FleetingNoteEditor() {
             updateFleetingNote(auth.access, id, storedContent, storedFileData)
                 .then((response) => {
                     if (response.status === 200) {
-                        setAlert({ show: true, message: 'Changes saved successfully.', color: 'green' })
+                        setAlert({
+                            show: true,
+                            message: 'Changes saved successfully.',
+                            color: 'green',
+                        });
                         refreshFleetingNotes();
                     }
                 })
@@ -109,7 +113,11 @@ export default function FleetingNoteEditor() {
             deleteFleetingNote(auth.access, id)
                 .then((response) => {
                     if (response.status === 200) {
-                        setAlert({ show: true, message: 'Note deleted successfully.', color: 'green' })
+                        setAlert({
+                            show: true,
+                            message: 'Note deleted successfully.',
+                            color: 'green',
+                        });
                         refreshFleetingNotes();
                         navigate('/');
                     }
@@ -124,7 +132,11 @@ export default function FleetingNoteEditor() {
             saveFleetingNoteAsFinal(auth.access, id, publishable)
                 .then((response) => {
                     if (response.status === 200) {
-                        setAlert({ show: true, message: 'Note finalized successfully.', color: 'green' })
+                        setAlert({
+                            show: true,
+                            message: 'Note finalized successfully.',
+                            color: 'green',
+                        });
                         refreshFleetingNotes();
                         navigate('/');
                     }
@@ -176,10 +188,7 @@ export default function FleetingNoteEditor() {
                 className={`w-full h-full rounded-md flex p-1.5 gap-1.5 ${flexDirection === 'flex-col' ? 'flex-col' : 'flex-row'} overflow-y-hidden`}
                 ref={textEditorRef}
             >
-                <AlertDismissible
-                    alert={alert}
-                    setAlert={setAlert}
-                />
+                <AlertDismissible alert={alert} setAlert={setAlert} />
                 <div
                     className={`${flexDirection === 'flex-col' ? 'h-1/2' : 'h-full'} w-full bg-gray-2 rounded-md`}
                 >
