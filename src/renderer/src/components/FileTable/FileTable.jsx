@@ -17,17 +17,15 @@ import AlertDismissible from '../AlertDismissible/AlertDismissible';
  * @constructor
  */
 export default function FileTable({ files, setFiles }) {
-    const [alert, setAlert] = useState('');
-    const [alertColor, setAlertColor] = useState('red');
+    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
 
     const copyToClipboard = (text) => {
         navigator.clipboard
             .writeText(text)
             .then(() => {
-                setAlert('Copied to clipboard!');
-                setAlertColor('green');
+                setAlert({ show: true, message: 'Copied to clipboard!', color: 'green' });
             })
-            .catch(displayError(setAlert, setAlertColor));
+            .catch(displayError(setAlert));
     };
 
     // Removes a file from the table only. The file is not deleted from the server.
@@ -42,7 +40,7 @@ export default function FileTable({ files, setFiles }) {
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
+            <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='w-full h-full mx-auto p-2 bg-transparent rounded-lg overflow-y-auto text-sm z-40'>
                 <div className='overflow-x-auto'>
                     <div className='w-full bg-gray-2 rounded-md overflow-x-hidden overflow-y-auto'>
