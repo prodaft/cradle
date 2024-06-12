@@ -26,4 +26,5 @@ urlpatterns = [
     path("query/", include("query.urls")),
     path("file-transfer/", include("file_transfer.urls")),
     path("fleeting-notes/", include("fleeting_notes.urls")),
+    path("notifications/", include("notifications.urls")),
 ]

@@ -11,6 +11,7 @@ from access.models import Access
 from ..utils.dashboard_utils import DashboardUtils
 from ..serializers import CaseDashboardSerializer
 from access.enums import AccessType
+from logs.decorators import log_failed_responses
 
 from typing import cast
 
@@ -20,6 +21,7 @@ class CaseDashboard(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @log_failed_responses
     def get(self, request: Request, case_name: str) -> Response:
         """Allow a user to retrieve the dashboard of a Case by specifying its name.
 

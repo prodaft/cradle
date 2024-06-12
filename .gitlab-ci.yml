@@ -1,7 +1,8 @@
 stages: 
-  - build
-  - linting
-  - test
+ - build
+ - linting
+ - test
+ - deploy
 
 variables:
   # DJANGO_CONFIG: "test"
@@ -13,8 +14,13 @@ variables:
   MINIO_ENDPOINT: "" # placeholder
   MINIO_ROOT_USER: "" # placeholder
   MINIO_ROOT_PASSWORD: "" # placeholder
+  MINIO_SECURE: false
+  ALLOWED_HOSTS: "*"
   PIPENV_CACHE_DIR: "$CI_PROJECT_DIR/.cache/packages"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  CI_REGISTRY_USER: "cradle"
+  CI_REGISTRY_PASSWORD: "YR6NCZ6BvAotJ94"
+  CI_REGISTRY: "registry.yigit.run"
 
 default:
   image: python:3.11
@@ -66,3 +72,19 @@ django-tests:
     - pipenv run coverage run manage.py test
     - pipenv run coverage report
   coverage: "/TOTAL.+ ([0-9]{1,3}%)/"
+
+deploy:
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "dev"'
+    - if: '$CI_COMMIT_REF_NAME == "main"'
+  allow_failure: true
+  before_script: []
+  cache:
+  image: docker:20.10.16
+  stage: deploy
+  services:
+    - docker:20.10.16-dind
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $CI_REGISTRY/cradle/backend:latest .
+    - docker push $CI_REGISTRY/cradle/backend:latest

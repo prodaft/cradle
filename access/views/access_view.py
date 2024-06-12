@@ -9,6 +9,7 @@ from user.models import CradleUser
 from entities.models import Entity
 from ..models import Access
 from ..serializers import AccessSerializer, AccessCaseSerializer
+from logs.decorators import log_failed_responses
 
 
 class AccessList(APIView):
@@ -17,6 +18,7 @@ class AccessList(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
     serializer_class = AccessCaseSerializer
 
+    @log_failed_responses
     def get(self, request: Request, user_id: int) -> Response:
         """Allows an admin to get the access priviliges of a User
             on all Cases.
@@ -58,6 +60,7 @@ class UpdateAccess(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
     serializer_class = AccessSerializer
 
+    @log_failed_responses
     def put(self, request, user_id, case_id, format=None):
         """Allows an admin to change the access priviliges of a User
             on a Case by specifying the corresponding id's.
