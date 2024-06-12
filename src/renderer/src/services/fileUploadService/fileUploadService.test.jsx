@@ -43,21 +43,27 @@ describe('File Upload Service', () => {
         expect(mock.history.put[0].data).toBe(file);
     });
 
-    it('should fetch a presigned URL for file download', async () => {
+    it('should fetch a download link for a file', async () => {
         const token = 'your-access-token';
-        const bucketName = 'bucket-name';
-        const minioFileName = '12345-file.txt';
+        const path = 'http://minio-file-link';
         const expectedResponse = {
-            presigned: 'http://presigned-url',
+            downloadLink: 'http://download-link',
         };
 
-        mock.onGet('/file-transfer/download').reply(200, expectedResponse);
+        mock.onGet(path).reply(200, expectedResponse);
 
-        const response = await getDownloadLink(token, bucketName, minioFileName);
+        const response = await getDownloadLink(token, path);
 
         expect(response.data).toEqual(expectedResponse);
         expect(mock.history.get[0].headers.Authorization).toBe(`Bearer ${token}`);
-        expect(mock.history.get[0].params.bucketName).toBe(bucketName);
-        expect(mock.history.get[0].params.minioFileName).toBe(minioFileName);
+    });
+
+    it('should handle errors when fetching a download link', async () => {
+        const token = 'your-access-token';
+        const path = 'http://minio-file-link';
+
+        mock.onGet(path).reply(500);
+
+        await expect(getDownloadLink(token, path)).rejects.toThrow();
     });
 });

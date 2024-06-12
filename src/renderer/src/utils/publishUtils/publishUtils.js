@@ -1,5 +1,6 @@
 import mime from 'mime';
 import template from './reportTemplate.js';
+import { prependLinks } from '../textEditorUtils/textEditorUtils.js';
 
 /**
  * Function to create a markdown section from an array of objects.
@@ -51,6 +52,7 @@ const createMarkdownReportFromJson = (data) => {
     if (notes) {
         markdown += '## Notes\n\n';
         notes.forEach((note) => {
+            prependLinks(note.content, note.files || []);
             markdown += `### ${new Date(note.timestamp).toLocaleString()}\n\n`;
             markdown += `${note.content}\n\n---\n\n`;
         });

@@ -1,11 +1,11 @@
 import axios from 'axios';
 
-axios.defaults.withCredentials = false;
 axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
 
 /**
  * Sends a POST request to authenticate user
- * @param data
+ *
+ * @param {{ username: string, password: string }} data - user credentials
  * @returns {Promise<AxiosResponse<any>>}
  */
 export async function logInReq(data) {
@@ -19,7 +19,8 @@ export async function logInReq(data) {
 
 /**
  * Sends a POST request to register user
- * @param data
+ *
+ * @param { username: string, password: string } data - user credentials
  * @returns {Promise<AxiosResponse<any>>}
  */
 export async function registerReq(data) {

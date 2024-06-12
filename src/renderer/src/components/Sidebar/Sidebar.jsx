@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit, LogOut, Network, UserCrown } from 'iconoir-react';
+import { Edit, Network, LogOut, UserCrown } from 'iconoir-react';
 import SidebarItem from '../SidebarItem/SidebarItem';
 import SidebarSection from '../SidebarSection/SidebarSection';
 import { useAuth } from '../../hooks/useAuth/useAuth';

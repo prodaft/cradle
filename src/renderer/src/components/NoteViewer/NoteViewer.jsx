@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth/useAuth';
 import { getNote } from '../../services/notesService/notesService';
 import Preview from '../Preview/Preview';
@@ -21,16 +21,25 @@ export default function NoteViewer() {
     const { id } = useParams();
     const [noteContent, setNoteContent] = useState('');
     const [noteTimestamp, setNoteTimestamp] = useState('');
+    const [noteFiles, setNoteFiles] = useState([]);
     const [isRaw, setIsRaw] = useState(false);
     const [alert, setAlert] = useState('');
     const [alertColor, setAlertColor] = useState('red');
     const auth = useAuth();
+    const [parsedContent, setParsedContent] = useState('');
+
+    useEffect(() => {
+        parseContent(noteContent, noteFiles)
+            .then((parsedContent) => setParsedContent(parsedContent))
+            .catch(displayError(setAlert, setAlertColor));
+    }, [noteContent, noteFiles]);
 
     useEffect(() => {
         getNote(auth.access, id)
             .then((response) => {
                 setNoteContent(response.data.content);
                 setNoteTimestamp(response.data.timestamp);
+                setNoteFiles(response.data.files);
             })
             .catch(displayError(setAlert, setAlertColor));
     }, [auth.access, id]);
@@ -62,7 +71,7 @@ export default function NoteViewer() {
                                 {noteContent}
                             </pre>
                         ) : (
-                            <Preview htmlContent={parseContent(noteContent)} />
+                            <Preview htmlContent={parsedContent} />
                         )}
                     </div>
                 </div>
