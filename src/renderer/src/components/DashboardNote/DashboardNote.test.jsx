@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import * as ReactRouterDom from 'react-router-dom';
 import { MemoryRouter } from 'react-router-dom';
 import DashboardNote from './DashboardNote';
@@ -36,7 +36,7 @@ describe('DashboardNote', () => {
     const setAlertColor = jest.fn();
     const setSelectedNoteIds = jest.fn();
 
-    test('renders note content', () => {
+    test('renders note content', async () => {
         render(
             <MemoryRouter>
                 <DashboardNote
@@ -51,11 +51,11 @@ describe('DashboardNote', () => {
             </MemoryRouter>,
         );
 
-        const noteContent = screen.getByText('This is a test note');
+        const noteContent = await screen.findByText('This is a test note');
         expect(noteContent).toBeInTheDocument();
     });
 
-    it('renders note content and entities', () => {
+    it('renders note content and entities', async () => {
         render(
             <MemoryRouter>
                 <DashboardNote
@@ -70,12 +70,12 @@ describe('DashboardNote', () => {
             </MemoryRouter>,
         );
 
-        expect(screen.getByText('This is a test note')).toBeInTheDocument();
-        expect(screen.getByText('Entity 1;')).toBeInTheDocument();
-        expect(screen.getByText('Entity 2;')).toBeInTheDocument();
+        expect(await screen.findByText('This is a test note')).toBeInTheDocument();
+        expect(await screen.findByText('Entity 1;')).toBeInTheDocument();
+        expect(await screen.findByText('Entity 2;')).toBeInTheDocument();
     });
 
-    it('navigates to note detail page on note click', () => {
+    it('navigates to note detail page on note click', async () => {
         const navigate = jest.fn();
         ReactRouterDom.useNavigate.mockReturnValue(navigate);
 
@@ -93,7 +93,7 @@ describe('DashboardNote', () => {
             </MemoryRouter>,
         );
 
-        fireEvent.click(screen.getByText('This is a test note'));
+        fireEvent.click(await screen.findByText('This is a test note'));
         expect(navigate).toHaveBeenCalledWith(`/notes/${note.id}`);
     });
 

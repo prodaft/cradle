@@ -1,4 +1,4 @@
-import {NavArrowDown, NavArrowUp} from 'iconoir-react';
+import { NavArrowDown, NavArrowUp } from 'iconoir-react';
 import React from 'react';
 import SearchFilter from '../SearchFilter/SearchFilter';
 import {
@@ -36,9 +36,19 @@ export default function SearchFilterSection({
                 onClick={toggleFilters}
             >
                 <div className='text-zinc-400 font-medium'>Filters</div>
-                {showFilters ? <NavArrowUp className='text-zinc-400' height='1.5em' width='1.5em' />
-                : <NavArrowDown className='text-zinc-400' height='1.5em' width='1.5em' />}
-
+                {showFilters ? (
+                    <NavArrowUp
+                        className='text-zinc-400'
+                        height='1.5em'
+                        width='1.5em'
+                    />
+                ) : (
+                    <NavArrowDown
+                        className='text-zinc-400'
+                        height='1.5em'
+                        width='1.5em'
+                    />
+                )}
             </div>
             <div
                 className={`flex-shrink-0 overflow-x-hidden overflow-y-scroll no-scrollbar backdrop-blur-lg rounded-lg my-2 transition-all duration-300 ease-in-out ${showFilters ? 'h-48' : 'h-0 opacity-0'}`}

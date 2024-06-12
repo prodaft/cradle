@@ -34,29 +34,29 @@ describe('FleetingNoteCard', () => {
         deleteFleetingNote.mockResolvedValue({ status: 200 });
     });
 
-    it('renders the note content', () => {
-        const { getByText } = render(
+    it('renders the note content', async () => {
+        const { findByText } = render(
             <FleetingNoteCard
                 note={note}
                 setAlert={setAlert}
                 setAlertColor={setAlertColor}
             />,
         );
-        expect(getByText('Test note')).toBeInTheDocument();
+        expect(await findByText('Test note')).toBeInTheDocument();
     });
 
-    it('navigates on click', () => {
+    it('navigates on click', async () => {
         const navigate = jest.fn();
         useNavigate.mockReturnValue(navigate);
 
-        const { getByText } = render(
+        const { findByText } = render(
             <FleetingNoteCard
                 note={note}
                 setAlert={setAlert}
                 setAlertColor={setAlertColor}
             />,
         );
-        fireEvent.click(getByText('Test note'));
+        fireEvent.click(await findByText('Test note'));
 
         expect(navigate).toHaveBeenCalledWith('/fleeting-editor/' + note.id);
     });

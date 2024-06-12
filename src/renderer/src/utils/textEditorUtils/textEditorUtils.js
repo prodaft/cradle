@@ -1,30 +1,76 @@
 import DOMPurify from 'dompurify';
-import marked from '../customParser/customParser';
+import parseMarkdown from '../customParser/customParser';
+import QueryString from 'qs';
 
 /**
  * Parses markdown content into HTML using a custom marked.js parser
  * Sanitizing is recommended by the marked documentation: https://github.com/markedjs/marked?tab=readme-ov-file#usage
  *
  * @param {string} content - Markdown syntax
+ * @param {Array<{tag: string, name: string, bucket: string}>} [fileData] - information about the files that will be linked (optional)
  * @returns {string} parsed and sanitized HTML
  */
-const parseContent = (content) => DOMPurify.sanitize(marked.parse(content));
+const parseContent = async (content, fileData) =>
+    DOMPurify.sanitize(await parseMarkdown(content, fileData));
 
 /**
- * Handles link clicks in the preview component
+ * Creates a download path for a file. This path correspond to the download endpoint in the backend.
+ * The base URL (e.g. `http://localhost:8000`) is the same as the backend API's.
  *
- * @param {(string) => void} handler - navigate function
+ * @param {{tag: string, name: string, bucket: string}} file - file information
+ * @returns {string} download link
+ */
+const createDownloadPath = (file) => {
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+    const { tag, bucket } = file;
+    const queryParams = QueryString.stringify({
+        bucketName: bucket,
+        minioFileName: tag,
+    });
+    return `${apiBaseUrl}/file-transfer/download?${queryParams}`;
+};
+
+/**
+ * Prepends links to the top of the markdown content. This will not be visible in the preview.
+ * These links correspond to the backend API download endpoints. (e.g. `http://localhost:8000/file-transfer/download?...`)
+ *
+ * @param {string} mdContent - markdown content
+ * @param {Array<{tag: string, name: string, bucket: string}>} fileData - file data
+ * @returns {string} markdown content with links prepended
+ */
+const prependLinks = (mdContent, fileData) => {
+    const mdLinks = fileData
+        .map((file) => {
+            const apiDownloadPath = createDownloadPath(file);
+
+            return `[${file.tag}]: ${apiDownloadPath} "${file.name}"\n\n`;
+        })
+        .join('');
+
+    return mdLinks + mdContent;
+};
+
+/**
+ * Handles link clicks in the Preview component.
+ * If the link is local, it will navigate using the provided navigateHandler.
+ * If the link is external, it will open in a new tab.
+ *
+ * Useful information:
+ * - All React Router navigation links have a `data-custom-href` attribute with the path they should navigate to.
+ *
+ * @param {(string) => void} navigateHandler - how to handle local navigate links
  * @returns {(event: MouseEvent) => void} event handler
  */
-const handleLinkClick = (handler) => (event) => {
+const handleLinkClick = (navigateHandler) => (event) => {
     const target = event.target;
     if (target.tagName === 'A' && target.href) {
         event.preventDefault();
+        if (!URL.canParse(target.href)) return;
         const url = new URL(target.href);
-        const path = event.target.dataset.customHref;
-        if (url.origin === window.location.origin) {
-            // Local links
-            handler(path);
+        const navigatePath = target.dataset.customHref;
+        if (navigatePath) {
+            // Local links to dashboards
+            navigateHandler(navigatePath);
         } else {
             // External links
             window.open(target.href, '_blank');
@@ -32,4 +78,4 @@ const handleLinkClick = (handler) => (event) => {
     }
 };
 
-export { parseContent, handleLinkClick };
+export { parseContent, handleLinkClick, createDownloadPath, prependLinks };

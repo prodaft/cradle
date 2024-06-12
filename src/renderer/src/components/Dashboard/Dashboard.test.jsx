@@ -71,15 +71,15 @@ describe('Dashboard Component', () => {
 
         await waitFor(() => expect(getDashboardData).toHaveBeenCalledTimes(1));
 
-        expect(screen.getByText('Test Case')).toBeInTheDocument();
-        expect(screen.getByText('Type: case')).toBeInTheDocument();
+        expect(await screen.findByText('Test Case')).toBeInTheDocument();
+        expect(await screen.findByText('Type: case')).toBeInTheDocument();
         expect(
-            screen.getByText('Description: This is a test case.'),
+            await screen.findByText('Description: This is a test case.'),
         ).toBeInTheDocument();
-        expect(screen.getByText('Actor 1')).toBeInTheDocument();
-        expect(screen.getByText('Case 1')).toBeInTheDocument();
-        expect(screen.getByText('Metadata 1')).toBeInTheDocument();
-        expect(screen.getByText('Note 1')).toBeInTheDocument();
+        expect(await screen.findByText('Actor 1')).toBeInTheDocument();
+        expect(await screen.findByText('Case 1')).toBeInTheDocument();
+        expect(await screen.findByText('Metadata 1')).toBeInTheDocument();
+        expect(await screen.findByText('Note 1')).toBeInTheDocument();
     });
 
     it('displays error message when entity is missing', async () => {

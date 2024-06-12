@@ -11,9 +11,9 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 import { getPublishData } from '../../services/publishService/publishService';
 import { Code, CodeBracketsSquare, Download } from 'iconoir-react/regular';
 import {
-    createHtmlReport,
     createMarkdownReportFromJson,
     downloadFile,
+    createHtmlReport,
 } from '../../utils/publishUtils/publishUtils';
 
 /**
@@ -34,9 +34,17 @@ export default function PublishPreview() {
     const auth = useAuth();
     const [isJson, setIsJson] = useState(false);
     const [responseData, setResponseData] = useState({});
+    const [htmlContent, setHtmlContent] = useState('');
 
     const location = useLocation();
     const { noteIds, entityName } = location.state;
+
+    useEffect(() => {
+        const mdReport = createMarkdownReportFromJson(responseData);
+        parseContent(mdReport)
+            .then((parsedContent) => setHtmlContent(parsedContent))
+            .catch(displayError(setAlert, setAlertColor));
+    }, [responseData]);
 
     useEffect(() => {
         getPublishData(auth.access, noteIds)
@@ -54,10 +62,7 @@ export default function PublishPreview() {
             try {
                 switch (extension) {
                     case 'html': {
-                        const content = parseContent(
-                            createMarkdownReportFromJson(responseData),
-                        );
-                        const report = createHtmlReport(entityName, content);
+                        const report = createHtmlReport(entityName, htmlContent);
                         downloadFile(report, extension);
                         break;
                     }
@@ -139,11 +144,7 @@ export default function PublishPreview() {
                                 {JSON.stringify(responseData, null, 2)}
                             </pre>
                         ) : (
-                            <Preview
-                                htmlContent={parseContent(
-                                    createMarkdownReportFromJson(responseData),
-                                )}
-                            />
+                            <Preview htmlContent={htmlContent} />
                         )}
                     </div>
                 </div>

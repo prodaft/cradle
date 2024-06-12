@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-axios.defaults.withCredentials = false;
 axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
 
 /**
@@ -10,16 +9,18 @@ axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
  * @param {string} token The user's JWT
  * @param {string} text  - the text to save
  * @param {boolean} publishable - whether to save the note as publishable
+ * @param {Array<{tag: string, name: string, bucket: string}>} files - information about the files that will be linked
  * @returns {Promise} The response from the server
  * @throws {Error} see the OpenApi specification
  */
-async function saveNote(token, text, publishable) {
+async function saveNote(token, text, publishable, files) {
     return axios({
         method: 'post',
         url: '/notes/',
         data: {
             content: text,
             publishable: publishable,
+            files: files,
         },
         headers: {
             'Content-Type': 'application/json',
