@@ -28,8 +28,7 @@ export default function NoteViewer() {
     const [note, setNote] = useState({});
     const [isPublishable, setIsPublishable] = useState(false);
     const [isRaw, setIsRaw] = useState(false);
-    const [alert, setAlert] = useState('');
-    const [alertColor, setAlertColor] = useState('red');
+    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const auth = useAuth();
     const [parsedContent, setParsedContent] = useState('');
     const [dialog, setDialog] = useState(false);
@@ -45,9 +44,9 @@ export default function NoteViewer() {
             .then((note) => {
                 parseContent(note.content, note.files)
                     .then((parsedContent) => setParsedContent(parsedContent))
-                    .catch(displayError(setAlert, setAlertColor));
+                    .catch(displayError(setAlert));
             })
-            .catch(displayError(setAlert, setAlertColor));
+            .catch(displayError(setAlert));
     }, [auth.access, id]);
 
     const toggleView = useCallback(() => {
@@ -65,7 +64,7 @@ export default function NoteViewer() {
             .then(() => {
                 setIsPublishable((prevIsPublishable) => !prevIsPublishable);
             })
-            .catch(displayError(setAlert, setAlertColor));
+            .catch(displayError(setAlert));
     }, [auth.access, id, isPublishable]);
 
     const handleDelete = useCallback(() => {
@@ -83,7 +82,7 @@ export default function NoteViewer() {
                 const newState = { ...state, notes: stateNotes };
                 navigate(from, { replace: true, state: newState })
             })
-            .catch(displayError(setAlert, setAlertColor));
+            .catch(displayError(setAlert));
     }, [auth.access, id, navigate]);
 
     const navbarContents = [
@@ -94,7 +93,7 @@ export default function NoteViewer() {
 
     useNavbarContents(
         navbarContents,
-        [toggleView, id, isPublishable, togglePublishable, handleDelete, dialog, setDialog, alert, setAlert, alertColor, setAlertColor],
+        [toggleView, id, isPublishable, togglePublishable, handleDelete, dialog, setDialog, alert, setAlert],
     );
 
     return (
@@ -109,7 +108,6 @@ export default function NoteViewer() {
             <AlertDismissible
                 alert={alert}
                 setAlert={setAlert}
-                color={alertColor}
                 onClose={() => setAlert('')}
             />
             <div className='w-full h-full overflow-hidden flex flex-col items-center p-4'>

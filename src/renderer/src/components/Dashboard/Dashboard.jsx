@@ -27,8 +27,7 @@ export default function Dashboard() {
     const path = location.pathname + location.search;
     const [entityMissing, setEntityMissing] = useState(false);
     const [contentObject, setContentObject] = useState({});
-    const [alert, setAlert] = useState('');
-    const [alertColor, setAlertColor] = useState('red');
+    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [dialog, setDialog] = useState(false);
     const navigate = useNavigate();
     const auth = useAuth();
@@ -50,7 +49,7 @@ export default function Dashboard() {
                 if (err.response && err.response.status === 404) {
                     setEntityMissing(true);
                 } else {
-                    const errHandler = displayError(setAlert, setAlertColor);
+                    const errHandler = displayError(setAlert);
                     errHandler(err);
                 }
             });
@@ -59,7 +58,6 @@ export default function Dashboard() {
         auth.access,
         path,
         setAlert,
-        setAlertColor,
         setEntityMissing,
         setContentObject,
     ]);
@@ -67,12 +65,11 @@ export default function Dashboard() {
     const handleEnterPublishMode = useCallback(() => {
         const publishableNotes = contentObject.notes.filter((note) => note.publishable);
         if (publishableNotes.length === 0) {
-            setAlertColor('red');
-            setAlert('There are no publishable notes available.');
+            setAlert({ show: true, message: 'There are no publishable notes available.', color: 'green' });
             return;
         }
         navigate(`/notes`, { state: contentObject });
-    }, [navigate, contentObject, setAlert, setAlertColor]);
+    }, [navigate, contentObject, setAlert]);
 
     const handleDelete = () => {
         deleteEntity(
@@ -85,7 +82,7 @@ export default function Dashboard() {
                     navigate('/');
                 }
             })
-            .catch(displayError(setAlert, setAlertColor));
+            .catch(displayError(setAlert));
     };
 
     const navbarContents = [
@@ -136,7 +133,7 @@ export default function Dashboard() {
                 description={'This is permanent'}
                 handleConfirm={handleDelete}
             />
-            <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
+            <AlertDismissible alert={alert} setAlert={setAlert} />
             <div
                 className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'
                 ref={dashboard}
@@ -204,7 +201,6 @@ export default function Dashboard() {
                                     index={index}
                                     note={note}
                                     setAlert={setAlert}
-                                    setAlertColor={setAlertColor}
                                     publishMode={false}
                                 />
                             ))}

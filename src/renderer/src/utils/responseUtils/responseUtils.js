@@ -6,19 +6,20 @@
  * Otherwise, display the error message from the client.
  *
  * @param {(string) => void} setAlert - Function to set the alert message (state)
- * @param {(string) => void} setAlertColor - Function to set the alert color (state)
- * @returns {(err: any) => void} - Function to display error message in an alert box
+ * @returns {(err: any) => void} Function to display error message in an alert box
  */
-const displayError = (setAlert, setAlertColor) => {
+const displayError = (setAlert) => {
     return (err) => {
-        setAlertColor('red');
+        const color = 'red';
+        let message = 'An unknown error occurred.'
+
         if (err.response && err.response.data && err.response.data.detail) {
-            setAlert(`${err.response.status}: ${err.response.data.detail}`);
+            message = `${err.response.status}: ${err.response.data.detail}`;
         } else if (err.message) {
-            setAlert(err.message);
-        } else {
-            setAlert('An unknown error occurred.');
+            message = err.message;
         }
+
+        setAlert({ show: true, message, color });
     };
 };
 

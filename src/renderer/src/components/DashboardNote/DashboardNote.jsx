@@ -18,7 +18,6 @@ import { useLocation } from 'react-router-dom';
  * @param {number} index - Index of the note
  * @param {Object} note - Note object
  * @param {(string) => void} setAlert - Function to set an alert
- * @param {(string) => void} setAlertColor - Function to set the color of the alert
  * @param {boolean} publishMode - determine if the dashboard is in publish mode
  * @param {Array<number>} selectedNoteIds - an array of note ids - used to keep track of notes to publish
  * @param {(Array<number>) => void} setSelectedNoteIds - Function to set the note ids
@@ -29,7 +28,6 @@ export default function DashboardNote({
     index,
     note,
     setAlert,
-    setAlertColor,
     publishMode,
     selectedNoteIds,
     setSelectedNoteIds,
@@ -44,7 +42,7 @@ export default function DashboardNote({
     useEffect(() => {
         parseContent(note.content, note.files)
             .then((parsedContent) => setParsedContent(parsedContent))
-            .catch(displayError(setAlert, setAlertColor));
+            .catch(displayError(setAlert));
     }, [note.content, note.files]);
 
     // Attempt to change the publishable status of a note.
@@ -57,9 +55,9 @@ export default function DashboardNote({
                         setIsPublishable(!isPublishable);
                     }
                 })
-                .catch(displayError(setAlert, setAlertColor));
+                .catch(displayError(setAlert));
         },
-        [auth.access, isPublishable, setIsPublishable, setAlert, setAlertColor],
+        [auth.access, isPublishable, setIsPublishable, setAlert],
     );
 
     // If the note is to be included in the report and the button is clicked, remove it from the list of notes to publish.

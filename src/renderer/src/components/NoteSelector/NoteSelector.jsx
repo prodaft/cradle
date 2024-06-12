@@ -16,8 +16,7 @@ import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
  */
 export default function NoteSelector() {
     const location = useLocation();
-    const [alert, setAlert] = useState('');
-    const [alertColor, setAlertColor] = useState('red');
+    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
     const dashboard = useRef(null);
     const [selectAll, setSelectAll] = useState(true);
@@ -71,8 +70,7 @@ export default function NoteSelector() {
     // where they can choose how to export the published report
     const handlePublish = useCallback(() => {
         if (selectedNoteIds.length === 0) {
-            setAlertColor('red');
-            setAlert('Please select at least one note to publish');
+            setAlert({ show: true, message: 'Please select at least one note to publish', color: 'red' })
             return;
         }
 
@@ -103,7 +101,7 @@ export default function NoteSelector() {
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
+            <AlertDismissible alert={alert} setAlert={setAlert} />
             <div
                 className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'
                 ref={dashboard}
@@ -137,7 +135,6 @@ export default function NoteSelector() {
                                     index={index}
                                     note={note}
                                     setAlert={setAlert}
-                                    setAlertColor={setAlertColor}
                                     publishMode={true}
                                     selectedNoteIds={selectedNoteIds}
                                     setSelectedNoteIds={setSelectedNoteIds}

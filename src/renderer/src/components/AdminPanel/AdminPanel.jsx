@@ -31,12 +31,9 @@ export default function AdminPanel() {
     const [actors, setActors] = useState([]);
     const [cases, setCases] = useState([]);
     const [users, setUsers] = useState([]);
-    const [alert, setAlert] = useState('');
+    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
-    const [alertColor, setAlertColor] = useState('red');
-    const handleError = displayError(setAlert, setAlertColor);
-
-    //TODO -Implement encoding: qs.stringify({ name: c.name }, { encodeValuesOnly: true }).split('=')[1]
+    const handleError = displayError(setAlert);
 
     const displayActors = async () => {
         getActors(auth.access)
@@ -120,7 +117,7 @@ export default function AdminPanel() {
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
+            <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='w-full h-full rounded-md flex flex-row p-1.5 gap-1.5 overflow-x-hidden overflow-y-scroll'>
                 <AdminPanelSection
                     title={'Actors'}

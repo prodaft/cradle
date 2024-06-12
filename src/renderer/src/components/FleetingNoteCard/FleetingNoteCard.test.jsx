@@ -27,7 +27,6 @@ describe('FleetingNoteCard', () => {
     };
 
     const setAlert = jest.fn();
-    const setAlertColor = jest.fn();
 
     beforeEach(() => {
         useNavigate.mockReturnValue(jest.fn());
@@ -39,7 +38,6 @@ describe('FleetingNoteCard', () => {
             <FleetingNoteCard
                 note={note}
                 setAlert={setAlert}
-                setAlertColor={setAlertColor}
             />,
         );
         expect(await findByText('Test note')).toBeInTheDocument();
@@ -53,7 +51,6 @@ describe('FleetingNoteCard', () => {
             <FleetingNoteCard
                 note={note}
                 setAlert={setAlert}
-                setAlertColor={setAlertColor}
             />,
         );
         fireEvent.click(await findByText('Test note'));

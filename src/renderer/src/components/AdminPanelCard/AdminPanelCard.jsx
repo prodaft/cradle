@@ -33,8 +33,7 @@ export default function AdminPanelCard({
     searchKey,
 }) {
     const [dialog, setDialog] = useState(false);
-    const [alert, setAlert] = useState('');
-    const [alertColor, setAlertColor] = useState('red');
+    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const auth = useAuth();
 
     const handleDelete = async () => {
@@ -44,12 +43,12 @@ export default function AdminPanelCard({
                     onDelete();
                 }
             })
-            .catch(displayError(setAlert, setAlertColor));
+            .catch(displayError(setAlert));
     };
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
+            <AlertDismissible alert={alert} setAlert={setAlert} />
             <ConfirmationDialog
                 open={dialog}
                 setOpen={setDialog}

@@ -19,8 +19,7 @@ export default function FleetingNotesPanel({
     fleetingNotesRefresh,
 }) {
     const auth = useAuth();
-    const [alertText, setAlertText] = useState('');
-    const [alertColor, setAlertColor] = useState('');
+    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [notes, setNotes] = useState([]);
 
     useEffect(() => {
@@ -30,15 +29,14 @@ export default function FleetingNotesPanel({
                     setNotes(response.data);
                 }
             })
-            .catch(displayError(setAlertText, setAlertColor));
+            .catch(displayError(setAlert));
     }, [fleetingNotesRefresh]);
 
     return (
         <>
             <AlertDismissible
                 alert={alertText}
-                setAlert={setAlertText}
-                color={alertColor}
+                setAlert={setAlert}
             />
             <div
                 className='bg-gray-2 w-full h-full p-4 flex flex-col space-y-2 overflow-hidden'
@@ -57,8 +55,7 @@ export default function FleetingNotesPanel({
                         notes.map((note) => (
                             <FleetingNoteCard
                                 note={note}
-                                setAlert={setAlertText}
-                                setAlertColor={setAlertColor}
+                                setAlert={setAlert}
                             />
                         ))
                     ) : (
