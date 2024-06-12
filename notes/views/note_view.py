@@ -8,10 +8,12 @@ from rest_framework.permissions import IsAuthenticated
 from ..serializers import NoteCreateSerializer, NoteRetrieveSerializer
 from ..models import Note
 from user.models import CradleUser
-from access.models import Access
 from access.enums import AccessType
-from entities.enums import EntityType
 from typing import cast
+from logs.decorators import log_failed_responses
+
+from entities.enums import EntityType
+from access.models import Access
 
 
 class NoteList(APIView):
@@ -19,6 +21,7 @@ class NoteList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @log_failed_responses
     def post(self, request: Request) -> Response:
         """Allow a user to create a new note, by sending the text itself.
         This text should be validated to meet the requirements
@@ -56,6 +59,7 @@ class NoteDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @log_failed_responses
     def get(self, request: Request, note_id: int) -> Response:
         """Allow a user to get an already existing note, by specifying
         its id. A user should be able to retrieve the id only if he has
@@ -88,6 +92,7 @@ class NoteDetail(APIView):
 
         return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
 
+    @log_failed_responses
     def delete(self, request: Request, note_id: int) -> Response:
         """Allow a user to delete an already existing note,
         by specifying its id.

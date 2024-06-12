@@ -7,6 +7,7 @@ from django.urls import reverse
 class TestFileUpload(FileTransferTestCase):
 
     def setUp(self):
+        super().setUp()
         self.mock_minio_client_create()
 
         self.user = CradleUser.objects.create_user(username="user", password="user")
@@ -14,6 +15,7 @@ class TestFileUpload(FileTransferTestCase):
         self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
 
     def tearDown(self):
+        super().tearDown()
         self.mock_minio_client_destroy()
 
     def test_get_presigned_put_successfully(self):

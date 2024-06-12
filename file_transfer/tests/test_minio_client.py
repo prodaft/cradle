@@ -6,6 +6,7 @@ from ..exceptions import MinioObjectNotFound
 class TestMinioClient(FileTransferTestCase):
 
     def setUp(self):
+        super().setUp()
         self.mock_minio_create()
 
     def test_is_singleton(self):
@@ -44,4 +45,5 @@ class TestMinioClient(FileTransferTestCase):
             )
 
     def tearDown(self):
+        super().tearDown()
         self.mock_minio_destroy()

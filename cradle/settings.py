@@ -32,12 +32,21 @@ SECRET_KEY = "django-insecure-0in+njnc5mjf3xuh$yjy+$s@78-!9rh$qjzv@aqw+*c$zh&d*&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS: List[str] = []
+ALLOWED_HOSTS: List[str] = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(
+    ","
+)
+
+# CORS_ALLOW_HEADERS = ["*"]
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_ALLOW_ALL = True
 
 
 # Application definition
-
 INSTALLED_APPS = [
+    "corsheaders",
+    "notifications.apps.NotificationsConfig",
+    "logs.apps.LogsConfig",
     "file_transfer.apps.FileTransferConfig",
     "query.apps.QueryConfig",
     "dashboards.apps.DashboardsConfig",
@@ -52,20 +61,73 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt",
 ]
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+
+def get_log_directory():
+    """Get the log directory for the application.
+    This is /var/log/cradle/ if /var/log/ exists and is writable,
+    and cradle/ can be created in it. Otherwise, it is the BASE_DIR.
+
+    Args:
+
+    Returns:
+        str: The log directory for the application.
+    """
+    log_dir = "/var/log/"
+    cradle_log_dir = "/var/log/cradle/"
+    if os.path.exists(log_dir) and os.access(log_dir, os.W_OK):
+        if not os.path.exists(cradle_log_dir):
+            try:
+                os.mkdir(cradle_log_dir)
+            except OSError:
+                return str(BASE_DIR)
+        return cradle_log_dir
+    return str(BASE_DIR)
+
+
+log_directory = get_log_directory()
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "success_file": {
+            "level": "WARNING",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(log_directory, "success.log"),
+        },
+        "error_file": {
+            "level": "WARNING",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(log_directory, "error.log"),
+        },
+    },
+    "loggers": {
+        "django.success": {
+            "handlers": ["success_file"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "django.error": {
+            "handlers": ["error_file"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+    },
+}
 
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
@@ -89,10 +151,6 @@ SIMPLE_JWT = {
 }
 
 ROOT_URLCONF = "cradle.urls"
-
-CORS_ALLOW_HEADERS = ["*"]
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_CREDENTIALS = True
 
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True

@@ -5,6 +5,17 @@ from datetime import timedelta
 
 
 class FileTransferTestCase(TestCase):
+    def setUp(self):
+        self.success_logger_patcher = patch("logs.utils.success_logger")
+        self.error_logger_patcher = patch("logs.utils.error_logger")
+
+        self.mocked_success_logger = self.success_logger_patcher.start()
+        self.mocked_error_logger = self.error_logger_patcher.start()
+
+    def tearDown(self):
+        self.success_logger_patcher.stop()
+        self.error_logger_patcher.stop()
+
     def init_minio_constants(self):
         self.bucket_name = "user"
         self.file_name = "evidence.png"

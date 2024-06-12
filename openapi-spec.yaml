@@ -29,6 +29,8 @@ tags:
     description: Operations targeting the dashboard.
   - name: File Transfer
     description: Operations targeting the transfer of files.
+  - name: Notification 
+    description: Operations regarding notifications
   
 paths:
   /users:
@@ -151,38 +153,26 @@ paths:
             The credentials given are invalid. 
             
 
-  /notifications/{userId}:
+  /notifications/:
     get:
       tags:
         - Notification
       summary: Get user's notifications
-      description: Checks if there are any new notifications. Can be implemented with polling, web sockets etc.
+      description: Fetches all of the user's notifications. The notifications are sorted from the newest to the oldest one.
       operationId: getNotifications
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            type: integer
-            format: int64
-          examples:
-            userIdExample:
-              value: "12341124"
       responses:
         '200':
           description: Returns a list of all notifications.
           content:
-            'application/json':
+            application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Notification'
+                  oneOf:
+                    - $ref: '#/components/schemas/MessageNotification'
+                    - $ref: '#/components/schemas/AccessRequestNotification'
         '401':
           description: User is not authenticated.
-        '403':
-          description: User cannot access other user's notifications.
-        '404':
-          description: User is not found. # maybe
 
   /entities/actors:
     get:
@@ -779,10 +769,10 @@ paths:
               schema:
                 type: object
                 properties:
-                  bucketName:
+                  bucket_name:
                     type: string
                     example: "admin"
-                  minioFileName:
+                  minio_file_name:
                     type: string
                     example: "be0b24ad-ae54-4952-ae87-00011ed9df27-evidence.png"
                   presigned:
@@ -893,7 +883,8 @@ paths:
       tags:
         - Fleeting Note
       summary: Get the content of a fleeting note
-      description: Allow  user to visualize a specific fleeting note
+      description: Get a FleetingNote entity by its primary key.
+        Only the owner of the FleetingNote entity can access it.
       operationId: getFleetingNote
       parameters:
         - in: path
@@ -914,15 +905,14 @@ paths:
                 $ref: '#/components/schemas/FleetingNote'
         '401': 
           description: User is not authenticated.
-        '403':
-          description: User cannot access fleeting notes he does not own. 
         '404':
           description: Fleeting note not found.
     delete:
       tags:
         - Fleeting Note
       summary: Delete a certain fleeting note
-      description: Allow a user to delete the fleeting note with id fleetingNoteId
+      description: Delete a FleetingNote entity by its primary key.
+        Only the owner of the FleetingNote entity can delete it.
       operationId: deleteFleetingNote
       parameters:
         - in: path
@@ -939,15 +929,14 @@ paths:
           description: Fleeting Note was deleted.
         '401': 
           description: User is not authenticated.
-        '403': 
-          description: User cannot delete a Fleeting Note he does not own.
         '404':
-          description: Fleeting Note not found.  
+          description: The Fleeting Note does not exist or is not owned by user.
     put:
       tags:
         - Fleeting Note
       summary: Update a Fleeting Note
-      description: Allow a user to edit a Fleeting Note by providing its text and id
+      description: Update a FleetingNote entity by its primary key.
+        Only the owner of the FleetingNote entity can update it.
       operationId: updateFleetingNote
       parameters:
         - in: path
@@ -966,26 +955,27 @@ paths:
             schema:
               type: object
               required:
-                - text
+                - content
               properties:
-                text:
+                content:
                   type: string
       responses:
         '200':  
           description: Fleeting Note was updated.
         '401': 
           description: User is not authenticated.
-        '403': 
-          description: User cannot edit a Fleeting Note he does not own.
         '404':
-          description: Fleeting Note not found. 
+          description: Fleeting Note not found or not owned by user.
           
-  /fleeting-notes/{fleetingNoteId}/final: 
+  /fleeting-notes/{fleetingNoteId}/final/:
     put:
       tags:
           - Fleeting Note
       summary: Transform a Fleeting Note to a Note. 
-      description: Allow a user to save a FleetingNote into a normal Note. 
+      description: Allow a user to save the contents of a fleeting note as a normal note. 
+        The user must be the owner of the Fleeting Note.
+        Optionally the user can specify if the note is publishable. If not specified, the note is not publishable.
+        The fleeting note is deleted after the transformation.
       operationId: finalizeNote
       parameters:
         - in: path
@@ -997,6 +987,15 @@ paths:
           examples:
             fleetingNoteIdExample:
               value: 2324169
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                publishable:
+                  type: boolean
       responses:
         '200': 
           description: Fleeting Note was transformed. 
@@ -1008,8 +1007,8 @@ paths:
           description: Note does not reference at least one Case and two Entities. 
         '401': 
           description: User is not authenticated. 
-        '403': 
-          description: User does not have Read-Write access to a referenced Case or User does not own the Fleeting Note. 
+        '404': 
+          description: User does not have Read-Write access to a referenced Case or not all Cases and Actors exist / The Fleeting Note does not exist or was not written by the user 
     
   
   /query:
@@ -1142,6 +1141,10 @@ components:
           type: array
           items: 
             $ref: "#/components/schemas/Entity"
+        inaccessible_cases:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
         access: 
           type: string
           enum: 
@@ -1193,6 +1196,10 @@ components:
           type: array
           items: 
             $ref: "#/components/schemas/Entity"
+        inaccessible_cases:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
     
     EntryDashboard:
       type: object
@@ -1227,6 +1234,10 @@ components:
           items: 
             $ref: "#/components/schemas/Note"
         cases:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        inaccessible_cases:
           type: array
           items: 
             $ref: "#/components/schemas/Entity"
@@ -1340,14 +1351,41 @@ components:
           type: string
           format: date-time
 
-    Notification: 
+    MessageNotification: 
       type: object
       properties: 
-        ID: 
+        id: 
           type: integer
           format: int64
-        text:
+        message:
           type: string
+        timestamp: 
+          type: string
+          format: date-time
+        notification_type:
+          enum:
+            - message_notification
+
+    AccessRequestNotification: 
+      type: object
+      properties: 
+        id: 
+          type: integer
+          format: int64
+        message:
+          type: string
+        case_id:
+          type: integer
+          format: int64
+        requesting_user_id:
+          type: integer
+          format: int64
+        timestamp: 
+          type: string
+          format: date-time
+        notification_type:
+          enum:
+            - request_access_notification
 
     ExportType:
       type: string
