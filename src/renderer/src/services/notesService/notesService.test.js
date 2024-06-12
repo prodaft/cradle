@@ -1,4 +1,4 @@
-import { getNote, setPublishable } from './notesService';
+import { getNote, setPublishable, deleteNote } from './notesService';
 import axios from 'axios';
 
 jest.mock('axios');
@@ -68,4 +68,29 @@ describe('setPublishable', () => {
 
         await expect(setPublishable(token, noteId, status)).rejects.toThrow(error);
     });
+});
+
+it('deletes note successfully from API', async () => {
+    const token = 'dummy_token';
+    const id = '1';
+
+    axios.mockResolvedValue({ data: {} });
+
+    await expect(deleteNote(token, id)).resolves.toEqual({ data: {} });
+
+    expect(axios).toHaveBeenCalledWith({
+        method: 'DELETE',
+        url: `/notes/${id}/`,
+        headers: { Authorization: `Bearer ${token}` },
+    });
+});
+
+it('deletes note unsuccessfully from API', async () => {
+    const token = 'dummy_token';
+    const id = '1';
+    const errorMessage = 'Network Error';
+
+    axios.mockRejectedValue(new Error(errorMessage));
+
+    await expect(deleteNote(token, id)).rejects.toThrow(errorMessage);
 });
