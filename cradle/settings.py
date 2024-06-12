@@ -45,6 +45,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 # Application definition
 INSTALLED_APPS = [
     "corsheaders",
+    "notifications.apps.NotificationsConfig",
     "logs.apps.LogsConfig",
     "file_transfer.apps.FileTransferConfig",
     "query.apps.QueryConfig",
