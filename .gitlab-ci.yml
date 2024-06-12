@@ -85,18 +85,12 @@ run-deploy:
     rules:
         - if: $CI_COMMIT_REF_NAME == "dev"
         - if: $CI_COMMIT_REF_NAME == "main"
-        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-          when: never
-    needs:
-        - job: install
-          artifacts: true
-        - job: run-build
-          artifacts: true
     variables:
         RSYNC_PASSWORD: RYDJZHRMPYUjICU
         API_BASE_URL: https://cradle.yigit.run/api
     script:
         - apt-get update -qq && apt-get install -qqy rsync
+        - npm ci --cache .npm --prefer-offline
         - echo "VITE_API_BASE_URL=$API_BASE_URL" > ./src/renderer/.env
         - npm run tailwind
         - npm run render
