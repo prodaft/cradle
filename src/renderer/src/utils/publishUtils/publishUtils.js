@@ -109,7 +109,7 @@ const downloadFile = (content, extension) => {
  * @returns {string} the HTML report
  */
 const createHtmlReport = (title, htmlContent) => {
-    const reportTitle = title || 'Report';
+    const reportTitle = title ? `Report for ${title}` : 'Report';
     const tailwindConfig = {
         theme: {
             extend: {
