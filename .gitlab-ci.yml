@@ -41,7 +41,7 @@ install:
         paths:
             # Artifact node_modules for subsequent jobs
             - node_modules/
-        expire_in: 6 hours
+        expire_in: 2 days
 
 run-build:
     stage: build
@@ -54,7 +54,7 @@ run-build:
     artifacts:
         paths:
             - out/
-        expire_in: 6 hours
+        expire_in: 2 days
 
 run-lint:
     stage: lint
@@ -83,18 +83,16 @@ run-test:
 run-deploy:
     stage: deploy
     rules:
-        - if: '$CI_COMMIT_REF_NAME == "dev"'
-        - if: '$CI_COMMIT_REF_NAME == "main"'
-    needs:
-        - job: install
-          artifacts: true
-        - job: run-build
-          artifacts: true
+        - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+          when: never
+        - if: $CI_COMMIT_REF_NAME == "dev"
+        - if: $CI_COMMIT_REF_NAME == "main"
     variables:
         RSYNC_PASSWORD: RYDJZHRMPYUjICU
         API_BASE_URL: https://cradle.yigit.run/api
     script:
         - apt-get update -qq && apt-get install -qqy rsync
+        - npm ci --cache .npm --prefer-offline
         - echo "VITE_API_BASE_URL=$API_BASE_URL" > ./src/renderer/.env
         - npm run tailwind
         - npm run render
