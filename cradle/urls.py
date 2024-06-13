@@ -16,15 +16,25 @@ Including another URLconf
 """
 
 from django.urls import include, path
+import os
+
+BASE_URL = (os.environ.get("BASE_URL", "").strip("/") + "/").removeprefix("/")
 
 urlpatterns = [
-    path("users/", include("user.urls")),
-    path("entities/", include("entities.urls")),
-    path("notes/", include("notes.urls")),
-    path("dashboards/", include("dashboards.urls")),
-    path("access/", include("access.urls")),
-    path("query/", include("query.urls")),
-    path("file-transfer/", include("file_transfer.urls")),
-    path("fleeting-notes/", include("fleeting_notes.urls")),
-    path("notifications/", include("notifications.urls")),
+    path(
+        BASE_URL,
+        include(
+            [
+                path("users/", include("user.urls")),
+                path("entities/", include("entities.urls")),
+                path("notes/", include("notes.urls")),
+                path("dashboards/", include("dashboards.urls")),
+                path("access/", include("access.urls")),
+                path("query/", include("query.urls")),
+                path("file-transfer/", include("file_transfer.urls")),
+                path("fleeting-notes/", include("fleeting_notes.urls")),
+                path("notifications/", include("notifications.urls")),
+            ]
+        ),
+    )
 ]
