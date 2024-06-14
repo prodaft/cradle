@@ -34,6 +34,7 @@ urlpatterns = [
                 path("file-transfer/", include("file_transfer.urls")),
                 path("fleeting-notes/", include("fleeting_notes.urls")),
                 path("notifications/", include("notifications.urls")),
+                path("knowledge-graph/", include("knowledge_graph.urls")),
             ]
         ),
     )

@@ -6,9 +6,10 @@ from entities.models import Entity
 from user.models import CradleUser
 from access.models import Access
 from access.enums import AccessType
-from django.db.models import Case, When
+from django.db.models import Case, When, Q, F
 
 from typing import List
+from typing import Optional
 
 
 class NoteManager(models.Manager):
@@ -43,40 +44,55 @@ class NoteManager(models.Manager):
 
         return entities
 
-    def get_accessible_notes(self, user: CradleUser, entity_id: int) -> models.QuerySet:
-        """Get the notes of a case that the user has access to
+    def get_accessible_notes(
+        self, user: CradleUser, entity_id: Optional[int] = None
+    ) -> models.QuerySet:
+        """Get the notes of a case that the user has access to.
+        If None is provided as a parameter, then the method returns all
+        accessible notes.
 
         Args:
             user: The user whose access is being checked
             entity_id: The id of the entiy whose notes are being retrieved
 
         Returns:
-            QuerySet: The notes of the case that the user has access to
+            QuerySet: The notes of the case that the user has access to or
+            all the notes the user has access to if None is provided for
+            entity_id.
         """
 
         if user.is_superuser:
-            return self.get_all_notes(entity_id)
+            return (
+                (
+                    self.get_all_notes(entity_id)
+                    if entity_id is not None
+                    else self.get_queryset().all()
+                )
+                .order_by("-timestamp")
+                .distinct()
+            )
 
-        inaccessible_notes = self.get_inaccessible_notes(user, entity_id).values_list(
+        inaccessible_notes = self.get_inaccessible_notes(user).values_list(
             "id", flat=True
         )
 
+        if entity_id is None:
+            notes = self.get_queryset().all()
+        else:
+            notes = self.get_queryset().filter(entities__id=entity_id)
+
         return (
-            Entity.objects.get(id=entity_id)
-            .note_set.exclude(id__in=inaccessible_notes)
-            .order_by("-timestamp")
-            .distinct()
+            notes.exclude(id__in=inaccessible_notes).order_by("-timestamp").distinct()
         )
 
-    def get_inaccessible_notes(self, user, entity_id):
-        """Get the notes of a case that the user does not have access to
+    def get_inaccessible_notes(self, user: CradleUser):
+        """Get the notes a user does not have any access to.
 
         Args:
             user: The user whose access is being checked
-            entity_id: The id of the entiy whose notes are being retrieved
 
         Returns:
-            QuerySet: The notes of the case that the user does not have access to
+            QuerySet: The notes that the user does not have access to
         """
         if user.is_superuser:
             return self.get_queryset().none()
@@ -95,11 +111,7 @@ class NoteManager(models.Manager):
             entities__id__in=inaccessible_cases, entities__type=EntityType.CASE
         )
 
-        return (
-            Entity.objects.get(id=entity_id)
-            .note_set.filter(id__in=inaccessible_notes)
-            .distinct()
-        )
+        return inaccessible_notes
 
     def delete_unreferenced_entities(self) -> None:
         """Deletes entities of type ENTRY and METADATA that
@@ -134,3 +146,31 @@ class NoteManager(models.Manager):
         """
         ordering = Case(*[When(id=id, then=pos) for pos, id in enumerate(note_ids)])
         return self.get_queryset().filter(id__in=note_ids).order_by(ordering)
+
+    def get_links(self, note_list: models.QuerySet) -> models.QuerySet:
+        """Given a list of note ids, retrieve pairs of entities connected
+        by those notes.
+
+        Args:
+            note_list (models.QuerySet): The list of note ids.
+
+        Returns:
+            models.QuerySet: The pairs of entities linked using notes.
+
+        """
+        connected_entities = Entity.objects.annotate(
+            note_count=Count("note", filter=Q(note__id__in=note_list))
+        )
+
+        connected_entities = connected_entities.filter(note_count__gt=0)
+
+        entity_pairs = (
+            connected_entities.values(
+                first_node=F("id"),
+                second_node=F("note__entities__id"),
+            )
+            .distinct()
+            .filter(first_node__lt=F("second_node"))
+        )
+
+        return entity_pairs

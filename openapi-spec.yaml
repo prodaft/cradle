@@ -1024,13 +1024,18 @@ paths:
       tags:
         - Knowledge Graph
       summary: Show Knowledge Graph
-      description: Allow a user to view the Knowledge Graph containing all Entities they can access
+      description: "Allow a user to view the Knowledge Graph containing all Entities they can access. The Knowledge Graph is represented as two arrays: 'entities' and 'links'. The 'entities' array contains a list ofentities which are connected using notes the User has access to, while the 'links' array contains pairs of id's, each link representing a connection between two entities through a note visible to the user."
       operationId: showKnowledgeGraph
       responses:
         '200': 
           description: Request is successful.
+          content: 
+            'application/json':
+              schema: 
+                $ref: "#/components/schemas/Graph"
         '401': 
           description: User is not authenticated. 
+      
             
 
 components:
@@ -1365,6 +1370,34 @@ components:
           type: array
           items: 
             $ref: "#/components/schemas/Note"
+      
+    Link: 
+      type: object
+      properties: 
+        source:
+          type: integer
+          format: int64
+        target:
+          type: integer
+          format: int64
+      example: 
+          source: 1234567890123456
+          target: 9876543210987654
+
+
+    Graph:
+      type: object
+      properties: 
+        entities: 
+          type: array
+          items: 
+            type: object
+            $ref: "#/components/schemas/Entity"
+        links:
+          type: array
+          items: 
+            type: object
+            $ref: "#/components/schemas/Link"
 
 security:
   - cookieAuth: []
