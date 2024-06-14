@@ -84,3 +84,27 @@ class AccessManager(models.Manager):
             .values("id", "name", "access_type__access_type")  # separate table
             .annotate(access_type=F("access_type__access_type"))  # rename obscure field
         )
+
+    def get_users_with_access(self, case_id: int) -> models.QuerySet:
+        """Retrieves the ids of the users that can provide access for the given
+        case. Those users are the ones that have read-write access to the case
+        and the superusers.
+
+        Args:
+            case_id: The id of the case we perform the check for
+
+        Returns:
+            A QuerySet containing the ids of the users that are allowed to give
+            access to the case.
+        """
+
+        return (
+            self.get_queryset()
+            .filter(case_id=case_id, access_type=AccessType.READ_WRITE)
+            .values_list("user_id", flat=True)
+            .union(
+                CradleUser.objects.filter(is_superuser=True).values_list(
+                    "id", flat=True
+                )
+            )
+        )

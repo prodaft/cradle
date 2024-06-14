@@ -406,6 +406,22 @@ paths:
           description: User not found.
 
 
+  /access/request/{caseId}:
+    post:
+      tags:
+        - Access
+      summary: Requests access for a case.
+      description: Allows a user to request access for a Case. All users with read-write access for that specific Case will receive a Notification. If the user making the request already has read-write access, no Notifications are sent but the request is deemed successful.
+      operationId: requestAccessForCase
+      responses:
+        '200': 
+          description: Request was successful.
+        '401':
+          description: User is not authenticated.
+        '404':
+          description: Case not found.
+
+
   /access/{userId}/{caseId}:
     put:
       tags:
@@ -634,74 +650,6 @@ paths:
           description: User is not authenticated.
         '404': 
           description: User does not have read access to the requested note or the requested note does not exist.
-
-  /notes/request/case/{caseId}/entity/{entityId}:
-    get:
-      tags:
-        - Note
-      summary: Request access to a Note
-      description: Allow a user to request access to a Note by specifying two id's, one of a Case and one of another Entity
-      operationId: requestAccessToNote
-      parameters:
-        - in: path
-          name: caseId
-          required: true
-          schema:
-            type: integer
-            format: int64
-          examples:
-            caseIdExample:
-              value: 12341223
-        - in: path
-          name: entityId
-          required: true
-          schema:
-            type: integer
-            format: int64
-          examples:
-            entityIdExample:
-              value: 4124018
-      responses:
-        '200':
-          description: Access was requested. 
-        '400': 
-          description: Request has invalid format. 
-        '401': 
-          description: User is not authenticated.
-
-  /notes/allow/user/{userId}/note/{noteId}:
-    get:
-      tags:
-        - Note
-      summary: Allow access to a Note
-      description: Allow a user to give another user access to a Note by specifying two id's, one of that user and one of the Note
-      operationId: allowAccessToNote
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            type: integer
-            format: int64
-          examples:
-            userIdExample:
-              value: 24124112
-        - in: path
-          name: noteId
-          required: true
-          schema:
-            type: integer
-            format: int64
-          examples:
-            noteIdExample:
-              value: 410287
-      responses:
-        '200': 
-          description: Access was granted. 
-        '401': 
-          description: User is not authenticated. 
-        '403': 
-          description: A User cannot grant access to a note it does not own. 
         
   /notes/publish:
     get:
