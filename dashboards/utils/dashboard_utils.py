@@ -54,7 +54,9 @@ class DashboardUtils:
             accessible_notes
         ).exclude(id=entity_id)
 
-        inaccessible_notes = Note.objects.get_inaccessible_notes(user, entity_id)
+        inaccessible_notes = Note.objects.get_inaccessible_notes(user).filter(
+            entities__id=entity_id
+        )
 
         inaccessible_notes_cases = (
             Note.objects.get_entities_from_notes(inaccessible_notes)
