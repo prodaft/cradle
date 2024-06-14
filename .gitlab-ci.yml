@@ -14,13 +14,6 @@ cache:
         - .npm/
     policy: pull-push
 
-# install:
-#   stage: .pre
-#   cache:
-#     key: *global_cache_node_mods
-#   script:
-#     - npm ci --cache .npm --prefer-offline
-
 run-build:
     stage: build
     cache:
