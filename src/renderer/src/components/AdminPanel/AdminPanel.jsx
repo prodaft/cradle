@@ -45,6 +45,7 @@ export default function AdminPanel() {
                             return (
                                 <AdminPanelCard
                                     id={actor.id}
+                                    key={actor.id}
                                     name={actor.name}
                                     searchKey={actor.name}
                                     description={actor.description}
@@ -70,6 +71,7 @@ export default function AdminPanel() {
                             return (
                                 <AdminPanelCard
                                     id={c.id}
+                                    key={c.id}
                                     name={c.name}
                                     searchKey={c.name}
                                     description={c.description}
@@ -95,6 +97,7 @@ export default function AdminPanel() {
                             return (
                                 <AdminPanelCard
                                     id={user.id}
+                                    key={user.id}
                                     name={user.username}
                                     searchKey={user.username}
                                     type={'users'}

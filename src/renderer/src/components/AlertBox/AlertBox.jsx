@@ -3,25 +3,25 @@ import rippleUiAlertIcon from '../../assets/ripple-ui-alert-icon.svg';
 /**
  * AlertBox component - a styled in-line alert box with an icon and text
  *
- * @param {{show: boolean, message: string, color: string}} error - The error object to display
+ * @param {{show: boolean, message: string, color: string}} alert - The alert object to display
  * @returns {JSX.Element}
  * @constructor
  */
-export default function AlertBox({ error }) {
+export default function AlertBox({ alert }) {
     const colorVariants = {
         green: 'alert-success',
         red: 'alert-error',
     };
 
     return (
-        error.show && (
+        alert.show && (
             <div
                 data-testid='auth-err-alert'
-                className={`alert ${colorVariants[error.color]}`}
+                className={`alert ${colorVariants[alert.color]}`}
             >
                 <img src={rippleUiAlertIcon} alt='alert icon' className='w-6 h-6' />
                 <div className='flex flex-col text-black dark:text-white'>
-                    <span>{error.message}</span>
+                    <span>{alert.message}</span>
                 </div>
             </div>
         )

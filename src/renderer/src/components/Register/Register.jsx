@@ -18,7 +18,7 @@ export default function Register() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [passwordCheck, setPasswordCheck] = useState('');
-    const [error, setError] = useState({ show: false, message: '', color: 'red' });
+    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -26,12 +26,12 @@ export default function Register() {
         e.preventDefault();
 
         if (password !== passwordCheck) {
-            setError({ show: true, message: 'Passwords do not match.', color: 'red' });
+            setAlert({ show: true, message: 'Passwords do not match.', color: 'red' });
             return;
         }
 
         if (!validatePassword(password)) {
-            setError({
+            setAlert({
                 show: true,
                 message:
                     'Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
@@ -44,7 +44,7 @@ export default function Register() {
 
         registerReq(data)
             .then(() => navigate('/login', { state: location.state, replace: true }))
-            .catch(displayError(setError));
+            .catch(displayError(setAlert));
     };
 
     return (
@@ -80,7 +80,7 @@ export default function Register() {
                                 type='password'
                                 handleInput={setPasswordCheck}
                             />
-                            <AlertBox error={error} />
+                            <AlertBox alert={alert} />
                             <button
                                 type='submit'
                                 data-testid='login-register-button'

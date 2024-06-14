@@ -9,8 +9,8 @@ import FleetingNoteCard from '../FleetingNoteCard/FleetingNoteCard';
 /**
  * The FleetingNotesPanel component is a panel that displays all the fleeting notes of the user.
  * It is displayed when the user clicks the fleeting notes button in the Navbar.
- * @param handleFleetingNotesButton - the function to handle the closing of the FleetingNotesPanel
- * @param fleetingNotesRefresh - the state used to determine the refresh of the FleetingNotesPanel
+ * @param {(any) => any} handleFleetingNotesButton - the function to handle the closing of the FleetingNotesPanel
+ * @param {*} fleetingNotesRefresh - the state used to determine the refresh of the FleetingNotesPanel
  * @returns {FleetingNotesPanel}
  * @constructor
  */
@@ -49,8 +49,8 @@ export default function FleetingNotesPanel({
                 </div>
                 <div className='w-full h-full overflow-y-auto'>
                     {notes && notes.length > 0 ? (
-                        notes.map((note) => (
-                            <FleetingNoteCard note={note} setAlert={setAlert} />
+                        notes.map((note, index) => (
+                            <FleetingNoteCard key={index} note={note} setAlert={setAlert} />
                         ))
                     ) : (
                         <p className='w-full p-2 text-zinc-500 text-center'>
