@@ -59,11 +59,11 @@ export default function SearchDialog({ isOpen, onClose }) {
         queryEntities(auth.access, searchQuery, entityTypeFilters, entitySubtypeFilters)
             .then((response) => {
                 setResults(
-                    response.data.map((result, index) => {
+                    response.data.map((result) => {
                         const dashboardLink = createDashboardLink(result);
                         return (
                             <SearchResult
-                                key={index}
+                                key={result.id}
                                 name={result.name}
                                 type={result.type}
                                 subtype={result.subtype}
