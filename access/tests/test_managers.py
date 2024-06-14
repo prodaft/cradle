@@ -166,3 +166,32 @@ class AccessManagerGetAccessibleTest(AccessTestCase):
                     user=self.users[2], case_id=query_result[i]["case_id"]
                 ).access_type
                 self.assertNotEqual(access_type, AccessType.NONE)
+
+
+class AccessManagerGetUsersWithAccessTest(AccessTestCase):
+
+    def setUp(self):
+        super().setUp()
+
+        self.users = [
+            CradleUser.objects.create_user(username=f"user{id}", password="password")
+            for id in range(3)
+        ]
+        self.users.append(
+            CradleUser.objects.create_superuser(username="admin", password="admin")
+        )
+
+        self.case = Entity.objects.create(name="Case", type=EntityType.CASE)
+
+        Access.objects.create(
+            user=self.users[0], case=self.case, access_type=AccessType.NONE
+        )
+        Access.objects.create(
+            user=self.users[1], case=self.case, access_type=AccessType.READ_WRITE
+        )
+
+    def test_get_users_with_access(self):
+        self.assertCountEqual(
+            [self.users[1].id, self.users[3].id],
+            list(Access.objects.get_users_with_access(self.case.id)),
+        )
