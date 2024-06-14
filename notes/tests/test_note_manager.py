@@ -7,6 +7,8 @@ from entities.enums import EntityType, EntitySubtype
 from access.models import Access
 from notes.models import Note
 
+from collections import Counter
+
 
 class DeleteUnfilteredEntitiesTest(NotesTestCase):
     def setUp(self):
@@ -91,6 +93,9 @@ class AccessibleNotesTest(NotesTestCase):
         self.note2 = Note.objects.create(content="Note2")
         self.note2.entities.set([self.case2, self.actor2, self.case1])
 
+        self.note3 = Note.objects.create(content="Note3")
+        self.note3.entities.set([self.case3])
+
     def create_cases(self):
         self.case1 = Entity.objects.create(
             name="Case1", description="Description1", type=EntityType.CASE
@@ -98,6 +103,10 @@ class AccessibleNotesTest(NotesTestCase):
 
         self.case2 = Entity.objects.create(
             name="Case2", description="Description2", type=EntityType.CASE
+        )
+
+        self.case3 = Entity.objects.create(
+            name="Case3", description="Description3", type=EntityType.CASE
         )
 
     def create_actors(self):
@@ -130,6 +139,14 @@ class AccessibleNotesTest(NotesTestCase):
             user=self.user2, case=self.case1, access_type="read"
         )
 
+        self.access4 = Access.objects.create(
+            user=self.user1, case=self.case3, access_type="read"
+        )
+
+        self.access5 = Access.objects.create(
+            user=self.user2, case=self.case2, access_type="read"
+        )
+
     def setUp(self):
         super().setUp()
 
@@ -149,8 +166,8 @@ class AccessibleNotesTest(NotesTestCase):
 
     def test_get_accessible_notes_admin(self):
         notes = Note.objects.get_accessible_notes(self.admin_user, self.case1.id)
-        expected = Note.objects.all()
-        self.assertQuerySetEqual(notes, expected, ordered=False)
+        expected = Note.objects.exclude(id=self.note3.id).order_by("-timestamp")
+        self.assertQuerySetEqual(notes, expected)
 
     def test_get_accessible_notes_read_write_access(self):
         notes = Note.objects.get_accessible_notes(self.user1, self.case1.id)
@@ -159,13 +176,31 @@ class AccessibleNotesTest(NotesTestCase):
 
     def test_get_accessible_notes_read_access(self):
         notes = Note.objects.get_accessible_notes(self.user2, self.case1.id)
-        expected = Note.objects.filter(id=self.note1.id)
+        expected = Note.objects.exclude(id=self.note3.id).order_by("-timestamp")
         self.assertQuerySetEqual(notes, expected)
 
     def test_get_accessible_notes_no_access(self):
         notes = Note.objects.get_accessible_notes(self.user1, self.case2.id)
         expected = Note.objects.none()
         self.assertQuerySetEqual(notes, expected)
+
+    def test_get_all_accessible_notes_admin(self):
+        notes = Note.objects.get_accessible_notes(self.admin_user)
+        expected = Note.objects.all().order_by("-timestamp")
+
+        self.assertQuerySetEqual(notes, expected)
+
+    def test_get_all_accessible_notes_read_write_access(self):
+        notes = Note.objects.get_accessible_notes(self.user1)
+        expected = Note.objects.exclude(id=self.note2.id)
+
+        self.assertQuerySetEqual(notes, expected, ordered=False)
+
+    def test_get_all_accessible_notes_read_access(self):
+        notes = Note.objects.get_accessible_notes(self.user2)
+        expected = Note.objects.exclude(id=self.note3.id)
+
+        self.assertQuerySetEqual(notes, expected, ordered=False)
 
 
 class GetAllNotesTest(NotesTestCase):
@@ -322,16 +357,16 @@ class GetEntitiesOfTypeTest(NotesTestCase):
         self.create_access()
 
     def test_get_accessible_notes_admin(self):
-        expected = Note.objects.all()
+        expected = Note.objects.all().order_by("-timestamp")
         notes = Note.objects.get_accessible_notes(self.admin_user, self.case1.id)
 
-        self.assertQuerySetEqual(notes, expected, ordered=False)
+        self.assertQuerySetEqual(notes, expected)
 
     def test_get_accessible_notes_read_write_access(self):
-        expected = Note.objects.all()
+        expected = Note.objects.all().order_by("-timestamp")
         notes = Note.objects.get_accessible_notes(self.user1, self.case1.id)
 
-        self.assertQuerySetEqual(notes, expected, ordered=False)
+        self.assertQuerySetEqual(notes, expected)
 
     def test_get_accessible_notes_exclude_case_without_access(self):
         expected = Note.objects.filter(id=self.note1.id)
@@ -477,3 +512,78 @@ class GetInOrderTest(NotesTestCase):
         self.assertEqual(notes[0].id, self.notes[1].id)
         self.assertEqual(notes[1].id, self.notes[0].id)
         self.assertEqual(notes[2].id, self.notes[2].id)
+
+
+class GetLinksTest(NotesTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.cases = [
+            Entity.objects.create(name=f"c{i}", type=EntityType.CASE)
+            for i in range(0, 2)
+        ]
+        self.actors = [
+            Entity.objects.create(name=f"a{i}", type=EntityType.ACTOR)
+            for i in range(0, 2)
+        ]
+        self.entry = [
+            Entity.objects.create(name=f"e{i}", type=EntityType.ENTRY)
+            for i in range(0, 2)
+        ]
+        self.metadata = [
+            Entity.objects.create(name=f"m{i}", type=EntityType.METADATA)
+            for i in range(0, 2)
+        ]
+
+        self.note1 = Note.objects.create(content="1")
+        self.note1.entities.set([self.cases[1], self.actors[0], self.metadata[0]])
+        self.note2 = Note.objects.create(content="2")
+        self.note2.entities.set([self.cases[0], self.metadata[1], self.entry[1]])
+
+        self.note3 = Note.objects.create(content="3")
+        self.note3.entities.set([self.cases[0], self.cases[1]])
+
+    def test_get_links_one_note(self):
+        links = list(Note.objects.get_links(Note.objects.filter(id=self.note1.id)))
+        expected = [
+            (self.cases[1].id, self.actors[0].id),
+            (self.cases[1].id, self.metadata[0].id),
+            (self.actors[0].id, self.metadata[0].id),
+        ]
+
+        links = [tuple(sorted(d.values())) for d in links]
+        self.assertEqual(Counter(links), Counter(expected))
+
+    def test_get_links_two_notes(self):
+        links = list(Note.objects.get_links(Note.objects.exclude(id=self.note1.id)))
+        links = [tuple(sorted(d.values())) for d in links]
+        expected = [
+            (self.cases[0].id, self.metadata[1].id),
+            (self.cases[0].id, self.entry[1].id),
+            (self.entry[1].id, self.metadata[1].id),
+            (self.cases[0].id, self.cases[1].id),
+        ]
+
+        self.assertEqual(Counter(links), Counter(expected))
+
+    def test_get_links_no_notes(self):
+        links = list(Note.objects.get_links(Note.objects.none()))
+        links = [tuple(sorted(d.values())) for d in links]
+        expected = []
+
+        self.assertEqual(Counter(links), Counter(expected))
+
+    def test_get_links_all_notes(self):
+        links = list(Note.objects.get_links(Note.objects.all()))
+        links = [tuple(sorted(d.values())) for d in links]
+        expected = [
+            (self.cases[0].id, self.metadata[1].id),
+            (self.cases[0].id, self.entry[1].id),
+            (self.entry[1].id, self.metadata[1].id),
+            (self.cases[0].id, self.cases[1].id),
+            (self.cases[1].id, self.actors[0].id),
+            (self.cases[1].id, self.metadata[0].id),
+            (self.actors[0].id, self.metadata[0].id),
+        ]
+
+        self.assertEqual(Counter(links), Counter(expected))
