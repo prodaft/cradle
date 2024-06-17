@@ -195,3 +195,31 @@ class AccessManagerGetUsersWithAccessTest(AccessTestCase):
             [self.users[1].id, self.users[3].id],
             list(Access.objects.get_users_with_access(self.case.id)),
         )
+
+
+class AccessManagerCheckUserAccessTest(AccessTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.user = CradleUser.objects.create_user(username="user", password="user")
+        self.case = Entity.objects.create(name="case", type=EntityType.CASE)
+
+    def test_check_user_access_has_access_type(self):
+        Access.objects.create(
+            user=self.user, case=self.case, access_type=AccessType.READ_WRITE
+        )
+        self.assertTrue(
+            Access.objects.check_user_access(
+                self.user, self.case, AccessType.READ_WRITE
+            )
+        )
+
+    def test_check_user_access_does_not_have_access_type(self):
+        Access.objects.create(
+            user=self.user, case=self.case, access_type=AccessType.READ
+        )
+        self.assertFalse(
+            Access.objects.check_user_access(
+                self.user, self.case, AccessType.READ_WRITE
+            )
+        )
