@@ -45,7 +45,7 @@ describe('handleLinkClick', () => {
 });
 
 test('createDownloadPath returns the correct download link', () => {
-    const file = { tag: 'file.txt', bucket: 'admin1234' };
+    const file = { minio_file_name: 'file.txt', bucket_name: 'admin1234' };
 
     const result = createDownloadPath(file);
 
@@ -55,7 +55,7 @@ test('createDownloadPath returns the correct download link', () => {
 });
 
 test('createDownloadPath handles special characters in file name', () => {
-    const file = { tag: 'file with spaces.txt', bucket: 'admin1234' };
+    const file = { minio_file_name: 'file with spaces.txt', bucket_name: 'admin1234' };
 
     const result = createDownloadPath(file);
 
@@ -65,7 +65,7 @@ test('createDownloadPath handles special characters in file name', () => {
 });
 
 test('createDownloadPath handles special characters in bucket name', () => {
-    const file = { tag: 'file.txt', bucket: 'admin@1234' };
+    const file = { minio_file_name: 'file.txt', bucket_name: 'admin@1234' };
 
     const result = createDownloadPath(file);
 

@@ -15,7 +15,7 @@ import { CloudUpload } from 'iconoir-react';
  * The user can upload multiple files at once. Each file is uploaded individually.
  * If any of the files fail to upload, the user is alerted.
  *
- * @param {Array<{tag: string, name: string, bucket: string}>} fileData - the files uploaded via this instance of the component. This only contains the tag and the name of the file.
+ * @param {Array<{minio_file_name: string, file_name: string, bucket_name: string}>} fileData - the files uploaded via this instance of the component. This only contains the tag and the name of the file.
  *                                   The tag is a unique identifier used to reference the file in the markdown content.
  * @param {(FileList) => void} setFileData - callback used when the files uploaded via this instance of the component change
  * @returns {FileInput}
@@ -52,9 +52,9 @@ export default function FileInput({ fileData, setFileData }) {
                 })
                 .then((data) => {
                     succeededFileData.push({
-                        tag: data.minio_file_name,
-                        name: file.name,
-                        bucket: data.bucket_name,
+                        minio_file_name: data.minio_file_name,
+                        file_name: file.name,
+                        bucket_name: data.bucket_name,
                     });
                 })
                 .catch(() => {
@@ -73,9 +73,9 @@ export default function FileInput({ fileData, setFileData }) {
                     setPendingFiles(failedFiles.files);
                     throw new Error(
                         'Failed to upload files: ' +
-                            Array.from(failedFiles.files)
-                                .map((file) => file.name)
-                                .join(', '),
+                        Array.from(failedFiles.files)
+                            .map((file) => file.name)
+                            .join(', '),
                     );
                 } else {
                     setPendingFiles(EMPTY_FILE_LIST);

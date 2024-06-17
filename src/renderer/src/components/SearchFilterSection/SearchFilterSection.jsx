@@ -2,8 +2,8 @@ import { NavArrowDown, NavArrowUp } from 'iconoir-react';
 import React from 'react';
 import SearchFilter from '../SearchFilter/SearchFilter';
 import {
-    entityCategoriesReduced,
-    entryTypes,
+    entityTypesReduced,
+    entrySubtypes,
 } from '../../utils/entityDefinitions/entityDefinitions';
 
 /**
@@ -57,7 +57,7 @@ export default function SearchFilterSection({
                     <div className='w-auto flex flex-col'>
                         <div className='font-medium text-zinc-400'>Entity type</div>
                         <div className='flex flex-wrap'>
-                            {Array.from(entityCategoriesReduced).map((entityType, index) => (
+                            {Array.from(entityTypesReduced).map((entityType, index) => (
                                 <SearchFilter
                                     key={index}
                                     option={entityType}
@@ -70,7 +70,7 @@ export default function SearchFilterSection({
                     <div className='w-auto flex flex-col'>
                         <div className='font-medium text-zinc-400'>Entry type</div>
                         <div className='flex flex-wrap'>
-                            {Array.from(entryTypes).map((entryType, index) => (
+                            {Array.from(entrySubtypes).map((entryType, index) => (
                                 <SearchFilter
                                     key={index}
                                     option={entryType}

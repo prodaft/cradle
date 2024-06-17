@@ -48,7 +48,7 @@ export default function NoteSelector() {
     useEffect(() => {
         setSelectAll(
             selectedNoteIds.length > 0 &&
-                selectedNoteIds.length === publishableNoteIds.length,
+            selectedNoteIds.length === publishableNoteIds.length,
         );
     }, [notes, selectedNoteIds]);
 
@@ -136,6 +136,7 @@ export default function NoteSelector() {
                             </span>
                             {notes.map((note, index) => (
                                 <DashboardNote
+                                    key={index}
                                     index={index}
                                     note={note}
                                     setAlert={setAlert}
