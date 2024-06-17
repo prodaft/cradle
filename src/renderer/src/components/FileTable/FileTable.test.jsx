@@ -31,7 +31,7 @@ describe('FileTable', () => {
     });
 
     test('renders table with files', () => {
-        render(<FileTable fileData={fileData} setFileData={() => { }} />);
+        render(<FileTable fileData={fileData} setFileData={() => {}} />);
 
         expect(screen.getByText('Tag')).toBeInTheDocument();
         expect(screen.getByText('File Name')).toBeInTheDocument();
@@ -43,13 +43,13 @@ describe('FileTable', () => {
     });
 
     test('displays "No files uploaded yet." message when no files are provided', () => {
-        render(<FileTable fileData={[]} setFileData={() => { }} />);
+        render(<FileTable fileData={[]} setFileData={() => {}} />);
 
         expect(screen.getByText('No files uploaded yet.')).toBeInTheDocument();
     });
 
     test('checks the contents of the clipboard after clicking the copy button', async () => {
-        render(<FileTable fileData={fileData} setFileData={() => { }} />);
+        render(<FileTable fileData={fileData} setFileData={() => {}} />);
 
         act(() => fireEvent.click(screen.getByTestId('copy-0')));
 
@@ -63,7 +63,9 @@ describe('FileTable', () => {
         fileData.forEach((_, index) => {
             act(() => fireEvent.click(screen.getByTestId(`delete-${index}`)));
             copyFiles.splice(0, 1);
-            expect(setFileData).toHaveBeenCalledWith(expect.not.arrayContaining([fileData[index]]));
+            expect(setFileData).toHaveBeenCalledWith(
+                expect.not.arrayContaining([fileData[index]]),
+            );
         });
     });
 });

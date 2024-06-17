@@ -73,9 +73,9 @@ export default function FileInput({ fileData, setFileData }) {
                     setPendingFiles(failedFiles.files);
                     throw new Error(
                         'Failed to upload files: ' +
-                        Array.from(failedFiles.files)
-                            .map((file) => file.name)
-                            .join(', '),
+                            Array.from(failedFiles.files)
+                                .map((file) => file.name)
+                                .join(', '),
                     );
                 } else {
                     setPendingFiles(EMPTY_FILE_LIST);

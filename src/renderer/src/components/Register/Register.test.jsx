@@ -37,7 +37,7 @@ describe('Register component', () => {
         const registerButton = getByTestId('login-register-button');
 
         fireEvent.change(usernameInput, {
-            target: { value: 'testuser' }
+            target: { value: 'testuser' },
         });
         fireEvent.change(emailInput, {
             target: { value: 'john@doe.com' },
@@ -71,7 +71,7 @@ describe('Register component', () => {
         const registerButton = getByTestId('login-register-button');
 
         fireEvent.change(usernameInput, {
-            target: { value: 'testuser' }
+            target: { value: 'testuser' },
         });
         fireEvent.change(emailInput, {
             target: { value: 'john@doe.com' },
@@ -101,7 +101,7 @@ describe('Register component', () => {
         const registerButton = getByTestId('login-register-button');
 
         fireEvent.change(usernameInput, {
-            target: { value: 'testuser' }
+            target: { value: 'testuser' },
         });
         fireEvent.change(emailInput, {
             target: { value: 'john@doe.com' },
@@ -129,7 +129,7 @@ describe('Register component', () => {
         const registerButton = getByTestId('login-register-button');
 
         fireEvent.change(usernameInput, {
-            target: { value: 'testuser' }
+            target: { value: 'testuser' },
         });
         fireEvent.change(emailInput, {
             target: { value: 'john@doe.com' },
@@ -157,7 +157,7 @@ describe('Register component', () => {
         const registerButton = getByTestId('login-register-button');
 
         fireEvent.change(usernameInput, {
-            target: { value: 'testuser' }
+            target: { value: 'testuser' },
         });
         fireEvent.change(emailInput, {
             target: { value: 'john@doe.com' },
