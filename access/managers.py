@@ -108,3 +108,31 @@ class AccessManager(models.Manager):
                 )
             )
         )
+
+    def check_user_access(
+        self, user: CradleUser, case: Entity, access_type: AccessType
+    ) -> bool:
+        """Checks whether the user has an access access_type for the provided case.
+        The method should not be called when the user is a superuser or when
+        access_type is NONE.
+
+        Args:
+            user: User whose access is checked
+            case: The case for which the check is performed
+            access_type: The access type for which the method checks
+
+        Returns:
+            True: If the user has access access_type for the case
+            False: If the user does not have access access_type for the case.
+        """
+
+        assert not user.is_superuser, "The user parameter should not be a superuser"
+        assert (
+            access_type != AccessType.NONE
+        ), "The provided access type should not be NONE"
+
+        return (
+            self.get_queryset()
+            .filter(user=user, case=case, access_type=access_type)
+            .exists()
+        )

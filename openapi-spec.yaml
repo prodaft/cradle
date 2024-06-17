@@ -426,9 +426,8 @@ paths:
     put:
       tags:
         - Access
-        - Admin
       summary: Update access of a user
-      description: Allow an admin to change the access privileges of a user by specifying its id
+      description: Allows a user to change the access privileges of another user for the specified case. If the user making the request is an admin, they can change the permission of any other non-admin user. If the user making the request has read-write access for the specified case, they can change the mentioned user's access if that user does not already have read-write access and if they are not an admin. Otherwise, they are not allowed to perform the operation.
       operationId: updateUserAccess
       parameters:
         - in: path
@@ -455,9 +454,9 @@ paths:
             schema:
               type: object
               required:
-                - access
+                - access_type
               properties:
-                access:
+                access_type:
                   $ref: "#/components/schemas/Access"
       responses:
         '200': 
