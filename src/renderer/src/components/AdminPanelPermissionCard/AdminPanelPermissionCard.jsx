@@ -28,8 +28,7 @@ export default function AdminPanelPermissionCard({
     searchKey,
 }) {
     const [currentAccess, setCurrentAccess] = useState(accessLevel);
-    const [alert, setAlert] = useState('');
-    const [alertColor, setAlertColor] = useState('red');
+    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const auth = useAuth();
 
     const handleChange = async (newAccess) => {
@@ -40,13 +39,13 @@ export default function AdminPanelPermissionCard({
                         setCurrentAccess(newAccess);
                     }
                 })
-                .catch(displayError(setAlert, setAlertColor));
+                .catch(displayError(setAlert));
         }
     };
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
+            <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='h-fit w-full bg-cradle3 p-4 my-1 bg-opacity-20 rounded-xl flex flex-row justify-start'>
                 <h2 className='card-header w-full mx-2'>{caseName}</h2>
                 <div className='w-full flex flex-row justify-end'>

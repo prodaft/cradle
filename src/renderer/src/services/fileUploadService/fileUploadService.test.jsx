@@ -18,7 +18,7 @@ describe('File Upload Service', () => {
             minio_file_link: 'http://minio-file-link',
         };
 
-        mock.onGet('/file-transfer/upload').reply(200, expectedResponse);
+        mock.onGet('/file-transfer/upload/').reply(200, expectedResponse);
 
         const response = await getUploadLink(token, fileName);
 

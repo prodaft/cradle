@@ -97,7 +97,7 @@ describe('SearchDialog', () => {
         await waitFor(() => fireEvent.click(screen.getByText('Test')));
         expect(mockOnClose).toHaveBeenCalled();
         expect(mockNavigate).toHaveBeenCalledWith(
-            '/dashboards/Types/Test?subtype=Subtype',
+            '/dashboards/Types/Test/?subtype=Subtype',
         );
     });
 

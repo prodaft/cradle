@@ -24,7 +24,7 @@ describe('createDashboardLink', () => {
             type: 'entry',
             subtype: 'ip',
         };
-        const expectedLink = '/dashboards/entries/127.0.0.1?subtype=ip';
+        const expectedLink = '/dashboards/entries/127.0.0.1/?subtype=ip';
         expect(createDashboardLink(entity)).toBe(expectedLink);
     });
 });
