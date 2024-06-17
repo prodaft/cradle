@@ -2,7 +2,10 @@ import Prism from 'prismjs';
 import { markedHighlight } from 'marked-highlight';
 import { Marked } from 'marked';
 import 'prismjs/themes/prism-tomorrow.css';
-import { entrySubtypes, metadataSubtypes } from '../entityDefinitions/entityDefinitions';
+import {
+    entrySubtypes,
+    metadataSubtypes,
+} from '../entityDefinitions/entityDefinitions';
 import { createDashboardLink } from '../dashboardUtils/dashboardUtils';
 import { prependLinks } from '../textEditorUtils/textEditorUtils';
 import { getDownloadLink } from '../../services/fileUploadService/fileUploadService';
