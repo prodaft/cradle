@@ -1,6 +1,7 @@
 from django.urls import path
-from .views.access_view import AccessList, UpdateAccess
+from .views.access_view import AccessList
 from .views.request_access_view import RequestAccess
+from .views.update_access_view import UpdateAccess
 
 urlpatterns = [
     path(
