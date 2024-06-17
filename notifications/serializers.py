@@ -30,7 +30,7 @@ class MessageNotificationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MessageNotification
-        fields = ["id", "message", "timestamp", "notification_type"]
+        fields = ["id", "message", "is_marked_unread", "timestamp", "notification_type"]
 
 
 class AccessRequestNotificationSerializer(serializers.ModelSerializer):
@@ -43,8 +43,21 @@ class AccessRequestNotificationSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "message",
+            "is_marked_unread",
             "case_id",
             "requesting_user_id",
             "timestamp",
             "notification_type",
         ]
+
+
+class UpdateNotificationSerializer(serializers.ModelSerializer):
+    is_marked_unread = serializers.BooleanField(required=True)
+
+    class Meta:
+        model = MessageNotification
+        fields = ["is_marked_unread"]
+
+
+class UnreadNotificationsSerializer(serializers.Serializer):
+    count = serializers.IntegerField()
