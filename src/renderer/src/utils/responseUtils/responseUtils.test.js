@@ -2,11 +2,9 @@ import { displayError } from './responseUtils';
 
 describe('displayError', () => {
     let setAlert;
-    let setAlertColor;
 
     beforeEach(() => {
         setAlert = jest.fn();
-        setAlertColor = jest.fn();
     });
 
     afterEach(() => {
@@ -23,20 +21,26 @@ describe('displayError', () => {
             },
         };
 
-        const setError = displayError(setAlert, setAlertColor);
+        const setError = displayError(setAlert);
         setError(err);
 
-        expect(setAlertColor).toHaveBeenCalledWith('red');
-        expect(setAlert).toHaveBeenCalledWith('500: Internal Server Error');
+        expect(setAlert).toHaveBeenCalledWith({
+            show: true,
+            message: '500: Internal Server Error',
+            color: 'red',
+        });
     });
 
     it('should display the error message from the error object if no server or client error message is available', () => {
         const err = new Error('Network Error');
 
-        const setError = displayError(setAlert, setAlertColor);
+        const setError = displayError(setAlert);
         setError(err);
 
-        expect(setAlertColor).toHaveBeenCalledWith('red');
-        expect(setAlert).toHaveBeenCalledWith('Network Error');
+        expect(setAlert).toHaveBeenCalledWith({
+            show: true,
+            message: 'Network Error',
+            color: 'red',
+        });
     });
 });

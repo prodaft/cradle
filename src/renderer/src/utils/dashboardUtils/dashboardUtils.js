@@ -22,7 +22,7 @@ const createDashboardLink = (entity) => {
 
     if (subtype) {
         const queryString = QueryString.stringify({ subtype: subtype }); // qs also encodes the values
-        return `/dashboards/${encodeURIComponent(pluralize(type))}/${encodeURIComponent(name)}?${queryString}`;
+        return `/dashboards/${encodeURIComponent(pluralize(type))}/${encodeURIComponent(name)}/?${queryString}`;
     }
 
     return `/dashboards/${encodeURIComponent(pluralize(type))}/${encodeURIComponent(name)}/`;

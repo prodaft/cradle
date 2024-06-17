@@ -9,25 +9,34 @@ import useFrontendSearch from '../../hooks/useFrontendSearch/useFrontendSearch';
  * - Search bar
  * - Children (cards)
  * The component will filter the children based on the search input.
- * @param props
+ *
+ * @param {string} title - The title of the section
+ * @param {boolean} addEnabled - Whether the add button is enabled
+ * @param {string} addTooltipText - The tooltip text for the add button
+ * @param {() => void} handleAdd - The handler for the add button
+ * @param {Array<ReactElement>} children - The children (cards) to display in the section
  * @returns {AdminPanelSection}
  * @constructor
  */
-export default function AdminPanelSection(props) {
-    const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(
-        props.children,
-    );
+export default function AdminPanelSection({
+    title,
+    addEnabled,
+    addTooltipText,
+    handleAdd,
+    children,
+}) {
+    const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(children);
 
     return (
         <div className='w-full h-fit bg-gray-2 rounded-md p-3'>
             <div className='w-full h-12 flex flex-row items-center justify-between'>
-                <h1 className='text-2xl font-bold'>{props.title}</h1>
-                {props.addEnabled && (
+                <h1 className='text-2xl font-bold'>{title}</h1>
+                {addEnabled && (
                     <span
                         className='tooltip tooltip-bottom'
-                        data-tooltip={props.addTooltipText}
+                        data-tooltip={addTooltipText}
                     >
-                        <button className='h-fit m-1' onClick={props.handleAdd}>
+                        <button className='h-fit m-1' onClick={handleAdd}>
                             <PlusCircle />
                         </button>
                     </span>

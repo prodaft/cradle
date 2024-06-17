@@ -30,8 +30,7 @@ import { useLocalStorage } from '@uidotdev/usehooks';
  * @returns {TextEditor}
  */
 export default function TextEditor() {
-    const [alert, setAlert] = useState('');
-    const [alertColor, setAlertColor] = useState('red');
+    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const auth = useAuth();
     const navigate = useNavigate();
     const isLightMode = useLightMode();
@@ -49,7 +48,7 @@ export default function TextEditor() {
     useEffect(() => {
         parseContent(markdownContent, fileData)
             .then((parsedContent) => setParsedContent(parsedContent))
-            .catch(displayError(setAlert, setAlertColor));
+            .catch(displayError(setAlert));
     }, [markdownContent, fileData]);
 
     // Resize the text editor based on the size of the parent container
@@ -65,8 +64,7 @@ export default function TextEditor() {
 
     const isEmptyNote = () => {
         if (!markdownContentRef.current) {
-            setAlertColor('red');
-            setAlert('Cannot save empty note');
+            setAlert({ show: true, message: 'Cannot save empty note', color: 'red' });
             return true;
         }
         return false;
@@ -87,11 +85,14 @@ export default function TextEditor() {
                     setMarkdownContentCallback('');
                     setFileData([]);
                     localStorage.removeItem('minio-cache');
-                    setAlertColor('green');
-                    setAlert('Note saved successfully.');
+                    setAlert({
+                        show: true,
+                        message: 'Note saved successfully.',
+                        color: 'green',
+                    });
                 }
             })
-            .catch(displayError(setAlert, setAlertColor));
+            .catch(displayError(setAlert));
     };
 
     const handleSaveFleetingNote = () => {
@@ -108,12 +109,15 @@ export default function TextEditor() {
                     setMarkdownContentCallback('');
                     setFileData([]);
                     localStorage.removeItem('minio-cache');
-                    setAlertColor('green');
-                    setAlert('Fleeting note saved successfully.');
+                    setAlert({
+                        show: true,
+                        message: 'Fleeting note saved successfully.',
+                        color: 'green',
+                    });
                     navigate(`/fleeting-editor/${res.data.id}`);
                 }
             })
-            .catch(displayError(setAlert, setAlertColor));
+            .catch(displayError(setAlert));
     };
 
     // Buttons for the dialog. Label & handler function
@@ -150,7 +154,7 @@ export default function TextEditor() {
             className={`w-full h-full rounded-md flex p-1.5 gap-1.5 ${flexDirection === 'flex-col' ? 'flex-col' : 'flex-row'} overflow-y-hidden`}
             ref={textEditorRef}
         >
-            <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
+            <AlertDismissible alert={alert} setAlert={setAlert} />
             <div
                 className={`${flexDirection === 'flex-col' ? 'h-1/2' : 'h-full'} w-full bg-gray-2 rounded-md`}
             >

@@ -15,7 +15,7 @@ import React from 'react';
  * @returns {ConfirmationDialog}
  * @constructor
  */
-export function ConfirmationDialog({
+export default function ConfirmationDialog({
     open,
     setOpen,
     handleConfirm,

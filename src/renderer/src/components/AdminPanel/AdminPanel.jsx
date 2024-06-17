@@ -31,12 +31,9 @@ export default function AdminPanel() {
     const [actors, setActors] = useState([]);
     const [cases, setCases] = useState([]);
     const [users, setUsers] = useState([]);
-    const [alert, setAlert] = useState('');
+    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
-    const [alertColor, setAlertColor] = useState('red');
-    const handleError = displayError(setAlert, setAlertColor);
-
-    //TODO -Implement encoding: qs.stringify({ name: c.name }, { encodeValuesOnly: true }).split('=')[1]
+    const handleError = displayError(setAlert);
 
     const displayActors = async () => {
         getActors(auth.access)
@@ -48,6 +45,7 @@ export default function AdminPanel() {
                             return (
                                 <AdminPanelCard
                                     id={actor.id}
+                                    key={actor.id}
                                     name={actor.name}
                                     searchKey={actor.name}
                                     description={actor.description}
@@ -73,6 +71,7 @@ export default function AdminPanel() {
                             return (
                                 <AdminPanelCard
                                     id={c.id}
+                                    key={c.id}
                                     name={c.name}
                                     searchKey={c.name}
                                     description={c.description}
@@ -98,6 +97,7 @@ export default function AdminPanel() {
                             return (
                                 <AdminPanelCard
                                     id={user.id}
+                                    key={user.id}
                                     name={user.username}
                                     searchKey={user.username}
                                     type={'users'}
@@ -120,7 +120,7 @@ export default function AdminPanel() {
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
+            <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='w-full h-full rounded-md flex flex-row p-1.5 gap-1.5 overflow-x-hidden overflow-y-scroll'>
                 <AdminPanelSection
                     title={'Actors'}

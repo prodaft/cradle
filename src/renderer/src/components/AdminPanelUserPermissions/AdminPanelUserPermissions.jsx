@@ -19,8 +19,7 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 export default function AdminPanelUserPermissions() {
     const { username, id } = useParams();
     const [cases, setCases] = useState([]);
-    const [alert, setAlert] = useState('');
-    const [alertColor, setAlertColor] = useState('red');
+    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const auth = useAuth();
 
     const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(cases);
@@ -45,12 +44,12 @@ export default function AdminPanelUserPermissions() {
                     );
                 }
             })
-            .catch(displayError(setAlert, setAlertColor));
+            .catch(displayError(setAlert));
     }, [id]);
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
+            <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='w-full h-full overflow-x-hidden overflow-y-scroll'>
                 <div className='container w-[70%] h-fit mx-auto my-4 center bg-gray-2 p-10 rounded-md'>
                     <h1 className='text-3xl font-bold'>User Permissions</h1>

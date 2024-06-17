@@ -25,8 +25,7 @@ export default function FileInput({ fileData, setFileData }) {
     const EMPTY_FILE_LIST = new DataTransfer().files;
     const [pendingFiles, setPendingFiles] = useState(EMPTY_FILE_LIST);
     const auth = useAuth();
-    const [alert, setAlert] = useState('');
-    const [alertColor, setAlertColor] = useState('red');
+    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [isUploading, setIsUploading] = useState(false);
     const inputRef = useRef(null);
 
@@ -36,8 +35,7 @@ export default function FileInput({ fileData, setFileData }) {
 
     const handleUpload = () => {
         if (!pendingFiles || pendingFiles.length === 0) {
-            setAlert('No files selected.');
-            setAlertColor('red');
+            setAlert({ show: true, message: 'No files selected.', color: 'red' });
             return;
         }
 
@@ -81,11 +79,14 @@ export default function FileInput({ fileData, setFileData }) {
                     );
                 } else {
                     setPendingFiles(EMPTY_FILE_LIST);
-                    setAlert('All files uploaded successfully!');
-                    setAlertColor('green');
+                    setAlert({
+                        show: true,
+                        message: 'All files uploaded successfully!',
+                        color: 'green',
+                    });
                 }
             })
-            .catch(displayError(setAlert, setAlertColor)) // Catches the error thrown in the .then block
+            .catch(displayError(setAlert)) // Catches the error thrown in the .then block
             .finally(() => {
                 setIsUploading(false);
             });
@@ -101,7 +102,7 @@ export default function FileInput({ fileData, setFileData }) {
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
+            <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='flex flex-row space-x-2'>
                 <input
                     type='file'
