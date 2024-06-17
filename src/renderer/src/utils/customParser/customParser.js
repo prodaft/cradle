@@ -15,10 +15,10 @@ const styleClasses = {
 };
 
 const regexes = {
-    actors: /\[\[actor:((?:\\\||[^|])+)(?:\|((?:\\\||[^|])+))?\]\]/g, // [[actor:name(|alias)]]
-    cases: /\[\[case:((?:\\\||[^|])+)(?:\|((?:\\\||[^|])+))?\]\]/g, // [[case:name(|alias)]]
-    entries: /\[\[([^:|]+):((?:\\\||[^|])+)(?:\|((?:\\\||[^|])+))?\]\]/g, // [[entry-type:name(|alias)]]
-    metadata: /\[\[([^:|]+):((?:\\\||[^|])+)(?:\|((?:\\\||[^|])+))?\]\]/g, // [[metadata-type:name(|alias)]]
+    actors: /\[\[actor:([\w\s.:-]+)(?:\|([\w\s.:-]+))?\]\]/g, // [[actor:name(|alias)]]
+    cases: /\[\[case:([\w\s.:-]+)(?:\|([\w\s.:-]+))?\]\]/g, // [[case:name(|alias)]]
+    entries: /\[\[([\w\s.-]+):([\w\s.:-]+)(?:\|([\w\s.:-]+))?\]\]/g, // [[entry-type:name(|alias)]]
+    metadata: /\[\[([\w\s.-]+):([\w\s.:-]+)(?:\|([\w\s.:-]+))?\]\]/g, // [[metadata-type:name(|alias)]]
 };
 
 // Define how each case should be handled
