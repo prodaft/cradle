@@ -5,8 +5,8 @@ import { fireEvent, render } from '@testing-library/react';
 import SearchFilterSection from './SearchFilterSection';
 import '@testing-library/jest-dom';
 import {
-    entityCategoriesReduced,
-    entryTypes,
+    entityTypesReduced,
+    entrySubtypes,
 } from '../../utils/entityDefinitions/entityDefinitions';
 
 describe('SearchFilterSection', () => {
@@ -46,10 +46,10 @@ describe('SearchFilterSection', () => {
             />,
         );
 
-        entryTypes.forEach((filter) => {
+        entrySubtypes.forEach((filter) => {
             expect(getByText(filter)).toBeInTheDocument();
         });
-        entityCategoriesReduced.forEach((filter) => {
+        entityTypesReduced.forEach((filter) => {
             expect(getByText(filter)).toBeInTheDocument();
         });
     });

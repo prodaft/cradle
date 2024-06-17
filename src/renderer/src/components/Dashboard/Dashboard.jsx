@@ -150,7 +150,7 @@ export default function Dashboard() {
                         <DashboardHorizontalSection title={'Related Actors'}>
                             {contentObject.actors.map((actor, index) => (
                                 <DashboardCard
-                                    index={index}
+                                    key={index}
                                     name={actor.name}
                                     link={createDashboardLink(actor)}
                                 />
@@ -162,7 +162,7 @@ export default function Dashboard() {
                         <DashboardHorizontalSection title={'Related Cases'}>
                             {contentObject.cases.map((c, index) => (
                                 <DashboardCard
-                                    index={index}
+                                    key={index}
                                     name={c.name}
                                     link={createDashboardLink(c)}
                                 />
@@ -174,7 +174,7 @@ export default function Dashboard() {
                         <DashboardHorizontalSection title={'Related Entries'}>
                             {contentObject.entries.map((entry, index) => (
                                 <DashboardCard
-                                    index={index}
+                                    key={index}
                                     name={`${entry.subtype}: ${entry.name}`}
                                     link={createDashboardLink(entry)}
                                 />
@@ -185,7 +185,7 @@ export default function Dashboard() {
                     {contentObject.metadata && (
                         <DashboardHorizontalSection title={'Metadata'}>
                             {contentObject.metadata.map((data, index) => (
-                                <DashboardCard index={index} name={data.name} />
+                                <DashboardCard key={index} name={data.name} />
                             ))}
                         </DashboardHorizontalSection>
                     )}
@@ -195,7 +195,7 @@ export default function Dashboard() {
                             <h2 className='text-xl font-semibold mb-2'>Notes</h2>
                             {contentObject.notes.map((note, index) => (
                                 <DashboardNote
-                                    index={index}
+                                    key={index}
                                     note={note}
                                     setAlert={setAlert}
                                     publishMode={false}

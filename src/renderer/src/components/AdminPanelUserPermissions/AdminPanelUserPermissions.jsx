@@ -33,6 +33,7 @@ export default function AdminPanelUserPermissions() {
                         permissions.map((c) => {
                             return (
                                 <AdminPanelPermissionCard
+                                    key={c['id']}
                                     userId={id}
                                     caseName={c['name']}
                                     caseId={c['id']}
