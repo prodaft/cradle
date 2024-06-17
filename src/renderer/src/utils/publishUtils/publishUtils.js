@@ -110,6 +110,32 @@ const downloadFile = (content, extension) => {
  */
 const createHtmlReport = (title, htmlContent) => {
     const reportTitle = title ? `Report for ${title}` : 'Report';
+    const tailwindConfig = {
+        theme: {
+            extend: {
+                colors: {
+                    cradle1: '#02111a',
+                    cradle2: '#f68d2e',
+                    cradle3: '#253746',
+                },
+                typography: (theme) => ({
+                    DEFAULT: {
+                        css: {
+                            pre: {
+                                padding: theme('padding.4'),
+                                overflow: 'auto !important',
+                                maxWidth: '100% !important',
+                            },
+                            code: {
+                                whiteSpace: 'pre-wrap !important',
+                                wordBreak: 'break-word !important',
+                            },
+                        },
+                    },
+                }),
+            },
+        },
+    };
 
     return template
         .replace(/{{reportTitle}}/g, reportTitle)

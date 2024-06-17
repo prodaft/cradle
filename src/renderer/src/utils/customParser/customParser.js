@@ -2,7 +2,7 @@ import Prism from 'prismjs';
 import { markedHighlight } from 'marked-highlight';
 import { Marked } from 'marked';
 import 'prismjs/themes/prism-tomorrow.css';
-import { entrySubtypes, metadataSubtypes } from '../entityDefinitions/entityDefinitions';
+import { entryTypes, metadataTypes } from '../entityDefinitions/entityDefinitions';
 import { createDashboardLink } from '../dashboardUtils/dashboardUtils';
 import { prependLinks } from '../textEditorUtils/textEditorUtils';
 import { getDownloadLink } from '../../services/fileUploadService/fileUploadService';
@@ -25,7 +25,7 @@ const regexes = {
 const handlers = {
     // Take the user to the actor's dashboard
     actors: (text) => {
-        return text.replace(regexes.actors, (_, name, alias) => {
+        return text.replace(regexes.actors, (matched, name, alias) => {
             const url = createDashboardLink({ name: name, type: 'actor' });
             // If an alias is provided, use it as the displayed name
             const displayedName = alias ? alias : name;
@@ -34,7 +34,7 @@ const handlers = {
     },
     // Take the user to the case's dashboard
     cases: (text) => {
-        return text.replace(regexes.cases, (_, name, alias) => {
+        return text.replace(regexes.cases, (matched, name, alias) => {
             const url = createDashboardLink({ name: name, type: 'case' });
             // If an alias is provided, use it as the displayed name
             const displayedName = alias ? alias : name;
@@ -44,7 +44,7 @@ const handlers = {
     // Take the user to the entry's dashboard
     entries: (text) => {
         return text.replace(regexes.entries, (matched, type, name, alias) => {
-            if (entrySubtypes.has(type)) {
+            if (entryTypes.has(type)) {
                 const url = createDashboardLink({
                     name: name,
                     type: 'entry',
@@ -61,7 +61,7 @@ const handlers = {
     // Metadata does not have a dashboard. Here just highlight the text
     metadata: (text) => {
         return text.replace(regexes.metadata, (matched, type, name, alias) => {
-            if (metadataSubtypes.has(type)) {
+            if (metadataTypes.has(type)) {
                 // If an alias is provided, use it as the displayed name
                 const displayedName = alias ? alias : name;
                 return `<span class="${styleClasses.metadata}">${displayedName}</span>`;
