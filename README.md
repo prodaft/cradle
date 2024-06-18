@@ -73,7 +73,7 @@ $ npm run test
 
 This section will provide and overview of what environment variables are expected by the code base and what they represent.
 
-- `VITE_API_BASE_URL`: the base URL of the backend server (e.g. `http://localhost:8000`)
+-   `VITE_API_BASE_URL`: the base URL of the backend server (e.g. `http://localhost:8000`)
 
 ## Contributing
 

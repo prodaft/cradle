@@ -20,7 +20,6 @@ describe('getDashboardData', () => {
         expect(axios).toHaveBeenCalledWith({
             method: 'GET',
             url: path,
-            withCredentials: true,
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`,
