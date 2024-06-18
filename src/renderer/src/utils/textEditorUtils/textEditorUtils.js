@@ -81,7 +81,16 @@ const handleLinkClick = (navigateHandler) => (event) => {
 
 const LINK_REGEX = /^\[([^:|]+)(?::((?:\\\||[^|])+))?(?:\|((?:\\\||[^|])+))?\]$/;
 
-function getLinkNode(context) {
+/**
+ * Gets the link node from the current position in the editor.
+ * This function is used to determine if the current position is inside a link.
+ * If the current position is inside a link, the link node is returned.
+ * Otherwise, null is returned.
+ *
+ * @param {import('@codemirror/state').EditorState} context - the editor state
+ * @returns {Node | null} the link node or null
+ */
+const getLinkNode = (context) => {
     const pos = context.pos;
     const tree = syntaxTree(context.state);
     let node = tree.resolve(pos, -1);
@@ -94,9 +103,28 @@ function getLinkNode(context) {
         node = node.parent;
     }
     return null;
-}
+};
 
-function parseLink(from, to, cur, text) {
+/**
+ * @typedef {Object} Link
+ * @property {number} from - the starting position of the link
+ * @property {number} to - the ending position of the link
+ * @property {string} type - the type of the link
+ * @property {string} text - the text of the link
+ */
+
+/**
+ * Parses a link from the text.
+ * This function is used to determine if the current position is inside a link.
+ * If the current position is inside a link, the link is returned.
+ * Otherwise, null is returned.
+ *
+ * @param {number} from - the starting position of the text
+ * @param {number} cur - the current position in the text
+ * @param {string} text - the text to parse
+ * @returns {Link | null}
+ */
+const parseLink = (from, cur, text) => {
     // Match the regex with the text
     const match = LINK_REGEX.exec(text);
     const [_, type, name, alias] = match || [];
@@ -109,9 +137,6 @@ function parseLink(from, to, cur, text) {
 
     const nameStart = name && typeEnd + 1;
     const nameEnd = nameStart && nameStart + name.length;
-
-    const aliasStart = alias && (nameEnd ? nameEnd + 1 : nameEnd + 1);
-    const aliasEnd = aliasStart && aliasStart + alias.length;
 
     if (cur >= typeStart && cur <= typeEnd)
         return {
@@ -127,10 +152,9 @@ function parseLink(from, to, cur, text) {
             type: text.slice(typeStart - from, typeEnd - from),
             text: text.slice(nameStart - from, nameEnd - from),
         };
-    else if (aliasStart && cur >= aliasStart && cur <= aliasEnd) return null;
 
     return null;
-}
+};
 
 export {
     parseContent,
