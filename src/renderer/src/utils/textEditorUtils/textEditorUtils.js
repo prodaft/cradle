@@ -127,9 +127,11 @@ const getLinkNode = (context) => {
 const parseLink = (from, cur, text) => {
     // Match the regex with the text
     const match = LINK_REGEX.exec(text);
-    const [_, type, name, alias] = match || [];
 
     if (!match) return null;
+
+    // `alias` cannot have suggestions
+    const [_, type, name] = match;
 
     // Extract group positions
     const typeStart = match.index + 1 + from;
