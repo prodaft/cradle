@@ -50,7 +50,11 @@ export default function FleetingNotesPanel({
                 <div className='w-full h-full overflow-y-auto'>
                     {notes && notes.length > 0 ? (
                         notes.map((note, index) => (
-                            <FleetingNoteCard key={index} note={note} setAlert={setAlert} />
+                            <FleetingNoteCard
+                                key={index}
+                                note={note}
+                                setAlert={setAlert}
+                            />
                         ))
                     ) : (
                         <p className='w-full p-2 text-zinc-500 text-center'>
