@@ -22,6 +22,14 @@ import { getLinkNode, parseLink } from '../../utils/textEditorUtils/textEditorUt
 import { Prec } from '@uiw/react-codemirror';
 
 /**
+ * @typedef {Object} FileData
+ * @property {string} minio_file_name - the name of the file in MinIO
+ * @property {string} file_name - the name of the file
+ * @property {string} bucket_name - the name of the bucket
+ * @typedef {Array<FileData>} FileDataArray
+ */
+
+/**
  * This component makes use of a pre-existing code editor component (CodeMirror, see https://github.com/uiwjs/react-codemirror)
  * The Editor component is expected to be used for typing Markdown. It also has a toggle for enabling Vim mode in the editor.
  *
@@ -30,7 +38,6 @@ import { Prec } from '@uiw/react-codemirror';
  *
  * This component is reactive to the system theme. It uses the Eclipse theme for light mode and the VSCode Dark theme for dark mode.
  *
- * @typedef {Array<{minio_file_name: string, file_name: string, bucket_name: string}>} FileData
  * @param {string} markdownContent - the content inside the Editor
  * @param {(string) => void} setMarkdownContent - callback used when the value of the content changes
  * @param {FileData} fileData - the files uploaded by the user. These belong to the note that is being written.
@@ -74,7 +81,7 @@ export default function Editor({
         if (node == null) return { from: context.pos, options: [] };
 
         const linkFull = context.state.sliceDoc(node.from, node.to);
-        const parsedLink = parseLink(node.from, node.to, context.pos, linkFull);
+        const parsedLink = parseLink(node.from, context.pos, linkFull);
 
         if (parsedLink == null) return { from: context.pos, options: [] };
 
