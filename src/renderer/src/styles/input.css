@@ -9,3 +9,8 @@
     text-overflow: ellipsis !important;
     max-width: 275px !important; /* Text is truncated after this size */
 }
+
+.graph-highlighted {
+    stroke: #f68d2e !important;
+    stroke-width: 4 !important;
+}

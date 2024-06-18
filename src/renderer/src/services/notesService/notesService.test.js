@@ -42,7 +42,6 @@ describe('setPublishable', () => {
         expect(axios).toHaveBeenCalledWith({
             method: 'PUT',
             url: `/notes/${noteId}/publishable/`,
-            withCredentials: true,
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`,
