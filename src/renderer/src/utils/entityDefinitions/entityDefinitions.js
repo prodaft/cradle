@@ -10,7 +10,6 @@ export const entryTypes = new Set([
     'url',
     'username',
     'password',
-    'person',
     'social-media',
     'hash',
     'tool',

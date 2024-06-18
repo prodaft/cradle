@@ -13,7 +13,6 @@ export function getFleetingNotes(token) {
     return axios({
         method: 'GET',
         url: '/fleeting-notes/',
-        withCredentials: true,
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
@@ -34,7 +33,6 @@ export function addFleetingNote(token, content, files) {
     return axios({
         method: 'POST',
         url: '/fleeting-notes/',
-        withCredentials: true,
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
@@ -56,7 +54,6 @@ export function deleteFleetingNote(token, id) {
     return axios({
         method: 'DELETE',
         url: `/fleeting-notes/${id}/`,
-        withCredentials: true,
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
@@ -76,7 +73,6 @@ export function updateFleetingNote(token, id, content, files) {
     return axios({
         method: 'PUT',
         url: `/fleeting-notes/${id}/`,
-        withCredentials: true,
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
@@ -98,7 +94,6 @@ export function getFleetingNoteById(token, id) {
     return axios({
         method: 'GET',
         url: `/fleeting-notes/${id}/`,
-        withCredentials: true,
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
@@ -117,7 +112,6 @@ export function saveFleetingNoteAsFinal(token, id, publishable) {
     return axios({
         method: 'PUT',
         url: `/fleeting-notes/${id}/final/`,
-        withCredentials: true,
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
