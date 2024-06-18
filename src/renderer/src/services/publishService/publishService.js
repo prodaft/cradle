@@ -11,7 +11,7 @@ axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
  * @returns {Promise<AxiosResponse<any>>} - a JSON object containing the related entities, as well as the notes and their content
  */
 export function getPublishData(token, noteIds) {
-    const path = `/notes/publish`;
+    const path = `/notes/publish/`;
     const queryParams = { note_ids: noteIds };
 
     return axios({

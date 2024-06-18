@@ -18,8 +18,7 @@ describe('getPublishData', () => {
 
         expect(axios).toHaveBeenCalledWith({
             method: 'GET',
-            url: '/notes/publish',
-            withCredentials: true,
+            url: '/notes/publish/',
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`,
