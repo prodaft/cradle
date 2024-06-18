@@ -34,7 +34,6 @@ const setPublishable = (token, noteId, status) => {
     return axios({
         method: 'PUT',
         url: path,
-        withCredentials: true,
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
