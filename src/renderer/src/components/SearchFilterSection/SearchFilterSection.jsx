@@ -57,16 +57,14 @@ export default function SearchFilterSection({
                     <div className='w-auto flex flex-col'>
                         <div className='font-medium text-zinc-400'>Entity type</div>
                         <div className='flex flex-wrap'>
-                            {Array.from(entityCategoriesReduced).map(
-                                (entityType, index) => (
-                                    <SearchFilter
-                                        key={index}
-                                        option={entityType}
-                                        filters={entityTypeFilters}
-                                        setFilters={setEntityTypeFilters}
-                                    />
-                                ),
-                            )}
+                            {Array.from(entityTypesReduced).map((entityType, index) => (
+                                <SearchFilter
+                                    key={index}
+                                    option={entityType}
+                                    filters={entityTypeFilters}
+                                    setFilters={setEntityTypeFilters}
+                                />
+                            ))}
                         </div>
                     </div>
                     <div className='w-auto flex flex-col'>
