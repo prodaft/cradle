@@ -84,3 +84,55 @@ class AccessManager(models.Manager):
             .values("id", "name", "access_type__access_type")  # separate table
             .annotate(access_type=F("access_type__access_type"))  # rename obscure field
         )
+
+    def get_users_with_access(self, case_id: int) -> models.QuerySet:
+        """Retrieves the ids of the users that can provide access for the given
+        case. Those users are the ones that have read-write access to the case
+        and the superusers.
+
+        Args:
+            case_id: The id of the case we perform the check for
+
+        Returns:
+            A QuerySet containing the ids of the users that are allowed to give
+            access to the case.
+        """
+
+        return (
+            self.get_queryset()
+            .filter(case_id=case_id, access_type=AccessType.READ_WRITE)
+            .values_list("user_id", flat=True)
+            .union(
+                CradleUser.objects.filter(is_superuser=True).values_list(
+                    "id", flat=True
+                )
+            )
+        )
+
+    def check_user_access(
+        self, user: CradleUser, case: Entity, access_type: AccessType
+    ) -> bool:
+        """Checks whether the user has an access access_type for the provided case.
+        The method should not be called when the user is a superuser or when
+        access_type is NONE.
+
+        Args:
+            user: User whose access is checked
+            case: The case for which the check is performed
+            access_type: The access type for which the method checks
+
+        Returns:
+            True: If the user has access access_type for the case
+            False: If the user does not have access access_type for the case.
+        """
+
+        assert not user.is_superuser, "The user parameter should not be a superuser"
+        assert (
+            access_type != AccessType.NONE
+        ), "The provided access type should not be NONE"
+
+        return (
+            self.get_queryset()
+            .filter(user=user, case=case, access_type=access_type)
+            .exists()
+        )

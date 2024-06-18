@@ -174,6 +174,56 @@ paths:
         '401':
           description: User is not authenticated.
 
+  /notifications/unread-count:
+    get:
+      tags:
+        - Notification
+      summary: Get amount of unread notifications
+      description: Returns the number of unread notifications that a user has. A notification is considered unread when `is_marked_unread OR is_unread` is true.
+      operationId: countUnreadNotifications
+      responses:
+        '200':
+          description: Returns the amount of unread notifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    format: int64
+                required:
+                  - count
+        '401':
+          description: User is not authenticated.
+
+  /notifications/{notificationId}:
+    put:
+      tags:
+        - Notification
+      summary: Update a notification's is_marked_unread field.
+      description: Updates the notification's `is_marked_unread` field. Should be used when the client wishes to explicitely mark a notification as read/unread.
+      operationId: updateNotifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - is_marked_unread
+              properties:
+                is_marked_unread:
+                  type: boolean
+      responses:
+        '200':
+          description: The notification was updated successfully.
+        '400':
+          description: Request body is invalid.
+        '401':
+          description: User is not authenticated.
+        '404':
+          description: The notification does not exist or is not owned by the user.
+
   /entities/actors:
     get:
       tags:
@@ -406,13 +456,28 @@ paths:
           description: User not found.
 
 
+  /access/request/{caseId}:
+    post:
+      tags:
+        - Access
+      summary: Requests access for a case.
+      description: Allows a user to request access for a Case. All users with read-write access for that specific Case will receive a Notification. If the user making the request already has read-write access, no Notifications are sent but the request is deemed successful.
+      operationId: requestAccessForCase
+      responses:
+        '200': 
+          description: Request was successful.
+        '401':
+          description: User is not authenticated.
+        '404':
+          description: Case not found.
+
+
   /access/{userId}/{caseId}:
     put:
       tags:
         - Access
-        - Admin
       summary: Update access of a user
-      description: Allow an admin to change the access privileges of a user by specifying its id
+      description: Allows a user to change the access privileges of another user for the specified case. If the user making the request is an admin, they can change the permission of any other non-admin user. If the user making the request has read-write access for the specified case, they can change the mentioned user's access if that user does not already have read-write access and if they are not an admin. Otherwise, they are not allowed to perform the operation.
       operationId: updateUserAccess
       parameters:
         - in: path
@@ -439,9 +504,9 @@ paths:
             schema:
               type: object
               required:
-                - access
+                - access_type
               properties:
-                access:
+                access_type:
                   $ref: "#/components/schemas/Access"
       responses:
         '200': 
@@ -574,6 +639,8 @@ paths:
       responses:
         '200':  
           description: Note was made publishable.
+        '400':
+          description: Request body is invalid.
         '401': 
           description: User is not authenticated.
         '403': 
@@ -634,74 +701,6 @@ paths:
           description: User is not authenticated.
         '404': 
           description: User does not have read access to the requested note or the requested note does not exist.
-
-  /notes/request/case/{caseId}/entity/{entityId}:
-    get:
-      tags:
-        - Note
-      summary: Request access to a Note
-      description: Allow a user to request access to a Note by specifying two id's, one of a Case and one of another Entity
-      operationId: requestAccessToNote
-      parameters:
-        - in: path
-          name: caseId
-          required: true
-          schema:
-            type: integer
-            format: int64
-          examples:
-            caseIdExample:
-              value: 12341223
-        - in: path
-          name: entityId
-          required: true
-          schema:
-            type: integer
-            format: int64
-          examples:
-            entityIdExample:
-              value: 4124018
-      responses:
-        '200':
-          description: Access was requested. 
-        '400': 
-          description: Request has invalid format. 
-        '401': 
-          description: User is not authenticated.
-
-  /notes/allow/user/{userId}/note/{noteId}:
-    get:
-      tags:
-        - Note
-      summary: Allow access to a Note
-      description: Allow a user to give another user access to a Note by specifying two id's, one of that user and one of the Note
-      operationId: allowAccessToNote
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            type: integer
-            format: int64
-          examples:
-            userIdExample:
-              value: 24124112
-        - in: path
-          name: noteId
-          required: true
-          schema:
-            type: integer
-            format: int64
-          examples:
-            noteIdExample:
-              value: 410287
-      responses:
-        '200': 
-          description: Access was granted. 
-        '401': 
-          description: User is not authenticated. 
-        '403': 
-          description: A User cannot grant access to a note it does not own. 
         
   /notes/publish:
     get:
@@ -1076,13 +1075,18 @@ paths:
       tags:
         - Knowledge Graph
       summary: Show Knowledge Graph
-      description: Allow a user to view the Knowledge Graph containing all Entities they can access
+      description: "Allow a user to view the Knowledge Graph containing all Entities they can access. The Knowledge Graph is represented as two arrays: 'entities' and 'links'. The 'entities' array contains a list ofentities which are connected using notes the User has access to, while the 'links' array contains pairs of id's, each link representing a connection between two entities through a note visible to the user."
       operationId: showKnowledgeGraph
       responses:
         '200': 
           description: Request is successful.
+          content: 
+            'application/json':
+              schema: 
+                $ref: "#/components/schemas/Graph"
         '401': 
           description: User is not authenticated. 
+      
             
 
 components:
@@ -1362,6 +1366,8 @@ components:
         timestamp: 
           type: string
           format: date-time
+        is_marked_unread:
+          type: string
         notification_type:
           enum:
             - message_notification
@@ -1383,6 +1389,8 @@ components:
         timestamp: 
           type: string
           format: date-time
+        is_marked_unread:
+          type: string
         notification_type:
           enum:
             - request_access_notification
@@ -1417,6 +1425,34 @@ components:
           type: array
           items: 
             $ref: "#/components/schemas/Note"
+      
+    Link: 
+      type: object
+      properties: 
+        source:
+          type: integer
+          format: int64
+        target:
+          type: integer
+          format: int64
+      example: 
+          source: 1234567890123456
+          target: 9876543210987654
+
+
+    Graph:
+      type: object
+      properties: 
+        entities: 
+          type: array
+          items: 
+            type: object
+            $ref: "#/components/schemas/Entity"
+        links:
+          type: array
+          items: 
+            type: object
+            $ref: "#/components/schemas/Link"
 
 security:
   - cookieAuth: []

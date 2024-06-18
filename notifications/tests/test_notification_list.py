@@ -10,7 +10,6 @@ from django.urls import reverse
 
 class NotificationListTest(NotificationsTestCase):
     def setUp(self):
-        self.maxDiff = None
         super().setUp()
         self.client = APIClient()
 
@@ -61,6 +60,7 @@ class NotificationListTest(NotificationsTestCase):
         expected_response_message_notification = {
             "id": message_user.id,
             "message": message_user.message,
+            "is_marked_unread": False,
             "timestamp": message_user.timestamp.isoformat().replace("+00:00", "Z"),
             "notification_type": "message_notification",
         }
@@ -68,6 +68,7 @@ class NotificationListTest(NotificationsTestCase):
         expected_response_access_request_notification = {
             "id": access_request_user.id,
             "message": access_request_user.message,
+            "is_marked_unread": False,
             "notification_type": "request_access_notification",
             "case_id": access_request_user.case.id,
             "timestamp": access_request_user.timestamp.isoformat().replace(
@@ -85,5 +86,14 @@ class NotificationListTest(NotificationsTestCase):
         )
 
         self.assertTrue(
-            response.json()[0]["timestamp"] > response.json()[1]["timestamp"]
+            response.json()[0]["timestamp"] >= response.json()[1]["timestamp"]
+        )
+
+        self.assertFalse(
+            MessageNotification.objects.filter(user=self.user, is_unread=True).exists()
+        )
+        self.assertFalse(
+            MessageNotification.objects.filter(
+                user=self.other_user, is_unread=False
+            ).exists()
         )

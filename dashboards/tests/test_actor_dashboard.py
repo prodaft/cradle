@@ -19,10 +19,10 @@ class GetActorDashboardTest(DashboardsTestCase):
         with self.subTest("Check number of entities"):
             self.assertEqual(len(entities), len(entities_json))
 
-        for i in range(0, len(entities_json)):
-            with self.subTest("Check entity id"):
-                entity = entities_json[i]
-                self.assertEqual(entity["id"], entities[i].id)
+        self.assertCountEqual(
+            [entity["id"] for entity in entities_json],
+            [entity.id for entity in entities],
+        )
 
     def check_inaccessible_cases_name(self, inaccessible_cases):
         for case in inaccessible_cases:
