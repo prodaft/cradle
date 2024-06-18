@@ -136,6 +136,7 @@ export default function NoteSelector() {
                             </span>
                             {notes.map((note, index) => (
                                 <DashboardNote
+                                    key={index}
                                     index={index}
                                     note={note}
                                     setAlert={setAlert}

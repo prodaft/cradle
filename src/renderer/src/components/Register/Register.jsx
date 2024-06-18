@@ -16,6 +16,7 @@ import { validatePassword } from '../../utils/validatePassword/validatePassword'
  */
 export default function Register() {
     const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [passwordCheck, setPasswordCheck] = useState('');
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
@@ -40,7 +41,7 @@ export default function Register() {
             return;
         }
 
-        const data = { username: username, password: password };
+        const data = { username: username, email: email, password: password };
 
         registerReq(data)
             .then(() => navigate('/login', { state: location.state, replace: true }))
@@ -67,6 +68,12 @@ export default function Register() {
                                 type='text'
                                 handleInput={setUsername}
                                 autofocus={true}
+                            />
+                            <FormField
+                                name='email'
+                                labelText='Email'
+                                type='email'
+                                handleInput={setEmail}
                             />
                             <FormField
                                 name='password'

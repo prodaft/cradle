@@ -14,7 +14,7 @@ describe('AuthService', () => {
     });
 
     it('should make a successful login request', async () => {
-        const data = { username: 'test', password: 'test' };
+        const data = { username: 'test', email: 'john@doe.com', password: 'test' };
         mock.onPost('/users/login/').reply(200, { data: 'success' });
 
         const response = await logInReq(data);
@@ -23,7 +23,7 @@ describe('AuthService', () => {
     });
 
     it('should handle failed login request', async () => {
-        const data = { username: 'test', password: 'test' };
+        const data = { username: 'test', email: 'john@doe.com', password: 'test' };
         mock.onPost('/users/login/').reply(500);
 
         try {
@@ -34,7 +34,7 @@ describe('AuthService', () => {
     });
 
     it('should make a successful registration request', async () => {
-        const data = { username: 'test', password: 'test' };
+        const data = { username: 'test', email: 'john@doe.com', password: 'test' };
         mock.onPost('/users/').reply(200, { data: 'success' });
 
         const response = await registerReq(data);
@@ -43,7 +43,7 @@ describe('AuthService', () => {
     });
 
     it('should handle failed registration request', async () => {
-        const data = { username: 'test', password: 'test' };
+        const data = { username: 'test', email: 'john@doe.com', password: 'test' };
         mock.onPost('/users/').reply(500);
 
         try {

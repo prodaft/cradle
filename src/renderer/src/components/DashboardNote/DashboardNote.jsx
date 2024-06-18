@@ -15,7 +15,6 @@ import { useLocation } from 'react-router-dom';
  * If the dashboard is in publish mode, only publishable notes will be displayed.
  * While in publish mode, a user can delete a note. In this case, the note will be removed from the list of notes to publish.
  *
- * @param {number} index - Index of the note
  * @param {Object} note - Note object
  * @param {(string) => void} setAlert - Function to set an alert
  * @param {boolean} publishMode - determine if the dashboard is in publish mode
@@ -25,7 +24,6 @@ import { useLocation } from 'react-router-dom';
  * @constructor
  */
 export default function DashboardNote({
-    index,
     note,
     setAlert,
     publishMode,
@@ -138,7 +136,6 @@ export default function DashboardNote({
                         )}
                     </div>
                     <div
-                        key={index}
                         className='bg-transparent h-fit p-2 backdrop-filter mb-4 overflow-hidden flex-grow flex space-y-2 flex-col cursor-pointer'
                         onClick={() =>
                             navigate(`/notes/${note.id}`, {
