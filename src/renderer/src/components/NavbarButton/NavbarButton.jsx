@@ -1,8 +1,8 @@
 /**
  * NavbarButton - a button in the navbar.
- * @param icon - the icon to display in the button
- * @param text - the tooltip text for the button
- * @param onClick - the handler for the button
+ * @param {*} icon - the icon to display in the button
+ * @param {string} text - the tooltip text for the button
+ * @param {() => void} onClick - the handler for the button
  * @returns {NavbarButton}
  * @constructor
  */

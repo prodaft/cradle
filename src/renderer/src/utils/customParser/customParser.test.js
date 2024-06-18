@@ -57,7 +57,7 @@ describe('renderer', () => {
         const encodedName = encodeURIComponent(name);
 
         const markdown = `This is an entry link: [[${type}:${name}]]`;
-        const entryUrl = `${baseUrl}/dashboards/entries/${encodedName}?subtype=${encodedType}`;
+        const entryUrl = `${baseUrl}/dashboards/entries/${encodedName}/?subtype=${encodedType}`;
         const parsedHtml = await parseMarkdown(markdown);
 
         expect(parsedHtml).toContain(entryUrl);
@@ -72,7 +72,7 @@ describe('renderer', () => {
         const alias = 'localhost';
 
         const markdown = `This is an entry link: [[${type}:${name}|${alias}]]`;
-        const entryUrl = `${baseUrl}/dashboards/entries/${encodedName}?subtype=${encodedType}`;
+        const entryUrl = `${baseUrl}/dashboards/entries/${encodedName}/?subtype=${encodedType}`;
         const parsedHtml = await parseMarkdown(markdown);
 
         expect(parsedHtml).toContain(entryUrl);
@@ -121,7 +121,7 @@ describe('renderer', () => {
         const parsedHtml = await parseMarkdown(markdown);
         const actorUrl = `${baseUrl}/dashboards/actors/John%20Doe`;
         const caseUrl = `${baseUrl}/dashboards/cases/Case123`;
-        const entryUrl = `${baseUrl}/dashboards/entries/127.0.0.1?subtype=ip`;
+        const entryUrl = `${baseUrl}/dashboards/entries/127.0.0.1/?subtype=ip`;
 
         expect(parsedHtml).toContain('Germany');
         expect(parsedHtml).not.toContain('country');

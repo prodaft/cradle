@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { NavArrowDown, Search } from 'iconoir-react';
+import { Search } from 'iconoir-react';
 import SearchFilterSection from '../SearchFilterSection/SearchFilterSection';
 import { queryEntities } from '../../services/queryService/queryService';
 import { useAuth } from '../../hooks/useAuth/useAuth';
@@ -17,9 +17,9 @@ import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
  * Gives filters for entity type and entry type
  * Shows search results
  * Search can be done on enter or when pressing the search buttons
- * @param isOpen - boolean to show or hide the dialog
- * @param onClose - function to close the dialog
- * @returns {SearchDialog: React.ReactPortal|null}
+ * @param {boolean} isOpen - to show or hide the dialog
+ * @param {(any) => any} onClose - function to close the dialog
+ * @returns {SearchDialog}
  * @constructor
  */
 export default function SearchDialog({ isOpen, onClose }) {
@@ -30,8 +30,7 @@ export default function SearchDialog({ isOpen, onClose }) {
     const [entityTypeFilters, setEntityTypeFilters] = useState([]);
     const [entitySubtypeFilters, setEntitySubtypeFilters] = useState([]);
     const [results, setResults] = useState(null);
-    const [error, setError] = useState('');
-    const [errorColor, setErrorColor] = useState('red');
+    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const dialogRoot = document.getElementById('portal-root');
     const navigate = useNavigate();
 
@@ -50,13 +49,13 @@ export default function SearchDialog({ isOpen, onClose }) {
     };
 
     const handleResultClick = (link) => () => {
-        setError('');
+        setAlert({ ...alert, show: false });
         onClose();
         navigate(link);
     };
 
     const performSearch = () => {
-        setError('');
+        setAlert({ ...alert, show: false });
         queryEntities(auth.access, searchQuery, entityTypeFilters, entitySubtypeFilters)
             .then((response) => {
                 setResults(
@@ -64,6 +63,7 @@ export default function SearchDialog({ isOpen, onClose }) {
                         const dashboardLink = createDashboardLink(result);
                         return (
                             <SearchResult
+                                key={result.id}
                                 name={result.name}
                                 type={result.type}
                                 subtype={result.subtype}
@@ -73,7 +73,7 @@ export default function SearchDialog({ isOpen, onClose }) {
                     }),
                 );
             })
-            .catch(displayError(setError, setErrorColor));
+            .catch(displayError(setAlert));
     };
 
     if (!isOpen) return null;
@@ -82,7 +82,7 @@ export default function SearchDialog({ isOpen, onClose }) {
         <div
             className='fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50'
             onClick={() => {
-                setError('');
+                setAlert({ ...alert, show: false });
                 onClose();
             }}
         >
@@ -117,7 +117,7 @@ export default function SearchDialog({ isOpen, onClose }) {
                     entryTypeFilters={entitySubtypeFilters}
                     setEntryTypeFilters={setEntitySubtypeFilters}
                 />
-                {error && <AlertBox title={error} color={errorColor} />}
+                <AlertBox alert={alert} />
                 <div className='flex-grow overflow-y-auto no-scrollbar space-y-2'>
                     {results && results.length > 0 ? (
                         results

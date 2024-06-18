@@ -9,7 +9,7 @@ axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
  * @param {string} token The user's JWT
  * @param {string} text  - the text to save
  * @param {boolean} publishable - whether to save the note as publishable
- * @param {Array<{tag: string, name: string, bucket: string}>} files - information about the files that will be linked
+ * @param {Array<{minio_file_name: string, file_name: string, bucket_name: string}>} files - information about the files that will be linked
  * @returns {Promise} The response from the server
  * @throws {Error} see the OpenApi specification
  */

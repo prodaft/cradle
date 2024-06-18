@@ -16,6 +16,7 @@ import PublishPreview from './components/PublishPreview/PublishPreview.jsx';
 import NoteViewer from './components/NoteViewer/NoteViewer';
 import FleetingNoteEditor from './components/FleetingNoteEditor/FleetingNoteEditor';
 import NoteSelector from './components/NoteSelector/NoteSelector.jsx';
+import GraphComponent from './components/GraphComponent/GraphComponent';
 
 /**
  * The App component is the entry point of the application. It wraps the entire application in the AuthProvider
@@ -44,6 +45,7 @@ function App() {
                             <Route path='/dashboards/*' element={<Dashboard />} />
                             <Route path='/notes/:id' element={<NoteViewer />} />
                             <Route path='/notes' element={<NoteSelector />} />
+                            <Route path='/graph' element={<GraphComponent />} />
                             <Route path='/publish' element={<PublishPreview />}></Route>
                             <Route path='/admin' element={<Outlet />}>
                                 <Route index element={<AdminPanel />}></Route>

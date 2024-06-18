@@ -16,10 +16,10 @@ import { validatePassword } from '../../utils/validatePassword/validatePassword'
  */
 export default function Register() {
     const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [passwordCheck, setPasswordCheck] = useState('');
-    const [error, setError] = useState('');
-    const [errorColor, setErrorColor] = useState('red');
+    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -27,22 +27,25 @@ export default function Register() {
         e.preventDefault();
 
         if (password !== passwordCheck) {
-            setError('Passwords do not match.');
+            setAlert({ show: true, message: 'Passwords do not match.', color: 'red' });
             return;
         }
 
         if (!validatePassword(password)) {
-            setError(
-                'Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
-            );
+            setAlert({
+                show: true,
+                message:
+                    'Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
+                color: 'red',
+            });
             return;
         }
 
-        const data = { username: username, password: password };
+        const data = { username: username, email: email, password: password };
 
         registerReq(data)
-            .then((res) => navigate('/login', { state: location.state, replace: true }))
-            .catch(displayError(setError, setErrorColor));
+            .then(() => navigate('/login', { state: location.state, replace: true }))
+            .catch(displayError(setAlert));
     };
 
     return (
@@ -67,6 +70,12 @@ export default function Register() {
                                 autofocus={true}
                             />
                             <FormField
+                                name='email'
+                                labelText='Email'
+                                type='email'
+                                handleInput={setEmail}
+                            />
+                            <FormField
                                 name='password'
                                 labelText='Password'
                                 type='password'
@@ -78,7 +87,7 @@ export default function Register() {
                                 type='password'
                                 handleInput={setPasswordCheck}
                             />
-                            {error && <AlertBox title={error} color={errorColor} />}
+                            <AlertBox alert={alert} />
                             <button
                                 type='submit'
                                 data-testid='login-register-button'

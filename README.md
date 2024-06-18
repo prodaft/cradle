@@ -69,6 +69,12 @@ $ npm run lint
 $ npm run test
 ```
 
+# Environment Variables
+
+This section will provide and overview of what environment variables are expected by the code base and what they represent.
+
+-   `VITE_API_BASE_URL`: the base URL of the backend server (e.g. `http://localhost:8000`)
+
 ## Contributing
 
 Right now only the designated team can contribute. Later on the project will be open sourced. The client will determine this aspect.
