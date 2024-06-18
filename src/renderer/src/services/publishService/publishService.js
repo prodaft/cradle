@@ -16,7 +16,6 @@ export function getPublishData(token, noteIds) {
 
     return axios({
         method: 'GET',
-        withCredentials: true,
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
