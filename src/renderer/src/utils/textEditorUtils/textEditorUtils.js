@@ -1,6 +1,7 @@
 import DOMPurify from 'dompurify';
 import parseMarkdown from '../customParser/customParser';
 import QueryString from 'qs';
+import { syntaxTree } from '@codemirror/language';
 
 /**
  * Parses markdown content into HTML using a custom marked.js parser
@@ -78,4 +79,64 @@ const handleLinkClick = (navigateHandler) => (event) => {
     }
 };
 
-export { parseContent, handleLinkClick, createDownloadPath, prependLinks };
+const LINK_REGEX = /^\[([^:|]+)(?::((?:\\\||[^|])+))?(?:\|((?:\\\||[^|])+))?\]$/;
+
+function getLinkNode(context) {
+    const pos = context.pos;
+    const tree = syntaxTree(context.state);
+    let node = tree.resolve(pos, -1);
+
+    // Traverse the tree to check if the node or its parents are a link
+    while (node) {
+        if (node.type.name === 'Link') {
+            return node;
+        }
+        node = node.parent;
+    }
+    return null;
+}
+
+function parseLink(from, to, cur, text) {
+    // Match the regex with the text
+    const match = LINK_REGEX.exec(text);
+    const [_, type, name, alias] = match || [];
+
+    if (!match) return null;
+
+    // Extract group positions
+    const typeStart = match.index + 1 + from;
+    const typeEnd = typeStart + type.length;
+
+    const nameStart = name && typeEnd + 1;
+    const nameEnd = nameStart && nameStart + name.length;
+
+    const aliasStart = alias && (nameEnd ? nameEnd + 1 : nameEnd + 1);
+    const aliasEnd = aliasStart && aliasStart + alias.length;
+
+    if (cur >= typeStart && cur <= typeEnd)
+        return {
+            from: typeStart,
+            to: typeEnd,
+            type: null,
+            text: text.slice(typeStart - from, typeEnd - from),
+        };
+    else if (nameStart && cur >= nameStart && cur <= nameEnd)
+        return {
+            from: nameStart,
+            to: nameEnd,
+            type: text.slice(typeStart - from, typeEnd - from),
+            text: text.slice(nameStart - from, nameEnd - from),
+        };
+    else if (aliasStart && cur >= aliasStart && cur <= aliasEnd) return null;
+
+    return null;
+}
+
+export {
+    parseContent,
+    handleLinkClick,
+    createDownloadPath,
+    prependLinks,
+    getLinkNode,
+    parseLink,
+};
