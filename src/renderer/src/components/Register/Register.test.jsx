@@ -31,11 +31,17 @@ describe('Register component', () => {
         const { getByLabelText, getByTestId } = setupTestComponent();
 
         const usernameInput = getByLabelText('Username');
+        const emailInput = getByLabelText('Email');
         const passwordInput = getByLabelText('Password');
         const passwordCheckInput = getByLabelText('Confirm Password');
         const registerButton = getByTestId('login-register-button');
 
-        fireEvent.change(usernameInput, { target: { value: 'testuser' } });
+        fireEvent.change(usernameInput, {
+            target: { value: 'testuser' },
+        });
+        fireEvent.change(emailInput, {
+            target: { value: 'john@doe.com' },
+        });
         fireEvent.change(passwordInput, {
             target: { value: 'Testpassword@1234' },
         });
@@ -47,6 +53,7 @@ describe('Register component', () => {
         await waitFor(() => {
             expect(registerReq).toHaveBeenCalledWith({
                 username: 'testuser',
+                email: 'john@doe.com',
                 password: 'Testpassword@1234',
             });
         });
@@ -58,11 +65,17 @@ describe('Register component', () => {
         const { getByLabelText, getByTestId } = setupTestComponent();
 
         const usernameInput = getByLabelText('Username');
+        const emailInput = getByLabelText('Email');
         const passwordInput = getByLabelText('Password');
         const passwordCheckInput = getByLabelText('Confirm Password');
         const registerButton = getByTestId('login-register-button');
 
-        fireEvent.change(usernameInput, { target: { value: 'testuser' } });
+        fireEvent.change(usernameInput, {
+            target: { value: 'testuser' },
+        });
+        fireEvent.change(emailInput, {
+            target: { value: 'john@doe.com' },
+        });
         fireEvent.change(passwordInput, {
             target: { value: 'Testpassword@1234' },
         });
@@ -82,11 +95,17 @@ describe('Register component', () => {
         const { getByLabelText, getByTestId } = setupTestComponent();
 
         const usernameInput = getByLabelText('Username');
+        const emailInput = getByLabelText('Email');
         const passwordInput = getByLabelText('Password');
         const passwordCheckInput = getByLabelText('Confirm Password');
         const registerButton = getByTestId('login-register-button');
 
-        fireEvent.change(usernameInput, { target: { value: 'testuser' } });
+        fireEvent.change(usernameInput, {
+            target: { value: 'testuser' },
+        });
+        fireEvent.change(emailInput, {
+            target: { value: 'john@doe.com' },
+        });
         fireEvent.change(passwordInput, {
             target: { value: 'Testpassword@1234' },
         });
@@ -104,11 +123,17 @@ describe('Register component', () => {
         const { getByLabelText, getByTestId } = setupTestComponent();
 
         const usernameInput = getByLabelText('Username');
+        const emailInput = getByLabelText('Email');
         const passwordInput = getByLabelText('Password');
         const passwordCheckInput = getByLabelText('Confirm Password');
         const registerButton = getByTestId('login-register-button');
 
-        fireEvent.change(usernameInput, { target: { value: 'testuser' } });
+        fireEvent.change(usernameInput, {
+            target: { value: 'testuser' },
+        });
+        fireEvent.change(emailInput, {
+            target: { value: 'john@doe.com' },
+        });
         fireEvent.change(passwordInput, {
             target: { value: 'Testpassword@1' },
         });
@@ -126,11 +151,17 @@ describe('Register component', () => {
         const { getByLabelText, getByTestId } = setupTestComponent();
 
         const usernameInput = getByLabelText('Username');
+        const emailInput = getByLabelText('Email');
         const passwordInput = getByLabelText('Password');
         const passwordCheckInput = getByLabelText('Confirm Password');
         const registerButton = getByTestId('login-register-button');
 
-        fireEvent.change(usernameInput, { target: { value: 'testuser' } });
+        fireEvent.change(usernameInput, {
+            target: { value: 'testuser' },
+        });
+        fireEvent.change(emailInput, {
+            target: { value: 'john@doe.com' },
+        });
         fireEvent.change(passwordInput, { target: { value: 'testpassword' } });
         fireEvent.change(passwordCheckInput, {
             target: { value: 'testpassword' },

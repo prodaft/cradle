@@ -2,19 +2,19 @@ import { NavArrowDown, NavArrowUp } from 'iconoir-react';
 import React from 'react';
 import SearchFilter from '../SearchFilter/SearchFilter';
 import {
-    entityCategoriesReduced,
-    entryTypes,
+    entityTypesReduced,
+    entrySubtypes,
 } from '../../utils/entityDefinitions/entityDefinitions';
 
 /**
  * Section for filters in the search dialog
  * Contains filters for entity type and entry type
- * @param showFilters - boolean to show or hide the filters
- * @param setShowFilters - function to toggle the filters
- * @param entryTypeFilters - the current entry type filters
- * @param setEntryTypeFilters - the function to update the entry type filters
- * @param entityTypeFilters - the current entity type filters
- * @param setEntityTypeFilters - the function to update the entity type filters
+ * @param {boolean} showFilters - to show or hide the filters
+ * @param {boolean => void} setShowFilters - function to toggle the filters
+ * @param {Array<string>} entryTypeFilters - the current entry type filters
+ * @param {(Array<string>) => void} setEntryTypeFilters - the function to update the entry type filters
+ * @param {Array<string>} entityTypeFilters - the current entity type filters
+ * @param {(Array<string>) => void} setEntityTypeFilters - the function to update the entity type filters
  * @returns {SearchFilterSection}
  * @constructor
  */
@@ -57,8 +57,9 @@ export default function SearchFilterSection({
                     <div className='w-auto flex flex-col'>
                         <div className='font-medium text-zinc-400'>Entity type</div>
                         <div className='flex flex-wrap'>
-                            {[...entityCategoriesReduced].map((entityType) => (
+                            {Array.from(entityTypesReduced).map((entityType, index) => (
                                 <SearchFilter
+                                    key={index}
                                     option={entityType}
                                     filters={entityTypeFilters}
                                     setFilters={setEntityTypeFilters}
@@ -69,8 +70,9 @@ export default function SearchFilterSection({
                     <div className='w-auto flex flex-col'>
                         <div className='font-medium text-zinc-400'>Entry type</div>
                         <div className='flex flex-wrap'>
-                            {[...entryTypes].map((entryType) => (
+                            {Array.from(entrySubtypes).map((entryType, index) => (
                                 <SearchFilter
+                                    key={index}
                                     option={entryType}
                                     filters={entryTypeFilters}
                                     setFilters={setEntryTypeFilters}

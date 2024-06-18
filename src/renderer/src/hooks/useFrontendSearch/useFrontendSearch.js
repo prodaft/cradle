@@ -10,8 +10,9 @@ import { useEffect, useState } from 'react';
  * IMPORTANT - The children should have a searchKey prop that will be used for filtering.
  * Update the searchVal using setSearchVal to filter the children.
  * Use the filteredChildren to display the filtered children.
- * @param children
- * @returns {{filteredChildren: unknown, searchVal: string, setSearchVal: (value: (((prevState: string) => string) | string)) => void}}
+ *
+ * @param {Array<React.Component>} children - The children to be filtered
+ * @returns {filteredChildren: Array<React.Component>, searchVal: string, setSearchVal: ((string) => void)}
  */
 const useFrontendSearch = (children) => {
     const [searchVal, setSearchVal] = useState('');

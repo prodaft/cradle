@@ -92,6 +92,8 @@ const config = {
     moduleNameMapper: {
         '^.+\\.(css|less|sass|scss|svg|html)$': 'jest-transform-stub',
         '^@/(.*)$': '<rootDir>/src/$1',
+        d3: '<rootDir>/node_modules/d3/dist/d3.min.js',
+        '^d3-(.*)$': '<rootDir>/node_modules/d3-$1/dist/d3-$1.min.js',
     },
 
     // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
@@ -185,7 +187,7 @@ const config = {
     transformIgnorePatterns: [
         // "\\\\node_modules\\\\",
         // "\\.pnp\\.[^\\\\]+$",
-        'node_modules/(?!(mime|@uidotdev/usehooks)/)',
+        'node_modules/(?!(mime|@uidotdev/usehooks|d3|d3-array|d3-force|internmap)/)',
     ],
 
     // An array of regexp pattern strings that are matched against all modules before the module loader will automatically return a mock for them

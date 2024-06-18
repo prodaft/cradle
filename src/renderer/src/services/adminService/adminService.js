@@ -86,7 +86,7 @@ export async function getUsers(token) {
  * Sends a DELETE request to delete an entity
  *
  * @param {string} token - JWT access token
- * @param {string} type - entity type : actors, cases, users (use plural form)
+ * @param {string} type - entity type : `entities/actors`, `entites/cases`, `users` (use plural form)
  * @param {string} id - entity id
  * @returns {Promise<Promise<AxiosResponse<any>> | *>}
  */

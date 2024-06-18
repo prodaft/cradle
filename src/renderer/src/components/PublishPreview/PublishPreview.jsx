@@ -29,8 +29,7 @@ import {
  * @constructor
  */
 export default function PublishPreview() {
-    const [alert, setAlert] = useState('');
-    const [alertColor, setAlertColor] = useState('red');
+    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const auth = useAuth();
     const [isJson, setIsJson] = useState(false);
     const [responseData, setResponseData] = useState({});
@@ -43,7 +42,7 @@ export default function PublishPreview() {
         const mdReport = createMarkdownReportFromJson(responseData);
         parseContent(mdReport)
             .then((parsedContent) => setHtmlContent(parsedContent))
-            .catch(displayError(setAlert, setAlertColor));
+            .catch(displayError(setAlert));
     }, [responseData]);
 
     useEffect(() => {
@@ -53,7 +52,7 @@ export default function PublishPreview() {
                     setResponseData(response.data);
                 }
             })
-            .catch(displayError(setAlert, setAlertColor));
+            .catch(displayError(setAlert));
     }, [location, auth.access]);
 
     // Publishes the preview in the provided format.
@@ -74,8 +73,8 @@ export default function PublishPreview() {
                     default:
                         throw new Error(`Invalid format: ${extension}`);
                 }
-            } catch (err) {
-                displayError(setAlert, setAlertColor)(err);
+            } catch (error) {
+                displayError(setAlert)(error);
             }
         },
         [isJson, responseData, entityName],
@@ -130,7 +129,6 @@ export default function PublishPreview() {
             <AlertDismissible
                 alert={alert}
                 setAlert={setAlert}
-                color={alertColor}
                 onClose={() => setAlert('')}
             />
             <div

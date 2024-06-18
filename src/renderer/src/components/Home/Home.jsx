@@ -62,7 +62,7 @@ export default function Home() {
                         navigate('/editor');
                     }}
                     handleGraphView={() => {
-                        navigate('/not-implemented');
+                        navigate('/graph');
                     }}
                 />
                 <div className='flex flex-col w-full h-full'>

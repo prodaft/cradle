@@ -8,7 +8,7 @@ describe('queryEntities', () => {
     const token = 'testToken';
     const name = 'testName';
     const entityTypes = ['type1', 'type2'];
-    const entryTypes = ['entry1', 'entry2'];
+    const entrySubtypes = ['entry1', 'entry2'];
 
     beforeEach(() => {
         axios.get.mockClear();
@@ -17,16 +17,16 @@ describe('queryEntities', () => {
     it('should send a GET request with correct parameters', async () => {
         axios.get.mockResolvedValue({ data: {} });
 
-        await queryEntities(token, name, entityTypes, entryTypes);
+        await queryEntities(token, name, entityTypes, entrySubtypes);
 
-        expect(axios.get).toHaveBeenCalledWith('/query', {
+        expect(axios.get).toHaveBeenCalledWith('/query/', {
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`,
             },
             params: {
                 entityType: entityTypes,
-                entitySubtype: entryTypes,
+                entitySubtype: entrySubtypes,
                 name: name,
             },
             paramsSerializer: expect.any(Function),
@@ -36,12 +36,12 @@ describe('queryEntities', () => {
     it('should correctly serialize array parameters', async () => {
         axios.get.mockResolvedValue({ data: {} });
 
-        await queryEntities(token, name, entityTypes, entryTypes);
+        await queryEntities(token, name, entityTypes, entrySubtypes);
 
         const paramsSerializer = axios.get.mock.calls[0][1].paramsSerializer;
         const serializedParams = paramsSerializer({
             entityType: entityTypes,
-            entitySubtype: entryTypes,
+            entitySubtype: entrySubtypes,
             name: name,
         });
 
@@ -49,7 +49,7 @@ describe('queryEntities', () => {
             qs.stringify(
                 {
                     entityType: entityTypes,
-                    entitySubtype: entryTypes,
+                    entitySubtype: entrySubtypes,
                     name: name,
                 },
                 { arrayFormat: 'repeat' },
@@ -61,7 +61,7 @@ describe('queryEntities', () => {
         const responseData = { data: 'testData' };
         axios.get.mockResolvedValue(responseData);
 
-        const result = await queryEntities(token, name, entityTypes, entryTypes);
+        const result = await queryEntities(token, name, entityTypes, entrySubtypes);
 
         expect(result).toBe(responseData);
     });
@@ -71,7 +71,7 @@ describe('queryEntities', () => {
         axios.get.mockRejectedValue(error);
 
         await expect(
-            queryEntities(token, name, entityTypes, entryTypes),
+            queryEntities(token, name, entityTypes, entrySubtypes),
         ).rejects.toThrow(error);
     });
 });

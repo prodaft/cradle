@@ -2,7 +2,10 @@ import Prism from 'prismjs';
 import { markedHighlight } from 'marked-highlight';
 import { Marked } from 'marked';
 import 'prismjs/themes/prism-tomorrow.css';
-import { entryTypes, metadataTypes } from '../entityDefinitions/entityDefinitions';
+import {
+    entrySubtypes,
+    metadataSubtypes,
+} from '../entityDefinitions/entityDefinitions';
 import { createDashboardLink } from '../dashboardUtils/dashboardUtils';
 import { prependLinks } from '../textEditorUtils/textEditorUtils';
 import { getDownloadLink } from '../../services/fileUploadService/fileUploadService';
@@ -25,7 +28,7 @@ const regexes = {
 const handlers = {
     // Take the user to the actor's dashboard
     actors: (text) => {
-        return text.replace(regexes.actors, (matched, name, alias) => {
+        return text.replace(regexes.actors, (_, name, alias) => {
             const url = createDashboardLink({ name: name, type: 'actor' });
             // If an alias is provided, use it as the displayed name
             const displayedName = alias ? alias : name;
@@ -34,7 +37,7 @@ const handlers = {
     },
     // Take the user to the case's dashboard
     cases: (text) => {
-        return text.replace(regexes.cases, (matched, name, alias) => {
+        return text.replace(regexes.cases, (_, name, alias) => {
             const url = createDashboardLink({ name: name, type: 'case' });
             // If an alias is provided, use it as the displayed name
             const displayedName = alias ? alias : name;
@@ -44,7 +47,7 @@ const handlers = {
     // Take the user to the entry's dashboard
     entries: (text) => {
         return text.replace(regexes.entries, (matched, type, name, alias) => {
-            if (entryTypes.has(type)) {
+            if (entrySubtypes.has(type)) {
                 const url = createDashboardLink({
                     name: name,
                     type: 'entry',
@@ -61,7 +64,7 @@ const handlers = {
     // Metadata does not have a dashboard. Here just highlight the text
     metadata: (text) => {
         return text.replace(regexes.metadata, (matched, type, name, alias) => {
-            if (metadataTypes.has(type)) {
+            if (metadataSubtypes.has(type)) {
                 // If an alias is provided, use it as the displayed name
                 const displayedName = alias ? alias : name;
                 return `<span class="${styleClasses.metadata}">${displayedName}</span>`;
@@ -158,7 +161,7 @@ marked.use(resolveMinioLinks);
  * This function does not sanitize the output.
  *
  * @param {string} mdContent - markdown content
- * @param {Array<{tag: string, name: string}>} [fileData] - information about the files that will be linked (optional)
+ * @param {Array<{minio_file_name: string, file_name: string, bucket_name: string}>} [fileData] - information about the files that will be linked (optional)
  * @returns {string} parsed HTML
  */
 const parseMarkdown = async (mdContent, fileData) => {

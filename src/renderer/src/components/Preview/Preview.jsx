@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { handleLinkClick } from '../../utils/textEditorUtils/textEditorUtils';
 import { useAuth } from '../../hooks/useAuth/useAuth';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import { color } from '@uiw/react-codemirror';
 
 /**
  * This Preview component expects a content parameter, which it uses to set as inner HTML to itself.
@@ -17,8 +18,7 @@ export default function Preview({ htmlContent }) {
     const sanitizedContent = DOMPurify.sanitize(htmlContent);
     const navigate = useNavigate();
     const previewRef = useRef(null);
-    const [alert, setAlert] = useState('');
-    const [alertColor, setAlertColor] = useState('red');
+    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
 
     useEffect(() => {
         // Handle local and external links using the navigate hook
@@ -34,7 +34,7 @@ export default function Preview({ htmlContent }) {
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} color={alertColor} />
+            <AlertDismissible alert={alert} setAlert={setAlert} />
             <div
                 className='h-full w-full p-4 bg-transparent prose max-w-none dark:prose-invert break-all
                        overflow-y-auto rounded-lg flex-1 overflow-x-hidden'

@@ -30,7 +30,6 @@ describe('Fleeting Notes Service', () => {
         expect(axios).toHaveBeenCalledWith({
             method: 'GET',
             url: '/fleeting-notes/',
-            withCredentials: true,
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`,
@@ -55,7 +54,6 @@ describe('Fleeting Notes Service', () => {
         expect(axios).toHaveBeenCalledWith({
             method: 'POST',
             url: '/fleeting-notes/',
-            withCredentials: true,
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`,
@@ -82,7 +80,6 @@ describe('Fleeting Notes Service', () => {
         expect(axios).toHaveBeenCalledWith({
             method: 'PUT',
             url: `/fleeting-notes/${id}/`,
-            withCredentials: true,
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`,
@@ -112,7 +109,6 @@ describe('Fleeting Notes Service', () => {
         expect(axios).toHaveBeenCalledWith({
             method: 'DELETE',
             url: `/fleeting-notes/${id}/`,
-            withCredentials: true,
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`,
@@ -131,7 +127,6 @@ describe('Fleeting Notes Service', () => {
         expect(axios).toHaveBeenCalledWith({
             method: 'PUT',
             url: `/fleeting-notes/${id}/`,
-            withCredentials: true,
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`,

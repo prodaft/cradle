@@ -33,7 +33,6 @@ describe('DashboardNote', () => {
     };
 
     const setAlert = jest.fn();
-    const setAlertColor = jest.fn();
     const setSelectedNoteIds = jest.fn();
 
     test('renders note content', async () => {
@@ -43,7 +42,6 @@ describe('DashboardNote', () => {
                     index={0}
                     note={note}
                     setAlert={setAlert}
-                    setAlertColor={setAlertColor}
                     publishMode={false}
                     selectedNoteIds={selectedNoteIds}
                     setSelectedNoteIds={setSelectedNoteIds}
@@ -62,7 +60,6 @@ describe('DashboardNote', () => {
                     index={0}
                     note={note}
                     setAlert={setAlert}
-                    setAlertColor={setAlertColor}
                     publishMode={true}
                     selectedNoteIds={selectedNoteIds}
                     setSelectedNoteIds={setSelectedNoteIds}
@@ -85,7 +82,6 @@ describe('DashboardNote', () => {
                     index={0}
                     note={note}
                     setAlert={setAlert}
-                    setAlertColor={setAlertColor}
                     publishMode={true}
                     selectedNoteIds={selectedNoteIds}
                     setSelectedNoteIds={setSelectedNoteIds}
@@ -94,7 +90,7 @@ describe('DashboardNote', () => {
         );
 
         fireEvent.click(await screen.findByText('This is a test note'));
-        expect(navigate).toHaveBeenCalledWith(`/notes/${note.id}`);
+        expect(navigate).toHaveBeenCalledWith(`/notes/${note.id}`, expect.any(Object));
     });
 
     it('does not navigate when checkbox is clicked', () => {
@@ -107,7 +103,6 @@ describe('DashboardNote', () => {
                     index={0}
                     note={note}
                     setAlert={setAlert}
-                    setAlertColor={setAlertColor}
                     publishMode={true}
                     selectedNoteIds={selectedNoteIds}
                     setSelectedNoteIds={setSelectedNoteIds}
@@ -126,7 +121,6 @@ describe('DashboardNote', () => {
                     index={0}
                     note={note}
                     setAlert={setAlert}
-                    setAlertColor={setAlertColor}
                     publishMode={true}
                     selectedNoteIds={selectedNoteIds}
                     setSelectedNoteIds={setSelectedNoteIds}
@@ -146,7 +140,6 @@ describe('DashboardNote', () => {
                     index={0}
                     note={note}
                     setAlert={setAlert}
-                    setAlertColor={setAlertColor}
                     publishMode={true}
                     selectedNoteIds={selectedNoteIds}
                     setSelectedNoteIds={setSelectedNoteIds}

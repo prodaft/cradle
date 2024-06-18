@@ -6,15 +6,20 @@ import { useAuth } from '../../hooks/useAuth/useAuth';
 
 /**
  * Sidebar component - the main sidebar for the application.
- * @param props
- * @param props.handleLogout - handler for the logout action
- * @param props.handleNewNote - handler for the new note action
- * @param props.handleGraphView - handler for the graph view action
  *
+ * @param handleLogout - handler for the logout action
+ * @param handleNewNote - handler for the new note action
+ * @param handleGraphView - handler for the graph view action
+ * @param handleAdminPanel - handler for the admin panel action
  * @returns {Sidebar}
  * @constructor
  */
-export default function Sidebar(props) {
+export default function Sidebar({
+    handleAdminPanel,
+    handleGraphView,
+    handleLogout,
+    handleNewNote,
+}) {
     const auth = useAuth();
     return (
         <div className='h-screen sticky top-0' data-testid='sidebar-test'>
@@ -22,12 +27,12 @@ export default function Sidebar(props) {
                 <div className='flex flex-col h-full'>
                     <SidebarSection sectionType='header' height='fit' justify='start'>
                         <SidebarItem
-                            handleClick={props.handleNewNote}
+                            handleClick={handleNewNote}
                             icon={<Edit />}
                             text='New Note'
                         />
                         <SidebarItem
-                            handleClick={props.handleGraphView}
+                            handleClick={handleGraphView}
                             icon={<Network />}
                             text='Graph View'
                         />
@@ -35,7 +40,7 @@ export default function Sidebar(props) {
                     <SidebarSection type='content' height='full' justify='start'>
                         {auth.isAdmin && (
                             <SidebarItem
-                                handleClick={props.handleAdminPanel}
+                                handleClick={handleAdminPanel}
                                 icon={<UserCrown />}
                                 text='Admin'
                             />
@@ -43,7 +48,7 @@ export default function Sidebar(props) {
                     </SidebarSection>
                     <SidebarSection type='footer' height='fit' justify='end'>
                         <SidebarItem
-                            handleClick={props.handleLogout}
+                            handleClick={handleLogout}
                             icon={<LogOut />}
                             text='Logout'
                         />
