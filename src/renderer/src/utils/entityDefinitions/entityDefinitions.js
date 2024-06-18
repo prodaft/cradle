@@ -4,33 +4,36 @@
  * Comprehensive set of all entry types
  * @type {Set<string>}
  */
-export const entryTypes = new Set([
+export const entrySubtypes = new Set([
     'ip',
     'domain',
     'url',
     'username',
     'password',
-    'social-media',
+    'social',
     'hash',
     'tool',
     'cve',
     'ttp',
+    'malware',
+    'campaign',
+    'family',
 ]);
 
 /**
  * Comprehensive set of all metadata types
  * @type {Set<string>}
  */
-export const metadataTypes = new Set(['crime', 'industry', 'country', 'company']);
+export const metadataSubtypes = new Set(['crime', 'industry', 'country', 'company']);
 
 /**
  * Comprehensive set of all entity types
  * @type {Set<string>}
  */
-export const entityCategories = new Set(['actor', 'case', 'entry', 'metadata']);
+export const entityTypes = new Set(['actor', 'case', 'entry', 'metadata']);
 
 /**
  * Set of all entity types that are not metadata
  * @type {Set<string>}
  */
-export const entityCategoriesReduced = new Set(['actor', 'case', 'entry']);
+export const entityTypesReduced = new Set(['actor', 'case', 'entry']);

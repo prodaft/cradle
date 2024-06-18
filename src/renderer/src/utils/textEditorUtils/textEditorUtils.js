@@ -7,7 +7,7 @@ import QueryString from 'qs';
  * Sanitizing is recommended by the marked documentation: https://github.com/markedjs/marked?tab=readme-ov-file#usage
  *
  * @param {string} content - Markdown syntax
- * @param {Array<{tag: string, name: string, bucket: string}>} [fileData] - information about the files that will be linked (optional)
+ * @param {Array<{minio_file_name: string, file_name: string, bucket_name: string}>} [fileData] - information about the files that will be linked (optional)
  * @returns {string} parsed and sanitized HTML
  */
 const parseContent = async (content, fileData) =>
@@ -17,15 +17,15 @@ const parseContent = async (content, fileData) =>
  * Creates a download path for a file. This path correspond to the download endpoint in the backend.
  * The base URL (e.g. `http://localhost:8000`) is the same as the backend API's.
  *
- * @param {{tag: string, name: string, bucket: string}} file - file information
+ * @param {{minio_file_name: string, file_name: string, bucket_name: string}} file - file information
  * @returns {string} download link
  */
 const createDownloadPath = (file) => {
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-    const { tag, bucket } = file;
+    const { minio_file_name, bucket_name } = file;
     const queryParams = QueryString.stringify({
-        bucketName: bucket,
-        minioFileName: tag,
+        bucketName: bucket_name,
+        minioFileName: minio_file_name,
     });
     return `${apiBaseUrl}/file-transfer/download?${queryParams}`;
 };
@@ -35,7 +35,7 @@ const createDownloadPath = (file) => {
  * These links correspond to the backend API download endpoints. (e.g. `http://localhost:8000/file-transfer/download?...`)
  *
  * @param {string} mdContent - markdown content
- * @param {Array<{tag: string, name: string, bucket: string}>} fileData - file data
+ * @param {Array<{minio_file_name: string, file_name: string, bucket_name: string}>} fileData - file data
  * @returns {string} markdown content with links prepended
  */
 const prependLinks = (mdContent, fileData) => {
@@ -43,7 +43,7 @@ const prependLinks = (mdContent, fileData) => {
         .map((file) => {
             const apiDownloadPath = createDownloadPath(file);
 
-            return `[${file.tag}]: ${apiDownloadPath} "${file.name}"\n\n`;
+            return `[${file.minio_file_name}]: ${apiDownloadPath} "${file.name}"\n\n`;
         })
         .join('');
 
