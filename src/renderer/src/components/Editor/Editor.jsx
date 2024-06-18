@@ -4,12 +4,22 @@ import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
 import { drawSelection } from '@uiw/react-codemirror';
 import { useId, useState, useRef, useCallback } from 'react';
-import { EditorView } from '@codemirror/view';
+import { EditorView, keymap } from '@codemirror/view';
 import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import { eclipse } from '@uiw/codemirror-theme-eclipse';
 import FileInput from '../FileInput/FileInput';
 import FileTable from '../FileTable/FileTable';
 import { NavArrowDown, NavArrowUp } from 'iconoir-react/regular';
+import {
+    entityTypes,
+    entrySubtypes,
+    metadataSubtypes,
+} from '../../utils/entityDefinitions/entityDefinitions';
+import { queryEntities } from '../../services/queryService/queryService';
+import { useAuth } from '../../hooks/useAuth/useAuth';
+import { completionKeymap, acceptCompletion } from '@codemirror/autocomplete';
+import { getLinkNode, parseLink } from '../../utils/textEditorUtils/textEditorUtils';
+import { Prec } from '@uiw/react-codemirror';
 
 /**
  * This component makes use of a pre-existing code editor component (CodeMirror, see https://github.com/uiwjs/react-codemirror)
@@ -20,11 +30,11 @@ import { NavArrowDown, NavArrowUp } from 'iconoir-react/regular';
  *
  * This component is reactive to the system theme. It uses the Eclipse theme for light mode and the VSCode Dark theme for dark mode.
  *
+ * @typedef {Array<{minio_file_name: string, file_name: string, bucket_name: string}>} FileData
  * @param {string} markdownContent - the content inside the Editor
  * @param {(string) => void} setMarkdownContent - callback used when the value of the content changes
- * @param {Array<{minio_file_name: string, file_name: string, bucket_name: string}>} fileData - the files uploaded by the user. These belong to the note that is being written.
- *                                   Each piece of fiele data consists of the `tag` and the `name` of the file
- * @param {(Array<{minio_file_name: string, file_name: string, bucket_name: string}>) => void} setFileData - callback used when the files change
+ * @param {FileData} fileData - the files uploaded by the user. These belong to the note that is being written.
+ * @param {(FileData) => void} setFileData - callback used when the files change
  * @param {boolean} isLightMode - the current theme of the editor
  * @returns {Editor}
  */
@@ -40,11 +50,80 @@ export default function Editor({
     const vimModeId = useId();
     const editorRef = useRef(null);
 
-    // Set extension here
+    const auth = useAuth();
+
+    const performSearch = async (name, type, subtype) => {
+        return queryEntities(auth.access, name, type, subtype)
+            .then((response) => {
+                let data = response.data.map((x) => ({
+                    label: x.name,
+                    type: 'keyword',
+                }));
+                return data;
+            })
+            .catch((error) => {
+                console.log(error);
+                return [];
+            });
+    };
+
+    // Autocomplete links (e.g. syntax `[[...]]`) using information from the database. Uses the `/query` endpoint to get the data.
+    const linkAutoComplete = (context) => {
+        let node = getLinkNode(context);
+
+        if (node == null) return { from: context.pos, options: [] };
+
+        const linkFull = context.state.sliceDoc(node.from, node.to);
+        const parsedLink = parseLink(node.from, node.to, context.pos, linkFull);
+
+        if (parsedLink == null) return { from: context.pos, options: [] };
+
+        let options = new Promise((f) => f([]));
+
+        if (parsedLink.type == null) {
+            options = new Promise((f) =>
+                f(
+                    [entityTypes, entrySubtypes, metadataSubtypes].flatMap((set) =>
+                        Array.from(set).map((item) => ({
+                            label: item,
+                            type: 'keyword',
+                        })),
+                    ),
+                ),
+            );
+        } else if (entrySubtypes.has(parsedLink.type) && parsedLink.text.length >= 3) {
+            options = performSearch(parsedLink.text, [], [parsedLink.type]);
+        } else if (!entrySubtypes.has(parsedLink.type)) {
+            options = performSearch(parsedLink.text, [parsedLink.type], []);
+        }
+
+        return options.then((o) => {
+            return {
+                from: parsedLink.from,
+                to: parsedLink.to,
+                options: o,
+            };
+        });
+    };
+
+    const autoCompleteConfig = markdownLanguage.data.of({
+        autocomplete: linkAutoComplete,
+    });
+
     var extensions = [
         markdown({ base: markdownLanguage, codeLanguages: languages }),
         drawSelection(),
         EditorView.lineWrapping,
+        autoCompleteConfig,
+        Prec.highest(
+            keymap.of([
+                ...completionKeymap,
+                {
+                    key: 'Tab',
+                    run: acceptCompletion,
+                },
+            ]),
+        ),
     ];
 
     if (enableVim) {
