@@ -10,12 +10,14 @@ export const entrySubtypes = new Set([
     'url',
     'username',
     'password',
-    'person',
-    'social-media',
+    'social',
     'hash',
     'tool',
     'cve',
     'ttp',
+    'malware',
+    'campaign',
+    'family',
 ]);
 
 /**
