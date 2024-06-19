@@ -44,7 +44,7 @@ class FileUpload(APIView):
             )
 
         response_data = {}
-        response_data["bucket_name"] = str(request.user.username)
+        response_data["bucket_name"] = str(request.user.id)
         (
             response_data["minio_file_name"],
             response_data["presigned"],

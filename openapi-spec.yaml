@@ -791,7 +791,8 @@ paths:
                 properties:
                   bucket_name:
                     type: string
-                    example: "admin"
+                    format: uuid
+                    example: "c9a0dd6a-78a3-476d-a7ff-f99e54261589"
                   minio_file_name:
                     type: string
                     example: "be0b24ad-ae54-4952-ae87-00011ed9df27-evidence.png"
@@ -816,9 +817,10 @@ paths:
           required: true
           schema:
             type: string
+            format: uuid
           examples:
             bucketNameExample:
-              value: "admin"
+              value: "c9a0dd6a-78a3-476d-a7ff-f99e54261589"
         - in: query
           name: minioFileName
           required: true
