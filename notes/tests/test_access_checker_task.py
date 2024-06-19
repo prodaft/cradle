@@ -13,7 +13,9 @@ class AccessCheckerTaskTest(NotesTestCase):
     def setUp(self):
         super().setUp()
 
-        self.user = CradleUser.objects.create_user(username="user", password="user")
+        self.user = CradleUser.objects.create_user(
+            username="user", password="user", email="alabala@gmail.com"
+        )
 
         self.case1 = Entity.objects.create(name="case1", type=EntityType.CASE)
         self.case2 = Entity.objects.create(name="case2", type=EntityType.CASE)

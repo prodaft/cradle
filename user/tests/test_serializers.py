@@ -10,10 +10,10 @@ class TokenObtainSerializerTest(UserTestCase):
 
         self.token_serializer = TokenObtainSerializer()
         self.normal_user = CradleUser.objects.create_user(
-            username="user", password="pass1"
+            username="user", password="pass1", email="alabala@a.b"
         )
         self.admin_user = CradleUser.objects.create_superuser(
-            username="admin", password="pass2"
+            username="admin", password="pass2", email="bla@a.b"
         )
 
     def test_get_token_normal_user(self):

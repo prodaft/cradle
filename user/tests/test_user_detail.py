@@ -9,9 +9,11 @@ class DeleteUserTest(UserTestCase):
     def setUp(self):
         super().setUp()
 
-        self.user = CradleUser.objects.create_user(username="user", password="user")
+        self.user = CradleUser.objects.create_user(
+            username="user", password="user", email="a@b.c"
+        )
         self.admin = CradleUser.objects.create_superuser(
-            username="admin", password="admin"
+            username="admin", password="admin", email="b@c.d"
         )
         self.token_admin = str(AccessToken.for_user(self.admin))
         self.token_normal = str(AccessToken.for_user(self.user))
