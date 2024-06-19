@@ -8,7 +8,7 @@ import React from 'react';
  * @returns {SidebarItem}
  * @constructor
  */
-export default function SidebarItem({ icon, text, handleClick }) {
+export default function SidebarItem({ icon, text = '', handleClick }) {
     return (
         <li
             className='menu-item p-4 cursor-pointer group-hover/sidebar:flex items-center'

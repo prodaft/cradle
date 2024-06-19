@@ -17,6 +17,7 @@ import NoteViewer from './components/NoteViewer/NoteViewer';
 import FleetingNoteEditor from './components/FleetingNoteEditor/FleetingNoteEditor';
 import NoteSelector from './components/NoteSelector/NoteSelector.jsx';
 import GraphComponent from './components/GraphComponent/GraphComponent';
+import Welcome from './components/Welcome/Welcome.jsx';
 
 /**
  * The App component is the entry point of the application. It wraps the entire application in the AuthProvider
@@ -33,6 +34,7 @@ function App() {
                         {/* Add any routes for components that NEED authentication here*/}
                         <Route path='/' element={<Home />}>
                             {/* Add any routes for components that keep the sidebar and navbar here */}
+                            <Route path='/welcome' element={<Welcome />} />
                             <Route
                                 path='/not-implemented'
                                 element={<FeatureNotImplemented />}
