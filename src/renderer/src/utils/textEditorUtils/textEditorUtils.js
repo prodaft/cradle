@@ -122,11 +122,11 @@ const getLinkNode = (context) => {
  * Otherwise, null is returned.
  *
  * @param {number} from - the starting position of the text
- * @param {number} cur - the current position in the text
+ * @param {number} current - the current position in the text
  * @param {string} text - the text to parse
  * @returns {Link | null}
  */
-const parseLink = (from, cur, text) => {
+const parseLink = (from, current, text) => {
     // Match the regex with the text
     const match = LINK_REGEX.exec(text);
 
@@ -142,14 +142,14 @@ const parseLink = (from, cur, text) => {
     const nameStart = name && typeEnd + 1;
     const nameEnd = nameStart && nameStart + name.length;
 
-    if (cur >= typeStart && cur <= typeEnd)
+    if (current >= typeStart && current <= typeEnd)
         return {
             from: typeStart,
             to: typeEnd,
             type: null,
             text: text.slice(typeStart - from, typeEnd - from),
         };
-    else if (nameStart && cur >= nameStart && cur <= nameEnd)
+    else if (nameStart && current >= nameStart && current <= nameEnd)
         return {
             from: nameStart,
             to: nameEnd,
