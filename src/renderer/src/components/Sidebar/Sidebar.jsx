@@ -3,6 +3,8 @@ import { Edit, Network, LogOut, UserCrown } from 'iconoir-react';
 import SidebarItem from '../SidebarItem/SidebarItem';
 import SidebarSection from '../SidebarSection/SidebarSection';
 import { useAuth } from '../../hooks/useAuth/useAuth';
+import Logo from '../Logo/Logo';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * Sidebar component - the main sidebar for the application.
@@ -21,11 +23,19 @@ export default function Sidebar({
     handleNewNote,
 }) {
     const auth = useAuth();
+    const navigate = useNavigate();
     return (
         <div className='h-screen sticky top-0' data-testid='sidebar-test'>
             <aside className='sidebar text-gray-400 w-16 hover:w-48 transition-all duration-300 overflow-hidden group/sidebar'>
                 <div className='flex flex-col h-full'>
                     <SidebarSection sectionType='header' height='fit' justify='start'>
+                        <SidebarItem
+                            icon={<Logo width='32px' height='32px' />}
+                            handleClick={() => {
+                                navigate('/welcome');
+                                console.log('HOme');
+                            }}
+                        />
                         <SidebarItem
                             handleClick={handleNewNote}
                             icon={<Edit />}

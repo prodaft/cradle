@@ -23,7 +23,7 @@ export default function Navbar({
 
     return (
         <div
-            className='navbar p-0.5 sticky top-0 rounded-md bg-gray-2 w-full h-fit z-40 pr-4 pl-2 min-h-12'
+            className='navbar p-0.5 sticky top-0 rounded-b-md bg-gray-2 w-full h-fit z-40 pr-4 pl-2 min-h-12'
             data-testid='navbar-test'
         >
             <div className='h-fit navbar-start w-full min-w-40'>

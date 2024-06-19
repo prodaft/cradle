@@ -11,6 +11,7 @@ function createWindow() {
             nodeIntegration: true,
             enableRemoteModule: true,
         },
+        icon: path.join(__dirname, '../renderer/src/assets/logo-nobg.ico'),
     });
 
     if (isDevelopment) {
