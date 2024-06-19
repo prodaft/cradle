@@ -64,7 +64,7 @@ export default function TextEditor() {
 
     const isEmptyNote = () => {
         if (!markdownContentRef.current) {
-            setAlert({ show: true, message: 'Cannot save empty note', color: 'red' });
+            setAlert({ show: true, message: 'Cannot save empty note.', color: 'red' });
             return true;
         }
         return false;

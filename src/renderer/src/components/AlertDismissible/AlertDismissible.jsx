@@ -22,7 +22,7 @@ export default function AlertDismissible({ alert, setAlert, duration = 3500.0 })
     const [timeLeft, setTimeLeft] = useState(duration);
 
     useEffect(() => {
-        if (alert) {
+        if (alert && alert.show) {
             setTimeLeft(duration);
             const timer = setTimeout(() => {
                 setAlert({ ...alert, show: false });

@@ -61,7 +61,7 @@ export default function Dashboard() {
             setAlert({
                 show: true,
                 message: 'There are no publishable notes available.',
-                color: 'green',
+                color: 'red',
             });
             return;
         }
