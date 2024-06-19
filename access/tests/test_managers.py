@@ -9,9 +9,11 @@ from .utils import AccessTestCase
 class AccessManagerHasAccessTest(AccessTestCase):
 
     def create_users(self):
-        self.user = CradleUser.objects.create_user(username="user", password="user")
+        self.user = CradleUser.objects.create_user(
+            username="user", password="user", email="alabala@gmail.com"
+        )
         self.admin = CradleUser.objects.create_superuser(
-            username="admin", password="admin"
+            username="admin", password="admin", email="b@c.d"
         )
 
     def create_cases(self):
@@ -103,7 +105,8 @@ class AccessManagerGetAccessibleTest(AccessTestCase):
         super().setUp()
 
         self.users = [
-            CradleUser.objects.create_user(f"u{i}", "abcd") for i in range(0, 3)
+            CradleUser.objects.create_user(f"u{i}", "abcd", email=f"a{i}@gmail.com")
+            for i in range(0, 3)
         ]
         self.cases = [
             Entity.objects.create(name=f"c{i}", type="case") for i in range(0, 3)
@@ -174,11 +177,15 @@ class AccessManagerGetUsersWithAccessTest(AccessTestCase):
         super().setUp()
 
         self.users = [
-            CradleUser.objects.create_user(username=f"user{id}", password="password")
+            CradleUser.objects.create_user(
+                username=f"user{id}", password="password", email=f"a{id}@gmail.com"
+            )
             for id in range(3)
         ]
         self.users.append(
-            CradleUser.objects.create_superuser(username="admin", password="admin")
+            CradleUser.objects.create_superuser(
+                username="admin", password="admin", email="alabala@gmail.com"
+            )
         )
 
         self.case = Entity.objects.create(name="Case", type=EntityType.CASE)
@@ -201,7 +208,9 @@ class AccessManagerCheckUserAccessTest(AccessTestCase):
 
     def setUp(self):
         super().setUp()
-        self.user = CradleUser.objects.create_user(username="user", password="user")
+        self.user = CradleUser.objects.create_user(
+            username="user", password="user", email="alabala@gmail.com"
+        )
         self.case = Entity.objects.create(name="case", type=EntityType.CASE)
 
     def test_check_user_access_has_access_type(self):

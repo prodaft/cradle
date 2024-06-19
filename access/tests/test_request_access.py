@@ -16,11 +16,15 @@ class UpdateAccessTest(AccessTestCase):
         super().setUp()
 
         self.users = [
-            CradleUser.objects.create_user(username=f"user{id}", password="user")
+            CradleUser.objects.create_user(
+                username=f"user{id}", password="user", email=f"b{id}@c.d"
+            )
             for id in range(4)
         ]
         self.users.append(
-            CradleUser.objects.create_superuser(username="admin", password="admin")
+            CradleUser.objects.create_superuser(
+                username="admin", password="admin", email="c@d.e"
+            )
         )
 
         self.case = Entity.objects.create(name="case", type=EntityType.CASE)

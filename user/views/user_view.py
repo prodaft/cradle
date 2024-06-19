@@ -53,7 +53,8 @@ class UserList(APIView):
                 The body must contain a "username" and a "password" field.
 
         Returns:
-            Response(status=200): if the request was successful
+            Response(status=200): if the request was successful or the email is
+            valid, but already exists.
             Response("Requested parameters not provided", status=400):
                 if username or password was not provided
             Response("User already exists", status=409): if user already exists
@@ -61,7 +62,10 @@ class UserList(APIView):
 
         serializer = UserCreateSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            if not CradleUser.objects.filter(
+                email=serializer.validated_data["email"]
+            ).exists():
+                serializer.save()
             return Response(status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
