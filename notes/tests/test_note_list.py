@@ -14,7 +14,9 @@ class CreateNoteTest(NotesTestCase):
     def setUp(self):
         super().setUp()
 
-        self.user = CradleUser.objects.create_user(username="user", password="user")
+        self.user = CradleUser.objects.create_user(
+            username="user", password="user", email="alabala@gmail.com"
+        )
         self.user_token = str(AccessToken.for_user(self.user))
         self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
         self.saved_case = Entity.objects.create(name="case", type=EntityType.CASE)
