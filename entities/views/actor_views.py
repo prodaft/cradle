@@ -10,6 +10,8 @@ from ..models import Entity
 from logs.utils import LoggingUtils
 from logs.decorators import log_failed_responses
 
+from uuid import UUID
+
 
 class ActorList(APIView):
 
@@ -73,7 +75,7 @@ class ActorDetail(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
 
     @log_failed_responses
-    def delete(self, request: Request, actor_id: int) -> Response:
+    def delete(self, request: Request, actor_id: UUID) -> Response:
         """Allow an admin to delete an Actor by specifying its id
 
         Args:

@@ -10,6 +10,8 @@ from access.enums import AccessType
 import io
 from .utils import NotesTestCase
 
+import uuid
+
 
 def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
@@ -70,7 +72,7 @@ class NotePublishableDetailTest(NotesTestCase):
 
     def test_update_note_publishable_not_found(self):
         response = self.client.put(
-            reverse("note_publish_detail", kwargs={"note_id": self.notes[1].id + 1}),
+            reverse("note_publish_detail", kwargs={"note_id": uuid.uuid4()}),
             {"publishable": "true"},
             content_type="application/json",
             **self.headers,

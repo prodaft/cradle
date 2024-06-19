@@ -47,10 +47,10 @@ class GetKnowledgeGraphTest(KnowledgeGraphTestCase):
 
         graph = bytes_to_json(response.content)
         expected_entities = [
-            entity.id for entity in Entity.objects.exclude(id=self.case2.pk)
+            str(entity.id) for entity in Entity.objects.exclude(id=self.case2.pk)
         ]
         entities = [entity["id"] for entity in graph["entities"]]
-        expected_links = [(self.case1.id, self.entry.id)]
+        expected_links = [tuple(sorted((str(self.entry.id), str(self.case1.id))))]
 
         with self.subTest("Test status code"):
             self.assertEqual(response.status_code, 200)

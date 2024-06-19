@@ -8,7 +8,7 @@ from django.urls import path
 urlpatterns = [
     path("", NotificationList.as_view(), name="notification_list"),
     path(
-        "<int:notification_id>/",
+        "<uuid:notification_id>/",
         NotificationDetail.as_view(),
         name="notification_detail",
     ),

@@ -10,6 +10,8 @@ from ..models import Entity
 from logs.utils import LoggingUtils
 from logs.decorators import log_failed_responses
 
+from uuid import UUID
+
 
 class CaseList(APIView):
 
@@ -73,7 +75,7 @@ class CaseDetail(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
 
     @log_failed_responses
-    def delete(self, request: Request, case_id: int) -> Response:
+    def delete(self, request: Request, case_id: UUID) -> Response:
         """Allow an admin to delete a Case by specifying its id
 
         Args:

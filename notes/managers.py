@@ -9,16 +9,17 @@ from access.enums import AccessType
 from django.db.models import Case, When, Q, F
 
 from typing import List
+from uuid import UUID
 from typing import Optional
 
 
 class NoteManager(models.Manager):
 
-    def get_all_notes(self, entity_id: int) -> models.QuerySet:
+    def get_all_notes(self, entity_id: UUID | str) -> models.QuerySet:
         """Gets the notes of an entity ordered by timestamp in descending order
 
         Args:
-            entity_id (int): The id of the entity
+            entity_id (UUID): The id of the entity
 
         Returns:
             models.QuerySet: The notes of the entity
@@ -45,7 +46,7 @@ class NoteManager(models.Manager):
         return entities
 
     def get_accessible_notes(
-        self, user: CradleUser, entity_id: Optional[int] = None
+        self, user: CradleUser, entity_id: Optional[UUID] = None
     ) -> models.QuerySet:
         """Get the notes of a case that the user has access to.
         If None is provided as a parameter, then the method returns all

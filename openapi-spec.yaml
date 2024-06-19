@@ -102,11 +102,9 @@ paths:
           name: userId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            userIdExample:
-              value: "1296348"
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
       responses:
         '200':
           description: Requested user account was deleted.
@@ -521,20 +519,16 @@ paths:
           name: userId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            userIdExample:
-              value: 1234521
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         - in: path
           name: caseId
           required: true
-          schema: 
-            type: integer
-            format: int64
-          examples: 
-            caseIdExample:
-              value: 123412
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
       requestBody:
         content:
           application/json:
@@ -567,11 +561,9 @@ paths:
           name: agentId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            agentIdExample:
-              value: "29423461"
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
       responses:
         '200':
           description: Requested agent was deleted.
@@ -597,11 +589,9 @@ paths:
           name: caseId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            caseIdExample:
-              value: 2341963112
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
       responses:
         '200':
           description: Requested case was deleted.
@@ -658,11 +648,9 @@ paths:
           name: noteId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            caseIdExample:
-              value: 1234163
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
       requestBody:
         content:
           application/json:
@@ -697,11 +685,9 @@ paths:
           name: noteId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            caseIdExample:
-              value: 12643969
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
       responses:
         '200':  
           description: Note was deleted.
@@ -722,11 +708,9 @@ paths:
           name: noteId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            noteIdExample:
-              value: 31249691
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
       responses:
         '200':  
           description: Request was successful.
@@ -755,15 +739,15 @@ paths:
           schema:
             type: array
             items: 
-              type: integer
-              format: int64
+              type: string
+              format: uuid
           examples:
             single-note:
               summary: Single note ID
-              value: [1]
+              value: ["123e4567-e89b-12d3-a456-426614174000"]
             multiple-notes:
               summary: Multiple note IDs
-              value: [1, 2, 3]
+              value: ["123e4567-e89b-12d3-a456-426614174000", "123e4567-e89b-12d3-a456-426614174001", "123e4567-e89b-12d3-a456-426614174004"]
               
       responses:
         '200': 
@@ -927,11 +911,9 @@ paths:
           name: fleetingNoteId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            fleetingNoteIdExample:
-              value: 234196123
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
       responses:
         '200': 
           description: Request was successful. 
@@ -955,11 +937,9 @@ paths:
           name: fleetingNoteId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            fleetingNoteIdExample:
-              value: 12341123
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
       responses:
         '200':  
           description: Fleeting Note was deleted.
@@ -979,11 +959,9 @@ paths:
           name: fleetingNoteId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            fleetingNoteIdExample:
-              value: 2324169
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
       requestBody:
         required: true
         content:
@@ -1018,11 +996,10 @@ paths:
           name: fleetingNoteId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            fleetingNoteIdExample:
-              value: 2324169
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+    
       requestBody:
         required: false
         content:
@@ -1107,7 +1084,7 @@ paths:
         '401':
           description: User is not authenticated.
 
-  /graph:
+  /knowledge-graph:
     get:
       tags:
         - Knowledge Graph
@@ -1137,9 +1114,10 @@ components:
     CaseDashboard:
       type: object
       properties:
-        ID:
-          type: integer
-          format: int64
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         name:
           type: string
         description:
@@ -1196,9 +1174,10 @@ components:
     ActorDashboard:
       type: object
       properties:
-        ID:
-          type: integer
-          format: int64
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         name:
           type: string
         description:
@@ -1245,9 +1224,10 @@ components:
     EntryDashboard:
       type: object
       properties:
-        ID:
-          type: integer
-          format: int64
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         name:
           type: string
         description:
@@ -1286,9 +1266,10 @@ components:
     User:
       type: object
       properties:
-        ID:
-          type: integer
-          format: int64
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         username:
           type: string
         password:
@@ -1301,9 +1282,10 @@ components:
     Entity:
       type: object
       properties:
-        ID:
-          type: integer
-          format: int64
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         name:
           type: string
         description: 
@@ -1340,9 +1322,10 @@ components:
     Note:
       type: object
       properties:
-        ID:
-          type: integer
-          format: int64
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         content: 
           type: string
         publishable:
@@ -1355,9 +1338,10 @@ components:
           items: 
             type: object
             properties:
-              ID:
-                type: integer
-                format: int64
+              id:
+                type: string
+                format: uuid
+                example: "123e4567-e89b-12d3-a456-426614174000"
               name:
                 type: string
               type:
@@ -1368,9 +1352,10 @@ components:
     CaseAccess:
       type: object
       properties:
-        ID: 
-          type: integer
-          format: int64
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         name: 
           type: string
         access_type:
@@ -1383,9 +1368,10 @@ components:
     FleetingNote:
       type: object
       properties:
-        ID:
-          type: integer
-          format: int64
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         content:
           type: string
         last_edited:
@@ -1395,9 +1381,10 @@ components:
     MessageNotification: 
       type: object
       properties: 
-        id: 
-          type: integer
-          format: int64
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         message:
           type: string
         timestamp: 
@@ -1412,17 +1399,18 @@ components:
     AccessRequestNotification: 
       type: object
       properties: 
-        id: 
-          type: integer
-          format: int64
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         message:
           type: string
         case_id:
-          type: integer
-          format: int64
+          type: string
+          format: uuid
         requesting_user_id:
-          type: integer
-          format: int64
+          type: string
+          format: uuid
         timestamp: 
           type: string
           format: date-time
@@ -1467,14 +1455,14 @@ components:
       type: object
       properties: 
         source:
-          type: integer
-          format: int64
+          type: string
+          format: uuid
         target:
-          type: integer
-          format: int64
+          type: string
+          format: uuid
       example: 
-          source: 1234567890123456
-          target: 9876543210987654
+          source: "00000000-0000-0000-0000-000000000000"
+          target: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
 
 
     Graph:

@@ -4,8 +4,8 @@ from typing import Any
 
 
 class LinkSerializer(serializers.Serializer):
-    first_node = serializers.IntegerField()
-    second_node = serializers.IntegerField()
+    first_node = serializers.UUIDField()
+    second_node = serializers.UUIDField()
 
     def to_representation(self, data: Any) -> dict[str, Any]:
         """Takes the validated data in the serializer and

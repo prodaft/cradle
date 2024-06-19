@@ -12,6 +12,7 @@ from access.models import Access
 from ..serializers import EntityQuerySerializer
 from entities.serializers import EntitySerializer
 from logs.decorators import log_failed_responses
+from uuid import UUID
 
 
 class QueryList(APIView):
@@ -52,7 +53,7 @@ class QueryList(APIView):
                     type="case",
                     id__in=Subquery(
                         Access.objects.get_accessible_case_ids(
-                            cast(int, request.user.pk)
+                            cast(UUID, request.user.id)
                         )
                     ),
                 )
