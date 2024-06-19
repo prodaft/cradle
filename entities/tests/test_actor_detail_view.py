@@ -8,6 +8,7 @@ from .utils import EntitiesTestCase
 
 from ..models import Entity
 from ..enums import EntityType
+import uuid
 
 
 def bytes_to_json(data):
@@ -72,12 +73,12 @@ class DeleteActorDetailsTest(EntitiesTestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_delete_actor_admin_wrong_id(self):
-        actor = Entity.objects.create(
+        Entity.objects.create(
             name="Actor1", description="Description1", type=EntityType.ACTOR
         )
 
         response = self.client.delete(
-            reverse("actor_detail", kwargs={"actor_id": actor.pk + 1}),
+            reverse("actor_detail", kwargs={"actor_id": uuid.uuid4()}),
             **self.headers_admin,
         )
 

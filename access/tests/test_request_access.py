@@ -9,8 +9,10 @@ from ..enums import AccessType
 from .utils import AccessTestCase
 from notifications.models import AccessRequestNotification
 
+import uuid
 
-class UpdateAccessTest(AccessTestCase):
+
+class RequestAccessTest(AccessTestCase):
 
     def setUp(self):
         super().setUp()
@@ -61,7 +63,7 @@ class UpdateAccessTest(AccessTestCase):
         response = self.client.post(
             reverse(
                 "request_access",
-                kwargs={"case_id": self.case.id + 10},
+                kwargs={"case_id": uuid.uuid4()},
             ),
             **self.headers[0],
         )

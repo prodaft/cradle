@@ -5,6 +5,8 @@ from entities.models import Entity
 from entities.enums import EntityType
 from notes.models import Note
 
+from uuid import UUID
+
 
 class DashboardUtils:
 
@@ -30,7 +32,7 @@ class DashboardUtils:
         return dashboard_dict
 
     @staticmethod
-    def get_dashboard(user: CradleUser, entity_id: int) -> Dict[str, QuerySet]:
+    def get_dashboard(user: CradleUser, entity_id: UUID) -> Dict[str, QuerySet]:
         """Get the entities related to the specified entity that the user has access to
 
         Args:

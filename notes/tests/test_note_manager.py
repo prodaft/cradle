@@ -573,9 +573,9 @@ class GetLinksTest(NotesTestCase):
     def test_get_links_one_note(self):
         links = list(Note.objects.get_links(Note.objects.filter(id=self.note1.id)))
         expected = [
-            (self.cases[1].id, self.actors[0].id),
-            (self.cases[1].id, self.metadata[0].id),
-            (self.actors[0].id, self.metadata[0].id),
+            tuple(sorted((self.cases[1].id, self.actors[0].id))),
+            tuple(sorted((self.cases[1].id, self.metadata[0].id))),
+            tuple(sorted((self.actors[0].id, self.metadata[0].id))),
         ]
 
         links = [tuple(sorted(d.values())) for d in links]
@@ -585,10 +585,10 @@ class GetLinksTest(NotesTestCase):
         links = list(Note.objects.get_links(Note.objects.exclude(id=self.note1.id)))
         links = [tuple(sorted(d.values())) for d in links]
         expected = [
-            (self.cases[0].id, self.metadata[1].id),
-            (self.cases[0].id, self.entry[1].id),
-            (self.entry[1].id, self.metadata[1].id),
-            (self.cases[0].id, self.cases[1].id),
+            tuple(sorted((self.cases[0].id, self.metadata[1].id))),
+            tuple(sorted((self.cases[0].id, self.entry[1].id))),
+            tuple(sorted((self.entry[1].id, self.metadata[1].id))),
+            tuple(sorted((self.cases[0].id, self.cases[1].id))),
         ]
 
         self.assertEqual(Counter(links), Counter(expected))
@@ -604,13 +604,13 @@ class GetLinksTest(NotesTestCase):
         links = list(Note.objects.get_links(Note.objects.all()))
         links = [tuple(sorted(d.values())) for d in links]
         expected = [
-            (self.cases[0].id, self.metadata[1].id),
-            (self.cases[0].id, self.entry[1].id),
-            (self.entry[1].id, self.metadata[1].id),
-            (self.cases[0].id, self.cases[1].id),
-            (self.cases[1].id, self.actors[0].id),
-            (self.cases[1].id, self.metadata[0].id),
-            (self.actors[0].id, self.metadata[0].id),
+            tuple(sorted((self.cases[0].id, self.metadata[1].id))),
+            tuple(sorted((self.cases[0].id, self.entry[1].id))),
+            tuple(sorted((self.entry[1].id, self.metadata[1].id))),
+            tuple(sorted((self.cases[0].id, self.cases[1].id))),
+            tuple(sorted((self.cases[1].id, self.actors[0].id))),
+            tuple(sorted((self.cases[1].id, self.metadata[0].id))),
+            tuple(sorted((self.actors[0].id, self.metadata[0].id))),
         ]
 
         self.assertEqual(Counter(links), Counter(expected))

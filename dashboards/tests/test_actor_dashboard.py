@@ -21,7 +21,7 @@ class GetActorDashboardTest(DashboardsTestCase):
 
         self.assertCountEqual(
             [entity["id"] for entity in entities_json],
-            [entity.id for entity in entities],
+            [str(entity.id) for entity in entities],
         )
 
     def check_inaccessible_cases_name(self, inaccessible_cases):
@@ -55,7 +55,7 @@ class GetActorDashboardTest(DashboardsTestCase):
         json_response = bytes_to_json(response.content)
 
         with self.subTest("Check case id"):
-            self.assertEqual(json_response["id"], self.actor1.id)
+            self.assertEqual(json_response["id"], str(self.actor1.id))
 
         self.check_ids(notes, json_response["notes"])
         self.check_ids(cases, json_response["cases"])
@@ -80,7 +80,7 @@ class GetActorDashboardTest(DashboardsTestCase):
         json_response = bytes_to_json(response.content)
 
         with self.subTest("Check case id"):
-            self.assertEqual(json_response["id"], self.actor1.id)
+            self.assertEqual(json_response["id"], str(self.actor1.id))
 
         self.check_ids(notes, json_response["notes"])
         self.check_ids(cases, json_response["cases"])
@@ -105,7 +105,7 @@ class GetActorDashboardTest(DashboardsTestCase):
         json_response = bytes_to_json(response.content)
 
         with self.subTest("Check case id"):
-            self.assertEqual(json_response["id"], self.actor1.id)
+            self.assertEqual(json_response["id"], str(self.actor1.id))
 
         self.check_ids(notes, json_response["notes"])
         self.check_ids(cases, json_response["cases"])
@@ -130,7 +130,7 @@ class GetActorDashboardTest(DashboardsTestCase):
         json_response = bytes_to_json(response.content)
 
         with self.subTest("Check case id"):
-            self.assertEqual(json_response["id"], self.actor2.id)
+            self.assertEqual(json_response["id"], str(self.actor2.id))
 
         self.check_ids(notes, json_response["notes"])
         self.check_ids(cases, json_response["cases"])

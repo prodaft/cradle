@@ -31,19 +31,19 @@ class NoteDashboardSerializersTest(DashboardsTestCase):
         mock_timestamp.return_value = "2024-01-01T00:00:00Z"
 
         expected = {
-            "id": self.note1.id,
+            "id": str(self.note1.id),
             "content": "a" * 200 + "...",
             "publishable": False,
             "timestamp": "2024-01-01T00:00:00Z",
             "entities": [
                 {
-                    "id": self.case1.id,
+                    "id": str(self.case1.id),
                     "name": "Case1",
                     "type": "case",
                     "subtype": "",
                 },
                 {
-                    "id": self.actor1.id,
+                    "id": str(self.actor1.id),
                     "name": "Actor1",
                     "type": "actor",
                     "subtype": "",
@@ -58,19 +58,19 @@ class NoteDashboardSerializersTest(DashboardsTestCase):
         mock_timestamp.return_value = "2024-01-01T00:00:00Z"
 
         expected = {
-            "id": self.note2.id,
+            "id": str(self.note2.id),
             "content": "Note2",
             "publishable": False,
             "timestamp": "2024-01-01T00:00:00Z",
             "entities": [
                 {
-                    "id": self.case2.id,
+                    "id": str(self.case2.id),
                     "name": "Case2",
                     "type": "case",
                     "subtype": "",
                 },
                 {
-                    "id": self.actor2.id,
+                    "id": str(self.actor2.id),
                     "name": "Actor2",
                     "type": "actor",
                     "subtype": "",
@@ -98,32 +98,32 @@ class CaseDashboardSerializerTest(DashboardsTestCase):
         inaccessible_cases = Entity.objects.filter(id=self.case2.id)
 
         expected_json = {
-            "id": self.case1.id,
+            "id": str(self.case1.id),
             "name": "Case1",
             "description": "Description1",
             "type": "case",
             "subtype": "",
             "notes": [
                 {
-                    "id": self.note1.id,
+                    "id": str(self.note1.id),
                     "content": "Note1",
                     "publishable": False,
                     "timestamp": "2024-01-01T00:00:00Z",
                     "entities": [
                         {
-                            "id": self.case1.id,
+                            "id": str(self.case1.id),
                             "name": "Case1",
                             "type": "case",
                             "subtype": "",
                         },
                         {
-                            "id": self.actor1.id,
+                            "id": str(self.actor1.id),
                             "name": "Actor1",
                             "type": "actor",
                             "subtype": "",
                         },
                         {
-                            "id": self.metadata1.id,
+                            "id": str(self.metadata1.id),
                             "name": "Metadata1",
                             "type": "metadata",
                             "subtype": "",
@@ -131,25 +131,25 @@ class CaseDashboardSerializerTest(DashboardsTestCase):
                     ],
                 },
                 {
-                    "id": self.note2.id,
+                    "id": str(self.note2.id),
                     "content": "Note2",
                     "publishable": False,
                     "timestamp": "2024-01-01T00:00:00Z",
                     "entities": [
                         {
-                            "id": self.case1.id,
+                            "id": str(self.case1.id),
                             "name": "Case1",
                             "type": "case",
                             "subtype": "",
                         },
                         {
-                            "id": self.case2.id,
+                            "id": str(self.case2.id),
                             "name": "Case2",
                             "type": "case",
                             "subtype": "",
                         },
                         {
-                            "id": self.actor2.id,
+                            "id": str(self.actor2.id),
                             "name": "Actor2",
                             "type": "actor",
                             "subtype": "",
@@ -159,14 +159,14 @@ class CaseDashboardSerializerTest(DashboardsTestCase):
             ],
             "actors": [
                 {
-                    "id": self.actor1.id,
+                    "id": str(self.actor1.id),
                     "name": "Actor1",
                     "description": "Description1",
                     "type": "actor",
                     "subtype": "",
                 },
                 {
-                    "id": self.actor2.id,
+                    "id": str(self.actor2.id),
                     "name": "Actor2",
                     "description": "Description2",
                     "type": "actor",
@@ -175,14 +175,14 @@ class CaseDashboardSerializerTest(DashboardsTestCase):
             ],
             "cases": [
                 {
-                    "id": self.case1.id,
+                    "id": str(self.case1.id),
                     "name": "Case1",
                     "description": "Description1",
                     "type": "case",
                     "subtype": "",
                 },
                 {
-                    "id": self.case2.id,
+                    "id": str(self.case2.id),
                     "name": "Case2",
                     "description": "Description2",
                     "type": "case",
@@ -191,7 +191,7 @@ class CaseDashboardSerializerTest(DashboardsTestCase):
             ],
             "metadata": [
                 {
-                    "id": self.metadata1.id,
+                    "id": str(self.metadata1.id),
                     "name": "Metadata1",
                     "description": "Description1",
                     "type": "metadata",
@@ -201,7 +201,7 @@ class CaseDashboardSerializerTest(DashboardsTestCase):
             "entries": [],
             "inaccessible_cases": [
                 {
-                    "id": self.case2.id,
+                    "id": str(self.case2.id),
                     "name": "Some Case",
                     "description": "Some Description",
                     "type": "case",
@@ -248,32 +248,32 @@ class ActorDashboardSerializerTest(DashboardsTestCase):
         inaccessible_cases = Entity.objects.filter(id=self.case2.id)
 
         expected_json = {
-            "id": self.actor1.id,
+            "id": str(self.actor1.id),
             "name": "Actor1",
             "description": "Description1",
             "type": "actor",
             "subtype": "",
             "notes": [
                 {
-                    "id": self.note1.id,
+                    "id": str(self.note1.id),
                     "content": "Note1",
                     "publishable": False,
                     "timestamp": "2024-01-01T00:00:00Z",
                     "entities": [
                         {
-                            "id": self.case1.id,
+                            "id": str(self.case1.id),
                             "name": "Case1",
                             "type": "case",
                             "subtype": "",
                         },
                         {
-                            "id": self.actor1.id,
+                            "id": str(self.actor1.id),
                             "name": "Actor1",
                             "type": "actor",
                             "subtype": "",
                         },
                         {
-                            "id": self.metadata1.id,
+                            "id": str(self.metadata1.id),
                             "name": "Metadata1",
                             "type": "metadata",
                             "subtype": "",
@@ -284,7 +284,7 @@ class ActorDashboardSerializerTest(DashboardsTestCase):
             "actors": [],
             "cases": [
                 {
-                    "id": self.case1.id,
+                    "id": str(self.case1.id),
                     "name": "Case1",
                     "description": "Description1",
                     "type": "case",
@@ -293,7 +293,7 @@ class ActorDashboardSerializerTest(DashboardsTestCase):
             ],
             "metadata": [
                 {
-                    "id": self.metadata1.id,
+                    "id": str(self.metadata1.id),
                     "name": "Metadata1",
                     "description": "Description1",
                     "type": "metadata",
@@ -302,7 +302,7 @@ class ActorDashboardSerializerTest(DashboardsTestCase):
             ],
             "inaccessible_cases": [
                 {
-                    "id": self.case2.id,
+                    "id": str(self.case2.id),
                     "name": "Some Case",
                     "description": "Some Description",
                     "type": "case",
@@ -363,38 +363,38 @@ class EntryDashboardSerializerTest(DashboardsTestCase):
         inaccessible_cases = Entity.objects.filter(id=self.case2.id)
 
         expected_json = {
-            "id": self.entry1.id,
+            "id": str(self.entry1.id),
             "name": "Entry1",
             "description": "Description1",
             "type": "entry",
             "subtype": "ip",
             "notes": [
                 {
-                    "id": self.note1.id,
+                    "id": str(self.note1.id),
                     "content": "Note1",
                     "publishable": False,
                     "timestamp": "2024-01-01T00:00:00Z",
                     "entities": [
                         {
-                            "id": self.case1.id,
+                            "id": str(self.case1.id),
                             "name": "Case1",
                             "type": "case",
                             "subtype": "",
                         },
                         {
-                            "id": self.actor1.id,
+                            "id": str(self.actor1.id),
                             "name": "Actor1",
                             "type": "actor",
                             "subtype": "",
                         },
                         {
-                            "id": self.metadata1.id,
+                            "id": str(self.metadata1.id),
                             "name": "Metadata1",
                             "type": "metadata",
                             "subtype": "",
                         },
                         {
-                            "id": self.entry1.id,
+                            "id": str(self.entry1.id),
                             "name": "Entry1",
                             "type": "entry",
                             "subtype": "ip",
@@ -404,7 +404,7 @@ class EntryDashboardSerializerTest(DashboardsTestCase):
             ],
             "cases": [
                 {
-                    "id": self.case1.id,
+                    "id": str(self.case1.id),
                     "name": "Case1",
                     "description": "Description1",
                     "type": "case",
@@ -413,7 +413,7 @@ class EntryDashboardSerializerTest(DashboardsTestCase):
             ],
             "inaccessible_cases": [
                 {
-                    "id": self.case2.id,
+                    "id": str(self.case2.id),
                     "name": "Some Case",
                     "description": "Some Description",
                     "type": "case",

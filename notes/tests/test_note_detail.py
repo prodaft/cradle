@@ -10,6 +10,7 @@ from access.models import Access
 from access.enums import AccessType
 import io
 from .utils import NotesTestCase
+import uuid
 
 
 def bytes_to_json(data):
@@ -35,7 +36,7 @@ class GetNoteTest(NotesTestCase):
 
     def test_get_note_not_authenticated(self):
         response = self.client.get(
-            reverse("note_detail", kwargs={"note_id": 2}),
+            reverse("note_detail", kwargs={"note_id": uuid.uuid4()}),
         )
 
         with self.subTest("Check correct response code."):
@@ -46,7 +47,7 @@ class GetNoteTest(NotesTestCase):
         mock_get.side_effect = Note.DoesNotExist
 
         response = self.client.get(
-            reverse("note_detail", kwargs={"note_id": 2}),
+            reverse("note_detail", kwargs={"note_id": uuid.uuid4()}),
             **self.headers,
         )
 
@@ -56,11 +57,12 @@ class GetNoteTest(NotesTestCase):
     @patch("notes.models.Note.objects.get")
     @patch("access.models.Access.objects.has_access_to_cases")
     def test_get_note_no_access(self, mock_access, mock_get):
-        note = Note(id=1)
+        uuid1 = uuid.uuid4()
+        note = Note(uuid1)
         mock_get.return_value = note
         mock_access.return_value = False
         response = self.client.get(
-            reverse("note_detail", kwargs={"note_id": 1}), **self.headers
+            reverse("note_detail", kwargs={"note_id": uuid1}), **self.headers
         )
 
         with self.subTest("Check correct response code."):
@@ -69,18 +71,19 @@ class GetNoteTest(NotesTestCase):
     @patch("notes.models.Note.objects.get")
     @patch("access.models.Access.objects.has_access_to_cases")
     def test_get_note_successful(self, mock_access, mock_get):
-        note = Note(id=1)
+        uuid1 = uuid.uuid4()
+        note = Note(id=uuid1)
         mock_get.return_value = note
         mock_access.return_value = True
         response = self.client.get(
-            reverse("note_detail", kwargs={"note_id": 1}), **self.headers
+            reverse("note_detail", kwargs={"note_id": uuid1}), **self.headers
         )
 
         with self.subTest("Check correct response code."):
             self.assertEqual(response.status_code, 200)
 
         with self.subTest("Correct note"):
-            self.assertEqual(bytes_to_json(response.content)["id"], 1)
+            self.assertEqual(bytes_to_json(response.content)["id"], str(uuid1))
 
 
 class DeleteNoteTest(NotesTestCase):
@@ -138,7 +141,7 @@ class DeleteNoteTest(NotesTestCase):
 
     def test_delete_note_not_found(self):
         response = self.client.delete(
-            reverse("note_detail", kwargs={"note_id": self.notes[1].id + 1}),
+            reverse("note_detail", kwargs={"note_id": uuid.uuid4()}),
             **self.headers,
         )
 

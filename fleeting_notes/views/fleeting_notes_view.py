@@ -15,6 +15,8 @@ from fleeting_notes.serializers import (
 from user.models import CradleUser
 from logs.decorators import log_failed_responses
 
+from uuid import UUID
+
 
 class FleetingNotesList(APIView):
 
@@ -74,7 +76,7 @@ class FleetingNotesDetail(APIView):
     permission_classes = [IsAuthenticated]
 
     @log_failed_responses
-    def get(self, request: Request, pk: int) -> Response:
+    def get(self, request: Request, pk: UUID) -> Response:
         """
         Get a FleetingNote entity by its primary key.
         Only the owner of the FleetingNote entity can access it.
@@ -105,7 +107,7 @@ class FleetingNotesDetail(APIView):
         return Response(serializer.data)
 
     @log_failed_responses
-    def put(self, request: Request, pk: int) -> Response:
+    def put(self, request: Request, pk: UUID) -> Response:
         """
         Update a FleetingNote entity by its primary key.
         Only the owner of the FleetingNote entity can update it.
@@ -146,7 +148,7 @@ class FleetingNotesDetail(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @log_failed_responses
-    def delete(self, request: Request, pk: int) -> Response:
+    def delete(self, request: Request, pk: UUID) -> Response:
         """
         Delete a FleetingNote entity by its primary key.
         Only the owner of the FleetingNote entity can delete it.
