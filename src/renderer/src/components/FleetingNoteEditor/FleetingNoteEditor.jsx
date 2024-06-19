@@ -81,7 +81,7 @@ export default function FleetingNoteEditor() {
 
     const isValidContent = () => {
         if (!markdownContentRef.current) {
-            setAlert({ show: true, message: 'Cannot save empty note', color: 'red' });
+            setAlert({ show: true, message: 'Cannot save empty note.', color: 'red' });
             return false;
         }
         return true;

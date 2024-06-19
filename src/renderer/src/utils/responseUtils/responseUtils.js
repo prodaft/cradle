@@ -10,7 +10,6 @@
  */
 const displayError = (setAlert) => {
     return (err) => {
-        const color = 'red';
         let message = 'An unknown error occurred.';
 
         if (err.response && err.response.data && err.response.data.detail) {
@@ -19,7 +18,7 @@ const displayError = (setAlert) => {
             message = err.message;
         }
 
-        setAlert({ show: true, message, color });
+        setAlert({ show: true, message, color: 'red' });
     };
 };
 
