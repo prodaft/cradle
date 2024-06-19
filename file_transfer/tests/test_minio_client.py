@@ -8,6 +8,7 @@ class TestMinioClient(FileTransferTestCase):
     def setUp(self):
         super().setUp()
         self.mock_minio_create()
+        self.bucket_name = "user"
 
     def test_is_singleton(self):
         if hasattr(MinioClient, "_instance"):
