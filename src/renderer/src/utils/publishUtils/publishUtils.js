@@ -52,9 +52,8 @@ const createMarkdownReportFromJson = (data) => {
     if (notes) {
         markdown += '## Notes\n\n';
         notes.forEach((note) => {
-            prependLinks(note.content, note.files || []);
             markdown += `### ${new Date(note.timestamp).toLocaleString()}\n\n`;
-            markdown += `${note.content}\n\n---\n\n`;
+            markdown += `${prependLinks(note.content, note.files || [])}\n\n---\n\n`;
         });
     }
 
