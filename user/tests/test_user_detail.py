@@ -2,6 +2,7 @@ from django.urls import reverse
 from ..models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 from .utils import UserTestCase
+import uuid
 
 
 class DeleteUserTest(UserTestCase):
@@ -30,7 +31,8 @@ class DeleteUserTest(UserTestCase):
 
     def test_delete_user_not_found(self):
         response = self.client.delete(
-            reverse("user_detail", kwargs={"user_id": 0}), **self.headers_admin
+            reverse("user_detail", kwargs={"user_id": uuid.uuid4()}),
+            **self.headers_admin,
         )
 
         self.assertEqual(response.status_code, 404)

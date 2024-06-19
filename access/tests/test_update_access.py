@@ -9,6 +9,8 @@ from ..enums import AccessType
 from .utils import AccessTestCase
 from notifications.models import MessageNotification
 
+import uuid
+
 
 class UpdateAccessTest(AccessTestCase):
 
@@ -63,7 +65,10 @@ class UpdateAccessTest(AccessTestCase):
 
     def test_update_access_user_not_found(self):
         response = self.client.put(
-            reverse("update_access", kwargs={"user_id": 0, "case_id": self.case.id}),
+            reverse(
+                "update_access",
+                kwargs={"user_id": uuid.uuid4(), "case_id": self.case.id},
+            ),
             {"access_type": "none"},
             content_type="application/json",
             **self.headers[0],
@@ -75,7 +80,8 @@ class UpdateAccessTest(AccessTestCase):
     def test_update_access_case_not_found(self):
         response = self.client.put(
             reverse(
-                "update_access", kwargs={"user_id": self.users[2].id, "case_id": 0}
+                "update_access",
+                kwargs={"user_id": self.users[2].id, "case_id": uuid.uuid4()},
             ),
             {"access_type": "none"},
             content_type="application/json",

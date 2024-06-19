@@ -8,9 +8,13 @@ from .managers import (
     EntityManager,
 )
 from .enums import EntityType, EntitySubtype
+import uuid
 
 
 class Entity(models.Model):
+    id: models.UUIDField = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
     name: models.CharField = models.CharField()
     description: models.TextField = models.TextField(null=True, blank=True)
     type: models.CharField = models.CharField(max_length=20, choices=EntityType.choices)

@@ -35,7 +35,7 @@ class NoteDashboardSerializer(serializers.ModelSerializer):
 
 
 class CaseDashboardSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+    id = serializers.UUIDField()
     name = serializers.CharField()
     description = serializers.CharField()
     type = serializers.CharField()
@@ -68,7 +68,7 @@ class CaseDashboardSerializer(serializers.Serializer):
 
 
 class ActorDashboardSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+    id = serializers.UUIDField()
     name = serializers.CharField()
     description = serializers.CharField()
     type = serializers.CharField()
@@ -100,7 +100,7 @@ class ActorDashboardSerializer(serializers.Serializer):
 
 
 class EntryDashboardSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+    id = serializers.UUIDField()
     name = serializers.CharField()
     description = serializers.CharField()
     type = serializers.CharField()

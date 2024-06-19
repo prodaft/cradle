@@ -8,7 +8,7 @@ urlpatterns = [
     path("refresh/", TokenRefreshLogView.as_view(), name="user_refresh"),
     path("", user_view.UserList.as_view(), name="user_list"),
     path(
-        "<int:user_id>/",
+        "<uuid:user_id>/",
         user_view.UserDetail.as_view(),
         name="user_detail",
     ),
