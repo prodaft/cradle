@@ -44,7 +44,7 @@ const prependLinks = (mdContent, fileData) => {
         .map((file) => {
             const apiDownloadPath = createDownloadPath(file);
 
-            return `[${file.minio_file_name}]: ${apiDownloadPath} "${file.name}"\n\n`;
+            return `[${file.minio_file_name}]: ${apiDownloadPath} "${file.file_name}"\n\n`;
         })
         .join('');
 
@@ -106,6 +106,8 @@ const getLinkNode = (context) => {
 };
 
 /**
+ * The custom syntax used to reference links to dashboards in the editor. The syntax is `[[type:name|alias]]`.
+ * This object holds information about where this link is located in the text.
  * @typedef {Object} Link
  * @property {number} from - the starting position of the link
  * @property {number} to - the ending position of the link
