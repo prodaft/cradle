@@ -20,10 +20,12 @@ class GetNoteTest(NotesTestCase):
     def setUp(self):
         super().setUp()
 
-        self.user = CradleUser.objects.create_user(username="user", password="user")
+        self.user = CradleUser.objects.create_user(
+            username="user", password="user", email="alabala@gmail.com"
+        )
         self.user_token = str(AccessToken.for_user(self.user))
         self.not_owner = CradleUser.objects.create_user(
-            username="not_owner", password="pass"
+            username="not_owner", password="pass", email="b@c.d"
         )
         self.not_owner_token = AccessToken.for_user(self.not_owner)
         self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
@@ -81,15 +83,17 @@ class GetNoteTest(NotesTestCase):
             self.assertEqual(bytes_to_json(response.content)["id"], 1)
 
 
-class CreateNoteTest(NotesTestCase):
+class DeleteNoteTest(NotesTestCase):
 
     def setUp(self):
         super().setUp()
 
-        self.user = CradleUser.objects.create_user(username="user", password="user")
+        self.user = CradleUser.objects.create_user(
+            username="user", password="user", email="alabala@gmail.com"
+        )
         self.user_token = str(AccessToken.for_user(self.user))
         self.not_owner = CradleUser.objects.create_user(
-            username="not_owner", password="pass"
+            username="not_owner", password="pass", email="b@c.d"
         )
         self.not_owner_token = str(AccessToken.for_user(self.not_owner))
         self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}

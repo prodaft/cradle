@@ -23,10 +23,10 @@ class QueryListTest(QueryTestCase):
 
         self.client = APIClient()
         self.admin_user = CradleUser.objects.create_superuser(
-            username="admin", password="password"
+            username="admin", password="password", email="alabala@gmail.com"
         )
         self.normal_user = CradleUser.objects.create_user(
-            username="user", password="password"
+            username="user", password="password", email="b@c.d"
         )
         self.token_admin = str(AccessToken.for_user(self.admin_user))
         self.token_normal = str(AccessToken.for_user(self.normal_user))

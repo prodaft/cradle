@@ -39,7 +39,7 @@ paths:
       tags:
         - User
       summary: Create account
-      description: Allows a user to create a new account, by sending a request with their username and password. This will be checked for validity and, if accepted, this new account will be added to the database, allowing the user to connect using the same credentials in the future
+      description: Allows a user to create a new account, by sending a request with their username, password and email. This will be checked for validity and, if accepted, this new account will be added to the database, allowing the user to connect using the same credentials in the future
       operationId: createAccount
       requestBody:
         required: true
@@ -53,11 +53,14 @@ paths:
               properties:
                 username:
                   type: string
+                email:
+                  type: string
+                  format: email
                 password:
                   type: string
       responses:
         '200':
-          description: Operation was successful.
+          description: If the request was successful or the email is valid, but already exists.
         '400':
           description: The request does not match the specified format.
         '409':

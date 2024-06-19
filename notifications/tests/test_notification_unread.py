@@ -14,7 +14,10 @@ class NotificationListTest(NotificationsTestCase):
         self.client = APIClient()
 
         self.user = CradleUser.objects.create_user(
-            username="user", password="password", is_staff=False
+            username="user",
+            password="password",
+            is_staff=False,
+            email="alabala@gmail.com",
         )
         self.case = Entity.objects.create(name="Case", type=EntityType.CASE)
 

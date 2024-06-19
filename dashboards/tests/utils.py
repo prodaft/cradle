@@ -11,13 +11,22 @@ from access.models import Access, AccessType
 class DashboardsTestCase(TestCase):
     def create_users(self):
         self.admin_user = CradleUser.objects.create_superuser(
-            username="admin", password="password", is_staff=True
+            username="admin",
+            password="password",
+            is_staff=True,
+            email="alabala@gmail.com",
         )
         self.user1 = CradleUser.objects.create_user(
-            username="user1", password="password", is_staff=False
+            username="user1",
+            password="password",
+            is_staff=False,
+            email="b@c.d",
         )
         self.user2 = CradleUser.objects.create_user(
-            username="user2", password="password", is_staff=False
+            username="user2",
+            password="password",
+            is_staff=False,
+            email="c@d.e",
         )
 
     def create_tokens(self):
