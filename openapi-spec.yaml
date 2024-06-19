@@ -151,7 +151,41 @@ paths:
         '401':
           description: >
             The credentials given are invalid. 
-            
+
+  /users/refresh/:
+    post:
+      tags: 
+        - User
+      summary: Refresh JWT Token
+      description: This endpoint allows users to refresh their JWT tokens using a refresh token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh:
+                  type: string
+                  description: The refresh token issued during login.
+              required:
+                - refresh
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access:
+                    type: string
+                    description: The new access token
+        '400':
+          description: The request does not match the specified format.
+        '401':
+          description: The refresh token is invalid.
+
 
   /notifications/:
     get:
