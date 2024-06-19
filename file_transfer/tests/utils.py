@@ -17,7 +17,6 @@ class FileTransferTestCase(TestCase):
         self.error_logger_patcher.stop()
 
     def init_minio_constants(self):
-        self.bucket_name = "user"
         self.file_name = "evidence.png"
         self.expiry_time = timedelta(minutes=5)
         self.minio_file_name = "aad5cae6-5737-409d-8ce2-5f116ed5e2de-evidence.png"

@@ -9,7 +9,7 @@ class CradleUser(AbstractUser):
     email = models.EmailField(unique=True)
 
     USERNAME_FIELD = "username"
-    REQUIRED_FIELDS = ["password"]
+    REQUIRED_FIELDS = ["password", "email"]
     EMAIL_FIELD = "email"
     # incompatible types. We do not have a fix for this yet.
     objects: CradleUserManager = CradleUserManager()  # type: ignore

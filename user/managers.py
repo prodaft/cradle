@@ -31,7 +31,7 @@ class CradleUserManager(BaseUserManager):
 
         with transaction.atomic():
             user.save(using=self._db)
-            MinioClient().create_user_bucket(user.username)
+            MinioClient().create_user_bucket(str(user.id))
 
         return user
 
