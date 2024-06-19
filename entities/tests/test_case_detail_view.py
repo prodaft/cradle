@@ -9,6 +9,8 @@ from .utils import EntitiesTestCase
 from ..models import Entity
 from ..enums import EntityType
 
+import uuid
+
 
 def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
@@ -71,12 +73,12 @@ class DeleteCaseDetailsTest(EntitiesTestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_delete_case_admin_wrong_id(self):
-        case = Entity.objects.create(
+        Entity.objects.create(
             name="Case1", description="Description1", type=EntityType.CASE
         )
 
         response = self.client.delete(
-            reverse("case_detail", kwargs={"case_id": case.pk + 1}),
+            reverse("case_detail", kwargs={"case_id": uuid.uuid4()}),
             **self.headers_admin,
         )
 

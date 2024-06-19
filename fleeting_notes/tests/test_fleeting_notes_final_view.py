@@ -7,6 +7,8 @@ from access.enums import AccessType
 from notes.models import Note
 from ..models import FleetingNote
 
+import uuid
+
 
 class FleetingNotesFinalTest(FleetingNotesTestCase):
 
@@ -17,7 +19,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
 
     def test_fleeting_note_final_does_not_exist(self):
         response = self.client.put(
-            reverse("fleeting_notes_final", kwargs={"pk": self.note_user.pk + 10}),
+            reverse("fleeting_notes_final", kwargs={"pk": uuid.uuid4()}),
             **self.headers_normal,
         )
 

@@ -9,6 +9,7 @@ from entities.enums import EntityType
 from access.models import Access
 from access.enums import AccessType
 import io
+import uuid
 
 
 def bytes_to_json(data):
@@ -45,14 +46,15 @@ class NotePublishableListTest(NotesTestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_get_note_publish_not_unique(self):
-        query_params = {"note_ids": [1, 1, 2]}
+        uuid1 = uuid.uuid4()
+        query_params = {"note_ids": [uuid1, uuid1, uuid.uuid4()]}
         response = self.client.get(
             reverse("note_publish_list"), query_params, **self.headers
         )
         self.assertEqual(response.status_code, 400)
 
     def test_get_note_publish_not_in_database(self):
-        query_params = {"note_ids": [self.note3.pk + 2]}
+        query_params = {"note_ids": [uuid.uuid4()]}
         response = self.client.get(
             reverse("note_publish_list"), query_params, **self.headers
         )
@@ -92,4 +94,4 @@ class NotePublishableListTest(NotesTestCase):
             self.assertEqual(len(report["notes"]), 2)
         with self.subTest("Test cases"):
             self.assertEqual(len(report["cases"]), 1)
-            self.assertEqual(report["cases"][0]["id"], self.case1.pk)
+            self.assertEqual(report["cases"][0]["id"], str(self.case1.pk))

@@ -15,6 +15,8 @@ from logs.decorators import log_failed_responses
 from entities.enums import EntityType
 from access.models import Access
 
+from uuid import UUID
+
 
 class NoteList(APIView):
 
@@ -60,7 +62,7 @@ class NoteDetail(APIView):
     permission_classes = [IsAuthenticated]
 
     @log_failed_responses
-    def get(self, request: Request, note_id: int) -> Response:
+    def get(self, request: Request, note_id: UUID) -> Response:
         """Allow a user to get an already existing note, by specifying
         its id. A user should be able to retrieve the id only if he has
         READ access an all the cases it references.
@@ -93,7 +95,7 @@ class NoteDetail(APIView):
         return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
 
     @log_failed_responses
-    def delete(self, request: Request, note_id: int) -> Response:
+    def delete(self, request: Request, note_id: UUID) -> Response:
         """Allow a user to delete an already existing note,
         by specifying its id.
 

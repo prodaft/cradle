@@ -22,6 +22,8 @@ from access.enums import AccessType
 
 from typing import cast
 
+from uuid import UUID
+
 
 class NotePublishDetail(APIView):
 
@@ -29,7 +31,7 @@ class NotePublishDetail(APIView):
     permission_classes = [IsAuthenticated]
 
     @log_failed_responses
-    def put(self, request: Request, note_id: int) -> Response:
+    def put(self, request: Request, note_id: UUID) -> Response:
         """Allow a user to change a Note's publishable status,
         from publishable to not publishable or vice versa.
 

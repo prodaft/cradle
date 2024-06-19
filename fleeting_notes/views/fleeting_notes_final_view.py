@@ -12,6 +12,8 @@ from django.db import transaction
 from django.http import QueryDict
 from logs.decorators import log_failed_responses
 
+from uuid import UUID
+
 
 class FleetingNotesFinal(APIView):
 
@@ -19,7 +21,7 @@ class FleetingNotesFinal(APIView):
     permission_classes = [IsAuthenticated]
 
     @log_failed_responses
-    def put(self, request: Request, pk: int) -> Response:
+    def put(self, request: Request, pk: UUID) -> Response:
         """Allow a user to save the contents of a fleeting note as a normal
         note. The user must be the owner of the Fleeting Note. Optionally
         the user can specify if the note is publishable. If not specified,

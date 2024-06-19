@@ -7,6 +7,8 @@ from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 from django.urls import reverse
 
+from uuid import UUID
+
 
 class NotificationDetailTest(NotificationsTestCase):
     def setUp(self):
@@ -56,7 +58,7 @@ class NotificationDetailTest(NotificationsTestCase):
 
     def test_update_notifications_not_found(self):
         response = self.client.put(
-            reverse("notification_detail", kwargs={"notification_id": 0}),
+            reverse("notification_detail", kwargs={"notification_id": UUID(int=0)}),
             {"is_marked_unread": True},
             **self.headers,
         )

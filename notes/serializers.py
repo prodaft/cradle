@@ -96,9 +96,7 @@ class NoteReportSerializer(serializers.ModelSerializer):
 
 
 class ReportQuerySerializer(serializers.Serializer):
-    note_ids = serializers.ListField(
-        child=serializers.IntegerField(), allow_empty=False
-    )
+    note_ids = serializers.ListField(child=serializers.UUIDField(), allow_empty=False)
 
     def __check_unique(self, value) -> None:
         if len(set(value)) != len(value):
