@@ -607,7 +607,7 @@ paths:
       tags:
         - Note
       summary: Create a new Note
-      description: Allow a user to create a new note, by sending the text itself. This text should be validated to meet the requirements (i.e. reference at least two Entities, one of which must be a Case).
+      description: Allow a user to create a new note, by sending the text itself. This text should be validated to meet the requirements (i.e. reference at least two Entities, one of which must be a Case). Moreover, the client should send an array of file references that correspond to the files uploaded to MinIO that are linked to this note.
       operationId: createNote
       requestBody:
         content:
@@ -620,8 +620,7 @@ paths:
                 files:
                   type: array
                   items:
-                    type: string
-                    format: binary
+                    $ref: '#/components/schemas/FileReference'
       responses:
         '200': 
           description: Note was created. 
@@ -630,11 +629,11 @@ paths:
               schema: 
                $ref: '#/components/schemas/Note'
         '400': 
-          description: Note does not reference at least one Case and two Entities. 
+          description: Note does not reference at least one Case and two Entities. / The bucket name of the file reference is incorrect.
         '401': 
           description: User is not authenticated.
         '404': 
-          description: User does not have Read-Write access to a referenced Case or not all Cases exist.
+          description: User does not have Read-Write access to a referenced Case or not all Cases exist. / There exists no file at the specified path.
 
   /notes/{noteId}/publishable:
     put:
@@ -888,6 +887,10 @@ paths:
               properties:
                 content:
                   type: string
+                files:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/FileReference'
       responses:
         '200': 
           description: Fleeting note was created. 
@@ -896,9 +899,11 @@ paths:
               schema: 
                 $ref: "#/components/schemas/FleetingNote"
         '400': 
-          description: The request does not respect the specified format. 
+          description: The request does not respect the specified format. / The bucket name of the file reference is incorrect.
         '401':
           description: User is not authenticated.
+        '404':
+          description: There exists no file at the specified path.
         
   /fleeting-notes/{fleetingNoteId}:
     get:
@@ -975,13 +980,19 @@ paths:
               properties:
                 content:
                   type: string
+                files:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/FileReference'
       responses:
         '200':  
           description: Fleeting Note was updated.
+        '400':
+          description: The bucket name of the file reference is incorrect.
         '401': 
           description: User is not authenticated.
         '404':
-          description: Fleeting Note not found or not owned by user.
+          description: Fleeting Note not found or not owned by user. / There exists no file at the specified path.
           
   /fleeting-notes/{fleetingNoteId}/final/:
     put:
@@ -1019,11 +1030,11 @@ paths:
               schema: 
                $ref: '#/components/schemas/Note'
         '400': 
-          description: Note does not reference at least one Case and two Entities. 
+          description: Note does not reference at least one Case and two Entities. / The bucket name of the file reference is incorrect.
         '401': 
           description: User is not authenticated. 
         '404': 
-          description: User does not have Read-Write access to a referenced Case or not all Cases and Actors exist / The Fleeting Note does not exist or was not written by the user 
+          description: User does not have Read-Write access to a referenced Case or not all Cases and Actors exist / The Fleeting Note does not exist or was not written by the user / There exists no file at the specified path.
     
   
   /query:
@@ -1350,6 +1361,10 @@ components:
                 type: string
               subtype:
                 type: string
+        files:
+          type: array
+          items: 
+            $ref: "#/components/schemas/FileReference"
     
     CaseAccess:
       type: object
@@ -1379,6 +1394,10 @@ components:
         last_edited:
           type: string
           format: date-time
+        files:
+          type: array
+          items: 
+            $ref: "#/components/schemas/FileReference"
 
     MessageNotification: 
       type: object
@@ -1480,6 +1499,19 @@ components:
           items: 
             type: object
             $ref: "#/components/schemas/Link"
+
+    FileReference:
+      type: object
+      properties:
+        minio_file_name:
+          type: string
+          example: 'eba72b27-14fa-4716-832b-dffd1f9b4d96-evidence.png'
+        file_name:
+          type: string
+          example: evidence.png
+        bucket_name: 
+          type: string
+          example: '9d32d873-4587-46fa-8f15-577ca0479d33'
 
 security:
   - cookieAuth: []

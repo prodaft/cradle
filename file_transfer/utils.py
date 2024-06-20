@@ -80,3 +80,26 @@ class MinioClient:
             )
         except Exception:
             raise MinioObjectNotFound()
+
+    def file_exists_at_path(self, bucket_name: str, minio_file_name: str) -> bool:
+        """Checks whether the file with name minio_file_name exists in the bucket
+        called bucket_name on the MinIO instance.
+
+        Args:
+            bucket_name: The name of the bucket where the check is performed
+            minio_file_name: The path to the object inside the bucket the method
+                checks for
+
+        Returns:
+            True: If there exists a file at the specified location
+            False: If there does not exist a file at the specified location
+        """
+        assert self.client is not None  # required by mypy
+
+        try:
+            self.client.stat_object(
+                bucket_name=bucket_name, object_name=minio_file_name
+            )
+            return True
+        except Exception:
+            return False
