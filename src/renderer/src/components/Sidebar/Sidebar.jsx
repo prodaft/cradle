@@ -10,8 +10,7 @@ import {
 import SidebarItem from '../SidebarItem/SidebarItem';
 import SidebarSection from '../SidebarSection/SidebarSection';
 import { useAuth } from '../../hooks/useAuth/useAuth';
-import Logo from '../Logo/Logo';
-import { useNavigate } from 'react-router-dom';
+import { HomeAltSlimHoriz } from 'iconoir-react/regular';
 
 /**
  * Sidebar component - the main sidebar for the application.
@@ -22,6 +21,7 @@ import { useNavigate } from 'react-router-dom';
  * @param handleAdminPanel - handler for the admin panel action
  * @param newNotificationsNumber - the number of new notifications
  * @param handleNotifications - handler for the notifications action
+ * @param handleWelcomePage - handler for navigating to the welcome page
  * @returns {Sidebar}
  * @constructor
  */
@@ -32,15 +32,21 @@ export default function Sidebar({
     handleNewNote,
     unreadNotificationsCount,
     handleNotifications,
+    handleWelcomePage,
 }) {
     const auth = useAuth();
-    const navigate = useNavigate();
+
     return (
         <div className='h-full sticky top-0' data-testid='sidebar-test'>
             <aside className='sidebar !h-full text-gray-400 w-16 hover:w-48 transition-all duration-300 overflow-hidden group/sidebar'>
                 <div className='flex flex-col h-full justify-between'>
                     <div className='flex flex-col'>
                         <SidebarSection sectionType='header' height='fit' justify='start'>
+                            <SidebarItem
+                                handleClick={handleWelcomePage}
+                                icon={<HomeAltSlimHoriz />}
+                                text='Home'
+                            />
                             <SidebarItem
                                 handleClick={handleNewNote}
                                 icon={<Edit />}
@@ -51,20 +57,12 @@ export default function Sidebar({
                                 icon={<Network />}
                                 text='Graph View'
                             />
+                            <SidebarItem
+                                handleClick={handleNotifications}
+                                icon={unreadNotificationsCount > 0 ? <BellNotification /> : <Bell />}
+                                text={`${unreadNotificationsCount} Notifications`}
+                            />
                         </SidebarSection>
-                        {unreadNotificationsCount > 0 ? (
-                            <SidebarItem
-                                handleClick={handleNotifications}
-                                icon={<BellNotification />}
-                                text={`${unreadNotificationsCount} Notifications`}
-                            />
-                        ) : (
-                            <SidebarItem
-                                handleClick={handleNotifications}
-                                icon={<Bell />}
-                                text={`${unreadNotificationsCount} Notifications`}
-                            />
-                        )}
                         <SidebarSection type='content' height='fit' justify='start'>
                             {auth.isAdmin && (
                                 <SidebarItem
