@@ -41,7 +41,11 @@ export default function Sidebar({
             <aside className='sidebar !h-full text-gray-400 w-16 hover:w-48 transition-all duration-300 overflow-hidden group/sidebar'>
                 <div className='flex flex-col h-full justify-between'>
                     <div className='flex flex-col'>
-                        <SidebarSection sectionType='header' height='fit' justify='start'>
+                        <SidebarSection
+                            sectionType='header'
+                            height='fit'
+                            justify='start'
+                        >
                             <SidebarItem
                                 handleClick={handleWelcomePage}
                                 icon={<HomeAltSlimHoriz />}
@@ -59,7 +63,13 @@ export default function Sidebar({
                             />
                             <SidebarItem
                                 handleClick={handleNotifications}
-                                icon={unreadNotificationsCount > 0 ? <BellNotification /> : <Bell />}
+                                icon={
+                                    unreadNotificationsCount > 0 ? (
+                                        <BellNotification />
+                                    ) : (
+                                        <Bell />
+                                    )
+                                }
                                 text={`${unreadNotificationsCount} Notifications`}
                             />
                         </SidebarSection>

@@ -6,13 +6,16 @@ import useChangeFlexDirectionBySize from '../../hooks/useChangeFlexDirectionBySi
 import { getStatistics } from '../../services/statisticsService/statisticsService';
 import { useAuth } from '../../hooks/useAuth/useAuth';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { useNavigate } from 'react-router-dom';
-import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 
+/**
+ * The Welcome component is the landing page of the application.
+ * It displays a welcome message and some statistics about the actors, cases, and notes in the system.
+ *
+ * @returns {Welcome}
+ */
 export default function Welcome() {
     const auth = useAuth();
-    const navigate = useNavigate();
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [actors, setActors] = useState([]);
     const [cases, setCases] = useState([]);
@@ -41,7 +44,9 @@ export default function Welcome() {
                         <Logo width='200px' height='auto' />
                     </div>
                     <span className='flex flex-col'>
-                        <h1 className='text-zinc-300 text-6xl text-center md:text-left'>CRADLE</h1>
+                        <h1 className='text-zinc-300 text-6xl text-center md:text-left'>
+                            CRADLE
+                        </h1>
                         <h3 className='text-zinc-300 text-2xl text-center md:text-left'>
                             A Hub For Managing Cyber Threat Intelligence Research Output
                         </h3>
@@ -49,11 +54,18 @@ export default function Welcome() {
                 </div>
 
                 <div className='flex flex-col w-[80%] mx-auto'>
-                    <div className={`flex ${flexDirection} justify-between text-zinc-300`} ref={entityListsDiv}>
-                        <div className={`${entityCardWrapperWidth} flex justify-center mb-8`}>
+                    <div
+                        className={`flex ${flexDirection} justify-between text-zinc-300`}
+                        ref={entityListsDiv}
+                    >
+                        <div
+                            className={`${entityCardWrapperWidth} flex justify-center mb-8`}
+                        >
                             <EntityListCard title='Recent Actors' items={actors} />
                         </div>
-                        <div className={`${entityCardWrapperWidth} flex justify-center mb-8`}>
+                        <div
+                            className={`${entityCardWrapperWidth} flex justify-center mb-8`}
+                        >
                             <EntityListCard title='Recent Cases' items={cases} />
                         </div>
                     </div>
@@ -65,12 +77,13 @@ export default function Welcome() {
                 <footer className='pb-5 mt-auto '>
                     <div className='container mx-auto flex flex-col items-center'>
                         <p className='mt-6 !text-sm !font-normal text-zinc-500'>
-                            <a href='https://prodaft.com'>Copyright &copy; 2024 PRODAFT</a>
+                            <a href='https://prodaft.com'>
+                                Copyright &copy; 2024 PRODAFT
+                            </a>
                         </p>
                     </div>
                 </footer>
             </div>
         </>
-
     );
 }

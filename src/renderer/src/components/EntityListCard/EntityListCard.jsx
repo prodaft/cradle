@@ -1,7 +1,18 @@
-import { useNavigate } from "react-router-dom";
-import { createDashboardLink } from "../../utils/dashboardUtils/dashboardUtils";
+import { useNavigate } from 'react-router-dom';
+import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 
-export default function ListCard({ title, items = [] }) {
+/**
+ * This component is a card component that displays a list of items.
+ * Each item in the list is displayed as a clickable card.
+ * When an item is clicked, the user is navigated to the corresponding dashboard.
+ * It is used to display lists of entities such as actors and cases.
+ *
+ * @param {Object} props - The props of the component.
+ * @param {string} props.title - The title of the list.
+ * @param {Object[]} props.items - The list of items to display.
+ * @returns {ListCard}
+ */
+export default function EntityListCard({ title, items = [] }) {
     const navigate = useNavigate();
     return (
         <div className='card bg-gray-2 overflow-auto !max-w-none'>
@@ -20,6 +31,6 @@ export default function ListCard({ title, items = [] }) {
                     );
                 })}
             </div>
-        </div >
+        </div>
     );
 }
