@@ -1,7 +1,6 @@
 import React from 'react';
 import Logo from '../Logo/Logo';
-import EntityListCard from '../EntityListCard/EntityListCard';
-import NoteListCard from '../NoteListCard/NoteListCard';
+import ListCard from '../ListCard/ListCard';
 
 export default function Welcome() {
     // TODO useEffect to fetch statistics
@@ -29,30 +28,30 @@ export default function Welcome() {
                 </div>
                 <span className='flex flex-col items-center justify-center'>
                     <h1 className='text-zinc-300 text-6xl'>CRADLE</h1>
-                    <h3 className='text-zinc-300 text-2xl'>
+                    <h3 className='text-zinc-300 text-2xl text-center'>
                         A Hub For Managing Cyber Threat Intelligence Research Output
                     </h3>
                 </span>
             </div>
 
             <div className='flex flex-col w-[80%] mx-auto'>
-                <div className='flex flex-row justify-between text-zinc-300 mb-8 w-full'>
-                    <div className='w-[45%] flex justify-center'>
-                        <EntityListCard title='Top Actors' entities={actors} />
+                <div className='flex flex-col md:flex-row justify-between text-zinc-300'>
+                    <div className='w-full md:w-[45%] flex justify-center mb-8'>
+                        <ListCard title='Top Actors' items={actors} />
                     </div>
-                    <div className='w-[45%] flex justify-center'>
-                        <EntityListCard title='Top Cases' entities={cases} />
+                    <div className='w-full md:w-[45%] flex justify-center mb-8'>
+                        <ListCard title='Top Cases' items={cases} />
                     </div>
                 </div>
-                <div className='w-full flex justify-center'>
-                    <NoteListCard title='Recent Notes' notes={notes} />
+                <div className='w-full flex justify-center mb-8'>
+                    <ListCard title='Recent Notes' items={notes} />
                 </div>
             </div>
 
             <footer className='pb-5 mt-auto '>
                 <div className='container mx-auto flex flex-col items-center'>
                     <p className='mt-6 !text-sm !font-normal text-zinc-500'>
-                        Copyright &copy; 2024 <a href='https://prodaft.com'>PRODAFT</a>
+                        <a href='https://prodaft.com'>Copyright &copy; 2024 PRODAFT</a>
                     </p>
                 </div>
             </footer>

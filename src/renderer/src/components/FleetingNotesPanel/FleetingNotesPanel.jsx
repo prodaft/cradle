@@ -40,11 +40,11 @@ export default function FleetingNotesPanel({
                 data-testid='fleeting-notes-panel'
             >
                 <div
-                    className='h-fit w-full flex flex-row justify-between cursor-pointer'
+                    className='h-fit w-full flex flex-row justify-end cursor-pointer'
                     onClick={handleFleetingNotesButton}
                     data-testid='close-fleeting-notes'
                 >
-                    <Notes className='text-zinc-500' width='1.5em' height='1.5em' />
+                    {/* <Notes className='text-zinc-500' width='1.5em' height='1.5em' /> */}
                     <Xmark className='text-zinc-500' width='1.5em' height='1.5em' />
                 </div>
                 <div className='w-full h-full overflow-y-auto'>
