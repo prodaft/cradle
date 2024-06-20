@@ -14,14 +14,17 @@ from entities.serializers import (
     MetadataResponseSerializer,
 )
 from typing import Any
+from file_transfer.serializers import FileReferenceSerializer
+from file_transfer.models import FileReference
 
 
 class NoteCreateSerializer(serializers.ModelSerializer):
-    content = serializers.CharField(required=False)
+    content = serializers.CharField(required=False, allow_blank=True)
+    files = FileReferenceSerializer(required=False, many=True)
 
     class Meta:
         model = Note
-        fields = ["publishable", "content"]
+        fields = ["publishable", "content", "files"]
 
     def validate(self, data):
         """First checks whether the client sent the content of the field
@@ -45,7 +48,6 @@ class NoteCreateSerializer(serializers.ModelSerializer):
             NoAccessToEntitiesException: if the user does not have access to the
             referenced cases.
         """
-
         if "content" not in data or not data["content"]:
             raise NoteIsEmptyException()
 
@@ -60,7 +62,8 @@ class NoteCreateSerializer(serializers.ModelSerializer):
         """Creates a new Note entity based on the validated data.
         Moreover, it sets the entities field to correspond to the
         referenced_entities field which was persisted in the validate
-        method.
+        method. Additionally, it sets the files field to
+        correspond to the file references that are linked to the note.
 
         Args:
             validated_data: a dictionary containing the attributes of
@@ -70,15 +73,26 @@ class NoteCreateSerializer(serializers.ModelSerializer):
             The created Note entity
         """
 
+        files = validated_data.pop("files", None)
+
         note = Note.objects.create(**validated_data)
         note.entities.set(self.referenced_entities)
+
+        if files is not None:
+            file_reference_models = [
+                FileReference(note=note, **file_data) for file_data in files
+            ]
+            FileReference.objects.bulk_create(file_reference_models)
+
         return note
 
 
 class NoteRetrieveSerializer(serializers.ModelSerializer):
+    files = FileReferenceSerializer(many=True)
+
     class Meta:
         model = Note
-        fields = ["id", "publishable", "content", "timestamp"]
+        fields = ["id", "publishable", "content", "timestamp", "files"]
 
 
 class NotePublishSerializer(serializers.ModelSerializer):
@@ -90,9 +104,11 @@ class NotePublishSerializer(serializers.ModelSerializer):
 
 
 class NoteReportSerializer(serializers.ModelSerializer):
+    files = FileReferenceSerializer(many=True)
+
     class Meta:
         model = Note
-        fields = ["content", "timestamp"]
+        fields = ["content", "timestamp", "files"]
 
 
 class ReportQuerySerializer(serializers.Serializer):

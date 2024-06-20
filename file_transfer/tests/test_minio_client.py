@@ -45,6 +45,16 @@ class TestMinioClient(FileTransferTestCase):
                 "wrong bucket", self.minio_file_name, self.expiry_time
             )
 
+    def test_file_exists_at_path_true(self):
+        self.assertTrue(
+            MinioClient().file_exists_at_path(self.bucket_name, self.minio_file_name)
+        )
+
+    def test_file_exists_at_path_false(self):
+        self.assertFalse(
+            MinioClient().file_exists_at_path("wrong_bucket", self.minio_file_name)
+        )
+
     def tearDown(self):
         super().tearDown()
         self.mock_minio_destroy()

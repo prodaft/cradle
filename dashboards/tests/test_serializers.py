@@ -49,6 +49,7 @@ class NoteDashboardSerializersTest(DashboardsTestCase):
                     "subtype": "",
                 },
             ],
+            "files": [],
         }
 
         self.assertEqual(expected, NoteDashboardSerializer(self.note1).data)
@@ -76,6 +77,7 @@ class NoteDashboardSerializersTest(DashboardsTestCase):
                     "subtype": "",
                 },
             ],
+            "files": [],
         }
 
         self.assertEqual(expected, NoteDashboardSerializer(self.note2).data)
@@ -129,6 +131,7 @@ class CaseDashboardSerializerTest(DashboardsTestCase):
                             "subtype": "",
                         },
                     ],
+                    "files": [],
                 },
                 {
                     "id": str(self.note2.id),
@@ -155,6 +158,7 @@ class CaseDashboardSerializerTest(DashboardsTestCase):
                             "subtype": "",
                         },
                     ],
+                    "files": [],
                 },
             ],
             "actors": [
@@ -279,6 +283,7 @@ class ActorDashboardSerializerTest(DashboardsTestCase):
                             "subtype": "",
                         },
                     ],
+                    "files": [],
                 },
             ],
             "actors": [],
@@ -400,6 +405,7 @@ class EntryDashboardSerializerTest(DashboardsTestCase):
                             "subtype": "ip",
                         },
                     ],
+                    "files": [],
                 },
             ],
             "cases": [

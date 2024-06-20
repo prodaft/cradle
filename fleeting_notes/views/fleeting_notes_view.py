@@ -59,8 +59,14 @@ class FleetingNotesList(APIView):
                 The created FleetingNote entity
             Response(serializer.errors, status=400):
                 if the request was unsuccessful
+            Response("The bucket name of the file reference is incorrect.",
+                status=400): if the bucket_name of at least one of the file references
+                does not match the user's id
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
+             Response("There exists no file at the specified path.", status=404):
+                if for at least one of the file references there exists no file at
+                that location on the MinIO instance
         """
         serializer = FleetingNoteSerializer(
             data=request.data, context={"request": request}
@@ -141,7 +147,9 @@ class FleetingNotesDetail(APIView):
                 "FleetingNote does not exist.", status=status.HTTP_404_NOT_FOUND
             )
 
-        serializer = FleetingNoteSerializer(fleeting_note, data=data)
+        serializer = FleetingNoteSerializer(
+            fleeting_note, data=data, context={"request": request}
+        )
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status.HTTP_200_OK)
