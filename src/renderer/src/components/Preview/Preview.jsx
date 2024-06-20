@@ -30,7 +30,7 @@ export default function Preview({ htmlContent }) {
         return () => {
             previewDiv.removeEventListener('click', handleLinkClickNavigate);
         };
-    }, [sanitizedContent, navigate]);
+    }, [navigate]);
 
     return (
         <>

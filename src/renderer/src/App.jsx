@@ -34,7 +34,7 @@ function App() {
                         {/* Add any routes for components that NEED authentication here*/}
                         <Route path='/' element={<Home />}>
                             {/* Add any routes for components that keep the sidebar and navbar here */}
-                            <Route path='/welcome' element={<Welcome />} />
+                            <Route index element={<Welcome />} />
                             <Route
                                 path='/not-implemented'
                                 element={<FeatureNotImplemented />}

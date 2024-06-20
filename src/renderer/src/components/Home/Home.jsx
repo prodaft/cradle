@@ -108,6 +108,9 @@ export default function Home() {
                         }}
                         unreadNotificationsCount={unreadNotificationsCount}
                         handleNotifications={toggleNotifications}
+                        handleWelcomePage={() => {
+                            navigate('/');
+                        }}
                     />
                     <div
                         className={`transition-all duration-150 ${showNotifications ? 'max-w-96 w-full' : 'w-0'} overflow-hidden`}
