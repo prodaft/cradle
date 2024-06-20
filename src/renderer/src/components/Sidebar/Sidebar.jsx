@@ -1,5 +1,12 @@
 import React from 'react';
-import { Edit, Network, LogOut, UserCrown } from 'iconoir-react';
+import {
+    Edit,
+    Network,
+    LogOut,
+    UserCrown,
+    Bell,
+    BellNotification,
+} from 'iconoir-react';
 import SidebarItem from '../SidebarItem/SidebarItem';
 import SidebarSection from '../SidebarSection/SidebarSection';
 import { useAuth } from '../../hooks/useAuth/useAuth';
@@ -13,6 +20,8 @@ import { useNavigate } from 'react-router-dom';
  * @param handleNewNote - handler for the new note action
  * @param handleGraphView - handler for the graph view action
  * @param handleAdminPanel - handler for the admin panel action
+ * @param newNotificationsNumber - the number of new notifications
+ * @param handleNotifications - handler for the notifications action
  * @returns {Sidebar}
  * @constructor
  */
@@ -21,6 +30,8 @@ export default function Sidebar({
     handleGraphView,
     handleLogout,
     handleNewNote,
+    unreadNotificationsCount,
+    handleNotifications,
 }) {
     const auth = useAuth();
     const navigate = useNavigate();
@@ -41,6 +52,19 @@ export default function Sidebar({
                                 text='Graph View'
                             />
                         </SidebarSection>
+                        {unreadNotificationsCount > 0 ? (
+                            <SidebarItem
+                                handleClick={handleNotifications}
+                                icon={<BellNotification />}
+                                text={`${unreadNotificationsCount} Notifications`}
+                            />
+                        ) : (
+                            <SidebarItem
+                                handleClick={handleNotifications}
+                                icon={<Bell />}
+                                text={`${unreadNotificationsCount} Notifications`}
+                            />
+                        )}
                         <SidebarSection type='content' height='fit' justify='start'>
                             {auth.isAdmin && (
                                 <SidebarItem
