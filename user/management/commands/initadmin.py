@@ -34,10 +34,12 @@ class Command(BaseCommand):
             password = os.environ.get(
                 "CRADLE_ADMIN_PASSWORD", "".join(random.choices(alphabet, k=20))
             )
+            email = os.environ.get("CRADLE_ADMIN_EMAIL", "admin@prodaft.com")
             print("Creating admin account: %s" % username)
             print("With password %s" % password)
+            print("And email %s" % email)
             admin = CradleUser.objects.create_superuser(
-                username=username, password=password
+                username=username, password=password, email=email
             )
             admin.is_active = True
             admin.is_admin = True
