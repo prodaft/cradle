@@ -7,14 +7,23 @@ from entities.serializers import (
     EntitySerializer,
 )
 from notes.models import Note
+from file_transfer.serializers import FileReferenceSerializer
 
 
 class NoteDashboardSerializer(serializers.ModelSerializer):
     entities = EntitySerializer(many=True)
+    files = FileReferenceSerializer(many=True)
 
     class Meta:
         model = Note
-        fields = ["id", "content", "publishable", "timestamp", "entities"]
+        fields = [
+            "id",
+            "content",
+            "publishable",
+            "timestamp",
+            "entities",
+            "files",
+        ]
 
     def to_representation(self, obj: dict) -> dict:
         """When the note is serialized if it contains more than 200 characters
