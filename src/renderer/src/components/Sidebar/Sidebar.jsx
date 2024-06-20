@@ -25,37 +25,32 @@ export default function Sidebar({
     const auth = useAuth();
     const navigate = useNavigate();
     return (
-        <div className='h-screen sticky top-0' data-testid='sidebar-test'>
-            <aside className='sidebar text-gray-400 w-16 hover:w-48 transition-all duration-300 overflow-hidden group/sidebar'>
-                <div className='flex flex-col h-full'>
-                    <SidebarSection sectionType='header' height='fit' justify='start'>
-                        <SidebarItem
-                            icon={<Logo width='32px' height='32px' />}
-                            handleClick={() => {
-                                navigate('/welcome');
-                                console.log('HOme');
-                            }}
-                        />
-                        <SidebarItem
-                            handleClick={handleNewNote}
-                            icon={<Edit />}
-                            text='New Note'
-                        />
-                        <SidebarItem
-                            handleClick={handleGraphView}
-                            icon={<Network />}
-                            text='Graph View'
-                        />
-                    </SidebarSection>
-                    <SidebarSection type='content' height='full' justify='start'>
-                        {auth.isAdmin && (
+        <div className='h-full sticky top-0' data-testid='sidebar-test'>
+            <aside className='sidebar !h-full text-gray-400 w-16 hover:w-48 transition-all duration-300 overflow-hidden group/sidebar'>
+                <div className='flex flex-col h-full justify-between'>
+                    <div className='flex flex-col'>
+                        <SidebarSection sectionType='header' height='fit' justify='start'>
                             <SidebarItem
-                                handleClick={handleAdminPanel}
-                                icon={<UserCrown />}
-                                text='Admin'
+                                handleClick={handleNewNote}
+                                icon={<Edit />}
+                                text='New Note'
                             />
-                        )}
-                    </SidebarSection>
+                            <SidebarItem
+                                handleClick={handleGraphView}
+                                icon={<Network />}
+                                text='Graph View'
+                            />
+                        </SidebarSection>
+                        <SidebarSection type='content' height='fit' justify='start'>
+                            {auth.isAdmin && (
+                                <SidebarItem
+                                    handleClick={handleAdminPanel}
+                                    icon={<UserCrown />}
+                                    text='Admin'
+                                />
+                            )}
+                        </SidebarSection>
+                    </div>
                     <SidebarSection type='footer' height='fit' justify='end'>
                         <SidebarItem
                             handleClick={handleLogout}

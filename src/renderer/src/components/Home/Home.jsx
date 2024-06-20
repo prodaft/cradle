@@ -52,24 +52,24 @@ export default function Home() {
                 height: '1.7em',
             }}
         >
-            <div className='flex flex-row w-screen h-screen overflow-hidden'>
-                <Sidebar
-                    handleLogout={handleLogout}
-                    handleAdminPanel={() => {
-                        navigate('/admin');
-                    }}
-                    handleNewNote={() => {
-                        navigate('/editor');
-                    }}
-                    handleGraphView={() => {
-                        navigate('/graph');
-                    }}
+            <div className='flex flex-col w-screen h-full overflow-hidden'>
+                <Navbar
+                    showFleetingNotesButton={!showFleetingNotes}
+                    handleFleetingNotesButton={switchFleetingNotes}
+                    contents={memoizedNavbarContents}
                 />
-                <div className='flex flex-col w-full h-full'>
-                    <Navbar
-                        showFleetingNotesButton={!showFleetingNotes}
-                        handleFleetingNotesButton={switchFleetingNotes}
-                        contents={memoizedNavbarContents}
+                <div className='flex flex-row w-full h-full overflow-hidden'>
+                    <Sidebar
+                        handleLogout={handleLogout}
+                        handleAdminPanel={() => {
+                            navigate('/admin');
+                        }}
+                        handleNewNote={() => {
+                            navigate('/editor');
+                        }}
+                        handleGraphView={() => {
+                            navigate('/graph');
+                        }}
                     />
                     <div className='flex-grow overflow-y-auto w-full'>
                         <Outlet
@@ -79,16 +79,16 @@ export default function Home() {
                             }}
                         />
                     </div>
-                </div>
-                <div
-                    className={`transition-all duration-300 ${showFleetingNotes ? 'w-full lg:w-1/2 xl:w-1/3' : 'w-0'} overflow-hidden`}
-                >
-                    {showFleetingNotes && (
-                        <FleetingNotesPanel
-                            handleFleetingNotesButton={switchFleetingNotes}
-                            fleetingNotesRefresh={fleetingNotesRefreshCount}
-                        />
-                    )}
+                    <div
+                        className={`transition-all duration-300 ${showFleetingNotes ? 'w-full lg:w-1/2 xl:w-1/3' : 'w-0'} overflow-hidden`}
+                    >
+                        {showFleetingNotes && (
+                            <FleetingNotesPanel
+                                handleFleetingNotesButton={switchFleetingNotes}
+                                fleetingNotesRefresh={fleetingNotesRefreshCount}
+                            />
+                        )}
+                    </div>
                 </div>
             </div>
         </IconoirProvider>
