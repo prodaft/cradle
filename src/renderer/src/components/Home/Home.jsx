@@ -119,7 +119,9 @@ export default function Home() {
                             <NotificationsPanel
                                 handleCloseNotifications={toggleNotifications}
                                 unreadNotificationsCount={unreadNotificationsCount}
-                                setUnreadNotificationsCount={setUnreadNotificationsCount}
+                                setUnreadNotificationsCount={
+                                    setUnreadNotificationsCount
+                                }
                             />
                         )}
                     </div>
@@ -140,10 +142,9 @@ export default function Home() {
                                 fleetingNotesRefresh={fleetingNotesRefreshCount}
                             />
                         )}
-                    </div >
+                    </div>
                 </div>
-
-            </div >
-        </IconoirProvider >
+            </div>
+        </IconoirProvider>
     );
 }
