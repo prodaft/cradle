@@ -72,7 +72,7 @@ export default function NoteSelector() {
         if (selectedNoteIds.length === 0) {
             setAlert({
                 show: true,
-                message: 'Please select at least one note to publish',
+                message: 'Please select at least one note to publish.',
                 color: 'red',
             });
             return;
