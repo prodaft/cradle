@@ -20,3 +20,21 @@ export function getDashboardData(token, path) {
         },
     });
 }
+
+/**
+ * Function to request access to a case
+ *
+ * @param {string} token - The (JWT) token to authenticate the request
+ * @param {string} id - The case ID to request access to
+ * @returns {Promise<AxiosResponse<any>>}
+ */
+export function requestCaseAccess(token, id) {
+    return axios({
+        method: 'POST',
+        url: `/access/request/${id}/`,
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+        },
+    });
+}
