@@ -1,6 +1,9 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getDashboardData } from '../../services/dashboardService/dashboardService';
+import {
+    getDashboardData,
+    requestCaseAccess,
+} from '../../services/dashboardService/dashboardService';
 import { useAuth } from '../../hooks/useAuth/useAuth';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import DashboardHorizontalSection from '../DashboardHorizontalSection/DashboardHorizontalSection';
@@ -19,6 +22,15 @@ import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 /**
  * Dashboard component
  * Fetches and displays the dashboard data for an entity
+ * If the entity does not exist, displays a 404 page
+ * The dashboard displays the entity's name, type, description, related actors, cases, entries, metadata, and notes
+ * The dashboard only displays the fields provided by the server, different entities may have different fields
+ * If the user is an admin, a delete button is displayed in the navbar
+ * If the user is not in publish mode, a button to enter publish mode is displayed in the navbar
+ * If the entity is linked to cases to which the user does not have access to, a button to request access to view them is displayed
+ *
+ *
+ * @component
  * @returns {Dashboard}
  * @constructor
  */
@@ -111,6 +123,22 @@ export default function Dashboard() {
         setDialog,
     ]);
 
+    const handleRequestCaseAccess = () => {
+        Promise.all(
+            contentObject.inaccessible_cases.map((c) =>
+                requestCaseAccess(auth.access, c.id),
+            ),
+        )
+            .then(() =>
+                setAlert({
+                    show: true,
+                    message: 'Access request sent successfully',
+                    color: 'green',
+                }),
+            )
+            .catch(displayError(setAlert));
+    };
+
     if (entityMissing) {
         return (
             <NotFound
@@ -167,6 +195,22 @@ export default function Dashboard() {
                                     link={createDashboardLink(c)}
                                 />
                             ))}
+                            {contentObject.inaccessible_cases &&
+                                contentObject.inaccessible_cases.length > 0 && (
+                                    <div className='w-full h-fit mt-1 flex flex-row justify-between items-center text-zinc-400'>
+                                        <p>
+                                            {
+                                                'There are inaccessible cases linked to this entity. '
+                                            }
+                                            <span
+                                                className='underline cursor-pointer'
+                                                onClick={handleRequestCaseAccess}
+                                            >
+                                                {'Request access to view them.'}
+                                            </span>
+                                        </p>
+                                    </div>
+                                )}
                         </DashboardHorizontalSection>
                     )}
 

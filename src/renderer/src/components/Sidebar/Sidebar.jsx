@@ -1,5 +1,12 @@
 import React from 'react';
-import { Edit, Network, LogOut, UserCrown } from 'iconoir-react';
+import {
+    Edit,
+    Network,
+    LogOut,
+    UserCrown,
+    Bell,
+    BellNotification,
+} from 'iconoir-react';
 import SidebarItem from '../SidebarItem/SidebarItem';
 import SidebarSection from '../SidebarSection/SidebarSection';
 import { useAuth } from '../../hooks/useAuth/useAuth';
@@ -11,6 +18,8 @@ import { useAuth } from '../../hooks/useAuth/useAuth';
  * @param handleNewNote - handler for the new note action
  * @param handleGraphView - handler for the graph view action
  * @param handleAdminPanel - handler for the admin panel action
+ * @param newNotificationsNumber - the number of new notifications
+ * @param handleNotifications - handler for the notifications action
  * @returns {Sidebar}
  * @constructor
  */
@@ -19,11 +28,13 @@ export default function Sidebar({
     handleGraphView,
     handleLogout,
     handleNewNote,
+    unreadNotificationsCount,
+    handleNotifications,
 }) {
     const auth = useAuth();
     return (
         <div className='h-screen sticky top-0' data-testid='sidebar-test'>
-            <aside className='sidebar text-gray-400 w-16 hover:w-48 transition-all duration-300 overflow-hidden group/sidebar'>
+            <aside className='sidebar text-gray-400 w-16 hover:w-48 transition-all duration-300 overflow-hidden group/sidebar shadow-2xl'>
                 <div className='flex flex-col h-full'>
                     <SidebarSection sectionType='header' height='fit' justify='start'>
                         <SidebarItem
@@ -43,6 +54,19 @@ export default function Sidebar({
                                 handleClick={handleAdminPanel}
                                 icon={<UserCrown />}
                                 text='Admin'
+                            />
+                        )}
+                        {unreadNotificationsCount > 0 ? (
+                            <SidebarItem
+                                handleClick={handleNotifications}
+                                icon={<BellNotification />}
+                                text={`${unreadNotificationsCount} Notifications`}
+                            />
+                        ) : (
+                            <SidebarItem
+                                handleClick={handleNotifications}
+                                icon={<Bell />}
+                                text={`${unreadNotificationsCount} Notifications`}
                             />
                         )}
                     </SidebarSection>
