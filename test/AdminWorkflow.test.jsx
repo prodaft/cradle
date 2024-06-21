@@ -7,10 +7,9 @@ import 'selenium-webdriver/firefox';
 
 describe('Test admin functionality', () => {
     let loginPage = new SeleniumUtils(CRADLE_URL);
-    //TODO: add assertions
     it.skip('creates/deletes cases, actors and a note.', async () => {
         let username = 'admin';
-        const password = import.meta.env.VITE_SUGI_PULA;
+        const password = import.meta.env.VITE_ADMIN_PASSWORD;
         let content = '[[case:Bromania]] il investigheaza pe [[ip:192.168.0.0]]';
         try {
             await loginPage.openStartPage();
