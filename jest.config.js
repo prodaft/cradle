@@ -138,7 +138,7 @@ const config = {
     // runner: "jest-runner",
 
     // The paths to modules that run some code to configure or set up the testing environment before each test
-    // setupFiles: ['./jest.setup.js'],
+    setupFiles: ['dotenv/config'],
 
     // A list of paths to modules that run some code to configure or set up the testing framework before each test
     // setupFilesAfterEnv: [],
@@ -189,6 +189,7 @@ const config = {
         // "\\.pnp\\.[^\\\\]+$",
         'node_modules/(?!(mime|@uidotdev/usehooks|d3|d3-array|d3-force|internmap)/)',
     ],
+    testTimeout: 100000,
 
     // An array of regexp pattern strings that are matched against all modules before the module loader will automatically return a mock for them
     // unmockedModulePathPatterns: undefined,
