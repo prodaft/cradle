@@ -31,6 +31,8 @@ tags:
     description: Operations targeting the transfer of files.
   - name: Notification 
     description: Operations regarding notifications
+  - name: Statistics
+    description: Operations regarding obtaining the statistics of the system.
   
 paths:
   /users:
@@ -1114,7 +1116,23 @@ paths:
         '401': 
           description: User is not authenticated. 
       
-            
+
+  /statistics/:
+    get:
+      tags:
+        - Statistics
+      summary: Get user's statistics
+      description: Fetches some of the user's statistics. More specifically, it fetches the 10 most recently written notes the user has access to and the 3 cases and actors that were most recently referenced in notes the user has access to. The entities are returned starting with the most recent ones.
+      operationId: getStatistics
+      responses:
+        '200':
+          description: Returns the statistics of the user.
+          content: 
+            'application/json':
+              schema: 
+                $ref: "#/components/schemas/Statistics"
+        '401':
+          description: User is not authenticated.
 
 components:
   securitySchemes:
@@ -1974,6 +1992,22 @@ components:
           items: 
             $ref: "#/components/schemas/Entity"
         metadata: 
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        notes:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Note"
+
+    Statistics: 
+      type: object
+      properties: 
+        actors: 
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        cases: 
           type: array
           items: 
             $ref: "#/components/schemas/Entity"
