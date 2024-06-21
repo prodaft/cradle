@@ -1,4 +1,4 @@
-import { Notes, Xmark } from 'iconoir-react';
+import { Xmark } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { getFleetingNotes } from '../../services/fleetingNotesService/fleetingNotesService';
 import { useAuth } from '../../hooks/useAuth/useAuth';
@@ -44,7 +44,6 @@ export default function FleetingNotesPanel({
                     onClick={handleFleetingNotesButton}
                     data-testid='close-fleeting-notes'
                 >
-                    {/* <Notes className='text-zinc-500' width='1.5em' height='1.5em' /> */}
                     <Xmark className='text-zinc-500' width='1.5em' height='1.5em' />
                 </div>
                 <div className='w-full h-full overflow-y-auto'>
