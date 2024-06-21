@@ -4,9 +4,7 @@ info:
   version: 1.0.0
   description: API for handling requests for the backend of the CRADLE project
 servers:
-  - description: SwaggerHub API Auto Mocking
-    url: https://virtserver.swaggerhub.com/diacicov.calin/CRADLE/1.0.0
-  - description: Localhost
+  - description: localhost
     url: 'https://localhost:8000'
 tags:
   - name: User
@@ -35,7 +33,7 @@ tags:
     description: Operations regarding obtaining the statistics of the system.
   
 paths:
-  /users:
+  /users/:
     post:
       security: []
       tags:
@@ -91,7 +89,7 @@ paths:
           description: User is not an admin.
 
 
-  /users/{userId}:
+  /users/{userId}/:
     delete:
       tags:
         - User
@@ -117,7 +115,7 @@ paths:
         '404':
           description: There is no user with specified ID.
 
-  /users/login:
+  /users/login/:
     post:
       tags:
         - User
@@ -143,11 +141,17 @@ paths:
         '200':
           description: >
             Successfully authenticated.
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-                example: sessionid=thisissecret;
+          content:
+            application/json:
+                schema:
+                  type: object
+                  properties:
+                    access:
+                      type: string
+                      description: The new access token
+                    refresh:
+                      type: string
+                      description: The new refresh token
         '400': 
           description: >
             The request does not match the specified format. 
@@ -211,7 +215,7 @@ paths:
         '401':
           description: User is not authenticated.
 
-  /notifications/unread-count:
+  /notifications/unread-count/:
     get:
       tags:
         - Notification
@@ -234,7 +238,7 @@ paths:
         '401':
           description: User is not authenticated.
 
-  /notifications/{notificationId}:
+  /notifications/{notificationId}/:
     put:
       tags:
         - Notification
@@ -261,7 +265,7 @@ paths:
         '404':
           description: The notification does not exist or is not owned by the user.
 
-  /entities/actors:
+  /entities/actors/:
     get:
       tags:
         - Entity
@@ -319,7 +323,7 @@ paths:
           description: Actor already exists.
             
 
-  /entities/cases:
+  /entities/cases/:
     get:
       tags:
         - Admin
@@ -376,7 +380,7 @@ paths:
         '409':
           description: Case already exists.
   
-  /dashboards/cases/{case_name}:
+  /dashboards/cases/{case_name}/:
     get:
       tags:
         - Dashboard
@@ -404,7 +408,7 @@ paths:
         '404':
           description: Case not found or User doesn't have access.
   
-  /dashboards/actors/{actor_name}:
+  /dashboards/actors/{actor_name}/:
     get:
       tags:
         - Dashboard
@@ -432,7 +436,7 @@ paths:
         '404':
           description: Actor not found.
   
-  /dashboards/entries/{entry_name}:
+  /dashboards/entries/{entry_name}/:
     get:
       tags:
         - Dashboard
@@ -468,7 +472,7 @@ paths:
         '404':
           description: There is no entry with the provided name or the entry exists but is not referenced in any of the user's accessible notes
 
-  /access/{userId}:
+  /access/{userId}/:
     get:
       tags:
         - Access
@@ -493,7 +497,7 @@ paths:
           description: User not found.
 
 
-  /access/request/{caseId}:
+  /access/request/{caseId}/:
     post:
       tags:
         - Access
@@ -509,7 +513,7 @@ paths:
           description: Case not found.
 
 
-  /access/{userId}/{caseId}:
+  /access/{userId}/{caseId}/:
     put:
       tags:
         - Access
@@ -550,7 +554,7 @@ paths:
           description: User is not an admin. 
             
 
-  /entities/actors/{actorId}:
+  /entities/actors/{actorId}/:
     delete:
       tags:
         - Entity
@@ -578,7 +582,7 @@ paths:
             
 
 
-  /entities/cases/{caseId}:
+  /entities/cases/{caseId}/:
     delete:
       tags:
         - Entity
@@ -604,7 +608,7 @@ paths:
         '404':
           description: There is no case with specified ID.
 
-  /notes:
+  /notes/:
     post:
       tags:
         - Note
@@ -637,7 +641,7 @@ paths:
         '404': 
           description: User does not have Read-Write access to a referenced Case or not all Cases exist. / There exists no file at the specified path.
 
-  /notes/{noteId}/publishable:
+  /notes/{noteId}/publishable/:
     put:
       tags:
         - Note
@@ -674,7 +678,7 @@ paths:
         '404':
           description: Note not found. 
 
-  /notes/{noteId}:
+  /notes/{noteId}/:
     delete:
       tags:
         - Note
@@ -724,7 +728,7 @@ paths:
         '404': 
           description: User does not have read access to the requested note or the requested note does not exist.
         
-  /notes/publish:
+  /notes/publish/:
     get:
       tags:
         - Note
@@ -766,7 +770,7 @@ paths:
         '404': 
           description: The user does not have read access to all the provided notes or some of the notes do not exist.
   
-  /file-transfer/upload:
+  /file-transfer/upload/:
     get:
       tags:
         - File Transfer
@@ -805,7 +809,7 @@ paths:
         '401': 
           description: User is not authenticated.
 
-  /file-transfer/download:
+  /file-transfer/download/:
     get:
       tags:
         - File Transfer
@@ -849,7 +853,7 @@ paths:
           description: The requested resource does not exist.
 
 
-  /fleeting-notes:
+  /fleeting-notes/:
     get:
       tags:
         - Fleeting Note
@@ -907,7 +911,7 @@ paths:
         '404':
           description: There exists no file at the specified path.
         
-  /fleeting-notes/{fleetingNoteId}:
+  /fleeting-notes/{fleetingNoteId}/:
     get:
       tags:
         - Fleeting Note
@@ -1039,7 +1043,7 @@ paths:
           description: User does not have Read-Write access to a referenced Case or not all Cases and Actors exist / The Fleeting Note does not exist or was not written by the user / There exists no file at the specified path.
     
   
-  /query:
+  /query/:
     get:
       tags:
         - Query
@@ -1094,12 +1098,18 @@ paths:
       responses:
         '200': 
           description: Request was succesful.
+          content: 
+            'application/json':
+              schema: 
+                type: array
+                items:
+                  $ref: "#/components/schemas/Entity"
         '400':
           description: Query parameters are invalid.
         '401':
           description: User is not authenticated.
 
-  /knowledge-graph:
+  /knowledge-graph/:
     get:
       tags:
         - Knowledge Graph
@@ -1136,10 +1146,10 @@ paths:
 
 components:
   securitySchemes:
-    cookieAuth:
-      type: apiKey
-      in: cookie
-      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 
   schemas:
     CaseDashboard:
@@ -1813,12 +1823,9 @@ components:
           example: "123e4567-e89b-12d3-a456-426614174000"
         username:
           type: string
-        password:
+        email:
           type: string
-        cases:
-          type: array
-          items: 
-            $ref: "#/components/schemas/Entity"
+          format: email
 
     Entity:
       type: object
@@ -1834,9 +1841,9 @@ components:
         type:
           type: string
           enum: 
+          - entry
           - actor
           - case
-          - entry
           - metadata
         subtype:
           type: string
