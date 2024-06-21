@@ -5,7 +5,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.request import Request
 
-from ..serializers import CaseSerializer, CaseResponseSerializer
+from ..serializers import CaseSerializer, EntityResponseSerializer
 from ..models import Entity
 from logs.utils import LoggingUtils
 from logs.decorators import log_failed_responses
@@ -35,7 +35,7 @@ class CaseList(APIView):
         """
 
         cases = Entity.cases.all()
-        serializer = CaseResponseSerializer(cases, many=True)
+        serializer = EntityResponseSerializer(cases, many=True)
 
         return Response(serializer.data)
 
