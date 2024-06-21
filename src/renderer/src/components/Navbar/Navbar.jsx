@@ -3,6 +3,7 @@ import SearchDialog from '../SearchDialog/SearchDialog';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NavbarButton from '../NavbarButton/NavbarButton';
+import Logo from '../Logo/Logo';
 
 /**
  * Navbar component - the main navigation bar for the application.
@@ -23,7 +24,7 @@ export default function Navbar({
 
     return (
         <div
-            className='navbar p-0.5 sticky top-0 rounded-md bg-gray-2 w-full h-fit z-40 pr-4 pl-2 min-h-12'
+            className='navbar p-0.5 sticky top-0 bg-gray-2 w-full h-fit z-40 pr-8 pl-2 min-h-12'
             data-testid='navbar-test'
         >
             <div className='h-fit navbar-start w-full min-w-40'>
@@ -61,15 +62,17 @@ export default function Navbar({
             </div>
             <div className='w-full justify-end h-fit navbar-center'>{contents}</div>
             <div className='w-fit h-fit navbar-end'>
-                {showFleetingNotesButton && (
-                    <NavbarButton
-                        key='fleeting-notes-button'
-                        text={'Fleeting Notes'}
-                        icon={<Notes />}
-                        onClick={handleFleetingNotesButton}
-                        testid='fleeting-notes-button'
-                    />
-                )}
+                <NavbarButton
+                    key='fleeting-notes-button'
+                    text={'Fleeting Notes'}
+                    icon={
+                        <Notes
+                            className={`${showFleetingNotesButton ? '' : 'text-gray-500'}`}
+                        />
+                    }
+                    onClick={handleFleetingNotesButton}
+                    testid='fleeting-notes-button'
+                />
             </div>
         </div>
     );

@@ -47,14 +47,6 @@ export default function Home() {
 
     const SHORT_POLLING_DELAY = 10000;
 
-    const handleLogout = useCallback(() => {
-        auth.logOut();
-        localStorage.clear(); // TODO save unsaved notes as fleeting notes
-        navigate('/login', {
-            state: { from: location, state: location.state },
-        });
-    }, [auth, navigate, location]);
-
     const toggleFleetingNotes = useCallback(() => {
         setShowFleetingNotes((prev) => !prev);
     }, [setShowFleetingNotes]);
@@ -88,38 +80,31 @@ export default function Home() {
                 height: '1.7em',
             }}
         >
-            <div className='flex flex-row w-screen h-screen overflow-hidden'>
-                <Sidebar
-                    handleLogout={handleLogout}
-                    handleAdminPanel={() => {
-                        navigate('/admin');
-                    }}
-                    handleNewNote={() => {
-                        navigate('/editor');
-                    }}
-                    handleGraphView={() => {
-                        navigate('/graph');
-                    }}
-                    unreadNotificationsCount={unreadNotificationsCount}
-                    handleNotifications={toggleNotifications}
+            <div className='flex flex-col w-screen h-full overflow-hidden'>
+                <Navbar
+                    showFleetingNotesButton={!showFleetingNotes}
+                    handleFleetingNotesButton={toggleFleetingNotes}
+                    contents={memoizedNavbarContents}
                 />
-                <div
-                    className={`transition-all duration-150 ${showNotifications ? 'max-w-96 w-full' : 'w-0'} overflow-hidden`}
-                >
-                    {showNotifications && (
-                        <NotificationsPanel
-                            handleCloseNotifications={toggleNotifications}
-                            unreadNotificationsCount={unreadNotificationsCount}
-                            setUnreadNotificationsCount={setUnreadNotificationsCount}
-                        />
-                    )}
-                </div>
-                <div className='flex flex-col w-full h-full'>
-                    <Navbar
-                        showFleetingNotesButton={!showFleetingNotes}
-                        handleFleetingNotesButton={toggleFleetingNotes}
-                        contents={memoizedNavbarContents}
+                <div className='flex flex-row w-full h-full overflow-hidden'>
+                    <Sidebar
+                        showNotifications={showNotifications}
+                        unreadNotificationsCount={unreadNotificationsCount}
+                        handleNotifications={toggleNotifications}
                     />
+                    <div
+                        className={`transition-all duration-150 ${showNotifications ? 'max-w-96 w-full' : 'w-0'} overflow-hidden`}
+                    >
+                        {showNotifications && (
+                            <NotificationsPanel
+                                handleCloseNotifications={toggleNotifications}
+                                unreadNotificationsCount={unreadNotificationsCount}
+                                setUnreadNotificationsCount={
+                                    setUnreadNotificationsCount
+                                }
+                            />
+                        )}
+                    </div>
                     <div className='flex-grow overflow-y-auto w-full'>
                         <Outlet
                             context={{
@@ -128,16 +113,16 @@ export default function Home() {
                             }}
                         />
                     </div>
-                </div>
-                <div
-                    className={`transition-all duration-150 ${showFleetingNotes ? 'max-w-96 w-full' : 'w-0'} overflow-hidden`}
-                >
-                    {showFleetingNotes && (
-                        <FleetingNotesPanel
-                            handleFleetingNotesButton={toggleFleetingNotes}
-                            fleetingNotesRefresh={fleetingNotesRefreshCount}
-                        />
-                    )}
+                    <div
+                        className={`transition-all duration-150 ${showFleetingNotes ? 'max-w-96 w-full' : 'w-0'} overflow-hidden`}
+                    >
+                        {showFleetingNotes && (
+                            <FleetingNotesPanel
+                                handleFleetingNotesButton={toggleFleetingNotes}
+                                fleetingNotesRefresh={fleetingNotesRefreshCount}
+                            />
+                        )}
+                    </div>
                 </div>
             </div>
         </IconoirProvider>

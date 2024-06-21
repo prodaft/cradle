@@ -139,8 +139,8 @@ const parseLink = (from, current, text) => {
     const typeStart = match.index + 1 + from;
     const typeEnd = typeStart + type.length;
 
-    const nameStart = name && (typeEnd + 1);
-    const nameEnd = nameStart && (nameStart + name.length);
+    const nameStart = name && typeEnd + 1;
+    const nameEnd = nameStart && nameStart + name.length;
 
     if (current >= typeStart && current <= typeEnd)
         return {
