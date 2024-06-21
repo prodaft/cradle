@@ -32,13 +32,13 @@ This section provides a comprehensive installation guide and instructions on how
 1. Clone the project:
 
     ```shell
-    $ git clone https://gitlab.ewi.tudelft.nl/cse2000-software-project/2023-2024/cluster-j/08b/frontend.git
+    git clone https://gitlab.ewi.tudelft.nl/cse2000-software-project/2023-2024/cluster-j/08b/frontend.git
     ```
 
 2. Use the package manager [**npm**](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) to install the dependencies:
 
     ```shell
-    $ npm install
+    npm install
     ```
 
 ### Scripts and Usage
@@ -137,70 +137,7 @@ We welcome contributions from everyone! To ensure a smooth process, please follo
 
 ## Code of Conduct
 
-CRADLE is committed to fostering a welcoming and inclusive community. As contributors and users of CRADLE, we pledge to adhere to these ethical guidelines to ensure a positive and respectful environment for everyone involved.
-
-### For Contributors
-
-#### Respectful Collaboration
-
-1. **Respect and Consideration**: Treat others with respect and consideration, valuing diverse perspectives and contributions.
-
-2. **Constructive Feedback**: Provide constructive feedback that helps improve the project and fosters growth.
-
-3. **Civility**: Be courteous and professional in interactions, even under disagreement.
-
-#### Inclusivity and Diversity
-
-1. **Inclusive Language**: Use inclusive language and avoid derogatory or discriminatory remarks.
-
-2. **Diverse Perspectives**: Embrace and encourage contributions from people of all backgrounds and identities.
-
-3. **Welcoming Environment**: Create a welcoming environment where everyone feels safe and valued.
-
-#### Integrity and Accountability
-
-1. **Ethical Behavior**: Conduct yourself ethically, with honesty and integrity in all interactions.
-
-2. **Accountability**: Take responsibility for your actions and their impact on others.
-
-3. **Conflicts of Interest**: Disclose any conflicts of interest that may arise from contributions.
-
-#### Compliance with Legal Standards
-
-1. **Legal Compliance**: Contributions must adhere to all applicable laws and regulations, including those concerning data privacy.
-
-2. **Respect Intellectual Property**: Respect intellectual property rights and refrain from unauthorized use of copyrighted material.
-
-### For Users
-
-#### Responsible Use
-
-1. **Lawful Use**: Use CRADLE in compliance with all applicable laws and regulations, including data privacy laws.
-
-2. **Data Privacy**: Respect the privacy of others and handle personal data responsibly. Sharing personally identifiable information without the consent or knowledge of the individuals involved is strictly prohibited.
-
-3. **Prohibited Content**: Refrain from posting or sharing content that is unlawful, harmful, defamatory, or discriminatory.
-
-#### Ethical Conduct
-
-1. **Integrity**: Use CRADLE with honesty and integrity, avoiding malicious or unethical behavior.
-
-2. **Respect for Others**: Respect the rights and opinions of others when interacting within the application.
-
-3. **Non-Interference**: Avoid disrupting or compromising the integrity of CRADLE or its users.
-
-#### Community Engagement
-
-1. **Constructive Feedback**: Provide constructive feedback to improve the application and user experience.
-
-2. **Supportive Environment**: Foster a supportive and collaborative environment for fellow users.
-
-3. **Reporting Concerns**: Report any concerns regarding misuse or unethical behavior to the appropriate authorities or administrators.
-
-
-This version emphasizes adherence to legal standards and specifically mentions compliance with data privacy regulations, which is crucial, especially in the context of EU laws like the GDPR (General Data Protection Regulation).
-
-By adhering to these guidelines, we contribute to a community that values inclusivity, integrity, and respect for all individuals. Thank you for your commitment to maintaining a positive environment within CRADLE.
+**TBA**
 
 ---
 
@@ -277,4 +214,4 @@ If you believe your library or tool should be included here, please contact us a
 
 ## License
 
-**CRADLE is under the free open source MIT licence.**
+**CRADLE is under the free open source MIT licence.** The license can be found in the [LICENSE](LICENSE) file.
