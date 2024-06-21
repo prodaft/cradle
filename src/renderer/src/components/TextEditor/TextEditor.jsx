@@ -12,7 +12,7 @@ import { displayError } from '../../utils/responseUtils/responseUtils.js';
 import useLightMode from '../../hooks/useLightMode/useLightMode.js';
 import NavbarDropdown from '../NavbarDropdown/NavbarDropdown.jsx';
 import { addFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
-import { useChangeFlexDirectionBySize } from '../../hooks/useChangeFlexDirectionBySize/useChangeFlexDirectionBySize';
+import useChangeFlexDirectionBySize from '../../hooks/useChangeFlexDirectionBySize/useChangeFlexDirectionBySize';
 import { useLocalStorage } from '@uidotdev/usehooks';
 
 /**
