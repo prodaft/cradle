@@ -10,7 +10,7 @@ from django.db.models import Case, When, Q, F
 
 from typing import List
 from uuid import UUID
-from typing import Optional
+from typing import Optional, Generator
 
 
 class NoteManager(models.Manager):
@@ -181,3 +181,28 @@ class NoteManager(models.Manager):
         )
 
         return entity_pairs
+
+    def note_references_iterator(
+        self, note_list: models.QuerySet, entity_type: EntityType
+    ) -> Generator:
+        """Given a QuerySet of Notes, returns an iterator over all
+        entities references in those Notes, that have the specified
+        Entity Type.
+
+        Args:
+            note_list (models.QuerySet): The QuerySet of Notes
+            entity_type (entities.EntityType): The EntityType entities
+                need to match
+
+        Returns:
+            Generator: The iterator over the entities
+
+        """
+
+        returned_entities = set()
+
+        for note in note_list:
+            for entity in note.entities.filter(type=entity_type):
+                if entity not in returned_entities:
+                    returned_entities.add(entity)
+                    yield entity
