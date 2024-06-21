@@ -206,3 +206,25 @@ class NoteManager(models.Manager):
                 if entity not in returned_entities:
                     returned_entities.add(entity)
                     yield entity
+
+    def get_accessible_entry_ids(self, user: CradleUser) -> models.QuerySet:
+        """For a given user id, get a list of all entry ids which
+        are accessible by the user. An entry is considered to be accessible by the
+        user when it is referenced in at least one note that the user has access to.
+        This method does not take into consideration the access privileges of the user.
+        Hence, this method should not be used for admin users.
+
+        Args:
+            user_id: the id of the user.
+
+        Returns:
+            A QuerySet instance which gives all the entry ids to which the user
+            has access.
+        """
+
+        return (
+            self.get_entities_from_notes(self.get_accessible_notes(user))
+            .filter(type=EntityType.ENTRY)
+            .values("id")
+            .distinct()
+        )
