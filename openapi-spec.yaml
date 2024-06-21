@@ -466,7 +466,7 @@ paths:
         '401': 
           description: User is not authenticated.
         '404':
-          description: Entry not found.
+          description: There is no entry with the provided name or the entry exists but is not referenced in any of the user's accessible notes
 
   /access/{userId}:
     get:

@@ -9,6 +9,7 @@ from entities.models import Entity
 from entities.enums import EntityType, EntitySubtype
 from access.models import Access
 from access.enums import AccessType
+from notes.models import Note
 from .utils import QueryTestCase
 
 
@@ -72,6 +73,9 @@ class QueryListTest(QueryTestCase):
         Entity.objects.create(
             name="Romania", type=EntityType.METADATA, subtype=EntitySubtype.COUNTRY
         )
+
+        self.note = Note.objects.create(content="Note content")
+        self.note.entities.add(self.entries[0], self.entries[1], self.cases[0])
 
     def test_query_not_authenticated(self):
         response = self.client.get(reverse("query_list"))
