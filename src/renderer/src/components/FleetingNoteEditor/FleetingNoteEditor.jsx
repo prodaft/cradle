@@ -9,7 +9,7 @@ import NavbarDropdown from '../NavbarDropdown/NavbarDropdown';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Editor from '../Editor/Editor';
 import Preview from '../Preview/Preview';
-import { useChangeFlexDirectionBySize } from '../../hooks/useChangeFlexDirectionBySize/useChangeFlexDirectionBySize';
+import useChangeFlexDirectionBySize from '../../hooks/useChangeFlexDirectionBySize/useChangeFlexDirectionBySize';
 import {
     deleteFleetingNote,
     getFleetingNoteById,

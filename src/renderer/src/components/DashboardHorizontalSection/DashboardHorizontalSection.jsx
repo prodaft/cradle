@@ -17,7 +17,7 @@ export default function DashboardHorizontalSection({ title, children }) {
     };
 
     return (
-        <div className='bg-cradle3 p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl'>
+        <div className='bg-cradle3 p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full'>
             <div
                 className='text-xl font-semibold mb-2 cursor-pointer w-full flex flex-row justify-between items-center'
                 onClick={toggleExpanded}
