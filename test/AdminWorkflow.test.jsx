@@ -9,7 +9,7 @@ describe('Test admin functionality', () => {
     let loginPage = new SeleniumUtils(CRADLE_URL);
     it.skip('creates/deletes cases, actors and a note.', async () => {
         let username = 'admin';
-        const password = import.meta.env.VITE_ADMIN_PASSWORD;
+        const password = process.env.VITE_ADMIN_PASSWORD;
         let content = '[[case:Bromania]] il investigheaza pe [[ip:192.168.0.0]]';
         try {
             await loginPage.openStartPage();
