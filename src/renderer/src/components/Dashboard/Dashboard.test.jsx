@@ -72,7 +72,7 @@ describe('Dashboard Component', () => {
         await waitFor(() => expect(getDashboardData).toHaveBeenCalledTimes(1));
 
         expect(await screen.findByText('Test Case')).toBeInTheDocument();
-        expect(await screen.findByText('Type: case')).toBeInTheDocument();
+        expect(await screen.findByText('case:')).toBeInTheDocument();
         expect(
             await screen.findByText('Description: This is a test case.'),
         ).toBeInTheDocument();
