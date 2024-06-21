@@ -21,9 +21,11 @@ class AccessListTest(AccessTestCase):
     def setUp(self):
         super().setUp()
 
-        self.user = CradleUser.objects.create_user(username="user", password="pass")
+        self.user = CradleUser.objects.create_user(
+            username="user", password="pass", email="alabala@gmail.com"
+        )
         self.admin = CradleUser.objects.create_superuser(
-            username="admin", password="pass"
+            username="admin", password="pass", email="b@c.d"
         )
         self.token_admin = str(AccessToken.for_user(self.admin))
         self.token_normal = str(AccessToken.for_user(self.user))

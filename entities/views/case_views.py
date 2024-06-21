@@ -5,10 +5,12 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.request import Request
 
-from ..serializers import CaseSerializer, CaseResponseSerializer
+from ..serializers import CaseSerializer, EntityResponseSerializer
 from ..models import Entity
 from logs.utils import LoggingUtils
 from logs.decorators import log_failed_responses
+
+from uuid import UUID
 
 
 class CaseList(APIView):
@@ -33,7 +35,7 @@ class CaseList(APIView):
         """
 
         cases = Entity.cases.all()
-        serializer = CaseResponseSerializer(cases, many=True)
+        serializer = EntityResponseSerializer(cases, many=True)
 
         return Response(serializer.data)
 
@@ -73,7 +75,7 @@ class CaseDetail(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
 
     @log_failed_responses
-    def delete(self, request: Request, case_id: int) -> Response:
+    def delete(self, request: Request, case_id: UUID) -> Response:
         """Allow an admin to delete a Case by specifying its id
 
         Args:

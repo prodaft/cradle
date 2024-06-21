@@ -3,10 +3,13 @@ from entities.models import Entity
 from .managers import AccessManager
 from .enums import AccessType
 from user.models import CradleUser
+import uuid
 
 
 class Access(models.Model):
-
+    id: models.UUIDField = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
     user: models.ForeignKey = models.ForeignKey(
         CradleUser, on_delete=models.CASCADE, to_field="id"
     )

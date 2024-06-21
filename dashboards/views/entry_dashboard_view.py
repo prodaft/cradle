@@ -12,6 +12,7 @@ from user.models import CradleUser
 from ..utils.dashboard_utils import DashboardUtils
 from ..serializers import EntryDashboardSerializer
 from logs.decorators import log_failed_responses
+from notes.models import Note
 
 
 class EntryDashboard(APIView):
@@ -33,7 +34,8 @@ class EntryDashboard(APIView):
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
             Response("There is no entry with specified name", status=404):
-                if there is no entry with the provided name
+                if there is no entry with the provided name or the entry exists but is
+                not referenced in any of the user's accessible notes
         """
 
         user: CradleUser = cast(CradleUser, request.user)
@@ -54,8 +56,14 @@ class EntryDashboard(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        entities_dict = DashboardUtils.get_dashboard(user, entry.id)
+        if not Note.objects.get_accessible_notes(user, entry.id).exists():
+            return Response(
+                "There is no entry with specified name",
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        entities_dict, neighbor_map = DashboardUtils.get_dashboard(user, entry.id)
 
         dashboard = DashboardUtils.add_entity_fields(entry, entities_dict)
 
-        return Response(EntryDashboardSerializer(dashboard).data)
+        return Response(EntryDashboardSerializer(dashboard, context=neighbor_map).data)

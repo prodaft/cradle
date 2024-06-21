@@ -55,7 +55,7 @@ class CaseDashboard(APIView):
                 "There is no case with specified name", status=status.HTTP_404_NOT_FOUND
             )
 
-        entities_dict = DashboardUtils.get_dashboard(user, case.id)
+        entities_dict, neighbor_map = DashboardUtils.get_dashboard(user, case.id)
 
         dashboard = DashboardUtils.add_entity_fields(case, entities_dict)
 
@@ -66,4 +66,4 @@ class CaseDashboard(APIView):
                 0
             ].access_type
 
-        return Response(CaseDashboardSerializer(dashboard).data)
+        return Response(CaseDashboardSerializer(dashboard, context=neighbor_map).data)

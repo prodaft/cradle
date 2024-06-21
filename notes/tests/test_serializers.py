@@ -6,6 +6,7 @@ from ..exceptions import (
     NoteNotPublishableException,
 )
 from ..serializers import ReportQuerySerializer
+from uuid import UUID
 
 
 class ReportQuerySerializerTest(NotesTestCase):
@@ -40,9 +41,9 @@ class ReportQuerySerializerTest(NotesTestCase):
 
     def test_validate_notes_not_in_database(self):
         note_ids = [
-            [self.notes[2].pk + 1, self.notes[2].pk + 2, self.notes[2].pk + 3],
-            [self.notes[2].pk, self.notes[2].pk + 2],
-            [self.notes[0].pk, self.notes[2].pk + 3, self.notes[1].pk],
+            [UUID(int=0), UUID(int=1), UUID(int=2)],
+            [self.notes[2].pk, UUID(int=0)],
+            [self.notes[0].pk, UUID(int=0), self.notes[1].pk],
         ]
         for test_case in note_ids:
             with self.subTest(f"{test_case}"):

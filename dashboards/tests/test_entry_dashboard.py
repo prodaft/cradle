@@ -19,10 +19,10 @@ class GetEntryDashboardTest(DashboardsTestCase):
         with self.subTest("Check number of entities"):
             self.assertEqual(len(entities), len(entities_json))
 
-        for i in range(0, len(entities_json)):
-            with self.subTest("Check entity id"):
-                entity = entities_json[i]
-                self.assertEqual(entity["id"], entities[i].id)
+        self.assertCountEqual(
+            [entity["id"] for entity in entities_json],
+            [str(entity.id) for entity in entities],
+        )
 
     def check_inaccessible_cases_name(self, inaccessible_cases):
         for case in inaccessible_cases:
@@ -30,56 +30,53 @@ class GetEntryDashboardTest(DashboardsTestCase):
                 self.assertEqual(case["name"], "Some Case")
                 self.assertEqual(case["description"], "Some Description")
 
-    def update_notes(self):
-        self.note1.entities.add(self.entry1, self.entry2)
-
-        self.note2.entities.add(self.entry1)
-
-    def create_entries(self):
-        self.entry1 = Entity.objects.create(
-            name="Entry1",
-            description="Description1",
-            type=EntityType.ENTRY,
-            subtype=EntrySubtype.IP,
-        )
-
-        self.entry2 = Entity.objects.create(
-            name="Entry1",
-            description="Description1",
-            type=EntityType.ENTRY,
-            subtype=EntrySubtype.URL,
-        )
-
     def setUp(self):
         super().setUp()
         self.client = APIClient()
 
-        self.create_entries()
-        self.update_notes()
+        self.entry2 = Entity.objects.create(
+            name="Entry2",
+            description="Description2",
+            type=EntityType.ENTRY,
+            subtype=EntrySubtype.URL,
+        )
+        self.note1.entities.add(self.entry2)
+        self.note2.entities.add(self.entry2)
 
     def test_get_dashboard_admin(self):
         response = self.client.get(
-            reverse("entry_dashboard", kwargs={"entry_name": self.entry1.name}),
-            {"subtype": EntrySubtype.IP},
+            reverse("entry_dashboard", kwargs={"entry_name": self.entry2.name}),
+            {"subtype": EntrySubtype.URL},
             **self.headers_admin,
         )
         self.assertEqual(response.status_code, 200)
 
-        notes = Note.objects.order_by("-timestamp")
-        cases = Entity.objects.filter(type=EntityType.CASE)
+        notes = Note.objects.exclude(id=self.note3.id).order_by("-timestamp")
+        cases = Entity.cases.exclude(id=self.case3.id)
         inaccessible_cases = Entity.objects.none()
+        second_hop_cases = Entity.objects.filter(id=self.case3.id)
+        second_hop_inaccessible_cases = Entity.objects.none()
 
         json_response = bytes_to_json(response.content)
+
+        with self.subTest("Check subtype"):
+            self.assertEqual("url", json_response["subtype"])
 
         self.check_ids(notes, json_response["notes"])
         self.check_ids(cases, json_response["cases"])
         self.check_ids(inaccessible_cases, json_response["inaccessible_cases"])
+        self.check_ids(second_hop_cases, json_response["second_hop_cases"])
+        self.check_ids(
+            second_hop_inaccessible_cases,
+            json_response["second_hop_inaccessible_cases"],
+        )
+
         self.check_inaccessible_cases_name(json_response["inaccessible_cases"])
 
     def test_get_dashboard_user_read_access(self):
         response = self.client.get(
-            reverse("entry_dashboard", kwargs={"entry_name": self.entry1.name}),
-            {"subtype": EntrySubtype.IP},
+            reverse("entry_dashboard", kwargs={"entry_name": self.entry2.name}),
+            {"subtype": EntrySubtype.URL},
             **self.headers_user2,
         )
         self.assertEqual(response.status_code, 200)
@@ -87,59 +84,53 @@ class GetEntryDashboardTest(DashboardsTestCase):
         notes = Note.objects.filter(id=self.note1.id)
         cases = Entity.objects.filter(id=self.case1.id)
         inaccessible_cases = Entity.objects.filter(id=self.case2.id)
+        second_hop_cases = Entity.objects.none()
+        second_hop_inaccessible_cases = Entity.objects.none()
 
         json_response = bytes_to_json(response.content)
 
         with self.subTest("Check subtype"):
-            self.assertEqual("ip", json_response["subtype"])
+            self.assertEqual("url", json_response["subtype"])
 
         self.check_ids(notes, json_response["notes"])
         self.check_ids(cases, json_response["cases"])
         self.check_ids(inaccessible_cases, json_response["inaccessible_cases"])
+        self.check_ids(second_hop_cases, json_response["second_hop_cases"])
+        self.check_ids(
+            second_hop_inaccessible_cases,
+            json_response["second_hop_inaccessible_cases"],
+        )
+
         self.check_inaccessible_cases_name(json_response["inaccessible_cases"])
 
     def test_get_dashboard_user_read_write_access(self):
         response = self.client.get(
-            reverse("entry_dashboard", kwargs={"entry_name": self.entry1.name}),
-            {"subtype": EntrySubtype.IP},
+            reverse("entry_dashboard", kwargs={"entry_name": self.entry2.name}),
+            {"subtype": EntrySubtype.URL},
             **self.headers_user1,
         )
         self.assertEqual(response.status_code, 200)
 
-        notes = Note.objects.order_by("-timestamp")
-        cases = Entity.objects.filter(type=EntityType.CASE)
+        notes = Note.objects.exclude(id=self.note3.id).order_by("-timestamp")
+        cases = Entity.cases.exclude(id=self.case3.id)
         inaccessible_cases = Entity.objects.none()
+        second_hop_cases = Entity.objects.none()
+        second_hop_inaccessible_cases = Entity.objects.filter(id=self.case3.id)
 
         json_response = bytes_to_json(response.content)
 
         with self.subTest("Check subtype"):
-            self.assertEqual("ip", json_response["subtype"])
+            self.assertEqual("url", json_response["subtype"])
 
         self.check_ids(notes, json_response["notes"])
         self.check_ids(cases, json_response["cases"])
         self.check_ids(inaccessible_cases, json_response["inaccessible_cases"])
-        self.check_inaccessible_cases_name(json_response["inaccessible_cases"])
-
-    def test_get_dashboard_user_no_access_to_a_case(self):
-        response = self.client.get(
-            reverse("entry_dashboard", kwargs={"entry_name": self.entry1.name}),
-            {"subtype": EntrySubtype.IP},
-            **self.headers_user2,
+        self.check_ids(second_hop_cases, json_response["second_hop_cases"])
+        self.check_ids(
+            second_hop_inaccessible_cases,
+            json_response["second_hop_inaccessible_cases"],
         )
-        self.assertEqual(response.status_code, 200)
 
-        notes = Note.objects.filter(id=self.note1.id)
-        cases = Entity.objects.filter(id=self.case1.id)
-        inaccessible_cases = Entity.objects.filter(id=self.case2.id)
-
-        json_response = bytes_to_json(response.content)
-
-        with self.subTest("Check subtype"):
-            self.assertEqual("ip", json_response["subtype"])
-
-        self.check_ids(notes, json_response["notes"])
-        self.check_ids(cases, json_response["cases"])
-        self.check_ids(inaccessible_cases, json_response["inaccessible_cases"])
         self.check_inaccessible_cases_name(json_response["inaccessible_cases"])
 
     def test_get_dashboard_invalid_entry(self):

@@ -9,18 +9,24 @@ from ..enums import AccessType
 from .utils import AccessTestCase
 from notifications.models import AccessRequestNotification
 
+import uuid
 
-class UpdateAccessTest(AccessTestCase):
+
+class RequestAccessTest(AccessTestCase):
 
     def setUp(self):
         super().setUp()
 
         self.users = [
-            CradleUser.objects.create_user(username=f"user{id}", password="user")
+            CradleUser.objects.create_user(
+                username=f"user{id}", password="user", email=f"b{id}@c.d"
+            )
             for id in range(4)
         ]
         self.users.append(
-            CradleUser.objects.create_superuser(username="admin", password="admin")
+            CradleUser.objects.create_superuser(
+                username="admin", password="admin", email="c@d.e"
+            )
         )
 
         self.case = Entity.objects.create(name="case", type=EntityType.CASE)
@@ -57,7 +63,7 @@ class UpdateAccessTest(AccessTestCase):
         response = self.client.post(
             reverse(
                 "request_access",
-                kwargs={"case_id": self.case.id + 10},
+                kwargs={"case_id": uuid.uuid4()},
             ),
             **self.headers[0],
         )

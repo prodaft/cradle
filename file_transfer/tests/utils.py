@@ -17,7 +17,6 @@ class FileTransferTestCase(TestCase):
         self.error_logger_patcher.stop()
 
     def init_minio_constants(self):
-        self.bucket_name = "user"
         self.file_name = "evidence.png"
         self.expiry_time = timedelta(minutes=5)
         self.minio_file_name = "aad5cae6-5737-409d-8ce2-5f116ed5e2de-evidence.png"
@@ -73,11 +72,13 @@ class FileTransferTestCase(TestCase):
         self.patcher_bucket = patch("minio.Minio.make_bucket")
         self.patcher_put = patch("minio.Minio.presigned_put_object")
         self.patcher_get = patch("minio.Minio.presigned_get_object")
+        self.patcher_stat_object = patch("minio.Minio.stat_object")
         self.patcher_uuid = patch("uuid.uuid4")
 
         self.mocked_make_bucket = self.patcher_bucket.start()
         self.mocked_presigned_put = self.patcher_put.start()
         self.mocked_presigned_get = self.patcher_get.start()
+        self.mocked_stat_object = self.patcher_stat_object.start()
         self.mocked_uuid = self.patcher_uuid.start()
 
         self.mocked_presigned_put.return_value = self.presigned_url
@@ -92,9 +93,17 @@ class FileTransferTestCase(TestCase):
             else:
                 raise Exception()
 
+        def mocked_stat_object_call(bucket_name, object_name):
+            if bucket_name == self.bucket_name and object_name == self.minio_file_name:
+                return True
+            else:
+                raise Exception()
+
         self.mocked_presigned_get.side_effect = mocked_presigned_get_call
+        self.mocked_stat_object.side_effect = mocked_stat_object_call
 
     def mock_minio_destroy(self):
         self.patcher_put.stop()
         self.patcher_get.stop()
         self.patcher_bucket.stop()
+        self.patcher_stat_object.stop()

@@ -5,6 +5,8 @@ from user.models import CradleUser
 from django.db.models import Q, F, FilteredRelation
 from entities.models import Entity
 
+from uuid import UUID
+
 
 class AccessManager(models.Manager):
     def has_access_to_cases(
@@ -34,7 +36,7 @@ class AccessManager(models.Manager):
         )
         return accesses.count() == len(cases)
 
-    def get_accessible_case_ids(self, user_id: int) -> models.QuerySet:
+    def get_accessible_case_ids(self, user_id: UUID) -> models.QuerySet:
         """For a given user id, get a list of all case ids which
         are accessible by the user. This method does not take into consideration
         the access privileges of the user. Hence, this method should not be used
@@ -60,7 +62,7 @@ class AccessManager(models.Manager):
             .distinct()
         )
 
-    def get_accesses(self, user_id: int) -> models.QuerySet:
+    def get_accesses(self, user_id: UUID) -> models.QuerySet:
         """Retrieves from the database the access_type of all cases for a given user id.
 
         Args:
@@ -85,7 +87,7 @@ class AccessManager(models.Manager):
             .annotate(access_type=F("access_type__access_type"))  # rename obscure field
         )
 
-    def get_users_with_access(self, case_id: int) -> models.QuerySet:
+    def get_users_with_access(self, case_id: UUID) -> models.QuerySet:
         """Retrieves the ids of the users that can provide access for the given
         case. Those users are the ones that have read-write access to the case
         and the superusers.

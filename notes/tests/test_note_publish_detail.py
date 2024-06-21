@@ -10,6 +10,8 @@ from access.enums import AccessType
 import io
 from .utils import NotesTestCase
 
+import uuid
+
 
 def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
@@ -20,10 +22,12 @@ class NotePublishableDetailTest(NotesTestCase):
     def setUp(self):
         super().setUp()
 
-        self.user = CradleUser.objects.create_user(username="user", password="user")
+        self.user = CradleUser.objects.create_user(
+            username="user", password="user", email="alabala@gmail.com"
+        )
         self.user_token = str(AccessToken.for_user(self.user))
         self.not_owner = CradleUser.objects.create_user(
-            username="not_owner", password="pass"
+            username="not_owner", password="pass", email="b@c.d"
         )
         self.not_owner_token = str(AccessToken.for_user(self.not_owner))
         self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
@@ -68,7 +72,7 @@ class NotePublishableDetailTest(NotesTestCase):
 
     def test_update_note_publishable_not_found(self):
         response = self.client.put(
-            reverse("note_publish_detail", kwargs={"note_id": self.notes[1].id + 1}),
+            reverse("note_publish_detail", kwargs={"note_id": uuid.uuid4()}),
             {"publishable": "true"},
             content_type="application/json",
             **self.headers,

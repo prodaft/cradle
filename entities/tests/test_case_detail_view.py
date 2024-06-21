@@ -9,6 +9,8 @@ from .utils import EntitiesTestCase
 from ..models import Entity
 from ..enums import EntityType
 
+import uuid
+
 
 def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
@@ -21,10 +23,16 @@ class DeleteCaseDetailsTest(EntitiesTestCase):
 
         self.client = APIClient()
         self.admin_user = CradleUser.objects.create_user(
-            username="admin", password="password", is_staff=True
+            username="admin",
+            password="password",
+            is_staff=True,
+            email="alabala@gmail.com",
         )
         self.normal_user = CradleUser.objects.create_user(
-            username="user", password="password", is_staff=False
+            username="user",
+            password="password",
+            is_staff=False,
+            email="b@c.d",
         )
         self.token_admin = str(AccessToken.for_user(self.admin_user))
         self.token_normal = str(AccessToken.for_user(self.normal_user))
@@ -65,12 +73,12 @@ class DeleteCaseDetailsTest(EntitiesTestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_delete_case_admin_wrong_id(self):
-        case = Entity.objects.create(
+        Entity.objects.create(
             name="Case1", description="Description1", type=EntityType.CASE
         )
 
         response = self.client.delete(
-            reverse("case_detail", kwargs={"case_id": case.pk + 1}),
+            reverse("case_detail", kwargs={"case_id": uuid.uuid4()}),
             **self.headers_admin,
         )
 

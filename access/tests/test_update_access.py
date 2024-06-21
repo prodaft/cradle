@@ -9,6 +9,8 @@ from ..enums import AccessType
 from .utils import AccessTestCase
 from notifications.models import MessageNotification
 
+import uuid
+
 
 class UpdateAccessTest(AccessTestCase):
 
@@ -16,11 +18,15 @@ class UpdateAccessTest(AccessTestCase):
         super().setUp()
 
         self.users = [
-            CradleUser.objects.create_user(username=f"user{id}", password="user")
+            CradleUser.objects.create_user(
+                username=f"user{id}", password="user", email=f"a{id}@gmail.com"
+            )
             for id in range(3)
         ]
         self.users.append(
-            CradleUser.objects.create_superuser(username="admin", password="admin")
+            CradleUser.objects.create_superuser(
+                username="admin", password="admin", email="b@c.d"
+            )
         )
         self.case = Entity.objects.create(name="case", type=EntityType.CASE)
 
@@ -59,7 +65,10 @@ class UpdateAccessTest(AccessTestCase):
 
     def test_update_access_user_not_found(self):
         response = self.client.put(
-            reverse("update_access", kwargs={"user_id": 0, "case_id": self.case.id}),
+            reverse(
+                "update_access",
+                kwargs={"user_id": uuid.uuid4(), "case_id": self.case.id},
+            ),
             {"access_type": "none"},
             content_type="application/json",
             **self.headers[0],
@@ -71,7 +80,8 @@ class UpdateAccessTest(AccessTestCase):
     def test_update_access_case_not_found(self):
         response = self.client.put(
             reverse(
-                "update_access", kwargs={"user_id": self.users[2].id, "case_id": 0}
+                "update_access",
+                kwargs={"user_id": self.users[2].id, "case_id": uuid.uuid4()},
             ),
             {"access_type": "none"},
             content_type="application/json",

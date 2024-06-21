@@ -69,13 +69,22 @@ class AccessibleNotesTest(NotesTestCase):
 
     def create_users(self):
         self.admin_user = CradleUser.objects.create_superuser(
-            username="admin", password="password", is_staff=True
+            username="admin",
+            password="password",
+            is_staff=True,
+            email="alabala@gmail.com",
         )
         self.user1 = CradleUser.objects.create_user(
-            username="user1", password="password", is_staff=False
+            username="user1",
+            password="password",
+            is_staff=False,
+            email="b@c.d",
         )
         self.user2 = CradleUser.objects.create_user(
-            username="user2", password="password", is_staff=False
+            username="user2",
+            password="password",
+            is_staff=False,
+            email="c@d.e",
         )
 
     def create_tokens(self):
@@ -275,13 +284,22 @@ class GetAllNotesTest(NotesTestCase):
 class GetEntitiesOfTypeTest(NotesTestCase):
     def create_users(self):
         self.admin_user = CradleUser.objects.create_superuser(
-            username="admin", password="password", is_staff=True
+            username="admin",
+            password="password",
+            is_staff=True,
+            email="alabala@gmail.com",
         )
         self.user1 = CradleUser.objects.create_user(
-            username="user1", password="password", is_staff=False
+            username="user1",
+            password="password",
+            is_staff=False,
+            email="b@c.d",
         )
         self.user2 = CradleUser.objects.create_user(
-            username="user2", password="password", is_staff=False
+            username="user2",
+            password="password",
+            is_staff=False,
+            email="c@d.e",
         )
 
     def create_notes(self):
@@ -378,13 +396,22 @@ class GetEntitiesOfTypeTest(NotesTestCase):
 class GetRelatedAccessibleEntitiesTest(NotesTestCase):
     def create_users(self):
         self.admin_user = CradleUser.objects.create_superuser(
-            username="admin", password="password", is_staff=True
+            username="admin",
+            password="password",
+            is_staff=True,
+            email="alabala@gmail.com",
         )
         self.user1 = CradleUser.objects.create_user(
-            username="user1", password="password", is_staff=False
+            username="user1",
+            password="password",
+            is_staff=False,
+            email="b@c.d",
         )
         self.user2 = CradleUser.objects.create_user(
-            username="user2", password="password", is_staff=False
+            username="user2",
+            password="password",
+            is_staff=False,
+            email="c@d.e",
         )
 
     def create_notes(self):
@@ -546,9 +573,9 @@ class GetLinksTest(NotesTestCase):
     def test_get_links_one_note(self):
         links = list(Note.objects.get_links(Note.objects.filter(id=self.note1.id)))
         expected = [
-            (self.cases[1].id, self.actors[0].id),
-            (self.cases[1].id, self.metadata[0].id),
-            (self.actors[0].id, self.metadata[0].id),
+            tuple(sorted((self.cases[1].id, self.actors[0].id))),
+            tuple(sorted((self.cases[1].id, self.metadata[0].id))),
+            tuple(sorted((self.actors[0].id, self.metadata[0].id))),
         ]
 
         links = [tuple(sorted(d.values())) for d in links]
@@ -558,10 +585,10 @@ class GetLinksTest(NotesTestCase):
         links = list(Note.objects.get_links(Note.objects.exclude(id=self.note1.id)))
         links = [tuple(sorted(d.values())) for d in links]
         expected = [
-            (self.cases[0].id, self.metadata[1].id),
-            (self.cases[0].id, self.entry[1].id),
-            (self.entry[1].id, self.metadata[1].id),
-            (self.cases[0].id, self.cases[1].id),
+            tuple(sorted((self.cases[0].id, self.metadata[1].id))),
+            tuple(sorted((self.cases[0].id, self.entry[1].id))),
+            tuple(sorted((self.entry[1].id, self.metadata[1].id))),
+            tuple(sorted((self.cases[0].id, self.cases[1].id))),
         ]
 
         self.assertEqual(Counter(links), Counter(expected))
@@ -577,13 +604,13 @@ class GetLinksTest(NotesTestCase):
         links = list(Note.objects.get_links(Note.objects.all()))
         links = [tuple(sorted(d.values())) for d in links]
         expected = [
-            (self.cases[0].id, self.metadata[1].id),
-            (self.cases[0].id, self.entry[1].id),
-            (self.entry[1].id, self.metadata[1].id),
-            (self.cases[0].id, self.cases[1].id),
-            (self.cases[1].id, self.actors[0].id),
-            (self.cases[1].id, self.metadata[0].id),
-            (self.actors[0].id, self.metadata[0].id),
+            tuple(sorted((self.cases[0].id, self.metadata[1].id))),
+            tuple(sorted((self.cases[0].id, self.entry[1].id))),
+            tuple(sorted((self.entry[1].id, self.metadata[1].id))),
+            tuple(sorted((self.cases[0].id, self.cases[1].id))),
+            tuple(sorted((self.cases[1].id, self.actors[0].id))),
+            tuple(sorted((self.cases[1].id, self.metadata[0].id))),
+            tuple(sorted((self.actors[0].id, self.metadata[0].id))),
         ]
 
         self.assertEqual(Counter(links), Counter(expected))

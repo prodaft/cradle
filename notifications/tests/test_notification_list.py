@@ -14,10 +14,16 @@ class NotificationListTest(NotificationsTestCase):
         self.client = APIClient()
 
         self.user = CradleUser.objects.create_user(
-            username="user", password="password", is_staff=False
+            username="user",
+            password="password",
+            is_staff=False,
+            email="alabala@gmail.com",
         )
         self.other_user = CradleUser.objects.create_user(
-            username="other_user", password="password", is_staff=False
+            username="other_user",
+            password="password",
+            is_staff=False,
+            email="b@c.d",
         )
         self.case = Entity.objects.create(name="Case", type=EntityType.CASE)
 
@@ -58,7 +64,7 @@ class NotificationListTest(NotificationsTestCase):
         self.assertEqual(len(response.json()), 2)
 
         expected_response_message_notification = {
-            "id": message_user.id,
+            "id": str(message_user.id),
             "message": message_user.message,
             "is_marked_unread": False,
             "timestamp": message_user.timestamp.isoformat().replace("+00:00", "Z"),
@@ -66,15 +72,15 @@ class NotificationListTest(NotificationsTestCase):
         }
 
         expected_response_access_request_notification = {
-            "id": access_request_user.id,
+            "id": str(access_request_user.id),
             "message": access_request_user.message,
             "is_marked_unread": False,
             "notification_type": "request_access_notification",
-            "case_id": access_request_user.case.id,
+            "case_id": str(access_request_user.case.id),
             "timestamp": access_request_user.timestamp.isoformat().replace(
                 "+00:00", "Z"
             ),
-            "requesting_user_id": access_request_user.requesting_user.id,
+            "requesting_user_id": str(access_request_user.requesting_user.id),
         }
 
         self.assertCountEqual(
