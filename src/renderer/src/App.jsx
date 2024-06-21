@@ -47,7 +47,10 @@ function App() {
                             <Route path='/dashboards/*' element={<Dashboard />} />
                             <Route path='/notes/:id' element={<NoteViewer />} />
                             <Route path='/notes' element={<NoteSelector />} />
-                            <Route path='/graph' element={<GraphComponent />} />
+                            <Route
+                                path='/knowledge-graph'
+                                element={<GraphComponent />}
+                            />
                             <Route path='/publish' element={<PublishPreview />}></Route>
                             <Route path='/admin' element={<Outlet />}>
                                 <Route index element={<AdminPanel />}></Route>

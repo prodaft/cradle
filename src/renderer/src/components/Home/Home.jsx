@@ -47,14 +47,6 @@ export default function Home() {
 
     const SHORT_POLLING_DELAY = 10000;
 
-    const handleLogout = useCallback(() => {
-        auth.logOut();
-        localStorage.clear(); // TODO save unsaved notes as fleeting notes
-        navigate('/login', {
-            state: { from: location, state: location.state },
-        });
-    }, [auth, navigate, location]);
-
     const toggleFleetingNotes = useCallback(() => {
         setShowFleetingNotes((prev) => !prev);
     }, [setShowFleetingNotes]);
@@ -96,21 +88,9 @@ export default function Home() {
                 />
                 <div className='flex flex-row w-full h-full overflow-hidden'>
                     <Sidebar
-                        handleLogout={handleLogout}
-                        handleAdminPanel={() => {
-                            navigate('/admin');
-                        }}
-                        handleNewNote={() => {
-                            navigate('/editor');
-                        }}
-                        handleGraphView={() => {
-                            navigate('/graph');
-                        }}
+                        showNotifications={showNotifications}
                         unreadNotificationsCount={unreadNotificationsCount}
                         handleNotifications={toggleNotifications}
-                        handleWelcomePage={() => {
-                            navigate('/');
-                        }}
                     />
                     <div
                         className={`transition-all duration-150 ${showNotifications ? 'max-w-96 w-full' : 'w-0'} overflow-hidden`}

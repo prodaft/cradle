@@ -65,7 +65,11 @@ export default function Navbar({
                 <NavbarButton
                     key='fleeting-notes-button'
                     text={'Fleeting Notes'}
-                    icon={showFleetingNotesButton ? <Notes /> : <Notes color='gray' />}
+                    icon={
+                        <Notes
+                            className={`${showFleetingNotesButton ? '' : 'text-gray-500'}`}
+                        />
+                    }
                     onClick={handleFleetingNotesButton}
                     testid='fleeting-notes-button'
                 />
