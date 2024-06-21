@@ -1,31 +1,38 @@
-# CRADLE (Back-end)
+# CRADLE (Back End)
 
-**This is the back-end server for CRADLE. The front-end client can be found [here](https://gitlab.ewi.tudelft.nl/cse2000-software-project/2023-2024/cluster-j/08b/frontend).**
+Welcome to CRADLE's back end codebase. We are happy to see you here!
 
-Cyber Threat Intelligence is data that is collected, processed and analyzed to understand a threat agent’s motives, targets and attack behaviours. The job of a threat analyst is multifaceted.
+**This is the back end server of CRADLE. The front end client can be found [here](https://gitlab.ewi.tudelft.nl/cse2000-software-project/2023-2024/cluster-j/08b/frontend).**
 
-On the one hand, analysts need to investigate the cyber activity of threat agents and make notes which can be quickly shared among peers. The notes taken will reference different entries of interest to agents or cases. Analysts need to visualize data in a way which can aid them in making connections between agents and entries.
+---
 
-On the other hand, analysts need to aggregate the intelligence gathered to compile reports on the cases they investigate. Analysts need to quickly access their relevant notes to improve effectiveness and decrease the time taken for unnecessary labor.
+## Introduction
 
-**CRADLE** is an open-source web application that will aid the Cyber-Threat Intelligence (CTI) field by providing a collaborative, domain-specific environment. The application will allow analysts to easily conduct their investigations which can then be exported in a publishable format.
+Cyber Threat Intelligence (CTI) involves the collection, processing, and analysis of data to understand the motives, targets, and attack behaviors of threat agents. The role of a threat analyst is complex and multifaceted.
 
-CRADLE is be a web application structured with a client-server architecture. Its design is modular to allow for other features and improvements to be added later on.
-CRADLE's frontend is built using mainly [Electron](https://www.electronjs.org/) and [React](https://react.dev/), aided by technologies such as [Tailwind CSS](https://tailwindcss.com/) and [Vite](https://vitejs.dev/). The backend is built mainly using the [Django](https://www.djangoproject.com/) web framework and [PostgreSQL](https://www.postgresql.org/) for data storage. For more information about the frontend visit its [page](https://gitlab.ewi.tudelft.nl/cse2000-software-project/2023-2024/cluster-j/08b/frontend).
+Analysts need to investigate cyber activities, make and share notes, visualize data to establish connections between agents and entries, and compile comprehensive reports on their findings. They require quick access to relevant notes to enhance efficiency and minimize unnecessary labor.
 
-<!-- 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method. --> 
+CRADLE is an open-source web application designed to assist CTI analysts by providing a collaborative, domain-specific note-taking tool. It streamlines the workflow of cyber threat analysts, enabling them to conduct investigations efficiently and export their findings in a publishable format.
 
-## Installation
+CRADLE employs a client-server architecture with a modular design, facilitating future feature additions and improvements.
+The front end is primarily built using [Electron](https://www.electronjs.org/) and [React](https://react.dev/), supported by technologies such as [Tailwind CSS](https://tailwindcss.com/) and [Vite](https://vitejs.dev/). The back end is built mainly using [Django](https://www.djangoproject.com/). For more information about the front end visit its [page](https://gitlab.ewi.tudelft.nl/cse2000-software-project/2023-2024/cluster-j/08b/frontend).
+
+---
+
+## Getting Started
+
+This section provides a comprehensive installation guide and instructions on how to use the application.
+
+### Installation
+
 1. Clone the project:
 ```
-$ git clone git@gitlab.ewi.tudelft.nl:cse2000-software-project/2023-2024/cluster-j/08b/backend.git
+git clone git@gitlab.ewi.tudelft.nl:cse2000-software-project/2023-2024/cluster-j/08b/backend.git
 ```
 2. Install [PostgreSQL](https://www.postgresql.org/). You will need to ensure you have created a user with its associated password (the default is ```postgres```).
 3. Run the server (usually this might happen automatically after install). Use a client such as ```psql``` to communicate with it:
 ```
-$ psql -U [your-username]
+psql -U [your-username]
 ```
 4. Once in the interactive section, create a new database:
 ```
@@ -41,31 +48,52 @@ export POSTGRES_HOST=[the location where the PostgreSQL server is running]
 6. Install [Minio](https://min.io/) and run an instance of it. This will be used for file storage. Define the **environment variables** which are described in `file_transfer/config.py`. 
 7. Install [Pipenv](https://pipenv.pypa.io/en/latest/) (Note: Your [Python](https://www.python.org/downloads/release/python-3110/) version should be 3.11):
 ```
-$ pip install pipenv
+pip install pipenv
 ```
-8. Navigate to the projects root project. Migrate the database schema:
+
+### Scripts and Usage
+
+* Migrating the Database Schema:
 ```
 pipenv run python manage.py makemigrations
-```
-```
 pipenv run python manage.py migrate
 ```
 
-## Usage
-- To run the server, use:
+* Running the Server:
 ```
 pipenv run python manage.py runserver
 ```
-- To run tests, use:
+
+* Running the Tests:
 ```
 pipenv run python manage.py test
 ```
 
-## Contributing
-Right now only the designated team can contribute. Later on the project will be open sourced. The client will determine this aspect.
+---
 
-## Authors and acknowledgment
-**This section will grow as we develop**
+## Contributing
+
+We welcome contributions from everyone! To ensure a smooth process, please follow these guidelines:
+
+**TBA**
+
+---
+
+## Code of Conduct
+
+**TBA**
+
+---
+
+## Authors and Acknowledgments
+
+This project is maintained by a dedicated team of developers and contributors. Special thanks to everyone who has contributed to this project so far.
+
+### Special Thanks
+
+**TBA**
+
+---
 
 ## License
-**To be determined. The client will choose this.**
+**CRADLE is under the free open source MIT licence.** The license can be found in the [LICENSE](LICENSE) file.
