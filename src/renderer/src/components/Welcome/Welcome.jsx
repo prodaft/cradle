@@ -76,10 +76,11 @@ export default function Welcome() {
 
                 <footer className='pb-5 mt-auto '>
                     <div className='container mx-auto flex flex-col items-center'>
-                        <p className='mt-6 !text-sm !font-normal text-zinc-500'>
-                            <a href='https://prodaft.com'>
-                                Copyright &copy; 2024 PRODAFT
-                            </a>
+                        <p
+                            className='mt-6 !text-sm !font-normal text-zinc-500 hover:cursor-pointer hover:opacity-80'
+                            onClick={() => window.open('https://prodaft.com')}
+                        >
+                            Copyright &copy; 2024 PRODAFT
                         </p>
                     </div>
                 </footer>
