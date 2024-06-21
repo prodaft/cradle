@@ -30,7 +30,7 @@ export default function AdminPanelSection({
     return (
         <div className='w-full h-fit bg-gray-2 rounded-md p-3'>
             <div className='w-full h-12 flex flex-row items-center justify-between'>
-                <h1 className='text-2xl font-bold'>{title}</h1>
+                <h1 className='text-2xl font-bold pl-2'>{title}</h1>
                 {addEnabled && (
                     <span
                         className='tooltip tooltip-bottom'
