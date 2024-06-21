@@ -68,8 +68,8 @@ describe('DashboardNote', () => {
         );
 
         expect(await screen.findByText('This is a test note')).toBeInTheDocument();
-        expect(await screen.findByText('Entity 1;')).toBeInTheDocument();
-        expect(await screen.findByText('Entity 2;')).toBeInTheDocument();
+        expect(await screen.findByText('Entity 1')).toBeInTheDocument();
+        expect(await screen.findByText('Entity 2')).toBeInTheDocument();
     });
 
     it('navigates to note detail page on note click', async () => {
@@ -147,7 +147,7 @@ describe('DashboardNote', () => {
             </MemoryRouter>,
         );
 
-        expect(screen.getByText('Entity 1;')).toBeInTheDocument();
-        expect(screen.getByText('Entity 2;')).toBeInTheDocument();
+        expect(screen.getByText('Entity 1')).toBeInTheDocument();
+        expect(screen.getByText('Entity 2')).toBeInTheDocument();
     });
 });

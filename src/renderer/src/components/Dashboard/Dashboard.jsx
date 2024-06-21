@@ -6,8 +6,6 @@ import {
 } from '../../services/dashboardService/dashboardService';
 import { useAuth } from '../../hooks/useAuth/useAuth';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import DashboardHorizontalSection from '../DashboardHorizontalSection/DashboardHorizontalSection';
-import DashboardCard from '../DashboardCard/DashboardCard';
 import DashboardNote from '../DashboardNote/DashboardNote';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
@@ -17,7 +15,10 @@ import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 import { deleteEntity } from '../../services/adminService/adminService';
 import NotFound from '../NotFound/NotFound';
 import pluralize from 'pluralize';
-import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
+import {
+    renderDashboardSection,
+    renderDashboardSectionWithInaccessibleEntities,
+} from '../../utils/dashboardUtils/dashboardUtils';
 import { Search } from 'iconoir-react';
 
 /**
@@ -124,12 +125,8 @@ export default function Dashboard() {
         setDialog,
     ]);
 
-    const handleRequestCaseAccess = () => {
-        Promise.all(
-            contentObject.inaccessible_cases.map((c) =>
-                requestCaseAccess(auth.access, c.id),
-            ),
-        )
+    const handleRequestCaseAccess = (cases) => {
+        Promise.all(cases.map((c) => requestCaseAccess(auth.access, c.id)))
             .then(() =>
                 setAlert({
                     show: true,
@@ -171,14 +168,14 @@ export default function Dashboard() {
                 <div className='w-[95%] h-full flex flex-col p-6 space-y-3'>
                     {contentObject.name && (
                         <h1 className='text-5xl font-bold w-full break-all'>
+                            {contentObject.type && (
+                                <span className='text-4xl text-zinc-500'>{`${contentObject.subtype ? contentObject.subtype : contentObject.type}: `}</span>
+                            )}
                             {contentObject.name}
                         </h1>
                     )}
-                    {contentObject.type && (
-                        <p className='text-sm text-zinc-500'>{`Type: ${contentObject.subtype ? contentObject.subtype : contentObject.type}`}</p>
-                    )}
                     {contentObject.description && (
-                        <p className='text-sm text-zinc-500'>{`Description: ${contentObject.description}`}</p>
+                        <p className='text-sm text-zinc-400'>{`Description: ${contentObject.description}`}</p>
                     )}
                     {contentObject.type && contentObject.type === 'entry' && (
                         <div className='flex flex-row space-x-2 flex-wrap'>
@@ -193,65 +190,31 @@ export default function Dashboard() {
                             </button>
                         </div>
                     )}
-                    {contentObject.actors && (
-                        <DashboardHorizontalSection title={'Related Actors'}>
-                            {contentObject.actors.map((actor, index) => (
-                                <DashboardCard
-                                    key={index}
-                                    name={actor.name}
-                                    link={createDashboardLink(actor)}
-                                />
-                            ))}
-                        </DashboardHorizontalSection>
+
+                    {renderDashboardSection(contentObject.actors, 'Related Actors')}
+
+                    {renderDashboardSectionWithInaccessibleEntities(
+                        contentObject.cases,
+                        contentObject.inaccessible_cases,
+                        'Related Cases',
+                        'There are inaccessible cases linked to this entity. ',
+                        'Request access to view them.',
+                        handleRequestCaseAccess,
                     )}
 
-                    {contentObject.cases && (
-                        <DashboardHorizontalSection title={'Related Cases'}>
-                            {contentObject.cases.map((c, index) => (
-                                <DashboardCard
-                                    key={index}
-                                    name={c.name}
-                                    link={createDashboardLink(c)}
-                                />
-                            ))}
-                            {contentObject.inaccessible_cases &&
-                                contentObject.inaccessible_cases.length > 0 && (
-                                    <div className='w-full h-fit mt-1 flex flex-row justify-between items-center text-zinc-400'>
-                                        <p>
-                                            {
-                                                'There are inaccessible cases linked to this entity. '
-                                            }
-                                            <span
-                                                className='underline cursor-pointer'
-                                                onClick={handleRequestCaseAccess}
-                                            >
-                                                {'Request access to view them.'}
-                                            </span>
-                                        </p>
-                                    </div>
-                                )}
-                        </DashboardHorizontalSection>
-                    )}
+                    {renderDashboardSection(contentObject.entries, 'Related Entries')}
 
-                    {contentObject.entries && (
-                        <DashboardHorizontalSection title={'Related Entries'}>
-                            {contentObject.entries.map((entry, index) => (
-                                <DashboardCard
-                                    key={index}
-                                    name={`${entry.subtype}: ${entry.name}`}
-                                    link={createDashboardLink(entry)}
-                                />
-                            ))}
-                        </DashboardHorizontalSection>
-                    )}
+                    {renderDashboardSection(contentObject.metadata, 'Metadata')}
 
-                    {contentObject.metadata && (
-                        <DashboardHorizontalSection title={'Metadata'}>
-                            {contentObject.metadata.map((data, index) => (
-                                <DashboardCard key={index} name={data.name} />
-                            ))}
-                        </DashboardHorizontalSection>
-                    )}
+                    {contentObject.second_hop_cases &&
+                        renderDashboardSectionWithInaccessibleEntities(
+                            contentObject.second_hop_cases,
+                            contentObject.second_hop_inaccessible_cases,
+                            'Second Degree Relationships',
+                            'There are inaccessible entities linked to this entity. ',
+                            'Request access to view them.',
+                            handleRequestCaseAccess,
+                        )}
 
                     {contentObject.notes && (
                         <div className='bg-cradle3 p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col flex-1'>

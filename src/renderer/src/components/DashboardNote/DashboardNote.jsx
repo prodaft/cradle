@@ -90,9 +90,9 @@ export default function DashboardNote({
             <Link
                 key={entity.id}
                 to={dashboardLink}
-                className='text-zinc-300 hover:underline hover:text-cradle2 mr-1'
+                className='text-zinc-300 hover:underline hover:text-cradle2 mr-1 backdrop-filter bg-cradle3 bg-opacity-60 backdrop-blur-lg px-2 py-1 rounded-md'
             >
-                {entity.name};
+                {entity.name}
             </Link>
         );
     });
