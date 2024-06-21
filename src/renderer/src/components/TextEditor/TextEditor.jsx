@@ -12,7 +12,7 @@ import { displayError } from '../../utils/responseUtils/responseUtils.js';
 import useLightMode from '../../hooks/useLightMode/useLightMode.js';
 import NavbarDropdown from '../NavbarDropdown/NavbarDropdown.jsx';
 import { addFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
-import { useChangeFlexDirectionBySize } from '../../hooks/useChangeFlexDirectionBySize/useChangeFlexDirectionBySize';
+import useChangeFlexDirectionBySize from '../../hooks/useChangeFlexDirectionBySize/useChangeFlexDirectionBySize';
 import { useLocalStorage } from '@uidotdev/usehooks';
 
 /**
@@ -64,7 +64,7 @@ export default function TextEditor() {
 
     const isEmptyNote = () => {
         if (!markdownContentRef.current) {
-            setAlert({ show: true, message: 'Cannot save empty note', color: 'red' });
+            setAlert({ show: true, message: 'Cannot save empty note.', color: 'red' });
             return true;
         }
         return false;

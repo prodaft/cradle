@@ -21,7 +21,7 @@ const config = {
     collectCoverage: true,
 
     // An array of glob patterns indicating a set of files for which coverage information should be collected
-    // collectCoverageFrom: undefined,
+    collectCoverageFrom: ['src/renderer/src/**/*.{js,jsx,ts,tsx}'],
 
     // The directory where Jest should output its coverage files
     coverageDirectory: 'coverage',
@@ -90,7 +90,7 @@ const config = {
 
     // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
     moduleNameMapper: {
-        '^.+\\.(css|less|sass|scss|svg|html)$': 'jest-transform-stub',
+        '^.+\\.(css|less|sass|scss|svg|html|png|jpg|jpeg|ico)$': 'jest-transform-stub',
         '^@/(.*)$': '<rootDir>/src/$1',
         d3: '<rootDir>/node_modules/d3/dist/d3.min.js',
         '^d3-(.*)$': '<rootDir>/node_modules/d3-$1/dist/d3-$1.min.js',
@@ -138,7 +138,7 @@ const config = {
     // runner: "jest-runner",
 
     // The paths to modules that run some code to configure or set up the testing environment before each test
-    // setupFiles: ['./jest.setup.js'],
+    setupFiles: ['dotenv/config'],
 
     // A list of paths to modules that run some code to configure or set up the testing framework before each test
     // setupFilesAfterEnv: [],
@@ -189,6 +189,7 @@ const config = {
         // "\\.pnp\\.[^\\\\]+$",
         'node_modules/(?!(mime|@uidotdev/usehooks|d3|d3-array|d3-force|internmap)/)',
     ],
+    testTimeout: 100000,
 
     // An array of regexp pattern strings that are matched against all modules before the module loader will automatically return a mock for them
     // unmockedModulePathPatterns: undefined,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export function useChangeFlexDirectionBySize(containerRef) {
+export default function useChangeFlexDirectionBySize(containerRef) {
     const [flexDirection, setFlexDirection] = useState('flex-col');
     useEffect(() => {
         const containerElement = containerRef.current;

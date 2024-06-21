@@ -12,7 +12,7 @@ axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
  * @param {Array<string>} entitySubtype - the types of entries to search for
  * @returns {Promise<axios.AxiosResponse<any>>}
  */
-export async function queryEntities(token, name, entityTypes, entitySubtype) {
+export function queryEntities(token, name, entityTypes, entitySubtype) {
     const url = `/query/`;
 
     const params = {

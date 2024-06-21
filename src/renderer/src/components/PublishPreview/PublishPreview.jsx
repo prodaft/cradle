@@ -102,6 +102,7 @@ export default function PublishPreview() {
                 <NavbarButton
                     text='Show HTML'
                     data-testid='show-html-btn'
+                    key='show-html-btn'
                     icon={<Code />}
                     onClick={toggleView}
                 />
@@ -109,6 +110,7 @@ export default function PublishPreview() {
                 <NavbarButton
                     text='Show JSON'
                     data-testid='show-json-btn'
+                    key='show-json-btn'
                     icon={<CodeBracketsSquare />}
                     onClick={toggleView}
                 />
@@ -118,6 +120,7 @@ export default function PublishPreview() {
                 icon={<Download />}
                 text='Download Report As...'
                 data-testid='publish-btn'
+                key='publish-btn'
                 contents={publishDropdownButtons}
             />,
         ],
