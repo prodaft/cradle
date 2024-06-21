@@ -41,7 +41,7 @@ export default function Welcome() {
             <div className='h-full w-full flex flex-col justify-between items-center overflow-auto bg-gradient-to-tl from-cradle1 to-gray-2'>
                 <div className='flex flex-row items-center justify-around py-10 w-[80%]'>
                     <div className='px-8 hidden md:block'>
-                        <Logo width='200px' height='auto' />
+                        <Logo width='200px' />
                     </div>
                     <span className='flex flex-col'>
                         <h1 className='text-zinc-300 text-6xl text-center md:text-left'>
