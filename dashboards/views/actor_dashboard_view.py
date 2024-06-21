@@ -45,8 +45,8 @@ class ActorDashboard(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        entities_dict = DashboardUtils.get_dashboard(user, actor.id)
+        entities_dict, neighbor_map = DashboardUtils.get_dashboard(user, actor.id)
 
         dashboard = DashboardUtils.add_entity_fields(actor, entities_dict)
 
-        return Response(ActorDashboardSerializer(dashboard).data)
+        return Response(ActorDashboardSerializer(dashboard, context=neighbor_map).data)

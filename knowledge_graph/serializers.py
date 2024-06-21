@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from entities.serializers import EntitySerializer
+from entities.serializers import EntityResponseSerializer
 from typing import Any
 
 
@@ -24,5 +24,5 @@ class LinkSerializer(serializers.Serializer):
 
 
 class KnowledgeGraphSerializer(serializers.Serializer):
-    entities = EntitySerializer(many=True)
+    entities = EntityResponseSerializer(many=True)
     links = LinkSerializer(many=True)
