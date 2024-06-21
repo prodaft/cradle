@@ -7,7 +7,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from .utils import EntitiesTestCase
 
 from ..models import Entity
-from ..serializers import ActorResponseSerializer
+from ..serializers import EntityResponseSerializer
 from ..enums import EntityType
 
 
@@ -47,7 +47,7 @@ class GetActorListTest(EntitiesTestCase):
         )
         actors = Entity.actors.all()
 
-        expected = ActorResponseSerializer(actors, many=True).data
+        expected = EntityResponseSerializer(actors, many=True).data
 
         response = self.client.get(reverse("actor_list"), **self.headers_admin)
 

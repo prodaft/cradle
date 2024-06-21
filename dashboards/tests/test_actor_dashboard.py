@@ -5,8 +5,6 @@ import io
 from .utils import DashboardsTestCase
 
 from entities.models import Entity
-from entities.enums import EntityType
-from notes.models import Note
 
 
 def bytes_to_json(data):
@@ -30,14 +28,11 @@ class GetActorDashboardTest(DashboardsTestCase):
                 self.assertEqual(case["name"], "Some Case")
                 self.assertEqual(case["description"], "Some Description")
 
-    def update_notes(self):
-        self.note2.entities.add(self.actor1)
-
     def setUp(self):
         super().setUp()
         self.client = APIClient()
 
-        self.update_notes()
+        self.note2.entities.add(self.actor1)
 
     def test_get_dashboard_admin(self):
         response = self.client.get(
@@ -46,11 +41,19 @@ class GetActorDashboardTest(DashboardsTestCase):
         )
         self.assertEqual(response.status_code, 200)
 
-        notes = Note.objects.all().order_by("-timestamp")
-        cases = Entity.objects.filter(type=EntityType.CASE)
-        actors = Entity.objects.filter(id=self.actor2.id)
-        metadata = Entity.objects.filter(type=EntityType.METADATA)
-        inaccessible_cases = Entity.objects.none()
+        notes = [self.note2, self.note1]
+        cases = [self.case1, self.case2]
+        actors = [self.actor2]
+        metadata = [self.metadata1]
+        inaccessible_cases = []
+        inaccessible_actors = Entity.objects.none()
+        inaccessible_metadata = Entity.objects.none()
+        second_hop_cases = Entity.objects.filter(id=self.case3.id)
+        second_hop_actors = Entity.objects.filter(id=self.actor3.id)
+        second_hop_metadata = Entity.objects.none()
+        second_hop_inaccessible_cases = Entity.objects.none()
+        second_hop_inaccessible_actors = Entity.objects.none()
+        second_hop_inaccessible_metadata = Entity.objects.none()
 
         json_response = bytes_to_json(response.content)
 
@@ -59,9 +62,27 @@ class GetActorDashboardTest(DashboardsTestCase):
 
         self.check_ids(notes, json_response["notes"])
         self.check_ids(cases, json_response["cases"])
-        self.check_ids(actors, json_response["actors"])
         self.check_ids(metadata, json_response["metadata"])
+        self.check_ids(actors, json_response["actors"])
         self.check_ids(inaccessible_cases, json_response["inaccessible_cases"])
+        self.check_ids(inaccessible_actors, json_response["inaccessible_actors"])
+        self.check_ids(inaccessible_metadata, json_response["inaccessible_metadata"])
+        self.check_ids(second_hop_cases, json_response["second_hop_cases"])
+        self.check_ids(second_hop_actors, json_response["second_hop_actors"])
+        self.check_ids(second_hop_metadata, json_response["second_hop_metadata"])
+        self.check_ids(
+            second_hop_inaccessible_cases,
+            json_response["second_hop_inaccessible_cases"],
+        )
+        self.check_ids(
+            second_hop_inaccessible_actors,
+            json_response["second_hop_inaccessible_actors"],
+        )
+        self.check_ids(
+            second_hop_inaccessible_metadata,
+            json_response["second_hop_inaccessible_metadata"],
+        )
+
         self.check_inaccessible_cases_name(json_response["inaccessible_cases"])
 
     def test_get_dashboard_user_read_access(self):
@@ -71,11 +92,19 @@ class GetActorDashboardTest(DashboardsTestCase):
         )
         self.assertEqual(response.status_code, 200)
 
-        notes = Note.objects.filter(id=self.note1.id)
-        cases = Entity.objects.filter(id=self.case1.id)
-        actors = Entity.objects.none()
-        metadata = Entity.objects.filter(id=self.metadata1.id)
-        inaccessible_cases = Entity.objects.filter(id=self.case2.id)
+        notes = [self.note1]
+        cases = [self.case1]
+        actors = []
+        metadata = [self.metadata1]
+        inaccessible_cases = [self.case2]
+        inaccessible_actors = Entity.objects.filter(id=self.actor2.id)
+        inaccessible_metadata = Entity.objects.none()
+        second_hop_cases = Entity.objects.none()
+        second_hop_actors = Entity.objects.none()
+        second_hop_metadata = Entity.objects.none()
+        second_hop_inaccessible_cases = Entity.objects.none()
+        second_hop_inaccessible_actors = Entity.objects.none()
+        second_hop_inaccessible_metadata = Entity.objects.none()
 
         json_response = bytes_to_json(response.content)
 
@@ -84,9 +113,27 @@ class GetActorDashboardTest(DashboardsTestCase):
 
         self.check_ids(notes, json_response["notes"])
         self.check_ids(cases, json_response["cases"])
-        self.check_ids(actors, json_response["actors"])
         self.check_ids(metadata, json_response["metadata"])
+        self.check_ids(actors, json_response["actors"])
         self.check_ids(inaccessible_cases, json_response["inaccessible_cases"])
+        self.check_ids(inaccessible_actors, json_response["inaccessible_actors"])
+        self.check_ids(inaccessible_metadata, json_response["inaccessible_metadata"])
+        self.check_ids(second_hop_cases, json_response["second_hop_cases"])
+        self.check_ids(second_hop_actors, json_response["second_hop_actors"])
+        self.check_ids(second_hop_metadata, json_response["second_hop_metadata"])
+        self.check_ids(
+            second_hop_inaccessible_cases,
+            json_response["second_hop_inaccessible_cases"],
+        )
+        self.check_ids(
+            second_hop_inaccessible_actors,
+            json_response["second_hop_inaccessible_actors"],
+        )
+        self.check_ids(
+            second_hop_inaccessible_metadata,
+            json_response["second_hop_inaccessible_metadata"],
+        )
+
         self.check_inaccessible_cases_name(json_response["inaccessible_cases"])
 
     def test_get_dashboard_user_read_write_access(self):
@@ -96,11 +143,19 @@ class GetActorDashboardTest(DashboardsTestCase):
         )
         self.assertEqual(response.status_code, 200)
 
-        notes = Note.objects.all().order_by("-timestamp")
-        cases = Entity.objects.filter(type=EntityType.CASE)
-        actors = Entity.objects.filter(id=self.actor2.id)
-        metadata = Entity.objects.filter(id=self.metadata1.id)
-        inaccessible_cases = Entity.objects.none()
+        notes = [self.note2, self.note1]
+        cases = [self.case1, self.case2]
+        actors = [self.actor2]
+        metadata = [self.metadata1]
+        inaccessible_cases = []
+        inaccessible_actors = Entity.objects.none()
+        inaccessible_metadata = Entity.objects.none()
+        second_hop_cases = Entity.objects.none()
+        second_hop_actors = Entity.objects.none()
+        second_hop_metadata = Entity.objects.none()
+        second_hop_inaccessible_cases = Entity.objects.filter(id=self.case3.id)
+        second_hop_inaccessible_actors = Entity.objects.filter(id=self.actor3.id)
+        second_hop_inaccessible_metadata = Entity.objects.none()
 
         json_response = bytes_to_json(response.content)
 
@@ -109,9 +164,27 @@ class GetActorDashboardTest(DashboardsTestCase):
 
         self.check_ids(notes, json_response["notes"])
         self.check_ids(cases, json_response["cases"])
-        self.check_ids(actors, json_response["actors"])
         self.check_ids(metadata, json_response["metadata"])
+        self.check_ids(actors, json_response["actors"])
         self.check_ids(inaccessible_cases, json_response["inaccessible_cases"])
+        self.check_ids(inaccessible_actors, json_response["inaccessible_actors"])
+        self.check_ids(inaccessible_metadata, json_response["inaccessible_metadata"])
+        self.check_ids(second_hop_cases, json_response["second_hop_cases"])
+        self.check_ids(second_hop_actors, json_response["second_hop_actors"])
+        self.check_ids(second_hop_metadata, json_response["second_hop_metadata"])
+        self.check_ids(
+            second_hop_inaccessible_cases,
+            json_response["second_hop_inaccessible_cases"],
+        )
+        self.check_ids(
+            second_hop_inaccessible_actors,
+            json_response["second_hop_inaccessible_actors"],
+        )
+        self.check_ids(
+            second_hop_inaccessible_metadata,
+            json_response["second_hop_inaccessible_metadata"],
+        )
+
         self.check_inaccessible_cases_name(json_response["inaccessible_cases"])
 
     def test_get_dashboard_user_no_access(self):
@@ -121,11 +194,19 @@ class GetActorDashboardTest(DashboardsTestCase):
         )
         self.assertEqual(response.status_code, 200)
 
-        notes = Note.objects.none()
-        cases = Entity.objects.none()
-        actors = Entity.objects.none()
-        metadata = Entity.objects.none()
-        inaccessible_cases = Entity.cases.order_by("-id")
+        notes = []
+        cases = []
+        actors = []
+        metadata = []
+        inaccessible_cases = [self.case2]
+        inaccessible_actors = Entity.objects.filter(id=self.actor1.id)
+        inaccessible_metadata = Entity.objects.none()
+        second_hop_cases = Entity.objects.none()
+        second_hop_actors = Entity.objects.none()
+        second_hop_metadata = Entity.objects.none()
+        second_hop_inaccessible_cases = Entity.objects.none()
+        second_hop_inaccessible_actors = Entity.objects.none()
+        second_hop_inaccessible_metadata = Entity.objects.none()
 
         json_response = bytes_to_json(response.content)
 
@@ -134,9 +215,27 @@ class GetActorDashboardTest(DashboardsTestCase):
 
         self.check_ids(notes, json_response["notes"])
         self.check_ids(cases, json_response["cases"])
-        self.check_ids(actors, json_response["actors"])
         self.check_ids(metadata, json_response["metadata"])
+        self.check_ids(actors, json_response["actors"])
         self.check_ids(inaccessible_cases, json_response["inaccessible_cases"])
+        self.check_ids(inaccessible_actors, json_response["inaccessible_actors"])
+        self.check_ids(inaccessible_metadata, json_response["inaccessible_metadata"])
+        self.check_ids(second_hop_cases, json_response["second_hop_cases"])
+        self.check_ids(second_hop_actors, json_response["second_hop_actors"])
+        self.check_ids(second_hop_metadata, json_response["second_hop_metadata"])
+        self.check_ids(
+            second_hop_inaccessible_cases,
+            json_response["second_hop_inaccessible_cases"],
+        )
+        self.check_ids(
+            second_hop_inaccessible_actors,
+            json_response["second_hop_inaccessible_actors"],
+        )
+        self.check_ids(
+            second_hop_inaccessible_metadata,
+            json_response["second_hop_inaccessible_metadata"],
+        )
+
         self.check_inaccessible_cases_name(json_response["inaccessible_cases"])
 
     def test_get_dashboard_invalid_actor(self):

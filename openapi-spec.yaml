@@ -1177,6 +1177,228 @@ components:
           type: array
           items: 
             $ref: "#/components/schemas/Entity"
+        inaccessible_actors:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        inaccessible_metadata:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        inaccessible_entries:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        second_hop_cases:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_actors:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_metadata:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_inaccessible_cases:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_inaccessible_actors:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_inaccessible_metadata:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
         access: 
           type: string
           enum: 
@@ -1233,6 +1455,224 @@ components:
           type: array
           items: 
             $ref: "#/components/schemas/Entity"
+        inaccessible_actors:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        inaccessible_metadata:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        second_hop_cases:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_actors:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_metadata:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_inaccessible_cases:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_inaccessible_actors:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_inaccessible_metadata:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
     
     EntryDashboard:
       type: object
@@ -1275,6 +1715,76 @@ components:
           type: array
           items: 
             $ref: "#/components/schemas/Entity"
+        second_hop_cases:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_inaccessible_cases:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
     
     User:
       type: object

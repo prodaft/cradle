@@ -10,7 +10,7 @@ from typing import cast
 from entities.models import Entity
 from access.models import Access
 from ..serializers import EntityQuerySerializer
-from entities.serializers import EntitySerializer
+from entities.serializers import EntityResponseSerializer
 from logs.decorators import log_failed_responses
 from uuid import UUID
 
@@ -66,6 +66,6 @@ class QueryList(APIView):
             param_serializer.data["name"],
         )
 
-        entity_serializer = EntitySerializer(entities, many=True)
+        entity_serializer = EntityResponseSerializer(entities, many=True)
 
         return Response(entity_serializer.data, status=status.HTTP_200_OK)

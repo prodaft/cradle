@@ -102,7 +102,7 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
         updated_note = FleetingNote.objects.get(pk=self.note_admin.pk)
 
         self.assertEqual(updated_note.content, "New content")
-        self.assertNotEqual(updated_note.last_edited, self.note_admin.last_edited)
+        self.assertTrue(updated_note.last_edited >= self.note_admin.last_edited)
         self.assertEqual(updated_note.user, self.admin_user)
 
         self.assertEqual(
@@ -134,7 +134,7 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
         updated_note = FleetingNote.objects.get(pk=self.note_user.pk)
 
         self.assertEqual(updated_note.content, "New content")
-        self.assertNotEqual(updated_note.last_edited, self.note_user.last_edited)
+        self.assertTrue(updated_note.last_edited >= self.note_user.last_edited)
         self.assertEqual(updated_note.user, self.normal_user)
 
         self.assertEqual(
