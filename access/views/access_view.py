@@ -9,6 +9,7 @@ from user.models import CradleUser
 from ..models import Access
 from ..serializers import AccessCaseSerializer
 from logs.decorators import log_failed_responses
+from uuid import UUID
 
 
 class AccessList(APIView):
@@ -18,7 +19,7 @@ class AccessList(APIView):
     serializer_class = AccessCaseSerializer
 
     @log_failed_responses
-    def get(self, request: Request, user_id: int) -> Response:
+    def get(self, request: Request, user_id: UUID) -> Response:
         """Allows an admin to get the access priviliges of a User
             on all Cases.
 

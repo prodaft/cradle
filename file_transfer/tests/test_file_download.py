@@ -10,9 +10,12 @@ class TestFileDownload(FileTransferTestCase):
         super().setUp()
         self.mock_minio_client_create()
 
-        self.user = CradleUser.objects.create_user(username="user", password="user")
+        self.user = CradleUser.objects.create_user(
+            username="user", password="user", email="alabala@gmail.com"
+        )
         self.user_token = str(AccessToken.for_user(self.user))
         self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
+        self.bucket_name = str(self.user.id)
 
     def tearDown(self):
         super().tearDown()
@@ -24,11 +27,12 @@ class TestFileDownload(FileTransferTestCase):
             "minioFileName": self.minio_file_name,
         }
 
-        response_json = self.client.get(
+        response = self.client.get(
             reverse("file_download"), query_params, **self.headers
-        ).json()
+        )
 
-        self.assertEqual(response_json["presigned"], self.presigned_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["presigned"], self.presigned_url)
 
     def test_get_presigned_get_not_authenticated(self):
         query_params = {

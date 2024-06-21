@@ -13,6 +13,8 @@ from django.db import transaction
 from user.models import CradleUser
 from typing import cast
 
+from uuid import UUID
+
 
 class RequestAccess(APIView):
 
@@ -20,7 +22,7 @@ class RequestAccess(APIView):
     permission_classes = [IsAuthenticated]
 
     @log_failed_responses
-    def post(self, request: Request, case_id: int) -> Response:
+    def post(self, request: Request, case_id: UUID) -> Response:
         """Allows a user to request access for a Case. All users with read-write
         access for that specific Case will receive a Notification. If the user
         making the request already has read-write access, no Notifications are

@@ -9,6 +9,7 @@ from entities.models import Entity
 from entities.enums import EntityType, EntitySubtype
 from access.models import Access
 from access.enums import AccessType
+from notes.models import Note
 from .utils import QueryTestCase
 
 
@@ -23,10 +24,10 @@ class QueryListTest(QueryTestCase):
 
         self.client = APIClient()
         self.admin_user = CradleUser.objects.create_superuser(
-            username="admin", password="password"
+            username="admin", password="password", email="alabala@gmail.com"
         )
         self.normal_user = CradleUser.objects.create_user(
-            username="user", password="password"
+            username="user", password="password", email="b@c.d"
         )
         self.token_admin = str(AccessToken.for_user(self.admin_user))
         self.token_normal = str(AccessToken.for_user(self.normal_user))
@@ -72,6 +73,9 @@ class QueryListTest(QueryTestCase):
         Entity.objects.create(
             name="Romania", type=EntityType.METADATA, subtype=EntitySubtype.COUNTRY
         )
+
+        self.note = Note.objects.create(content="Note content")
+        self.note.entities.add(self.entries[0], self.entries[1], self.cases[0])
 
     def test_query_not_authenticated(self):
         response = self.client.get(reverse("query_list"))

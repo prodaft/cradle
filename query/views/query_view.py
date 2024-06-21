@@ -10,8 +10,12 @@ from typing import cast
 from entities.models import Entity
 from access.models import Access
 from ..serializers import EntityQuerySerializer
-from entities.serializers import EntitySerializer
+from entities.serializers import EntityResponseSerializer
 from logs.decorators import log_failed_responses
+from uuid import UUID
+from entities.enums import EntityType
+from notes.models import Note
+from user.models import CradleUser
 
 
 class QueryList(APIView):
@@ -47,12 +51,20 @@ class QueryList(APIView):
         accessible_entities = Entity.objects.all()
         if not request.user.is_superuser:
             accessible_entities = accessible_entities.filter(
-                (~Q(type="case"))
+                (Q(type=EntityType.ACTOR))
                 | Q(
-                    type="case",
+                    type=EntityType.CASE,
                     id__in=Subquery(
                         Access.objects.get_accessible_case_ids(
-                            cast(int, request.user.pk)
+                            cast(UUID, request.user.id)
+                        )
+                    ),
+                )
+                | Q(
+                    type=EntityType.ENTRY,
+                    id__in=Subquery(
+                        Note.objects.get_accessible_entry_ids(
+                            cast(CradleUser, request.user)
                         )
                     ),
                 )
@@ -65,6 +77,6 @@ class QueryList(APIView):
             param_serializer.data["name"],
         )
 
-        entity_serializer = EntitySerializer(entities, many=True)
+        entity_serializer = EntityResponseSerializer(entities, many=True)
 
         return Response(entity_serializer.data, status=status.HTTP_200_OK)

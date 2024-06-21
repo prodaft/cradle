@@ -9,16 +9,17 @@ from access.enums import AccessType
 from django.db.models import Case, When, Q, F
 
 from typing import List
-from typing import Optional
+from uuid import UUID
+from typing import Optional, Generator
 
 
 class NoteManager(models.Manager):
 
-    def get_all_notes(self, entity_id: int) -> models.QuerySet:
+    def get_all_notes(self, entity_id: UUID | str) -> models.QuerySet:
         """Gets the notes of an entity ordered by timestamp in descending order
 
         Args:
-            entity_id (int): The id of the entity
+            entity_id (UUID): The id of the entity
 
         Returns:
             models.QuerySet: The notes of the entity
@@ -45,7 +46,7 @@ class NoteManager(models.Manager):
         return entities
 
     def get_accessible_notes(
-        self, user: CradleUser, entity_id: Optional[int] = None
+        self, user: CradleUser, entity_id: Optional[UUID] = None
     ) -> models.QuerySet:
         """Get the notes of a case that the user has access to.
         If None is provided as a parameter, then the method returns all
@@ -85,11 +86,14 @@ class NoteManager(models.Manager):
             notes.exclude(id__in=inaccessible_notes).order_by("-timestamp").distinct()
         )
 
-    def get_inaccessible_notes(self, user: CradleUser):
+    def get_inaccessible_notes(
+        self, user: CradleUser, entity_id: Optional[UUID] = None
+    ):
         """Get the notes a user does not have any access to.
 
         Args:
             user: The user whose access is being checked
+            entity_id: The id of the entiy whose notes are being retrieved
 
         Returns:
             QuerySet: The notes that the user does not have access to
@@ -111,7 +115,10 @@ class NoteManager(models.Manager):
             entities__id__in=inaccessible_cases, entities__type=EntityType.CASE
         )
 
-        return inaccessible_notes
+        if entity_id is None:
+            return inaccessible_notes
+
+        return inaccessible_notes.filter(entities__id=entity_id)
 
     def delete_unreferenced_entities(self) -> None:
         """Deletes entities of type ENTRY and METADATA that
@@ -174,3 +181,50 @@ class NoteManager(models.Manager):
         )
 
         return entity_pairs
+
+    def note_references_iterator(
+        self, note_list: models.QuerySet, entity_type: EntityType
+    ) -> Generator:
+        """Given a QuerySet of Notes, returns an iterator over all
+        entities references in those Notes, that have the specified
+        Entity Type.
+
+        Args:
+            note_list (models.QuerySet): The QuerySet of Notes
+            entity_type (entities.EntityType): The EntityType entities
+                need to match
+
+        Returns:
+            Generator: The iterator over the entities
+
+        """
+
+        returned_entities = set()
+
+        for note in note_list:
+            for entity in note.entities.filter(type=entity_type):
+                if entity not in returned_entities:
+                    returned_entities.add(entity)
+                    yield entity
+
+    def get_accessible_entry_ids(self, user: CradleUser) -> models.QuerySet:
+        """For a given user id, get a list of all entry ids which
+        are accessible by the user. An entry is considered to be accessible by the
+        user when it is referenced in at least one note that the user has access to.
+        This method does not take into consideration the access privileges of the user.
+        Hence, this method should not be used for admin users.
+
+        Args:
+            user_id: the id of the user.
+
+        Returns:
+            A QuerySet instance which gives all the entry ids to which the user
+            has access.
+        """
+
+        return (
+            self.get_entities_from_notes(self.get_accessible_notes(user))
+            .filter(type=EntityType.ENTRY)
+            .values("id")
+            .distinct()
+        )

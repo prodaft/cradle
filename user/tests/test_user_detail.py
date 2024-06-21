@@ -2,6 +2,7 @@ from django.urls import reverse
 from ..models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 from .utils import UserTestCase
+import uuid
 
 
 class DeleteUserTest(UserTestCase):
@@ -9,9 +10,11 @@ class DeleteUserTest(UserTestCase):
     def setUp(self):
         super().setUp()
 
-        self.user = CradleUser.objects.create_user(username="user", password="user")
+        self.user = CradleUser.objects.create_user(
+            username="user", password="user", email="a@b.c"
+        )
         self.admin = CradleUser.objects.create_superuser(
-            username="admin", password="admin"
+            username="admin", password="admin", email="b@c.d"
         )
         self.token_admin = str(AccessToken.for_user(self.admin))
         self.token_normal = str(AccessToken.for_user(self.user))
@@ -28,7 +31,8 @@ class DeleteUserTest(UserTestCase):
 
     def test_delete_user_not_found(self):
         response = self.client.delete(
-            reverse("user_detail", kwargs={"user_id": 0}), **self.headers_admin
+            reverse("user_detail", kwargs={"user_id": uuid.uuid4()}),
+            **self.headers_admin,
         )
 
         self.assertEqual(response.status_code, 404)

@@ -15,6 +15,8 @@ from fleeting_notes.serializers import (
 from user.models import CradleUser
 from logs.decorators import log_failed_responses
 
+from uuid import UUID
+
 
 class FleetingNotesList(APIView):
 
@@ -57,8 +59,14 @@ class FleetingNotesList(APIView):
                 The created FleetingNote entity
             Response(serializer.errors, status=400):
                 if the request was unsuccessful
+            Response("The bucket name of the file reference is incorrect.",
+                status=400): if the bucket_name of at least one of the file references
+                does not match the user's id
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
+             Response("There exists no file at the specified path.", status=404):
+                if for at least one of the file references there exists no file at
+                that location on the MinIO instance
         """
         serializer = FleetingNoteSerializer(
             data=request.data, context={"request": request}
@@ -74,7 +82,7 @@ class FleetingNotesDetail(APIView):
     permission_classes = [IsAuthenticated]
 
     @log_failed_responses
-    def get(self, request: Request, pk: int) -> Response:
+    def get(self, request: Request, pk: UUID) -> Response:
         """
         Get a FleetingNote entity by its primary key.
         Only the owner of the FleetingNote entity can access it.
@@ -105,7 +113,7 @@ class FleetingNotesDetail(APIView):
         return Response(serializer.data)
 
     @log_failed_responses
-    def put(self, request: Request, pk: int) -> Response:
+    def put(self, request: Request, pk: UUID) -> Response:
         """
         Update a FleetingNote entity by its primary key.
         Only the owner of the FleetingNote entity can update it.
@@ -139,14 +147,16 @@ class FleetingNotesDetail(APIView):
                 "FleetingNote does not exist.", status=status.HTTP_404_NOT_FOUND
             )
 
-        serializer = FleetingNoteSerializer(fleeting_note, data=data)
+        serializer = FleetingNoteSerializer(
+            fleeting_note, data=data, context={"request": request}
+        )
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @log_failed_responses
-    def delete(self, request: Request, pk: int) -> Response:
+    def delete(self, request: Request, pk: UUID) -> Response:
         """
         Delete a FleetingNote entity by its primary key.
         Only the owner of the FleetingNote entity can delete it.

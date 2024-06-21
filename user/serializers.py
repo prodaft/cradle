@@ -20,15 +20,19 @@ from .utils.validators import (
 
 class UserCreateSerializer(serializers.ModelSerializer):
 
+    email = serializers.EmailField(required=True)
+
     class Meta:
         model = CradleUser
-        fields = ["username", "password"]
+        fields = ["username", "email", "password"]
         extra_kwargs: Dict[str, Dict[str, List]] = {"username": {"validators": []}}
 
     def validate(self, data: Any) -> Any:
         """First checks whether there exists another user with the
-        same username, in which case it returns error code 409. Otherwise,
-        it applies the other validations from the superclass.
+        same username, in which case it returns error code 409. Then, the
+        password is validated. In case the password validation fails, error
+        code 400 is returned. Otherwise, it applies the other validations
+        from the superclass.
 
         Args:
             data: a dictionary containing the attributes of

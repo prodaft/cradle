@@ -4,9 +4,7 @@ info:
   version: 1.0.0
   description: API for handling requests for the backend of the CRADLE project
 servers:
-  - description: SwaggerHub API Auto Mocking
-    url: https://virtserver.swaggerhub.com/diacicov.calin/CRADLE/1.0.0
-  - description: Localhost
+  - description: localhost
     url: 'https://localhost:8000'
 tags:
   - name: User
@@ -31,15 +29,17 @@ tags:
     description: Operations targeting the transfer of files.
   - name: Notification 
     description: Operations regarding notifications
+  - name: Statistics
+    description: Operations regarding obtaining the statistics of the system.
   
 paths:
-  /users:
+  /users/:
     post:
       security: []
       tags:
         - User
       summary: Create account
-      description: Allows a user to create a new account, by sending a request with their username and password. This will be checked for validity and, if accepted, this new account will be added to the database, allowing the user to connect using the same credentials in the future
+      description: Allows a user to create a new account, by sending a request with their username, password and email. This will be checked for validity and, if accepted, this new account will be added to the database, allowing the user to connect using the same credentials in the future
       operationId: createAccount
       requestBody:
         required: true
@@ -53,11 +53,14 @@ paths:
               properties:
                 username:
                   type: string
+                email:
+                  type: string
+                  format: email
                 password:
                   type: string
       responses:
         '200':
-          description: Operation was successful.
+          description: If the request was successful or the email is valid, but already exists.
         '400':
           description: The request does not match the specified format.
         '409':
@@ -86,7 +89,7 @@ paths:
           description: User is not an admin.
 
 
-  /users/{userId}:
+  /users/{userId}/:
     delete:
       tags:
         - User
@@ -99,11 +102,9 @@ paths:
           name: userId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            userIdExample:
-              value: "1296348"
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
       responses:
         '200':
           description: Requested user account was deleted.
@@ -114,7 +115,7 @@ paths:
         '404':
           description: There is no user with specified ID.
 
-  /users/login:
+  /users/login/:
     post:
       tags:
         - User
@@ -140,18 +141,58 @@ paths:
         '200':
           description: >
             Successfully authenticated.
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-                example: sessionid=thisissecret;
+          content:
+            application/json:
+                schema:
+                  type: object
+                  properties:
+                    access:
+                      type: string
+                      description: The new access token
+                    refresh:
+                      type: string
+                      description: The new refresh token
         '400': 
           description: >
             The request does not match the specified format. 
         '401':
           description: >
             The credentials given are invalid. 
-            
+
+  /users/refresh/:
+    post:
+      tags: 
+        - User
+      summary: Refresh JWT Token
+      description: This endpoint allows users to refresh their JWT tokens using a refresh token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh:
+                  type: string
+                  description: The refresh token issued during login.
+              required:
+                - refresh
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access:
+                    type: string
+                    description: The new access token
+        '400':
+          description: The request does not match the specified format.
+        '401':
+          description: The refresh token is invalid.
+
 
   /notifications/:
     get:
@@ -174,7 +215,7 @@ paths:
         '401':
           description: User is not authenticated.
 
-  /notifications/unread-count:
+  /notifications/unread-count/:
     get:
       tags:
         - Notification
@@ -197,7 +238,7 @@ paths:
         '401':
           description: User is not authenticated.
 
-  /notifications/{notificationId}:
+  /notifications/{notificationId}/:
     put:
       tags:
         - Notification
@@ -224,7 +265,7 @@ paths:
         '404':
           description: The notification does not exist or is not owned by the user.
 
-  /entities/actors:
+  /entities/actors/:
     get:
       tags:
         - Entity
@@ -282,7 +323,7 @@ paths:
           description: Actor already exists.
             
 
-  /entities/cases:
+  /entities/cases/:
     get:
       tags:
         - Admin
@@ -339,7 +380,7 @@ paths:
         '409':
           description: Case already exists.
   
-  /dashboards/cases/{case_name}:
+  /dashboards/cases/{case_name}/:
     get:
       tags:
         - Dashboard
@@ -367,7 +408,7 @@ paths:
         '404':
           description: Case not found or User doesn't have access.
   
-  /dashboards/actors/{actor_name}:
+  /dashboards/actors/{actor_name}/:
     get:
       tags:
         - Dashboard
@@ -395,7 +436,7 @@ paths:
         '404':
           description: Actor not found.
   
-  /dashboards/entries/{entry_name}:
+  /dashboards/entries/{entry_name}/:
     get:
       tags:
         - Dashboard
@@ -429,9 +470,9 @@ paths:
         '401': 
           description: User is not authenticated.
         '404':
-          description: Entry not found.
+          description: There is no entry with the provided name or the entry exists but is not referenced in any of the user's accessible notes
 
-  /access/{userId}:
+  /access/{userId}/:
     get:
       tags:
         - Access
@@ -456,7 +497,7 @@ paths:
           description: User not found.
 
 
-  /access/request/{caseId}:
+  /access/request/{caseId}/:
     post:
       tags:
         - Access
@@ -472,7 +513,7 @@ paths:
           description: Case not found.
 
 
-  /access/{userId}/{caseId}:
+  /access/{userId}/{caseId}/:
     put:
       tags:
         - Access
@@ -484,20 +525,16 @@ paths:
           name: userId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            userIdExample:
-              value: 1234521
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         - in: path
           name: caseId
           required: true
-          schema: 
-            type: integer
-            format: int64
-          examples: 
-            caseIdExample:
-              value: 123412
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
       requestBody:
         content:
           application/json:
@@ -517,7 +554,7 @@ paths:
           description: User is not an admin. 
             
 
-  /entities/actors/{actorId}:
+  /entities/actors/{actorId}/:
     delete:
       tags:
         - Entity
@@ -530,11 +567,9 @@ paths:
           name: agentId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            agentIdExample:
-              value: "29423461"
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
       responses:
         '200':
           description: Requested agent was deleted.
@@ -547,7 +582,7 @@ paths:
             
 
 
-  /entities/cases/{caseId}:
+  /entities/cases/{caseId}/:
     delete:
       tags:
         - Entity
@@ -560,11 +595,9 @@ paths:
           name: caseId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            caseIdExample:
-              value: 2341963112
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
       responses:
         '200':
           description: Requested case was deleted.
@@ -575,12 +608,12 @@ paths:
         '404':
           description: There is no case with specified ID.
 
-  /notes:
+  /notes/:
     post:
       tags:
         - Note
       summary: Create a new Note
-      description: Allow a user to create a new note, by sending the text itself. This text should be validated to meet the requirements (i.e. reference at least two Entities, one of which must be a Case).
+      description: Allow a user to create a new note, by sending the text itself. This text should be validated to meet the requirements (i.e. reference at least two Entities, one of which must be a Case). Moreover, the client should send an array of file references that correspond to the files uploaded to MinIO that are linked to this note.
       operationId: createNote
       requestBody:
         content:
@@ -593,8 +626,7 @@ paths:
                 files:
                   type: array
                   items:
-                    type: string
-                    format: binary
+                    $ref: '#/components/schemas/FileReference'
       responses:
         '200': 
           description: Note was created. 
@@ -603,13 +635,13 @@ paths:
               schema: 
                $ref: '#/components/schemas/Note'
         '400': 
-          description: Note does not reference at least one Case and two Entities. 
+          description: Note does not reference at least one Case and two Entities. / The bucket name of the file reference is incorrect.
         '401': 
           description: User is not authenticated.
         '404': 
-          description: User does not have Read-Write access to a referenced Case or not all Cases exist.
+          description: User does not have Read-Write access to a referenced Case or not all Cases exist. / There exists no file at the specified path.
 
-  /notes/{noteId}/publishable:
+  /notes/{noteId}/publishable/:
     put:
       tags:
         - Note
@@ -621,11 +653,9 @@ paths:
           name: noteId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            caseIdExample:
-              value: 1234163
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
       requestBody:
         content:
           application/json:
@@ -648,7 +678,7 @@ paths:
         '404':
           description: Note not found. 
 
-  /notes/{noteId}:
+  /notes/{noteId}/:
     delete:
       tags:
         - Note
@@ -660,11 +690,9 @@ paths:
           name: noteId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            caseIdExample:
-              value: 12643969
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
       responses:
         '200':  
           description: Note was deleted.
@@ -685,11 +713,9 @@ paths:
           name: noteId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            noteIdExample:
-              value: 31249691
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
       responses:
         '200':  
           description: Request was successful.
@@ -702,7 +728,7 @@ paths:
         '404': 
           description: User does not have read access to the requested note or the requested note does not exist.
         
-  /notes/publish:
+  /notes/publish/:
     get:
       tags:
         - Note
@@ -718,15 +744,15 @@ paths:
           schema:
             type: array
             items: 
-              type: integer
-              format: int64
+              type: string
+              format: uuid
           examples:
             single-note:
               summary: Single note ID
-              value: [1]
+              value: ["123e4567-e89b-12d3-a456-426614174000"]
             multiple-notes:
               summary: Multiple note IDs
-              value: [1, 2, 3]
+              value: ["123e4567-e89b-12d3-a456-426614174000", "123e4567-e89b-12d3-a456-426614174001", "123e4567-e89b-12d3-a456-426614174004"]
               
       responses:
         '200': 
@@ -744,7 +770,7 @@ paths:
         '404': 
           description: The user does not have read access to all the provided notes or some of the notes do not exist.
   
-  /file-transfer/upload:
+  /file-transfer/upload/:
     get:
       tags:
         - File Transfer
@@ -770,7 +796,8 @@ paths:
                 properties:
                   bucket_name:
                     type: string
-                    example: "admin"
+                    format: uuid
+                    example: "c9a0dd6a-78a3-476d-a7ff-f99e54261589"
                   minio_file_name:
                     type: string
                     example: "be0b24ad-ae54-4952-ae87-00011ed9df27-evidence.png"
@@ -782,7 +809,7 @@ paths:
         '401': 
           description: User is not authenticated.
 
-  /file-transfer/download:
+  /file-transfer/download/:
     get:
       tags:
         - File Transfer
@@ -795,9 +822,10 @@ paths:
           required: true
           schema:
             type: string
+            format: uuid
           examples:
             bucketNameExample:
-              value: "admin"
+              value: "c9a0dd6a-78a3-476d-a7ff-f99e54261589"
         - in: query
           name: minioFileName
           required: true
@@ -825,7 +853,7 @@ paths:
           description: The requested resource does not exist.
 
 
-  /fleeting-notes:
+  /fleeting-notes/:
     get:
       tags:
         - Fleeting Note
@@ -865,6 +893,10 @@ paths:
               properties:
                 content:
                   type: string
+                files:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/FileReference'
       responses:
         '200': 
           description: Fleeting note was created. 
@@ -873,11 +905,13 @@ paths:
               schema: 
                 $ref: "#/components/schemas/FleetingNote"
         '400': 
-          description: The request does not respect the specified format. 
+          description: The request does not respect the specified format. / The bucket name of the file reference is incorrect.
         '401':
           description: User is not authenticated.
+        '404':
+          description: There exists no file at the specified path.
         
-  /fleeting-notes/{fleetingNoteId}:
+  /fleeting-notes/{fleetingNoteId}/:
     get:
       tags:
         - Fleeting Note
@@ -890,11 +924,9 @@ paths:
           name: fleetingNoteId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            fleetingNoteIdExample:
-              value: 234196123
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
       responses:
         '200': 
           description: Request was successful. 
@@ -918,11 +950,9 @@ paths:
           name: fleetingNoteId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            fleetingNoteIdExample:
-              value: 12341123
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
       responses:
         '200':  
           description: Fleeting Note was deleted.
@@ -942,11 +972,9 @@ paths:
           name: fleetingNoteId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            fleetingNoteIdExample:
-              value: 2324169
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
       requestBody:
         required: true
         content:
@@ -958,13 +986,19 @@ paths:
               properties:
                 content:
                   type: string
+                files:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/FileReference'
       responses:
         '200':  
           description: Fleeting Note was updated.
+        '400':
+          description: The bucket name of the file reference is incorrect.
         '401': 
           description: User is not authenticated.
         '404':
-          description: Fleeting Note not found or not owned by user.
+          description: Fleeting Note not found or not owned by user. / There exists no file at the specified path.
           
   /fleeting-notes/{fleetingNoteId}/final/:
     put:
@@ -981,11 +1015,10 @@ paths:
           name: fleetingNoteId
           required: true
           schema:
-            type: integer
-            format: int64
-          examples:
-            fleetingNoteIdExample:
-              value: 2324169
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+    
       requestBody:
         required: false
         content:
@@ -1003,14 +1036,14 @@ paths:
               schema: 
                $ref: '#/components/schemas/Note'
         '400': 
-          description: Note does not reference at least one Case and two Entities. 
+          description: Note does not reference at least one Case and two Entities. / The bucket name of the file reference is incorrect.
         '401': 
           description: User is not authenticated. 
         '404': 
-          description: User does not have Read-Write access to a referenced Case or not all Cases and Actors exist / The Fleeting Note does not exist or was not written by the user 
+          description: User does not have Read-Write access to a referenced Case or not all Cases and Actors exist / The Fleeting Note does not exist or was not written by the user / There exists no file at the specified path.
     
   
-  /query:
+  /query/:
     get:
       tags:
         - Query
@@ -1065,12 +1098,18 @@ paths:
       responses:
         '200': 
           description: Request was succesful.
+          content: 
+            'application/json':
+              schema: 
+                type: array
+                items:
+                  $ref: "#/components/schemas/Entity"
         '400':
           description: Query parameters are invalid.
         '401':
           description: User is not authenticated.
 
-  /graph:
+  /knowledge-graph/:
     get:
       tags:
         - Knowledge Graph
@@ -1087,22 +1126,39 @@ paths:
         '401': 
           description: User is not authenticated. 
       
-            
+
+  /statistics/:
+    get:
+      tags:
+        - Statistics
+      summary: Get user's statistics
+      description: Fetches some of the user's statistics. More specifically, it fetches the 10 most recently written notes the user has access to and the 3 cases and actors that were most recently referenced in notes the user has access to. The entities are returned starting with the most recent ones.
+      operationId: getStatistics
+      responses:
+        '200':
+          description: Returns the statistics of the user.
+          content: 
+            'application/json':
+              schema: 
+                $ref: "#/components/schemas/Statistics"
+        '401':
+          description: User is not authenticated.
 
 components:
   securitySchemes:
-    cookieAuth:
-      type: apiKey
-      in: cookie
-      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 
   schemas:
     CaseDashboard:
       type: object
       properties:
-        ID:
-          type: integer
-          format: int64
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         name:
           type: string
         description:
@@ -1149,6 +1205,228 @@ components:
           type: array
           items: 
             $ref: "#/components/schemas/Entity"
+        inaccessible_actors:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        inaccessible_metadata:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        inaccessible_entries:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        second_hop_cases:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_actors:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_metadata:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_inaccessible_cases:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_inaccessible_actors:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_inaccessible_metadata:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
         access: 
           type: string
           enum: 
@@ -1159,9 +1437,10 @@ components:
     ActorDashboard:
       type: object
       properties:
-        ID:
-          type: integer
-          format: int64
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         name:
           type: string
         description:
@@ -1204,13 +1483,232 @@ components:
           type: array
           items: 
             $ref: "#/components/schemas/Entity"
+        inaccessible_actors:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        inaccessible_metadata:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        second_hop_cases:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_actors:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_metadata:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_inaccessible_cases:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_inaccessible_actors:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_inaccessible_metadata:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
     
     EntryDashboard:
       type: object
       properties:
-        ID:
-          type: integer
-          format: int64
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         name:
           type: string
         description:
@@ -1245,28 +1743,97 @@ components:
           type: array
           items: 
             $ref: "#/components/schemas/Entity"
+        second_hop_cases:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
+        second_hop_inaccessible_cases:
+          type: array
+          items: 
+            type: object
+            properties:
+              ID:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+                enum: 
+                - case
+                - actor
+                - metadata
+                - entry
+              subtype:
+                type: string
+                enum: 
+                  - ip
+                  - domain
+                  - url
+                  - username
+                  - password
+                  - person
+                  - social-media
+                  - hash
+                  - tool 
+                  - cve
+                  - ttp
+              neighbor:
+                $ref: "#/components/schemas/Entity"
     
     User:
       type: object
       properties:
-        ID:
-          type: integer
-          format: int64
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         username:
           type: string
-        password:
+        email:
           type: string
-        cases:
-          type: array
-          items: 
-            $ref: "#/components/schemas/Entity"
+          format: email
 
     Entity:
       type: object
       properties:
-        ID:
-          type: integer
-          format: int64
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         name:
           type: string
         description: 
@@ -1274,9 +1841,9 @@ components:
         type:
           type: string
           enum: 
+          - entry
           - actor
           - case
-          - entry
           - metadata
         subtype:
           type: string
@@ -1303,9 +1870,10 @@ components:
     Note:
       type: object
       properties:
-        ID:
-          type: integer
-          format: int64
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         content: 
           type: string
         publishable:
@@ -1318,22 +1886,28 @@ components:
           items: 
             type: object
             properties:
-              ID:
-                type: integer
-                format: int64
+              id:
+                type: string
+                format: uuid
+                example: "123e4567-e89b-12d3-a456-426614174000"
               name:
                 type: string
               type:
                 type: string
               subtype:
                 type: string
+        files:
+          type: array
+          items: 
+            $ref: "#/components/schemas/FileReference"
     
     CaseAccess:
       type: object
       properties:
-        ID: 
-          type: integer
-          format: int64
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         name: 
           type: string
         access_type:
@@ -1346,21 +1920,27 @@ components:
     FleetingNote:
       type: object
       properties:
-        ID:
-          type: integer
-          format: int64
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         content:
           type: string
         last_edited:
           type: string
           format: date-time
+        files:
+          type: array
+          items: 
+            $ref: "#/components/schemas/FileReference"
 
     MessageNotification: 
       type: object
       properties: 
-        id: 
-          type: integer
-          format: int64
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         message:
           type: string
         timestamp: 
@@ -1375,17 +1955,18 @@ components:
     AccessRequestNotification: 
       type: object
       properties: 
-        id: 
-          type: integer
-          format: int64
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         message:
           type: string
         case_id:
-          type: integer
-          format: int64
+          type: string
+          format: uuid
         requesting_user_id:
-          type: integer
-          format: int64
+          type: string
+          format: uuid
         timestamp: 
           type: string
           format: date-time
@@ -1425,19 +2006,35 @@ components:
           type: array
           items: 
             $ref: "#/components/schemas/Note"
+
+    Statistics: 
+      type: object
+      properties: 
+        actors: 
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        cases: 
+          type: array
+          items: 
+            $ref: "#/components/schemas/Entity"
+        notes:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Note"
       
     Link: 
       type: object
       properties: 
         source:
-          type: integer
-          format: int64
+          type: string
+          format: uuid
         target:
-          type: integer
-          format: int64
+          type: string
+          format: uuid
       example: 
-          source: 1234567890123456
-          target: 9876543210987654
+          source: "00000000-0000-0000-0000-000000000000"
+          target: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
 
 
     Graph:
@@ -1453,6 +2050,19 @@ components:
           items: 
             type: object
             $ref: "#/components/schemas/Link"
+
+    FileReference:
+      type: object
+      properties:
+        minio_file_name:
+          type: string
+          example: 'eba72b27-14fa-4716-832b-dffd1f9b4d96-evidence.png'
+        file_name:
+          type: string
+          example: evidence.png
+        bucket_name: 
+          type: string
+          example: '9d32d873-4587-46fa-8f15-577ca0479d33'
 
 security:
   - cookieAuth: []

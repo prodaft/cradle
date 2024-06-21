@@ -35,6 +35,7 @@ urlpatterns = [
                 path("fleeting-notes/", include("fleeting_notes.urls")),
                 path("notifications/", include("notifications.urls")),
                 path("knowledge-graph/", include("knowledge_graph.urls")),
+                path("statistics/", include("cradle_statistics.urls")),
             ]
         ),
     )

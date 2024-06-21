@@ -15,6 +15,8 @@ from ..enums import AccessType
 from notifications.models import MessageNotification
 from django.db import transaction
 
+from uuid import UUID
+
 
 class UpdateAccess(APIView):
 
@@ -66,7 +68,7 @@ class UpdateAccess(APIView):
         return True
 
     @log_failed_responses
-    def put(self, request: Request, user_id: int, case_id: int) -> Response:
+    def put(self, request: Request, user_id: UUID, case_id: UUID) -> Response:
         """Allows a user to change the access privileges of another user for
         the specified case. If the user making the request is an admin, they
         can change the permission of any other non-admin user. If the user

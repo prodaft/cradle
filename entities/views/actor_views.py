@@ -5,10 +5,12 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.request import Request
 
-from ..serializers import ActorResponseSerializer, ActorSerializer
+from ..serializers import EntityResponseSerializer, ActorSerializer
 from ..models import Entity
 from logs.utils import LoggingUtils
 from logs.decorators import log_failed_responses
+
+from uuid import UUID
 
 
 class ActorList(APIView):
@@ -33,7 +35,7 @@ class ActorList(APIView):
         """
 
         actors = Entity.actors.all()
-        serializer = ActorResponseSerializer(actors, many=True)
+        serializer = EntityResponseSerializer(actors, many=True)
 
         return Response(serializer.data)
 
@@ -73,7 +75,7 @@ class ActorDetail(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
 
     @log_failed_responses
-    def delete(self, request: Request, actor_id: int) -> Response:
+    def delete(self, request: Request, actor_id: UUID) -> Response:
         """Allow an admin to delete an Actor by specifying its id
 
         Args:

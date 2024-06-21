@@ -7,6 +7,15 @@ from .exceptions import (
 )
 
 
+class EntityResponseSerializer(serializers.ModelSerializer):
+
+    description = serializers.CharField(required=False, allow_blank=True)
+
+    class Meta:
+        model = Entity
+        fields = ["id", "name", "description", "type", "subtype"]
+
+
 class ActorSerializer(serializers.ModelSerializer):
 
     description = serializers.CharField(required=False, allow_blank=True)
@@ -48,15 +57,6 @@ class ActorSerializer(serializers.ModelSerializer):
 
         validated_data["type"] = "actor"
         return super().create(validated_data)
-
-
-class ActorResponseSerializer(serializers.ModelSerializer):
-
-    description = serializers.CharField(required=False, allow_blank=True)
-
-    class Meta:
-        model = Entity
-        fields = ["id", "name", "description", "type", "subtype"]
 
 
 class CaseSerializer(serializers.ModelSerializer):
@@ -109,15 +109,6 @@ class CaseAccessAdminSerializer(serializers.ModelSerializer):
         fields = ["id", "name"]
 
 
-class CaseResponseSerializer(serializers.ModelSerializer):
-
-    description = serializers.CharField(required=False, allow_blank=True)
-
-    class Meta:
-        model = Entity
-        fields = ["id", "name", "description", "type", "subtype"]
-
-
 class EntrySerializer(serializers.ModelSerializer):
 
     description = serializers.CharField(required=False, allow_blank=True)
@@ -163,15 +154,6 @@ class EntrySerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
-class EntryResponseSerializer(serializers.ModelSerializer):
-
-    description = serializers.CharField(required=False, allow_blank=True)
-
-    class Meta:
-        model = Entity
-        fields = ["id", "name", "description", "type", "subtype"]
-
-
 class MetadataSerializer(serializers.ModelSerializer):
 
     description = serializers.CharField(required=False, allow_blank=True)
@@ -193,15 +175,6 @@ class MetadataSerializer(serializers.ModelSerializer):
         """
         validated_data["type"] = "metadata"
         return super().create(validated_data)
-
-
-class MetadataResponseSerializer(serializers.ModelSerializer):
-
-    description = serializers.CharField(required=False, allow_blank=True)
-
-    class Meta:
-        model = Entity
-        fields = ["id", "name", "description", "type", "subtype"]
 
 
 class EntitySerializer(serializers.ModelSerializer):

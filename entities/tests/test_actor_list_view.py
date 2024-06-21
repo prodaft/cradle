@@ -7,7 +7,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from .utils import EntitiesTestCase
 
 from ..models import Entity
-from ..serializers import ActorResponseSerializer
+from ..serializers import EntityResponseSerializer
 from ..enums import EntityType
 
 
@@ -22,10 +22,16 @@ class GetActorListTest(EntitiesTestCase):
 
         self.client = APIClient()
         self.admin_user = CradleUser.objects.create_user(
-            username="admin", password="password", is_staff=True
+            username="admin",
+            password="password",
+            is_staff=True,
+            email="alabala@gmail.com",
         )
         self.normal_user = CradleUser.objects.create_user(
-            username="user", password="password", is_staff=False
+            username="user",
+            password="password",
+            is_staff=False,
+            email="b@c.d",
         )
         self.token_admin = str(AccessToken.for_user(self.admin_user))
         self.token_normal = str(AccessToken.for_user(self.normal_user))
@@ -41,7 +47,7 @@ class GetActorListTest(EntitiesTestCase):
         )
         actors = Entity.actors.all()
 
-        expected = ActorResponseSerializer(actors, many=True).data
+        expected = EntityResponseSerializer(actors, many=True).data
 
         response = self.client.get(reverse("actor_list"), **self.headers_admin)
 
@@ -66,10 +72,16 @@ class PostActorListTest(EntitiesTestCase):
 
         self.client = APIClient()
         self.admin_user = CradleUser.objects.create_user(
-            username="admin", password="password", is_staff=True
+            username="admin",
+            password="password",
+            is_staff=True,
+            email="alabala@gmail.com",
         )
         self.normal_user = CradleUser.objects.create_user(
-            username="user", password="password", is_staff=False
+            username="user",
+            password="password",
+            is_staff=False,
+            email="b@c.d",
         )
         self.token_admin = str(AccessToken.for_user(self.admin_user))
         self.token_normal = str(AccessToken.for_user(self.normal_user))

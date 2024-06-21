@@ -1,9 +1,13 @@
 from django.db import models
 from entities.models import Entity
 from .managers import NoteManager
+import uuid
 
 
 class Note(models.Model):
+    id: models.UUIDField = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
     content: models.CharField = models.CharField()
     publishable: models.BooleanField = models.BooleanField(default=False)
     timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
@@ -32,6 +36,9 @@ class Note(models.Model):
 
 
 class ArchivedNote(models.Model):
+    id: models.UUIDField = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
     content: models.CharField = models.CharField()
     timestamp: models.DateTimeField = models.DateTimeField()
     publishable: models.BooleanField = models.BooleanField(default=False)
