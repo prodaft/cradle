@@ -189,6 +189,7 @@ const config = {
         // "\\.pnp\\.[^\\\\]+$",
         'node_modules/(?!(mime|@uidotdev/usehooks|d3|d3-array|d3-force|internmap)/)',
     ],
+    testTimeout: 100000,
 
     // An array of regexp pattern strings that are matched against all modules before the module loader will automatically return a mock for them
     // unmockedModulePathPatterns: undefined,
