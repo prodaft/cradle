@@ -7,7 +7,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from .utils import EntitiesTestCase
 
 from ..models import Entity
-from ..serializers import CaseResponseSerializer
+from ..serializers import EntityResponseSerializer
 from ..enums import EntityType
 
 
@@ -47,7 +47,7 @@ class GetCaseListTest(EntitiesTestCase):
         )
         cases = Entity.cases.all()
 
-        expected = CaseResponseSerializer(cases, many=True).data
+        expected = EntityResponseSerializer(cases, many=True).data
 
         response = self.client.get(reverse("case_list"), **self.headers_admin)
 

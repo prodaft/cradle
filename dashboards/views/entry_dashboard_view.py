@@ -54,8 +54,8 @@ class EntryDashboard(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        entities_dict = DashboardUtils.get_dashboard(user, entry.id)
+        entities_dict, neighbor_map = DashboardUtils.get_dashboard(user, entry.id)
 
         dashboard = DashboardUtils.add_entity_fields(entry, entities_dict)
 
-        return Response(EntryDashboardSerializer(dashboard).data)
+        return Response(EntryDashboardSerializer(dashboard, context=neighbor_map).data)

@@ -7,12 +7,7 @@ from .exceptions import (
     NoteDoesNotExistException,
     NoteNotPublishableException,
 )
-from entities.serializers import (
-    EntryResponseSerializer,
-    CaseResponseSerializer,
-    ActorResponseSerializer,
-    MetadataResponseSerializer,
-)
+from entities.serializers import EntityResponseSerializer
 from typing import Any
 from file_transfer.serializers import FileReferenceSerializer
 from file_transfer.models import FileReference
@@ -175,8 +170,8 @@ class ReportQuerySerializer(serializers.Serializer):
 
 
 class ReportSerializer(serializers.Serializer):
-    actors = ActorResponseSerializer(many=True)
-    cases = CaseResponseSerializer(many=True)
-    metadata = MetadataResponseSerializer(many=True)
-    entries = EntryResponseSerializer(many=True)
+    actors = EntityResponseSerializer(many=True)
+    cases = EntityResponseSerializer(many=True)
+    metadata = EntityResponseSerializer(many=True)
+    entries = EntityResponseSerializer(many=True)
     notes = NoteReportSerializer(many=True)

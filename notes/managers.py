@@ -86,11 +86,14 @@ class NoteManager(models.Manager):
             notes.exclude(id__in=inaccessible_notes).order_by("-timestamp").distinct()
         )
 
-    def get_inaccessible_notes(self, user: CradleUser):
+    def get_inaccessible_notes(
+        self, user: CradleUser, entity_id: Optional[UUID] = None
+    ):
         """Get the notes a user does not have any access to.
 
         Args:
             user: The user whose access is being checked
+            entity_id: The id of the entiy whose notes are being retrieved
 
         Returns:
             QuerySet: The notes that the user does not have access to
@@ -112,7 +115,10 @@ class NoteManager(models.Manager):
             entities__id__in=inaccessible_cases, entities__type=EntityType.CASE
         )
 
-        return inaccessible_notes
+        if entity_id is None:
+            return inaccessible_notes
+
+        return inaccessible_notes.filter(entities__id=entity_id)
 
     def delete_unreferenced_entities(self) -> None:
         """Deletes entities of type ENTRY and METADATA that
