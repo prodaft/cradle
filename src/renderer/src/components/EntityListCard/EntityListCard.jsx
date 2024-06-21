@@ -23,7 +23,7 @@ export default function EntityListCard({ title, items = [] }) {
                         <div
                             key={index}
                             className='opacity-90 hover:opacity-70 active:opacity-50 hover:cursor-pointer card p-4 
-                            bg-gray-4 hover:bg-gray-6 active:bg-gray-8 !max-w-none'
+                            bg-gray-4 hover:bg-gray-6 active:bg-gray-8 !max-w-none break-all'
                             onClick={() => navigate(createDashboardLink(item))}
                         >
                             <p className='card-title'>{item.name}</p>
