@@ -115,20 +115,20 @@ class DashboardUtils:
                 neighbor_map, inaccessible_notes_entities, id
             )
 
-            all_entities_second_hop = all_entities_second_hop.union(notes_entities)
+            all_entities_second_hop = all_entities_second_hop | notes_entities
             all_inaccessible_entities_second_hop = (
-                all_inaccessible_entities_second_hop.union(inaccessible_notes_entities)
+                all_inaccessible_entities_second_hop | inaccessible_notes_entities
             )
 
-        entities_second_hop = all_entities_second_hop.exclude(
-            id__in=accessible_entities
-        ).exclude(id=entity_id)
+        entities_second_hop = all_entities_second_hop.filter(
+            ~Q(id__in=accessible_entities) & ~Q(id=entity_id)
+        )
 
-        inaccessible_entities_second_hop = all_inaccessible_entities_second_hop.exclude(
-            Q(id__in=inaccessible_entities)
-            | Q(id=entity_id)
-            | Q(id__in=entities_second_hop)
-            | Q(id__in=accessible_entities)
+        inaccessible_entities_second_hop = all_inaccessible_entities_second_hop.filter(
+            ~Q(id__in=inaccessible_entities)
+            & ~Q(id=entity_id)
+            & ~Q(id__in=entities_second_hop)
+            & ~Q(id__in=accessible_entities)
         )
 
         return entities_second_hop, inaccessible_entities_second_hop, neighbor_map
