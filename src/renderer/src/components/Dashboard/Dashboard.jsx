@@ -18,6 +18,7 @@ import { deleteEntity } from '../../services/adminService/adminService';
 import NotFound from '../NotFound/NotFound';
 import pluralize from 'pluralize';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
+import { Search } from 'iconoir-react';
 
 /**
  * Dashboard component
@@ -28,7 +29,7 @@ import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
  * If the user is an admin, a delete button is displayed in the navbar
  * If the user is not in publish mode, a button to enter publish mode is displayed in the navbar
  * If the entity is linked to cases to which the user does not have access to, a button to request access to view them is displayed
- *
+ * If the entity is an entry, a button to search the entry name on VirusTotal is displayed
  *
  * @component
  * @returns {Dashboard}
@@ -139,6 +140,10 @@ export default function Dashboard() {
             .catch(displayError(setAlert));
     };
 
+    const handleVirusTotalSearch = (name) => {
+        window.open(`https://www.virustotal.com/gui/search/${name}`);
+    };
+
     if (entityMissing) {
         return (
             <NotFound
@@ -165,7 +170,9 @@ export default function Dashboard() {
             >
                 <div className='w-[95%] h-full flex flex-col p-6 space-y-3'>
                     {contentObject.name && (
-                        <h1 className='text-5xl font-bold'>{contentObject.name}</h1>
+                        <h1 className='text-5xl font-bold w-full break-all'>
+                            {contentObject.name}
+                        </h1>
                     )}
                     {contentObject.type && (
                         <p className='text-sm text-zinc-500'>{`Type: ${contentObject.subtype ? contentObject.subtype : contentObject.type}`}</p>
@@ -173,7 +180,19 @@ export default function Dashboard() {
                     {contentObject.description && (
                         <p className='text-sm text-zinc-500'>{`Description: ${contentObject.description}`}</p>
                     )}
-
+                    {contentObject.type && contentObject.type === 'entry' && (
+                        <div className='flex flex-row space-x-2 flex-wrap'>
+                            <button
+                                className='btn w-fit min-w-[200px] mt-2 gap-2 !pl-4'
+                                onClick={() =>
+                                    handleVirusTotalSearch(contentObject.name)
+                                }
+                            >
+                                <Search />
+                                Search on VirusTotal
+                            </button>
+                        </div>
+                    )}
                     {contentObject.actors && (
                         <DashboardHorizontalSection title={'Related Actors'}>
                             {contentObject.actors.map((actor, index) => (
