@@ -54,8 +54,11 @@ axios.interceptors.request.use(
             accessToken = localStorage.getItem('access');
         }
 
-        config.headers['Content-Type'] = config.headers['Content-Type'] || 'application/json';
-        config.headers['Authorization'] = `Bearer ${accessToken}`;
+        if (!config.headers['Content-Type']) {
+            config.headers['Content-Type'] = 'application/json';
+            config.headers['Authorization'] = `Bearer ${accessToken}`;
+        }
+
         return config;
     },
     (error) => {
@@ -63,26 +66,26 @@ axios.interceptors.request.use(
     },
 );
 
-/**
- * If the response status is 401, the access token is expired.
- * The refresh token is used to get a new access token.
- * The access token and refresh token are stored in local storage.
- */
-axios.interceptors.response.use(
-    (response) => {
-        return response;
-    },
-    async (error) => {
-        const originalRequest = error.config;
-        if (error.response.status === 401 && !originalRequest._retry) {
-            originalRequest._retry = true;
-            await refreshAccessToken();
-            const accessToken = localStorage.getItem('access');
-            originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
-            return axios(originalRequest);
-        }
-        return Promise.reject(error);
-    },
-);
+// /**
+//  * If the response status is 401, the access token is expired.
+//  * The refresh token is used to get a new access token.
+//  * The access token and refresh token are stored in local storage.
+//  */
+// axios.interceptors.response.use(
+//     (response) => {
+//         return response;
+//     },
+//     async (error) => {
+//         const originalRequest = error.config;
+//         if (error.response.status === 401 && !originalRequest._retry) {
+//             originalRequest._retry = true;
+//             await refreshAccessToken();
+//             const accessToken = localStorage.getItem('access');
+//             originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
+//             return axios(originalRequest);
+//         }
+//         return Promise.reject(error);
+//     },
+// );
 
 export default axios;
