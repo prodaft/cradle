@@ -33,6 +33,12 @@ const refreshAccessToken = async () => {
     }
 };
 
+/**
+ * Add the Authorization header to each request.
+ * If no Content-Type header is specified, the default is `application/json`.
+ * If the access token has expired, the refresh token is used to get a new access token.
+ * The access token and refresh token are stored in local storage.
+ */
 axios.interceptors.request.use(
     async (config) => {
         let accessToken = localStorage.getItem('access');
@@ -48,10 +54,7 @@ axios.interceptors.request.use(
             accessToken = localStorage.getItem('access');
         }
 
-        // The default content type is JSON, unless specified otherwise
-        if (!config.headers['Content-Type']) {
-            config.headers['Content-Type'] = 'application/json';
-        }
+        config.headers['Content-Type'] = config.headers['Content-Type'] || 'application/json';
         config.headers['Authorization'] = `Bearer ${accessToken}`;
         return config;
     },
@@ -60,6 +63,11 @@ axios.interceptors.request.use(
     },
 );
 
+/**
+ * If the response status is 401, the access token is expired.
+ * The refresh token is used to get a new access token.
+ * The access token and refresh token are stored in local storage.
+ */
 axios.interceptors.response.use(
     (response) => {
         return response;

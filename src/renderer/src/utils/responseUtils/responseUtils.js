@@ -4,6 +4,8 @@
  *
  * If the error is from the server, display the error message from the server.
  * Otherwise, display the error message from the client.
+ * 
+ * If the error is a 401, the user is redirected to the login page.
  *
  * @param {Function} setAlert - Function to set the alert message (state)
  * @param {Function} [navigate] - Function to navigate to a different page
