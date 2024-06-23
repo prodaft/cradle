@@ -67,7 +67,7 @@ export default function FleetingNoteEditor() {
                     setMarkdownContent(response.data.content);
                     setFileData(response.data.files);
                 })
-                .catch(displayError(setAlert));
+                .catch(displayError(setAlert, navigate));
         }
     }, [id]);
 
@@ -104,7 +104,7 @@ export default function FleetingNoteEditor() {
                         refreshFleetingNotes();
                     }
                 })
-                .catch(displayError(setAlert));
+                .catch(displayError(setAlert, navigate));
         }
     };
 
@@ -122,7 +122,7 @@ export default function FleetingNoteEditor() {
                         navigate('/');
                     }
                 })
-                .catch(displayError(setAlert));
+                .catch(displayError(setAlert, navigate));
         }
     };
 
@@ -141,7 +141,7 @@ export default function FleetingNoteEditor() {
                         navigate('/');
                     }
                 })
-                .catch(displayError(setAlert));
+                .catch(displayError(setAlert, navigate));
         }
     };
 

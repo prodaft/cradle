@@ -4,6 +4,7 @@ import '@testing-library/jest-dom';
 import NotificationsPanel from './NotificationsPanel';
 import { useAuth } from '../../hooks/useAuth/useAuth';
 import { getNotifications } from '../../services/notificationsService/notificationsService';
+import { MemoryRouter } from 'react-router-dom';
 
 jest.mock('../../hooks/useAuth/useAuth');
 jest.mock('../../services/notificationsService/notificationsService', () => ({
@@ -11,8 +12,6 @@ jest.mock('../../services/notificationsService/notificationsService', () => ({
 }));
 
 describe('NotificationsPanel', () => {
-    const mockUseAuth = useAuth;
-
     afterEach(() => {
         jest.clearAllMocks();
     });
@@ -25,12 +24,15 @@ describe('NotificationsPanel', () => {
 
         getNotifications.mockResolvedValue({ data: mockNotifications });
 
-        const { getByTestId, getByText } = render(
-            <NotificationsPanel
-                handleCloseNotifications={() => {}}
-                unreadNotificationsCount={2}
-                setUnreadNotificationsCount={() => {}}
-            />,
+        const { getByText } = render(
+            <MemoryRouter>
+                <NotificationsPanel
+                    handleCloseNotifications={() => { }}
+                    unreadNotificationsCount={2}
+                    setUnreadNotificationsCount={() => { }}
+                />
+            </MemoryRouter>
+
         );
 
         await waitFor(() => {
@@ -45,11 +47,14 @@ describe('NotificationsPanel', () => {
         getNotifications.mockResolvedValueOnce({ data: mockNotifications });
 
         const { getByText } = render(
-            <NotificationsPanel
-                handleCloseNotifications={() => {}}
-                unreadNotificationsCount={0}
-                setUnreadNotificationsCount={() => {}}
-            />,
+            <MemoryRouter>
+                <NotificationsPanel
+                    handleCloseNotifications={() => { }}
+                    unreadNotificationsCount={0}
+                    setUnreadNotificationsCount={() => { }}
+                />
+            </MemoryRouter>
+
         );
 
         await waitFor(() => {
@@ -67,11 +72,14 @@ describe('NotificationsPanel', () => {
         getNotifications.mockResolvedValue({ data: mockNotifications });
 
         const { getByTestId } = render(
-            <NotificationsPanel
-                handleCloseNotifications={mockHandleNotificationsButton}
-                unreadNotificationsCount={0}
-                setUnreadNotificationsCount={() => {}}
-            />,
+            <MemoryRouter>
+                <NotificationsPanel
+                    handleCloseNotifications={mockHandleNotificationsButton}
+                    unreadNotificationsCount={0}
+                    setUnreadNotificationsCount={() => { }}
+                />
+            </MemoryRouter>
+
         );
 
         fireEvent.click(getByTestId('close-notifications-panel'));

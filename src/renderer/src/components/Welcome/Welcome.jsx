@@ -4,9 +4,9 @@ import EntityListCard from '../EntityListCard/EntityListCard';
 import NoteListCard from '../NoteListCard/NoteListCard';
 import useChangeFlexDirectionBySize from '../../hooks/useChangeFlexDirectionBySize/useChangeFlexDirectionBySize';
 import { getStatistics } from '../../services/statisticsService/statisticsService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * The Welcome component is the landing page of the application.
@@ -15,7 +15,6 @@ import AlertDismissible from '../AlertDismissible/AlertDismissible';
  * @returns {Welcome}
  */
 export default function Welcome() {
-    const auth = useAuth();
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [actors, setActors] = useState([]);
     const [cases, setCases] = useState([]);
@@ -23,6 +22,7 @@ export default function Welcome() {
     const entityListsDiv = useRef(null);
     const flexDirection = useChangeFlexDirectionBySize(entityListsDiv);
     const entityCardWrapperWidth = flexDirection === 'flex-row' ? 'w-[45%]' : 'w-full';
+    const navigate = useNavigate();
 
     useEffect(() => {
         getStatistics()
@@ -32,7 +32,7 @@ export default function Welcome() {
                 setCases(cases);
                 setNotes(notes);
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     }, []);
 
     return (

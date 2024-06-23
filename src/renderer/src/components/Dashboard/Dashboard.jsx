@@ -63,7 +63,7 @@ export default function Dashboard() {
                 if (err.response && err.response.status === 404) {
                     setEntityMissing(true);
                 } else {
-                    const errHandler = displayError(setAlert);
+                    const errHandler = displayError(setAlert, navigate);
                     errHandler(err);
                 }
             });
@@ -89,7 +89,7 @@ export default function Dashboard() {
                     navigate('/');
                 }
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     };
 
     const navbarContents = [
@@ -132,7 +132,7 @@ export default function Dashboard() {
                     color: 'green',
                 }),
             )
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     };
 
     const handleVirusTotalSearch = (name) => {

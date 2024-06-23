@@ -73,7 +73,7 @@ export default function SearchDialog({ isOpen, onClose }) {
                     }),
                 );
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     };
 
     if (!isOpen) return null;

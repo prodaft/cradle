@@ -1,6 +1,5 @@
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useState } from 'react';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import Preview from '../Preview/Preview';
 import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
@@ -30,11 +29,10 @@ import {
  */
 export default function PublishPreview() {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const auth = useAuth();
     const [isJson, setIsJson] = useState(false);
     const [responseData, setResponseData] = useState({});
     const [htmlContent, setHtmlContent] = useState('');
-
+    const navigate = useNavigate();
     const location = useLocation();
     const { noteIds, entityName } = location.state;
 
@@ -52,7 +50,7 @@ export default function PublishPreview() {
                     setResponseData(response.data);
                 }
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     }, [location]);
 
     // Publishes the preview in the provided format.

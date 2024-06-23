@@ -92,7 +92,7 @@ export default function TextEditor() {
                     });
                 }
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     };
 
     const handleSaveFleetingNote = () => {
@@ -117,7 +117,7 @@ export default function TextEditor() {
                     navigate(`/fleeting-editor/${res.data.id}`);
                 }
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     };
 
     // Buttons for the dialog. Label & handler function

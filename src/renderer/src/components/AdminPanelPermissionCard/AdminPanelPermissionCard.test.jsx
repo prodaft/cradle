@@ -6,18 +6,22 @@ import AdminPanelPermissionCard from './AdminPanelPermissionCard';
 import { changeAccess } from '../../services/adminService/adminService';
 import React from 'react';
 import '@testing-library/jest-dom';
+import { MemoryRouter } from 'react-router-dom';
 
 jest.mock('../../services/adminService/adminService');
 
 describe('AdminPanelPermissionCard', () => {
     it('should display current access level', () => {
-        const { getByTestId, getByText } = render(
-            <AdminPanelPermissionCard
-                userId='1'
-                caseName='Test Case'
-                caseId='1'
-                accessLevel='read'
-            />,
+        const { getByTestId } = render(
+            <MemoryRouter>
+                <AdminPanelPermissionCard
+                    userId='1'
+                    caseName='Test Case'
+                    caseId='1'
+                    accessLevel='read'
+                />
+            </MemoryRouter>
+
         );
         expect(getByTestId('accessLevelDisplay')).toBeInTheDocument();
     });
@@ -25,12 +29,15 @@ describe('AdminPanelPermissionCard', () => {
     it('should call changeAccess when access level is changed', async () => {
         changeAccess.mockResolvedValue({ status: 200 });
         const { getByTestId, getByText } = render(
-            <AdminPanelPermissionCard
-                userId='1'
-                caseName='Test Case'
-                caseId='1'
-                accessLevel='read'
-            />,
+            <MemoryRouter>
+                <AdminPanelPermissionCard
+                    userId='1'
+                    caseName='Test Case'
+                    caseId='1'
+                    accessLevel='read'
+                />
+            </MemoryRouter>
+
         );
         fireEvent.click(getByTestId('accessLevelDisplay'));
         fireEvent.click(getByText('none'));
@@ -42,12 +49,15 @@ describe('AdminPanelPermissionCard', () => {
     it('should display error message when changeAccess fails', async () => {
         changeAccess.mockRejectedValue(new Error('Failed to change access level'));
         const { getByTestId, getByText, findByText } = render(
-            <AdminPanelPermissionCard
-                userId='1'
-                caseName='Test Case'
-                caseId='1'
-                accessLevel='read'
-            />,
+            <MemoryRouter>
+                <AdminPanelPermissionCard
+                    userId='1'
+                    caseName='Test Case'
+                    caseId='1'
+                    accessLevel='read'
+                />
+            </MemoryRouter>
+
         );
         fireEvent.click(getByTestId('accessLevelDisplay'));
         fireEvent.click(getByText('none'));
