@@ -100,6 +100,7 @@ export default function Dashboard() {
         // If the user is an admin and the dashboard is not for an entry, add a delete button to the navbar
         auth.isAdmin && contentObject.type !== 'entry' && (
             <NavbarButton
+                key='delete-entity-btn'
                 icon={<Trash />}
                 text='Delete'
                 onClick={() => setDialog(true)}
@@ -110,6 +111,7 @@ export default function Dashboard() {
         // A button to enter publish mode. Here the user can choose which notes they want to view in the publish preview
         // This is only visible while the user is not in publish preview mode
         <NavbarButton
+            key='publish-mode-btn'
             icon={<TaskList />}
             text='Enter Publish Mode'
             data-testid='publish-mode-btn'

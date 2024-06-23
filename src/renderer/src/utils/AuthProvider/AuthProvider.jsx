@@ -21,6 +21,7 @@ export const AuthContext = createContext();
 const AuthProvider = ({ children }) => {
     const [access, setAccess] = useState(localStorage.getItem('access') || '');
     const [refresh, setRefresh] = useState(localStorage.getItem('refresh') || '');
+    const [expiration, setExpiration] = useState(localStorage.getItem('expiration') || '0');
     const [isAdmin, setIsAdmin] = useState(
         localStorage.getItem('isAdmin') === 'true' || false,
     );
@@ -33,7 +34,11 @@ const AuthProvider = ({ children }) => {
         localStorage.setItem('refresh', ref);
 
         try {
-            let adm = jwtDecode(acc)['is_admin'];
+            const decodedToken = jwtDecode(acc);
+            const exp = decodedToken['exp']; // TODO remove this if needed
+            setExpiration(exp);
+            localStorage.setItem('expiration', exp.toString());
+            const adm = decodedToken['is_admin'];
             setIsAdmin(adm);
             localStorage.setItem('isAdmin', adm.toString());
         } catch (e) {
@@ -52,7 +57,7 @@ const AuthProvider = ({ children }) => {
 
     return (
         <AuthContext.Provider
-            value={{ access, refresh, isAdmin, logIn, logOut, isAuthenticated }}
+            value={{ access, refresh, expiration, isAdmin, logIn, logOut, isAuthenticated }}
         >
             {children}
         </AuthContext.Provider>
