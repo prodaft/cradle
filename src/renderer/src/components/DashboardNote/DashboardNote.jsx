@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from 'react';
 import Preview from '../Preview/Preview';
 import { setPublishable } from '../../services/notesService/notesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 import { useLocation } from 'react-router-dom';
 
@@ -34,7 +33,6 @@ export default function DashboardNote({
     const [isSelected, setIsSelected] = useState(true);
     const navigate = useNavigate();
     const location = useLocation();
-    const auth = useAuth();
     const [parsedContent, setParsedContent] = useState('');
 
     useEffect(() => {
@@ -53,7 +51,7 @@ export default function DashboardNote({
                         setIsPublishable(!isPublishable);
                     }
                 })
-                .catch(displayError(setAlert));
+                .catch(displayError(setAlert, navigate));
         },
         [isPublishable, setIsPublishable, setAlert],
     );

@@ -1,10 +1,10 @@
 import { Xmark } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { getFleetingNotes } from '../../services/fleetingNotesService/fleetingNotesService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import FleetingNoteCard from '../FleetingNoteCard/FleetingNoteCard';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * The FleetingNotesPanel component is a panel that displays all the fleeting notes of the user.
@@ -18,9 +18,9 @@ export default function FleetingNotesPanel({
     handleFleetingNotesButton,
     fleetingNotesRefresh,
 }) {
-    const auth = useAuth();
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [notes, setNotes] = useState([]);
+    const navigate = useNavigate();
 
     useEffect(() => {
         getFleetingNotes()
@@ -29,7 +29,7 @@ export default function FleetingNotesPanel({
                     setNotes(response.data);
                 }
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     }, [fleetingNotesRefresh]);
 
     return (

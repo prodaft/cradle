@@ -4,8 +4,8 @@ import '@testing-library/jest-dom';
 import NotificationCard from './NotificationCard';
 import { markUnread } from '../../services/notificationsService/notificationsService';
 import { changeAccess } from '../../services/adminService/adminService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import { displayError } from '../../utils/responseUtils/responseUtils';
+import { MemoryRouter } from 'react-router-dom';
 
 jest.mock('../../services/notificationsService/notificationsService');
 jest.mock('../../services/adminService/adminService');
@@ -44,11 +44,14 @@ describe('NotificationCard', () => {
 
     test('renders a simple notification card', () => {
         render(
-            <NotificationCard
-                notification={mockSimpleNotification}
-                setAlert={mockSetAlert}
-                updateFlaggedNotificationsCount={mockUpdateFlaggedNotificationsCount}
-            />,
+            <MemoryRouter>
+                <NotificationCard
+                    notification={mockSimpleNotification}
+                    setAlert={mockSetAlert}
+                    updateFlaggedNotificationsCount={mockUpdateFlaggedNotificationsCount}
+                />
+            </MemoryRouter>
+
         );
 
         expect(screen.getByText('Test notification message')).toBeInTheDocument();
@@ -59,11 +62,14 @@ describe('NotificationCard', () => {
 
     test('renders an access notification card', () => {
         render(
-            <NotificationCard
-                notification={mockNotification}
-                setAlert={mockSetAlert}
-                updateFlaggedNotificationsCount={mockUpdateFlaggedNotificationsCount}
-            />,
+            <MemoryRouter>
+                <NotificationCard
+                    notification={mockNotification}
+                    setAlert={mockSetAlert}
+                    updateFlaggedNotificationsCount={mockUpdateFlaggedNotificationsCount}
+                />
+            </MemoryRouter>
+
         );
 
         expect(screen.getByText('Test notification message')).toBeInTheDocument();
@@ -78,11 +84,14 @@ describe('NotificationCard', () => {
         markUnread.mockResolvedValue({ status: 200 });
 
         render(
-            <NotificationCard
-                notification={mockNotification}
-                setAlert={mockSetAlert}
-                updateFlaggedNotificationsCount={mockUpdateFlaggedNotificationsCount}
-            />,
+            <MemoryRouter>
+                <NotificationCard
+                    notification={mockNotification}
+                    setAlert={mockSetAlert}
+                    updateFlaggedNotificationsCount={mockUpdateFlaggedNotificationsCount}
+                />
+            </MemoryRouter>
+
         );
 
         const markUnreadButton = screen.getByTestId('mark-read');
@@ -101,18 +110,21 @@ describe('NotificationCard', () => {
         markUnread.mockRejectedValue(new Error('Failed to mark unread'));
 
         render(
-            <NotificationCard
-                notification={mockNotification}
-                setAlert={mockSetAlert}
-                updateFlaggedNotificationsCount={mockUpdateFlaggedNotificationsCount}
-            />,
+            <MemoryRouter>
+                <NotificationCard
+                    notification={mockNotification}
+                    setAlert={mockSetAlert}
+                    updateFlaggedNotificationsCount={mockUpdateFlaggedNotificationsCount}
+                />
+            </MemoryRouter>
+
         );
 
         const markUnreadButton = screen.getByTestId('mark-read');
         fireEvent.click(markUnreadButton);
 
         await waitFor(() => {
-            expect(displayError).toHaveBeenCalledWith(mockSetAlert);
+            expect(displayError).toHaveBeenCalledWith(mockSetAlert, expect.any(Function));
         });
     });
 
@@ -120,11 +132,14 @@ describe('NotificationCard', () => {
         changeAccess.mockResolvedValue({ status: 200 });
 
         render(
-            <NotificationCard
-                notification={mockNotification}
-                setAlert={mockSetAlert}
-                updateFlaggedNotificationsCount={mockUpdateFlaggedNotificationsCount}
-            />,
+            <MemoryRouter>
+                <NotificationCard
+                    notification={mockNotification}
+                    setAlert={mockSetAlert}
+                    updateFlaggedNotificationsCount={mockUpdateFlaggedNotificationsCount}
+                />
+            </MemoryRouter>
+
         );
 
         const readAccessButton = screen.getByText('Read');
@@ -144,18 +159,21 @@ describe('NotificationCard', () => {
         changeAccess.mockRejectedValue(new Error('Failed to change access'));
 
         render(
-            <NotificationCard
-                notification={mockNotification}
-                setAlert={mockSetAlert}
-                updateFlaggedNotificationsCount={mockUpdateFlaggedNotificationsCount}
-            />,
+            <MemoryRouter>
+                <NotificationCard
+                    notification={mockNotification}
+                    setAlert={mockSetAlert}
+                    updateFlaggedNotificationsCount={mockUpdateFlaggedNotificationsCount}
+                />
+            </MemoryRouter>
+
         );
 
         const readAccessButton = screen.getByText('Read');
         fireEvent.click(readAccessButton);
 
         await waitFor(() => {
-            expect(displayError).toHaveBeenCalledWith(mockSetAlert);
+            expect(displayError).toHaveBeenCalledWith(mockSetAlert, expect.any(Function));
         });
     });
 });

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { UserCircle } from 'iconoir-react';
 import FormField from '../FormField/FormField';
 import { Link, useLocation } from 'react-router-dom';
@@ -40,7 +40,7 @@ export default function Login() {
                 }
                 navigate(from, { replace: true, state: state });
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     };
 
     return (

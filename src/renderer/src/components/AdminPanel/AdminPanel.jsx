@@ -1,4 +1,3 @@
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import AdminPanelSection from '../AdminPanelSection/AdminPanelSection';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -27,13 +26,12 @@ import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
  * @constructor
  */
 export default function AdminPanel() {
-    const auth = useAuth();
     const [actors, setActors] = useState([]);
     const [cases, setCases] = useState([]);
     const [users, setUsers] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
-    const handleError = displayError(setAlert);
+    const handleError = displayError(setAlert, navigate);
 
     const displayActors = async () => {
         getActors()

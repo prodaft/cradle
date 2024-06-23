@@ -1,6 +1,5 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import {
     deleteNote,
     getNote,
@@ -33,7 +32,6 @@ export default function NoteViewer() {
     const [isPublishable, setIsPublishable] = useState(false);
     const [isRaw, setIsRaw] = useState(false);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const auth = useAuth();
     const [parsedContent, setParsedContent] = useState('');
     const [dialog, setDialog] = useState(false);
 
@@ -50,7 +48,7 @@ export default function NoteViewer() {
                     .then((parsedContent) => setParsedContent(parsedContent))
                     .catch(displayError(setAlert));
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     }, [id]);
 
     const toggleView = useCallback(() => {
@@ -67,7 +65,7 @@ export default function NoteViewer() {
             .then(() => {
                 setIsPublishable((prevIsPublishable) => !prevIsPublishable);
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     }, [id, isPublishable]);
 
     const handleDelete = useCallback(() => {
@@ -85,7 +83,7 @@ export default function NoteViewer() {
                 const newState = { ...state, notes: stateNotes };
                 navigate(from, { replace: true, state: newState });
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     }, [id, navigate]);
 
     const navbarContents = [

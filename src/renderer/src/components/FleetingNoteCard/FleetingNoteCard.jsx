@@ -1,10 +1,7 @@
 import Preview from '../Preview/Preview';
 import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
 import { useNavigate } from 'react-router-dom';
-import { Trash } from 'iconoir-react/regular';
-import { deleteFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import { useState, useEffect } from 'react';
 
 /**
@@ -16,7 +13,6 @@ import { useState, useEffect } from 'react';
  */
 export default function FleetingNoteCard({ note, setAlert }) {
     const navigate = useNavigate();
-    const auth = useAuth();
     const [parsedContent, setParsedContent] = useState('');
 
     useEffect(() => {

@@ -1,8 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import * as d3 from 'd3';
 import 'tailwindcss/tailwind.css';
 import { getGraphData } from '../../services/graphService/graphService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import { Menu, RefreshDouble, Search, Xmark } from 'iconoir-react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
@@ -46,7 +44,6 @@ const GraphComponent = () => {
     const [searchValue, setSearchValue] = useState('');
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [highlightedNode, setHighlightedNode] = useState(null);
-    const auth = useAuth();
     const navigate = useNavigate();
 
     // Reference to the SVG element used to render the graph
@@ -86,7 +83,7 @@ const GraphComponent = () => {
                 const data = preprocessData(response.data);
                 setData(data);
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     }, [setAlert]);
 
     // Fetch the graph data on component mount

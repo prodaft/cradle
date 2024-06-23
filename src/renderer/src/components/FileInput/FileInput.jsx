@@ -3,10 +3,10 @@ import {
     getUploadLink,
     uploadFile,
 } from '../../services/fileUploadService/fileUploadService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { CloudUpload } from 'iconoir-react';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * This component is used to upload files to the server.
@@ -23,10 +23,10 @@ import { CloudUpload } from 'iconoir-react';
 export default function FileInput({ fileData, setFileData }) {
     const EMPTY_FILE_LIST = new DataTransfer().files;
     const [pendingFiles, setPendingFiles] = useState(EMPTY_FILE_LIST);
-    const auth = useAuth();
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [isUploading, setIsUploading] = useState(false);
     const inputRef = useRef(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         inputRef.current.files = pendingFiles;
@@ -72,9 +72,9 @@ export default function FileInput({ fileData, setFileData }) {
                     setPendingFiles(failedFiles.files);
                     throw new Error(
                         'Failed to upload files: ' +
-                            Array.from(failedFiles.files)
-                                .map((file) => file.name)
-                                .join(', '),
+                        Array.from(failedFiles.files)
+                            .map((file) => file.name)
+                            .join(', '),
                     );
                 } else {
                     setPendingFiles(EMPTY_FILE_LIST);
@@ -85,7 +85,7 @@ export default function FileInput({ fileData, setFileData }) {
                     });
                 }
             })
-            .catch(displayError(setAlert)) // Catches the error thrown in the .then block
+            .catch(displayError(setAlert, navigate)) // Catches the error thrown in the .then block
             .finally(() => {
                 setIsUploading(false);
             });

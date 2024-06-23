@@ -1,11 +1,10 @@
 import { Xmark } from 'iconoir-react';
 import { useEffect, useState } from 'react';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import FleetingNoteCard from '../FleetingNoteCard/FleetingNoteCard';
 import { getNotifications } from '../../services/notificationsService/notificationsService';
 import NotificationCard from '../NotificationCard/NotificationCard';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * The NotificationsPanel component is responsible for displaying notifications to the user.
@@ -32,10 +31,10 @@ export default function NotificationsPanel({
     unreadNotificationsCount,
     setUnreadNotificationsCount,
 }) {
-    const auth = useAuth();
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [notifications, setNotifications] = useState([]);
     const [flaggedNotificationsCount, setFlaggedNotificationsCount] = useState(0);
+    const navigate = useNavigate();
 
     const updateFlaggedNotificationsCount = (update) => {
         setFlaggedNotificationsCount(update);
@@ -51,7 +50,7 @@ export default function NotificationsPanel({
                 ).length;
                 updateFlaggedNotificationsCount(auxFlaggedNotificationsCount);
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     }
 
     useEffect(() => {
