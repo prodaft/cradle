@@ -29,9 +29,9 @@ export default function AdminPanelAdd({ type }) {
 
         try {
             if (type === 'Actor') {
-                await createActor(data, auth.access);
+                await createActor(data);
             } else if (type === 'Case') {
-                await createCase(data, auth.access);
+                await createCase(data);
             }
             navigate('/admin');
         } catch (err) {

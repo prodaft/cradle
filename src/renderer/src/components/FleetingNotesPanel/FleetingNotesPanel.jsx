@@ -23,7 +23,7 @@ export default function FleetingNotesPanel({
     const [notes, setNotes] = useState([]);
 
     useEffect(() => {
-        getFleetingNotes(auth.access)
+        getFleetingNotes()
             .then((response) => {
                 if (response.status == 200) {
                     setNotes(response.data);

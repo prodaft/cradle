@@ -33,7 +33,7 @@ export default function AdminPanelPermissionCard({
 
     const handleChange = async (newAccess) => {
         if (currentAccess !== newAccess) {
-            changeAccess(auth.access, userId, caseId, newAccess)
+            changeAccess(userId, caseId, newAccess)
                 .then((response) => {
                     if (response.status === 200) {
                         setCurrentAccess(newAccess);

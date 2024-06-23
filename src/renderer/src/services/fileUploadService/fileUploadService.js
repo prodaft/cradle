@@ -1,26 +1,19 @@
-import axios from 'axios';
-
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
+import axios from '../axiosInstance/axiosInstance';
 
 /**
  * Make a GET request to `/file-transfer/upload`.
  * This fetches a presigned URL that can be used to upload a file to an external `minio` instance.
  * See the OpenAPI specification for more information.
  *
- * @param {string} token - the JWT access token
  * @param {string} fileName - the name of the file (e.g. 'file.txt')
  * @returns {Promise<AxiosResponse<any>>} a presigned URL that can be used to upload the file,
  *                                        the name of the bucket and the name of the file
- * @example const { presigned, bucket_name, minio_file_link } = getUploadLink(token, 'file.txt');
+ * @example const { presigned, bucket_name, minio_file_link } = getUploadLink('file.txt');
  */
-const getUploadLink = (token, fileName) => {
+const getUploadLink = (fileName) => {
     return axios({
         url: '/file-transfer/upload/',
         method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
         params: {
             fileName: fileName,
         },
@@ -49,18 +42,13 @@ const uploadFile = (uploadUrl, file) => {
  * Make a GET request to `/file-transfer/download`.
  * See the OpenAPI specification for more information.
  *
- * @param {string} token - the JWT access token
  * @param {string} path - the path to request the download link from
  * @returns {Promise<AxiosResponse<any>>} a JSON containing presigned URL that can be used to download the file
  */
-const getDownloadLink = (token, path) => {
+const getDownloadLink = (path) => {
     return axios({
         url: path,
         method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
     });
 };
 

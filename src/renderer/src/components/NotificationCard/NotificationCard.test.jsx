@@ -35,7 +35,6 @@ describe('NotificationCard', () => {
     const mockUpdateFlaggedNotificationsCount = jest.fn();
 
     beforeEach(() => {
-        useAuth.mockReturnValue({ access: 'test-token' });
         displayError.mockImplementation(() => jest.fn());
     });
 
@@ -90,7 +89,7 @@ describe('NotificationCard', () => {
         fireEvent.click(markUnreadButton);
 
         await waitFor(() => {
-            expect(markUnread).toHaveBeenCalledWith('test-token', '1', false);
+            expect(markUnread).toHaveBeenCalledWith('1', false);
             expect(mockUpdateFlaggedNotificationsCount).toHaveBeenCalledWith(
                 expect.any(Function),
             );
@@ -132,12 +131,7 @@ describe('NotificationCard', () => {
         fireEvent.click(readAccessButton);
 
         await waitFor(() => {
-            expect(changeAccess).toHaveBeenCalledWith(
-                'test-token',
-                '456',
-                '123',
-                'read',
-            );
+            expect(changeAccess).toHaveBeenCalledWith('456', '123', 'read');
             expect(mockSetAlert).toHaveBeenCalledWith({
                 show: true,
                 message: 'Access level changed successfully',

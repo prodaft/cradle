@@ -13,10 +13,6 @@ jest.mock('../../services/notificationsService/notificationsService', () => ({
 describe('NotificationsPanel', () => {
     const mockUseAuth = useAuth;
 
-    beforeEach(() => {
-        mockUseAuth.mockReturnValue({ access: 'mock-access-token' });
-    });
-
     afterEach(() => {
         jest.clearAllMocks();
     });
@@ -41,8 +37,6 @@ describe('NotificationsPanel', () => {
             expect(getByText('Notification 1')).toBeInTheDocument();
             expect(getByText('Notification 2')).toBeInTheDocument();
         });
-
-        expect(getNotifications).toHaveBeenCalledWith('mock-access-token');
     });
 
     test('renders "No notifications to display" when there are no notifications', async () => {
@@ -63,7 +57,6 @@ describe('NotificationsPanel', () => {
         });
 
         expect(getNotifications).toHaveBeenCalledTimes(1);
-        expect(getNotifications).toHaveBeenCalledWith('mock-access-token');
     });
 
     test('handles close notifications panel button click', () => {

@@ -46,14 +46,14 @@ export default function PublishPreview() {
     }, [responseData]);
 
     useEffect(() => {
-        getPublishData(auth.access, noteIds)
+        getPublishData(noteIds)
             .then((response) => {
                 if (response.status === 200) {
                     setResponseData(response.data);
                 }
             })
             .catch(displayError(setAlert));
-    }, [location, auth.access]);
+    }, [location]);
 
     // Publishes the preview in the provided format.
     const handlePublish = useCallback(

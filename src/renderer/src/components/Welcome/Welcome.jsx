@@ -25,7 +25,7 @@ export default function Welcome() {
     const entityCardWrapperWidth = flexDirection === 'flex-row' ? 'w-[45%]' : 'w-full';
 
     useEffect(() => {
-        getStatistics(auth.access)
+        getStatistics()
             .then((response) => {
                 const { actors, cases, notes } = response.data;
                 setActors(actors);
@@ -33,7 +33,7 @@ export default function Welcome() {
                 setNotes(notes);
             })
             .catch(displayError(setAlert));
-    }, [auth.access]);
+    }, []);
 
     return (
         <>

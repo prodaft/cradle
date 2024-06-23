@@ -24,7 +24,7 @@ window.HTMLElement.prototype.scrollTo = () => {};
 describe('Dashboard Component', () => {
     beforeEach(() => {
         useLocation.mockReturnValue({ pathname: '/dashboard', search: '' });
-        useAuth.mockReturnValue({ access: 'token' });
+        useAuth.mockReturnValue({ isAdmin: false });
     });
 
     it('renders without crashing when case data is present', () => {

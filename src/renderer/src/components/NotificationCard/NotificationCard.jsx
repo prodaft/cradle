@@ -50,7 +50,7 @@ export default function NotificationCard({
     const auth = useAuth();
 
     const handleMarkUnread = (id) => {
-        markUnread(auth.access, id, !isMarkedUnread)
+        markUnread(id, !isMarkedUnread)
             .then((response) => {
                 if (response.status === 200) {
                     if (isMarkedUnread) {
@@ -65,7 +65,7 @@ export default function NotificationCard({
     };
 
     const handleChangeAccess = (newAccess) => () => {
-        changeAccess(auth.access, requesting_user_id, case_id, newAccess)
+        changeAccess(requesting_user_id, case_id, newAccess)
             .then((response) => {
                 if (response.status === 200) {
                     setAlert({

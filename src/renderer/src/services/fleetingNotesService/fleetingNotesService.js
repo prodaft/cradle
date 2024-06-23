@@ -1,22 +1,15 @@
-import axios from 'axios';
-
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
+import axios from '../axiosInstance/axiosInstance';
 
 /**
  * Function to get fleeting notes from the API
  * Passes the token to the API
  *
- * @param {string} token - The (JWT) token to authenticate the request
  * @returns {Promise<AxiosResponse<any>> | *}
  */
-export function getFleetingNotes(token) {
+export function getFleetingNotes() {
     return axios({
         method: 'GET',
         url: '/fleeting-notes/',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
     });
 }
 
@@ -24,19 +17,14 @@ export function getFleetingNotes(token) {
  * Function to add a fleeting note
  * Passes the token and content to the API
  *
- * @param {string} token - The (JWT) token to authenticate the request
  * @param {string} content - The content of the note to add (String)
  * @param {Array<{minio_file_name: string, file_name: string, bucket_name: string}>} files - information about the files that will be linked
  * @returns {Promise<AxiosResponse<any>> | *}
  */
-export function addFleetingNote(token, content, files) {
+export function addFleetingNote(content, files) {
     return axios({
         method: 'POST',
         url: '/fleeting-notes/',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
         data: {
             content: content,
             files: files,
@@ -46,37 +34,29 @@ export function addFleetingNote(token, content, files) {
 
 /**
  * Function to delete a fleeting note
- * @param {string} token
+ *
  * @param {string} id
  * @returns {Promise<AxiosResponse<any>> | *}
  */
-export function deleteFleetingNote(token, id) {
+export function deleteFleetingNote(id) {
     return axios({
         method: 'DELETE',
         url: `/fleeting-notes/${id}/`,
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
     });
 }
 
 /**
  * Function to update a fleeting note
- * @param {string} token - The (JWT) token to authenticate the request
+ *
  * @param {string} id - The id of the note to update
  * @param {string} content - The content of the note to update
  * @param {Array<{minio_file_name: string, file_name: string, bucket_name: string}>} files - information about the files that are linked to this note
  * @returns {Promise<AxiosResponse<any>> | *}
  */
-export function updateFleetingNote(token, id, content, files) {
+export function updateFleetingNote(id, content, files) {
     return axios({
         method: 'PUT',
         url: `/fleeting-notes/${id}/`,
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
         data: {
             content: content,
             files: files,
@@ -86,36 +66,28 @@ export function updateFleetingNote(token, id, content, files) {
 
 /**
  * Function to get a fleeting note by id
- * @param {string} token
+ *
  * @param {string} id
  * @returns {Promise<AxiosResponse<any>> | *}
  */
-export function getFleetingNoteById(token, id) {
+export function getFleetingNoteById(id) {
     return axios({
         method: 'GET',
         url: `/fleeting-notes/${id}/`,
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
     });
 }
 
 /**
  * Function to save a fleeting note as final
- * @param {string} token - The (JWT) token to authenticate the request
+ *
  * @param {string} id - The id of the note to update
  * @param {boolean} publishable - Whether the note is publishable
  * @returns {Promise<AxiosResponse<any>> | *}
  */
-export function saveFleetingNoteAsFinal(token, id, publishable) {
+export function saveFleetingNoteAsFinal(id, publishable) {
     return axios({
         method: 'PUT',
         url: `/fleeting-notes/${id}/final/`,
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
         data: {
             publishable: publishable,
         },

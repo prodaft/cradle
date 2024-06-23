@@ -5,11 +5,22 @@
  * If the error is from the server, display the error message from the server.
  * Otherwise, display the error message from the client.
  *
- * @param {(string) => void} setAlert - Function to set the alert message (state)
- * @returns {(err: any) => void} Function to display error message in an alert box
+ * @param {Function} setAlert - Function to set the alert message (state)
+ * @param {Function} [navigate] - Function to navigate to a different page
+ * @returns {Function} - Function to display the error message
  */
-const displayError = (setAlert) => {
+const displayError = (setAlert, navigate) => {
     return (err) => {
+        if (err.response && err.response.status === 401 && navigate) {
+            setAlert({
+                show: true,
+                message: 'Your session has expired. Please log back in.',
+                color: 'red',
+            });
+            navigate('/login');
+            return;
+        }
+
         let message = 'An unknown error occurred.';
 
         if (err.response && err.response.data && err.response.data.detail) {

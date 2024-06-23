@@ -1,23 +1,15 @@
-import axios from 'axios';
-
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
-
+import axios from '../axiosInstance/axiosInstance';
 /**
  * Sends a POST to create an actor
  *
  * @param {{name: string, description: string}} data - actor data
- * @param {string} token - JWT access token
  * @returns {Promise<Promise<AxiosResponse<any>> | *>}
  */
-export async function createActor(data, token) {
+export async function createActor(data) {
     return axios({
         method: 'post',
         url: '/entities/actors/',
         data: data,
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
     });
 }
 
@@ -25,7 +17,6 @@ export async function createActor(data, token) {
  * Sends a POST to create a case
  *
  * @param {{name: string, description: string}} data - case data
- * @param {string} token - JWT access token
  * @returns {Promise<Promise<AxiosResponse<any>> | *>}
  */
 export async function createCase(data, token) {
@@ -33,100 +24,84 @@ export async function createCase(data, token) {
         method: 'post',
         url: '/entities/cases/',
         data: data,
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
     });
 }
 
 /**
  * Sends a GET request to get all actors
  *
- * @param {string} token - JWT access token
  * @returns {Promise<Promise<AxiosResponse<any>> | *>}
  */
-export async function getActors(token) {
+export async function getActors() {
     return axios({
         method: 'get',
         url: '/entities/actors/',
-        headers: { Authorization: `Bearer ${token}` },
     });
 }
 
 /**
  * Sends a GET request to get all cases
  *
- * @param {string} token - JWT access token
  * @returns {Promise<Promise<AxiosResponse<any>> | *>}
  */
-export async function getCases(token) {
+export async function getCases() {
     return axios({
         method: 'get',
         url: '/entities/cases/',
-        headers: { Authorization: `Bearer ${token}` },
     });
 }
 
 /**
  * Sends a GET request to get all users
  *
- * @param {string} token - JWT access token
  * @returns {Promise<Promise<AxiosResponse<any>> | *>}
  */
-export async function getUsers(token) {
+export async function getUsers() {
     return axios({
         method: 'get',
         url: '/users/',
-        headers: { Authorization: `Bearer ${token}` },
     });
 }
 
 /**
  * Sends a DELETE request to delete an entity
  *
- * @param {string} token - JWT access token
  * @param {string} type - entity type : `entities/actors`, `entites/cases`, `users` (use plural form)
  * @param {string} id - entity id
  * @returns {Promise<Promise<AxiosResponse<any>> | *>}
  */
-export async function deleteEntity(token, type, id) {
+export async function deleteEntity(type, id) {
     return axios({
         method: 'delete',
         url: `/${type}/${id}/`,
-        headers: { Authorization: `Bearer ${token}` },
     });
 }
 
 /**
  * Sends a PUT request to change access level of a user
  *
- * @param {string} token - JWT access token
  * @param {string} userId - user id
  * @param {string} caseId - case id
  * @param {string} accessLevel - access level : none, read, read-write
  * @returns {Promise<Promise<AxiosResponse<any>> | *>}
  */
-export async function changeAccess(token, userId, caseId, accessLevel) {
+export async function changeAccess(userId, caseId, accessLevel) {
     return axios({
         method: 'put',
         url: `/access/${userId}/${caseId}/`,
         data: { access_type: accessLevel },
-        headers: { Authorization: `Bearer ${token}` },
     });
 }
 
 /**
  * Sends a GET request to get permissions for a user
  *
- * @param {string} token - JWT access token
  * @param {string} userId - user id
  * @returns {Promise<Promise<AxiosResponse<any>> | *>}
  */
-export async function getPermissions(token, userId) {
+export async function getPermissions(userId) {
     return axios({
         method: 'get',
         url: `/access/${userId}/`,
-        headers: { Authorization: `Bearer ${token}` },
     });
 }

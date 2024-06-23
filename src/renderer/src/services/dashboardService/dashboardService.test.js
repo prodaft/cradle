@@ -1,11 +1,9 @@
 import { getDashboardData } from './dashboardService';
 import { setPublishable } from '../notesService/notesService';
-import axios from 'axios';
-
+import axios from '../axiosInstance/axiosInstance';
 jest.mock('axios');
 
 describe('getDashboardData', () => {
-    const token = 'testToken';
     const path = '/testPath';
 
     beforeEach(() => {
@@ -15,15 +13,11 @@ describe('getDashboardData', () => {
     it('sends a GET request with correct parameters', async () => {
         axios.mockResolvedValue({ data: {} });
 
-        await getDashboardData(token, path);
+        await getDashboardData(path);
 
         expect(axios).toHaveBeenCalledWith({
             method: 'GET',
             url: path,
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-            },
         });
     });
 
@@ -31,7 +25,7 @@ describe('getDashboardData', () => {
         const responseData = { data: 'testData' };
         axios.mockResolvedValue(responseData);
 
-        const result = await getDashboardData(token, path);
+        const result = await getDashboardData(path);
 
         expect(result).toBe(responseData);
     });
@@ -40,6 +34,6 @@ describe('getDashboardData', () => {
         const error = new Error('testError');
         axios.mockRejectedValue(error);
 
-        await expect(getDashboardData(token, path)).rejects.toThrow(error);
+        await expect(getDashboardData(path)).rejects.toThrow(error);
     });
 });
