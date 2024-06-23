@@ -25,7 +25,7 @@ export default function AdminPanelUserPermissions() {
     const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(cases);
 
     useEffect(() => {
-        getPermissions(auth.access, id)
+        getPermissions(id)
             .then((response) => {
                 if (response.status === 200) {
                     let permissions = response.data;

@@ -81,13 +81,13 @@ const GraphComponent = () => {
 
     // Function to fetch the graph data from the server
     const fetchGraphData = useCallback(() => {
-        getGraphData(auth.access)
+        getGraphData()
             .then((response) => {
                 const data = preprocessData(response.data);
                 setData(data);
             })
             .catch(displayError(setAlert));
-    }, [auth.access, setAlert]);
+    }, [setAlert]);
 
     // Fetch the graph data on component mount
     useEffect(() => {

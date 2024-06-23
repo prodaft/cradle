@@ -7,12 +7,6 @@ import { changeAccess } from '../../services/adminService/adminService';
 import React from 'react';
 import '@testing-library/jest-dom';
 
-jest.mock('../../hooks/useAuth/useAuth', () => ({
-    useAuth: jest.fn().mockImplementation(() => {
-        return { access: 'testToken' };
-    }),
-}));
-
 jest.mock('../../services/adminService/adminService');
 
 describe('AdminPanelPermissionCard', () => {
@@ -41,7 +35,7 @@ describe('AdminPanelPermissionCard', () => {
         fireEvent.click(getByTestId('accessLevelDisplay'));
         fireEvent.click(getByText('none'));
         await waitFor(() =>
-            expect(changeAccess).toHaveBeenCalledWith('testToken', '1', '1', 'none'),
+            expect(changeAccess).toHaveBeenCalledWith('1', '1', 'none'),
         );
     });
 

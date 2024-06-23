@@ -36,7 +36,7 @@ export default function AdminPanel() {
     const handleError = displayError(setAlert);
 
     const displayActors = async () => {
-        getActors(auth.access)
+        getActors()
             .then((response) => {
                 if (response.status === 200) {
                     let actors = response.data;
@@ -62,7 +62,7 @@ export default function AdminPanel() {
     };
 
     const displayCases = async () => {
-        getCases(auth.access)
+        getCases()
             .then((response) => {
                 if (response.status === 200) {
                     let cases = response.data;
@@ -88,7 +88,7 @@ export default function AdminPanel() {
     };
 
     const displayUsers = async () => {
-        getUsers(auth.access)
+        getUsers()
             .then((response) => {
                 if (response.status === 200) {
                     let users = response.data;

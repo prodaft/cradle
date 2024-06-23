@@ -1,6 +1,5 @@
 import { getNote, setPublishable, deleteNote } from './notesService';
-import axios from 'axios';
-
+import axios from '../axiosInstance/axiosInstance';
 jest.mock('axios');
 
 it('fetches note successfully from API', async () => {
@@ -9,12 +8,11 @@ it('fetches note successfully from API', async () => {
     };
     axios.mockImplementationOnce(() => Promise.resolve(data));
 
-    await expect(getNote('dummy_token', '1')).resolves.toEqual(data);
+    await expect(getNote('1')).resolves.toEqual(data);
 
     expect(axios).toHaveBeenCalledWith({
         method: 'get',
         url: `/notes/1/`,
-        headers: { Authorization: `Bearer dummy_token` },
     });
 });
 
@@ -22,11 +20,10 @@ it('fetches note unsuccessfully from API', async () => {
     const errorMessage = 'Network Error';
     axios.mockImplementationOnce(() => Promise.reject(new Error(errorMessage)));
 
-    await expect(getNote('dummy_token', '1')).rejects.toThrow(errorMessage);
+    await expect(getNote('1')).rejects.toThrow(errorMessage);
 });
 
 describe('setPublishable', () => {
-    const token = 'testToken';
     const noteId = 123;
     const status = true;
 
@@ -37,15 +34,11 @@ describe('setPublishable', () => {
     it('sends a PUT request with correct parameters', async () => {
         axios.mockResolvedValue({ data: {} });
 
-        await setPublishable(token, noteId, status);
+        await setPublishable(noteId, status);
 
         expect(axios).toHaveBeenCalledWith({
             method: 'PUT',
             url: `/notes/${noteId}/publishable/`,
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-            },
             data: {
                 publishable: status,
             },
@@ -56,7 +49,7 @@ describe('setPublishable', () => {
         const responseData = { data: 'testData' };
         axios.mockResolvedValue(responseData);
 
-        const result = await setPublishable(token, noteId, status);
+        const result = await setPublishable(noteId, status);
 
         expect(result).toBe(responseData);
     });
@@ -65,31 +58,28 @@ describe('setPublishable', () => {
         const error = new Error('testError');
         axios.mockRejectedValue(error);
 
-        await expect(setPublishable(token, noteId, status)).rejects.toThrow(error);
+        await expect(setPublishable(noteId, status)).rejects.toThrow(error);
     });
 });
 
 it('deletes note successfully from API', async () => {
-    const token = 'dummy_token';
     const id = '1';
 
     axios.mockResolvedValue({ data: {} });
 
-    await expect(deleteNote(token, id)).resolves.toEqual({ data: {} });
+    await expect(deleteNote(id)).resolves.toEqual({ data: {} });
 
     expect(axios).toHaveBeenCalledWith({
         method: 'DELETE',
         url: `/notes/${id}/`,
-        headers: { Authorization: `Bearer ${token}` },
     });
 });
 
 it('deletes note unsuccessfully from API', async () => {
-    const token = 'dummy_token';
     const id = '1';
     const errorMessage = 'Network Error';
 
     axios.mockRejectedValue(new Error(errorMessage));
 
-    await expect(deleteNote(token, id)).rejects.toThrow(errorMessage);
+    await expect(deleteNote(id)).rejects.toThrow(errorMessage);
 });

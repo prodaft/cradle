@@ -43,7 +43,7 @@ export default function FileInput({ fileData, setFileData }) {
         const succeededFileData = [];
         const failedFiles = new DataTransfer();
         const fileUploadPromises = Array.from(pendingFiles).map((file) =>
-            getUploadLink(auth.access, file.name)
+            getUploadLink(file.name)
                 .then(async (res) => {
                     const uploadUrl = res.data.presigned;
                     await uploadFile(uploadUrl, file);

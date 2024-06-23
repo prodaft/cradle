@@ -56,7 +56,7 @@ export default function SearchDialog({ isOpen, onClose }) {
 
     const performSearch = () => {
         setAlert({ ...alert, show: false });
-        queryEntities(auth.access, searchQuery, entityTypeFilters, entitySubtypeFilters)
+        queryEntities(searchQuery, entityTypeFilters, entitySubtypeFilters)
             .then((response) => {
                 setResults(
                     response.data.map((result) => {

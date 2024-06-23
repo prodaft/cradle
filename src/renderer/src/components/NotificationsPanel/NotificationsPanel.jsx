@@ -43,7 +43,7 @@ export default function NotificationsPanel({
     };
 
     function fetchNotificationsAndUpdateCounts() {
-        getNotifications(auth.access)
+        getNotifications()
             .then((response) => {
                 setNotifications(response.data);
                 const auxFlaggedNotificationsCount = response.data.filter(
@@ -56,13 +56,13 @@ export default function NotificationsPanel({
 
     useEffect(() => {
         fetchNotificationsAndUpdateCounts();
-    }, [auth.access]);
+    }, []);
 
     useEffect(() => {
         if (flaggedNotificationsCount < unreadNotificationsCount) {
             fetchNotificationsAndUpdateCounts();
         }
-    }, [unreadNotificationsCount, auth.access]);
+    }, [unreadNotificationsCount]);
 
     return (
         <>

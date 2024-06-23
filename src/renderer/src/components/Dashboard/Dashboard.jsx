@@ -53,7 +53,7 @@ export default function Dashboard() {
         setAlert('');
 
         // Populate dashboard
-        getDashboardData(auth.access, path)
+        getDashboardData(path)
             .then((response) => {
                 setContentObject(response.data);
                 dashboard.current.scrollTo(0, 0);
@@ -67,7 +67,7 @@ export default function Dashboard() {
                     errHandler(err);
                 }
             });
-    }, [location, auth.access, path, setAlert, setEntityMissing, setContentObject]);
+    }, [location, path, setAlert, setEntityMissing, setContentObject]);
 
     const handleEnterPublishMode = useCallback(() => {
         const publishableNotes = contentObject.notes.filter((note) => note.publishable);
@@ -83,11 +83,7 @@ export default function Dashboard() {
     }, [navigate, contentObject, setAlert]);
 
     const handleDelete = () => {
-        deleteEntity(
-            auth.access,
-            `entities/${pluralize(contentObject.type)}`,
-            contentObject.id,
-        )
+        deleteEntity(`entities/${pluralize(contentObject.type)}`, contentObject.id)
             .then((response) => {
                 if (response.status === 200) {
                     navigate('/');
@@ -121,14 +117,14 @@ export default function Dashboard() {
     useNavbarContents(!entityMissing && navbarContents, [
         contentObject,
         location,
-        auth.access,
+        auth.isAdmin,
         entityMissing,
         handleEnterPublishMode,
         setDialog,
     ]);
 
     const handleRequestCaseAccess = (cases) => {
-        Promise.all(cases.map((c) => requestCaseAccess(auth.access, c.id)))
+        Promise.all(cases.map((c) => requestCaseAccess(c.id)))
             .then(() =>
                 setAlert({
                     show: true,

@@ -47,7 +47,7 @@ export default function DashboardNote({
     // If successful, update the switch to reflect this. Otherwise, display an error.
     const handleTogglePublishable = useCallback(
         (noteId) => {
-            setPublishable(auth.access, noteId, !isPublishable)
+            setPublishable(noteId, !isPublishable)
                 .then((response) => {
                     if (response.status === 200) {
                         setIsPublishable(!isPublishable);
@@ -55,7 +55,7 @@ export default function DashboardNote({
                 })
                 .catch(displayError(setAlert));
         },
-        [auth.access, isPublishable, setIsPublishable, setAlert],
+        [isPublishable, setIsPublishable, setAlert],
     );
 
     // If the note is to be included in the report and the button is clicked, remove it from the list of notes to publish.

@@ -38,7 +38,7 @@ export default function NoteViewer() {
     const [dialog, setDialog] = useState(false);
 
     useEffect(() => {
-        getNote(auth.access, id)
+        getNote(id)
             .then((response) => {
                 const responseNote = response.data;
                 setNote(responseNote);
@@ -51,7 +51,7 @@ export default function NoteViewer() {
                     .catch(displayError(setAlert));
             })
             .catch(displayError(setAlert));
-    }, [auth.access, id]);
+    }, [id]);
 
     const toggleView = useCallback(() => {
         setIsRaw((prevIsRaw) => !prevIsRaw);
@@ -63,15 +63,15 @@ export default function NoteViewer() {
     }, [isPublishable]);
 
     const togglePublishable = useCallback(() => {
-        setPublishable(auth.access, id, !isPublishable)
+        setPublishable(id, !isPublishable)
             .then(() => {
                 setIsPublishable((prevIsPublishable) => !prevIsPublishable);
             })
             .catch(displayError(setAlert));
-    }, [auth.access, id, isPublishable]);
+    }, [id, isPublishable]);
 
     const handleDelete = useCallback(() => {
-        deleteNote(auth.access, id)
+        deleteNote(id)
             .then(() => {
                 if (!state) {
                     navigate(from, { replace: true });
@@ -86,7 +86,7 @@ export default function NoteViewer() {
                 navigate(from, { replace: true, state: newState });
             })
             .catch(displayError(setAlert));
-    }, [auth.access, id, navigate]);
+    }, [id, navigate]);
 
     const navbarContents = [
         <NavbarSwitch

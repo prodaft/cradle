@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../axiosInstance/axiosInstance';
 import MockAdapter from 'axios-mock-adapter';
 import {
     getNotificationCount,
@@ -8,7 +8,6 @@ import {
 
 describe('notificationsService', () => {
     let mock;
-    const token = 'test-token';
 
     beforeAll(() => {
         mock = new MockAdapter(axios);
@@ -27,20 +26,18 @@ describe('notificationsService', () => {
             const responseData = { unread_count: 5 };
             mock.onGet('/notifications/unread-count/').reply(200, responseData);
 
-            const response = await getNotificationCount(token);
+            const response = await getNotificationCount();
 
             expect(response.status).toBe(200);
             expect(response.data).toEqual(responseData);
             expect(mock.history.get.length).toBe(1);
-            expect(mock.history.get[0].headers.Authorization).toBe(`Bearer ${token}`);
         });
 
         test('returns an error response from /notifications/unread-count/', async () => {
             mock.onGet('/notifications/unread-count/').reply(500);
 
-            await expect(getNotificationCount(token)).rejects.toThrow();
+            await expect(getNotificationCount()).rejects.toThrow();
             expect(mock.history.get.length).toBe(1);
-            expect(mock.history.get[0].headers.Authorization).toBe(`Bearer ${token}`);
         });
     });
 
@@ -49,20 +46,18 @@ describe('notificationsService', () => {
             const responseData = [{ id: 1, message: 'Test notification' }];
             mock.onGet('/notifications/').reply(200, responseData);
 
-            const response = await getNotifications(token);
+            const response = await getNotifications();
 
             expect(response.status).toBe(200);
             expect(response.data).toEqual(responseData);
             expect(mock.history.get.length).toBe(1);
-            expect(mock.history.get[0].headers.Authorization).toBe(`Bearer ${token}`);
         });
 
         test('returns an error response from /notifications/', async () => {
             mock.onGet('/notifications/').reply(500);
 
-            await expect(getNotifications(token)).rejects.toThrow();
+            await expect(getNotifications()).rejects.toThrow();
             expect(mock.history.get.length).toBe(1);
-            expect(mock.history.get[0].headers.Authorization).toBe(`Bearer ${token}`);
         });
     });
 
@@ -72,11 +67,10 @@ describe('notificationsService', () => {
             const flag = true;
             mock.onPut(`/notifications/${notificationId}/`).reply(200);
 
-            const response = await markUnread(token, notificationId, flag);
+            const response = await markUnread(notificationId, flag);
 
             expect(response.status).toBe(200);
             expect(mock.history.put.length).toBe(1);
-            expect(mock.history.put[0].headers.Authorization).toBe(`Bearer ${token}`);
             expect(mock.history.put[0].data).toBe(
                 JSON.stringify({ is_marked_unread: flag }),
             );
@@ -87,9 +81,8 @@ describe('notificationsService', () => {
             const flag = true;
             mock.onPut(`/notifications/${notificationId}/`).reply(500);
 
-            await expect(markUnread(token, notificationId, flag)).rejects.toThrow();
+            await expect(markUnread(notificationId, flag)).rejects.toThrow();
             expect(mock.history.put.length).toBe(1);
-            expect(mock.history.put[0].headers.Authorization).toBe(`Bearer ${token}`);
             expect(mock.history.put[0].data).toBe(
                 JSON.stringify({ is_marked_unread: flag }),
             );

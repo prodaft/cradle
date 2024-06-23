@@ -37,7 +37,7 @@ export default function AdminPanelCard({
     const auth = useAuth();
 
     const handleDelete = async () => {
-        deleteEntity(auth.access, type, id)
+        deleteEntity(type, id)
             .then((response) => {
                 if (response.status === 200) {
                     onDelete();
