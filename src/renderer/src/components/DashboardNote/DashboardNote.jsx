@@ -111,7 +111,6 @@ export default function DashboardNote({
                             <input
                                 data-testid='select-btn'
                                 type='checkbox'
-                                defaultChecked={true}
                                 checked={isSelected}
                                 className='form-checkbox checkbox checkbox-primary'
                                 onClick={handleSelectNote}
@@ -125,7 +124,6 @@ export default function DashboardNote({
                                     Publishable
                                 </label>
                                 <input
-                                    defaultChecked={true}
                                     checked={isPublishable}
                                     id={`publishable-switch-${note.id}`}
                                     type='checkbox'

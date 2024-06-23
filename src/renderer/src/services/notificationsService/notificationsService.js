@@ -1,4 +1,5 @@
-import axios from 'axios';
+// import axios from 'axios';
+import axios from '../axiosInstance/axiosInstance';
 
 axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
 
@@ -12,7 +13,7 @@ export function getNotificationCount(token) {
     return axios({
         method: 'get',
         url: '/notifications/unread-count/',
-        headers: { Authorization: `Bearer ${token}` },
+        // headers: { Authorization: `Bearer ${token}` },
     });
 }
 
