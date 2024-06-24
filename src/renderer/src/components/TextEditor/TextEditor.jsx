@@ -53,7 +53,8 @@ export default function TextEditor() {
     const [fileData, setFileData] = useState([]);
     const fileDataRef = useRef(fileData);
     const [parsedContent, setParsedContent] = useState('');
-
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(true);
+    const prevIdRef = useRef(id);
     const flexDirection = useChangeFlexDirectionBySize(textEditorRef);
 
     const NEW_NOTE_PLACEHOLDER_ID = 'new';
@@ -70,11 +71,13 @@ export default function TextEditor() {
             if (id === NEW_NOTE_PLACEHOLDER_ID) {
                 setMarkdownContent('');
                 setFileData([]);
+                setHasUnsavedChanges(true);
             } else {
-                getFleetingNoteById( id)
+                getFleetingNoteById(id)
                     .then((response) => {
                         setMarkdownContent(response.data.content);
                         setFileData(response.data.files);
+                        setHasUnsavedChanges(false);
                     })
                     .catch(displayError(setAlert, navigate));
             }
@@ -111,7 +114,7 @@ export default function TextEditor() {
                             refreshFleetingNotes();
                             setMarkdownContent('');
                             setFileData([]);
-                            navigate(`/editor/${res.data.id}`, navigate);
+                            navigate(`/editor/${res.data.id}`);
                         }
                     })
                     .catch(displayError(setAlert, navigate));
@@ -172,16 +175,25 @@ export default function TextEditor() {
     // Autosave feature
     useEffect(() => {
         if (!markdownContentRef.current) return;
+
+        // Avoid starting autosave when id changes
+        if (prevIdRef.current !== id) {
+            prevIdRef.current = id;
+            return;
+        }
+
         console.log('Setting autosave timer');
+        setHasUnsavedChanges(true);
         const autosaveTimer = setTimeout(() => {
             handleSaveNote();
+            setHasUnsavedChanges(false);
         }, AUTO_SAVE_DELAY);
 
         return () => {
             console.log('Clearing autosave timer');
             clearTimeout(autosaveTimer);
         };
-    }, [markdownContentRef.current, fileDataRef.current]);
+    }, [markdownContent, fileData]);
 
     useNavbarContents(
         [
@@ -225,10 +237,13 @@ export default function TextEditor() {
                 handleConfirm={handleDeleteNote}
             />
             <div
-                className={`w-full h-full rounded-md flex p-1.5 gap-1.5 ${flexDirection === 'flex-col' ? 'flex-col' : 'flex-row'} overflow-y-hidden`}
+                className={`w-full h-full rounded-md flex p-1.5 gap-1.5 ${flexDirection === 'flex-col' ? 'flex-col' : 'flex-row'} overflow-y-hidden relative`}
                 ref={textEditorRef}
             >
-                <AlertDismissible alert={alert} setAlert={setAlert} />
+                <div className='absolute bottom-4 right-4 px-4 py-2 rounded-md backdrop-blur-lg backdrop-filter bg-cradle3 bg-opacity-50 shadow-lg'>
+                    {hasUnsavedChanges ? 'Changes Not Saved' : 'Saved'}
+                </div>
+                <AlertDismissible alert={alert} setAlert={setAlert}/>
                 <div
                     className={`${flexDirection === 'flex-col' ? 'h-1/2' : 'h-full'} w-full bg-gray-2 rounded-md`}
                 >
@@ -243,7 +258,7 @@ export default function TextEditor() {
                 <div
                     className={`${flexDirection === 'flex-col' ? 'h-1/2' : 'h-full'} w-full bg-gray-2 rounded-md`}
                 >
-                    <Preview htmlContent={parsedContent} />
+                    <Preview htmlContent={parsedContent}/>
                 </div>
             </div>
         </>
