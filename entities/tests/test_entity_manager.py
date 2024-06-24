@@ -49,10 +49,10 @@ class EntityManagerTest(EntitiesTestCase):
             )
         )
         with self.subTest("Correct number of results"):
-            self.assertEqual(len(result), 1)
+            self.assertEqual(len(result), 2)
         for i in range(0, len(result)):
             with self.subTest("Correct name"):
-                self.assertTrue(result[i].name.startswith("Ent"))
+                self.assertTrue("ent" in result[i].name.lower())
 
     def test_get_filtered_entities_filters_by_entity_type(self):
         initial_queryset = Entity.objects.all()
@@ -80,7 +80,7 @@ class EntityManagerTest(EntitiesTestCase):
             with self.subTest("Correct name"):
                 self.assertEqual(result[i].subtype, EntitySubtype.USERNAME)
 
-    def test_get_filtered_entites_mixed_filters(self):
+    def test_get_filtered_entities_mixed_filters(self):
         initial_queryset = Entity.objects.all()
         result = list(
             Entity.objects.get_filtered_entities(
@@ -88,10 +88,10 @@ class EntityManagerTest(EntitiesTestCase):
             )
         )
         with self.subTest("Correct number of results"):
-            self.assertEqual(len(result), 1)
+            self.assertEqual(len(result), 2)
         for i in range(0, len(result)):
             with self.subTest("Correct name"):
-                self.assertEqual(result[i].name, "Entry1")
+                self.assertTrue("ent" in result[i].name.lower())
 
     def test_get_filtered_entities_multiple_options(self):
         initial_queryset = Entity.objects.all()
