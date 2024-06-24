@@ -38,10 +38,7 @@ function App() {
                                 path='/not-implemented'
                                 element={<FeatureNotImplemented />}
                             />
-                            <Route
-                                path='/editor/:id'
-                                element={<TextEditor />}
-                            />
+                            <Route path='/editor/:id' element={<TextEditor />} />
                             <Route path='/dashboards/*' element={<Dashboard />} />
                             <Route path='/notes/:id' element={<NoteViewer />} />
                             <Route path='/notes' element={<NoteSelector />} />
