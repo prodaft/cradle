@@ -1,4 +1,4 @@
-import axios from '../axiosInstance/axiosInstance';
+import { authAxios as axios } from '../axiosInstance/axiosInstance';
 import MockAdapter from 'axios-mock-adapter';
 import { getGraphData } from './graphService';
 

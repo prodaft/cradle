@@ -1,4 +1,3 @@
-import axios from '../axiosInstance/axiosInstance';
 import {
     getFleetingNotes,
     addFleetingNote,
@@ -6,7 +5,10 @@ import {
     deleteFleetingNote,
 } from './fleetingNotesService';
 
-jest.mock('axios');
+import { authAxios as axios } from '../axiosInstance/axiosInstance';
+jest.mock('../axiosInstance/axiosInstance', () => ({
+    authAxios: jest.fn(),
+}));
 
 describe('Fleeting Notes Service', () => {
     const content = 'testContent';

@@ -124,10 +124,7 @@ const resolveMinioLinks = {
                     JSON.parse(localStorage.getItem('minio-cache')) || {};
 
                 const fetchMinioDownloadLink = async () => {
-                    const response = await getDownloadLink(
-                        localStorage.getItem('access'),
-                        apiDownloadPath,
-                    );
+                    const response = await getDownloadLink(apiDownloadPath);
                     const presigned = response.data.presigned;
                     const expiry = Date.now() + 1000 * 60 * 5; // 5 minutes
                     return { presigned, expiry };

@@ -1,4 +1,4 @@
-import axios from '../axiosInstance/axiosInstance';
+import { authAxios } from '../axiosInstance/axiosInstance';
 
 /**
  * Function to get fleeting notes from the API
@@ -7,7 +7,7 @@ import axios from '../axiosInstance/axiosInstance';
  * @returns {Promise<AxiosResponse<any>> | *}
  */
 export function getFleetingNotes() {
-    return axios({
+    return authAxios({
         method: 'GET',
         url: '/fleeting-notes/',
     });
@@ -22,7 +22,7 @@ export function getFleetingNotes() {
  * @returns {Promise<AxiosResponse<any>> | *}
  */
 export function addFleetingNote(content, files) {
-    return axios({
+    return authAxios({
         method: 'POST',
         url: '/fleeting-notes/',
         data: {
@@ -39,7 +39,7 @@ export function addFleetingNote(content, files) {
  * @returns {Promise<AxiosResponse<any>> | *}
  */
 export function deleteFleetingNote(id) {
-    return axios({
+    return authAxios({
         method: 'DELETE',
         url: `/fleeting-notes/${id}/`,
     });
@@ -54,7 +54,7 @@ export function deleteFleetingNote(id) {
  * @returns {Promise<AxiosResponse<any>> | *}
  */
 export function updateFleetingNote(id, content, files) {
-    return axios({
+    return authAxios({
         method: 'PUT',
         url: `/fleeting-notes/${id}/`,
         data: {
@@ -71,7 +71,7 @@ export function updateFleetingNote(id, content, files) {
  * @returns {Promise<AxiosResponse<any>> | *}
  */
 export function getFleetingNoteById(id) {
-    return axios({
+    return authAxios({
         method: 'GET',
         url: `/fleeting-notes/${id}/`,
     });
@@ -85,7 +85,7 @@ export function getFleetingNoteById(id) {
  * @returns {Promise<AxiosResponse<any>> | *}
  */
 export function saveFleetingNoteAsFinal(id, publishable) {
-    return axios({
+    return authAxios({
         method: 'PUT',
         url: `/fleeting-notes/${id}/final/`,
         data: {

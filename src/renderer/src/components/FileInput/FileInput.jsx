@@ -47,7 +47,6 @@ export default function FileInput({ fileData, setFileData }) {
                 .then(async (res) => {
                     const uploadUrl = res.data.presigned;
                     await uploadFile(uploadUrl, file);
-                    console.log(res.data);
                     return res.data;
                 })
                 .then((data) => {
@@ -56,10 +55,8 @@ export default function FileInput({ fileData, setFileData }) {
                         file_name: file.name,
                         bucket_name: data.bucket_name,
                     });
-                    console.log("Succeeded!")
                 })
                 .catch((err) => {
-                    console.log(err);
                     failedFiles.items.add(file);
                 }),
         );
@@ -75,9 +72,9 @@ export default function FileInput({ fileData, setFileData }) {
                     setPendingFiles(failedFiles.files);
                     throw new Error(
                         'Failed to upload files: ' +
-                        Array.from(failedFiles.files)
-                            .map((file) => file.name)
-                            .join(', '),
+                            Array.from(failedFiles.files)
+                                .map((file) => file.name)
+                                .join(', '),
                     );
                 } else {
                     setPendingFiles(EMPTY_FILE_LIST);

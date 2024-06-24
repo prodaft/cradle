@@ -1,4 +1,4 @@
-import axios from '../axiosInstance/axiosInstance';
+import { authAxios } from '../axiosInstance/axiosInstance';
 /**
  * Sends a POST to create an actor
  *
@@ -6,7 +6,7 @@ import axios from '../axiosInstance/axiosInstance';
  * @returns {Promise<Promise<AxiosResponse<any>> | *>}
  */
 export async function createActor(data) {
-    return axios({
+    return authAxios({
         method: 'post',
         url: '/entities/actors/',
         data: data,
@@ -20,7 +20,7 @@ export async function createActor(data) {
  * @returns {Promise<Promise<AxiosResponse<any>> | *>}
  */
 export async function createCase(data, token) {
-    return axios({
+    return authAxios({
         method: 'post',
         url: '/entities/cases/',
         data: data,
@@ -33,7 +33,7 @@ export async function createCase(data, token) {
  * @returns {Promise<Promise<AxiosResponse<any>> | *>}
  */
 export async function getActors() {
-    return axios({
+    return authAxios({
         method: 'get',
         url: '/entities/actors/',
     });
@@ -45,7 +45,7 @@ export async function getActors() {
  * @returns {Promise<Promise<AxiosResponse<any>> | *>}
  */
 export async function getCases() {
-    return axios({
+    return authAxios({
         method: 'get',
         url: '/entities/cases/',
     });
@@ -57,7 +57,7 @@ export async function getCases() {
  * @returns {Promise<Promise<AxiosResponse<any>> | *>}
  */
 export async function getUsers() {
-    return axios({
+    return authAxios({
         method: 'get',
         url: '/users/',
     });
@@ -71,7 +71,7 @@ export async function getUsers() {
  * @returns {Promise<Promise<AxiosResponse<any>> | *>}
  */
 export async function deleteEntity(type, id) {
-    return axios({
+    return authAxios({
         method: 'delete',
         url: `/${type}/${id}/`,
     });
@@ -86,7 +86,7 @@ export async function deleteEntity(type, id) {
  * @returns {Promise<Promise<AxiosResponse<any>> | *>}
  */
 export async function changeAccess(userId, caseId, accessLevel) {
-    return axios({
+    return authAxios({
         method: 'put',
         url: `/access/${userId}/${caseId}/`,
         data: { access_type: accessLevel },
@@ -100,7 +100,7 @@ export async function changeAccess(userId, caseId, accessLevel) {
  * @returns {Promise<Promise<AxiosResponse<any>> | *>}
  */
 export async function getPermissions(userId) {
-    return axios({
+    return authAxios({
         method: 'get',
         url: `/access/${userId}/`,
     });

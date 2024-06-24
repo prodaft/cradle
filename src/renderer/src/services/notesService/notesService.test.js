@@ -1,5 +1,8 @@
 import { getNote, setPublishable, deleteNote } from './notesService';
-import axios from '../axiosInstance/axiosInstance';
+import { authAxios as axios } from '../axiosInstance/axiosInstance';
+jest.mock('../axiosInstance/axiosInstance', () => ({
+    authAxios: jest.fn(),
+}));
 jest.mock('axios');
 
 it('fetches note successfully from API', async () => {

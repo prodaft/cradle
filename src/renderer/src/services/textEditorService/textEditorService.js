@@ -1,4 +1,4 @@
-import axios from '../axiosInstance/axiosInstance';
+import { authAxios } from '../axiosInstance/axiosInstance';
 /**
  * Saves a note to the database
  * Sends a POST request to '/notes/', with the text in the request body
@@ -10,7 +10,7 @@ import axios from '../axiosInstance/axiosInstance';
  * @throws {Error} see the OpenApi specification
  */
 async function saveNote(text, publishable, files) {
-    return axios({
+    return authAxios({
         method: 'post',
         url: '/notes/',
         data: {

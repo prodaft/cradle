@@ -1,4 +1,4 @@
-import axios from '../axiosInstance/axiosInstance';
+import { authAxios } from '../axiosInstance/axiosInstance';
 /**
  * Function to get statistics of a user from the API.
  * It returns recent activity about actors, cases, notes
@@ -7,7 +7,7 @@ import axios from '../axiosInstance/axiosInstance';
  * @returns {Promise<axios.AxiosResponse<any>>}
  */
 export async function getStatistics() {
-    return axios({
+    return authAxios({
         method: 'GET',
         url: '/statistics/',
     });

@@ -1,4 +1,4 @@
-import axios from '../axiosInstance/axiosInstance';
+import { authAxios } from '../axiosInstance/axiosInstance';
 
 /**
  * Sends a POST request to authenticate user
@@ -7,7 +7,7 @@ import axios from '../axiosInstance/axiosInstance';
  * @returns {Promise<AxiosResponse<any>>}
  */
 export async function logInReq(data) {
-    return axios({
+    return authAxios({
         method: 'post',
         url: '/users/login/',
         data: data,
@@ -21,7 +21,7 @@ export async function logInReq(data) {
  * @returns {Promise<AxiosResponse<any>>}
  */
 export async function registerReq(data) {
-    return axios({
+    return authAxios({
         method: 'post',
         url: '/users/',
         data: data,

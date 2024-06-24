@@ -1,5 +1,5 @@
 import QueryString from 'qs';
-import axios from '../axiosInstance/axiosInstance';
+import { authAxios } from '../axiosInstance/axiosInstance';
 
 /**
  * Function to retrieve the preview of a publish report
@@ -11,7 +11,7 @@ export function getPublishData(noteIds) {
     const path = `/notes/publish/`;
     const queryParams = { note_ids: noteIds };
 
-    return axios({
+    return authAxios({
         method: 'GET',
         url: path,
         params: queryParams,

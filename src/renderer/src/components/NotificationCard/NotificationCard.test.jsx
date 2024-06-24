@@ -48,10 +48,11 @@ describe('NotificationCard', () => {
                 <NotificationCard
                     notification={mockSimpleNotification}
                     setAlert={mockSetAlert}
-                    updateFlaggedNotificationsCount={mockUpdateFlaggedNotificationsCount}
+                    updateFlaggedNotificationsCount={
+                        mockUpdateFlaggedNotificationsCount
+                    }
                 />
-            </MemoryRouter>
-
+            </MemoryRouter>,
         );
 
         expect(screen.getByText('Test notification message')).toBeInTheDocument();
@@ -66,10 +67,11 @@ describe('NotificationCard', () => {
                 <NotificationCard
                     notification={mockNotification}
                     setAlert={mockSetAlert}
-                    updateFlaggedNotificationsCount={mockUpdateFlaggedNotificationsCount}
+                    updateFlaggedNotificationsCount={
+                        mockUpdateFlaggedNotificationsCount
+                    }
                 />
-            </MemoryRouter>
-
+            </MemoryRouter>,
         );
 
         expect(screen.getByText('Test notification message')).toBeInTheDocument();
@@ -88,10 +90,11 @@ describe('NotificationCard', () => {
                 <NotificationCard
                     notification={mockNotification}
                     setAlert={mockSetAlert}
-                    updateFlaggedNotificationsCount={mockUpdateFlaggedNotificationsCount}
+                    updateFlaggedNotificationsCount={
+                        mockUpdateFlaggedNotificationsCount
+                    }
                 />
-            </MemoryRouter>
-
+            </MemoryRouter>,
         );
 
         const markUnreadButton = screen.getByTestId('mark-read');
@@ -114,17 +117,21 @@ describe('NotificationCard', () => {
                 <NotificationCard
                     notification={mockNotification}
                     setAlert={mockSetAlert}
-                    updateFlaggedNotificationsCount={mockUpdateFlaggedNotificationsCount}
+                    updateFlaggedNotificationsCount={
+                        mockUpdateFlaggedNotificationsCount
+                    }
                 />
-            </MemoryRouter>
-
+            </MemoryRouter>,
         );
 
         const markUnreadButton = screen.getByTestId('mark-read');
         fireEvent.click(markUnreadButton);
 
         await waitFor(() => {
-            expect(displayError).toHaveBeenCalledWith(mockSetAlert, expect.any(Function));
+            expect(displayError).toHaveBeenCalledWith(
+                mockSetAlert,
+                expect.any(Function),
+            );
         });
     });
 
@@ -136,10 +143,11 @@ describe('NotificationCard', () => {
                 <NotificationCard
                     notification={mockNotification}
                     setAlert={mockSetAlert}
-                    updateFlaggedNotificationsCount={mockUpdateFlaggedNotificationsCount}
+                    updateFlaggedNotificationsCount={
+                        mockUpdateFlaggedNotificationsCount
+                    }
                 />
-            </MemoryRouter>
-
+            </MemoryRouter>,
         );
 
         const readAccessButton = screen.getByText('Read');
@@ -163,17 +171,21 @@ describe('NotificationCard', () => {
                 <NotificationCard
                     notification={mockNotification}
                     setAlert={mockSetAlert}
-                    updateFlaggedNotificationsCount={mockUpdateFlaggedNotificationsCount}
+                    updateFlaggedNotificationsCount={
+                        mockUpdateFlaggedNotificationsCount
+                    }
                 />
-            </MemoryRouter>
-
+            </MemoryRouter>,
         );
 
         const readAccessButton = screen.getByText('Read');
         fireEvent.click(readAccessButton);
 
         await waitFor(() => {
-            expect(displayError).toHaveBeenCalledWith(mockSetAlert, expect.any(Function));
+            expect(displayError).toHaveBeenCalledWith(
+                mockSetAlert,
+                expect.any(Function),
+            );
         });
     });
 });

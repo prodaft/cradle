@@ -1,6 +1,9 @@
 import { getDashboardData } from './dashboardService';
 import { setPublishable } from '../notesService/notesService';
-import axios from '../axiosInstance/axiosInstance';
+import { authAxios as axios } from '../axiosInstance/axiosInstance';
+jest.mock('../axiosInstance/axiosInstance', () => ({
+    authAxios: jest.fn(),
+}));
 jest.mock('axios');
 
 describe('getDashboardData', () => {
