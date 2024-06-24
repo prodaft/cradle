@@ -2,10 +2,12 @@ import { Link } from 'react-router-dom';
 
 /**
  * FeatureNotImplemented component - a placeholder component for features that are not yet implemented.
+ * 
+ * @function FeatureNotImplemented
  * @returns {FeatureNotImplemented}
  * @constructor
  */
-const FeatureNotImplemented = () => {
+export default function FeatureNotImplemented() {
     return (
         <div className='flex flex-col justify-center h-full'>
             <h1 className='text-5xl font-bold text-center w-full'>
@@ -20,5 +22,3 @@ const FeatureNotImplemented = () => {
         </div>
     );
 };
-
-export default FeatureNotImplemented;

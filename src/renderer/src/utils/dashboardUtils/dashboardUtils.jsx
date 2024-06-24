@@ -44,7 +44,7 @@ export const createDashboardLink = (entity) => {
  *
  * @param {?Array.<Entity>} entities - the entities to render
  * @param {string} relatedEntitiesTitle - the title of the section
- * @returns {JSX.Element|null}
+ * @returns {React.ReactElement|null}
  */
 export const renderDashboardSection = (entities, relatedEntitiesTitle) => {
     if (!entities) {
@@ -77,7 +77,7 @@ export const renderDashboardSection = (entities, relatedEntitiesTitle) => {
  * @param {string} inaccessibleEntitiesMessage
  * @param {string} requestAccessMessage
  * @param {function} handleRequestEntityAccess
- * @returns {JSX.Element|null}
+ * @returns {React.ReactElement|null}
  */
 export const renderDashboardSectionWithInaccessibleEntities = (
     entities,
@@ -102,23 +102,23 @@ export const renderDashboardSectionWithInaccessibleEntities = (
     const inaccessibleEntitiesDiv =
         inaccessibleEntities && inaccessibleEntities.length > 0
             ? [
-                  <div
-                      key='inaccessible-entities'
-                      className='w-full h-fit mt-1 flex flex-row justify-between items-center text-zinc-400'
-                  >
-                      <p>
-                          {inaccessibleEntitiesMessage}
-                          <span
-                              className='underline cursor-pointer'
-                              onClick={() =>
-                                  handleRequestEntityAccess(inaccessibleEntities)
-                              }
-                          >
-                              {requestAccessMessage}
-                          </span>
-                      </p>
-                  </div>,
-              ]
+                <div
+                    key='inaccessible-entities'
+                    className='w-full h-fit mt-1 flex flex-row justify-between items-center text-zinc-400'
+                >
+                    <p>
+                        {inaccessibleEntitiesMessage}
+                        <span
+                            className='underline cursor-pointer'
+                            onClick={() =>
+                                handleRequestEntityAccess(inaccessibleEntities)
+                            }
+                        >
+                            {requestAccessMessage}
+                        </span>
+                    </p>
+                </div>,
+            ]
             : [];
 
     return (

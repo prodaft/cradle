@@ -3,8 +3,10 @@ import rippleUiAlertIcon from '../../assets/ripple-ui-alert-icon.svg';
 /**
  * AlertBox component - a styled in-line alert box with an icon and text
  *
- * @param {{show: boolean, message: string, color: string}} alert - The alert object to display
- * @returns {JSX.Element}
+ * @function AlertBox
+ * @param {Object} props - The props object
+ * @param {Alert} props.alert - The alert object to display
+ * @returns {React.ReactElement}
  * @constructor
  */
 export default function AlertBox({ alert }) {

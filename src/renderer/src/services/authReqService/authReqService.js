@@ -1,4 +1,4 @@
-import { authAxios } from '../axiosInstance/axiosInstance';
+import { noAuthAxios } from '../axiosInstance/axiosInstance';
 
 /**
  * Sends a POST request to authenticate user
@@ -7,9 +7,9 @@ import { authAxios } from '../axiosInstance/axiosInstance';
  * @returns {Promise<AxiosResponse<any>>}
  */
 export async function logInReq(data) {
-    return authAxios({
+    return noAuthAxios({
         method: 'post',
-        url: '/users/login/',
+        url: `${import.meta.env.VITE_API_BASE_URL}/users/login/`,
         data: data,
     });
 }
@@ -21,9 +21,9 @@ export async function logInReq(data) {
  * @returns {Promise<AxiosResponse<any>>}
  */
 export async function registerReq(data) {
-    return authAxios({
+    return noAuthAxios({
         method: 'post',
-        url: '/users/',
+        url: `${import.meta.env.VITE_API_BASE_URL}/users/`,
         data: data,
     });
 }

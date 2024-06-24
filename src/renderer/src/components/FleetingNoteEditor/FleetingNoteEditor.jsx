@@ -33,6 +33,7 @@ import { useLocalStorage } from '@uidotdev/usehooks';
  * The component uses the Markdown syntax to edit the content of the note.
  * The component uses the Fleeting Notes service to save and delete notes.
  *
+ * @function FleetingNoteEditor
  * @returns {FleetingNoteEditor}
  * @constructor
  */

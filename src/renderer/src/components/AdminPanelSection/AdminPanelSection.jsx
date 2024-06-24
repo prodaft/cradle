@@ -10,11 +10,13 @@ import useFrontendSearch from '../../hooks/useFrontendSearch/useFrontendSearch';
  * - Children (cards)
  * The component will filter the children based on the search input.
  *
- * @param {string} title - The title of the section
- * @param {boolean} addEnabled - Whether the add button is enabled
- * @param {string} addTooltipText - The tooltip text for the add button
- * @param {() => void} handleAdd - The handler for the add button
- * @param {Array<ReactElement>} children - The children (cards) to display in the section
+ * @function AdminPanelSection
+ * @param {Object} props - The props object
+ * @param {string} props.title - The title of the section
+ * @param {boolean} props.addEnabled - Whether the add button is enabled
+ * @param {string} props.addTooltipText - The tooltip text for the add button
+ * @param {Function} props.handleAdd - The handler for the add button
+ * @param {Array<React.ReactElement>} props.children - The children (cards) to display in the section
  * @returns {AdminPanelSection}
  * @constructor
  */

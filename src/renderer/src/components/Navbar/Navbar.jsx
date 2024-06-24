@@ -8,9 +8,11 @@ import Logo from '../Logo/Logo';
 /**
  * Navbar component - the main navigation bar for the application.
  *
- * @param {Array<React.Component>} contents - the contents of the navbar set by other components
- * @param {() => void} showFleetingNotesButton - determines if the Fleeting Notes button should be displayed
- * @param {() => void} handleFleetingNotes - handler for the Fleeting Notes action
+ * @function Navbar
+ * @param {Object} props - the props object
+ * @param {Array<NavbarButton|NavbarDropdown|NavbarSwitch>} props.contents - the contents of the navbar set by other components
+ * @param {Function} props.showFleetingNotesButton - determines if the Fleeting Notes button should be displayed
+ * @param {Function} props.handleFleetingNotes - handler for the Fleeting Notes action
  * @returns {Navbar}
  * @constructor
  */

@@ -1,8 +1,11 @@
 /**
  * NavbarButton - a button in the navbar.
- * @param {*} icon - the icon to display in the button
- * @param {string} text - the tooltip text for the button
- * @param {() => void} onClick - the handler for the button
+ * 
+ * @function NavbarButton
+ * @param {Object} props - the props object
+ * @param {any} props.icon - the icon to display in the button
+ * @param {string} props.text - the tooltip text for the button
+ * @param {Function} props.onClick - the handler for the button
  * @returns {NavbarButton}
  * @constructor
  */
