@@ -1,4 +1,4 @@
-import axios from '../axiosInstance/axiosInstance';
+import { authAxios } from '../axiosInstance/axiosInstance';
 
 /**
  * Get the count of unread notifications
@@ -6,7 +6,7 @@ import axios from '../axiosInstance/axiosInstance';
  * @returns {Promise<AxiosResponse<any>>}
  */
 export function getNotificationCount() {
-    return axios({
+    return authAxios({
         method: 'get',
         url: '/notifications/unread-count/',
     });
@@ -18,7 +18,7 @@ export function getNotificationCount() {
  * @returns {Promise<AxiosResponse<any>>}
  */
 export function getNotifications() {
-    return axios({
+    return authAxios({
         method: 'get',
         url: '/notifications/',
     });
@@ -32,7 +32,7 @@ export function getNotifications() {
  * @returns {Promise<AxiosResponse<any>>}
  */
 export function markUnread(notificationId, flag) {
-    return axios({
+    return authAxios({
         method: 'put',
         url: `/notifications/${notificationId}/`,
         data: {

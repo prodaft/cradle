@@ -1,6 +1,19 @@
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 
+// An axios instance with default JSON headers and a base URL to the backend API
+// It will be used for all internal requests and it will automatically refresh the JWT if it has expired
+const authAxios = axios.create({
+    baseURL: import.meta.env.VITE_API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
+
+// A default axios instance that will be used for all other requests
+// (e.g. to minio or when no authorization headers are needed)
+const noAuthAxios = axios.create();
+
 axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
 
 /**
@@ -16,9 +29,9 @@ const refreshAccessToken = async () => {
         return;
     }
 
-    const response = await axios({
+    const response = await noAuthAxios({
         method: 'POST',
-        url: '/users/refresh/',
+        url: `${import.meta.env.VITE_API_BASE_URL}/users/refresh/`,
         data: {
             refresh: refreshToken,
         },
@@ -39,7 +52,7 @@ const refreshAccessToken = async () => {
  * If the access token has expired, the refresh token is used to get a new access token.
  * The access token and refresh token are stored in local storage.
  */
-axios.interceptors.request.use(
+authAxios.interceptors.request.use(
     async (config) => {
         let accessToken = localStorage.getItem('access');
         const expirationInSeconds = new Number(localStorage.getItem('expiration'));
@@ -54,10 +67,7 @@ axios.interceptors.request.use(
             accessToken = localStorage.getItem('access');
         }
 
-        if (!config.headers['Content-Type']) {
-            config.headers['Content-Type'] = 'application/json';
-            config.headers['Authorization'] = `Bearer ${accessToken}`;
-        }
+        config.headers['Authorization'] = `Bearer ${accessToken}`;
 
         return config;
     },
@@ -66,26 +76,4 @@ axios.interceptors.request.use(
     },
 );
 
-// /**
-//  * If the response status is 401, the access token is expired.
-//  * The refresh token is used to get a new access token.
-//  * The access token and refresh token are stored in local storage.
-//  */
-// axios.interceptors.response.use(
-//     (response) => {
-//         return response;
-//     },
-//     async (error) => {
-//         const originalRequest = error.config;
-//         if (error.response.status === 401 && !originalRequest._retry) {
-//             originalRequest._retry = true;
-//             await refreshAccessToken();
-//             const accessToken = localStorage.getItem('access');
-//             originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
-//             return axios(originalRequest);
-//         }
-//         return Promise.reject(error);
-//     },
-// );
-
-export default axios;
+export { authAxios, noAuthAxios };

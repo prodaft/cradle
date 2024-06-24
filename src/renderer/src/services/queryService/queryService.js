@@ -1,5 +1,5 @@
 import qs from 'qs';
-import axios from '../axiosInstance/axiosInstance';
+import { authAxios } from '../axiosInstance/axiosInstance';
 
 /**
  * Function to query entities from the API
@@ -21,7 +21,9 @@ export function queryEntities(name, entityTypes, entitySubtype) {
         params.name = name;
     }
 
-    return axios.get(url, {
+    return authAxios({
+        method: 'GET',
+        url: url,
         params: params,
         paramsSerializer: (params) => {
             return qs.stringify(params, { arrayFormat: 'repeat' });

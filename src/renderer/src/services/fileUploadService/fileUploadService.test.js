@@ -1,8 +1,10 @@
-import axios from '../axiosInstance/axiosInstance';
 import MockAdapter from 'axios-mock-adapter';
 import { getUploadLink, uploadFile, getDownloadLink } from './fileUploadService';
 
+import { authAxios as axios, noAuthAxios } from '../axiosInstance/axiosInstance';
+
 const mock = new MockAdapter(axios);
+const noAuthMock = new MockAdapter(noAuthAxios);
 
 describe('File Upload Service', () => {
     afterEach(() => {
@@ -32,13 +34,13 @@ describe('File Upload Service', () => {
         });
         const expectedResponse = { message: 'File uploaded successfully' };
 
-        mock.onPut(uploadUrl).reply(200, expectedResponse);
+        noAuthMock.onPut(uploadUrl).reply(200, expectedResponse);
 
         const response = await uploadFile(uploadUrl, file);
 
         expect(response.data).toEqual(expectedResponse);
-        expect(mock.history.put[0].headers['Content-Type']).toBe(file.type);
-        expect(mock.history.put[0].data).toBe(file);
+        expect(noAuthMock.history.put[0].headers['Content-Type']).toBe(file.type);
+        expect(noAuthMock.history.put[0].data).toBe(file);
     });
 
     it('should fetch a download link for a file', async () => {
@@ -57,7 +59,7 @@ describe('File Upload Service', () => {
     it('should handle errors when fetching a download link', async () => {
         const path = 'http://minio-file-link';
 
-        mock.onGet(path).reply(500);
+        noAuthMock.onGet(path).reply(500);
 
         await expect(getDownloadLink(path)).rejects.toThrow();
     });

@@ -1,6 +1,6 @@
-import axios from '../axiosInstance/axiosInstance';
 import MockAdapter from 'axios-mock-adapter';
 import { getStatistics } from './statisticsService';
+import { authAxios as axios } from '../axiosInstance/axiosInstance';
 
 const mock = new MockAdapter(axios);
 

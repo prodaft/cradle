@@ -1,6 +1,9 @@
 import { queryEntities } from './queryService';
-import axios from '../axiosInstance/axiosInstance';
 import qs from 'qs';
+import { authAxios as axios } from '../axiosInstance/axiosInstance';
+jest.mock('../axiosInstance/axiosInstance', () => ({
+    authAxios: jest.fn(),
+}));
 
 jest.mock('axios');
 
@@ -10,15 +13,17 @@ describe('queryEntities', () => {
     const entrySubtypes = ['entry1', 'entry2'];
 
     beforeEach(() => {
-        axios.get.mockClear();
+        axios.mockClear();
     });
 
     it('should send a GET request with correct parameters', async () => {
-        axios.get.mockResolvedValue({ data: {} });
+        axios.mockResolvedValue({ data: {} });
 
         await queryEntities(name, entityTypes, entrySubtypes);
 
-        expect(axios.get).toHaveBeenCalledWith('/query/', {
+        expect(axios).toHaveBeenCalledWith({
+            method: 'GET',
+            url: '/query/',
             params: {
                 entityType: entityTypes,
                 entitySubtype: entrySubtypes,
@@ -29,11 +34,11 @@ describe('queryEntities', () => {
     });
 
     it('should correctly serialize array parameters', async () => {
-        axios.get.mockResolvedValue({ data: {} });
+        axios.mockResolvedValue({ data: {} });
 
         await queryEntities(name, entityTypes, entrySubtypes);
 
-        const paramsSerializer = axios.get.mock.calls[0][1].paramsSerializer;
+        const paramsSerializer = axios.mock.calls[0][0].paramsSerializer;
         const serializedParams = paramsSerializer({
             entityType: entityTypes,
             entitySubtype: entrySubtypes,
@@ -54,7 +59,7 @@ describe('queryEntities', () => {
 
     it('should return the response data', async () => {
         const responseData = { data: 'testData' };
-        axios.get.mockResolvedValue(responseData);
+        axios.mockResolvedValue(responseData);
 
         const result = await queryEntities(name, entityTypes, entrySubtypes);
 
@@ -63,7 +68,7 @@ describe('queryEntities', () => {
 
     it('should throw an error if the request fails', async () => {
         const error = new Error('testError');
-        axios.get.mockRejectedValue(error);
+        axios.mockRejectedValue(error);
 
         await expect(queryEntities(name, entityTypes, entrySubtypes)).rejects.toThrow(
             error,

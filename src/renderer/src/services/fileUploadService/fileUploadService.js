@@ -1,4 +1,4 @@
-import axios from '../axiosInstance/axiosInstance';
+import { authAxios, noAuthAxios } from '../axiosInstance/axiosInstance';
 
 /**
  * Make a GET request to `/file-transfer/upload`.
@@ -11,7 +11,7 @@ import axios from '../axiosInstance/axiosInstance';
  * @example const { presigned, bucket_name, minio_file_link } = getUploadLink('file.txt');
  */
 const getUploadLink = (fileName) => {
-    return axios({
+    return authAxios({
         url: '/file-transfer/upload/',
         method: 'GET',
         params: {
@@ -28,7 +28,7 @@ const getUploadLink = (fileName) => {
  * @returns {Promise<AxiosResponse<any>>}
  */
 const uploadFile = (uploadUrl, file) => {
-    return axios({
+    return noAuthAxios({
         url: uploadUrl,
         method: 'PUT',
         data: file,
@@ -46,7 +46,7 @@ const uploadFile = (uploadUrl, file) => {
  * @returns {Promise<AxiosResponse<any>>} a JSON containing presigned URL that can be used to download the file
  */
 const getDownloadLink = (path) => {
-    return axios({
+    return authAxios({
         url: path,
         method: 'GET',
     });
@@ -59,7 +59,7 @@ const getDownloadLink = (path) => {
  * @returns {Promise<AxiosResponse<Blob>>} the file
  */
 const downloadFile = (url) => {
-    return axios({
+    return noAuthAxios({
         url: url,
         method: 'GET',
         responseType: 'blob',

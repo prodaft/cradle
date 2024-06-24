@@ -1,4 +1,4 @@
-import axios from '../axiosInstance/axiosInstance';
+import { authAxios } from '../axiosInstance/axiosInstance';
 /**
  * Function to get dashboard data from the API
  * Passes the token and path to the API
@@ -7,7 +7,7 @@ import axios from '../axiosInstance/axiosInstance';
  * @returns {Promise<AxiosResponse<any>> | *}
  */
 export function getDashboardData(path) {
-    return axios({
+    return authAxios({
         method: 'GET',
         url: path,
     });
@@ -20,7 +20,7 @@ export function getDashboardData(path) {
  * @returns {Promise<AxiosResponse<any>>}
  */
 export function requestCaseAccess(id) {
-    return axios({
+    return authAxios({
         method: 'POST',
         url: `/access/request/${id}/`,
     });

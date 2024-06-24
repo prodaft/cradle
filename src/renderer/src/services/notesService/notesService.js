@@ -1,4 +1,4 @@
-import axios from '../axiosInstance/axiosInstance';
+import { authAxios } from '../axiosInstance/axiosInstance';
 /**
  * Function to get notes from the API
  * Passes the token and id to the API
@@ -7,7 +7,7 @@ import axios from '../axiosInstance/axiosInstance';
  * @returns {Promise<AxiosResponse<any>> | *}
  */
 const getNote = (id) => {
-    return axios({
+    return authAxios({
         method: 'get',
         url: `/notes/${id}/`,
     });
@@ -24,7 +24,7 @@ const getNote = (id) => {
 const setPublishable = (noteId, status) => {
     const path = `/notes/${noteId}/publishable/`;
 
-    return axios({
+    return authAxios({
         method: 'PUT',
         url: path,
         data: {
@@ -40,7 +40,7 @@ const setPublishable = (noteId, status) => {
  * @returns {Promise<AxiosResponse<string>>}
  */
 const deleteNote = (id) => {
-    return axios({
+    return authAxios({
         method: 'DELETE',
         url: `/notes/${id}/`,
     });

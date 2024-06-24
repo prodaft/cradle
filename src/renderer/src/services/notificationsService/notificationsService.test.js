@@ -1,10 +1,10 @@
-import axios from '../axiosInstance/axiosInstance';
 import MockAdapter from 'axios-mock-adapter';
 import {
     getNotificationCount,
     getNotifications,
     markUnread,
 } from './notificationsService';
+import { authAxios as axios } from '../axiosInstance/axiosInstance';
 
 describe('notificationsService', () => {
     let mock;

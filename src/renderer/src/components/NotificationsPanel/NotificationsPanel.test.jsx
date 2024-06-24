@@ -27,12 +27,11 @@ describe('NotificationsPanel', () => {
         const { getByText } = render(
             <MemoryRouter>
                 <NotificationsPanel
-                    handleCloseNotifications={() => { }}
+                    handleCloseNotifications={() => {}}
                     unreadNotificationsCount={2}
-                    setUnreadNotificationsCount={() => { }}
+                    setUnreadNotificationsCount={() => {}}
                 />
-            </MemoryRouter>
-
+            </MemoryRouter>,
         );
 
         await waitFor(() => {
@@ -49,12 +48,11 @@ describe('NotificationsPanel', () => {
         const { getByText } = render(
             <MemoryRouter>
                 <NotificationsPanel
-                    handleCloseNotifications={() => { }}
+                    handleCloseNotifications={() => {}}
                     unreadNotificationsCount={0}
-                    setUnreadNotificationsCount={() => { }}
+                    setUnreadNotificationsCount={() => {}}
                 />
-            </MemoryRouter>
-
+            </MemoryRouter>,
         );
 
         await waitFor(() => {
@@ -76,10 +74,9 @@ describe('NotificationsPanel', () => {
                 <NotificationsPanel
                     handleCloseNotifications={mockHandleNotificationsButton}
                     unreadNotificationsCount={0}
-                    setUnreadNotificationsCount={() => { }}
+                    setUnreadNotificationsCount={() => {}}
                 />
-            </MemoryRouter>
-
+            </MemoryRouter>,
         );
 
         fireEvent.click(getByTestId('close-notifications-panel'));

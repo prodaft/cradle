@@ -1,5 +1,8 @@
 import { getPublishData } from './publishService';
-import axios from '../axiosInstance/axiosInstance';
+import { authAxios as axios } from '../axiosInstance/axiosInstance';
+jest.mock('../axiosInstance/axiosInstance', () => ({
+    authAxios: jest.fn(),
+}));
 jest.mock('axios');
 
 describe('getPublishData', () => {

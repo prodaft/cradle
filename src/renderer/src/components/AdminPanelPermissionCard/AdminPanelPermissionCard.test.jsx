@@ -20,8 +20,7 @@ describe('AdminPanelPermissionCard', () => {
                     caseId='1'
                     accessLevel='read'
                 />
-            </MemoryRouter>
-
+            </MemoryRouter>,
         );
         expect(getByTestId('accessLevelDisplay')).toBeInTheDocument();
     });
@@ -36,8 +35,7 @@ describe('AdminPanelPermissionCard', () => {
                     caseId='1'
                     accessLevel='read'
                 />
-            </MemoryRouter>
-
+            </MemoryRouter>,
         );
         fireEvent.click(getByTestId('accessLevelDisplay'));
         fireEvent.click(getByText('none'));
@@ -56,8 +54,7 @@ describe('AdminPanelPermissionCard', () => {
                     caseId='1'
                     accessLevel='read'
                 />
-            </MemoryRouter>
-
+            </MemoryRouter>,
         );
         fireEvent.click(getByTestId('accessLevelDisplay'));
         fireEvent.click(getByText('none'));
