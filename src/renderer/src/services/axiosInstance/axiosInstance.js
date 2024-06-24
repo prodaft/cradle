@@ -14,8 +14,6 @@ const authAxios = axios.create({
 // (e.g. to minio or when no authorization headers are needed)
 const noAuthAxios = axios.create();
 
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
-
 /**
  * Refresh the access token using the refresh token. These are both stored in local storage.
  *
@@ -56,11 +54,11 @@ authAxios.interceptors.request.use(
     async (config) => {
         let accessToken = localStorage.getItem('access');
         const expirationInSeconds = new Number(localStorage.getItem('expiration'));
-        const expirationInMiliseconds = new Date(expirationInSeconds * 1000);
+        const expirationInMilliseconds = new Date(expirationInSeconds * 1000);
 
         if (
-            expirationInMiliseconds &&
-            expirationInMiliseconds < Date.now() + 1000 * 60
+            expirationInMilliseconds &&
+            expirationInMilliseconds < Date.now() + 1000 * 60
         ) {
             // Token has expired or will expire in less than 1 minute
             await refreshAccessToken();
