@@ -54,10 +54,6 @@ export default function Sidebar({
 
     const handleLogout = useCallback(() => {
         auth.logOut();
-        localStorage.clear(); // TODO save unsaved notes as fleeting notes
-        navigate('/login', {
-            state: { from: location, state: location.state },
-        });
     }, [auth, navigate, location]);
 
     let notificationIconColor = showNotifications ? 'text-gray-500' : '';
