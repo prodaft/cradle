@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react';
  * Use the filteredChildren to display the filtered children.
  *
  * @param {Array<React.Component>} children - The children to be filtered
- * @returns {filteredChildren: Array<React.Component>, searchVal: string, setSearchVal: ((string) => void)}
+ * @returns {{filteredChildren: Array<React.Component>, searchVal: string, setSearchVal: StateSetter<string>}}
  */
 const useFrontendSearch = (children) => {
     const [searchVal, setSearchVal] = useState('');

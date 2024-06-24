@@ -66,16 +66,6 @@ module.exports = {
                     backgroundSecondary: '#555161',
                 },
             },
-            {
-                themeName: 'cradle',
-                colorScheme: 'dark' | 'light',
-                colors: {
-                    primary: '#f68d2e',
-                    backgroundPrimary: '#02111a',
-                    secondary: '#ffffff',
-                    backgroundSecondary: '#253746',
-                },
-            },
         ],
     },
 };

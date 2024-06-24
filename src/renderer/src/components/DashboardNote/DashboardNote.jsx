@@ -40,8 +40,8 @@ export default function DashboardNote({
     useEffect(() => {
         parseContent(note.content, note.files)
             .then((parsedContent) => setParsedContent(parsedContent))
-            .catch(displayError(setAlert));
-    }, [note.content, note.files]);
+            .catch(displayError(setAlert, navigate));
+    }, [note.content, note.files, setAlert, navigate]);
 
     // Attempt to change the publishable status of a note.
     // If successful, update the switch to reflect this. Otherwise, display an error.
