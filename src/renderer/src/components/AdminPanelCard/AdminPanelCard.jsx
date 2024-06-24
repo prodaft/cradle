@@ -2,8 +2,7 @@ import { Trash } from 'iconoir-react/regular';
 import { useState } from 'react';
 import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 import { deleteEntity } from '../../services/adminService/adminService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 
@@ -34,16 +33,16 @@ export default function AdminPanelCard({
 }) {
     const [dialog, setDialog] = useState(false);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const auth = useAuth();
+    const navigate = useNavigate();
 
     const handleDelete = async () => {
-        deleteEntity(auth.access, type, id)
+        deleteEntity(type, id)
             .then((response) => {
                 if (response.status === 200) {
                     onDelete();
                 }
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     };
 
     return (

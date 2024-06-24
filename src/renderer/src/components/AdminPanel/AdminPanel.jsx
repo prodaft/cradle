@@ -1,4 +1,3 @@
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import AdminPanelSection from '../AdminPanelSection/AdminPanelSection';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -27,16 +26,15 @@ import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
  * @constructor
  */
 export default function AdminPanel() {
-    const auth = useAuth();
     const [actors, setActors] = useState([]);
     const [cases, setCases] = useState([]);
     const [users, setUsers] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
-    const handleError = displayError(setAlert);
+    const handleError = displayError(setAlert, navigate);
 
     const displayActors = async () => {
-        getActors(auth.access)
+        getActors()
             .then((response) => {
                 if (response.status === 200) {
                     let actors = response.data;
@@ -62,7 +60,7 @@ export default function AdminPanel() {
     };
 
     const displayCases = async () => {
-        getCases(auth.access)
+        getCases()
             .then((response) => {
                 if (response.status === 200) {
                     let cases = response.data;
@@ -88,7 +86,7 @@ export default function AdminPanel() {
     };
 
     const displayUsers = async () => {
-        getUsers(auth.access)
+        getUsers()
             .then((response) => {
                 if (response.status === 200) {
                     let users = response.data;

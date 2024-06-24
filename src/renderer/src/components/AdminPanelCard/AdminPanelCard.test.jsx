@@ -9,12 +9,6 @@ import AuthProvider from '../../utils/AuthProvider/AuthProvider';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
 
-jest.mock('../../hooks/useAuth/useAuth', () => ({
-    useAuth: jest.fn().mockImplementation(() => {
-        return { access: 'testToken' };
-    }),
-}));
-
 jest.mock('../../services/adminService/adminService');
 
 describe('AdminPanelCard', () => {
@@ -60,9 +54,7 @@ describe('AdminPanelCard', () => {
         fireEvent.click(getByRole('button'));
         fireEvent.click(getByText('Confirm'));
 
-        await waitFor(() =>
-            expect(deleteEntity).toHaveBeenCalledWith('testToken', 'testType', '1'),
-        );
+        await waitFor(() => expect(deleteEntity).toHaveBeenCalledWith('testType', '1'));
         expect(onDelete).toHaveBeenCalled();
     });
 

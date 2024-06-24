@@ -4,6 +4,7 @@ import '@testing-library/jest-dom';
 import NotificationsPanel from './NotificationsPanel';
 import { useAuth } from '../../hooks/useAuth/useAuth';
 import { getNotifications } from '../../services/notificationsService/notificationsService';
+import { MemoryRouter } from 'react-router-dom';
 
 jest.mock('../../hooks/useAuth/useAuth');
 jest.mock('../../services/notificationsService/notificationsService', () => ({
@@ -11,12 +12,6 @@ jest.mock('../../services/notificationsService/notificationsService', () => ({
 }));
 
 describe('NotificationsPanel', () => {
-    const mockUseAuth = useAuth;
-
-    beforeEach(() => {
-        mockUseAuth.mockReturnValue({ access: 'mock-access-token' });
-    });
-
     afterEach(() => {
         jest.clearAllMocks();
     });
@@ -29,20 +24,20 @@ describe('NotificationsPanel', () => {
 
         getNotifications.mockResolvedValue({ data: mockNotifications });
 
-        const { getByTestId, getByText } = render(
-            <NotificationsPanel
-                handleCloseNotifications={() => {}}
-                unreadNotificationsCount={2}
-                setUnreadNotificationsCount={() => {}}
-            />,
+        const { getByText } = render(
+            <MemoryRouter>
+                <NotificationsPanel
+                    handleCloseNotifications={() => {}}
+                    unreadNotificationsCount={2}
+                    setUnreadNotificationsCount={() => {}}
+                />
+            </MemoryRouter>,
         );
 
         await waitFor(() => {
             expect(getByText('Notification 1')).toBeInTheDocument();
             expect(getByText('Notification 2')).toBeInTheDocument();
         });
-
-        expect(getNotifications).toHaveBeenCalledWith('mock-access-token');
     });
 
     test('renders "No notifications to display" when there are no notifications', async () => {
@@ -51,11 +46,13 @@ describe('NotificationsPanel', () => {
         getNotifications.mockResolvedValueOnce({ data: mockNotifications });
 
         const { getByText } = render(
-            <NotificationsPanel
-                handleCloseNotifications={() => {}}
-                unreadNotificationsCount={0}
-                setUnreadNotificationsCount={() => {}}
-            />,
+            <MemoryRouter>
+                <NotificationsPanel
+                    handleCloseNotifications={() => {}}
+                    unreadNotificationsCount={0}
+                    setUnreadNotificationsCount={() => {}}
+                />
+            </MemoryRouter>,
         );
 
         await waitFor(() => {
@@ -63,7 +60,6 @@ describe('NotificationsPanel', () => {
         });
 
         expect(getNotifications).toHaveBeenCalledTimes(1);
-        expect(getNotifications).toHaveBeenCalledWith('mock-access-token');
     });
 
     test('handles close notifications panel button click', () => {
@@ -74,11 +70,13 @@ describe('NotificationsPanel', () => {
         getNotifications.mockResolvedValue({ data: mockNotifications });
 
         const { getByTestId } = render(
-            <NotificationsPanel
-                handleCloseNotifications={mockHandleNotificationsButton}
-                unreadNotificationsCount={0}
-                setUnreadNotificationsCount={() => {}}
-            />,
+            <MemoryRouter>
+                <NotificationsPanel
+                    handleCloseNotifications={mockHandleNotificationsButton}
+                    unreadNotificationsCount={0}
+                    setUnreadNotificationsCount={() => {}}
+                />
+            </MemoryRouter>,
         );
 
         fireEvent.click(getByTestId('close-notifications-panel'));

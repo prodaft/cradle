@@ -28,12 +28,12 @@ const createDownloadPath = (file) => {
         bucketName: bucket_name,
         minioFileName: minio_file_name,
     });
-    return `${apiBaseUrl}/file-transfer/download?${queryParams}`;
+    return `${apiBaseUrl}/file-transfer/download/?${queryParams}`;
 };
 
 /**
  * Prepends links to the top of the markdown content. This will not be visible in the preview.
- * These links correspond to the backend API download endpoints. (e.g. `http://localhost:8000/file-transfer/download?...`)
+ * These links correspond to the backend API download endpoints. (e.g. `http://localhost:8000/file-transfer/download/?...`)
  *
  * @param {string} mdContent - markdown content
  * @param {Array<{minio_file_name: string, file_name: string, bucket_name: string}>} fileData - file data

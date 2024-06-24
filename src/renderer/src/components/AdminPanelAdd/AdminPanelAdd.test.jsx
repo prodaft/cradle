@@ -10,7 +10,7 @@ import '@testing-library/jest-dom';
 
 jest.mock('../../hooks/useAuth/useAuth', () => ({
     useAuth: jest.fn().mockImplementation(() => {
-        return { access: 'testToken', isAdmin: true };
+        return { isAdmin: true };
     }),
 }));
 
@@ -32,13 +32,10 @@ describe('AdminPanelAdd', () => {
         });
         fireEvent.click(getByText('Add'));
         await waitFor(() =>
-            expect(createActor).toHaveBeenCalledWith(
-                {
-                    name: 'Test Actor',
-                    description: 'Test Description',
-                },
-                'testToken',
-            ),
+            expect(createActor).toHaveBeenCalledWith({
+                name: 'Test Actor',
+                description: 'Test Description',
+            }),
         );
     });
 
@@ -57,13 +54,10 @@ describe('AdminPanelAdd', () => {
         });
         fireEvent.click(getByText('Add'));
         await waitFor(() =>
-            expect(createCase).toHaveBeenCalledWith(
-                {
-                    name: 'Test Case',
-                    description: 'Test Description',
-                },
-                'testToken',
-            ),
+            expect(createCase).toHaveBeenCalledWith({
+                name: 'Test Case',
+                description: 'Test Description',
+            }),
         );
     });
 

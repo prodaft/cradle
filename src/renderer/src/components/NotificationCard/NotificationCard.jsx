@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { markUnread } from '../../services/notificationsService/notificationsService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { Mail, MailOpen } from 'iconoir-react';
 import { changeAccess } from '../../services/adminService/adminService';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * The notification object contains the details of a notification.
@@ -47,10 +47,10 @@ export default function NotificationCard({
         requesting_user_id,
     } = notification;
     const [isMarkedUnread, setIsMarkedUnread] = useState(is_marked_unread);
-    const auth = useAuth();
+    const navigate = useNavigate();
 
     const handleMarkUnread = (id) => {
-        markUnread(auth.access, id, !isMarkedUnread)
+        markUnread(id, !isMarkedUnread)
             .then((response) => {
                 if (response.status === 200) {
                     if (isMarkedUnread) {
@@ -61,11 +61,11 @@ export default function NotificationCard({
                     setIsMarkedUnread(!isMarkedUnread);
                 }
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     };
 
     const handleChangeAccess = (newAccess) => () => {
-        changeAccess(auth.access, requesting_user_id, case_id, newAccess)
+        changeAccess(requesting_user_id, case_id, newAccess)
             .then((response) => {
                 if (response.status === 200) {
                     setAlert({
@@ -75,7 +75,7 @@ export default function NotificationCard({
                     });
                 }
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     };
 
     return (

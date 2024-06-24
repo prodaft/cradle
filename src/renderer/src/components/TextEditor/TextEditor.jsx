@@ -62,7 +62,7 @@ export default function TextEditor() {
     useEffect(() => {
         parseContent(markdownContent, fileData)
             .then((parsedContent) => setParsedContent(parsedContent))
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     }, [markdownContent, fileData]);
 
     useEffect(() => {
@@ -71,12 +71,12 @@ export default function TextEditor() {
                 setMarkdownContent('');
                 setFileData([]);
             } else {
-                getFleetingNoteById(auth.access, id)
+                getFleetingNoteById( id)
                     .then((response) => {
                         setMarkdownContent(response.data.content);
                         setFileData(response.data.files);
                     })
-                    .catch(displayError(setAlert));
+                    .catch(displayError(setAlert, navigate));
             }
         }
     }, [id]);
@@ -104,19 +104,19 @@ export default function TextEditor() {
             const storedFileData = fileDataRef.current;
 
             if (id === NEW_NOTE_PLACEHOLDER_ID) {
-                addFleetingNote(auth.access, storedContent, storedFileData)
+                addFleetingNote(storedContent, storedFileData)
                     .then((res) => {
                         if (res.status === 200) {
                             // Clear local storage on success
                             refreshFleetingNotes();
                             setMarkdownContent('');
                             setFileData([]);
-                            navigate(`/editor/${res.data.id}`);
+                            navigate(`/editor/${res.data.id}`, navigate);
                         }
                     })
-                    .catch(displayError(setAlert));
+                    .catch(displayError(setAlert, navigate));
             } else {
-                updateFleetingNote(auth.access, id, storedContent, storedFileData)
+                updateFleetingNote(id, storedContent, storedFileData)
                     .then((response) => {
                         if (displayAlert && response.status === 200) {
                             setAlert({
@@ -127,14 +127,14 @@ export default function TextEditor() {
                         }
                         refreshFleetingNotes();
                     })
-                    .catch(displayError(setAlert));
+                    .catch(displayError(setAlert, navigate));
             }
         }
     };
 
     const handleDeleteNote = () => {
         if (id) {
-            deleteFleetingNote(auth.access, id)
+            deleteFleetingNote(id)
                 .then((response) => {
                     if (response.status === 200) {
                         setAlert({
@@ -146,14 +146,14 @@ export default function TextEditor() {
                         navigate('/');
                     }
                 })
-                .catch(displayError(setAlert));
+                .catch(displayError(setAlert, navigate));
         }
     };
 
     const handleMakeFinal = (publishable) => () => {
         if (!isValidContent()) return;
         if (id) {
-            saveFleetingNoteAsFinal(auth.access, id, publishable)
+            saveFleetingNoteAsFinal(id, publishable)
                 .then((response) => {
                     if (response.status === 200) {
                         setAlert({
@@ -165,7 +165,7 @@ export default function TextEditor() {
                         navigate('/');
                     }
                 })
-                .catch(displayError(setAlert));
+                .catch(displayError(setAlert, navigate));
         }
     };
 

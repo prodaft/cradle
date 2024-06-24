@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import { changeAccess } from '../../services/adminService/adminService';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { NavArrowDown } from 'iconoir-react';
 import { displayError } from '../../utils/responseUtils/responseUtils';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * AdminPanelUserPermissions component - This component is used to display the permissions for a user.
@@ -29,17 +29,17 @@ export default function AdminPanelPermissionCard({
 }) {
     const [currentAccess, setCurrentAccess] = useState(accessLevel);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const auth = useAuth();
+    const navigate = useNavigate();
 
     const handleChange = async (newAccess) => {
         if (currentAccess !== newAccess) {
-            changeAccess(auth.access, userId, caseId, newAccess)
+            changeAccess(userId, caseId, newAccess)
                 .then((response) => {
                     if (response.status === 200) {
                         setCurrentAccess(newAccess);
                     }
                 })
-                .catch(displayError(setAlert));
+                .catch(displayError(setAlert, navigate));
         }
     };
 

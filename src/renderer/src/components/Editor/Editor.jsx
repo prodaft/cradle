@@ -60,7 +60,7 @@ export default function Editor({
     const auth = useAuth();
 
     const performSearch = async (name, type, subtype) => {
-        return queryEntities(auth.access, name, type, subtype)
+        return queryEntities(name, type, subtype)
             .then((response) => {
                 let data = response.data.map((x) => ({
                     label: x.name,
