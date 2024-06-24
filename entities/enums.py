@@ -18,12 +18,14 @@ class EntrySubtype(models.TextChoices):
     URL = "url", _("URL")
     USERNAME = "username", _("Username")
     PASSWORD = "password", _("Password")
-    PERSON = "person", _("Person")
-    SOCIAL_MEDIA = "social-media", _("Social Media")
+    SOCIAL_MEDIA = "social", _("Social Media")
     HASH = "hash", _("Hash")
     TOOL = "tool", _("Tool Name")
     CVE = "cve", _("CVE")
     TTP = "ttp", _("TTP")
+    MALWARE = "malware", _("Malware")
+    CAMPAIGN = "campaign", _("Campaign")
+    FAMILY = "family", _("Family")
 
 
 class MetadataSubtype(models.TextChoices):

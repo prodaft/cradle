@@ -24,13 +24,13 @@ class ParserTask:
 
     entity_regexes = {
         # [[actor:name|alias]]
-        "actor": r"\[\[actor:([\w\s.:-]+)(?:\|([\w\s.:-]+))?\]\]",
+        "actor": r"\[\[actor:((?:\\[\[\]\|]|[^\[\]\|])+?)(?:\|((?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]",  # noqa: E501 to avoid splitting the regex on two lines
         # [[case:name|alias]]
-        "case": r"\[\[case:([\w\s.:-]+)(?:\|([\w\s.:-]+))?\]\]",
+        "case": r"\[\[case:((?:\\[\[\]\|]|[^\[\]\|])+?)(?:\|((?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]",  # noqa: E501 to avoid splitting the regex on two lines
         # [[entry_type:name|alias]]
-        "entry": r"\[\[([\w\s.-]+):([\w\s.:-]+)(?:\|([\w\s.:-]+))?\]\]",
+        "entry": r"\[\[([^:\|\]]+?):((?:\\[\[\]\|]|[^\[\]\|])+?)(?:\|((?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]",  # noqa: E501 to avoid splitting the regex on two lines
         # [[metadata-type:name|alias]]
-        "metadata": r"\[\[([\w\s.-]+):([\w\s.:-]+)(?:\|([\w\s.:-]+))?\]\]",
+        "metadata": r"\[\[([^:\|\]]+?):((?:\\[\[\]\|]|[^\[\]\|])+?)(?:\|((?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]",  # noqa: E501 to avoid splitting the regex on two lines
     }
 
     def run(self, note_content: str) -> Dict[str, Set[Entity]]:
