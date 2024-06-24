@@ -39,7 +39,7 @@ const uploadFile = (uploadUrl, file) => {
 };
 
 /**
- * Make a GET request to `/file-transfer/download`.
+ * Make a GET request to `/file-transfer/download/`.
  * See the OpenAPI specification for more information.
  *
  * @param {string} path - the path to request the download link from
