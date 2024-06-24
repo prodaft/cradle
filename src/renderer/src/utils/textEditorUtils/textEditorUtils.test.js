@@ -50,7 +50,7 @@ test('createDownloadPath returns the correct download link', () => {
     const result = createDownloadPath(file);
 
     expect(result).toMatch(
-        /.*\/file-transfer\/download\?bucketName=admin1234&minioFileName=file.txt/,
+        /.*\/file-transfer\/download\/\?bucketName=admin1234&minioFileName=file.txt/,
     );
 });
 
@@ -60,7 +60,7 @@ test('createDownloadPath handles special characters in file name', () => {
     const result = createDownloadPath(file);
 
     expect(result).toMatch(
-        /.*\/file-transfer\/download\?bucketName=admin1234&minioFileName=file%20with%20spaces.txt/,
+        /.*\/file-transfer\/download\/\?bucketName=admin1234&minioFileName=file%20with%20spaces.txt/,
     );
 });
 
@@ -70,6 +70,6 @@ test('createDownloadPath handles special characters in bucket name', () => {
     const result = createDownloadPath(file);
 
     expect(result).toMatch(
-        /.*\/file-transfer\/download\?bucketName=admin%401234&minioFileName=file.txt/,
+        /.*\/file-transfer\/download\/\?bucketName=admin%401234&minioFileName=file.txt/,
     );
 });

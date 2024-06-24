@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import React, { useState } from 'react';
 import AlertBox from '../AlertBox/AlertBox';
 import { createActor, createCase } from '../../services/adminService/adminService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 
 /**
@@ -22,20 +21,19 @@ export default function AdminPanelAdd({ type }) {
     const [description, setDescription] = useState('');
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
-    const auth = useAuth();
 
     const handleSubmit = async () => {
         const data = { name: name, description: description };
 
         try {
             if (type === 'Actor') {
-                await createActor(data, auth.access);
+                await createActor(data);
             } else if (type === 'Case') {
-                await createCase(data, auth.access);
+                await createCase(data);
             }
             navigate('/admin');
         } catch (err) {
-            displayError(setAlert)(err);
+            displayError(setAlert, navigate)(err);
         }
     };
 

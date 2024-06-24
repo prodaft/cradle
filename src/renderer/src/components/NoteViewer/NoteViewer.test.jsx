@@ -14,7 +14,6 @@ jest.mock('../../hooks/useNavbarContents/useNavbarContents');
 
 beforeEach(() => {
     jest.resetAllMocks();
-    useAuth.mockReturnValue({ access: 'dummy_token' });
 });
 
 describe('NoteViewer', () => {

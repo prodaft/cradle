@@ -62,12 +62,12 @@ export default function FleetingNoteEditor() {
     useEffect(() => {
         if (id) {
             // Fetch note from server
-            getFleetingNoteById(auth.access, id)
+            getFleetingNoteById(id)
                 .then((response) => {
                     setMarkdownContent(response.data.content);
                     setFileData(response.data.files);
                 })
-                .catch(displayError(setAlert));
+                .catch(displayError(setAlert, navigate));
         }
     }, [id]);
 
@@ -93,7 +93,7 @@ export default function FleetingNoteEditor() {
             const storedContent = markdownContentRef.current;
             const storedFileData = fileDataRef.current;
 
-            updateFleetingNote(auth.access, id, storedContent, storedFileData)
+            updateFleetingNote(id, storedContent, storedFileData)
                 .then((response) => {
                     if (response.status === 200) {
                         setAlert({
@@ -104,13 +104,13 @@ export default function FleetingNoteEditor() {
                         refreshFleetingNotes();
                     }
                 })
-                .catch(displayError(setAlert));
+                .catch(displayError(setAlert, navigate));
         }
     };
 
     const handleDeleteNote = () => {
         if (id) {
-            deleteFleetingNote(auth.access, id)
+            deleteFleetingNote(id)
                 .then((response) => {
                     if (response.status === 200) {
                         setAlert({
@@ -122,14 +122,14 @@ export default function FleetingNoteEditor() {
                         navigate('/');
                     }
                 })
-                .catch(displayError(setAlert));
+                .catch(displayError(setAlert, navigate));
         }
     };
 
     const handleMakeFinal = (publishable) => () => {
         if (!isValidContent()) return;
         if (id) {
-            saveFleetingNoteAsFinal(auth.access, id, publishable)
+            saveFleetingNoteAsFinal(id, publishable)
                 .then((response) => {
                     if (response.status === 200) {
                         setAlert({
@@ -141,7 +141,7 @@ export default function FleetingNoteEditor() {
                         navigate('/');
                     }
                 })
-                .catch(displayError(setAlert));
+                .catch(displayError(setAlert, navigate));
         }
     };
 

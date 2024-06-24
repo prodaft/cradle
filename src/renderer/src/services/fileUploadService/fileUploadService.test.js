@@ -1,8 +1,10 @@
-import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { getUploadLink, uploadFile, getDownloadLink } from './fileUploadService';
 
+import { authAxios as axios, noAuthAxios } from '../axiosInstance/axiosInstance';
+
 const mock = new MockAdapter(axios);
+const noAuthMock = new MockAdapter(noAuthAxios);
 
 describe('File Upload Service', () => {
     afterEach(() => {
@@ -10,7 +12,6 @@ describe('File Upload Service', () => {
     });
 
     it('should fetch a presigned URL for file upload', async () => {
-        const token = 'your-access-token';
         const fileName = 'file.txt';
         const expectedResponse = {
             presigned: 'http://presigned-url',
@@ -20,10 +21,9 @@ describe('File Upload Service', () => {
 
         mock.onGet('/file-transfer/upload/').reply(200, expectedResponse);
 
-        const response = await getUploadLink(token, fileName);
+        const response = await getUploadLink(fileName);
 
         expect(response.data).toEqual(expectedResponse);
-        expect(mock.history.get[0].headers.Authorization).toBe(`Bearer ${token}`);
         expect(mock.history.get[0].params.fileName).toBe(fileName);
     });
 
@@ -34,17 +34,16 @@ describe('File Upload Service', () => {
         });
         const expectedResponse = { message: 'File uploaded successfully' };
 
-        mock.onPut(uploadUrl).reply(200, expectedResponse);
+        noAuthMock.onPut(uploadUrl).reply(200, expectedResponse);
 
         const response = await uploadFile(uploadUrl, file);
 
         expect(response.data).toEqual(expectedResponse);
-        expect(mock.history.put[0].headers['Content-Type']).toBe(file.type);
-        expect(mock.history.put[0].data).toBe(file);
+        expect(noAuthMock.history.put[0].headers['Content-Type']).toBe(file.type);
+        expect(noAuthMock.history.put[0].data).toBe(file);
     });
 
     it('should fetch a download link for a file', async () => {
-        const token = 'your-access-token';
         const path = 'http://minio-file-link';
         const expectedResponse = {
             downloadLink: 'http://download-link',
@@ -52,18 +51,16 @@ describe('File Upload Service', () => {
 
         mock.onGet(path).reply(200, expectedResponse);
 
-        const response = await getDownloadLink(token, path);
+        const response = await getDownloadLink(path);
 
         expect(response.data).toEqual(expectedResponse);
-        expect(mock.history.get[0].headers.Authorization).toBe(`Bearer ${token}`);
     });
 
     it('should handle errors when fetching a download link', async () => {
-        const token = 'your-access-token';
         const path = 'http://minio-file-link';
 
-        mock.onGet(path).reply(500);
+        noAuthMock.onGet(path).reply(500);
 
-        await expect(getDownloadLink(token, path)).rejects.toThrow();
+        await expect(getDownloadLink(path)).rejects.toThrow();
     });
 });

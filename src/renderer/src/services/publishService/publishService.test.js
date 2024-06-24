@@ -1,10 +1,11 @@
 import { getPublishData } from './publishService';
-import axios from 'axios';
-
+import { authAxios as axios } from '../axiosInstance/axiosInstance';
+jest.mock('../axiosInstance/axiosInstance', () => ({
+    authAxios: jest.fn(),
+}));
 jest.mock('axios');
 
 describe('getPublishData', () => {
-    const token = 'testToken';
     const noteIds = [1, 2, 3];
 
     beforeEach(() => {
@@ -14,15 +15,11 @@ describe('getPublishData', () => {
     it('sends a GET request with correct parameters', async () => {
         axios.mockResolvedValue({ data: {} });
 
-        await getPublishData(token, noteIds);
+        await getPublishData(noteIds);
 
         expect(axios).toHaveBeenCalledWith({
             method: 'GET',
             url: '/notes/publish/',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-            },
             params: { note_ids: noteIds },
             paramsSerializer: expect.any(Function),
         });
@@ -32,7 +29,7 @@ describe('getPublishData', () => {
         const responseData = { data: 'testData' };
         axios.mockResolvedValue(responseData);
 
-        const result = await getPublishData(token, noteIds);
+        const result = await getPublishData(noteIds);
 
         expect(result).toBe(responseData);
     });
@@ -41,6 +38,6 @@ describe('getPublishData', () => {
         const error = new Error('testError');
         axios.mockRejectedValue(error);
 
-        await expect(getPublishData(token, noteIds)).rejects.toThrow(error);
+        await expect(getPublishData(noteIds)).rejects.toThrow(error);
     });
 });

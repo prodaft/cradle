@@ -102,7 +102,7 @@ const renderer = {
 };
 marked.use({ renderer });
 
-// Define a custom extension that resolves all local links to `/file-transfer/download` to their respective Minio links.
+// Define a custom extension that resolves all local links to `/file-transfer/download/` to their respective Minio links.
 // This also works for images. These are shown in the preview if the ref is valid.
 // These links are cached.
 const resolveMinioLinks = {
@@ -117,17 +117,14 @@ const resolveMinioLinks = {
 
             if (
                 url.origin === apiBaseUrl &&
-                url.pathname === '/file-transfer/download'
+                url.pathname === '/file-transfer/download/'
             ) {
                 const apiDownloadPath = url.pathname + url.search;
                 const minioCache =
                     JSON.parse(localStorage.getItem('minio-cache')) || {};
 
                 const fetchMinioDownloadLink = async () => {
-                    const response = await getDownloadLink(
-                        localStorage.getItem('access'),
-                        apiDownloadPath,
-                    );
+                    const response = await getDownloadLink(apiDownloadPath);
                     const presigned = response.data.presigned;
                     const expiry = Date.now() + 1000 * 60 * 5; // 5 minutes
                     return { presigned, expiry };

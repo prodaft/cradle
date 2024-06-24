@@ -14,7 +14,6 @@ const PrivateRoute = ({ fallback }) => {
     const user = useAuth();
     const location = useLocation();
     if (!user.isAuthenticated()) {
-        console.log('User tried accessing private route without being allowed');
         return (
             <Navigate
                 to={fallback}

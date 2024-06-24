@@ -62,7 +62,7 @@ export default function Home() {
     const memoizedNavbarContents = useMemo(() => navbarContents, [navbarContents]);
 
     useInterval(() => {
-        getNotificationCount(auth.access)
+        getNotificationCount()
             .then((response) => {
                 setUnreadNotificationsCount(response.data.count);
             })

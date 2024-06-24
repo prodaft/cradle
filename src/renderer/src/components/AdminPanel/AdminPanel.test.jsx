@@ -10,7 +10,7 @@ import '@testing-library/jest-dom';
 
 jest.mock('../../hooks/useAuth/useAuth', () => ({
     useAuth: jest.fn().mockImplementation(() => {
-        return { access: 'testToken', isAdmin: true };
+        return { isAdmin: true };
     }),
 }));
 
@@ -43,7 +43,6 @@ describe('AdminPanel', () => {
 
     it('should not display actors, cases, and users when user is not admin', async () => {
         useAuth.mockImplementation(() => ({
-            access: 'testToken',
             isAdmin: false,
         }));
         const { queryByText } = render(
