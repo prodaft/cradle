@@ -1,7 +1,6 @@
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { getPermissions } from '../../services/adminService/adminService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import AdminPanelPermissionCard from '../AdminPanelPermissionCard/AdminPanelPermissionCard';
 import useFrontendSearch from '../../hooks/useFrontendSearch/useFrontendSearch';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
@@ -20,12 +19,12 @@ export default function AdminPanelUserPermissions() {
     const { username, id } = useParams();
     const [cases, setCases] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const auth = useAuth();
+    const navigate = useNavigate();
 
     const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(cases);
 
     useEffect(() => {
-        getPermissions(auth.access, id)
+        getPermissions(id)
             .then((response) => {
                 if (response.status === 200) {
                     let permissions = response.data;
@@ -45,7 +44,7 @@ export default function AdminPanelUserPermissions() {
                     );
                 }
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     }, [id]);
 
     return (

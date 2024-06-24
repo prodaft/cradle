@@ -24,8 +24,6 @@ global.ResizeObserver = jest.fn().mockImplementation(() => ({
 jest.mock('../../services/graphService/graphService');
 
 describe('GraphComponent', () => {
-    useAuth.mockReturnValue({ access: 'token' });
-
     it('fetches graph data on mount', () => {
         getGraphData.mockResolvedValue({ data: { entities: [], links: [] } });
         render(<GraphComponent />);

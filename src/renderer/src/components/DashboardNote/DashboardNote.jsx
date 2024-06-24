@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from 'react';
 import Preview from '../Preview/Preview';
 import { setPublishable } from '../../services/notesService/notesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 import { useLocation } from 'react-router-dom';
 
@@ -34,7 +33,6 @@ export default function DashboardNote({
     const [isSelected, setIsSelected] = useState(true);
     const navigate = useNavigate();
     const location = useLocation();
-    const auth = useAuth();
     const [parsedContent, setParsedContent] = useState('');
 
     useEffect(() => {
@@ -47,15 +45,15 @@ export default function DashboardNote({
     // If successful, update the switch to reflect this. Otherwise, display an error.
     const handleTogglePublishable = useCallback(
         (noteId) => {
-            setPublishable(auth.access, noteId, !isPublishable)
+            setPublishable(noteId, !isPublishable)
                 .then((response) => {
                     if (response.status === 200) {
                         setIsPublishable(!isPublishable);
                     }
                 })
-                .catch(displayError(setAlert));
+                .catch(displayError(setAlert, navigate));
         },
-        [auth.access, isPublishable, setIsPublishable, setAlert],
+        [isPublishable, setIsPublishable, setAlert],
     );
 
     // If the note is to be included in the report and the button is clicked, remove it from the list of notes to publish.
@@ -111,7 +109,6 @@ export default function DashboardNote({
                             <input
                                 data-testid='select-btn'
                                 type='checkbox'
-                                defaultChecked={true}
                                 checked={isSelected}
                                 className='form-checkbox checkbox checkbox-primary'
                                 onClick={handleSelectNote}
@@ -125,7 +122,6 @@ export default function DashboardNote({
                                     Publishable
                                 </label>
                                 <input
-                                    defaultChecked={true}
                                     checked={isPublishable}
                                     id={`publishable-switch-${note.id}`}
                                     type='checkbox'
