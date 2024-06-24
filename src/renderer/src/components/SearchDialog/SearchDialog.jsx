@@ -17,8 +17,10 @@ import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
  * Gives filters for entity type and entry type
  * Shows search results
  * Search can be done on enter or when pressing the search buttons
- * @param {boolean} isOpen - to show or hide the dialog
- * @param {(any) => any} onClose - function to close the dialog
+ * 
+ * @param {Object} props - The props of the component.
+ * @param {boolean} props.isOpen - to show or hide the dialog
+ * @param {Function} props.onClose - function to close the dialog
  * @returns {SearchDialog}
  * @constructor
  */

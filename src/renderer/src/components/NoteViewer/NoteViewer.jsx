@@ -20,6 +20,8 @@ import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
  * NoteViewer component
  * Fetches and displays the content of a note
  * Adds a button to Navbar to toggle between raw and parsed content
+ * 
+ * @function NoteViewer
  * @returns {NoteViewer}
  * @constructor
  */

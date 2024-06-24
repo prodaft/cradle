@@ -11,6 +11,8 @@ import { validatePassword } from '../../utils/validatePassword/validatePassword'
  * Register new user in the system.
  * On successful registration, user is redirected to the login page.
  * On error, displays an error message.
+ * 
+ * @function Register
  * @returns {Register}
  * @constructor
  */
@@ -45,7 +47,7 @@ export default function Register() {
 
         registerReq(data)
             .then(() => navigate('/login', { state: location.state, replace: true }))
-            .catch(displayError(setAlert, navigate));
+            .catch(displayError(setAlert));
     };
 
     return (

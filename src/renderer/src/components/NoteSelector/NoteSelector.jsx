@@ -11,6 +11,7 @@ import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
  * Displays the notes for an entity.
  * Allows the user to select notes for publishing and to publish the selected notes, which sends them to the publish preview page.
  *
+ * @function NoteSelector
  * @returns {NoteSelector}
  * @constructor
  */
@@ -48,7 +49,7 @@ export default function NoteSelector() {
     useEffect(() => {
         setSelectAll(
             selectedNoteIds.length > 0 &&
-                selectedNoteIds.length === publishableNoteIds.length,
+            selectedNoteIds.length === publishableNoteIds.length,
         );
     }, [notes, selectedNoteIds]);
 

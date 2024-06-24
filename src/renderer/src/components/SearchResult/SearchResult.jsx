@@ -1,9 +1,12 @@
 /**
  * Component to show search results
- * @param name - the name of the search result
- * @param onClick - the function to call when the result is clicked
- * @param type - the type of the search result
- * @param subtype - the subtype of the search result (Not shown if not provided)
+ * 
+ * @function SearchResult
+ * @param {Object} props - The props of the component.
+ * @param {string} props.name - the name of the search result
+ * @param {Function} props.onClick - the function to call when the result is clicked
+ * @param {string} props.type - the type of the search result
+ * @param {string} props.subtype - the subtype of the search result (Not shown if not provided)
  * @returns {SearchResult}
  * @constructor
  */

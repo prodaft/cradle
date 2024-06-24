@@ -24,6 +24,7 @@ import {
  * - JSON
  * - HTML
  *
+ * @function PublishPreview
  * @returns {PublishPreview}
  * @constructor
  */

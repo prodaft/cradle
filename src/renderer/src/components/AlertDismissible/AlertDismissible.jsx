@@ -6,9 +6,11 @@ import { Xmark } from 'iconoir-react';
  * The component has an absolute position at the bottom right of the screen.
  * It has a progress bar that indicates the time left before the alert is dismissed.
  *
- * @param {{show: boolean, message: string, color: string}} alert
- * @param {({show: boolean, message: string, color: string}) => void} setAlert
- * @param {number} duration - The duration in milliseconds for which the alert should be displayed. Default is 3500ms.
+ * @function AlertDismissible
+ * @param {Object} props - The props object
+ * @param {Alert} props.alert - The alert object containing the message, color, and show properties.
+ * @param {StateSetter<Alert>} props.setAlert
+ * @param {number} props.duration - The duration in milliseconds for which the alert should be displayed. Default is 3500ms.
  * @returns {AlertDismissible}
  * @constructor
  */

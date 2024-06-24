@@ -8,7 +8,7 @@ import { syntaxTree } from '@codemirror/language';
  * Sanitizing is recommended by the marked documentation: https://github.com/markedjs/marked?tab=readme-ov-file#usage
  *
  * @param {string} content - Markdown syntax
- * @param {Array<{minio_file_name: string, file_name: string, bucket_name: string}>} [fileData] - information about the files that will be linked (optional)
+ * @param {Array<FileData>} [fileData] - information about the files that will be linked
  * @returns {string} parsed and sanitized HTML
  */
 const parseContent = async (content, fileData) =>
@@ -36,7 +36,7 @@ const createDownloadPath = (file) => {
  * These links correspond to the backend API download endpoints. (e.g. `http://localhost:8000/file-transfer/download/?...`)
  *
  * @param {string} mdContent - markdown content
- * @param {Array<{minio_file_name: string, file_name: string, bucket_name: string}>} fileData - file data
+ * @param {Array<FileData>} fileData - file data
  * @returns {string} markdown content with links prepended
  */
 const prependLinks = (mdContent, fileData) => {

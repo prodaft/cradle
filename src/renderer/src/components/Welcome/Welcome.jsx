@@ -12,7 +12,9 @@ import { useNavigate } from 'react-router-dom';
  * The Welcome component is the landing page of the application.
  * It displays a welcome message and some statistics about the actors, cases, and notes in the system.
  *
+ * @function Welcome
  * @returns {Welcome}
+ * @constructor
  */
 export default function Welcome() {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });

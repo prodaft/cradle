@@ -12,8 +12,9 @@ import { createDownloadPath } from '../../utils/textEditorUtils/textEditorUtils'
  * - The Actions column contains two buttons: one to copy the tag to the clipboard and one to delete the file.
  * The tag will be copied with the syntax [<filename>][<tag>]. Deleting a file will remove it from the table.
  *
- * @param {Array<{minio_file_name: string, file_name: string, bucket_name: string}>} fileData - a list of fileData to be displayed in the table. Each file has a tag, a name, and its bucket.
- * @param {(Array<{minio_file_name: string, file_name: string, bucket_name: string}>) => void} setFileData - callback used when the fileData change
+ * @function FileTable
+ * @param {Array<FileData>} fileData - a list of fileData to be displayed in the table. Each file has a tag, a name, and its bucket.
+ * @param {StateSetter<Array<FileData>>} setFileData - callback used when the fileData change
  * @returns {FileTable}
  * @constructor
  */

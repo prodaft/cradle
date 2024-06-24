@@ -6,8 +6,11 @@ import { useState, useEffect } from 'react';
 
 /**
  * FleetingNoteCard is a component that displays a single Fleeting Note. It is used in the FleetingNotesPanel component.
- * @param note - the note to display
- * @param setAlert - the function to set the alert text
+ * 
+ * @function FleetingNoteCard
+ * @param {Object} props - The props object
+ * @param {Note} props.note - the note to display
+ * @param {StateSetter<Alert>} setAlert - the function to set the alert text
  * @returns {FleetingNoteCard}
  * @constructor
  */

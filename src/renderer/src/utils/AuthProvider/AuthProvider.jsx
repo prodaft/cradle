@@ -15,7 +15,7 @@ export const AuthContext = createContext();
  * The context is stored in local storage for persistence
  * This should be used only once to wrap the application in the App.jsx file
  * @param children - the children of the component
- * @returns {JSX.Element}
+ * @returns {React.ReactElement}
  * @constructor
  */
 const AuthProvider = ({ children }) => {
