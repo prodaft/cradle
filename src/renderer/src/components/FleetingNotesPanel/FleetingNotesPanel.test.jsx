@@ -9,9 +9,6 @@ import '@testing-library/jest-dom';
 jest.mock('../../services/fleetingNotesService/fleetingNotesService', () => ({
     getFleetingNotes: jest.fn(),
 }));
-jest.mock('../../hooks/useAuth/useAuth', () => ({
-    useAuth: jest.fn(() => ({ access: 'access-token' })),
-}));
 jest.mock('react-router-dom', () => ({
     ...jest.requireActual('react-router-dom'),
     useNavigate: jest.fn(() => jest.fn()),

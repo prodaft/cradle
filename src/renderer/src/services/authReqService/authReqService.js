@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
+import { authAxios } from '../axiosInstance/axiosInstance';
 
 /**
  * Sends a POST request to authenticate user
@@ -9,11 +7,10 @@ axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
  * @returns {Promise<AxiosResponse<any>>}
  */
 export async function logInReq(data) {
-    return axios({
+    return authAxios({
         method: 'post',
         url: '/users/login/',
         data: data,
-        headers: { 'Content-Type': 'application/json' },
     });
 }
 
@@ -24,10 +21,9 @@ export async function logInReq(data) {
  * @returns {Promise<AxiosResponse<any>>}
  */
 export async function registerReq(data) {
-    return axios({
+    return authAxios({
         method: 'post',
         url: '/users/',
         data: data,
-        headers: { 'Content-Type': 'application/json' },
     });
 }

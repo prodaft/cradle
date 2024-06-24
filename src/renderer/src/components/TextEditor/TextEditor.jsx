@@ -78,7 +78,7 @@ export default function TextEditor() {
         const storedContent = markdownContentRef.current;
         const storedFileData = fileDataRef.current;
 
-        saveNote(auth.access, storedContent, publishable, storedFileData)
+        saveNote(storedContent, publishable, storedFileData)
             .then((res) => {
                 if (res.status === 200) {
                     // Clear local storage on success
@@ -92,7 +92,7 @@ export default function TextEditor() {
                     });
                 }
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     };
 
     const handleSaveFleetingNote = () => {
@@ -101,7 +101,7 @@ export default function TextEditor() {
         const storedContent = markdownContentRef.current;
         const storedFileData = fileDataRef.current;
 
-        addFleetingNote(auth.access, storedContent, storedFileData)
+        addFleetingNote(storedContent, storedFileData)
             .then((res) => {
                 if (res.status === 200) {
                     // Clear local storage on success
@@ -117,7 +117,7 @@ export default function TextEditor() {
                     navigate(`/fleeting-editor/${res.data.id}`);
                 }
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     };
 
     // Buttons for the dialog. Label & handler function

@@ -1,21 +1,15 @@
-import axios from 'axios';
-
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
-
+import { authAxios } from '../axiosInstance/axiosInstance';
 /**
  * Function to get notes from the API
  * Passes the token and id to the API
- * @param {string} token - JWT token
+ *
  * @param {string} id - note id
  * @returns {Promise<AxiosResponse<any>> | *}
  */
-const getNote = (token, id) => {
-    return axios({
+const getNote = (id) => {
+    return authAxios({
         method: 'get',
         url: `/notes/${id}/`,
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
     });
 };
 
@@ -23,21 +17,16 @@ const getNote = (token, id) => {
  * Function to set the publishable status of a note
  * Passes the token, path, and status to the API
  *
- * @param {string} token - The (JWT) token to authenticate the request
  * @param {number} noteId - The id of the note to set the publishable status of
  * @param {boolean} status - The status to set the note to
  * @returns {Promise<AxiosResponse<string>>}
  */
-const setPublishable = (token, noteId, status) => {
+const setPublishable = (noteId, status) => {
     const path = `/notes/${noteId}/publishable/`;
 
-    return axios({
+    return authAxios({
         method: 'PUT',
         url: path,
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
         data: {
             publishable: status,
         },
@@ -47,17 +36,13 @@ const setPublishable = (token, noteId, status) => {
 /**
  * Function to delete a note
  *
- * @param {string} token - The (JWT) token to authenticate the request
  * @param {number} id - The id of the note to delete
  * @returns {Promise<AxiosResponse<string>>}
  */
-const deleteNote = (token, id) => {
-    return axios({
+const deleteNote = (id) => {
+    return authAxios({
         method: 'DELETE',
         url: `/notes/${id}/`,
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
     });
 };
 

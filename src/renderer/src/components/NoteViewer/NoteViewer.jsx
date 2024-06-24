@@ -1,6 +1,5 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import {
     deleteNote,
     getNote,
@@ -33,12 +32,11 @@ export default function NoteViewer() {
     const [isPublishable, setIsPublishable] = useState(false);
     const [isRaw, setIsRaw] = useState(false);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const auth = useAuth();
     const [parsedContent, setParsedContent] = useState('');
     const [dialog, setDialog] = useState(false);
 
     useEffect(() => {
-        getNote(auth.access, id)
+        getNote(id)
             .then((response) => {
                 const responseNote = response.data;
                 setNote(responseNote);
@@ -50,8 +48,8 @@ export default function NoteViewer() {
                     .then((parsedContent) => setParsedContent(parsedContent))
                     .catch(displayError(setAlert));
             })
-            .catch(displayError(setAlert));
-    }, [auth.access, id]);
+            .catch(displayError(setAlert, navigate));
+    }, [id]);
 
     const toggleView = useCallback(() => {
         setIsRaw((prevIsRaw) => !prevIsRaw);
@@ -63,15 +61,15 @@ export default function NoteViewer() {
     }, [isPublishable]);
 
     const togglePublishable = useCallback(() => {
-        setPublishable(auth.access, id, !isPublishable)
+        setPublishable(id, !isPublishable)
             .then(() => {
                 setIsPublishable((prevIsPublishable) => !prevIsPublishable);
             })
-            .catch(displayError(setAlert));
-    }, [auth.access, id, isPublishable]);
+            .catch(displayError(setAlert, navigate));
+    }, [id, isPublishable]);
 
     const handleDelete = useCallback(() => {
-        deleteNote(auth.access, id)
+        deleteNote(id)
             .then(() => {
                 if (!state) {
                     navigate(from, { replace: true });
@@ -85,8 +83,8 @@ export default function NoteViewer() {
                 const newState = { ...state, notes: stateNotes };
                 navigate(from, { replace: true, state: newState });
             })
-            .catch(displayError(setAlert));
-    }, [auth.access, id, navigate]);
+            .catch(displayError(setAlert, navigate));
+    }, [id, navigate]);
 
     const navbarContents = [
         <NavbarSwitch

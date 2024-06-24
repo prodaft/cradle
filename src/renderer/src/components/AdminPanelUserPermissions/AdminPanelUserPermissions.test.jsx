@@ -8,12 +8,6 @@ import React from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import '@testing-library/jest-dom';
 
-jest.mock('../../hooks/useAuth/useAuth', () => ({
-    useAuth: jest.fn().mockImplementation(() => {
-        return { access: 'testToken' };
-    }),
-}));
-
 jest.mock('../../services/adminService/adminService');
 
 describe('AdminPanelUserPermissions', () => {

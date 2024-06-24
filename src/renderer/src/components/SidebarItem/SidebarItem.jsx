@@ -19,8 +19,6 @@ export default function SidebarItem({
     highlightedLocation = '',
 }) {
     const location = useLocation();
-    console.log('pathname', location.pathname);
-    console.log('highlighted', highlightedLocation);
     const isHighlighted = location.pathname === highlightedLocation;
 
     return (

@@ -53,7 +53,7 @@ export default function Dashboard() {
         setAlert('');
 
         // Populate dashboard
-        getDashboardData(auth.access, path)
+        getDashboardData(path)
             .then((response) => {
                 setContentObject(response.data);
                 dashboard.current.scrollTo(0, 0);
@@ -63,11 +63,11 @@ export default function Dashboard() {
                 if (err.response && err.response.status === 404) {
                     setEntityMissing(true);
                 } else {
-                    const errHandler = displayError(setAlert);
+                    const errHandler = displayError(setAlert, navigate);
                     errHandler(err);
                 }
             });
-    }, [location, auth.access, path, setAlert, setEntityMissing, setContentObject]);
+    }, [location, path, setAlert, setEntityMissing, setContentObject]);
 
     const handleEnterPublishMode = useCallback(() => {
         const publishableNotes = contentObject.notes.filter((note) => note.publishable);
@@ -83,23 +83,20 @@ export default function Dashboard() {
     }, [navigate, contentObject, setAlert]);
 
     const handleDelete = () => {
-        deleteEntity(
-            auth.access,
-            `entities/${pluralize(contentObject.type)}`,
-            contentObject.id,
-        )
+        deleteEntity(`entities/${pluralize(contentObject.type)}`, contentObject.id)
             .then((response) => {
                 if (response.status === 200) {
                     navigate('/');
                 }
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     };
 
     const navbarContents = [
         // If the user is an admin and the dashboard is not for an entry, add a delete button to the navbar
         auth.isAdmin && contentObject.type !== 'entry' && (
             <NavbarButton
+                key='delete-entity-btn'
                 icon={<Trash />}
                 text='Delete'
                 onClick={() => setDialog(true)}
@@ -110,6 +107,7 @@ export default function Dashboard() {
         // A button to enter publish mode. Here the user can choose which notes they want to view in the publish preview
         // This is only visible while the user is not in publish preview mode
         <NavbarButton
+            key='publish-mode-btn'
             icon={<TaskList />}
             text='Enter Publish Mode'
             data-testid='publish-mode-btn'
@@ -119,14 +117,14 @@ export default function Dashboard() {
     useNavbarContents(!entityMissing && navbarContents, [
         contentObject,
         location,
-        auth.access,
+        auth.isAdmin,
         entityMissing,
         handleEnterPublishMode,
         setDialog,
     ]);
 
     const handleRequestCaseAccess = (cases) => {
-        Promise.all(cases.map((c) => requestCaseAccess(auth.access, c.id)))
+        Promise.all(cases.map((c) => requestCaseAccess(c.id)))
             .then(() =>
                 setAlert({
                     show: true,
@@ -134,7 +132,7 @@ export default function Dashboard() {
                     color: 'green',
                 }),
             )
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     };
 
     const handleVirusTotalSearch = (name) => {

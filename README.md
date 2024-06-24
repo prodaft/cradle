@@ -151,62 +151,66 @@ We would like to extend our heartfelt thanks to the developers and maintainers o
 
 #### Core Libraries
 
-- **React Ecosystem**
-    - `react`
-    - `react-dom`
-    - `react-router-dom`
+-   **React Ecosystem**
 
-- **Data Handling and Manipulation**
-    - `d3`
-    - `dompurify`
-    - `jwt-decode`
-    - `mime`
-    - `pluralize`
-    - `qs`
+    -   `react`
+    -   `react-dom`
+    -   `react-router-dom`
 
-- **Markdown and Syntax Highlighting**
-    - `marked`
-    - `marked-highlight`
-    - `prismjs`
+-   **Data Handling and Manipulation**
 
-- **Codemirror**
-    - `@codemirror/lang-markdown`
-    - `@codemirror/language-data`
-    - `@codemirror/view`
-    - `@replit/codemirror-vim`
+    -   `d3`
+    -   `dompurify`
+    -   `jwt-decode`
+    -   `mime`
+    -   `pluralize`
+    -   `qs`
+
+-   **Markdown and Syntax Highlighting**
+
+    -   `marked`
+    -   `marked-highlight`
+    -   `prismjs`
+
+-   **Codemirror**
+    -   `@codemirror/lang-markdown`
+    -   `@codemirror/language-data`
+    -   `@codemirror/view`
+    -   `@replit/codemirror-vim`
 
 #### Utilities and Enhancements
 
-- **Styling and Design**
-    - `@tailwindcss/forms`
-    - `@tailwindcss/typography`
-    - `tailwind-scrollbar`
-    - `rippleui`
+-   **Styling and Design**
 
-- **Icons and Graphics**
-    - `iconoir`
-    - `iconoir-react`
+    -   `@tailwindcss/forms`
+    -   `@tailwindcss/typography`
+    -   `tailwind-scrollbar`
+    -   `rippleui`
+
+-   **Icons and Graphics**
+    -   `iconoir`
+    -   `iconoir-react`
 
 #### Testing and Development Tools
 
-- **Testing Frameworks**
-    - `jest`
-    - `@jest/globals`
-    - `jest-environment-jsdom`
-    - `@testing-library/jest-dom`
-    - `@testing-library/react`
-    - `react-test-renderer`
+-   **Testing Frameworks**
 
-- **Build and Development**
-    - `electron`
-    - `electron-vite`
-    - `vite`
-    - `@vitejs/plugin-react`
-    - `babel-jest`
-    - `babel-preset-vite`
-    - `dotenv`
-    - `globals`
+    -   `jest`
+    -   `@jest/globals`
+    -   `jest-environment-jsdom`
+    -   `@testing-library/jest-dom`
+    -   `@testing-library/react`
+    -   `react-test-renderer`
 
+-   **Build and Development**
+    -   `electron`
+    -   `electron-vite`
+    -   `vite`
+    -   `@vitejs/plugin-react`
+    -   `babel-jest`
+    -   `babel-preset-vite`
+    -   `dotenv`
+    -   `globals`
 
 If you believe your library or tool should be included here, please contact us at **TBA**.
 

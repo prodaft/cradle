@@ -45,7 +45,7 @@ export default function Register() {
 
         registerReq(data)
             .then(() => navigate('/login', { state: location.state, replace: true }))
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     };
 
     return (
