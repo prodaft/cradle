@@ -57,6 +57,7 @@ export default function TextEditor() {
     const flexDirection = useChangeFlexDirectionBySize(textEditorRef);
 
     const NEW_NOTE_PLACEHOLDER_ID = 'new';
+    const AUTO_SAVE_DELAY = 2000;
 
     useEffect(() => {
         parseContent(markdownContent, fileData)
@@ -174,7 +175,7 @@ export default function TextEditor() {
         console.log('Setting autosave timer')
         const autosaveTimer = setTimeout(() => {
             handleSaveNote();
-        }, 2000);
+        }, AUTO_SAVE_DELAY);
 
         return () => {
             console.log('Clearing autosave timer');
