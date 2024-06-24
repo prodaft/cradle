@@ -38,7 +38,7 @@ export default function Sidebar({
         navigate(welcomeLocation);
     }, [navigate]);
 
-    const newNoteLocation = '/editor';
+    const newNoteLocation = '/editor/new';
     const handleNewNote = useCallback(() => {
         navigate(newNoteLocation);
     }, [navigate]);
@@ -55,10 +55,6 @@ export default function Sidebar({
 
     const handleLogout = useCallback(() => {
         auth.logOut();
-        localStorage.clear(); // TODO save unsaved notes as fleeting notes
-        navigate('/login', {
-            state: { from: location, state: location.state },
-        });
     }, [auth, navigate, location]);
 
     let notificationIconColor = showNotifications ? 'text-gray-500' : '';

@@ -40,8 +40,8 @@ export default function NoteListCard({ title = '', notes = [] }) {
             }),
         )
             .then((res) => setNoteCards(res))
-            .catch(displayError(setAlert));
-    }, [notes]);
+            .catch(displayError(setAlert, navigate));
+    }, [notes, navigate]);
 
     return (
         <>
