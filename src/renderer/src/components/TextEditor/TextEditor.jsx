@@ -67,7 +67,7 @@ export default function TextEditor() {
 
     useEffect(() => {
         if (id) {
-            if(id === NEW_NOTE_PLACEHOLDER_ID) {
+            if (id === NEW_NOTE_PLACEHOLDER_ID) {
                 setMarkdownContent('');
                 setFileData([]);
             } else {
@@ -103,7 +103,7 @@ export default function TextEditor() {
             const storedContent = markdownContentRef.current;
             const storedFileData = fileDataRef.current;
 
-            if(id === NEW_NOTE_PLACEHOLDER_ID) {
+            if (id === NEW_NOTE_PLACEHOLDER_ID) {
                 addFleetingNote(auth.access, storedContent, storedFileData)
                     .then((res) => {
                         if (res.status === 200) {
@@ -172,7 +172,7 @@ export default function TextEditor() {
     // Autosave feature
     useEffect(() => {
         if (!markdownContentRef.current) return;
-        console.log('Setting autosave timer')
+        console.log('Setting autosave timer');
         const autosaveTimer = setTimeout(() => {
             handleSaveNote();
         }, AUTO_SAVE_DELAY);
@@ -185,30 +185,32 @@ export default function TextEditor() {
 
     useNavbarContents(
         [
-            id !== NEW_NOTE_PLACEHOLDER_ID && [<NavbarButton
-                icon={<Trash />}
-                text={'Delete'}
-                onClick={() => setDialog(true)}
-            />,
-            <NavbarDropdown
-                icon={<FloppyDiskArrowIn />}
-                text={'Save As Final'}
-                contents={[
-                    {
-                        label: 'Publishable',
-                        handler: handleMakeFinal(true),
-                    },
-                    {
-                        label: 'Not Publishable',
-                        handler: handleMakeFinal(false),
-                    },
-                ]}
-            />],
+            id !== NEW_NOTE_PLACEHOLDER_ID && [
+                <NavbarButton
+                    icon={<Trash />}
+                    text={'Delete'}
+                    onClick={() => setDialog(true)}
+                />,
+                <NavbarDropdown
+                    icon={<FloppyDiskArrowIn />}
+                    text={'Save As Final'}
+                    contents={[
+                        {
+                            label: 'Publishable',
+                            handler: handleMakeFinal(true),
+                        },
+                        {
+                            label: 'Not Publishable',
+                            handler: handleMakeFinal(false),
+                        },
+                    ]}
+                />,
+            ],
             <NavbarButton
                 icon={<FloppyDisk />}
                 text={'Save'}
                 onClick={() => handleSaveNote('Changes saved successfully.')}
-            />
+            />,
         ],
         [auth, id],
     );
