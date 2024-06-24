@@ -28,7 +28,7 @@ export default function FleetingNoteCard({ note, setAlert }) {
     return (
         <div
             className='bg-cradle3 bg-opacity-20 p-4 backdrop-blur-lg rounded-xl m-3 shadow-md'
-            onClick={() => navigate(`/fleeting-editor/${note.id}`)}
+            onClick={() => navigate(`/editor/${note.id}`)}
         >
             <div className='flex flex-row justify-left'>
                 <div className='text-zinc-500 text-xs w-full'>

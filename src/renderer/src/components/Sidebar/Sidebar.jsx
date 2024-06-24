@@ -37,7 +37,7 @@ export default function Sidebar({
         navigate(welcomeLocation);
     }, [navigate]);
 
-    const newNoteLocation = '/editor';
+    const newNoteLocation = '/editor/new';
     const handleNewNote = useCallback(() => {
         navigate(newNoteLocation);
     }, [navigate]);
