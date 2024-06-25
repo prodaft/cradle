@@ -22,6 +22,8 @@ import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
  * - Create new entity
  * - Delete entity
  * When deleting an entity a dialog will be displayed to confirm the deletion.
+ *
+ * @function AdminPanel
  * @returns {AdminPanel}
  * @constructor
  */

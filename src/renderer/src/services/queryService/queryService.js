@@ -7,7 +7,7 @@ import { authAxios } from '../axiosInstance/axiosInstance';
  * @param {?string} name - the name of the entity to search for
  * @param {Array<string>} entityTypes - the types of entities to search for
  * @param {Array<string>} entitySubtype - the types of entries to search for
- * @returns {Promise<axios.AxiosResponse<any>>}
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
 export function queryEntities(name, entityTypes, entitySubtype) {
     const url = `/query/`;

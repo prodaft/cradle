@@ -3,9 +3,12 @@ import React from 'react';
 /**
  * Single filter for search dialog
  * Manages the state of the filters passed as parameters
- * @param {string} option - the name of the filter
- * @param {Array<string>} filters - the current filters
- * @param {(Array<string>) => void} setFilters - the function to update the filters
+ *
+ * @function SearchFilter
+ * @param {Object} props - The props of the component.
+ * @param {string} props.option - the name of the filter
+ * @param {Array<string>} props.filters - the current filters
+ * @param {StateSetter<Array<string>>} props.setFilters - the function to update the filters
  * @returns {SearchFilter}
  * @constructor
  */

@@ -22,14 +22,6 @@ import { getLinkNode, parseLink } from '../../utils/textEditorUtils/textEditorUt
 import { Prec } from '@uiw/react-codemirror';
 
 /**
- * @typedef {Object} FileData
- * @property {string} minio_file_name - the name of the file in MinIO
- * @property {string} file_name - the name of the file
- * @property {string} bucket_name - the name of the bucket
- * @typedef {Array<FileData>} FileDataArray
- */
-
-/**
  * This component makes use of a pre-existing code editor component (CodeMirror, see https://github.com/uiwjs/react-codemirror)
  * The Editor component is expected to be used for typing Markdown. It also has a toggle for enabling Vim mode in the editor.
  *
@@ -38,12 +30,15 @@ import { Prec } from '@uiw/react-codemirror';
  *
  * This component is reactive to the system theme. It uses the Eclipse theme for light mode and the VSCode Dark theme for dark mode.
  *
- * @param {string} markdownContent - the content inside the Editor
- * @param {(string) => void} setMarkdownContent - callback used when the value of the content changes
- * @param {FileData} fileData - the files uploaded by the user. These belong to the note that is being written.
- * @param {(FileData) => void} setFileData - callback used when the files change
- * @param {boolean} isLightMode - the current theme of the editor
+ * @function Editor
+ * @param {Object} props - The props object
+ * @param {string} props.markdownContent - the content inside the Editor
+ * @param {StateSetter<string>} props.setMarkdownContent - callback used when the value of the content changes
+ * @param {FileData} props.fileData - the files uploaded by the user. These belong to the note that is being written.
+ * @param {StateSetter<FileData>} props.setFileData - callback used when the files change
+ * @param {boolean} props.isLightMode - the current theme of the editor
  * @returns {Editor}
+ * @constructor
  */
 export default function Editor({
     markdownContent,

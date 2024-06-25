@@ -27,10 +27,11 @@ import { entityGraphColors } from '../../utils/entityDefinitions/entityDefinitio
  * When hovering over an edge, the component highlights the edge and its source and target nodes.
  * When clicking on a node, the component displays a panel with information about the node and provides a link to navigate to the node's dashboard.
  *
+ * @function GraphComponent
  * @returns {GraphComponent}
  * @constructor
  */
-const GraphComponent = () => {
+export default function GraphComponent() {
     const [data, setData] = useState({ nodes: [], links: [] });
     const defaultStrokeWidth = 2;
     const [spacingCoefficient, setSpacingCoefficient] = useState(48);
@@ -311,6 +312,4 @@ const GraphComponent = () => {
             </div>
         </>
     );
-};
-
-export default GraphComponent;
+}

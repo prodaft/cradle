@@ -9,7 +9,7 @@ const passwordRegex =
 /**
  * Validates password
  * Password must contain at least 8 characters, including at least one uppercase letter, one lowercase letter, one digit and one special character
- * @param password
+ * @param {string} password - the password to validate
  * @returns {boolean}
  */
 export function validatePassword(password) {

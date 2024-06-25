@@ -1,16 +1,24 @@
 import React from 'react';
 
 /**
+ * @typedef {Object} Button
+ * @property {string} label - the text of the button
+ * @property {Function} handler - the handler function of the button
+ */
+
+/**
  * This component is used to display a confirmation dialog.
  * The dialog will display a title and a description.
  * The dialog will have multiple buttons based on the `buttons` prop.
  * When a button is clicked, its corresponding handler function will be called.
  *
- * @param {boolean} open - Whether the dialog should be open or not
- * @param {function} setOpen - A function to open an close the dialog
- * @param {object} buttons - An array of objects with the keys `label` and `handler`
- * @param {string} title - The title of the dialog
- * @param {string} description - The description of the dialog
+ * @function MultipleChoiceDialog
+ * @param {Object} props - the props object
+ * @param {boolean} props.open - Whether the dialog should be open or not
+ * @param {StateSetter<boolean>} props.setOpen - A function to open an close the dialog
+ * @param {Array<Button>} props.buttons - An array of objects with the keys `label` and `handler`
+ * @param {string} props.title - The title of the dialog
+ * @param {string} props.description - The description of the dialog
  * @returns {MultipleChoiceDialog}
  * @constructor
  */

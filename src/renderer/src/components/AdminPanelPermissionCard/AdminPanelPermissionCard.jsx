@@ -13,10 +13,14 @@ import { useNavigate } from 'react-router-dom';
  * The component contains a dropdown to change the access level for the user.
  * The component will display an alert if an error occurs.
  * The component will display the current access level.
- * @param userId
- * @param caseName
- * @param caseId
- * @param accessLevel
+ *
+ * @function AdminPanelPermissionCard
+ * @param {Object} props - The props object
+ * @param {string} props.userId - The id of the user
+ * @param {string} props.caseName - The name of the case
+ * @param {string} props.caseId - The id of the case
+ * @param {string} props.accessLevel - The access level of the user
+ * @param {string} props.searchKey - The search key for the user
  * @returns {AdminPanelPermissionCard}
  * @constructor
  */

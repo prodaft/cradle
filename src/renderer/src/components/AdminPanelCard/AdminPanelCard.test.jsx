@@ -5,7 +5,7 @@ import { fireEvent, render, waitFor } from '@testing-library/react';
 import AdminPanelCard from '../AdminPanelCard/AdminPanelCard';
 import { deleteEntity } from '../../services/adminService/adminService';
 import React from 'react';
-import AuthProvider from '../../utils/AuthProvider/AuthProvider';
+import AuthProvider from '../../components/AuthProvider/AuthProvider';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
 

@@ -4,7 +4,7 @@ import { authAxios } from '../axiosInstance/axiosInstance';
  * Passes the token and id to the API
  *
  * @param {string} id - note id
- * @returns {Promise<AxiosResponse<any>> | *}
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
 const getNote = (id) => {
     return authAxios({
@@ -19,7 +19,7 @@ const getNote = (id) => {
  *
  * @param {number} noteId - The id of the note to set the publishable status of
  * @param {boolean} status - The status to set the note to
- * @returns {Promise<AxiosResponse<string>>}
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
 const setPublishable = (noteId, status) => {
     const path = `/notes/${noteId}/publishable/`;
@@ -37,7 +37,7 @@ const setPublishable = (noteId, status) => {
  * Function to delete a note
  *
  * @param {number} id - The id of the note to delete
- * @returns {Promise<AxiosResponse<string>>}
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
 const deleteNote = (id) => {
     return authAxios({

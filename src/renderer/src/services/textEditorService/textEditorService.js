@@ -5,7 +5,7 @@ import { authAxios } from '../axiosInstance/axiosInstance';
  *
  * @param {string} text  - the text to save
  * @param {boolean} publishable - whether to save the note as publishable
- * @param {Array<import('../../components/Editor/Editor').FileData> | []} files - information about the files that will be linked
+ * @param {Array<FileData>} files - information about the files that will be linked
  * @returns {Promise} The response from the server
  * @throws {Error} see the OpenApi specification
  */

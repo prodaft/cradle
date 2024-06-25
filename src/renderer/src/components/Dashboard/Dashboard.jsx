@@ -32,7 +32,7 @@ import { Search } from 'iconoir-react';
  * If the entity is linked to cases to which the user does not have access to, a button to request access to view them is displayed
  * If the entity is an entry, a button to search the entry name on VirusTotal is displayed
  *
- * @component
+ * @function Dashboard
  * @returns {Dashboard}
  * @constructor
  */
