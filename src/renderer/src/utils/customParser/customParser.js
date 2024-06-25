@@ -3,19 +3,13 @@ import { markedHighlight } from 'marked-highlight';
 import { Marked } from 'marked';
 import 'prismjs/themes/prism-tomorrow.css';
 import {
+    entityMarkdownColors,
     entrySubtypes,
     metadataSubtypes,
 } from '../entityDefinitions/entityDefinitions';
 import { createDashboardLink } from '../dashboardUtils/dashboardUtils';
 import { prependLinks } from '../textEditorUtils/textEditorUtils';
 import { getDownloadLink } from '../../services/fileUploadService/fileUploadService';
-
-const styleClasses = {
-    actors: 'text-purple-700',
-    cases: 'text-cyan-800',
-    entries: 'text-orange-600',
-    metadata: 'text-emerald-700 underline',
-};
 
 const regexes = {
     actors: /\[\[actor:((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\]/g, // [[actor:name(|alias)]]
@@ -34,7 +28,7 @@ const handlers = {
             const url = createDashboardLink({ name: name, type: 'actor' });
             // If an alias is provided, use it as the displayed name
             const displayedName = alias ? alias : name;
-            return `<a class="${styleClasses.actors}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
+            return `<a class="${entityMarkdownColors.actors}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
         });
     },
     // Take the user to the case's dashboard
@@ -43,7 +37,7 @@ const handlers = {
             const url = createDashboardLink({ name: name, type: 'case' });
             // If an alias is provided, use it as the displayed name
             const displayedName = alias ? alias : name;
-            return `<a class="${styleClasses.cases}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
+            return `<a class="${entityMarkdownColors.cases}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
         });
     },
     // Take the user to the entry's dashboard
@@ -57,7 +51,7 @@ const handlers = {
                 });
                 // If an alias is provided, use it as the displayed name
                 const displayedName = alias ? alias : name;
-                return `<a class="${styleClasses.entries}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
+                return `<a class="${entityMarkdownColors.entries}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
             }
 
             return matched;
@@ -69,7 +63,7 @@ const handlers = {
             if (metadataSubtypes.has(type)) {
                 // If an alias is provided, use it as the displayed name
                 const displayedName = alias ? alias : name;
-                return `<span class="${styleClasses.metadata}">${displayedName}</span>`;
+                return `<span class="${entityMarkdownColors.metadata}">${displayedName}</span>`;
             }
 
             return matched;
