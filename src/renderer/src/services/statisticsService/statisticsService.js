@@ -4,7 +4,7 @@ import { authAxios } from '../axiosInstance/axiosInstance';
  * It returns recent activity about actors, cases, notes
  * See the OpenAPI documentation for more information on what this should return.
  *
- * @returns {Promise<axios.AxiosResponse<any>>}
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
 export async function getStatistics() {
     return authAxios({

@@ -7,6 +7,7 @@ import { syntaxTree } from '@codemirror/language';
  * Parses markdown content into HTML using a custom marked.js parser
  * Sanitizing is recommended by the marked documentation: https://github.com/markedjs/marked?tab=readme-ov-file#usage
  *
+ * @function parseContent
  * @param {string} content - Markdown syntax
  * @param {Array<FileData>} [fileData] - information about the files that will be linked
  * @returns {string} parsed and sanitized HTML
@@ -18,7 +19,8 @@ const parseContent = async (content, fileData) =>
  * Creates a download path for a file. This path correspond to the download endpoint in the backend.
  * The base URL (e.g. `http://localhost:8000`) is the same as the backend API's.
  *
- * @param {{minio_file_name: string, file_name: string, bucket_name: string}} file - file information
+ * @function createDownloadPath
+ * @param {FileData} file - file information
  * @returns {string} download link
  */
 const createDownloadPath = (file) => {
@@ -35,6 +37,7 @@ const createDownloadPath = (file) => {
  * Prepends links to the top of the markdown content. This will not be visible in the preview.
  * These links correspond to the backend API download endpoints. (e.g. `http://localhost:8000/file-transfer/download/?...`)
  *
+ * @function prependLinks
  * @param {string} mdContent - markdown content
  * @param {Array<FileData>} fileData - file data
  * @returns {string} markdown content with links prepended
@@ -59,8 +62,9 @@ const prependLinks = (mdContent, fileData) => {
  * Useful information:
  * - All React Router navigation links have a `data-custom-href` attribute with the path they should navigate to.
  *
- * @param {(string) => void} navigateHandler - how to handle local navigate links
- * @returns {(event: MouseEvent) => void} event handler
+ * @function handleLinkClick
+ * @param {NavigateFunction} navigateHandler - how to handle local navigate links
+ * @returns {Function} event handler
  */
 const handleLinkClick = (navigateHandler) => (event) => {
     const target = event.target;
@@ -87,8 +91,8 @@ const LINK_REGEX = /^\[([^:|]+)(?::((?:\\\||[^|])+))?(?:\|((?:\\\||[^|])+))?\]$/
  * If the current position is inside a link, the link node is returned.
  * Otherwise, null is returned.
  *
- * @param {import('@codemirror/state').EditorState} context - the editor state
- * @returns {Node | null} the link node or null
+ * @param {EditorState} context - the editor state. See `@codemirror/state`
+ * @returns {?Node} the link node or null
  */
 const getLinkNode = (context) => {
     const pos = context.pos;
@@ -124,7 +128,7 @@ const getLinkNode = (context) => {
  * @param {number} from - the starting position of the text
  * @param {number} current - the current position in the text
  * @param {string} text - the text to parse
- * @returns {Link | null}
+ * @returns {?Link}
  */
 const parseLink = (from, current, text) => {
     // Match the regex with the text

@@ -165,7 +165,7 @@ marked.use(resolveMinioLinks);
  * This function does not sanitize the output.
  *
  * @param {string} mdContent - markdown content
- * @param {Array<FileData>} [fileData] - information about the files that will be linked (optional)
+ * @param {Array<FileData> | []} [fileData] - information about the files that will be linked (optional)
  * @returns {string} parsed HTML
  */
 const parseMarkdown = async (mdContent, fileData) => {

@@ -6,11 +6,14 @@ import { useAuth } from '../../hooks/useAuth/useAuth';
 /**
  * PrivateRoute component - route that requires authentication to access
  * If the user is not authenticated, they are redirected to the fallback route
- * @param fallback - the route to redirect to if the user is not authenticated
- * @returns {Element}
+ * 
+ * @function PrivateRoute
+ * @param {Object} props - the props object
+ * @param {string} props.fallback - the route to redirect to if the user is not authenticated
+ * @returns {?React.ReactElement}
  * @constructor
  */
-const PrivateRoute = ({ fallback }) => {
+export default function PrivateRoute({ fallback }) {
     const user = useAuth();
     const location = useLocation();
     if (!user.isAuthenticated()) {
@@ -24,5 +27,3 @@ const PrivateRoute = ({ fallback }) => {
     }
     return <Outlet />;
 };
-
-export default PrivateRoute;

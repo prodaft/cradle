@@ -31,6 +31,48 @@
  * @property {boolean} publishable - Whether the note is publishable.
  */
 
+/**
+ * The entities in the dashboard. They are used to create links to their dashboards, which are created using name and (sub)type.
+ * @typedef {Object} DashboardEntity
+ * @property {string} name - the name of the entity
+ * @property {string} type - the type of the entity, e.g. 'actor', 'case', 'entry', 'metadata'
+ * @property {string} [subtype] - the subtype for entities with 'entry' or 'metadata' type
+ */
+
+/**
+ * The entites in the Knowledge Graph. Similar to {@link DashboardEntity} but these must have id's.
+ * @typedef {Object} GraphEntity
+ * @property {string} id - the unique identifier of the entity
+ * @property {string} name - the name of the entity
+ * @property {string} type - the type of the entity
+ * @property {string} [subtype] - the subtype of the entity
+ */
+
+/**
+ * The links (edges) between the nodes of the Knowledge Graph
+ * @typedef {Object} GraphLink
+ * @property {string} source - the id of the source node
+ * @property {string} target - the id of the target node
+ */
+
+/**
+ * The nodes (vertices) of the Knowledge Graph. These contain links to {@link GraphEntity}.
+ * @typedef {Object} GraphNode
+ * @property {string} id - the unique identifier of the node
+ * @property {string} label - the label of the node
+ * @property {string} color - the color of the node
+ * @property {string} name - the name of the node
+ * @property {string} type - the type of the node
+ * @property {string} [subtype] - the subtype of the node
+ * @property {number} degree - the degree of the node (number of links connected to the node)
+ * @property {number} x - the x-coordinate of the node
+ * @property {number} y - the y-coordinate of the node
+ * @property {number} vx - the x-velocity of the node
+ * @property {number} vy - the y-velocity of the node
+ * @property {number|null} fx - the x-coordinate of the node when fixed
+ * @property {number|null} fy - the y-coordinate of the node when fixed
+ */
+
 // This can be used to import types with `import * as types from './types';`
 // However, JSDoc automatically resolves types. VSCode does not.
 // Using the import will not generate correct JSDoc, but not using it will not allow VSCode to resolve the types.
