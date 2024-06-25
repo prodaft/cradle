@@ -1,5 +1,6 @@
-import { preprocessData, entityColors, visualizeGraph } from './graphUtils';
+import { preprocessData, visualizeGraph } from './graphUtils';
 import { describe, expect, it } from '@jest/globals';
+import { entityGraphColors } from '../entityDefinitions/entityDefinitions';
 
 describe('preprocessData', () => {
     it('transforms raw data into nodes and links', () => {
@@ -54,13 +55,13 @@ describe('preprocessData', () => {
         const result = preprocessData(rawData);
 
         expect(result.nodes.find((node) => node.id === '1').color).toEqual(
-            entityColors.case,
+            entityGraphColors.case,
         );
         expect(result.nodes.find((node) => node.id === '2').color).toEqual(
-            entityColors.actor,
+            entityGraphColors.actor,
         );
         expect(result.nodes.find((node) => node.id === '3').color).toEqual(
-            entityColors.entry,
+            entityGraphColors.entry,
         );
     });
 
@@ -75,7 +76,7 @@ describe('preprocessData', () => {
         expect(result.nodes.find((node) => node.id === '1')).toEqual({
             id: '1',
             label: 'Entity1',
-            color: entityColors.case,
+            color: entityGraphColors.case,
             name: 'Entity1',
             type: 'case',
             subtype: undefined,
@@ -100,7 +101,7 @@ describe('preprocessData', () => {
         expect(result.nodes.find((node) => node.id === '1')).toEqual({
             id: '1',
             label: 'url: Entity1',
-            color: entityColors.entry,
+            color: entityGraphColors.entry,
             name: 'Entity1',
             type: 'entry',
             subtype: 'url',
