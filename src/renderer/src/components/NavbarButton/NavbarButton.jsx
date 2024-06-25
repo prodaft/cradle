@@ -1,6 +1,6 @@
 /**
  * NavbarButton - a button in the navbar.
- * 
+ *
  * @function NavbarButton
  * @param {Object} props - the props object
  * @param {any} props.icon - the icon to display in the button

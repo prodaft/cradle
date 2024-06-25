@@ -17,7 +17,13 @@
  * @returns {FormField}
  * @constructor
  */
-export default function FormField({ name, type, labelText, handleInput, autofocus = false }) {
+export default function FormField({
+    name,
+    type,
+    labelText,
+    handleInput,
+    autofocus = false,
+}) {
     return (
         <div className='w-full'>
             <label htmlFor={name} className='block text-sm font-medium leading-6'>

@@ -49,7 +49,7 @@ export default function NoteSelector() {
     useEffect(() => {
         setSelectAll(
             selectedNoteIds.length > 0 &&
-            selectedNoteIds.length === publishableNoteIds.length,
+                selectedNoteIds.length === publishableNoteIds.length,
         );
     }, [notes, selectedNoteIds]);
 

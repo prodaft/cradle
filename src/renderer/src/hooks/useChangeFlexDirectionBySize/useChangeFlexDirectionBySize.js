@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 /**
  * Hook to change the flex direction of a container based on its size.
- * 
+ *
  * @param {React.MutableRefObject} containerRef - The reference to the container element.
  * @returns {string} - The flex direction of the container.
  */

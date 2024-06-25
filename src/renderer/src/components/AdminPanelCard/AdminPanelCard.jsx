@@ -13,7 +13,7 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
  * - Delete button
  * When the delete button is clicked a dialog will be displayed to confirm the deletion.
  * When clicking the name the user will be redirected to the entity dashboard.
- * 
+ *
  * @function AdminPanelCard
  * @param {Object} props - The props object
  * @param {string} props.name - The name of the entity
