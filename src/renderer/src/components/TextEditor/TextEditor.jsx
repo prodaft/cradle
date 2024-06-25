@@ -74,6 +74,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
                 setFileData([]);
                 setHasUnsavedChanges(true);
             } else {
+                if(id === prevIdRef.current) return;
                 getFleetingNoteById(id)
                     .then((response) => {
                         setMarkdownContent(response.data.content);
@@ -116,11 +117,9 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
                 addFleetingNote(storedContent, storedFileData)
                     .then((res) => {
                         if (res.status === 200) {
-                            // Clear local storage on success
                             refreshFleetingNotes();
-                            setMarkdownContent('');
-                            setFileData([]);
                             setHasUnsavedChanges(false);
+                            prevIdRef.current = res.data.id;
                             if (navigateOnNewNote) {
                                 navigate(`/editor/${res.data.id}`);
                             }
