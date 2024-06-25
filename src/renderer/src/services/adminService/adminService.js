@@ -1,9 +1,17 @@
 import { authAxios } from '../axiosInstance/axiosInstance';
+
+/**
+ * The data for an entity. This data needs to be sent to the server to create an entity.
+ * @typedef {Object} EntityData
+ * @property {string} name - entity name
+ * @property {string} description - entity description
+ */
+
 /**
  * Sends a POST to create an actor
  *
- * @param {{name: string, description: string}} data - actor data
- * @returns {Promise<Promise<AxiosResponse<any>> | *>}
+ * @param {EntityData} data - actor data
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
 export async function createActor(data) {
     return authAxios({
@@ -16,8 +24,8 @@ export async function createActor(data) {
 /**
  * Sends a POST to create a case
  *
- * @param {{name: string, description: string}} data - case data
- * @returns {Promise<Promise<AxiosResponse<any>> | *>}
+ * @param {EntityData} data - case data
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
 export async function createCase(data, token) {
     return authAxios({
@@ -30,7 +38,7 @@ export async function createCase(data, token) {
 /**
  * Sends a GET request to get all actors
  *
- * @returns {Promise<Promise<AxiosResponse<any>> | *>}
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
 export async function getActors() {
     return authAxios({
@@ -42,7 +50,7 @@ export async function getActors() {
 /**
  * Sends a GET request to get all cases
  *
- * @returns {Promise<Promise<AxiosResponse<any>> | *>}
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
 export async function getCases() {
     return authAxios({
@@ -54,7 +62,7 @@ export async function getCases() {
 /**
  * Sends a GET request to get all users
  *
- * @returns {Promise<Promise<AxiosResponse<any>> | *>}
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
 export async function getUsers() {
     return authAxios({
@@ -68,7 +76,7 @@ export async function getUsers() {
  *
  * @param {string} type - entity type : `entities/actors`, `entites/cases`, `users` (use plural form)
  * @param {string} id - entity id
- * @returns {Promise<Promise<AxiosResponse<any>> | *>}
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
 export async function deleteEntity(type, id) {
     return authAxios({
@@ -82,8 +90,8 @@ export async function deleteEntity(type, id) {
  *
  * @param {string} userId - user id
  * @param {string} caseId - case id
- * @param {string} accessLevel - access level : none, read, read-write
- * @returns {Promise<Promise<AxiosResponse<any>> | *>}
+ * @param {string} accessLevel - access level : "none", "read", "read-write"
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
 export async function changeAccess(userId, caseId, accessLevel) {
     return authAxios({
@@ -97,7 +105,7 @@ export async function changeAccess(userId, caseId, accessLevel) {
  * Sends a GET request to get permissions for a user
  *
  * @param {string} userId - user id
- * @returns {Promise<Promise<AxiosResponse<any>> | *>}
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
 export async function getPermissions(userId) {
     return authAxios({

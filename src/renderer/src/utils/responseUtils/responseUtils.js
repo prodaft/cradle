@@ -7,7 +7,8 @@
  *
  * If the error is a 401, the user is redirected to the login page.
  *
- * @param {Function} setAlert - Function to set the alert message (state)
+ * @function displayError
+ * @param {StateSetter<Alert>} setAlert - Function to set the alert message (state)
  * @param {Function} [navigate] - Function to navigate to a different page
  * @returns {Function} - Function to display the error message
  */

@@ -28,8 +28,9 @@ const refreshAccessToken = async () => {
     }
 
     const response = await noAuthAxios({
+        baseURL: import.meta.env.VITE_API_BASE_URL,
         method: 'POST',
-        url: `${import.meta.env.VITE_API_BASE_URL}/users/refresh/`,
+        url: '/users/refresh/',
         data: {
             refresh: refreshToken,
         },
@@ -55,6 +56,10 @@ authAxios.interceptors.request.use(
         let accessToken = localStorage.getItem('access');
         const expirationInSeconds = new Number(localStorage.getItem('expiration'));
         const expirationInMilliseconds = new Date(expirationInSeconds * 1000);
+
+        if (!accessToken) {
+            return config;
+        }
 
         if (
             expirationInMilliseconds &&

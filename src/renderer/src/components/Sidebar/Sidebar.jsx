@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom';
 /**
  * Sidebar component - the main sidebar for the application.
  *
+ * @function Sidebar
  * @param {Object} props - the props object
  * @param {boolean} props.showNotifications - determines if the notifications panel should be displayed
  * @param {number} props.unreadNotificationsNumber - the number of new notifications

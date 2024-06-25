@@ -3,8 +3,8 @@ import Login from './components/Login/Login.jsx';
 import Register from './components/Register/Register.jsx';
 import Home from './components/Home/Home.jsx';
 import { HashRouter as Router } from 'react-router-dom';
-import PrivateRoute from './utils/PrivateRoute/PrivateRoute.jsx';
-import AuthProvider from './utils/AuthProvider/AuthProvider.jsx';
+import PrivateRoute from './components/PrivateRoute/PrivateRoute.jsx';
+import AuthProvider from './components/AuthProvider/AuthProvider.jsx';
 import FeatureNotImplemented from './components/FeatureNotImplemented/FeatureNotImplemented';
 import AdminPanel from './components/AdminPanel/AdminPanel';
 import AdminPanelAdd from './components/AdminPanelAdd/AdminPanelAdd';
@@ -22,7 +22,9 @@ import Welcome from './components/Welcome/Welcome.jsx';
  * The App component is the entry point of the application. It wraps the entire application in the AuthProvider
  * to handle authentication and authorization logic. The App component also defines the routes of the application.
  *
- * @returns App
+ * @function App
+ * @returns {App}
+ * @constructor
  */
 function App() {
     return (

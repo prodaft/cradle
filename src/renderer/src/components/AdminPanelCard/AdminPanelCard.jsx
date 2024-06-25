@@ -13,12 +13,16 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
  * - Delete button
  * When the delete button is clicked a dialog will be displayed to confirm the deletion.
  * When clicking the name the user will be redirected to the entity dashboard.
- * @param name
- * @param id
- * @param description
- * @param type
- * @param onDelete
- * @param link
+ *
+ * @function AdminPanelCard
+ * @param {Object} props - The props object
+ * @param {string} props.name - The name of the entity
+ * @param {string} props.id - The id of the entity
+ * @param {string} props.description - The description of the entity
+ * @param {string} props.type - The type of the entity
+ * @param {Function} props.onDelete - The function to call when the entity is deleted
+ * @param {string} props.link - The link to the entity dashboard
+ * @param {string} props.searchKey - The search key for the entity. used by the `useFrontendSearch` hook
  * @returns {AdminPanelCard}
  * @constructor
  */

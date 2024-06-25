@@ -20,9 +20,10 @@ import { useNavigate } from 'react-router-dom';
  * It also uses the AlertDismissible component to display alerts.
  *
  * @component
- * @param {Function} handleCloseNotifications - The function to call when the close button is clicked.
- * @param {number} unreadNotificationsCount - The current count of new notifications.
- * @param {Function} setUnreadNotificationsCount - The function to update the newNotificationsCount state.
+ * @param {Object} props - The props of the component.
+ * @param {Function} props.handleCloseNotifications - The function to call when the close button is clicked.
+ * @param {number} props.unreadNotificationsCount - The current count of new notifications.
+ * @param {StateSetter<number>} props.setUnreadNotificationsCount - The function to update the newNotificationsCount state.
  *
  * @returns {NotificationsPanel} The NotificationsPanel component.
  */

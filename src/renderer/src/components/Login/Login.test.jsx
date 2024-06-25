@@ -5,7 +5,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import Login from './Login';
-import AuthProvider from '../../utils/AuthProvider/AuthProvider';
+import AuthProvider from '../../components/AuthProvider/AuthProvider';
 import { logInReq } from '../../services/authReqService/authReqService';
 import '@testing-library/jest-dom';
 

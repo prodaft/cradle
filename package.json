@@ -14,7 +14,7 @@
         "tailwind": "npx tailwindcss -i ./src/renderer/src/styles/input.css -o ./src/renderer/src/styles/output.css",
         "tailwind-w": "npx tailwindcss -i ./src/renderer/src/styles/input.css -o ./src/renderer/src/styles/output.css --watch",
         "render": "cd ./src/renderer/ && vite -c ../../vite.config.js build",
-        "jsdoc": "npx jsdoc -r src/renderer",
+        "jsdoc": "npx jsdoc -r src/renderer --readme ./README.md",
         "prettier": "npx prettier . --write"
     },
     "dependencies": {

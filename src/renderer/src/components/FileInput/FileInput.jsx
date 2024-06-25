@@ -15,8 +15,10 @@ import { useNavigate } from 'react-router-dom';
  * The user can upload multiple files at once. Each file is uploaded individually.
  * If any of the files fail to upload, the user is alerted.
  *
- * @param {import('../Editor/Editor').FileDataArray} fileData - the files uploaded via this instance of the component. This only contains the tag and the name of the file.
- * @param {(import('../Editor/Editor').FileDataArray) => void} setFileData - callback used when the files uploaded via this instance of the component change
+ * @function FileInput
+ * @param {Object} props - The props object
+ * @param {Array<FileData>} props.fileData - the files uploaded via this instance of the component. This only contains the tag and the name of the file.
+ * @param {StateSetter<Array<FileData>>} props.setFileData - callback used when the files uploaded via this instance of the component change
  * @returns {FileInput}
  * @constructor
  */

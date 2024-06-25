@@ -65,7 +65,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
         parseContent(markdownContent, fileData)
             .then((parsedContent) => setParsedContent(parsedContent))
             .catch(displayError(setAlert, navigate));
-    }, [markdownContent, fileData]);
+    }, [markdownContent, fileData, setParsedContent, setAlert, navigate]);
 
     useEffect(() => {
         if (id) {
@@ -83,7 +83,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
                     .catch(displayError(setAlert, navigate));
             }
         }
-    }, [id]);
+    }, [id, setMarkdownContent, setFileData, setHasUnsavedChanges, setAlert, navigate]);
 
     useEffect(() => {
         markdownContentRef.current = markdownContent;

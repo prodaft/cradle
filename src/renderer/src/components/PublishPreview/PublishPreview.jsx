@@ -24,6 +24,7 @@ import {
  * - JSON
  * - HTML
  *
+ * @function PublishPreview
  * @returns {PublishPreview}
  * @constructor
  */
@@ -40,8 +41,8 @@ export default function PublishPreview() {
         const mdReport = createMarkdownReportFromJson(responseData);
         parseContent(mdReport)
             .then((parsedContent) => setHtmlContent(parsedContent))
-            .catch(displayError(setAlert));
-    }, [responseData]);
+            .catch(displayError(setAlert, navigate));
+    }, [responseData, setHtmlContent, setAlert, navigate]);
 
     useEffect(() => {
         getPublishData(noteIds)

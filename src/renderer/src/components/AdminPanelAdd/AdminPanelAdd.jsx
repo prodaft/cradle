@@ -11,7 +11,9 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
  * - Description
  * When canceling or confirming the addition the user will be redirected to the AdminPanel.
  *
- * @param {string} type - The type of object to add. e.g. "Actor" or "Case".
+ * @function AdminPanelAdd
+ * @param {Object} props - The props object
+ * @param {string} props.type - The type of object to add. e.g. "Actor" or "Case".
  * @returns {AdminPanelAdd}
  * @constructor
  */

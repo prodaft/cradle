@@ -1,8 +1,7 @@
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import Sidebar from '../Sidebar/Sidebar';
 import Navbar from '../Navbar/Navbar';
 import { useCallback, useMemo, useState } from 'react';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import { IconoirProvider } from 'iconoir-react';
 import FleetingNotesPanel from '../FleetingNotesPanel/FleetingNotesPanel';
 import NotificationsPanel from '../NotificationsPanel/NotificationsPanel';
@@ -32,15 +31,13 @@ import { getNotificationCount } from '../../services/notificationsService/notifi
  * It fetches the count of new notifications from the server every 10 seconds and updates the newNotificationsCount state.
  * When the newNotificationsCount state changes, the Sidebar and NotificationsPanel are updated to reflect the new count.
  *
+ * @function Home
  * @returns {Home}
  * @constructor
  */
 export default function Home() {
-    const navigate = useNavigate();
-    const auth = useAuth();
     const [showFleetingNotes, setShowFleetingNotes] = useState(false);
     const [fleetingNotesRefreshCount, setFleetingNotesRefreshCount] = useState(0);
-    const location = useLocation();
     const [navbarContents, setNavbarContents] = useState([]);
     const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);

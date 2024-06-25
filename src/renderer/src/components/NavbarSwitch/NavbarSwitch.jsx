@@ -3,9 +3,12 @@ import { useId } from 'react';
 /**
  * NavbarSwitch
  * A switch component for the navbar.
- * @param {string} text - the label for the switch
- * @param {boolean} checked - the checked status of the switch
- * @param {() => void} onChange - the handler for the switch
+ *
+ * @function NavbarSwitch
+ * @param {Object} props - the props of the component
+ * @param {string} props.text - the label for the switch
+ * @param {boolean} props.checked - the checked status of the switch
+ * @param {Function} props.onChange - the handler for the switch
  * @returns {NavbarSwitch}
  * @constructor
  */

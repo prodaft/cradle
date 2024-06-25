@@ -14,11 +14,13 @@ import { useLocation } from 'react-router-dom';
  * If the dashboard is in publish mode, only publishable notes will be displayed.
  * While in publish mode, a user can delete a note. In this case, the note will be removed from the list of notes to publish.
  *
- * @param {Object} note - Note object
- * @param {(string) => void} setAlert - Function to set an alert
- * @param {boolean} publishMode - determine if the dashboard is in publish mode
- * @param {Array<number>} selectedNoteIds - an array of note ids - used to keep track of notes to publish
- * @param {(Array<number>) => void} setSelectedNoteIds - Function to set the note ids
+ * @function DashboardNote
+ * @param {Object} props - The props object
+ * @param {Note} props.note - Note object
+ * @param {StateSetter<Alert>} props.setAlert - Function to set an alert
+ * @param {boolean} props.publishMode - determine if the dashboard is in publish mode
+ * @param {Array<number>} props.selectedNoteIds - an array of note ids - used to keep track of notes to publish
+ * @param {StateSetter<Array<number>>} props.setSelectedNoteIds - Function to set the note ids
  * @returns {DashboardNote}
  * @constructor
  */
@@ -38,8 +40,8 @@ export default function DashboardNote({
     useEffect(() => {
         parseContent(note.content, note.files)
             .then((parsedContent) => setParsedContent(parsedContent))
-            .catch(displayError(setAlert));
-    }, [note.content, note.files]);
+            .catch(displayError(setAlert, navigate));
+    }, [note.content, note.files, setAlert, navigate]);
 
     // Attempt to change the publishable status of a note.
     // If successful, update the switch to reflect this. Otherwise, display an error.

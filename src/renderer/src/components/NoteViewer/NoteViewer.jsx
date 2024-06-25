@@ -20,6 +20,8 @@ import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
  * NoteViewer component
  * Fetches and displays the content of a note
  * Adds a button to Navbar to toggle between raw and parsed content
+ *
+ * @function NoteViewer
  * @returns {NoteViewer}
  * @constructor
  */
@@ -46,10 +48,10 @@ export default function NoteViewer() {
             .then((note) => {
                 parseContent(note.content, note.files)
                     .then((parsedContent) => setParsedContent(parsedContent))
-                    .catch(displayError(setAlert));
+                    .catch(displayError(setAlert, navigate));
             })
             .catch(displayError(setAlert, navigate));
-    }, [id]);
+    }, [id, navigate, setAlert]);
 
     const toggleView = useCallback(() => {
         setIsRaw((prevIsRaw) => !prevIsRaw);

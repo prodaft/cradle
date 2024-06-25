@@ -7,10 +7,12 @@ import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
  * When an item is clicked, the user is navigated to the corresponding dashboard.
  * It is used to display lists of entities such as actors and cases.
  *
+ * @function EntityListCard
  * @param {Object} props - The props of the component.
  * @param {string} props.title - The title of the list.
  * @param {Object[]} props.items - The list of items to display.
  * @returns {ListCard}
+ * @constructor
  */
 export default function EntityListCard({ title, items = [] }) {
     const navigate = useNavigate();

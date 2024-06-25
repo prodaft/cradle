@@ -13,6 +13,8 @@ import { useWindowSize } from '@uidotdev/usehooks';
  * Login component - renders the login form.
  * Sets the username and password states for the AuthProvider when successfully logged in with the server
  * On error, displays an error message.
+ *
+ * @function Login
  * @returns {Login}
  * @constructor
  */
@@ -40,7 +42,7 @@ export default function Login() {
                 }
                 navigate(from, { replace: true, state: state });
             })
-            .catch(displayError(setAlert, navigate));
+            .catch(displayError(setAlert));
     };
 
     return (

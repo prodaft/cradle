@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 /**
  * Custom hook to determine if the user's system is in light mode
  *
- * @returns {boolean} isLightMode
+ * @returns {boolean}
  */
 const useLightMode = () => {
     const [isLightMode, setIsLightMode] = useState(

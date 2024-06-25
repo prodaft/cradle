@@ -3,7 +3,7 @@ import { authAxios } from '../axiosInstance/axiosInstance';
 /**
  * Function to get the knowledge graph data from the API
  *
- * @returns {Promise<AxiosResponse<any>>}
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
 export function getGraphData() {
     return authAxios({
