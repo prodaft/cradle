@@ -35,11 +35,13 @@ import { useLocalStorage } from '@uidotdev/usehooks';
  *      - When creating a new note, the component saves the note as a fleeting note.
  *      - When editing an existing fleeting note, the component updates the note.
  *
- * @component
+ * @function TextEditor
+ * @param {Object} props
+ * @param {number} [props.autoSaveDelay=1000] - The delay in milliseconds before auto-saving the note
  * @returns {TextEditor}
  * @constructor
  */
-export default function TextEditor({ AUTO_SAVE_DELAY = 1000 }) {
+export default function TextEditor({ autoSaveDelay = 1000 }) {
     const [markdownContent, setMarkdownContent] = useState('');
     const markdownContentRef = useRef(markdownContent);
     const textEditorRef = useRef(null);
@@ -195,7 +197,7 @@ export default function TextEditor({ AUTO_SAVE_DELAY = 1000 }) {
         setHasUnsavedChanges(true);
         const autosaveTimer = setTimeout(() => {
             handleSaveNote('', true);
-        }, AUTO_SAVE_DELAY);
+        }, autoSaveDelay);
 
         return () => {
             clearTimeout(autosaveTimer);
