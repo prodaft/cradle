@@ -39,7 +39,7 @@ import { useLocalStorage } from '@uidotdev/usehooks';
  * @returns {TextEditor}
  * @constructor
  */
-export default function TextEditor() {
+export default function TextEditor({ AUTO_SAVE_DELAY = 1000 }) {
     const [markdownContent, setMarkdownContent] = useState('');
     const markdownContentRef = useRef(markdownContent);
     const textEditorRef = useRef(null);
@@ -58,7 +58,6 @@ export default function TextEditor() {
     const flexDirection = useChangeFlexDirectionBySize(textEditorRef);
 
     const NEW_NOTE_PLACEHOLDER_ID = 'new';
-    const AUTO_SAVE_DELAY = 2000;
 
     useEffect(() => {
         parseContent(markdownContent, fileData)
@@ -93,15 +92,20 @@ export default function TextEditor() {
     }, [fileData]);
 
     const isValidContent = () => {
-        if (!markdownContentRef.current) {
+        return markdownContentRef.current && markdownContentRef.current.trim();
+    };
+
+    const validateContent = () => {
+        if (isValidContent()) {
+            return true;
+        } else {
             setAlert({ show: true, message: 'Cannot save empty note.', color: 'red' });
             return false;
         }
-        return true;
     };
 
-    const handleSaveNote = (displayAlert) => {
-        if (!isValidContent()) return;
+    const handleSaveNote = (displayAlert, navigateOnNewNote) => {
+        if (!validateContent()) return;
         if (id) {
             const storedContent = markdownContentRef.current;
             const storedFileData = fileDataRef.current;
@@ -114,19 +118,25 @@ export default function TextEditor() {
                             refreshFleetingNotes();
                             setMarkdownContent('');
                             setFileData([]);
-                            navigate(`/editor/${res.data.id}`);
+                            setHasUnsavedChanges(false);
+                            if (navigateOnNewNote) {
+                                navigate(`/editor/${res.data.id}`);
+                            }
                         }
                     })
                     .catch(displayError(setAlert, navigate));
             } else {
                 updateFleetingNote(id, storedContent, storedFileData)
                     .then((response) => {
-                        if (displayAlert && response.status === 200) {
-                            setAlert({
-                                show: true,
-                                message: displayAlert,
-                                color: 'green',
-                            });
+                        if (response.status === 200) {
+                            setHasUnsavedChanges(false);
+                            if (displayAlert) {
+                                setAlert({
+                                    show: true,
+                                    message: displayAlert,
+                                    color: 'green',
+                                });
+                            }
                         }
                         refreshFleetingNotes();
                     })
@@ -154,7 +164,7 @@ export default function TextEditor() {
     };
 
     const handleMakeFinal = (publishable) => () => {
-        if (!isValidContent()) return;
+        if (!validateContent()) return;
         if (id) {
             saveFleetingNoteAsFinal(id, publishable)
                 .then((response) => {
@@ -174,7 +184,7 @@ export default function TextEditor() {
 
     // Autosave feature
     useEffect(() => {
-        if (!markdownContentRef.current) return;
+        if (!isValidContent()) return;
 
         // Avoid starting autosave when id changes
         if (prevIdRef.current !== id) {
@@ -182,46 +192,49 @@ export default function TextEditor() {
             return;
         }
 
-        console.log('Setting autosave timer');
         setHasUnsavedChanges(true);
         const autosaveTimer = setTimeout(() => {
-            handleSaveNote();
-            setHasUnsavedChanges(false);
+            handleSaveNote('', true);
         }, AUTO_SAVE_DELAY);
 
         return () => {
-            console.log('Clearing autosave timer');
             clearTimeout(autosaveTimer);
         };
     }, [markdownContent, fileData]);
 
+    useEffect(() => {
+        return () => {
+            if (hasUnsavedChanges && isValidContent()) {
+                handleSaveNote('', false);
+            }
+        };
+    }, []);
+
     useNavbarContents(
-        [
-            id !== NEW_NOTE_PLACEHOLDER_ID && [
-                <NavbarButton
-                    icon={<Trash />}
-                    text={'Delete'}
-                    onClick={() => setDialog(true)}
-                />,
-                <NavbarDropdown
-                    icon={<FloppyDiskArrowIn />}
-                    text={'Save As Final'}
-                    contents={[
-                        {
-                            label: 'Publishable',
-                            handler: handleMakeFinal(true),
-                        },
-                        {
-                            label: 'Not Publishable',
-                            handler: handleMakeFinal(false),
-                        },
-                    ]}
-                />,
-            ],
+        id !== NEW_NOTE_PLACEHOLDER_ID && [
+            <NavbarButton
+                icon={<Trash />}
+                text={'Delete'}
+                onClick={() => setDialog(true)}
+            />,
+            <NavbarDropdown
+                icon={<FloppyDiskArrowIn />}
+                text={'Save As Final'}
+                contents={[
+                    {
+                        label: 'Publishable',
+                        handler: handleMakeFinal(true),
+                    },
+                    {
+                        label: 'Not Publishable',
+                        handler: handleMakeFinal(false),
+                    },
+                ]}
+            />,
             <NavbarButton
                 icon={<FloppyDisk />}
                 text={'Save'}
-                onClick={() => handleSaveNote('Changes saved successfully.')}
+                onClick={() => handleSaveNote('Changes saved successfully.', true)}
             />,
         ],
         [auth, id],
@@ -240,10 +253,10 @@ export default function TextEditor() {
                 className={`w-full h-full rounded-md flex p-1.5 gap-1.5 ${flexDirection === 'flex-col' ? 'flex-col' : 'flex-row'} overflow-y-hidden relative`}
                 ref={textEditorRef}
             >
-                <div className='absolute bottom-4 right-4 px-4 py-2 rounded-md backdrop-blur-lg backdrop-filter bg-cradle3 bg-opacity-50 shadow-lg'>
+                <div className='absolute bottom-4 right-4 px-2 py-1 rounded-md backdrop-blur-lg backdrop-filter bg-cradle3 bg-opacity-50 shadow-lg text-zinc-300'>
                     {hasUnsavedChanges ? 'Changes Not Saved' : 'Saved'}
                 </div>
-                <AlertDismissible alert={alert} setAlert={setAlert}/>
+                <AlertDismissible alert={alert} setAlert={setAlert} />
                 <div
                     className={`${flexDirection === 'flex-col' ? 'h-1/2' : 'h-full'} w-full bg-gray-2 rounded-md`}
                 >
@@ -258,7 +271,7 @@ export default function TextEditor() {
                 <div
                     className={`${flexDirection === 'flex-col' ? 'h-1/2' : 'h-full'} w-full bg-gray-2 rounded-md`}
                 >
-                    <Preview htmlContent={parsedContent}/>
+                    <Preview htmlContent={parsedContent} />
                 </div>
             </div>
         </>
