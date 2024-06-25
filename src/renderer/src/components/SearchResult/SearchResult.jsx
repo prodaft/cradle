@@ -1,6 +1,6 @@
 /**
  * Component to show search results
- * 
+ *
  * @function SearchResult
  * @param {Object} props - The props of the component.
  * @param {string} props.name - the name of the search result

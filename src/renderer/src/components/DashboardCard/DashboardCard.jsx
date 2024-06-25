@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
  * DashboardCard component - This component is used to display a simple name card on the dashboard.
  * It can be clicked to navigate to a link.
  * Used for displaying cases, actors and metadata on the dashboard.
- * 
+ *
  * @function DashboardCard
  * @param {Object} props - The props of the component
  * @param {string} props.name - Name of the entity

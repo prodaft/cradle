@@ -3,7 +3,7 @@ import React from 'react';
 /**
  * Single filter for search dialog
  * Manages the state of the filters passed as parameters
- * 
+ *
  * @function SearchFilter
  * @param {Object} props - The props of the component.
  * @param {string} props.option - the name of the filter

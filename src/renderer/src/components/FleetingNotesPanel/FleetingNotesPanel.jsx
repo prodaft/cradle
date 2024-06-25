@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 /**
  * The FleetingNotesPanel component is a panel that displays all the fleeting notes of the user.
  * It is displayed when the user clicks the fleeting notes button in the Navbar.
- * 
+ *
  * @function FleetingNotesPanel
  * @param {Object} props - The props object
  * @param {Function} props.handleFleetingNotesButton - the function to handle the closing of the FleetingNotesPanel
@@ -19,7 +19,7 @@ import { useNavigate } from 'react-router-dom';
  */
 export default function FleetingNotesPanel({
     handleFleetingNotesButton,
-    fleetingNotesRefresh
+    fleetingNotesRefresh,
 }) {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [notes, setNotes] = useState([]);

@@ -1,7 +1,7 @@
 /**
  * NavbarDropdown
  * A dropdown menu component for the navbar.
- * 
+ *
  * @function NavbarDropdown
  * @param {Object} props - the props object
  * @param {Button} props.contents - the contents of the dropdown, need to be passed as an array of objects with label and handler fields

@@ -9,7 +9,7 @@ import {
 /**
  * Section for filters in the search dialog
  * Contains filters for entity type and entry type
- * 
+ *
  * @function SearchFilterSection
  * @param {Object} props - The props of the component.
  * @param {boolean} props.showFilters - to show or hide the filters

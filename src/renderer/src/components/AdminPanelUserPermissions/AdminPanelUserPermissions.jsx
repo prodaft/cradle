@@ -12,7 +12,7 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
  * - User permissions
  * The component will display the permissions for the user for each case.
  * The component will allow changing the access level for the user.
- * 
+ *
  * @function AdminPanelUserPermissions
  * @returns {AdminPanelUserPermissions}
  * @constructor

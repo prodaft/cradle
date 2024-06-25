@@ -113,18 +113,23 @@ const resolveMinioLinks = {
             URL.canParse(token.href)
         ) {
             const url = new URL(token.href);
-            const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+            const apiBaseUrl = new URL(import.meta.env.VITE_API_BASE_URL);
+
+            const apiBaseOrigin = apiBaseUrl.origin;
+            const apiBasePath = apiBaseUrl.pathname.endsWith('/')
+                ? apiBaseUrl.pathname.slice(0, -1)
+                : apiBaseUrl.pathname;
 
             if (
-                url.origin === apiBaseUrl &&
-                url.pathname === '/file-transfer/download/'
+                url.origin === apiBaseOrigin &&
+                url.pathname === `${apiBasePath}/file-transfer/download/`
             ) {
-                const apiDownloadPath = url.pathname + url.search;
+                const apiDownloadPath = url.href;
                 const minioCache =
                     JSON.parse(localStorage.getItem('minio-cache')) || {};
 
                 const fetchMinioDownloadLink = async () => {
-                    const response = await getDownloadLink(apiDownloadPath);
+                    const response = await getDownloadLink(url.href);
                     const presigned = response.data.presigned;
                     const expiry = Date.now() + 1000 * 60 * 5; // 5 minutes
                     return { presigned, expiry };

@@ -56,7 +56,7 @@ authAxios.interceptors.request.use(
         const expirationInSeconds = new Number(localStorage.getItem('expiration'));
         const expirationInMilliseconds = new Date(expirationInSeconds * 1000);
 
-        if(!accessToken) {
+        if (!accessToken) {
             return config;
         }
 
