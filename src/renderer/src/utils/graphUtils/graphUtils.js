@@ -1,17 +1,5 @@
 import * as d3 from 'd3';
-
-/**
- * entityColors - This object contains the colors for the different entity types in the graph.
- * The colors are used to distinguish between different types of entities in the graph.
- * The keys are the entity types, and the values are the corresponding hex color codes.
- *
- * @type {{actor: string, case: string, entry: string}}
- */
-export const entityColors = {
-    actor: '#155e75',
-    case: '#7e22ce',
-    entry: '#ea580c',
-};
+import { entityGraphColors } from '../entityDefinitions/entityDefinitions';
 
 /**
  * preprocessData - This function is used to preprocess the raw data into a format suitable for the D3 force simulation.
@@ -43,7 +31,7 @@ export const preprocessData = (data) => {
     nodes = data.entities.map((entity) => ({
         id: entity.id,
         label: entity.subtype ? `${entity.subtype}: ${entity.name}` : entity.name,
-        color: entityColors[entity.type],
+        color: entityGraphColors[entity.type],
         name: entity.name,
         type: entity.type,
         subtype: entity.subtype,
@@ -186,9 +174,9 @@ export const visualizeGraph = (
         .enter()
         .append('text')
         // Add classes and attributes to the text elements
-        .attr('dx', (d) => Math.max(10, d.degree * nodeRadiusCoefficient + 2))
+        .attr('dx', (d) => Math.max(14, d.degree * nodeRadiusCoefficient + 4))
         .attr('dy', '.35em')
-        .attr('class', 'text-xs fill-current dark:fill-white')
+        .attr('class', 'text-xs dark:fill-white')
         .text((d) => d.label);
 
     // Set up the D3 force simulation with the nodes and links

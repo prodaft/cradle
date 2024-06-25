@@ -90,7 +90,7 @@ export default function Home() {
                         handleNotifications={toggleNotifications}
                     />
                     <div
-                        className={`transition-all duration-150 ${showNotifications ? 'max-w-96 w-full' : 'w-0'} overflow-hidden`}
+                        className={`transition-all duration-150 ${showNotifications ? 'w-[40rem]' : 'w-0'} overflow-hidden`}
                     >
                         {showNotifications && (
                             <NotificationsPanel
@@ -111,7 +111,7 @@ export default function Home() {
                         />
                     </div>
                     <div
-                        className={`transition-all duration-150 ${showFleetingNotes ? 'max-w-96 w-full' : 'w-0'} overflow-hidden`}
+                        className={`transition-all duration-150 ${showFleetingNotes ? 'w-[40rem]' : 'w-0'} overflow-hidden`}
                     >
                         {showFleetingNotes && (
                             <FleetingNotesPanel
