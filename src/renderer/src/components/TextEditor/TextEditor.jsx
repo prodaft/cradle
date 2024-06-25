@@ -256,7 +256,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
                 ref={textEditorRef}
             >
                 <div className='absolute bottom-4 right-4 px-2 py-1 rounded-md backdrop-blur-lg backdrop-filter bg-cradle3 bg-opacity-50 shadow-lg text-zinc-300'>
-                    {hasUnsavedChanges ? 'Changes Not Saved' : 'Saved'}
+                    {isValidContent() ?  hasUnsavedChanges ? 'Changes Not Saved' : 'Saved' : 'Cannot Save Empty Note' }
                 </div>
                 <AlertDismissible alert={alert} setAlert={setAlert} />
                 <div
