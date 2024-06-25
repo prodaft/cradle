@@ -14,7 +14,7 @@ export const AuthContext = createContext();
  * The context also provides a function to check if the user is authenticated
  * The context is stored in local storage for persistence
  * This should be used only once to wrap the application in the App.jsx file
- * 
+ *
  * @function AuthProvider
  * @param {Array<React.ReactElement>} children - the children of the component
  * @returns {AuthProvider}
@@ -74,4 +74,4 @@ export default function AuthProvider({ children }) {
             {children}
         </AuthContext.Provider>
     );
-};
+}
