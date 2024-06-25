@@ -8,7 +8,7 @@ import React from 'react';
  * @param {string} props.sectionType - the type of section (header, content, footer)
  * @param {string} props.justify - the alignment of the items in the section
  * @param {string} props.height - the height of the section
- * @param {Array<React.Component} props.children - the children to display in the section
+ * @param {Array<React.Component>} props.children - the children to display in the section
  * @returns {SidebarSection}
  * @constructor
  */

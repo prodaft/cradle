@@ -97,23 +97,23 @@ export const renderDashboardSectionWithInaccessibleEntities = (
     const inaccessibleEntitiesDiv =
         inaccessibleEntities && inaccessibleEntities.length > 0
             ? [
-                <div
-                    key='inaccessible-entities'
-                    className='w-full h-fit mt-1 flex flex-row justify-between items-center text-zinc-400'
-                >
-                    <p>
-                        {inaccessibleEntitiesMessage}
-                        <span
-                            className='underline cursor-pointer'
-                            onClick={() =>
-                                handleRequestEntityAccess(inaccessibleEntities)
-                            }
-                        >
-                            {requestAccessMessage}
-                        </span>
-                    </p>
-                </div>,
-            ]
+                  <div
+                      key='inaccessible-entities'
+                      className='w-full h-fit mt-1 flex flex-row justify-between items-center text-zinc-400'
+                  >
+                      <p>
+                          {inaccessibleEntitiesMessage}
+                          <span
+                              className='underline cursor-pointer'
+                              onClick={() =>
+                                  handleRequestEntityAccess(inaccessibleEntities)
+                              }
+                          >
+                              {requestAccessMessage}
+                          </span>
+                      </p>
+                  </div>,
+              ]
             : [];
 
     return (

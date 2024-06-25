@@ -18,7 +18,7 @@ import { useNavigate } from 'react-router-dom';
  * @function FileInput
  * @param {Object} props - The props object
  * @param {Array<FileData>} props.fileData - the files uploaded via this instance of the component. This only contains the tag and the name of the file.
- * @param {(Array<FileData>) => void} props.setFileData - callback used when the files uploaded via this instance of the component change
+ * @param {StateSetter<Array<FileData>>} props.setFileData - callback used when the files uploaded via this instance of the component change
  * @returns {FileInput}
  * @constructor
  */
