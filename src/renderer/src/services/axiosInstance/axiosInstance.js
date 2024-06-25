@@ -28,8 +28,9 @@ const refreshAccessToken = async () => {
     }
 
     const response = await noAuthAxios({
+        baseURL: import.meta.env.VITE_API_BASE_URL,
         method: 'POST',
-        url: `${import.meta.env.VITE_API_BASE_URL}/users/refresh/`,
+        url: '/users/refresh/',
         data: {
             refresh: refreshToken,
         },
