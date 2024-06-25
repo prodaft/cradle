@@ -38,16 +38,16 @@ export default function Welcome() {
     return (
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
-            <div className='h-full w-full flex flex-col justify-between items-center overflow-auto bg-gradient-to-tl from-cradle1 to-gray-2'>
+            <div className='h-full w-full flex flex-col justify-between items-center overflow-auto dark:bg-gradient-to-tl dark:from-cradle1 dark:to-gray-2'>
                 <div className='flex flex-row items-center justify-around py-10 w-[80%]'>
                     <div className='px-8 hidden md:block'>
                         <Logo width='200px' />
                     </div>
                     <span className='flex flex-col'>
-                        <h1 className='text-zinc-300 text-6xl text-center md:text-left'>
+                        <h1 className='dark:text-zinc-300 text-6xl text-center md:text-left'>
                             CRADLE
                         </h1>
-                        <h3 className='text-zinc-300 text-2xl text-center md:text-left'>
+                        <h3 className='dark:text-zinc-300 text-2xl text-center md:text-left'>
                             A Hub For Managing Cyber Threat Intelligence Research Output
                         </h3>
                     </span>
@@ -55,7 +55,7 @@ export default function Welcome() {
 
                 <div className='flex flex-col w-[80%] mx-auto'>
                     <div
-                        className={`flex ${flexDirection} justify-between text-zinc-300`}
+                        className={`flex ${flexDirection} justify-between dark:text-zinc-300`}
                         ref={entityListsDiv}
                     >
                         <div
