@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useAuth } from '../../hooks/useAuth/useAuth';
+import useAuth from '../../hooks/useAuth/useAuth';
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import useLightMode from '../../hooks/useLightMode/useLightMode';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
@@ -256,7 +256,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
                 ref={textEditorRef}
             >
                 <div className='absolute bottom-4 right-4 px-2 py-1 rounded-md backdrop-blur-lg backdrop-filter bg-cradle3 bg-opacity-50 shadow-lg text-zinc-300'>
-                    {isValidContent() ?  hasUnsavedChanges ? 'Changes Not Saved' : 'Saved' : 'Cannot Save Empty Note' }
+                    {isValidContent() ? hasUnsavedChanges ? 'Changes Not Saved' : 'Saved' : 'Cannot Save Empty Note'}
                 </div>
                 <AlertDismissible alert={alert} setAlert={setAlert} />
                 <div

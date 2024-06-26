@@ -2,7 +2,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import NotificationsPanel from './NotificationsPanel';
-import { useAuth } from '../../hooks/useAuth/useAuth';
+import useAuth from '../../hooks/useAuth/useAuth';
 import { getNotifications } from '../../services/notificationsService/notificationsService';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -27,9 +27,9 @@ describe('NotificationsPanel', () => {
         const { getByText } = render(
             <MemoryRouter>
                 <NotificationsPanel
-                    handleCloseNotifications={() => {}}
+                    handleCloseNotifications={() => { }}
                     unreadNotificationsCount={2}
-                    setUnreadNotificationsCount={() => {}}
+                    setUnreadNotificationsCount={() => { }}
                 />
             </MemoryRouter>,
         );
@@ -48,9 +48,9 @@ describe('NotificationsPanel', () => {
         const { getByText } = render(
             <MemoryRouter>
                 <NotificationsPanel
-                    handleCloseNotifications={() => {}}
+                    handleCloseNotifications={() => { }}
                     unreadNotificationsCount={0}
-                    setUnreadNotificationsCount={() => {}}
+                    setUnreadNotificationsCount={() => { }}
                 />
             </MemoryRouter>,
         );
@@ -74,7 +74,7 @@ describe('NotificationsPanel', () => {
                 <NotificationsPanel
                     handleCloseNotifications={mockHandleNotificationsButton}
                     unreadNotificationsCount={0}
-                    setUnreadNotificationsCount={() => {}}
+                    setUnreadNotificationsCount={() => { }}
                 />
             </MemoryRouter>,
         );

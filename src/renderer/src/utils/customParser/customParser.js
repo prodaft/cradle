@@ -20,7 +20,7 @@ const regexes = {
         /\[\[([^:|]+?):((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\]/g, // [[metadata-type:name(|alias)]]
 };
 
-// Define how each case should be handled
+// TODO handle escaped characters (e.g. '\]' '\|') when parsing. This needs to be done on the backend as well.
 const handlers = {
     // Take the user to the actor's dashboard
     actors: (text) => {

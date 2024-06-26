@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Search } from 'iconoir-react';
 import SearchFilterSection from '../SearchFilterSection/SearchFilterSection';
 import { queryEntities } from '../../services/queryService/queryService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
+import useAuth from '../../hooks/useAuth/useAuth';
 import AlertBox from '../AlertBox/AlertBox';
 import SearchResult from '../SearchResult/SearchResult';
 import { useNavigate } from 'react-router-dom';

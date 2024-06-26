@@ -9,7 +9,7 @@ import {
 } from 'iconoir-react';
 import SidebarItem from '../SidebarItem/SidebarItem';
 import SidebarSection from '../SidebarSection/SidebarSection';
-import { useAuth } from '../../hooks/useAuth/useAuth';
+import useAuth from '../../hooks/useAuth/useAuth';
 import { HomeAltSlimHoriz } from 'iconoir-react/regular';
 import { useNavigate } from 'react-router-dom';
 
