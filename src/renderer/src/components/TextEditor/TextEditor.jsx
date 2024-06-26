@@ -60,19 +60,28 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
 
     const NEW_NOTE_PLACEHOLDER_ID = 'new';
 
+    // When the contents change update the preview
     useEffect(() => {
         parseContent(markdownContent, fileData)
             .then((parsedContent) => setParsedContent(parsedContent))
             .catch(displayError(setAlert, navigate));
     }, [markdownContent, fileData, setParsedContent, setAlert, navigate]);
 
+    // When the id changes prepare the editor
     useEffect(() => {
         if (id) {
+            // When the editor is on the 'new' path clear contents to prepare for new note creation
             if (id === NEW_NOTE_PLACEHOLDER_ID) {
+                //clear contents
                 setMarkdownContent('');
                 setFileData([]);
                 setHasUnsavedChanges(true);
+                //ensure the previous note id is reset
+                prevIdRef.current = NEW_NOTE_PLACEHOLDER_ID;
             } else {
+                // Check that if the last page  you were on is the same as the one you are now
+                // If you navigate again to the same page don't re-fetch data
+                if (id === prevIdRef.current) return;
                 getFleetingNoteById(id)
                     .then((response) => {
                         setMarkdownContent(response.data.content);
@@ -84,18 +93,22 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
         }
     }, [id, setMarkdownContent, setFileData, setHasUnsavedChanges, setAlert, navigate]);
 
+    // Ensure the ref to the markdown content is correct
     useEffect(() => {
         markdownContentRef.current = markdownContent;
     }, [markdownContent]);
 
+    // Ensure the ref to the file data is correct
     useEffect(() => {
         fileDataRef.current = fileData;
     }, [fileData]);
 
+    // Function to check if the contents represent a valid note
     const isValidContent = () => {
         return markdownContentRef.current && markdownContentRef.current.trim();
     };
 
+    // Function that checks if contents are valid and display error in case not
     const validateContent = () => {
         if (isValidContent()) {
             return true;
@@ -105,28 +118,30 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
         }
     };
 
-    const handleSaveNote = (displayAlert, navigateOnNewNote) => {
+    // Function to save a note
+    // If the note you are working on is on the 'new' path create new fleeting note
+    // If the note has an id update the fleeting note
+    const handleSaveNote = (displayAlert) => {
         if (!validateContent()) return;
         if (id) {
             const storedContent = markdownContentRef.current;
             const storedFileData = fileDataRef.current;
 
             if (id === NEW_NOTE_PLACEHOLDER_ID) {
+                // Case for new notes
                 addFleetingNote(storedContent, storedFileData)
                     .then((res) => {
                         if (res.status === 200) {
-                            // Clear local storage on success
                             refreshFleetingNotes();
-                            setMarkdownContent('');
-                            setFileData([]);
                             setHasUnsavedChanges(false);
-                            if (navigateOnNewNote) {
-                                navigate(`/editor/${res.data.id}`);
-                            }
+                            // Set previous id as the one from the response to avoid re-fetching the note
+                            prevIdRef.current = res.data.id;
+                            navigate(`/editor/${res.data.id}`);
                         }
                     })
                     .catch(displayError(setAlert, navigate));
             } else {
+                // Case for existing fleeting notes
                 updateFleetingNote(id, storedContent, storedFileData)
                     .then((response) => {
                         if (response.status === 200) {
@@ -146,6 +161,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
         }
     };
 
+    // Function to delete a fleeting note you are working on
     const handleDeleteNote = () => {
         if (id) {
             deleteFleetingNote(id)
@@ -157,13 +173,15 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
                             color: 'green',
                         });
                         refreshFleetingNotes();
-                        navigate('/');
+                        // Navigate to new note page on deletion
+                        navigate('/editor/new');
                     }
                 })
                 .catch(displayError(setAlert, navigate));
         }
     };
 
+    // Function to make final note
     const handleMakeFinal = (publishable) => () => {
         if (!validateContent()) return;
         if (id) {
@@ -176,7 +194,8 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
                             color: 'green',
                         });
                         refreshFleetingNotes();
-                        navigate('/');
+                        // Navigate to new note page on deletion
+                        navigate('/editor/new');
                     }
                 })
                 .catch(displayError(setAlert, navigate));
@@ -185,40 +204,48 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
 
     // Autosave feature
     useEffect(() => {
+        // If the content is not valid do not attempt to save
         if (!isValidContent()) return;
 
-        // Avoid starting autosave when id changes
+        // Avoid starting autosave when id changes (new page navigation)
+        // Additionally set the prev id correctly
         if (prevIdRef.current !== id) {
             prevIdRef.current = id;
             return;
         }
 
+        // Set the unsaved changes flag to true
         setHasUnsavedChanges(true);
+        // Start the timer for autosave
         const autosaveTimer = setTimeout(() => {
-            handleSaveNote('', true);
+            handleSaveNote('');
         }, autoSaveDelay);
 
+        // In case there are new changes detected reset the timer
         return () => {
             clearTimeout(autosaveTimer);
         };
     }, [markdownContent, fileData]);
 
+    // On component dismount reset the prevIdRef
     useEffect(() => {
         return () => {
-            if (hasUnsavedChanges && isValidContent()) {
-                handleSaveNote('', false);
-            }
+            prevIdRef.current = NEW_NOTE_PLACEHOLDER_ID;
         };
     }, []);
 
+    // Use utilities for navbar contents
+    // Set the id as dependency
     useNavbarContents(
         id !== NEW_NOTE_PLACEHOLDER_ID && [
             <NavbarButton
+                key='editor-delete-btn'
                 icon={<Trash />}
                 text={'Delete'}
                 onClick={() => setDialog(true)}
             />,
             <NavbarDropdown
+                key='editor-save-final-btn'
                 icon={<FloppyDiskArrowIn />}
                 text={'Save As Final'}
                 contents={[
@@ -233,9 +260,10 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
                 ]}
             />,
             <NavbarButton
+                key='editor-save-btn'
                 icon={<FloppyDisk />}
                 text={'Save'}
-                onClick={() => handleSaveNote('Changes saved successfully.', true)}
+                onClick={() => handleSaveNote('Changes saved successfully.')}
             />,
         ],
         [auth, id],

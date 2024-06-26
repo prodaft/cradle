@@ -75,7 +75,7 @@ describe('preprocessData', () => {
 
         expect(result.nodes.find((node) => node.id === '1')).toEqual({
             id: '1',
-            label: 'Entity1',
+            label: 'case: Entity1',
             color: entityGraphColors.case,
             name: 'Entity1',
             type: 'case',

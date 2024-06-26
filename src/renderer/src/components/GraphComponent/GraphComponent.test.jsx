@@ -38,7 +38,7 @@ describe('GraphComponent', () => {
             },
         });
         const { findByText } = render(<GraphComponent />);
-        const nodeLabel = await findByText('Entity1');
+        const nodeLabel = await findByText('case: Entity1');
         expect(nodeLabel).toBeInTheDocument();
     });
 
@@ -60,8 +60,8 @@ describe('GraphComponent', () => {
         const searchInput = await findByPlaceholderText('Search Graph');
         fireEvent.change(searchInput, { target: { value: 'Entity2' } });
         fireEvent.keyDown(searchInput, { key: 'Enter' });
-        const nodeLabel = await queryByText('Entity2');
+        const nodeLabel = await queryByText('actor: Entity2');
         expect(nodeLabel).toBeInTheDocument();
-        expect(await queryByText('Entity1')).not.toBeInTheDocument();
+        expect(await queryByText('case: Entity1')).not.toBeInTheDocument();
     });
 });
