@@ -30,7 +30,9 @@ export const preprocessData = (data) => {
     // Map over the entities in the data and create a new node for each entity
     nodes = data.entities.map((entity) => ({
         id: entity.id,
-        label: entity.subtype ? `${entity.subtype}: ${entity.name}` : entity.name,
+        label: entity.subtype
+            ? `${entity.subtype}: ${entity.name}`
+            : `${entity.type}: ${entity.name}`,
         color: entityGraphColors[entity.type],
         name: entity.name,
         type: entity.type,
