@@ -4,7 +4,7 @@ import globals from 'globals';
 
 export default [
     {
-        ignores: ['*out/*'],
+        ignores: ['*out/*', 'node_modules/*', 'docs/*'],
     },
     { languageOptions: { globals: globals.browser } },
     pluginJs.configs.recommended,

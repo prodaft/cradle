@@ -11,6 +11,8 @@ import { validatePassword } from '../../utils/validatePassword/validatePassword'
  * Register new user in the system.
  * On successful registration, user is redirected to the login page.
  * On error, displays an error message.
+ *
+ * @function Register
  * @returns {Register}
  * @constructor
  */
@@ -35,7 +37,7 @@ export default function Register() {
             setAlert({
                 show: true,
                 message:
-                    'Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
+                    'Password must be at least 12 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
                 color: 'red',
             });
             return;

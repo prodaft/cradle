@@ -1,22 +1,14 @@
-import axios from 'axios';
-
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
-
+import { authAxios } from '../axiosInstance/axiosInstance';
 /**
  * Function to get statistics of a user from the API.
  * It returns recent activity about actors, cases, notes
  * See the OpenAPI documentation for more information on what this should return.
  *
- * @param {string} token - the (JWT) token of the user
- * @returns {Promise<axios.AxiosResponse<any>>}
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
-export async function getStatistics(token) {
-    return axios({
+export async function getStatistics() {
+    return authAxios({
         method: 'GET',
         url: '/statistics/',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
     });
 }

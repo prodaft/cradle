@@ -1,18 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import * as d3 from 'd3';
 import 'tailwindcss/tailwind.css';
 import { getGraphData } from '../../services/graphService/graphService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import { Menu, RefreshDouble, Search, Xmark } from 'iconoir-react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { useNavigate } from 'react-router-dom';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
-import {
-    preprocessData,
-    entityColors,
-    visualizeGraph,
-} from '../../utils/graphUtils/graphUtils';
+import { preprocessData, visualizeGraph } from '../../utils/graphUtils/graphUtils';
+import { entityGraphColors } from '../../utils/entityDefinitions/entityDefinitions';
 
 /**
  * The component displays a graph visualization using D3.js.
@@ -32,10 +27,11 @@ import {
  * When hovering over an edge, the component highlights the edge and its source and target nodes.
  * When clicking on a node, the component displays a panel with information about the node and provides a link to navigate to the node's dashboard.
  *
+ * @function GraphComponent
  * @returns {GraphComponent}
  * @constructor
  */
-const GraphComponent = () => {
+export default function GraphComponent() {
     const [data, setData] = useState({ nodes: [], links: [] });
     const defaultStrokeWidth = 2;
     const [spacingCoefficient, setSpacingCoefficient] = useState(48);
@@ -46,7 +42,6 @@ const GraphComponent = () => {
     const [searchValue, setSearchValue] = useState('');
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [highlightedNode, setHighlightedNode] = useState(null);
-    const auth = useAuth();
     const navigate = useNavigate();
 
     // Reference to the SVG element used to render the graph
@@ -81,13 +76,13 @@ const GraphComponent = () => {
 
     // Function to fetch the graph data from the server
     const fetchGraphData = useCallback(() => {
-        getGraphData(auth.access)
+        getGraphData()
             .then((response) => {
                 const data = preprocessData(response.data);
                 setData(data);
             })
-            .catch(displayError(setAlert));
-    }, [auth.access, setAlert]);
+            .catch(displayError(setAlert, navigate));
+    }, [setAlert]);
 
     // Fetch the graph data on component mount
     useEffect(() => {
@@ -143,7 +138,7 @@ const GraphComponent = () => {
             <div className='w-full h-full relative overflow-hidden text-white'>
                 <div className='absolute bottom-4 right-4 flex flex-col p-4 w-fit h-fit space-y-1 bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-md'>
                     <div className='flex flex-col'>
-                        {Object.entries(entityColors).map(([type, color]) => (
+                        {Object.entries(entityGraphColors).map(([type, color]) => (
                             <div
                                 key={type}
                                 className='flex flex-row items-center space-x-2'
@@ -176,20 +171,22 @@ const GraphComponent = () => {
                                 </button>
                             </div>
                             <div>Connections: {highlightedNode.degree}</div>
-                            <div
-                                className='underline cursor-pointer'
-                                onClick={() =>
-                                    navigate(
-                                        createDashboardLink({
-                                            name: highlightedNode.name,
-                                            type: highlightedNode.type,
-                                            subtype: highlightedNode.subtype,
-                                        }),
-                                    )
-                                }
-                            >
-                                Navigate to dashboard
-                            </div>
+                            {highlightedNode.type !== 'metadata' && (
+                                <div
+                                    className='underline cursor-pointer'
+                                    onClick={() =>
+                                        navigate(
+                                            createDashboardLink({
+                                                name: highlightedNode.name,
+                                                type: highlightedNode.type,
+                                                subtype: highlightedNode.subtype,
+                                            }),
+                                        )
+                                    }
+                                >
+                                    Navigate to dashboard
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -199,7 +196,7 @@ const GraphComponent = () => {
                         className='bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg text-white p-2 rounded'
                         data-testid='toggle-controls'
                     >
-                        <Menu height='1.2em' width='1.2em' className='text-zinc-400' />
+                        <Menu height='1.2em' width='1.2em' className='text-zinc-300' />
                     </button>
                 </div>
                 {showControls && (
@@ -317,6 +314,4 @@ const GraphComponent = () => {
             </div>
         </>
     );
-};
-
-export default GraphComponent;
+}

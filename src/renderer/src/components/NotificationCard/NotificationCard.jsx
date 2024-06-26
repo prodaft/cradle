@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { markUnread } from '../../services/notificationsService/notificationsService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { Mail, MailOpen } from 'iconoir-react';
 import { changeAccess } from '../../services/adminService/adminService';
+import { useNavigate } from 'react-router-dom';
 
 /**
- * The notification object contains the details of a notification.
- * It is equivalent to the Notification type in the backend.
  * @typedef {Object} Notification
  * @property {string} id - The unique identifier of the notification.
  * @property {string} message - The message contained in the notification.
@@ -16,6 +14,13 @@ import { changeAccess } from '../../services/adminService/adminService';
  * @property {string} notification_type - The type of notification.
  * @property {string} case_id - The case ID associated with the notification.
  * @property {string} requesting_user_id - The user ID of the user requesting access.
+ * @description The notification object contains the details of a notification. It is equivalent to the Notification type in the backend.
+ */
+
+/**
+ * @function updateFlaggedNotificationsCount
+ * @param {number} prevCount - The previous count of flagged notifications.
+ * @returns {number} The updated count of flagged notifications.
  */
 
 /**
@@ -26,11 +31,13 @@ import { changeAccess } from '../../services/adminService/adminService';
  * The options include 'Read' and 'Read/Write' access levels, when clicked, the access level is changed for the user requesting access.
  * The component also provides a button to mark the notification as read or unread.
  *
- * @component
- * @param {Notification} notification - The notification object containing the details of the notification.
- * @param {(Object) => void} setAlert - A function to set an alert in the parent component
- * @param updateFlaggedNotificationsCount - A function to update the count of flagged notifications in the parent component
+ * @function NotificationCard
+ * @param {Object} props - The props of the component.
+ * @param {Notification} props.notification - The notification object containing the details of the notification.
+ * @param {StateSetter<Alert>} props.setAlert - A function to set an alert in the parent component
+ * @param {updateFlaggedNotificationsCount} props.updateFlaggedNotificationsCount - A function to update the count of flagged notifications in the parent component
  * @returns {NotificationCard} A card displaying the details of the notification.
+ * @constructor
  */
 export default function NotificationCard({
     notification,
@@ -47,10 +54,10 @@ export default function NotificationCard({
         requesting_user_id,
     } = notification;
     const [isMarkedUnread, setIsMarkedUnread] = useState(is_marked_unread);
-    const auth = useAuth();
+    const navigate = useNavigate();
 
     const handleMarkUnread = (id) => {
-        markUnread(auth.access, id, !isMarkedUnread)
+        markUnread(id, !isMarkedUnread)
             .then((response) => {
                 if (response.status === 200) {
                     if (isMarkedUnread) {
@@ -61,11 +68,11 @@ export default function NotificationCard({
                     setIsMarkedUnread(!isMarkedUnread);
                 }
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     };
 
     const handleChangeAccess = (newAccess) => () => {
-        changeAccess(auth.access, requesting_user_id, case_id, newAccess)
+        changeAccess(requesting_user_id, case_id, newAccess)
             .then((response) => {
                 if (response.status === 200) {
                     setAlert({
@@ -75,7 +82,7 @@ export default function NotificationCard({
                     });
                 }
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     };
 
     return (

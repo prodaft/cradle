@@ -4,18 +4,19 @@ import EntityListCard from '../EntityListCard/EntityListCard';
 import NoteListCard from '../NoteListCard/NoteListCard';
 import useChangeFlexDirectionBySize from '../../hooks/useChangeFlexDirectionBySize/useChangeFlexDirectionBySize';
 import { getStatistics } from '../../services/statisticsService/statisticsService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * The Welcome component is the landing page of the application.
  * It displays a welcome message and some statistics about the actors, cases, and notes in the system.
  *
+ * @function Welcome
  * @returns {Welcome}
+ * @constructor
  */
 export default function Welcome() {
-    const auth = useAuth();
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [actors, setActors] = useState([]);
     const [cases, setCases] = useState([]);
@@ -23,31 +24,32 @@ export default function Welcome() {
     const entityListsDiv = useRef(null);
     const flexDirection = useChangeFlexDirectionBySize(entityListsDiv);
     const entityCardWrapperWidth = flexDirection === 'flex-row' ? 'w-[45%]' : 'w-full';
+    const navigate = useNavigate();
 
     useEffect(() => {
-        getStatistics(auth.access)
+        getStatistics()
             .then((response) => {
                 const { actors, cases, notes } = response.data;
                 setActors(actors);
                 setCases(cases);
                 setNotes(notes);
             })
-            .catch(displayError(setAlert));
-    }, [auth.access]);
+            .catch(displayError(setAlert, navigate));
+    }, []);
 
     return (
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
-            <div className='h-full w-full flex flex-col justify-between items-center overflow-auto bg-gradient-to-tl from-cradle1 to-gray-2'>
+            <div className='h-full w-full flex flex-col justify-between items-center overflow-auto dark:bg-gradient-to-tl dark:from-cradle1 dark:to-gray-2'>
                 <div className='flex flex-row items-center justify-around py-10 w-[80%]'>
                     <div className='px-8 hidden md:block'>
                         <Logo width='200px' />
                     </div>
                     <span className='flex flex-col'>
-                        <h1 className='text-zinc-300 text-6xl text-center md:text-left'>
+                        <h1 className='dark:text-zinc-300 text-6xl text-center md:text-left'>
                             CRADLE
                         </h1>
-                        <h3 className='text-zinc-300 text-2xl text-center md:text-left'>
+                        <h3 className='dark:text-zinc-300 text-2xl text-center md:text-left'>
                             A Hub For Managing Cyber Threat Intelligence Research Output
                         </h3>
                     </span>
@@ -55,7 +57,7 @@ export default function Welcome() {
 
                 <div className='flex flex-col w-[80%] mx-auto'>
                     <div
-                        className={`flex ${flexDirection} justify-between text-zinc-300`}
+                        className={`flex ${flexDirection} justify-between dark:text-zinc-300`}
                         ref={entityListsDiv}
                     >
                         <div

@@ -1,40 +1,27 @@
-import axios from 'axios';
-
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
-
+import { authAxios } from '../axiosInstance/axiosInstance';
 /**
  * Function to get dashboard data from the API
  * Passes the token and path to the API
  *
- * @param {string} token - The (JWT) token to authenticate the request
- * @param {string} path - the API endpoint for a specific dashboard
- * @returns {Promise<AxiosResponse<any>> | *}
+ * @param {string} path - the API endpoint for a specific dashboard (see the OpenAPI specification)
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function getDashboardData(token, path) {
-    return axios({
+export function getDashboardData(path) {
+    return authAxios({
         method: 'GET',
         url: path,
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
     });
 }
 
 /**
  * Function to request access to a case
  *
- * @param {string} token - The (JWT) token to authenticate the request
  * @param {string} id - The case ID to request access to
- * @returns {Promise<AxiosResponse<any>>}
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function requestCaseAccess(token, id) {
-    return axios({
+export function requestCaseAccess(id) {
+    return authAxios({
         method: 'POST',
         url: `/access/request/${id}/`,
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
     });
 }

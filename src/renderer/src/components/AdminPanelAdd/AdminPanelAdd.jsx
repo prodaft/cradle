@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import React, { useState } from 'react';
 import AlertBox from '../AlertBox/AlertBox';
 import { createActor, createCase } from '../../services/adminService/adminService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 
 /**
@@ -12,7 +11,9 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
  * - Description
  * When canceling or confirming the addition the user will be redirected to the AdminPanel.
  *
- * @param {string} type - The type of object to add. e.g. "Actor" or "Case".
+ * @function AdminPanelAdd
+ * @param {Object} props - The props object
+ * @param {string} props.type - The type of object to add. e.g. "Actor" or "Case".
  * @returns {AdminPanelAdd}
  * @constructor
  */
@@ -22,20 +23,19 @@ export default function AdminPanelAdd({ type }) {
     const [description, setDescription] = useState('');
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
-    const auth = useAuth();
 
     const handleSubmit = async () => {
         const data = { name: name, description: description };
 
         try {
             if (type === 'Actor') {
-                await createActor(data, auth.access);
+                await createActor(data);
             } else if (type === 'Case') {
-                await createCase(data, auth.access);
+                await createCase(data);
             }
             navigate('/admin');
         } catch (err) {
-            displayError(setAlert)(err);
+            displayError(setAlert, navigate)(err);
         }
     };
 

@@ -3,6 +3,7 @@ import { markedHighlight } from 'marked-highlight';
 import { Marked } from 'marked';
 import 'prismjs/themes/prism-tomorrow.css';
 import {
+    entityMarkdownColors,
     entrySubtypes,
     metadataSubtypes,
 } from '../entityDefinitions/entityDefinitions';
@@ -10,14 +11,9 @@ import { createDashboardLink } from '../dashboardUtils/dashboardUtils';
 import { prependLinks } from '../textEditorUtils/textEditorUtils';
 import { getDownloadLink } from '../../services/fileUploadService/fileUploadService';
 
-const styleClasses = {
-    actors: 'text-purple-700',
-    cases: 'text-cyan-800',
-    entries: 'text-orange-600',
-    metadata: 'text-emerald-700 underline',
-};
-
 const regexes = {
+    cradleLink:
+        /^\[\[([^:|]+?):((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\]/,
     actors: /\[\[actor:((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\]/g, // [[actor:name(|alias)]]
     cases: /\[\[case:((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\]/g, // [[case:name(|alias)]]
     entries:
@@ -26,7 +22,7 @@ const regexes = {
         /\[\[([^:|]+?):((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\]/g, // [[metadata-type:name(|alias)]]
 };
 
-// Define how each case should be handled
+// TODO handle escaped characters (e.g. '\]' '\|') when parsing. This needs to be done on the backend as well.
 const handlers = {
     // Take the user to the actor's dashboard
     actors: (text) => {
@@ -34,7 +30,7 @@ const handlers = {
             const url = createDashboardLink({ name: name, type: 'actor' });
             // If an alias is provided, use it as the displayed name
             const displayedName = alias ? alias : name;
-            return `<a class="${styleClasses.actors}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
+            return `<a class="${entityMarkdownColors.actors}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
         });
     },
     // Take the user to the case's dashboard
@@ -43,7 +39,7 @@ const handlers = {
             const url = createDashboardLink({ name: name, type: 'case' });
             // If an alias is provided, use it as the displayed name
             const displayedName = alias ? alias : name;
-            return `<a class="${styleClasses.cases}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
+            return `<a class="${entityMarkdownColors.cases}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
         });
     },
     // Take the user to the entry's dashboard
@@ -57,7 +53,7 @@ const handlers = {
                 });
                 // If an alias is provided, use it as the displayed name
                 const displayedName = alias ? alias : name;
-                return `<a class="${styleClasses.entries}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
+                return `<a class="${entityMarkdownColors.entries}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
             }
 
             return matched;
@@ -69,7 +65,7 @@ const handlers = {
             if (metadataSubtypes.has(type)) {
                 // If an alias is provided, use it as the displayed name
                 const displayedName = alias ? alias : name;
-                return `<span class="${styleClasses.metadata}">${displayedName}</span>`;
+                return `<span class="${entityMarkdownColors.metadata}">${displayedName}</span>`;
             }
 
             return matched;
@@ -88,10 +84,32 @@ const marked = new Marked(
     }),
 );
 
-// Use a customer renderer
-const renderer = {
-    text(text) {
+const cradleLinkExtension = {
+    name: 'cradlelink',
+    level: 'inline',
+    start(src) {
+        return src.match(regexes.cradleLink)?.index;
+    },
+    tokenizer(src, tokens) {
+        const match = src.match(regexes.cradleLink);
+        if (match) {
+            return {
+                type: 'cradlelink',
+                raw: match[0],
+                text: match[0].trim(),
+            };
+        }
+
+        return false;
+    },
+    renderer(token) {
+        if (token.type !== 'cradlelink') {
+            return false;
+        }
+
         // Loop through all type handlers and call them on the text
+        var text = token.raw;
+
         Object.keys(handlers).forEach((key) => {
             const handler = handlers[key];
             text = handler(text);
@@ -100,7 +118,6 @@ const renderer = {
         return text;
     },
 };
-marked.use({ renderer });
 
 // Define a custom extension that resolves all local links to `/file-transfer/download` to their respective Minio links.
 // This also works for images. These are shown in the preview if the ref is valid.
@@ -113,21 +130,23 @@ const resolveMinioLinks = {
             URL.canParse(token.href)
         ) {
             const url = new URL(token.href);
-            const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+            const apiBaseUrl = new URL(import.meta.env.VITE_API_BASE_URL);
+
+            const apiBaseOrigin = apiBaseUrl.origin;
+            const apiBasePath = apiBaseUrl.pathname.endsWith('/')
+                ? apiBaseUrl.pathname.slice(0, -1)
+                : apiBaseUrl.pathname;
 
             if (
-                url.origin === apiBaseUrl &&
-                url.pathname === '/file-transfer/download'
+                url.origin === apiBaseOrigin &&
+                url.pathname === `${apiBasePath}/file-transfer/download/`
             ) {
-                const apiDownloadPath = url.pathname + url.search;
+                const apiDownloadPath = url.href;
                 const minioCache =
                     JSON.parse(localStorage.getItem('minio-cache')) || {};
 
                 const fetchMinioDownloadLink = async () => {
-                    const response = await getDownloadLink(
-                        localStorage.getItem('access'),
-                        apiDownloadPath,
-                    );
+                    const response = await getDownloadLink(url.href);
                     const presigned = response.data.presigned;
                     const expiry = Date.now() + 1000 * 60 * 5; // 5 minutes
                     return { presigned, expiry };
@@ -156,14 +175,15 @@ const resolveMinioLinks = {
         }
     },
 };
-marked.use(resolveMinioLinks);
+
+marked.use({ ...resolveMinioLinks, extensions: [cradleLinkExtension] });
 
 /**
  * Parses markdown content into HTML. If fileData is provided, links will be prepended to the content.
  * This function does not sanitize the output.
  *
  * @param {string} mdContent - markdown content
- * @param {Array<{minio_file_name: string, file_name: string, bucket_name: string}>} [fileData] - information about the files that will be linked (optional)
+ * @param {Array<FileData>} [fileData] - information about the files that will be linked (optional)
  * @returns {string} parsed HTML
  */
 const parseMarkdown = async (mdContent, fileData) => {

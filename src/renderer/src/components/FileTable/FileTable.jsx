@@ -12,8 +12,9 @@ import { createDownloadPath } from '../../utils/textEditorUtils/textEditorUtils'
  * - The Actions column contains two buttons: one to copy the tag to the clipboard and one to delete the file.
  * The tag will be copied with the syntax [<filename>][<tag>]. Deleting a file will remove it from the table.
  *
- * @param {Array<{minio_file_name: string, file_name: string, bucket_name: string}>} fileData - a list of fileData to be displayed in the table. Each file has a tag, a name, and its bucket.
- * @param {(Array<{minio_file_name: string, file_name: string, bucket_name: string}>) => void} setFileData - callback used when the fileData change
+ * @function FileTable
+ * @param {Array<FileData>} fileData - a list of fileData to be displayed in the table. Each file has a tag, a name, and its bucket.
+ * @param {StateSetter<Array<FileData>>} setFileData - callback used when the fileData change
  * @returns {FileTable}
  * @constructor
  */
@@ -50,31 +51,33 @@ export default function FileTable({ fileData, setFileData }) {
                 <div className='overflow-x-auto'>
                     <div className='w-full bg-gray-2 rounded-md overflow-x-hidden overflow-y-auto'>
                         {(!fileData || fileData.length === 0) && (
-                            <p className='ml-4 mt-2 text-zinc-200'>
+                            <p className='ml-4 mt-2 dark:text-zinc-200'>
                                 No files uploaded yet.
                             </p>
                         )}
                         {fileData.length > 0 && (
-                            <div className='grid grid-cols-2 p-2 border-b border-zinc-400 text-base'>
-                                <div className='font-bold text-zinc-200'>Tag</div>
-                                <div className='font-bold text-zinc-200'>File Name</div>
+                            <div className='grid grid-cols-2 p-2 border-b dark:border-zinc-400 text-base'>
+                                <div className='font-bold dark:text-zinc-200'>Tag</div>
+                                <div className='font-bold dark:text-zinc-200'>
+                                    File Name
+                                </div>
                             </div>
                         )}
                         {Array.from(fileData).map((data, index) => (
                             <div
                                 key={index}
-                                className='grid grid-cols-2 py-1 border-b border-zinc-600'
+                                className='grid grid-cols-2 py-1 border-b dark:border-zinc-600'
                             >
-                                <div className='text-zinc-200 flex items-center'>
+                                <div className='dark:text-zinc-200 flex items-center'>
                                     <div className='max-w-150px truncate px-3'>
                                         {data.minio_file_name}
                                     </div>
                                 </div>
-                                <div className='text-zinc-200 flex items-center justify-between'>
+                                <div className='dark:text-zinc-200 flex items-center justify-between'>
                                     <div className='max-w-150px truncate pr-3'>
                                         {data.file_name}
                                     </div>
-                                    <div className='text-zinc-200 flex items-center justify-end pr-4'>
+                                    <div className='dark:text-zinc-200 flex items-center justify-end pr-4'>
                                         <span
                                             className='tooltip tooltip-top'
                                             data-tooltip='Copy to clipboard'

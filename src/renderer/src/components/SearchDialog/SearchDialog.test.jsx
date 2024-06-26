@@ -6,7 +6,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import SearchDialog from './SearchDialog';
 import { queryEntities } from '../../services/queryService/queryService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
+import useAuth from '../../hooks/useAuth/useAuth';
 import { useNavigate } from 'react-router-dom';
 
 // Mock dependencies
@@ -18,12 +18,10 @@ jest.mock('react-router-dom', () => ({
 }));
 
 describe('SearchDialog', () => {
-    const mockAuth = { access: 'fake_token' };
     const mockNavigate = jest.fn();
     const mockOnClose = jest.fn();
 
     beforeEach(() => {
-        useAuth.mockReturnValue(mockAuth);
         useNavigate.mockReturnValue(mockNavigate);
         document.body.innerHTML = '<div id="portal-root"></div>';
     });
@@ -58,7 +56,7 @@ describe('SearchDialog', () => {
         });
         fireEvent.click(screen.getByRole('button'));
 
-        expect(queryEntities).toHaveBeenCalledWith(mockAuth.access, 'test', [], []);
+        expect(queryEntities).toHaveBeenCalledWith('test', [], []);
         await waitFor(() => expect(screen.getByText('Test')).toBeInTheDocument());
         await waitFor(() =>
             expect(screen.getByText('Type: Subtype')).toBeInTheDocument(),
@@ -107,7 +105,7 @@ describe('SearchDialog', () => {
         });
         render(<SearchDialog isOpen={true} onClose={mockOnClose} />);
 
-        expect(queryEntities).toHaveBeenCalledWith(mockAuth.access, '', [], []);
+        expect(queryEntities).toHaveBeenCalledWith('', [], []);
         await waitFor(() => expect(screen.getByText('Test')).toBeInTheDocument());
         await waitFor(() =>
             expect(screen.getByText('Type: Subtype')).toBeInTheDocument(),

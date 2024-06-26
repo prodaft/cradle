@@ -2,15 +2,11 @@
  * @jest-environment jsdom
  */
 import { saveNote } from './textEditorService';
-import axios from 'axios';
-
+import { authAxios as axios } from '../axiosInstance/axiosInstance';
+jest.mock('../axiosInstance/axiosInstance', () => ({
+    authAxios: jest.fn(),
+}));
 jest.mock('axios');
-
-const headers = {
-    Authorization: 'Bearer placeholder',
-    'Content-Type': 'application/json',
-};
-const token = 'placeholder';
 
 describe('saveNote', () => {
     test('sends a POST request to /notes/ with the correct parameters', async () => {
@@ -19,13 +15,12 @@ describe('saveNote', () => {
 
         axios.mockResolvedValue(mockResponse);
 
-        const response = await saveNote(token, text);
+        const response = await saveNote(text);
 
         expect(axios).toHaveBeenCalledWith({
             method: 'post',
             url: '/notes/',
             data: { content: text },
-            headers: headers,
         });
 
         expect(response).toEqual(mockResponse);
@@ -38,7 +33,7 @@ describe('saveNote', () => {
         axios.mockRejectedValue(mockError);
 
         try {
-            await saveNote(token, text);
+            await saveNote(text);
         } catch (error) {
             expect(error).toBe(mockError);
         }
@@ -47,7 +42,6 @@ describe('saveNote', () => {
             method: 'post',
             url: '/notes/',
             data: { content: text },
-            headers: headers,
         });
     });
 });

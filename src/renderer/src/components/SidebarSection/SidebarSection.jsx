@@ -3,10 +3,12 @@ import React from 'react';
 /**
  * SidebarSection component - section of the sidebar
  *
- * @param {string} sectionType - the type of section (header, content, footer)
- * @param {string} justify - the alignment of the items in the section
- * @param {string} height - the height of the section
- * @param {Array<React.Component} children - the children to display in the section
+ * @function SidebarSection
+ * @param {Object} props - the props object
+ * @param {string} props.sectionType - the type of section (header, content, footer)
+ * @param {string} props.justify - the alignment of the items in the section
+ * @param {string} props.height - the height of the section
+ * @param {Array<React.Component>} props.children - the children to display in the section
  * @returns {SidebarSection}
  * @constructor
  */

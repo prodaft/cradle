@@ -1,17 +1,5 @@
 import * as d3 from 'd3';
-
-/**
- * entityColors - This object contains the colors for the different entity types in the graph.
- * The colors are used to distinguish between different types of entities in the graph.
- * The keys are the entity types, and the values are the corresponding hex color codes.
- *
- * @type {{actor: string, case: string, entry: string}}
- */
-export const entityColors = {
-    actor: '#155e75',
-    case: '#7e22ce',
-    entry: '#ea580c',
-};
+import { entityGraphColors } from '../entityDefinitions/entityDefinitions';
 
 /**
  * preprocessData - This function is used to preprocess the raw data into a format suitable for the D3 force simulation.
@@ -19,17 +7,17 @@ export const entityColors = {
  * The function maps over the entities in the data and creates a new node for each entity with the necessary properties.
  * The function also calculates the degree of each node (i.e., the number of links connected to the node).
 
+ * @function preprocessData
  * @param {
  *     {
- *          entities:[{id:string,name:string,type:string,subtype:string|undefined}],
- *          links:[{source:string,target:string}]
+ *          entities: Array<GraphEntity>,
+ *          links: Array<GraphLink>
  *     }
  *     } data - The raw data to be preprocessed. The data should have a 'entities' property and a 'links' property.
  * @returns {
  *      {
- *          nodes: [{id:string,label:string,color:string,name:string,type:string,subtype:string|undefined,
- *          degree:number,x:number,y:number,vx:number,vy:number,fx:number|null,fy:number|null}],
- *          links: [{source:string,target:string}]
+ *          nodes: Array<GraphNode>,
+ *          links: Array<GraphLink>
  *      }
  *      } The preprocessed data, containing an array of nodes and an array of links.
  */
@@ -42,8 +30,10 @@ export const preprocessData = (data) => {
     // Map over the entities in the data and create a new node for each entity
     nodes = data.entities.map((entity) => ({
         id: entity.id,
-        label: entity.subtype ? `${entity.subtype}: ${entity.name}` : entity.name,
-        color: entityColors[entity.type],
+        label: entity.subtype
+            ? `${entity.subtype}: ${entity.name}`
+            : `${entity.type}: ${entity.name}`,
+        color: entityGraphColors[entity.type],
         name: entity.name,
         type: entity.type,
         subtype: entity.subtype,
@@ -80,24 +70,21 @@ export const preprocessData = (data) => {
  * The function also adds zoom behavior to the SVG element and sets up the resize observer to update the graph layout.
  * The function returns a cleanup function to stop the simulation and remove the resize observer when the component is unmounted.
  *
+ * @function visualizeGraph
  * @param {
  *      {
- *          nodes: [{id:string,label:string,color:string,name:string,type:string,subtype:string|undefined,
- *          degree:number,x:number,y:number,vx:number,vy:number,fx:number|null,fy:number|null}],
- *          links: [{source:string,target:string}]
+ *          nodes: Array<GraphNode>,
+ *          links: Array<GraphLink>
  *      }
  *      } data - The preprocessed data to be visualized. The data should have a 'nodes' property and a 'links' property.
  * @param {React.Ref} svgRef - The ref to the SVG element where the graph will be rendered.
- * @param {(
- *          {id:string,label:string,color:string,name:string,type:string,subtype:string|undefined,
- *          degree:number,x:number,y:number,vx:number,vy:number,fx:number|null,fy:number|null}
- *          ) => void} setHighlightedNode - The function to set the highlighted node when a node is clicked.
+ * @param {StateSetter<GraphNode>} setHighlightedNode - The function to set the highlighted node when a node is clicked.
  * @param {d3-force.simulation} simulation - The ref to the D3 force simulation used to update the graph layout.
  * @param {number} nodeRadiusCoefficient - The coefficient used to calculate the radius of the nodes based on the degree of the node.
  * @param {number} spacingCoefficient - The coefficient used to calculate the desired distance between connected nodes.
  * @param {number} componentDistanceCoefficient - The coefficient used to calculate the strength of the repulsion between nodes.
  * @param {number} centerGravity - The strength of the force that pulls the nodes towards the center.
- * @returns {() => void} - The cleanup function to stop the simulation and remove the resize observer when the component is unmounted.
+ * @returns {Function} - The cleanup function to stop the simulation and remove the resize observer when the component is unmounted.
  */
 export const visualizeGraph = (
     data,
@@ -189,9 +176,9 @@ export const visualizeGraph = (
         .enter()
         .append('text')
         // Add classes and attributes to the text elements
-        .attr('dx', (d) => Math.max(10, d.degree * nodeRadiusCoefficient + 2))
+        .attr('dx', (d) => Math.max(14, d.degree * nodeRadiusCoefficient + 4))
         .attr('dy', '.35em')
-        .attr('class', 'text-xs fill-current dark:fill-white')
+        .attr('class', 'text-xs dark:fill-white')
         .text((d) => d.label);
 
     // Set up the D3 force simulation with the nodes and links

@@ -4,7 +4,8 @@
 import React from 'react';
 import { act, render } from '@testing-library/react';
 import AuthProvider from './AuthProvider.jsx';
-import { useAuth } from '../../hooks/useAuth/useAuth.js';
+import useAuth from '../../hooks/useAuth/useAuth.js';
+import { jwtDecode } from 'jwt-decode';
 
 describe('useAuth hook', () => {
     it('should return access and refresh as empty strings by default', () => {
@@ -65,7 +66,7 @@ describe('useAuth hook', () => {
 
     it('should update access and refresh after logging in with real token - admin false', async () => {
         let token =
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJpc19hZG1pbiI6ZmFsc2V9.iSULssAolUioOBE6qs2EyxW5ygZuxZEdgCbEndWWBeA';
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjAsImlzX2FkbWluIjpmYWxzZX0.Xto05juFIZgLy-IR4-HRA8O6rBdsCoS8mi-vy8fVTCY';
 
         const TestComponent = () => {
             const { access, refresh, logIn, isAdmin } = useAuth();
@@ -101,7 +102,7 @@ describe('useAuth hook', () => {
 
     it('should update access and refresh after logging in with real token - admin true', async () => {
         let token =
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJpc19hZG1pbiI6dHJ1ZX0.wldE4kYw8WXq3SvZyRNcugit9bkuRzDUV_aAdVKDs1U';
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjAsImlzX2FkbWluIjp0cnVlfQ.tWL6jHsokMV78kzO0pBtTMrLBHvA8fvwB2IpppzLOTI';
 
         const TestComponent = () => {
             const { access, refresh, logIn, isAdmin } = useAuth();

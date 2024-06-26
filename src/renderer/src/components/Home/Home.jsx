@@ -1,8 +1,7 @@
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import Sidebar from '../Sidebar/Sidebar';
 import Navbar from '../Navbar/Navbar';
 import { useCallback, useMemo, useState } from 'react';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import { IconoirProvider } from 'iconoir-react';
 import FleetingNotesPanel from '../FleetingNotesPanel/FleetingNotesPanel';
 import NotificationsPanel from '../NotificationsPanel/NotificationsPanel';
@@ -32,15 +31,13 @@ import { getNotificationCount } from '../../services/notificationsService/notifi
  * It fetches the count of new notifications from the server every 10 seconds and updates the newNotificationsCount state.
  * When the newNotificationsCount state changes, the Sidebar and NotificationsPanel are updated to reflect the new count.
  *
+ * @function Home
  * @returns {Home}
  * @constructor
  */
 export default function Home() {
-    const navigate = useNavigate();
-    const auth = useAuth();
     const [showFleetingNotes, setShowFleetingNotes] = useState(false);
     const [fleetingNotesRefreshCount, setFleetingNotesRefreshCount] = useState(0);
-    const location = useLocation();
     const [navbarContents, setNavbarContents] = useState([]);
     const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
@@ -62,7 +59,7 @@ export default function Home() {
     const memoizedNavbarContents = useMemo(() => navbarContents, [navbarContents]);
 
     useInterval(() => {
-        getNotificationCount(auth.access)
+        getNotificationCount()
             .then((response) => {
                 setUnreadNotificationsCount(response.data.count);
             })
@@ -93,7 +90,7 @@ export default function Home() {
                         handleNotifications={toggleNotifications}
                     />
                     <div
-                        className={`transition-all duration-150 ${showNotifications ? 'max-w-96 w-full' : 'w-0'} overflow-hidden`}
+                        className={`transition-all duration-150 ${showNotifications ? 'w-[40rem]' : 'w-0'} overflow-hidden`}
                     >
                         {showNotifications && (
                             <NotificationsPanel
@@ -114,7 +111,7 @@ export default function Home() {
                         />
                     </div>
                     <div
-                        className={`transition-all duration-150 ${showFleetingNotes ? 'max-w-96 w-full' : 'w-0'} overflow-hidden`}
+                        className={`transition-all duration-150 ${showFleetingNotes ? 'w-[40rem]' : 'w-0'} overflow-hidden`}
                     >
                         {showFleetingNotes && (
                             <FleetingNotesPanel

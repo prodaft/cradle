@@ -16,18 +16,10 @@ import {
     metadataSubtypes,
 } from '../../utils/entityDefinitions/entityDefinitions';
 import { queryEntities } from '../../services/queryService/queryService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
+import useAuth from '../../hooks/useAuth/useAuth';
 import { completionKeymap, acceptCompletion } from '@codemirror/autocomplete';
 import { getLinkNode, parseLink } from '../../utils/textEditorUtils/textEditorUtils';
 import { Prec } from '@uiw/react-codemirror';
-
-/**
- * @typedef {Object} FileData
- * @property {string} minio_file_name - the name of the file in MinIO
- * @property {string} file_name - the name of the file
- * @property {string} bucket_name - the name of the bucket
- * @typedef {Array<FileData>} FileDataArray
- */
 
 /**
  * This component makes use of a pre-existing code editor component (CodeMirror, see https://github.com/uiwjs/react-codemirror)
@@ -38,12 +30,15 @@ import { Prec } from '@uiw/react-codemirror';
  *
  * This component is reactive to the system theme. It uses the Eclipse theme for light mode and the VSCode Dark theme for dark mode.
  *
- * @param {string} markdownContent - the content inside the Editor
- * @param {(string) => void} setMarkdownContent - callback used when the value of the content changes
- * @param {FileData} fileData - the files uploaded by the user. These belong to the note that is being written.
- * @param {(FileData) => void} setFileData - callback used when the files change
- * @param {boolean} isLightMode - the current theme of the editor
+ * @function Editor
+ * @param {Object} props - The props object
+ * @param {string} props.markdownContent - the content inside the Editor
+ * @param {StateSetter<string>} props.setMarkdownContent - callback used when the value of the content changes
+ * @param {FileData} props.fileData - the files uploaded by the user. These belong to the note that is being written.
+ * @param {StateSetter<FileData>} props.setFileData - callback used when the files change
+ * @param {boolean} props.isLightMode - the current theme of the editor
  * @returns {Editor}
+ * @constructor
  */
 export default function Editor({
     markdownContent,
@@ -60,7 +55,7 @@ export default function Editor({
     const auth = useAuth();
 
     const performSearch = async (name, type, subtype) => {
-        return queryEntities(auth.access, name, type, subtype)
+        return queryEntities(name, type, subtype)
             .then((response) => {
                 let data = response.data.map((x) => ({
                     label: x.name,
@@ -190,7 +185,7 @@ export default function Editor({
             {fileData && fileData.length > 0 && (
                 <div className='max-h-[25%] rounded-md flex flex-col justify-end z-30'>
                     <div
-                        className='bg-gray-3 text-zinc-200 px-4 py-[2px] my-1 rounded-md hover:cursor-pointer flex flex-row space-x-2'
+                        className='bg-gray-5 dark:bg-gray-3 dark:text-zinc-200 px-4 py-[2px] my-1 rounded-md hover:cursor-pointer flex flex-row space-x-2'
                         onClick={toggleFileList}
                     >
                         <span>

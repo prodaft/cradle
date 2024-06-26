@@ -9,12 +9,15 @@ import {
 /**
  * Section for filters in the search dialog
  * Contains filters for entity type and entry type
- * @param {boolean} showFilters - to show or hide the filters
- * @param {boolean => void} setShowFilters - function to toggle the filters
- * @param {Array<string>} entryTypeFilters - the current entry type filters
- * @param {(Array<string>) => void} setEntryTypeFilters - the function to update the entry type filters
- * @param {Array<string>} entityTypeFilters - the current entity type filters
- * @param {(Array<string>) => void} setEntityTypeFilters - the function to update the entity type filters
+ *
+ * @function SearchFilterSection
+ * @param {Object} props - The props of the component.
+ * @param {boolean} props.showFilters - to show or hide the filters
+ * @param {StateSetter<boolean>} props.setShowFilters - function to toggle the filters
+ * @param {Array<string>} props.entryTypeFilters - the current entry type filters
+ * @param {StateSetter<Array<string>>} props.setEntryTypeFilters - the function to update the entry type filters
+ * @param {Array<string>} props.entityTypeFilters - the current entity type filters
+ * @param {StateSetter<Array<string>>} props.setEntityTypeFilters - the function to update the entity type filters
  * @returns {SearchFilterSection}
  * @constructor
  */

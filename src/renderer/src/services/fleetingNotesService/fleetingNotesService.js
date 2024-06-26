@@ -1,22 +1,15 @@
-import axios from 'axios';
-
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
+import { authAxios } from '../axiosInstance/axiosInstance';
 
 /**
  * Function to get fleeting notes from the API
  * Passes the token to the API
  *
- * @param {string} token - The (JWT) token to authenticate the request
- * @returns {Promise<AxiosResponse<any>> | *}
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function getFleetingNotes(token) {
-    return axios({
+export function getFleetingNotes() {
+    return authAxios({
         method: 'GET',
         url: '/fleeting-notes/',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
     });
 }
 
@@ -24,19 +17,14 @@ export function getFleetingNotes(token) {
  * Function to add a fleeting note
  * Passes the token and content to the API
  *
- * @param {string} token - The (JWT) token to authenticate the request
  * @param {string} content - The content of the note to add (String)
- * @param {Array<{minio_file_name: string, file_name: string, bucket_name: string}>} files - information about the files that will be linked
- * @returns {Promise<AxiosResponse<any>> | *}
+ * @param {Array<FileDatay>} files - information about the files that will be linked
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function addFleetingNote(token, content, files) {
-    return axios({
+export function addFleetingNote(content, files) {
+    return authAxios({
         method: 'POST',
         url: '/fleeting-notes/',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
         data: {
             content: content,
             files: files,
@@ -46,37 +34,29 @@ export function addFleetingNote(token, content, files) {
 
 /**
  * Function to delete a fleeting note
- * @param {string} token
+ *
  * @param {string} id
- * @returns {Promise<AxiosResponse<any>> | *}
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function deleteFleetingNote(token, id) {
-    return axios({
+export function deleteFleetingNote(id) {
+    return authAxios({
         method: 'DELETE',
         url: `/fleeting-notes/${id}/`,
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
     });
 }
 
 /**
  * Function to update a fleeting note
- * @param {string} token - The (JWT) token to authenticate the request
+ *
  * @param {string} id - The id of the note to update
  * @param {string} content - The content of the note to update
- * @param {Array<{minio_file_name: string, file_name: string, bucket_name: string}>} files - information about the files that are linked to this note
- * @returns {Promise<AxiosResponse<any>> | *}
+ * @param {Array<FileData>} files - information about the files that are linked to this note
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function updateFleetingNote(token, id, content, files) {
-    return axios({
+export function updateFleetingNote(id, content, files) {
+    return authAxios({
         method: 'PUT',
         url: `/fleeting-notes/${id}/`,
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
         data: {
             content: content,
             files: files,
@@ -86,36 +66,28 @@ export function updateFleetingNote(token, id, content, files) {
 
 /**
  * Function to get a fleeting note by id
- * @param {string} token
+ *
  * @param {string} id
- * @returns {Promise<AxiosResponse<any>> | *}
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function getFleetingNoteById(token, id) {
-    return axios({
+export function getFleetingNoteById(id) {
+    return authAxios({
         method: 'GET',
         url: `/fleeting-notes/${id}/`,
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
     });
 }
 
 /**
  * Function to save a fleeting note as final
- * @param {string} token - The (JWT) token to authenticate the request
+ *
  * @param {string} id - The id of the note to update
  * @param {boolean} publishable - Whether the note is publishable
- * @returns {Promise<AxiosResponse<any>> | *}
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function saveFleetingNoteAsFinal(token, id, publishable) {
-    return axios({
+export function saveFleetingNoteAsFinal(id, publishable) {
+    return authAxios({
         method: 'PUT',
         url: `/fleeting-notes/${id}/final/`,
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
         data: {
             publishable: publishable,
         },
