@@ -55,7 +55,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
     const fileDataRef = useRef(fileData);
     const [parsedContent, setParsedContent] = useState('');
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(true);
-    const prevIdRef = useRef(id);
+    const prevIdRef = useRef(null);
     const flexDirection = useChangeFlexDirectionBySize(textEditorRef);
 
     const NEW_NOTE_PLACEHOLDER_ID = 'new';
@@ -230,7 +230,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
     // On component dismount reset the prevIdRef
     useEffect(() => {
         return () => {
-            prevIdRef.current = NEW_NOTE_PLACEHOLDER_ID;
+            prevIdRef.current = null;
         };
     }, []);
 
