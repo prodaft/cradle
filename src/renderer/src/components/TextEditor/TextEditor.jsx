@@ -21,7 +21,6 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 import { FloppyDiskArrowIn } from 'iconoir-react';
 import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
 import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
-import { useLocalStorage } from '@uidotdev/usehooks';
 
 /**
  * Component for creating new Notes and editing existing fleeting Notes.

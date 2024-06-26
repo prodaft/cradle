@@ -42,7 +42,8 @@ export default function Dashboard() {
     const [entityMissing, setEntityMissing] = useState(false);
     const [contentObject, setContentObject] = useState({});
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const [dialog, setDialog] = useState(false);
+    const [deleteDialog, setDeleteDialog] = useState(false);
+    const [virusTotalDialog, setVirusTotalDialog] = useState(false);
     const navigate = useNavigate();
     const auth = useAuth();
     const dashboard = useRef(null);
@@ -99,7 +100,7 @@ export default function Dashboard() {
                 key='delete-entity-btn'
                 icon={<Trash />}
                 text='Delete'
-                onClick={() => setDialog(true)}
+                onClick={() => setDeleteDialog(true)}
                 data-testid='delete-entity-btn'
             />
         ),
@@ -120,7 +121,7 @@ export default function Dashboard() {
         auth.isAdmin,
         entityMissing,
         handleEnterPublishMode,
-        setDialog,
+        setDeleteDialog,
     ]);
 
     const handleRequestCaseAccess = (cases) => {
@@ -152,11 +153,20 @@ export default function Dashboard() {
     return (
         <>
             <ConfirmationDialog
-                open={dialog}
-                setOpen={setDialog}
+                open={deleteDialog}
+                setOpen={setDeleteDialog}
                 title={'Confirm Deletion'}
                 description={'This is permanent'}
                 handleConfirm={handleDelete}
+            />
+            <ConfirmationDialog
+                open={virusTotalDialog}
+                setOpen={setVirusTotalDialog}
+                title={'Notice'}
+                description={
+                    'This action will send data about this entry to VirusTotal. Are you sure you want to proceed?'
+                }
+                handleConfirm={() => handleVirusTotalSearch(contentObject.name)}
             />
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div
@@ -179,9 +189,7 @@ export default function Dashboard() {
                         <div className='flex flex-row space-x-2 flex-wrap'>
                             <button
                                 className='btn w-fit min-w-[200px] mt-2 gap-2 !pl-4'
-                                onClick={() =>
-                                    handleVirusTotalSearch(contentObject.name)
-                                }
+                                onClick={() => setVirusTotalDialog(true)}
                             >
                                 <Search />
                                 Search on VirusTotal
