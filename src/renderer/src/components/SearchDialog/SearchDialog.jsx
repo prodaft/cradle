@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { Search } from 'iconoir-react';
 import SearchFilterSection from '../SearchFilterSection/SearchFilterSection';
 import { queryEntities } from '../../services/queryService/queryService';
-import useAuth from '../../hooks/useAuth/useAuth';
 import AlertBox from '../AlertBox/AlertBox';
 import SearchResult from '../SearchResult/SearchResult';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +17,7 @@ import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
  * Shows search results
  * Search can be done on enter or when pressing the search buttons
  *
+ * @function SearchDialog
  * @param {Object} props - The props of the component.
  * @param {boolean} props.isOpen - to show or hide the dialog
  * @param {Function} props.onClose - function to close the dialog
@@ -25,7 +25,6 @@ import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
  * @constructor
  */
 export default function SearchDialog({ isOpen, onClose }) {
-    const auth = useAuth();
     const [searchQuery, setSearchQuery] = useState('');
     const inputRef = useRef(null);
     const [showFilters, setShowFilters] = useState(false);

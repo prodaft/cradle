@@ -12,6 +12,8 @@ import { prependLinks } from '../textEditorUtils/textEditorUtils';
 import { getDownloadLink } from '../../services/fileUploadService/fileUploadService';
 
 const regexes = {
+    cradleLink:
+        /^\[\[([^:|]+?):((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\]/,
     actors: /\[\[actor:((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\]/g, // [[actor:name(|alias)]]
     cases: /\[\[case:((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\]/g, // [[case:name(|alias)]]
     entries:
@@ -82,10 +84,32 @@ const marked = new Marked(
     }),
 );
 
-// Use a customer renderer
-const renderer = {
-    text(text) {
+const cradleLinkExtension = {
+    name: 'cradlelink',
+    level: 'inline',
+    start(src) {
+        return src.match(regexes.cradleLink)?.index;
+    },
+    tokenizer(src, tokens) {
+        const match = src.match(regexes.cradleLink);
+        if (match) {
+            return {
+                type: 'cradlelink',
+                raw: match[0],
+                text: match[0].trim(),
+            };
+        }
+
+        return false;
+    },
+    renderer(token) {
+        if (token.type !== 'cradlelink') {
+            return false;
+        }
+
         // Loop through all type handlers and call them on the text
+        var text = token.raw;
+
         Object.keys(handlers).forEach((key) => {
             const handler = handlers[key];
             text = handler(text);
@@ -94,9 +118,8 @@ const renderer = {
         return text;
     },
 };
-marked.use({ renderer });
 
-// Define a custom extension that resolves all local links to `/file-transfer/download/` to their respective Minio links.
+// Define a custom extension that resolves all local links to `/file-transfer/download` to their respective Minio links.
 // This also works for images. These are shown in the preview if the ref is valid.
 // These links are cached.
 const resolveMinioLinks = {
@@ -152,7 +175,8 @@ const resolveMinioLinks = {
         }
     },
 };
-marked.use(resolveMinioLinks);
+
+marked.use({ ...resolveMinioLinks, extensions: [cradleLinkExtension] });
 
 /**
  * Parses markdown content into HTML. If fileData is provided, links will be prepended to the content.
