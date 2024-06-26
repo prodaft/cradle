@@ -1,3 +1,29 @@
+# Table of Contents
+
+- [Introduction](#introduction)
+    - [Why Contribute?](#why-contribute)
+    - [Main Technologies](#main-technologies)
+- [File Structure](#file-structure)
+- [Quickstart Guide](#quickstart-guide)
+    - [Adding a File](#adding-a-file)
+    - [Creating the Component](#creating-the-component)
+    - [Adding It to the App Component](#adding-it-to-the-app-component)
+        - [HashRouter](#hashrouter)
+        - [AuthProvider](#authprovider)
+        - [PrivateRoute](#privateroute)
+        - [Home](#home)
+        - [Navbar & useNavbarContents](#navbar--usenavbarcontents)
+        - [Sidebar](#sidebar)
+    - [Testing Your Functionality](#testing-your-functionality)
+- [Possible Obstacles](#possible-obstacles)
+    - [API Base URL's](#api-base-urls)
+    - [Documenting with JSDoc](#documenting-with-jsdoc)
+    - [Importing Files & Jest](#importing-files--jest)
+- [Linting and Code Style](#linting-and-code-style)
+    - [ESLint](#eslint)
+    - [Prettier](#prettier)
+
+
 # Introduction
 
 Hi! This is the Developer Guide for CRADLE: A Hub For Managing Cyber Threat Intelligence Research Output. We are happy to have you here. This guide will take you through the reasons behind the application itself, some of its design choices and help you take on the task of contributing to it by adding new features.
@@ -481,7 +507,7 @@ If you are hosting the backend on a server who's domain contains a path (e.g. `l
 
 For example, seding a `GET` request to `localhost:8000/api/users` will redirect to `localhost:8000/users/` (assuming that `VITE_API_BASE_URL = localhost:8000/api` in the `.env` file).
 
-## Documenting With JSDoc
+## Documenting with JSDoc
 
 When writing documentation for your contribution, please note that (the current version) of JSDoc cannot parse TypeScript import syntax, for example:
 
