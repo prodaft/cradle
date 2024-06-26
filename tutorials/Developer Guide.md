@@ -60,6 +60,7 @@ Let's start with the root of the repository:
 -   `tutorials` are `.md` files like this one, referenced in the README and used in the generated JSDoc.
 -   You will need a `.env`. Please follow the instructions in the README file to set up those environment variables. Also check the [Vite documentation](https://vitejs.dev/guide/env-and-mode) for details on how to name them and import them in your code.
 -   Currently, all of the config files are in the root. Note that since this is an [Electron-Vite](https://electron-vite.org/) project, all of the configs are under `electron.vite.config.js`.
+-   The `vite.config.js` file is used for for building the web page version of the application.
 
 Now, the `src` folder:
 
