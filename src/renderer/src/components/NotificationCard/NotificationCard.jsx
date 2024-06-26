@@ -37,6 +37,7 @@ import { useNavigate } from 'react-router-dom';
  * @param {StateSetter<Alert>} props.setAlert - A function to set an alert in the parent component
  * @param {updateFlaggedNotificationsCount} props.updateFlaggedNotificationsCount - A function to update the count of flagged notifications in the parent component
  * @returns {NotificationCard} A card displaying the details of the notification.
+ * @constructor
  */
 export default function NotificationCard({
     notification,

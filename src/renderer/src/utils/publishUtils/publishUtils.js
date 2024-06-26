@@ -49,15 +49,18 @@ const createMarkdownReportFromJson = (data) => {
     markdown += createMarkdownSection(entries, 'Entries');
     markdown += createMarkdownSection(metadata, 'Metadata');
 
+    let reportFiles = [];
+
     if (notes) {
         markdown += '## Notes\n\n';
         notes.forEach((note) => {
             markdown += `### ${new Date(note.timestamp).toLocaleString()}\n\n`;
-            markdown += `${prependLinks(note.content, note.files || [])}\n\n---\n\n`;
+            markdown += `${note.content}\n\n---\n\n`;
+            reportFiles = reportFiles.concat(note.files || []);
         });
     }
 
-    return markdown;
+    return prependLinks(markdown, reportFiles);
 };
 
 /**
