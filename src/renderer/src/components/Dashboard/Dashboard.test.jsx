@@ -6,7 +6,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter as Router, useLocation } from 'react-router-dom';
 import Dashboard from './Dashboard';
 import { getDashboardData } from '../../services/dashboardService/dashboardService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
+import useAuth from '../../hooks/useAuth/useAuth';
 import '@testing-library/jest-dom';
 
 // Mock the dependencies

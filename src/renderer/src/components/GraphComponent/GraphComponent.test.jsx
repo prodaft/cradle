@@ -2,7 +2,7 @@ import { render, fireEvent } from '@testing-library/react';
 import GraphComponent from './GraphComponent';
 import { getGraphData } from '../../services/graphService/graphService';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
-import { useAuth } from '../../hooks/useAuth/useAuth';
+import useAuth from '../../hooks/useAuth/useAuth';
 import { useNavigate } from 'react-router-dom';
 import '@testing-library/jest-dom';
 import { describe, expect, it } from '@jest/globals';
