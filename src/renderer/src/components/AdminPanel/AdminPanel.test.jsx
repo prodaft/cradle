@@ -3,7 +3,7 @@
  */
 import { render } from '@testing-library/react';
 import AdminPanel from '../AdminPanel/AdminPanel';
-import { useAuth } from '../../hooks/useAuth/useAuth';
+import useAuth from '../../hooks/useAuth/useAuth';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';

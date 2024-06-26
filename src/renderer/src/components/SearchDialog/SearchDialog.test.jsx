@@ -6,7 +6,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import SearchDialog from './SearchDialog';
 import { queryEntities } from '../../services/queryService/queryService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
+import useAuth from '../../hooks/useAuth/useAuth';
 import { useNavigate } from 'react-router-dom';
 
 // Mock dependencies

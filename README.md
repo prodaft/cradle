@@ -6,6 +6,12 @@ Welcome to CRADLE's frontend codebase. We are happy to see you here!
 
 ---
 
+The User Guide can be found at: {@tutorial User Guide}
+
+The Developer Guide can be found at: {@tutorial Developer Guide}
+
+---
+
 ## Introduction
 
 Cyber Threat Intelligence (CTI) involves the collection, processing, and analysis of data to understand the motives, targets, and attack behaviors of threat agents. The role of a threat analyst is complex and multifaceted.

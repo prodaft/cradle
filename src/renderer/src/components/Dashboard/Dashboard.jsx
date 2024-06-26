@@ -4,7 +4,7 @@ import {
     getDashboardData,
     requestCaseAccess,
 } from '../../services/dashboardService/dashboardService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
+import useAuth from '../../hooks/useAuth/useAuth';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import DashboardNote from '../DashboardNote/DashboardNote';
 import { displayError } from '../../utils/responseUtils/responseUtils';

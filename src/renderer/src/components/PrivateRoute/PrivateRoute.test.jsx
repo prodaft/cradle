@@ -7,7 +7,7 @@ import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import AuthProvider from '../AuthProvider/AuthProvider.jsx';
 import PrivateRoute from './PrivateRoute.jsx';
 import '@testing-library/jest-dom';
-import { useAuth } from '../../hooks/useAuth/useAuth.js';
+import useAuth from '../../hooks/useAuth/useAuth.js';
 
 describe('PrivateRoute component', () => {
     it('should redirect to fallback route when user is not authenticated', () => {

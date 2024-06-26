@@ -7,6 +7,8 @@ import { AuthContext } from '../../components/AuthProvider/AuthProvider';
  * Must be used inside a component wrapped in AuthProvider
  * @returns {unknwown}
  */
-export const useAuth = () => {
+const useAuth = () => {
     return useContext(AuthContext);
 };
+
+export default useAuth;

@@ -16,7 +16,7 @@ import {
     metadataSubtypes,
 } from '../../utils/entityDefinitions/entityDefinitions';
 import { queryEntities } from '../../services/queryService/queryService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
+import useAuth from '../../hooks/useAuth/useAuth';
 import { completionKeymap, acceptCompletion } from '@codemirror/autocomplete';
 import { getLinkNode, parseLink } from '../../utils/textEditorUtils/textEditorUtils';
 import { Prec } from '@uiw/react-codemirror';
