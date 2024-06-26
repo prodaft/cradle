@@ -4,7 +4,7 @@
 import React from 'react';
 import { act, render } from '@testing-library/react';
 import AuthProvider from './AuthProvider.jsx';
-import { useAuth } from '../../hooks/useAuth/useAuth.js';
+import useAuth from '../../hooks/useAuth/useAuth.js';
 import { jwtDecode } from 'jwt-decode';
 
 describe('useAuth hook', () => {

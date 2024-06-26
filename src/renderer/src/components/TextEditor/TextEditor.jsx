@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useAuth } from '../../hooks/useAuth/useAuth';
+import useAuth from '../../hooks/useAuth/useAuth';
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import useLightMode from '../../hooks/useLightMode/useLightMode';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';

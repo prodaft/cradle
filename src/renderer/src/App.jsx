@@ -1,8 +1,7 @@
-import { Outlet, Route, Routes } from 'react-router-dom';
+import { Outlet, Route, Routes, HashRouter } from 'react-router-dom';
 import Login from './components/Login/Login.jsx';
 import Register from './components/Register/Register.jsx';
 import Home from './components/Home/Home.jsx';
-import { HashRouter as Router } from 'react-router-dom';
 import PrivateRoute from './components/PrivateRoute/PrivateRoute.jsx';
 import AuthProvider from './components/AuthProvider/AuthProvider.jsx';
 import FeatureNotImplemented from './components/FeatureNotImplemented/FeatureNotImplemented';
@@ -28,11 +27,11 @@ import Welcome from './components/Welcome/Welcome.jsx';
  */
 function App() {
     return (
-        <Router>
+        <HashRouter>
             <AuthProvider>
                 <Routes>
                     <Route element={<PrivateRoute fallback={'/login'} />}>
-                        {/* Add any routes for components that NEED authentication here*/}
+                        {/* Add any routes for components that NEED authentication here */}
                         <Route path='/' element={<Home />}>
                             {/* Add any routes for components that keep the sidebar and navbar here */}
                             <Route index element={<Welcome />} />
@@ -67,7 +66,7 @@ function App() {
                         </Route>
                         {/* Add any routes for components that DO NOT KEEP the sidebar and navbar here */}
                     </Route>
-                    {/* Add any routes for components that DO NOT NEED authentication here*/}
+                    {/* Add any routes for components that DO NOT NEED authentication here */}
                     <Route path='/login' element={<Login />}></Route>
                     <Route path='/register' element={<Register />}></Route>
                     <Route
@@ -83,7 +82,7 @@ function App() {
                     <Route path='*' element={<NotFound />} />
                 </Routes>
             </AuthProvider>
-        </Router>
+        </HashRouter>
     );
 }
 

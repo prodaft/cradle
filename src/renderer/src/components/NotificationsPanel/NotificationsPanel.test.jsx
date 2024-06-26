@@ -2,7 +2,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import NotificationsPanel from './NotificationsPanel';
-import { useAuth } from '../../hooks/useAuth/useAuth';
+import useAuth from '../../hooks/useAuth/useAuth';
 import { getNotifications } from '../../services/notificationsService/notificationsService';
 import { MemoryRouter } from 'react-router-dom';
 
