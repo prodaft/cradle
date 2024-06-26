@@ -21,7 +21,6 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 import { FloppyDiskArrowIn } from 'iconoir-react';
 import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
 import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
-import { useLocalStorage } from '@uidotdev/usehooks';
 
 /**
  * Component for creating new Notes and editing existing fleeting Notes.
@@ -256,7 +255,11 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
                 ref={textEditorRef}
             >
                 <div className='absolute bottom-4 right-4 px-2 py-1 rounded-md backdrop-blur-lg backdrop-filter bg-cradle3 bg-opacity-50 shadow-lg text-zinc-300'>
-                    {isValidContent() ?  hasUnsavedChanges ? 'Changes Not Saved' : 'Saved' : 'Cannot Save Empty Note' }
+                    {isValidContent()
+                        ? hasUnsavedChanges
+                            ? 'Changes Not Saved'
+                            : 'Saved'
+                        : 'Cannot Save Empty Note'}
                 </div>
                 <AlertDismissible alert={alert} setAlert={setAlert} />
                 <div
