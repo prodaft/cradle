@@ -242,11 +242,13 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
     useNavbarContents(
         id !== NEW_NOTE_PLACEHOLDER_ID && [
             <NavbarButton
+                key = 'editor-delete-btn'
                 icon={<Trash />}
                 text={'Delete'}
                 onClick={() => setDialog(true)}
             />,
             <NavbarDropdown
+                key = 'editor-save-final-btn'
                 icon={<FloppyDiskArrowIn />}
                 text={'Save As Final'}
                 contents={[
@@ -261,6 +263,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
                 ]}
             />,
             <NavbarButton
+                key = 'editor-save-btn'
                 icon={<FloppyDisk />}
                 text={'Save'}
                 onClick={() => handleSaveNote('Changes saved successfully.', true)}
