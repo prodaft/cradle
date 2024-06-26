@@ -60,10 +60,16 @@ To create an account, follow these steps:
 2. Fill in the required information, such as your username, email address, and password. The password you use must contain at least 12 characters, including at least one uppercase letter, one lowercase letter, one number, and one special character. In case the password does not meet the requirements or the username is already in use, an error message will be displayed.
 3. Click on the `Register` button to create your account. This will redirect you to the login page.
 
+To create an administrator account there are 2 possible ways:
+1. Set up the corresponding environment variables for admin creation before booting up the server for the first time.
+    An administrator account is created by default using the provided settings.
+2. Run the command: `python manage.py createsuperuser` from the terminal of the server.
+   Complete the credentials as requested in the command line interface.
+
 To log in to CRADLE, follow these steps:
 
-1. Enter your username and password in the login form.
-2. Click on the `Login` button or press enter to access your account. You will be redirected to the main dashboard of the application or the last page you visited.
+1. Enter your username and password in the login page.
+2. Click on the `Login` button or press enter to access your account. You will be redirected to the welcome page of the application or the last page you visited.
 
 ## Features and Functionality
 
