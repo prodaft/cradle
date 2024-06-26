@@ -49,6 +49,6 @@ describe('FleetingNoteCard', () => {
         );
         fireEvent.click(await findByText('Test note'));
 
-        expect(navigate).toHaveBeenCalledWith('/fleeting-editor/' + note.id);
+        expect(navigate).toHaveBeenCalledWith('/editor/' + note.id);
     });
 });

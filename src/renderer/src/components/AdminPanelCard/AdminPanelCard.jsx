@@ -2,8 +2,7 @@ import { Trash } from 'iconoir-react/regular';
 import { useState } from 'react';
 import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 import { deleteEntity } from '../../services/adminService/adminService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 
@@ -14,12 +13,16 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
  * - Delete button
  * When the delete button is clicked a dialog will be displayed to confirm the deletion.
  * When clicking the name the user will be redirected to the entity dashboard.
- * @param name
- * @param id
- * @param description
- * @param type
- * @param onDelete
- * @param link
+ *
+ * @function AdminPanelCard
+ * @param {Object} props - The props object
+ * @param {string} props.name - The name of the entity
+ * @param {string} props.id - The id of the entity
+ * @param {string} props.description - The description of the entity
+ * @param {string} props.type - The type of the entity
+ * @param {Function} props.onDelete - The function to call when the entity is deleted
+ * @param {string} props.link - The link to the entity dashboard
+ * @param {string} props.searchKey - The search key for the entity. used by the `useFrontendSearch` hook
  * @returns {AdminPanelCard}
  * @constructor
  */
@@ -34,16 +37,16 @@ export default function AdminPanelCard({
 }) {
     const [dialog, setDialog] = useState(false);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const auth = useAuth();
+    const navigate = useNavigate();
 
     const handleDelete = async () => {
-        deleteEntity(auth.access, type, id)
+        deleteEntity(type, id)
             .then((response) => {
                 if (response.status === 200) {
                     onDelete();
                 }
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     };
 
     return (

@@ -2,6 +2,7 @@
 build
 coverage
 out
+docs
 node_modules
 src/renderer/dist
 src/renderer/src/assets

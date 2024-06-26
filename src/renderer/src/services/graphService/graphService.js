@@ -1,20 +1,13 @@
-import axios from 'axios';
-
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
+import { authAxios } from '../axiosInstance/axiosInstance';
 
 /**
  * Function to get the knowledge graph data from the API
  *
- * @param {string} token - The (JWT) token to authenticate the request
- * @returns {Promise<AxiosResponse<any>>}
+ * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function getGraphData(token) {
-    return axios({
+export function getGraphData() {
+    return authAxios({
         method: 'GET',
         url: '/knowledge-graph/',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
     });
 }

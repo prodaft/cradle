@@ -14,13 +14,18 @@ export const AuthContext = createContext();
  * The context also provides a function to check if the user is authenticated
  * The context is stored in local storage for persistence
  * This should be used only once to wrap the application in the App.jsx file
- * @param children - the children of the component
- * @returns {JSX.Element}
+ *
+ * @function AuthProvider
+ * @param {Array<React.ReactElement>} children - the children of the component
+ * @returns {AuthProvider}
  * @constructor
  */
-const AuthProvider = ({ children }) => {
+export default function AuthProvider({ children }) {
     const [access, setAccess] = useState(localStorage.getItem('access') || '');
     const [refresh, setRefresh] = useState(localStorage.getItem('refresh') || '');
+    const [expiration, setExpiration] = useState(
+        localStorage.getItem('expiration') || '0',
+    );
     const [isAdmin, setIsAdmin] = useState(
         localStorage.getItem('isAdmin') === 'true' || false,
     );
@@ -33,9 +38,11 @@ const AuthProvider = ({ children }) => {
         localStorage.setItem('refresh', ref);
 
         try {
-            let adm = jwtDecode(acc)['is_admin'];
-            setIsAdmin(adm);
-            localStorage.setItem('isAdmin', adm.toString());
+            const { exp, is_admin } = jwtDecode(acc);
+            setExpiration(exp);
+            setIsAdmin(is_admin);
+            localStorage.setItem('expiration', exp.toString());
+            localStorage.setItem('isAdmin', is_admin.toString());
         } catch (e) {
             setIsAdmin(false);
             localStorage.setItem('isAdmin', 'false');
@@ -48,15 +55,23 @@ const AuthProvider = ({ children }) => {
         localStorage.removeItem('refresh');
         setIsAdmin(false);
         localStorage.removeItem('isAdmin');
+        setExpiration('0');
+        localStorage.removeItem('expiration');
     };
 
     return (
         <AuthContext.Provider
-            value={{ access, refresh, isAdmin, logIn, logOut, isAuthenticated }}
+            value={{
+                access,
+                refresh,
+                expiration,
+                isAdmin,
+                logIn,
+                logOut,
+                isAuthenticated,
+            }}
         >
             {children}
         </AuthContext.Provider>
     );
-};
-
-export default AuthProvider;
+}

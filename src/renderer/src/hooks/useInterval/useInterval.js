@@ -4,8 +4,8 @@ import { useEffect, useRef } from 'react';
  * Custom hook that calls the callback function at a specified interval.
  * Also calls the callback immediately.
  *
- * @param callback - the callback function to call
- * @param delay - the interval in milliseconds
+ * @param {Function} callback - the callback function to call
+ * @param {number} delay - the interval in milliseconds
  */
 const useInterval = (callback, delay) => {
     const savedCallback = useRef();

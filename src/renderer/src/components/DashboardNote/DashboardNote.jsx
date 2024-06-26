@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from 'react';
 import Preview from '../Preview/Preview';
 import { setPublishable } from '../../services/notesService/notesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 import { useLocation } from 'react-router-dom';
 
@@ -15,11 +14,13 @@ import { useLocation } from 'react-router-dom';
  * If the dashboard is in publish mode, only publishable notes will be displayed.
  * While in publish mode, a user can delete a note. In this case, the note will be removed from the list of notes to publish.
  *
- * @param {Object} note - Note object
- * @param {(string) => void} setAlert - Function to set an alert
- * @param {boolean} publishMode - determine if the dashboard is in publish mode
- * @param {Array<number>} selectedNoteIds - an array of note ids - used to keep track of notes to publish
- * @param {(Array<number>) => void} setSelectedNoteIds - Function to set the note ids
+ * @function DashboardNote
+ * @param {Object} props - The props object
+ * @param {Note} props.note - Note object
+ * @param {StateSetter<Alert>} props.setAlert - Function to set an alert
+ * @param {boolean} props.publishMode - determine if the dashboard is in publish mode
+ * @param {Array<number>} props.selectedNoteIds - an array of note ids - used to keep track of notes to publish
+ * @param {StateSetter<Array<number>>} props.setSelectedNoteIds - Function to set the note ids
  * @returns {DashboardNote}
  * @constructor
  */
@@ -34,28 +35,27 @@ export default function DashboardNote({
     const [isSelected, setIsSelected] = useState(true);
     const navigate = useNavigate();
     const location = useLocation();
-    const auth = useAuth();
     const [parsedContent, setParsedContent] = useState('');
 
     useEffect(() => {
         parseContent(note.content, note.files)
             .then((parsedContent) => setParsedContent(parsedContent))
-            .catch(displayError(setAlert));
-    }, [note.content, note.files]);
+            .catch(displayError(setAlert, navigate));
+    }, [note.content, note.files, setAlert, navigate]);
 
     // Attempt to change the publishable status of a note.
     // If successful, update the switch to reflect this. Otherwise, display an error.
     const handleTogglePublishable = useCallback(
         (noteId) => {
-            setPublishable(auth.access, noteId, !isPublishable)
+            setPublishable(noteId, !isPublishable)
                 .then((response) => {
                     if (response.status === 200) {
                         setIsPublishable(!isPublishable);
                     }
                 })
-                .catch(displayError(setAlert));
+                .catch(displayError(setAlert, navigate));
         },
-        [auth.access, isPublishable, setIsPublishable, setAlert],
+        [isPublishable, setIsPublishable, setAlert],
     );
 
     // If the note is to be included in the report and the button is clicked, remove it from the list of notes to publish.
@@ -111,7 +111,6 @@ export default function DashboardNote({
                             <input
                                 data-testid='select-btn'
                                 type='checkbox'
-                                defaultChecked={true}
                                 checked={isSelected}
                                 className='form-checkbox checkbox checkbox-primary'
                                 onClick={handleSelectNote}
@@ -125,7 +124,6 @@ export default function DashboardNote({
                                     Publishable
                                 </label>
                                 <input
-                                    defaultChecked={true}
                                     checked={isPublishable}
                                     id={`publishable-switch-${note.id}`}
                                     type='checkbox'

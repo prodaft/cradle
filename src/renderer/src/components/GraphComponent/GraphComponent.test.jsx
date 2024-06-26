@@ -2,7 +2,7 @@ import { render, fireEvent } from '@testing-library/react';
 import GraphComponent from './GraphComponent';
 import { getGraphData } from '../../services/graphService/graphService';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
-import { useAuth } from '../../hooks/useAuth/useAuth';
+import useAuth from '../../hooks/useAuth/useAuth';
 import { useNavigate } from 'react-router-dom';
 import '@testing-library/jest-dom';
 import { describe, expect, it } from '@jest/globals';
@@ -24,8 +24,6 @@ global.ResizeObserver = jest.fn().mockImplementation(() => ({
 jest.mock('../../services/graphService/graphService');
 
 describe('GraphComponent', () => {
-    useAuth.mockReturnValue({ access: 'token' });
-
     it('fetches graph data on mount', () => {
         getGraphData.mockResolvedValue({ data: { entities: [], links: [] } });
         render(<GraphComponent />);
@@ -40,7 +38,7 @@ describe('GraphComponent', () => {
             },
         });
         const { findByText } = render(<GraphComponent />);
-        const nodeLabel = await findByText('Entity1');
+        const nodeLabel = await findByText('case: Entity1');
         expect(nodeLabel).toBeInTheDocument();
     });
 
@@ -62,8 +60,8 @@ describe('GraphComponent', () => {
         const searchInput = await findByPlaceholderText('Search Graph');
         fireEvent.change(searchInput, { target: { value: 'Entity2' } });
         fireEvent.keyDown(searchInput, { key: 'Enter' });
-        const nodeLabel = await queryByText('Entity2');
+        const nodeLabel = await queryByText('actor: Entity2');
         expect(nodeLabel).toBeInTheDocument();
-        expect(await queryByText('Entity1')).not.toBeInTheDocument();
+        expect(await queryByText('case: Entity1')).not.toBeInTheDocument();
     });
 });

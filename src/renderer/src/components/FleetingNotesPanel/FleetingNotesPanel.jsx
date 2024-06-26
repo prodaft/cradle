@@ -1,16 +1,19 @@
 import { Xmark } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { getFleetingNotes } from '../../services/fleetingNotesService/fleetingNotesService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import FleetingNoteCard from '../FleetingNoteCard/FleetingNoteCard';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * The FleetingNotesPanel component is a panel that displays all the fleeting notes of the user.
  * It is displayed when the user clicks the fleeting notes button in the Navbar.
- * @param {(any) => any} handleFleetingNotesButton - the function to handle the closing of the FleetingNotesPanel
- * @param {*} fleetingNotesRefresh - the state used to determine the refresh of the FleetingNotesPanel
+ *
+ * @function FleetingNotesPanel
+ * @param {Object} props - The props object
+ * @param {Function} props.handleFleetingNotesButton - the function to handle the closing of the FleetingNotesPanel
+ * @param {any} fleetingNotesRefresh - the state used to determine the refresh of the FleetingNotesPanel
  * @returns {FleetingNotesPanel}
  * @constructor
  */
@@ -18,18 +21,18 @@ export default function FleetingNotesPanel({
     handleFleetingNotesButton,
     fleetingNotesRefresh,
 }) {
-    const auth = useAuth();
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [notes, setNotes] = useState([]);
+    const navigate = useNavigate();
 
     useEffect(() => {
-        getFleetingNotes(auth.access)
+        getFleetingNotes()
             .then((response) => {
                 if (response.status == 200) {
                     setNotes(response.data);
                 }
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     }, [fleetingNotesRefresh]);
 
     return (

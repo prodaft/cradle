@@ -7,11 +7,14 @@ import React from 'react';
  * - Cancel
  * - Confirm
  * When the confirm button is clicked the handleConfirm function will be called.
- * @param open
- * @param setOpen
- * @param handleConfirm
- * @param title
- * @param description
+ *
+ * @function ConfirmationDialog
+ * @param {Object} props - The props object
+ * @param {boolean} props.open - Whether the dialog is open
+ * @param {StateSetter<boolean>} props.setOpen - A function to set the open state
+ * @param {Function} props.handleConfirm - The function to call when the confirm button is clicked
+ * @param {string} props.title - The title of the dialog
+ * @param {string} props.description - The description of the dialog
  * @returns {ConfirmationDialog}
  * @constructor
  */

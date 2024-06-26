@@ -15,6 +15,7 @@ dist-ssr
 coverage
 
 out
+docs
 
 # Editor directories and files
 .vscode/*

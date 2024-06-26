@@ -1,34 +1,33 @@
 import Preview from '../Preview/Preview';
 import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
 import { useNavigate } from 'react-router-dom';
-import { Trash } from 'iconoir-react/regular';
-import { deleteFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import { useState, useEffect } from 'react';
 
 /**
  * FleetingNoteCard is a component that displays a single Fleeting Note. It is used in the FleetingNotesPanel component.
- * @param note - the note to display
- * @param setAlert - the function to set the alert text
+ *
+ * @function FleetingNoteCard
+ * @param {Object} props - The props object
+ * @param {Note} props.note - the note to display
+ * @param {StateSetter<Alert>} setAlert - the function to set the alert text
  * @returns {FleetingNoteCard}
  * @constructor
  */
 export default function FleetingNoteCard({ note, setAlert }) {
     const navigate = useNavigate();
-    const auth = useAuth();
     const [parsedContent, setParsedContent] = useState('');
 
     useEffect(() => {
         parseContent(note.content, note.files)
             .then((parsedContent) => setParsedContent(parsedContent))
-            .catch(displayError(setAlert));
-    }, [note.content, note.files]);
+            .catch(displayError(setAlert, navigate));
+    }, [note.content, note.files, setAlert, navigate]);
 
     return (
         <div
             className='bg-cradle3 bg-opacity-20 p-4 backdrop-blur-lg rounded-xl m-3 shadow-md'
-            onClick={() => navigate(`/fleeting-editor/${note.id}`)}
+            onClick={() => navigate(`/editor/${note.id}`)}
         >
             <div className='flex flex-row justify-left'>
                 <div className='text-zinc-500 text-xs w-full'>

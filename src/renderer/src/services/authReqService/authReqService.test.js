@@ -1,5 +1,5 @@
 import { logInReq, registerReq } from './authReqService';
-import axios from 'axios';
+import { noAuthAxios as axios } from '../axiosInstance/axiosInstance';
 import MockAdapter from 'axios-mock-adapter';
 
 describe('AuthService', () => {

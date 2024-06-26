@@ -3,10 +3,10 @@ import {
     getUploadLink,
     uploadFile,
 } from '../../services/fileUploadService/fileUploadService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { CloudUpload } from 'iconoir-react';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * This component is used to upload files to the server.
@@ -15,18 +15,20 @@ import { CloudUpload } from 'iconoir-react';
  * The user can upload multiple files at once. Each file is uploaded individually.
  * If any of the files fail to upload, the user is alerted.
  *
- * @param {import('../Editor/Editor').FileDataArray} fileData - the files uploaded via this instance of the component. This only contains the tag and the name of the file.
- * @param {(import('../Editor/Editor').FileDataArray) => void} setFileData - callback used when the files uploaded via this instance of the component change
+ * @function FileInput
+ * @param {Object} props - The props object
+ * @param {Array<FileData>} props.fileData - the files uploaded via this instance of the component. This only contains the tag and the name of the file.
+ * @param {StateSetter<Array<FileData>>} props.setFileData - callback used when the files uploaded via this instance of the component change
  * @returns {FileInput}
  * @constructor
  */
 export default function FileInput({ fileData, setFileData }) {
     const EMPTY_FILE_LIST = new DataTransfer().files;
     const [pendingFiles, setPendingFiles] = useState(EMPTY_FILE_LIST);
-    const auth = useAuth();
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [isUploading, setIsUploading] = useState(false);
     const inputRef = useRef(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         inputRef.current.files = pendingFiles;
@@ -43,7 +45,7 @@ export default function FileInput({ fileData, setFileData }) {
         const succeededFileData = [];
         const failedFiles = new DataTransfer();
         const fileUploadPromises = Array.from(pendingFiles).map((file) =>
-            getUploadLink(auth.access, file.name)
+            getUploadLink(file.name)
                 .then(async (res) => {
                     const uploadUrl = res.data.presigned;
                     await uploadFile(uploadUrl, file);
@@ -56,7 +58,7 @@ export default function FileInput({ fileData, setFileData }) {
                         bucket_name: data.bucket_name,
                     });
                 })
-                .catch(() => {
+                .catch((err) => {
                     failedFiles.items.add(file);
                 }),
         );
@@ -85,7 +87,7 @@ export default function FileInput({ fileData, setFileData }) {
                     });
                 }
             })
-            .catch(displayError(setAlert)) // Catches the error thrown in the .then block
+            .catch(displayError(setAlert, navigate)) // Catches the error thrown in the .then block
             .finally(() => {
                 setIsUploading(false);
             });

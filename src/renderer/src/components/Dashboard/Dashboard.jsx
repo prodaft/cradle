@@ -4,7 +4,7 @@ import {
     getDashboardData,
     requestCaseAccess,
 } from '../../services/dashboardService/dashboardService';
-import { useAuth } from '../../hooks/useAuth/useAuth';
+import useAuth from '../../hooks/useAuth/useAuth';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import DashboardNote from '../DashboardNote/DashboardNote';
 import { displayError } from '../../utils/responseUtils/responseUtils';
@@ -32,7 +32,7 @@ import { Search } from 'iconoir-react';
  * If the entity is linked to cases to which the user does not have access to, a button to request access to view them is displayed
  * If the entity is an entry, a button to search the entry name on VirusTotal is displayed
  *
- * @component
+ * @function Dashboard
  * @returns {Dashboard}
  * @constructor
  */
@@ -42,7 +42,8 @@ export default function Dashboard() {
     const [entityMissing, setEntityMissing] = useState(false);
     const [contentObject, setContentObject] = useState({});
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const [dialog, setDialog] = useState(false);
+    const [deleteDialog, setDeleteDialog] = useState(false);
+    const [virusTotalDialog, setVirusTotalDialog] = useState(false);
     const navigate = useNavigate();
     const auth = useAuth();
     const dashboard = useRef(null);
@@ -53,7 +54,7 @@ export default function Dashboard() {
         setAlert('');
 
         // Populate dashboard
-        getDashboardData(auth.access, path)
+        getDashboardData(path)
             .then((response) => {
                 setContentObject(response.data);
                 dashboard.current.scrollTo(0, 0);
@@ -63,11 +64,11 @@ export default function Dashboard() {
                 if (err.response && err.response.status === 404) {
                     setEntityMissing(true);
                 } else {
-                    const errHandler = displayError(setAlert);
+                    const errHandler = displayError(setAlert, navigate);
                     errHandler(err);
                 }
             });
-    }, [location, auth.access, path, setAlert, setEntityMissing, setContentObject]);
+    }, [location, path, setAlert, setEntityMissing, setContentObject]);
 
     const handleEnterPublishMode = useCallback(() => {
         const publishableNotes = contentObject.notes.filter((note) => note.publishable);
@@ -83,26 +84,23 @@ export default function Dashboard() {
     }, [navigate, contentObject, setAlert]);
 
     const handleDelete = () => {
-        deleteEntity(
-            auth.access,
-            `entities/${pluralize(contentObject.type)}`,
-            contentObject.id,
-        )
+        deleteEntity(`entities/${pluralize(contentObject.type)}`, contentObject.id)
             .then((response) => {
                 if (response.status === 200) {
                     navigate('/');
                 }
             })
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     };
 
     const navbarContents = [
         // If the user is an admin and the dashboard is not for an entry, add a delete button to the navbar
         auth.isAdmin && contentObject.type !== 'entry' && (
             <NavbarButton
+                key='delete-entity-btn'
                 icon={<Trash />}
                 text='Delete'
-                onClick={() => setDialog(true)}
+                onClick={() => setDeleteDialog(true)}
                 data-testid='delete-entity-btn'
             />
         ),
@@ -110,6 +108,7 @@ export default function Dashboard() {
         // A button to enter publish mode. Here the user can choose which notes they want to view in the publish preview
         // This is only visible while the user is not in publish preview mode
         <NavbarButton
+            key='publish-mode-btn'
             icon={<TaskList />}
             text='Enter Publish Mode'
             data-testid='publish-mode-btn'
@@ -119,14 +118,14 @@ export default function Dashboard() {
     useNavbarContents(!entityMissing && navbarContents, [
         contentObject,
         location,
-        auth.access,
+        auth.isAdmin,
         entityMissing,
         handleEnterPublishMode,
-        setDialog,
+        setDeleteDialog,
     ]);
 
     const handleRequestCaseAccess = (cases) => {
-        Promise.all(cases.map((c) => requestCaseAccess(auth.access, c.id)))
+        Promise.all(cases.map((c) => requestCaseAccess(c.id)))
             .then(() =>
                 setAlert({
                     show: true,
@@ -134,7 +133,7 @@ export default function Dashboard() {
                     color: 'green',
                 }),
             )
-            .catch(displayError(setAlert));
+            .catch(displayError(setAlert, navigate));
     };
 
     const handleVirusTotalSearch = (name) => {
@@ -154,11 +153,20 @@ export default function Dashboard() {
     return (
         <>
             <ConfirmationDialog
-                open={dialog}
-                setOpen={setDialog}
+                open={deleteDialog}
+                setOpen={setDeleteDialog}
                 title={'Confirm Deletion'}
                 description={'This is permanent'}
                 handleConfirm={handleDelete}
+            />
+            <ConfirmationDialog
+                open={virusTotalDialog}
+                setOpen={setVirusTotalDialog}
+                title={'Notice'}
+                description={
+                    'This action will send data about this entry to VirusTotal. Are you sure you want to proceed?'
+                }
+                handleConfirm={() => handleVirusTotalSearch(contentObject.name)}
             />
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div
@@ -181,9 +189,7 @@ export default function Dashboard() {
                         <div className='flex flex-row space-x-2 flex-wrap'>
                             <button
                                 className='btn w-fit min-w-[200px] mt-2 gap-2 !pl-4'
-                                onClick={() =>
-                                    handleVirusTotalSearch(contentObject.name)
-                                }
+                                onClick={() => setVirusTotalDialog(true)}
                             >
                                 <Search />
                                 Search on VirusTotal

@@ -2,19 +2,19 @@ import DOMPurify from 'dompurify';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { handleLinkClick } from '../../utils/textEditorUtils/textEditorUtils';
-import { useAuth } from '../../hooks/useAuth/useAuth';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import { color } from '@uiw/react-codemirror';
 
 /**
  * This Preview component expects a content parameter, which it uses to set as inner HTML to itself.
  * This can be a dangerous procedure if the content is not sanitized, so the Preview also performs this step.
  *
- * @param {string} htmlContent - the (HTML) content to preview
+ * @function Preview
+ * @param {Object} props - The props of the component.
+ * @param {string} props.htmlContent - the (HTML) content to preview
  * @returns {Preview}
+ * @constructor
  */
 export default function Preview({ htmlContent }) {
-    const auth = useAuth();
     const sanitizedContent = DOMPurify.sanitize(htmlContent);
     const navigate = useNavigate();
     const previewRef = useRef(null);

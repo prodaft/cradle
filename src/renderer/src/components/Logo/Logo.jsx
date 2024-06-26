@@ -4,9 +4,10 @@ import logo from '../../assets/logo-nobg.png';
 /**
  * The Logo component is a simple component that displays the CRADLE logo.
  *
+ * @function Logo
  * @param {Object} props
- * @param {string} [props.width] - the width of the logo
- * @param {string} [props.height] - the height of the logo
+ * @param {string} [props.width='auto'] - the width of the logo
+ * @param {string} [props.height='auto'] - the height of the logo
  * @returns {Logo}
  * @constructor
  */

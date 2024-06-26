@@ -4,8 +4,11 @@ import { NavArrowDown, NavArrowUp } from 'iconoir-react';
 /**
  * DashboardHorizontalSection component - This component is used to display a horizontal section on the dashboard.
  * Used for displaying cases, actors and metadata on the dashboard.
- * @param title - Title of the section
- * @param children - Children to display in the section
+ *
+ * @function DashboardHorizontalSection
+ * @param {Object} props - The props object
+ * @param {string} props.title - Title of the section
+ * @param {Array<React.ReactElement>} children - Children to display in the section
  * @returns {DashboardHorizontalSection}
  * @constructor
  */

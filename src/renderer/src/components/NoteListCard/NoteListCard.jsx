@@ -10,10 +10,12 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
  * Each note in the list is displayed as a clickable card.
  * When a note is clicked, the user is navigated to the corresponding note viewer.
  *
+ * @function NoteListCard
  * @param {Object} props - The props of the component.
  * @param {string} props.title - The title of the list.
- * @param {Object[]} props.notes - The list of notes to display.
+ * @param {Array<Note>} props.notes - The list of notes to display.
  * @returns {NoteListCard}
+ * @constructor
  */
 export default function NoteListCard({ title = '', notes = [] }) {
     const navigate = useNavigate();
@@ -38,8 +40,8 @@ export default function NoteListCard({ title = '', notes = [] }) {
             }),
         )
             .then((res) => setNoteCards(res))
-            .catch(displayError(setAlert));
-    }, [notes]);
+            .catch(displayError(setAlert, navigate));
+    }, [notes, navigate]);
 
     return (
         <>

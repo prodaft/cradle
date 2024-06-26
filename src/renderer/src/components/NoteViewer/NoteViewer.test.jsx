@@ -5,7 +5,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { getNote } from '../../services/notesService/notesService';
 import NoteViewer from './NoteViewer';
-import { useAuth } from '../../hooks/useAuth/useAuth';
+import useAuth from '../../hooks/useAuth/useAuth';
 import '@testing-library/jest-dom';
 
 jest.mock('../../services/notesService/notesService');
@@ -14,7 +14,6 @@ jest.mock('../../hooks/useNavbarContents/useNavbarContents');
 
 beforeEach(() => {
     jest.resetAllMocks();
-    useAuth.mockReturnValue({ access: 'dummy_token' });
 });
 
 describe('NoteViewer', () => {

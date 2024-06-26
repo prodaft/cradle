@@ -5,15 +5,9 @@ import { fireEvent, render, waitFor } from '@testing-library/react';
 import AdminPanelCard from '../AdminPanelCard/AdminPanelCard';
 import { deleteEntity } from '../../services/adminService/adminService';
 import React from 'react';
-import AuthProvider from '../../utils/AuthProvider/AuthProvider';
+import AuthProvider from '../../components/AuthProvider/AuthProvider';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
-
-jest.mock('../../hooks/useAuth/useAuth', () => ({
-    useAuth: jest.fn().mockImplementation(() => {
-        return { access: 'testToken' };
-    }),
-}));
 
 jest.mock('../../services/adminService/adminService');
 
@@ -60,9 +54,7 @@ describe('AdminPanelCard', () => {
         fireEvent.click(getByRole('button'));
         fireEvent.click(getByText('Confirm'));
 
-        await waitFor(() =>
-            expect(deleteEntity).toHaveBeenCalledWith('testToken', 'testType', '1'),
-        );
+        await waitFor(() => expect(deleteEntity).toHaveBeenCalledWith('testType', '1'));
         expect(onDelete).toHaveBeenCalled();
     });
 
