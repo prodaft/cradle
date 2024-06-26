@@ -121,7 +121,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
     // Function to save a note
     // If the note you are working on is on the 'new' path create new fleeting note
     // If the note has an id update the fleeting note
-    const handleSaveNote = (displayAlert, navigateOnNewNote) => {
+    const handleSaveNote = (displayAlert) => {
         if (!validateContent()) return;
         if (id) {
             const storedContent = markdownContentRef.current;
@@ -136,9 +136,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
                             setHasUnsavedChanges(false);
                             // Set previous id as the one from the response to avoid re-fetching the note
                             prevIdRef.current = res.data.id;
-                            if (navigateOnNewNote) {
-                                navigate(`/editor/${res.data.id}`);
-                            }
+                            navigate(`/editor/${res.data.id}`);
                         }
                     })
                     .catch(displayError(setAlert, navigate));
@@ -220,7 +218,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
         setHasUnsavedChanges(true);
         // Start the timer for autosave
         const autosaveTimer = setTimeout(() => {
-            handleSaveNote('', true);
+            handleSaveNote('');
         }, autoSaveDelay);
 
         // In case there are new changes detected reset the timer
@@ -241,13 +239,13 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
     useNavbarContents(
         id !== NEW_NOTE_PLACEHOLDER_ID && [
             <NavbarButton
-                key = 'editor-delete-btn'
+                key='editor-delete-btn'
                 icon={<Trash />}
                 text={'Delete'}
                 onClick={() => setDialog(true)}
             />,
             <NavbarDropdown
-                key = 'editor-save-final-btn'
+                key='editor-save-final-btn'
                 icon={<FloppyDiskArrowIn />}
                 text={'Save As Final'}
                 contents={[
@@ -262,10 +260,10 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
                 ]}
             />,
             <NavbarButton
-                key = 'editor-save-btn'
+                key='editor-save-btn'
                 icon={<FloppyDisk />}
                 text={'Save'}
-                onClick={() => handleSaveNote('Changes saved successfully.', true)}
+                onClick={() => handleSaveNote('Changes saved successfully.')}
             />,
         ],
         [auth, id],

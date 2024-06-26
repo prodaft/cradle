@@ -61,8 +61,9 @@ To create an account, follow these steps:
 3. Click on the `Register` button to create your account. This will redirect you to the login page.
 
 To create an administrator account there are 2 possible ways:
+
 1. Set up the corresponding environment variables for admin creation before booting up the server for the first time.
-    An administrator account is created by default using the provided settings.
+   An administrator account is created by default using the provided settings.
 2. Run the command: `python manage.py createsuperuser` from the terminal of the server.
    Complete the credentials as requested in the command line interface.
 
@@ -138,9 +139,8 @@ The syntax for linking to cases, actors and entries is as follows:
 'ttp',
 'malware',
 'campaign',
-'family'`.
-    -   If the entry type is not recognized, the link will be displayed as plain text.
-        If you believe this list should be updated, please contact the system administrator.
+'family'`. - If the entry type is not recognized, the link will be displayed as plain text.
+    If you believe this list should be updated, please contact the system administrator.
 -   The supported metadata types are:
     `'crime', 'industry', 'country', 'company'`.
     -   If the metadata type is not recognized, the link will be displayed as plain text.
