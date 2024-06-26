@@ -9,9 +9,9 @@ import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
 
 jest.mock('../../hooks/useAuth/useAuth', () => ({
-    useAuth: jest.fn().mockImplementation(() => {
-        return { isAdmin: true };
-    }),
+    default: () => {
+        isAdmin: true;
+    },
 }));
 
 jest.mock('../../services/adminService/adminService', () => ({
@@ -42,8 +42,10 @@ describe('AdminPanel', () => {
     });
 
     it('should not display actors, cases, and users when user is not admin', async () => {
-        useAuth.mockImplementation(() => ({
-            isAdmin: false,
+        jest.mock('../../hooks/useAuth/useAuth', () => ({
+            default: () => {
+                isAdmin: false;
+            },
         }));
         const { queryByText } = render(
             <MemoryRouter>
