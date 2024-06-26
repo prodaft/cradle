@@ -171,20 +171,22 @@ export default function GraphComponent() {
                                 </button>
                             </div>
                             <div>Connections: {highlightedNode.degree}</div>
-                            <div
-                                className='underline cursor-pointer'
-                                onClick={() =>
-                                    navigate(
-                                        createDashboardLink({
-                                            name: highlightedNode.name,
-                                            type: highlightedNode.type,
-                                            subtype: highlightedNode.subtype,
-                                        }),
-                                    )
-                                }
-                            >
-                                Navigate to dashboard
-                            </div>
+                            {highlightedNode.type !== 'metadata' && (
+                                <div
+                                    className='underline cursor-pointer'
+                                    onClick={() =>
+                                        navigate(
+                                            createDashboardLink({
+                                                name: highlightedNode.name,
+                                                type: highlightedNode.type,
+                                                subtype: highlightedNode.subtype,
+                                            }),
+                                        )
+                                    }
+                                >
+                                    Navigate to dashboard
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
