@@ -28,7 +28,7 @@ class AccessCheckerTask:
             case of this task, the old dictionary is returned.
 
         Raises:
-            NoAccessToEntitiesException: The referenced agents or cases do not exist.
+            NoAccessToEntitiesException: The referenced actors or cases do not exist.
         """
 
         required_access = {AccessType.READ_WRITE}

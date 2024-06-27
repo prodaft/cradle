@@ -21,7 +21,7 @@ class CountReferencesTask:
 
         Raises:
             NotEnoughReferencesException: The note does not reference at least one case
-            and at least two entities.
+                and at least two entities.
         """
 
         referenced_cases = len(referenced_entities["case"])

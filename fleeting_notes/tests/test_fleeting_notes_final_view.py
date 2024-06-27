@@ -72,7 +72,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
-            response.json()["detail"], "The referenced agents or cases do not exist."
+            response.json()["detail"], "The referenced actors or cases do not exist."
         )
 
         self.assertIsNotNone(FleetingNote.objects.get(id=self.note_user.pk))
@@ -88,7 +88,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
-            response.json()["detail"], "The referenced agents or cases do not exist."
+            response.json()["detail"], "The referenced actors or cases do not exist."
         )
 
         self.assertIsNotNone(FleetingNote.objects.get(id=self.note_user.pk))
