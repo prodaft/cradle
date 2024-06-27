@@ -210,7 +210,7 @@ export class SeleniumUtils {
             content,
         );
 
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
         let buttons = await this.driver.findElements(By.css('button'));
         await buttons[3].click();
