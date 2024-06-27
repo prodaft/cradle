@@ -155,7 +155,7 @@ class CreateNoteTest(NotesTestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
-            response.json()["detail"], "The referenced agents or cases do not exist."
+            response.json()["detail"], "The referenced actors or cases do not exist."
         )
 
     def test_references_cases_user_has_no_access_to(self):
@@ -171,7 +171,7 @@ class CreateNoteTest(NotesTestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
-            response.json()["detail"], "The referenced agents or cases do not exist."
+            response.json()["detail"], "The referenced actors or cases do not exist."
         )
 
     def test_create_note_successfully(self):

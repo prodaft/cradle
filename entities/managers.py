@@ -11,13 +11,13 @@ class EntityManager(models.Manager):
         query_set: models.QuerySet,
         entity_types: list[str],
         entity_subtypes: list[str],
-        name_prefix: str,
+        name_substr: str,
     ) -> models.QuerySet:
         """For a given initial query_set, a list of entity types, a list of entity
-        subtypes and a name prefix, filter the initial query set to keep only
+        subtypes and a string, filter the initial query set to keep only
         entities which have the entity type in entity_types, the entries which
-        have the the subtype in entity_subtypes and the name starting with
-        name_prefix.
+        have the the subtype in entity_subtypes and the name containing name_substr
+        as a substring. The check for containment ignores upper and lowercase.
 
         Args:
             query_set: the query_set on which the additional filters are applied.
@@ -37,7 +37,7 @@ class EntityManager(models.Manager):
                 Q(type=EntityType.ENTRY) & ~Q(subtype__in=entity_subtypes),
             )
             # filter name
-            .filter(name__startswith=name_prefix)
+            .filter(name__icontains=name_substr).order_by("name")
         )
 
 
