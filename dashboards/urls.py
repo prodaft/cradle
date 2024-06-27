@@ -6,17 +6,17 @@ from .views.entry_dashboard_view import EntryDashboard
 
 urlpatterns = [
     path(
-        "cases/<str:case_name>/",
+        "cases/<path:case_name>/",
         CaseDashboard.as_view(),
         name="case_dashboard",
     ),
     path(
-        "actors/<str:actor_name>/",
+        "actors/<path:actor_name>/",
         ActorDashboard.as_view(),
         name="actor_dashboard",
     ),
     path(
-        "entries/<str:entry_name>/",
+        "entries/<path:entry_name>/",
         EntryDashboard.as_view(),
         name="entry_dashboard",
     ),

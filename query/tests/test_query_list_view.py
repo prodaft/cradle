@@ -53,7 +53,7 @@ class QueryListTest(QueryTestCase):
         )
         self.entries.append(
             Entity.objects.create(
-                name="EnTry2",
+                name="3nTry2",
                 description="2",
                 type=EntityType.ENTRY,
                 subtype=EntitySubtype.PASSWORD,
