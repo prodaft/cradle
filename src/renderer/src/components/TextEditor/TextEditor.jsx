@@ -55,7 +55,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
     const fileDataRef = useRef(fileData);
     const [parsedContent, setParsedContent] = useState('');
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(true);
-    const prevIdRef = useRef(id);
+    const prevIdRef = useRef(null);
     const flexDirection = useChangeFlexDirectionBySize(textEditorRef);
 
     const NEW_NOTE_PLACEHOLDER_ID = 'new';
@@ -195,7 +195,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
                         });
                         refreshFleetingNotes();
                         // Navigate to new note page on deletion
-                        navigate('/editor/new');
+                        navigate('/editor/new', {replace: true});
                     }
                 })
                 .catch(displayError(setAlert, navigate));
@@ -230,7 +230,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
     // On component dismount reset the prevIdRef
     useEffect(() => {
         return () => {
-            prevIdRef.current = NEW_NOTE_PLACEHOLDER_ID;
+            prevIdRef.current = null;
         };
     }, []);
 
@@ -282,7 +282,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
                 className={`w-full h-full rounded-md flex p-1.5 gap-1.5 ${flexDirection === 'flex-col' ? 'flex-col' : 'flex-row'} overflow-y-hidden relative`}
                 ref={textEditorRef}
             >
-                <div className='absolute bottom-4 right-4 px-2 py-1 rounded-md backdrop-blur-lg backdrop-filter bg-cradle3 bg-opacity-50 shadow-lg text-zinc-300'>
+                <div className='absolute bottom-4 right-8 px-2 py-1 rounded-md backdrop-blur-lg backdrop-filter bg-cradle3 bg-opacity-50 shadow-lg text-zinc-300'>
                     {isValidContent()
                         ? hasUnsavedChanges
                             ? 'Changes Not Saved'

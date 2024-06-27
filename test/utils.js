@@ -202,7 +202,7 @@ export class SeleniumUtils {
     }
 
     async createNote(content, option) {
-        await this.driver.wait(until.urlIs('https://cradle.yigit.run/#/editor'));
+        await this.driver.wait(until.urlIs('https://cradle.yigit.run/#/editor/new'));
         let activeLine = await this.driver.findElement(By.className('cm-activeLine'));
         await this.driver.executeScript(
             'arguments[0].innerText = arguments[1];',
@@ -210,8 +210,10 @@ export class SeleniumUtils {
             content,
         );
 
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
         let buttons = await this.driver.findElements(By.css('button'));
-        await buttons[2].click();
+        await buttons[3].click();
         let options = await this.driver.findElements(By.css('a'));
         await options[option].click();
     }
