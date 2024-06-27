@@ -308,7 +308,7 @@ paths:
                   type: string
       responses:
         '200': 
-          description: Agent has been added. 
+          description: Actor has been added. 
           content: 
             'application/json':
               schema: 
@@ -333,7 +333,7 @@ paths:
       operationId: getCases
       responses:
         '200': 
-          description: Agent has been added. 
+          description: Request is successful.
           content: 
             'application/json':
               schema: 
@@ -564,7 +564,7 @@ paths:
       operationId: deleteActor
       parameters:
         - in: path
-          name: agentId
+          name: actorId
           required: true
           schema:
             type: string
@@ -572,13 +572,13 @@ paths:
           example: "123e4567-e89b-12d3-a456-426614174000"
       responses:
         '200':
-          description: Requested agent was deleted.
+          description: Requested actor was deleted.
         '401':
           description: User is not authenticated.
         '403':
           description: User is not an admin.
         '404':
-          description: There is no agent with specified ID.
+          description: There is no actor with specified ID.
             
 
 

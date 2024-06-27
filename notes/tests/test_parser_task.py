@@ -2,8 +2,6 @@ from notes.utils.parser_task import ParserTask
 from entities.models import Entity
 from .utils import NotesTestCase
 
-from unittest.mock import patch, PropertyMock
-
 from uuid import UUID
 
 
@@ -38,9 +36,7 @@ class ParserTaskTest(NotesTestCase):
         refs = ParserTask().run(note_content)
         self.references_assertions(refs)
 
-    @patch("entities.models.Entity.id", new_callable=PropertyMock)
-    def test_reference_each_type(self, mock_id):
-        mock_id.return_value = UUID(int=0)
+    def test_reference_each_type(self):
         note_content = (
             self.actor_pattern
             + self.case_pattern
@@ -66,18 +62,14 @@ class ParserTaskTest(NotesTestCase):
         refs = ParserTask().run(note_content)
         self.references_assertions(refs)
 
-    @patch("entities.models.Entity.id", new_callable=PropertyMock)
-    def test_no_aliases(self, mock_id):
-        mock_id.return_value = UUID(int=0)
+    def test_no_aliases(self):
         note_content = "[[actor:actor]][[case:case]]"
         refs = ParserTask().run(note_content)
         self.references_assertions(
             refs, actors={self.actor_entity}, cases={self.case_entity}
         )
 
-    @patch("entities.models.Entity.id", new_callable=PropertyMock)
-    def test_both_references_and_text(self, mock_id):
-        mock_id.return_value = UUID(int=0)
+    def test_both_references_and_text(self):
         note_content = (
             self.actor_pattern
             + "Lorem ipsum dolor sit amet."
@@ -93,13 +85,15 @@ class ParserTaskTest(NotesTestCase):
             cases={self.case_entity},
         )
 
-    @patch("entities.models.Entity.id", new_callable=PropertyMock)
-    def test_remove_duplicates(self, mock_id):
-        mock_id.return_value = UUID(int=0)
+    def test_remove_duplicates(self):
         note_content = (
             self.actor_pattern + self.actor_pattern + "[[actor:actor2|alias]]"
         )
         refs = ParserTask().run(note_content)
         self.references_assertions(
-            refs, actors={self.actor_entity, Entity(type="actor", name="actor2")}
+            refs,
+            actors={
+                self.actor_entity,
+                Entity(id=UUID(int=0), type="actor", name="actor2"),
+            },
         )
