@@ -4,7 +4,10 @@ import { useCallback, useEffect, useState } from 'react';
 import Preview from '../Preview/Preview';
 import { setPublishable } from '../../services/notesService/notesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
+import {
+    createDashboardLink,
+    truncateText,
+} from '../../utils/dashboardUtils/dashboardUtils';
 import { useLocation } from 'react-router-dom';
 
 /**
@@ -90,9 +93,9 @@ export default function DashboardNote({
             <Link
                 key={entity.id}
                 to={dashboardLink}
-                className='text-zinc-300 hover:underline hover:text-cradle2 mr-1 backdrop-filter bg-cradle3 bg-opacity-60 backdrop-blur-lg px-2 py-1 rounded-md'
+                className='text-zinc-300 hover:underline hover:text-cradle2 backdrop-filter bg-cradle3 bg-opacity-60 backdrop-blur-lg h-6 px-2 py-1 rounded-md'
             >
-                {entity.name}
+                {truncateText(entity.name, 30)}
             </Link>
         );
     });
@@ -143,10 +146,9 @@ export default function DashboardNote({
                     >
                         <Preview htmlContent={parsedContent} />
                     </div>
-                    <div className='text-zinc-300 text-xs w-full flex justify-between'>
-                        <span className='break-all w-full'>
-                            References: {referenceLinks}
-                        </span>
+                    <div className='text-zinc-300 text-xs w-full break-all flex flex-row flex-wrap justify-start space-x-1 space-y-1 items-center'>
+                        <div>References:</div>
+                        {referenceLinks}
                     </div>
                 </div>
             )}
