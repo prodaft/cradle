@@ -21,7 +21,7 @@ class EntityCheckerTask:
             True iff all referenced entities exist.
 
         Raises:
-            EntitiesDoNotExistException: The referenced agents or cases do not exist.
+            EntitiesDoNotExistException: The referenced actors or cases do not exist.
         """
 
         referenced_names = [e.name for e in referenced_entities]
@@ -50,7 +50,7 @@ class EntityCheckerTask:
             also contain their corresponding ids from the database.
 
         Raises:
-            Http404: The referenced agents or cases do not exist.
+            Http404: The referenced actors or cases do not exist.
         """
 
         for entity_type in self.__checked_entities:

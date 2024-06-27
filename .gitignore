@@ -10,3 +10,7 @@ reports
 error.log
 success.log
 .idea
+
+/docs/_build
+/docs/api_reference/*
+!/docs/api_reference/index.rst
