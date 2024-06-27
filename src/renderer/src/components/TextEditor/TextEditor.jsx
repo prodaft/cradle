@@ -195,7 +195,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
                         });
                         refreshFleetingNotes();
                         // Navigate to new note page on deletion
-                        navigate('/editor/new', {replace: true});
+                        navigate('/editor/new', { replace: true });
                     }
                 })
                 .catch(displayError(setAlert, navigate));
