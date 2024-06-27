@@ -25,12 +25,12 @@ class NoteDoesNotExistException(APIException):
 
 class EntitiesDoNotExistException(APIException):
     status_code = 404
-    default_detail = "The referenced agents or cases do not exist."
+    default_detail = "The referenced actors or cases do not exist."
 
 
 class NoAccessToEntitiesException(APIException):
     status_code = 404
-    default_detail = "The referenced agents or cases do not exist."
+    default_detail = "The referenced actors or cases do not exist."
 
 
 class NoteNotPublishableException(APIException):

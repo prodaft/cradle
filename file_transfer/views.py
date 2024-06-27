@@ -92,7 +92,7 @@ class FileDownload(APIView):
 
         response_data = {}
         response_data["presigned"] = MinioClient().create_presigned_get(
-            bucket_name, minio_file_name, timedelta(minutes=5)
+            bucket_name, minio_file_name, timedelta(days=7)
         )
 
         return Response(FileDownloadSerializer(response_data).data)
