@@ -122,3 +122,20 @@ export const renderDashboardSectionWithInaccessibleEntities = (
         </DashboardHorizontalSection>
     );
 };
+
+/**
+ * Function to truncate text to a specific length.
+ * If the text is shorter than the specified length, it is returned as is.
+ * Otherwise, the text is truncated and '...' is appended to it.
+ *
+ * @param {string} text - the text to truncate
+ * @param {number} maxLength - the maximum length of the truncated text (not including '...')
+ * @returns {string} - the truncated text
+ */
+export const truncateText = (text, maxLength) => {
+    if (text.length <= maxLength) {
+        return text;
+    }
+
+    return text.slice(0, maxLength) + '...';
+};

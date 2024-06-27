@@ -36,7 +36,7 @@ export default function GraphComponent() {
     const defaultStrokeWidth = 2;
     const [spacingCoefficient, setSpacingCoefficient] = useState(48);
     const [componentDistanceCoefficient, setComponentDistanceCoefficient] = useState(8);
-    const [nodeRadiusCoefficient, setNodeRadiusCoefficient] = useState(2);
+    const [nodeRadiusCoefficient, setNodeRadiusCoefficient] = useState(1.5);
     const [centerGravity, setCenterGravity] = useState(0.05);
     const [showControls, setShowControls] = useState(false);
     const [searchValue, setSearchValue] = useState('');
@@ -154,11 +154,16 @@ export default function GraphComponent() {
                 </div>
                 <div className='absolute top-4 left-4 w-fit h-fit'>
                     {highlightedNode && (
-                        <div className='bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg p-4 rounded-md min-w-96 flex flex-col space-y-2'>
-                            <div className='flex flex-row items-center justify-between space-x-4'>
-                                <h2 className='text-xl font-bold'>
-                                    {highlightedNode.label}
-                                </h2>
+                        <div className='bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg p-4 rounded-md w-96 max-h-[90vh] flex flex-col space-y-2'>
+                            <div className='flex flex-row items-start justify-between space-x-4'>
+                                <p className='text-xl font-bold max-h-[75vh] overflow-hidden break-all'>
+                                    <span className='text-l text-zinc-300'>
+                                        {highlightedNode.subtype
+                                            ? highlightedNode.subtype + ': '
+                                            : highlightedNode.type + ': '}
+                                    </span>
+                                    {highlightedNode.name}
+                                </p>
                                 <button
                                     onClick={() => setHighlightedNode(null)}
                                     className='w-fit h-fit'
@@ -257,8 +262,8 @@ export default function GraphComponent() {
                                     <input
                                         type='range'
                                         min='0'
-                                        max='10'
-                                        step='1'
+                                        max='5'
+                                        step='0.5'
                                         className='range range-primary'
                                         value={nodeRadiusCoefficient}
                                         onChange={(e) => {

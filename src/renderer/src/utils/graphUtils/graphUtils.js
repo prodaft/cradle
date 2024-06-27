@@ -1,12 +1,14 @@
 import * as d3 from 'd3';
 import { entityGraphColors } from '../entityDefinitions/entityDefinitions';
+import { truncateText } from '../dashboardUtils/dashboardUtils';
 
 /**
  * preprocessData - This function is used to preprocess the raw data into a format suitable for the D3 force simulation.
  * The function is used in the GraphComponent component to preprocess the data before rendering the graph.
  * The function maps over the entities in the data and creates a new node for each entity with the necessary properties.
  * The function also calculates the degree of each node (i.e., the number of links connected to the node).
-
+ * Labels are truncated to 40 characters.
+ *
  * @function preprocessData
  * @param {
  *     {
@@ -31,8 +33,8 @@ export const preprocessData = (data) => {
     nodes = data.entities.map((entity) => ({
         id: entity.id,
         label: entity.subtype
-            ? `${entity.subtype}: ${entity.name}`
-            : `${entity.type}: ${entity.name}`,
+            ? truncateText(`${entity.subtype}: ${entity.name}`, 40)
+            : truncateText(`${entity.type}: ${entity.name}`, 40),
         color: entityGraphColors[entity.type],
         name: entity.name,
         type: entity.type,
