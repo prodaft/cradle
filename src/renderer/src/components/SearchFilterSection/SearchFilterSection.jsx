@@ -2,32 +2,32 @@ import { NavArrowDown, NavArrowUp } from 'iconoir-react';
 import React from 'react';
 import SearchFilter from '../SearchFilter/SearchFilter';
 import {
-    entityTypesReduced,
-    entrySubtypes,
-} from '../../utils/entityDefinitions/entityDefinitions';
+    entryTypesReduced,
+    artifactSubtypes,
+} from '../../utils/entryDefinitions/entryDefinitions';
 
 /**
  * Section for filters in the search dialog
- * Contains filters for entity type and entry type
+ * Contains filters for entry type and artifact type
  *
  * @function SearchFilterSection
  * @param {Object} props - The props of the component.
  * @param {boolean} props.showFilters - to show or hide the filters
  * @param {StateSetter<boolean>} props.setShowFilters - function to toggle the filters
+ * @param {Array<string>} props.artifactTypeFilters - the current artifact type filters
+ * @param {StateSetter<Array<string>>} props.setArtifactTypeFilters - the function to update the artifact type filters
  * @param {Array<string>} props.entryTypeFilters - the current entry type filters
  * @param {StateSetter<Array<string>>} props.setEntryTypeFilters - the function to update the entry type filters
- * @param {Array<string>} props.entityTypeFilters - the current entity type filters
- * @param {StateSetter<Array<string>>} props.setEntityTypeFilters - the function to update the entity type filters
  * @returns {SearchFilterSection}
  * @constructor
  */
 export default function SearchFilterSection({
     showFilters,
     setShowFilters,
+    artifactTypeFilters,
+    setArtifactTypeFilters,
     entryTypeFilters,
     setEntryTypeFilters,
-    entityTypeFilters,
-    setEntityTypeFilters,
 }) {
     const toggleFilters = () => {
         setShowFilters(!showFilters);
@@ -58,27 +58,27 @@ export default function SearchFilterSection({
             >
                 <div className='flex flex-col md:flex-row justify-start items-start space-y-4 md:space-y-0 md:space-x-4 p-4'>
                     <div className='w-auto flex flex-col'>
-                        <div className='font-medium text-zinc-400'>Entity type</div>
-                        <div className='flex flex-wrap'>
-                            {Array.from(entityTypesReduced).map((entityType, index) => (
-                                <SearchFilter
-                                    key={index}
-                                    option={entityType}
-                                    filters={entityTypeFilters}
-                                    setFilters={setEntityTypeFilters}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                    <div className='w-auto flex flex-col'>
                         <div className='font-medium text-zinc-400'>Entry type</div>
                         <div className='flex flex-wrap'>
-                            {Array.from(entrySubtypes).map((entryType, index) => (
+                            {Array.from(entryTypesReduced).map((entryType, index) => (
                                 <SearchFilter
                                     key={index}
                                     option={entryType}
                                     filters={entryTypeFilters}
                                     setFilters={setEntryTypeFilters}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                    <div className='w-auto flex flex-col'>
+                        <div className='font-medium text-zinc-400'>Artifact type</div>
+                        <div className='flex flex-wrap'>
+                            {Array.from(artifactSubtypes).map((artifactType, index) => (
+                                <SearchFilter
+                                    key={index}
+                                    option={artifactType}
+                                    filters={artifactTypeFilters}
+                                    setFilters={setArtifactTypeFilters}
                                 />
                             ))}
                         </div>

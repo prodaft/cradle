@@ -33,7 +33,7 @@ const createMarkdownSection = (array, sectionTitle) => {
  * Expects the following fields in the JSON object:
  * - actors
  * - cases
- * - entries
+ * - artifacts
  * - metadata
  * - notes
  *
@@ -41,12 +41,12 @@ const createMarkdownSection = (array, sectionTitle) => {
  * @returns {String} the markdown report
  */
 const createMarkdownReportFromJson = (data) => {
-    const { actors, cases, entries, metadata, notes } = data;
+    const { actors, cases, artifacts, metadata, notes } = data;
     let markdown = '';
 
     markdown += createMarkdownSection(actors, 'Actors');
     markdown += createMarkdownSection(cases, 'Cases');
-    markdown += createMarkdownSection(entries, 'Entries');
+    markdown += createMarkdownSection(artifacts, 'Artifacts');
     markdown += createMarkdownSection(metadata, 'Metadata');
 
     let reportFiles = [];

@@ -8,7 +8,7 @@ import { StatsReport, Xmark } from 'iconoir-react/regular';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 
 /**
- * Displays the notes for an entity.
+ * Displays the notes for an entry.
  * Allows the user to select notes for publishing and to publish the selected notes, which sends them to the publish preview page.
  *
  * @function NoteSelector
@@ -84,7 +84,7 @@ export default function NoteSelector() {
             .filter((note) => selectedNoteIds.includes(note.id))
             .sort((note1, note2) => note2.timestamp - note1.timestamp)
             .map((note) => note.id);
-        navigate(`/publish`, { state: { noteIds: noteIds, entityName: name } });
+        navigate(`/publish`, { state: { noteIds: noteIds, entryName: name } });
     }, [selectedNoteIds, name, navigate]);
 
     const navbarContents = [

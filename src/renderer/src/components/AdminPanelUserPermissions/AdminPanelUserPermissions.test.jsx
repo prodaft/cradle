@@ -17,7 +17,7 @@ describe('AdminPanelUserPermissions', () => {
             data: [{ id: '1', name: 'Test Case', access_type: 'read' }],
         });
         const { findByText } = render(
-            <MemoryRouter initialEntries={['/user/1']}>
+            <MemoryRouter initialArtifacts={['/user/1']}>
                 <Routes>
                     <Route
                         path='/user/:id'
@@ -32,7 +32,7 @@ describe('AdminPanelUserPermissions', () => {
     it('should not display user permissions when user has no permissions', async () => {
         getPermissions.mockResolvedValue({ status: 200, data: [] });
         const { queryByText } = render(
-            <MemoryRouter initialEntries={['/user/1']}>
+            <MemoryRouter initialArtifacts={['/user/1']}>
                 <Routes>
                     <Route
                         path='/user/:id'

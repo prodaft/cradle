@@ -25,7 +25,7 @@ jest.mock('../../services/graphService/graphService');
 
 describe('GraphComponent', () => {
     it('fetches graph data on mount', () => {
-        getGraphData.mockResolvedValue({ data: { entities: [], links: [] } });
+        getGraphData.mockResolvedValue({ data: { entries: [], links: [] } });
         render(<GraphComponent />);
         expect(getGraphData).toHaveBeenCalled();
     });
@@ -33,21 +33,21 @@ describe('GraphComponent', () => {
     it('renders graph data after fetch', async () => {
         getGraphData.mockResolvedValue({
             data: {
-                entities: [{ id: '1', name: 'Entity1', type: 'case' }],
+                entries: [{ id: '1', name: 'Entry1', type: 'case' }],
                 links: [],
             },
         });
         const { findByText } = render(<GraphComponent />);
-        const nodeLabel = await findByText('case: Entity1');
+        const nodeLabel = await findByText('case: Entry1');
         expect(nodeLabel).toBeInTheDocument();
     });
 
     it('filters graph on search', async () => {
         getGraphData.mockResolvedValue({
             data: {
-                entities: [
-                    { id: '1', name: 'Entity1', type: 'case' },
-                    { id: '2', name: 'Entity2', type: 'actor' },
+                entries: [
+                    { id: '1', name: 'Entry1', type: 'case' },
+                    { id: '2', name: 'Entry2', type: 'actor' },
                 ],
                 links: [],
             },
@@ -58,10 +58,10 @@ describe('GraphComponent', () => {
         const toggleButton = await findByTestId('toggle-controls');
         fireEvent.click(toggleButton);
         const searchInput = await findByPlaceholderText('Search Graph');
-        fireEvent.change(searchInput, { target: { value: 'Entity2' } });
+        fireEvent.change(searchInput, { target: { value: 'Entry2' } });
         fireEvent.keyDown(searchInput, { key: 'Enter' });
-        const nodeLabel = await queryByText('actor: Entity2');
+        const nodeLabel = await queryByText('actor: Entry2');
         expect(nodeLabel).toBeInTheDocument();
-        expect(await queryByText('case: Entity1')).not.toBeInTheDocument();
+        expect(await queryByText('case: Entry1')).not.toBeInTheDocument();
     });
 });

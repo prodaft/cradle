@@ -19,9 +19,9 @@ import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
  * - Users
  * Each section contains a list of cards with the respective information and actions.
  * The actions are:
- * - Create new entity
- * - Delete entity
- * When deleting an entity a dialog will be displayed to confirm the deletion.
+ * - Create new entry
+ * - Delete entry
+ * When deleting an entry a dialog will be displayed to confirm the deletion.
  *
  * @function AdminPanel
  * @returns {AdminPanel}
@@ -49,7 +49,7 @@ export default function AdminPanel() {
                                     name={actor.name}
                                     searchKey={actor.name}
                                     description={actor.description}
-                                    type={'entities/actors'}
+                                    type={'entries/actors'}
                                     onDelete={displayActors}
                                     link={createDashboardLink(actor)}
                                 />
@@ -75,7 +75,7 @@ export default function AdminPanel() {
                                     name={c.name}
                                     searchKey={c.name}
                                     description={c.description}
-                                    type={'entities/cases'}
+                                    type={'entries/cases'}
                                     onDelete={displayCases}
                                     link={createDashboardLink(c)}
                                 />

@@ -50,32 +50,32 @@ describe('renderer', () => {
         expect(parsedHtml).toContain(alias);
     });
 
-    test('parse entry links no alias', async () => {
+    test('parse artifact links no alias', async () => {
         const type = 'ip';
         const encodedType = encodeURIComponent(type);
         const name = '127.0.0.1';
         const encodedName = encodeURIComponent(name);
 
-        const markdown = `This is an entry link: [[${type}:${name}]]`;
-        const entryUrl = `${baseUrl}/dashboards/entries/${encodedName}/?subtype=${encodedType}`;
+        const markdown = `This is an artifact link: [[${type}:${name}]]`;
+        const artifactUrl = `${baseUrl}/dashboards/artifacts/${encodedName}/?subtype=${encodedType}`;
         const parsedHtml = await parseMarkdown(markdown);
 
-        expect(parsedHtml).toContain(entryUrl);
+        expect(parsedHtml).toContain(artifactUrl);
         expect(parsedHtml).toContain(name);
     });
 
-    test('parse entry links alias', async () => {
+    test('parse artifact links alias', async () => {
         const type = 'ip';
         const encodedType = encodeURIComponent(type);
         const name = '127.0.0.1';
         const encodedName = encodeURIComponent(name);
         const alias = 'localhost';
 
-        const markdown = `This is an entry link: [[${type}:${name}|${alias}]]`;
-        const entryUrl = `${baseUrl}/dashboards/entries/${encodedName}/?subtype=${encodedType}`;
+        const markdown = `This is an artifact link: [[${type}:${name}|${alias}]]`;
+        const artifactUrl = `${baseUrl}/dashboards/artifacts/${encodedName}/?subtype=${encodedType}`;
         const parsedHtml = await parseMarkdown(markdown);
 
-        expect(parsedHtml).toContain(entryUrl);
+        expect(parsedHtml).toContain(artifactUrl);
         expect(parsedHtml).toContain(alias);
     });
 
@@ -105,8 +105,8 @@ describe('renderer', () => {
         expect(parsedHtml).not.toContain(name);
     });
 
-    test('ignores invalid entry types', async () => {
-        const markdown = 'This string should still be visible [[invalid:entry]]';
+    test('ignores invalid artifact types', async () => {
+        const markdown = 'This string should still be visible [[invalid:artifact]]';
         const parsedHtml = await parseMarkdown(markdown);
 
         expect(parsedHtml).toContain(markdown);
@@ -116,17 +116,17 @@ describe('renderer', () => {
         const markdown = `Metadata: [[country:Germany]],
         Actor: [[actor:John Doe]],
         Case: [[case:Case123]],
-        Entry: [[ip:127.0.0.1]]`;
+        Artifact: [[ip:127.0.0.1]]`;
 
         const parsedHtml = await parseMarkdown(markdown);
         const actorUrl = `${baseUrl}/dashboards/actors/John%20Doe`;
         const caseUrl = `${baseUrl}/dashboards/cases/Case123`;
-        const entryUrl = `${baseUrl}/dashboards/entries/127.0.0.1/?subtype=ip`;
+        const artifactUrl = `${baseUrl}/dashboards/artifacts/127.0.0.1/?subtype=ip`;
 
         expect(parsedHtml).toContain('Germany');
         expect(parsedHtml).not.toContain('country');
         expect(parsedHtml).toContain(actorUrl);
         expect(parsedHtml).toContain(caseUrl);
-        expect(parsedHtml).toContain(entryUrl);
+        expect(parsedHtml).toContain(artifactUrl);
     });
 });

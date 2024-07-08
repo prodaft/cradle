@@ -5,16 +5,16 @@ import { fireEvent, render } from '@testing-library/react';
 import SearchFilterSection from './SearchFilterSection';
 import '@testing-library/jest-dom';
 import {
-    entityTypesReduced,
-    entrySubtypes,
-} from '../../utils/entityDefinitions/entityDefinitions';
+    entryTypesReduced,
+    artifactSubtypes,
+} from '../../utils/entryDefinitions/entryDefinitions';
 
 describe('SearchFilterSection', () => {
     const setShowFilters = jest.fn();
+    const setArtifactTypeFilters = jest.fn();
     const setEntryTypeFilters = jest.fn();
-    const setEntityTypeFilters = jest.fn();
+    const artifactTypeFilters = [];
     const entryTypeFilters = [];
-    const entityTypeFilters = [];
     const showFilters = false;
     const handleCheckboxChange = jest.fn();
 
@@ -23,10 +23,10 @@ describe('SearchFilterSection', () => {
             <SearchFilterSection
                 showFilters={showFilters}
                 setShowFilters={setShowFilters}
+                artifactTypeFilters={artifactTypeFilters}
+                setArtifactTypeFilters={setArtifactTypeFilters}
                 entryTypeFilters={entryTypeFilters}
                 setEntryTypeFilters={setEntryTypeFilters}
-                entityTypeFilters={entityTypeFilters}
-                setEntityTypeFilters={setEntityTypeFilters}
             />,
         );
 
@@ -34,40 +34,40 @@ describe('SearchFilterSection', () => {
         expect(setShowFilters).toHaveBeenCalledWith(true);
     });
 
-    it('renders entity type filters', () => {
+    it('renders entry type filters', () => {
         const { getByText } = render(
             <SearchFilterSection
                 showFilters={showFilters}
                 setShowFilters={setShowFilters}
+                artifactTypeFilters={artifactTypeFilters}
+                setArtifactTypeFilters={setArtifactTypeFilters}
                 entryTypeFilters={entryTypeFilters}
                 setEntryTypeFilters={setEntryTypeFilters}
-                entityTypeFilters={entityTypeFilters}
-                setEntityTypeFilters={setEntityTypeFilters}
             />,
         );
 
-        entrySubtypes.forEach((filter) => {
+        artifactSubtypes.forEach((filter) => {
             expect(getByText(filter)).toBeInTheDocument();
         });
-        entityTypesReduced.forEach((filter) => {
+        entryTypesReduced.forEach((filter) => {
             expect(getByText(filter)).toBeInTheDocument();
         });
     });
 
-    it('changes entity type filters', () => {
+    it('changes entry type filters', () => {
         const { getByText } = render(
             <SearchFilterSection
                 showFilters={showFilters}
                 setShowFilters={setShowFilters}
+                artifactTypeFilters={artifactTypeFilters}
+                setArtifactTypeFilters={setArtifactTypeFilters}
                 entryTypeFilters={entryTypeFilters}
                 setEntryTypeFilters={setEntryTypeFilters}
-                entityTypeFilters={entityTypeFilters}
-                setEntityTypeFilters={setEntityTypeFilters}
             />,
         );
 
         fireEvent.click(getByText('actor'));
         // it will be called with a lambda function taking "actor as param"
-        expect(setEntityTypeFilters).toHaveBeenCalledWith(['actor']);
+        expect(setEntryTypeFilters).toHaveBeenCalledWith(['actor']);
     });
 });

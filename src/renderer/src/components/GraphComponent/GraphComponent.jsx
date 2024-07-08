@@ -7,7 +7,7 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 import { useNavigate } from 'react-router-dom';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 import { preprocessData, visualizeGraph } from '../../utils/graphUtils/graphUtils';
-import { entityGraphColors } from '../../utils/entityDefinitions/entityDefinitions';
+import { entryGraphColors } from '../../utils/entryDefinitions/entryDefinitions';
 
 /**
  * The component displays a graph visualization using D3.js.
@@ -138,7 +138,7 @@ export default function GraphComponent() {
             <div className='w-full h-full relative overflow-hidden text-white'>
                 <div className='absolute bottom-4 right-4 flex flex-col p-4 w-fit h-fit space-y-1 bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-md'>
                     <div className='flex flex-col'>
-                        {Object.entries(entityGraphColors).map(([type, color]) => (
+                        {Object.entries(entryGraphColors).map(([type, color]) => (
                             <div
                                 key={type}
                                 className='flex flex-row items-center space-x-2'

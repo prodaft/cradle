@@ -19,8 +19,8 @@ jest.mock('../../hooks/useAuth/useAuth', () => ({
 
 jest.mock('../../hooks/useNavbarContents/useNavbarContents');
 
-const noteEntities = [
-    { id: 4, name: '127.0.0.1', type: 'entry', subtype: 'ip' },
+const noteEntries = [
+    { id: 4, name: '127.0.0.1', type: 'artifact', subtype: 'ip' },
     { id: 5, name: 'Case 1', type: 'case', subtype: '' },
 ];
 
@@ -29,12 +29,12 @@ const contentObject = {
     name: 'Case 1',
     type: 'case',
     subtype: '',
-    entites: noteEntities,
+    entries: noteEntries,
     description: 'Description',
     notes: [
-        { id: 1, publishable: true, entities: noteEntities },
-        { id: 2, publishable: true, entities: noteEntities },
-        { id: 3, publishable: true, entities: noteEntities },
+        { id: 1, publishable: true, entries: noteEntries },
+        { id: 2, publishable: true, entries: noteEntries },
+        { id: 3, publishable: true, entries: noteEntries },
     ],
 };
 
@@ -42,7 +42,7 @@ const notes = [
     {
         id: 10,
         content: 'Note 1',
-        entities: [
+        entries: [
             { id: 2, name: 'Actor 1' },
             { id: 3, name: 'Case 1' },
         ],

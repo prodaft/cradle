@@ -17,7 +17,7 @@ jest.mock('react-router-dom', () => ({
     useLocation: jest.fn().mockImplementation(() => {
         return {
             location: '/publish',
-            state: { noteIds: [1], entityName: 'Test' },
+            state: { noteIds: [1], entryName: 'Test' },
         };
     }),
 }));

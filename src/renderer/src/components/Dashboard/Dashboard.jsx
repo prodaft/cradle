@@ -12,25 +12,25 @@ import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import NavbarButton from '../NavbarButton/NavbarButton';
 import { TaskList, Trash } from 'iconoir-react/regular';
 import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
-import { deleteEntity } from '../../services/adminService/adminService';
+import { deleteEntry } from '../../services/adminService/adminService';
 import NotFound from '../NotFound/NotFound';
 import pluralize from 'pluralize';
 import {
     renderDashboardSection,
-    renderDashboardSectionWithInaccessibleEntities,
+    renderDashboardSectionWithInaccessibleEntries,
 } from '../../utils/dashboardUtils/dashboardUtils';
 import { Search } from 'iconoir-react';
 
 /**
  * Dashboard component
- * Fetches and displays the dashboard data for an entity
- * If the entity does not exist, displays a 404 page
- * The dashboard displays the entity's name, type, description, related actors, cases, entries, metadata, and notes
- * The dashboard only displays the fields provided by the server, different entities may have different fields
+ * Fetches and displays the dashboard data for an entry
+ * If the entry does not exist, displays a 404 page
+ * The dashboard displays the entry's name, type, description, related actors, cases, artifacts, metadata, and notes
+ * The dashboard only displays the fields provided by the server, different entries may have different fields
  * If the user is an admin, a delete button is displayed in the navbar
  * If the user is not in publish mode, a button to enter publish mode is displayed in the navbar
- * If the entity is linked to cases to which the user does not have access to, a button to request access to view them is displayed
- * If the entity is an entry, a button to search the entry name on VirusTotal is displayed
+ * If the entry is linked to cases to which the user does not have access to, a button to request access to view them is displayed
+ * If the entry is an artifact, a button to search the artifact name on VirusTotal is displayed
  *
  * @function Dashboard
  * @returns {Dashboard}
@@ -39,7 +39,7 @@ import { Search } from 'iconoir-react';
 export default function Dashboard() {
     const location = useLocation();
     const path = location.pathname + location.search;
-    const [entityMissing, setEntityMissing] = useState(false);
+    const [entryMissing, setEntryMissing] = useState(false);
     const [contentObject, setContentObject] = useState({});
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [deleteDialog, setDeleteDialog] = useState(false);
@@ -48,9 +48,9 @@ export default function Dashboard() {
     const auth = useAuth();
     const dashboard = useRef(null);
 
-    // On load, fetch the dashboard data for the entity
+    // On load, fetch the dashboard data for the entry
     useEffect(() => {
-        setEntityMissing(false);
+        setEntryMissing(false);
         setAlert('');
 
         // Populate dashboard
@@ -62,13 +62,13 @@ export default function Dashboard() {
             .catch((err) => {
                 setContentObject({});
                 if (err.response && err.response.status === 404) {
-                    setEntityMissing(true);
+                    setEntryMissing(true);
                 } else {
                     const errHandler = displayError(setAlert, navigate);
                     errHandler(err);
                 }
             });
-    }, [location, path, setAlert, setEntityMissing, setContentObject]);
+    }, [location, path, setAlert, setEntryMissing, setContentObject]);
 
     const handleEnterPublishMode = useCallback(() => {
         const publishableNotes = contentObject.notes.filter((note) => note.publishable);
@@ -84,7 +84,7 @@ export default function Dashboard() {
     }, [navigate, contentObject, setAlert]);
 
     const handleDelete = () => {
-        deleteEntity(`entities/${pluralize(contentObject.type)}`, contentObject.id)
+        deleteEntry(`entries/${pluralize(contentObject.type)}`, contentObject.id)
             .then((response) => {
                 if (response.status === 200) {
                     navigate('/');
@@ -94,14 +94,14 @@ export default function Dashboard() {
     };
 
     const navbarContents = [
-        // If the user is an admin and the dashboard is not for an entry, add a delete button to the navbar
-        auth.isAdmin && contentObject.type !== 'entry' && (
+        // If the user is an admin and the dashboard is not for an artifact, add a delete button to the navbar
+        auth.isAdmin && contentObject.type !== 'artifact' && (
             <NavbarButton
-                key='delete-entity-btn'
+                key='delete-entry-btn'
                 icon={<Trash />}
                 text='Delete'
                 onClick={() => setDeleteDialog(true)}
-                data-testid='delete-entity-btn'
+                data-testid='delete-entry-btn'
             />
         ),
 
@@ -115,11 +115,11 @@ export default function Dashboard() {
             onClick={handleEnterPublishMode}
         />,
     ];
-    useNavbarContents(!entityMissing && navbarContents, [
+    useNavbarContents(!entryMissing && navbarContents, [
         contentObject,
         location,
         auth.isAdmin,
-        entityMissing,
+        entryMissing,
         handleEnterPublishMode,
         setDeleteDialog,
     ]);
@@ -140,11 +140,11 @@ export default function Dashboard() {
         window.open(`https://www.virustotal.com/gui/search/${name}`);
     };
 
-    if (entityMissing) {
+    if (entryMissing) {
         return (
             <NotFound
                 message={
-                    'The entity you are looking for does not exist or you do not have access to it. If you believe the entity exists contact an administrator for access.'
+                    'The entry you are looking for does not exist or you do not have access to it. If you believe the entry exists contact an administrator for access.'
                 }
             />
         );
@@ -164,7 +164,7 @@ export default function Dashboard() {
                 setOpen={setVirusTotalDialog}
                 title={'Notice'}
                 description={
-                    'This action will send data about this entry to VirusTotal. Are you sure you want to proceed?'
+                    'This action will send data about this artifact to VirusTotal. Are you sure you want to proceed?'
                 }
                 handleConfirm={() => handleVirusTotalSearch(contentObject.name)}
             />
@@ -185,7 +185,7 @@ export default function Dashboard() {
                     {contentObject.description && (
                         <p className='text-sm text-zinc-400'>{`Description: ${contentObject.description}`}</p>
                     )}
-                    {contentObject.type && contentObject.type === 'entry' && (
+                    {contentObject.type && contentObject.type === 'artifact' && (
                         <div className='flex flex-row space-x-2 flex-wrap'>
                             <button
                                 className='btn w-fit min-w-[200px] mt-2 gap-2 !pl-4'
@@ -199,25 +199,25 @@ export default function Dashboard() {
 
                     {renderDashboardSection(contentObject.actors, 'Related Actors')}
 
-                    {renderDashboardSectionWithInaccessibleEntities(
+                    {renderDashboardSectionWithInaccessibleEntries(
                         contentObject.cases,
                         contentObject.inaccessible_cases,
                         'Related Cases',
-                        'There are inaccessible cases linked to this entity. ',
+                        'There are inaccessible cases linked to this entry. ',
                         'Request access to view them.',
                         handleRequestCaseAccess,
                     )}
 
-                    {renderDashboardSection(contentObject.entries, 'Related Entries')}
+                    {renderDashboardSection(contentObject.artifacts, 'Related Artifacts')}
 
                     {renderDashboardSection(contentObject.metadata, 'Metadata')}
 
                     {contentObject.second_hop_cases &&
-                        renderDashboardSectionWithInaccessibleEntities(
+                        renderDashboardSectionWithInaccessibleEntries(
                             contentObject.second_hop_cases,
                             contentObject.second_hop_inaccessible_cases,
                             'Second Degree Relationships',
-                            'There are inaccessible entities linked to this entity. ',
+                            'There are inaccessible entries linked to this entry. ',
                             'Request access to view them.',
                             handleRequestCaseAccess,
                         )}

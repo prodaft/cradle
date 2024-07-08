@@ -18,7 +18,7 @@ import GraphComponent from './components/GraphComponent/GraphComponent';
 import Welcome from './components/Welcome/Welcome.jsx';
 
 /**
- * The App component is the entry point of the application. It wraps the entire application in the AuthProvider
+ * The App component is the artifact point of the application. It wraps the entire application in the AuthProvider
  * to handle authentication and authorization logic. The App component also defines the routes of the application.
  *
  * @function App

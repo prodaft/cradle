@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Search } from 'iconoir-react';
 import SearchFilterSection from '../SearchFilterSection/SearchFilterSection';
-import { queryEntities } from '../../services/queryService/queryService';
+import { queryEntries } from '../../services/queryService/queryService';
 import AlertBox from '../AlertBox/AlertBox';
 import SearchResult from '../SearchResult/SearchResult';
 import { useNavigate } from 'react-router-dom';
@@ -10,10 +10,10 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 
 /**
- * Dialog to search for entities
- * Opens a dialog to search for entities
+ * Dialog to search for entries
+ * Opens a dialog to search for entries
  * Overlays the entire screen
- * Gives filters for entity type and entry type
+ * Gives filters for entry type and artifact type
  * Shows search results
  * Search can be done on enter or when pressing the search buttons
  *
@@ -28,8 +28,8 @@ export default function SearchDialog({ isOpen, onClose }) {
     const [searchQuery, setSearchQuery] = useState('');
     const inputRef = useRef(null);
     const [showFilters, setShowFilters] = useState(false);
-    const [entityTypeFilters, setEntityTypeFilters] = useState([]);
-    const [entitySubtypeFilters, setEntitySubtypeFilters] = useState([]);
+    const [entryTypeFilters, setEntryTypeFilters] = useState([]);
+    const [entrySubtypeFilters, setEntrySubtypeFilters] = useState([]);
     const [results, setResults] = useState(null);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const dialogRoot = document.getElementById('portal-root');
@@ -57,7 +57,7 @@ export default function SearchDialog({ isOpen, onClose }) {
 
     const performSearch = () => {
         setAlert({ ...alert, show: false });
-        queryEntities(searchQuery, entityTypeFilters, entitySubtypeFilters)
+        queryEntries(searchQuery, entryTypeFilters, entrySubtypeFilters)
             .then((response) => {
                 setResults(
                     response.data.map((result) => {
@@ -113,10 +113,10 @@ export default function SearchDialog({ isOpen, onClose }) {
                 <SearchFilterSection
                     showFilters={showFilters}
                     setShowFilters={setShowFilters}
-                    entityTypeFilters={entityTypeFilters}
-                    setEntityTypeFilters={setEntityTypeFilters}
-                    entryTypeFilters={entitySubtypeFilters}
-                    setEntryTypeFilters={setEntitySubtypeFilters}
+                    entryTypeFilters={entryTypeFilters}
+                    setEntryTypeFilters={setEntryTypeFilters}
+                    artifactTypeFilters={entrySubtypeFilters}
+                    setArtifactTypeFilters={setEntrySubtypeFilters}
                 />
                 <AlertBox alert={alert} />
                 <div className='flex-grow overflow-y-auto no-scrollbar space-y-2'>

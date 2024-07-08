@@ -1,7 +1,7 @@
 import { Trash } from 'iconoir-react/regular';
 import { useState } from 'react';
 import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
-import { deleteEntity } from '../../services/adminService/adminService';
+import { deleteEntry } from '../../services/adminService/adminService';
 import { Link, useNavigate } from 'react-router-dom';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
@@ -12,17 +12,17 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
  * - Name
  * - Delete button
  * When the delete button is clicked a dialog will be displayed to confirm the deletion.
- * When clicking the name the user will be redirected to the entity dashboard.
+ * When clicking the name the user will be redirected to the entry dashboard.
  *
  * @function AdminPanelCard
  * @param {Object} props - The props object
- * @param {string} props.name - The name of the entity
- * @param {string} props.id - The id of the entity
- * @param {string} props.description - The description of the entity
- * @param {string} props.type - The type of the entity
- * @param {Function} props.onDelete - The function to call when the entity is deleted
- * @param {string} props.link - The link to the entity dashboard
- * @param {string} props.searchKey - The search key for the entity. used by the `useFrontendSearch` hook
+ * @param {string} props.name - The name of the entry
+ * @param {string} props.id - The id of the entry
+ * @param {string} props.description - The description of the entry
+ * @param {string} props.type - The type of the entry
+ * @param {Function} props.onDelete - The function to call when the entry is deleted
+ * @param {string} props.link - The link to the entry dashboard
+ * @param {string} props.searchKey - The search key for the entry. used by the `useFrontendSearch` hook
  * @returns {AdminPanelCard}
  * @constructor
  */
@@ -40,7 +40,7 @@ export default function AdminPanelCard({
     const navigate = useNavigate();
 
     const handleDelete = async () => {
-        deleteEntity(type, id)
+        deleteEntry(type, id)
             .then((response) => {
                 if (response.status === 200) {
                     onDelete();

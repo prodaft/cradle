@@ -25,9 +25,9 @@ describe('DashboardNote', () => {
         id: 1,
         timestamp: new Date().getTime(),
         content: 'This is a test note',
-        entities: [
-            { id: 1, name: 'Entity 1' },
-            { id: 2, name: 'Entity 2' },
+        entries: [
+            { id: 1, name: 'Entry 1' },
+            { id: 2, name: 'Entry 2' },
         ],
         publishable: true,
     };
@@ -53,7 +53,7 @@ describe('DashboardNote', () => {
         expect(noteContent).toBeInTheDocument();
     });
 
-    it('renders note content and entities', async () => {
+    it('renders note content and entries', async () => {
         render(
             <MemoryRouter>
                 <DashboardNote
@@ -68,8 +68,8 @@ describe('DashboardNote', () => {
         );
 
         expect(await screen.findByText('This is a test note')).toBeInTheDocument();
-        expect(await screen.findByText('Entity 1')).toBeInTheDocument();
-        expect(await screen.findByText('Entity 2')).toBeInTheDocument();
+        expect(await screen.findByText('Entry 1')).toBeInTheDocument();
+        expect(await screen.findByText('Entry 2')).toBeInTheDocument();
     });
 
     it('navigates to note detail page on note click', async () => {
@@ -133,7 +133,7 @@ describe('DashboardNote', () => {
         ).toBeInTheDocument();
     });
 
-    it('renders note entities correctly', () => {
+    it('renders note entries correctly', () => {
         render(
             <MemoryRouter>
                 <DashboardNote
@@ -147,7 +147,7 @@ describe('DashboardNote', () => {
             </MemoryRouter>,
         );
 
-        expect(screen.getByText('Entity 1')).toBeInTheDocument();
-        expect(screen.getByText('Entity 2')).toBeInTheDocument();
+        expect(screen.getByText('Entry 1')).toBeInTheDocument();
+        expect(screen.getByText('Entry 2')).toBeInTheDocument();
     });
 });

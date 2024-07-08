@@ -7,9 +7,9 @@ import { useNavigate } from 'react-router-dom';
  *
  * @function DashboardCard
  * @param {Object} props - The props of the component
- * @param {string} props.name - Name of the entity
+ * @param {string} props.name - Name of the entry
  * @param {string} props.link - Link to navigate to when the card is clicked
- * @param {string} props.type - Type of the entity
+ * @param {string} props.type - Type of the entry
  * @returns {DashboardCard}
  * @constructor
  */

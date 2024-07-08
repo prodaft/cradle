@@ -1,22 +1,22 @@
 import { authAxios } from '../axiosInstance/axiosInstance';
 
 /**
- * The data for an entity. This data needs to be sent to the server to create an entity.
- * @typedef {Object} EntityData
- * @property {string} name - entity name
- * @property {string} description - entity description
+ * The data for an entry. This data needs to be sent to the server to create an entry.
+ * @typedef {Object} EntryData
+ * @property {string} name - entry name
+ * @property {string} description - entry description
  */
 
 /**
  * Sends a POST to create an actor
  *
- * @param {EntityData} data - actor data
+ * @param {EntryData} data - actor data
  * @returns {Promise<AxiosResponse<any, any>>}
  */
 export async function createActor(data) {
     return authAxios({
         method: 'post',
-        url: '/entities/actors/',
+        url: '/entries/actors/',
         data: data,
     });
 }
@@ -24,13 +24,13 @@ export async function createActor(data) {
 /**
  * Sends a POST to create a case
  *
- * @param {EntityData} data - case data
+ * @param {EntryData} data - case data
  * @returns {Promise<AxiosResponse<any, any>>}
  */
 export async function createCase(data, token) {
     return authAxios({
         method: 'post',
-        url: '/entities/cases/',
+        url: '/entries/cases/',
         data: data,
     });
 }
@@ -43,7 +43,7 @@ export async function createCase(data, token) {
 export async function getActors() {
     return authAxios({
         method: 'get',
-        url: '/entities/actors/',
+        url: '/entries/actors/',
     });
 }
 
@@ -55,7 +55,7 @@ export async function getActors() {
 export async function getCases() {
     return authAxios({
         method: 'get',
-        url: '/entities/cases/',
+        url: '/entries/cases/',
     });
 }
 
@@ -72,13 +72,13 @@ export async function getUsers() {
 }
 
 /**
- * Sends a DELETE request to delete an entity
+ * Sends a DELETE request to delete an entry
  *
- * @param {string} type - entity type : `entities/actors`, `entites/cases`, `users` (use plural form)
- * @param {string} id - entity id
+ * @param {string} type - entry type : `entries/actors`, `entries/cases`, `users` (use plural form)
+ * @param {string} id - entry id
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export async function deleteEntity(type, id) {
+export async function deleteEntry(type, id) {
     return authAxios({
         method: 'delete',
         url: `/${type}/${id}/`,

@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import Logo from '../Logo/Logo';
-import EntityListCard from '../EntityListCard/EntityListCard';
+import EntryListCard from '../EntryListCard/EntryListCard';
 import NoteListCard from '../NoteListCard/NoteListCard';
 import useChangeFlexDirectionBySize from '../../hooks/useChangeFlexDirectionBySize/useChangeFlexDirectionBySize';
 import { getStatistics } from '../../services/statisticsService/statisticsService';
@@ -21,9 +21,9 @@ export default function Welcome() {
     const [actors, setActors] = useState([]);
     const [cases, setCases] = useState([]);
     const [notes, setNotes] = useState([]);
-    const entityListsDiv = useRef(null);
-    const flexDirection = useChangeFlexDirectionBySize(entityListsDiv);
-    const entityCardWrapperWidth = flexDirection === 'flex-row' ? 'w-[45%]' : 'w-full';
+    const entryListsDiv = useRef(null);
+    const flexDirection = useChangeFlexDirectionBySize(entryListsDiv);
+    const entryCardWrapperWidth = flexDirection === 'flex-row' ? 'w-[45%]' : 'w-full';
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -58,17 +58,17 @@ export default function Welcome() {
                 <div className='flex flex-col w-[80%] mx-auto'>
                     <div
                         className={`flex ${flexDirection} justify-between dark:text-zinc-300`}
-                        ref={entityListsDiv}
+                        ref={entryListsDiv}
                     >
                         <div
-                            className={`${entityCardWrapperWidth} flex justify-center mb-8`}
+                            className={`${entryCardWrapperWidth} flex justify-center mb-8`}
                         >
-                            <EntityListCard title='Recent Actors' items={actors} />
+                            <EntryListCard title='Recent Actors' items={actors} />
                         </div>
                         <div
-                            className={`${entityCardWrapperWidth} flex justify-center mb-8`}
+                            className={`${entryCardWrapperWidth} flex justify-center mb-8`}
                         >
-                            <EntityListCard title='Recent Cases' items={cases} />
+                            <EntryListCard title='Recent Cases' items={cases} />
                         </div>
                     </div>
                     <div className='w-full flex justify-center mb-8'>
