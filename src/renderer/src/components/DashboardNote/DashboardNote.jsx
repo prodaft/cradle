@@ -86,16 +86,16 @@ export default function DashboardNote({
         }
     }, [selectedNoteIds]);
 
-    // Create a link to the dashboard for each entity that is referenced in the note
-    const referenceLinks = note.entities.map((entity) => {
-        const dashboardLink = createDashboardLink(entity);
+    // Create a link to the dashboard for each entry that is referenced in the note
+    const referenceLinks = note.entries.map((entry) => {
+        const dashboardLink = createDashboardLink(entry);
         return (
             <Link
-                key={entity.id}
+                key={entry.id}
                 to={dashboardLink}
                 className='text-zinc-300 hover:underline hover:text-cradle2 backdrop-filter bg-cradle3 bg-opacity-60 backdrop-blur-lg h-6 px-2 py-1 rounded-md'
             >
-                {truncateText(entity.name, 30)}
+                {truncateText(entry.name, 30)}
             </Link>
         );
     });

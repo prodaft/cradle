@@ -91,7 +91,7 @@ describe('createMarkdownReportFromJson', () => {
         const data = {
             actors: [],
             cases: [],
-            entries: [],
+            artifacts: [],
             metadata: [],
         };
         const result = createMarkdownReportFromJson(data);
@@ -103,7 +103,7 @@ describe('createMarkdownReportFromJson', () => {
         const data = {
             actors: [{ name: 'Actor 1' }, { name: 'Actor 2' }],
             cases: [{ name: 'Case 1' }, { name: 'Case 2' }],
-            entries: [{ name: 'Entry 1' }, { name: 'Entry 2' }],
+            artifacts: [{ name: 'Artifact 1' }, { name: 'Artifact 2' }],
             metadata: [{ name: 'Metadata 1' }, { name: 'Metadata 2' }],
             notes: [
                 { timestamp: '2022-01-01', content: 'Note 1' },
@@ -114,7 +114,7 @@ describe('createMarkdownReportFromJson', () => {
         const expected =
             '## Actors\n\n##### Actor 1; Actor 2; \n\n---\n\n' +
             '## Cases\n\n##### Case 1; Case 2; \n\n---\n\n' +
-            '## Entries\n\n##### Entry 1; Entry 2; \n\n---\n\n' +
+            '## Artifacts\n\n##### Artifact 1; Artifact 2; \n\n---\n\n' +
             '## Metadata\n\n##### Metadata 1; Metadata 2; \n\n---\n\n' +
             '## Notes\n\n### 01/01/2022, 01:00:00\n\nNote 1\n\n---\n\n### 01/01/2022, 01:00:00\n\nNote 2\n\n---\n\n';
 
@@ -125,7 +125,7 @@ describe('createMarkdownReportFromJson', () => {
         const data = {
             actors: [],
             cases: [{ name: 'Case 1' }, { name: 'Case 2' }],
-            entries: [],
+            artifacts: [],
             metadata: [{ name: 'Metadata 1' }, { name: 'Metadata 2' }],
             notes: [
                 { timestamp: '2022-01-01', content: 'Note 1' },

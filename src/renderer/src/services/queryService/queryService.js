@@ -2,19 +2,19 @@ import qs from 'qs';
 import { authAxios } from '../axiosInstance/axiosInstance';
 
 /**
- * Function to query entities from the API
+ * Function to query entries from the API
  * Passes the token and query parameters to the API
- * @param {?string} name - the name of the entity to search for
- * @param {Array<string>} entityTypes - the types of entities to search for
- * @param {Array<string>} entitySubtype - the types of entries to search for
+ * @param {?string} name - the name of the entry to search for
+ * @param {Array<string>} entryTypes - the types of entries to search for
+ * @param {Array<string>} entrySubtype - the types of artifacts to search for
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function queryEntities(name, entityTypes, entitySubtype) {
+export function queryEntries(name, entryTypes, entrySubtype) {
     const url = `/query/`;
 
     const params = {
-        entityType: entityTypes,
-        entitySubtype: entitySubtype,
+        entryType: entryTypes,
+        entrySubtype: entrySubtype,
     };
 
     if (name) {

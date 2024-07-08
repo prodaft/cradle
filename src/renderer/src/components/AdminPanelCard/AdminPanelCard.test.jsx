@@ -3,7 +3,7 @@
  */
 import { fireEvent, render, waitFor } from '@testing-library/react';
 import AdminPanelCard from '../AdminPanelCard/AdminPanelCard';
-import { deleteEntity } from '../../services/adminService/adminService';
+import { deleteEntry } from '../../services/adminService/adminService';
 import React from 'react';
 import AuthProvider from '../../components/AuthProvider/AuthProvider';
 import { MemoryRouter } from 'react-router-dom';
@@ -33,8 +33,8 @@ describe('AdminPanelCard', () => {
         expect(getByText('Confirm Deletion')).toBeInTheDocument();
     });
 
-    it('should call deleteEntity on confirmation', async () => {
-        deleteEntity.mockResolvedValue({ status: 200 });
+    it('should call deleteEntry on confirmation', async () => {
+        deleteEntry.mockResolvedValue({ status: 200 });
         const onDelete = jest.fn();
         const { getByRole, getByText } = render(
             <AuthProvider>
@@ -54,12 +54,12 @@ describe('AdminPanelCard', () => {
         fireEvent.click(getByRole('button'));
         fireEvent.click(getByText('Confirm'));
 
-        await waitFor(() => expect(deleteEntity).toHaveBeenCalledWith('testType', '1'));
+        await waitFor(() => expect(deleteEntry).toHaveBeenCalledWith('testType', '1'));
         expect(onDelete).toHaveBeenCalled();
     });
 
-    it('should display error alert on deleteEntity failure', async () => {
-        deleteEntity.mockRejectedValue(new Error('Failed to delete'));
+    it('should display error alert on deleteEntry failure', async () => {
+        deleteEntry.mockRejectedValue(new Error('Failed to delete'));
         const { getByRole, getByText, findByText, findByTestId } = render(
             <AuthProvider>
                 <MemoryRouter>

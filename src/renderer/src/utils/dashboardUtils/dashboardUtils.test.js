@@ -1,7 +1,7 @@
 import { createDashboardLink, truncateText } from './dashboardUtils';
 
 describe('createDashboardLink', () => {
-    it("should return '/not-found' if entity is falsy", () => {
+    it("should return '/not-found' if entry is falsy", () => {
         expect(createDashboardLink(null)).toBe('/not-found');
         expect(createDashboardLink(undefined)).toBe('/not-found');
         expect(createDashboardLink(false)).toBe('/not-found');
@@ -10,22 +10,22 @@ describe('createDashboardLink', () => {
     });
 
     it('should create a dashboard link with encoded name and type when subtype is not provided', () => {
-        const entity = {
+        const entry = {
             name: 'Case A',
             type: 'case',
         };
         const expectedLink = '/dashboards/cases/Case%20A/';
-        expect(createDashboardLink(entity)).toBe(expectedLink);
+        expect(createDashboardLink(entry)).toBe(expectedLink);
     });
 
     it('should create a dashboard link with encoded name, type, and subtype when subtype is provided', () => {
-        const entity = {
+        const entry = {
             name: '127.0.0.1',
-            type: 'entry',
+            type: 'artifact',
             subtype: 'ip',
         };
-        const expectedLink = '/dashboards/entries/127.0.0.1/?subtype=ip';
-        expect(createDashboardLink(entity)).toBe(expectedLink);
+        const expectedLink = '/dashboards/artifacts/127.0.0.1/?subtype=ip';
+        expect(createDashboardLink(entry)).toBe(expectedLink);
     });
 });
 

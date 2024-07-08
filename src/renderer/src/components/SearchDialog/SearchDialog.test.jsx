@@ -5,7 +5,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import SearchDialog from './SearchDialog';
-import { queryEntities } from '../../services/queryService/queryService';
+import { queryEntries } from '../../services/queryService/queryService';
 import useAuth from '../../hooks/useAuth/useAuth';
 import { useNavigate } from 'react-router-dom';
 
@@ -31,7 +31,7 @@ describe('SearchDialog', () => {
     });
 
     it('renders correctly when open', () => {
-        queryEntities.mockResolvedValueOnce({ data: [] });
+        queryEntries.mockResolvedValueOnce({ data: [] });
         render(<SearchDialog isOpen={true} onClose={mockOnClose} />);
 
         expect(screen.getByPlaceholderText('Search...')).toBeInTheDocument();
@@ -39,16 +39,16 @@ describe('SearchDialog', () => {
     });
 
     it('focuses the input when opened', () => {
-        queryEntities.mockResolvedValueOnce({ data: [] });
+        queryEntries.mockResolvedValueOnce({ data: [] });
         render(<SearchDialog isOpen={true} onClose={mockOnClose} />);
         expect(screen.getByPlaceholderText('Search...')).toHaveFocus();
     });
 
-    it('calls queryEntities on search button click', async () => {
-        queryEntities.mockResolvedValueOnce({ data: [] });
+    it('calls queryEntries on search button click', async () => {
+        queryEntries.mockResolvedValueOnce({ data: [] });
         render(<SearchDialog isOpen={true} onClose={mockOnClose} />);
 
-        queryEntities.mockResolvedValueOnce({
+        queryEntries.mockResolvedValueOnce({
             data: [{ name: 'Test', type: 'Type', subtype: 'Subtype' }],
         });
         fireEvent.change(screen.getByPlaceholderText('Search...'), {
@@ -56,7 +56,7 @@ describe('SearchDialog', () => {
         });
         fireEvent.click(screen.getByRole('button'));
 
-        expect(queryEntities).toHaveBeenCalledWith('test', [], []);
+        expect(queryEntries).toHaveBeenCalledWith('test', [], []);
         await waitFor(() => expect(screen.getByText('Test')).toBeInTheDocument());
         await waitFor(() =>
             expect(screen.getByText('Type: Subtype')).toBeInTheDocument(),
@@ -64,12 +64,12 @@ describe('SearchDialog', () => {
     });
 
     it('displays an error message on query failure', async () => {
-        queryEntities.mockRejectedValueOnce({ data: [] });
+        queryEntries.mockRejectedValueOnce({ data: [] });
         const { getByTestId } = render(
             <SearchDialog isOpen={true} onClose={mockOnClose} />,
         );
 
-        queryEntities.mockRejectedValueOnce({ response: { status: 401 } });
+        queryEntries.mockRejectedValueOnce({ response: { status: 401 } });
         fireEvent.change(screen.getByPlaceholderText('Search...'), {
             target: { value: 'test' },
         });
@@ -81,10 +81,10 @@ describe('SearchDialog', () => {
     });
 
     it('calls onClose and navigate on result click', async () => {
-        queryEntities.mockResolvedValueOnce({ data: [] });
+        queryEntries.mockResolvedValueOnce({ data: [] });
         render(<SearchDialog isOpen={true} onClose={mockOnClose} />);
 
-        queryEntities.mockResolvedValueOnce({
+        queryEntries.mockResolvedValueOnce({
             data: [{ name: 'Test', type: 'Type', subtype: 'Subtype' }],
         });
         fireEvent.change(screen.getByPlaceholderText('Search...'), {
@@ -100,12 +100,12 @@ describe('SearchDialog', () => {
     });
 
     it('queryes result on open', async () => {
-        queryEntities.mockResolvedValueOnce({
+        queryEntries.mockResolvedValueOnce({
             data: [{ name: 'Test', type: 'Type', subtype: 'Subtype' }],
         });
         render(<SearchDialog isOpen={true} onClose={mockOnClose} />);
 
-        expect(queryEntities).toHaveBeenCalledWith('', [], []);
+        expect(queryEntries).toHaveBeenCalledWith('', [], []);
         await waitFor(() => expect(screen.getByText('Test')).toBeInTheDocument());
         await waitFor(() =>
             expect(screen.getByText('Type: Subtype')).toBeInTheDocument(),

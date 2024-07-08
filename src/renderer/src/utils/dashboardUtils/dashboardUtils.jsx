@@ -4,20 +4,20 @@ import DashboardCard from '../../components/DashboardCard/DashboardCard';
 import DashboardHorizontalSection from '../../components/DashboardHorizontalSection/DashboardHorizontalSection';
 
 /**
- * Function to create a dashboard link for an entity.
- * It does not assert the correctness of the entity object.
+ * Function to create a dashboard link for an entry.
+ * It does not assert the correctness of the entry object.
  * Any invalid link will send the user to the '404 Not Found' Page.
  *
  * @function createDashboardLink
- * @param {?DashboardEntity} entity - the entity object
+ * @param {?DashboardEntry} entry - the entry object
  * @returns {string} - the dashboard link
  */
-export const createDashboardLink = (entity) => {
-    if (!entity) {
+export const createDashboardLink = (entry) => {
+    if (!entry) {
         return '/not-found';
     }
 
-    const { name, type, subtype } = entity;
+    const { name, type, subtype } = entry;
 
     if (!name || !type) {
         return '/not-found';
@@ -32,81 +32,81 @@ export const createDashboardLink = (entity) => {
 };
 
 /**
- * Function to render a dashboard section with entities.
- * It creates a DashboardCard for each entity and wraps them in a DashboardHorizontalSection.
+ * Function to render a dashboard section with entries.
+ * It creates a DashboardCard for each entry and wraps them in a DashboardHorizontalSection.
  *
  * @function renderDashboardSection
- * @param {?Array<DashboardEntity>} entities - the entities to render
- * @param {string} relatedEntitiesTitle - the title of the section
+ * @param {?Array<DashboardEntry>} entries - the entries to render
+ * @param {string} relatedEntriesTitle - the title of the section
  * @returns {?React.ReactElement}
  */
-export const renderDashboardSection = (entities, relatedEntitiesTitle) => {
-    if (!entities) {
+export const renderDashboardSection = (entries, relatedEntriesTitle) => {
+    if (!entries) {
         return null;
     }
 
-    const entityCards = entities.map((entry, index) => (
+    const entryCards = entries.map((artifact, index) => (
         <DashboardCard
             key={index}
-            name={entry.subtype ? `${entry.subtype}: ${entry.name}` : entry.name}
-            link={createDashboardLink(entry)}
+            name={artifact.subtype ? `${artifact.subtype}: ${artifact.name}` : artifact.name}
+            link={createDashboardLink(artifact)}
         />
     ));
 
     return (
-        <DashboardHorizontalSection title={relatedEntitiesTitle}>
-            {entityCards}
+        <DashboardHorizontalSection title={relatedEntriesTitle}>
+            {entryCards}
         </DashboardHorizontalSection>
     );
 };
 
 /**
- * Function to render a dashboard section with entities and inaccessible entities.
- * It creates a DashboardCard for each entity and wraps them in a DashboardHorizontalSection.
- * If there are inaccessible entities, a message is displayed with a button to request access.
+ * Function to render a dashboard section with entries and inaccessible entries.
+ * It creates a DashboardCard for each entry and wraps them in a DashboardHorizontalSection.
+ * If there are inaccessible entries, a message is displayed with a button to request access.
  *
- * @function renderDashboardSectionWithInaccessibleEntities
- * @param {?Array<DashboardEntity>} entities
- * @param {?Array<DashboardEntity>} inaccessibleEntities
- * @param {string} relatedEntitiesTitle
- * @param {string} inaccessibleEntitiesMessage
+ * @function renderDashboardSectionWithInaccessibleEntries
+ * @param {?Array<DashboardEntry>} entries
+ * @param {?Array<DashboardEntry>} inaccessibleEntries
+ * @param {string} relatedEntriesTitle
+ * @param {string} inaccessibleEntriesMessage
  * @param {string} requestAccessMessage
- * @param {function} handleRequestEntityAccess
+ * @param {function} handleRequestEntryAccess
  * @returns {?React.ReactElement}
  */
-export const renderDashboardSectionWithInaccessibleEntities = (
-    entities,
-    inaccessibleEntities,
-    relatedEntitiesTitle,
-    inaccessibleEntitiesMessage,
+export const renderDashboardSectionWithInaccessibleEntries = (
+    entries,
+    inaccessibleEntries,
+    relatedEntriesTitle,
+    inaccessibleEntriesMessage,
     requestAccessMessage,
-    handleRequestEntityAccess,
+    handleRequestEntryAccess,
 ) => {
-    if (!entities) {
+    if (!entries) {
         return null;
     }
 
-    const entityCards = entities.map((entity, index) => (
+    const entryCards = entries.map((entry, index) => (
         <DashboardCard
             key={index}
-            name={entity.name}
-            link={createDashboardLink(entity)}
+            name={entry.name}
+            link={createDashboardLink(entry)}
         />
     ));
 
-    const inaccessibleEntitiesDiv =
-        inaccessibleEntities && inaccessibleEntities.length > 0
+    const inaccessibleEntriesDiv =
+        inaccessibleEntries && inaccessibleEntries.length > 0
             ? [
                   <div
-                      key='inaccessible-entities'
+                      key='inaccessible-entries'
                       className='w-full h-fit mt-1 flex flex-row justify-between items-center text-zinc-400'
                   >
                       <p>
-                          {inaccessibleEntitiesMessage}
+                          {inaccessibleEntriesMessage}
                           <span
                               className='underline cursor-pointer'
                               onClick={() =>
-                                  handleRequestEntityAccess(inaccessibleEntities)
+                                  handleRequestEntryAccess(inaccessibleEntries)
                               }
                           >
                               {requestAccessMessage}
@@ -117,8 +117,8 @@ export const renderDashboardSectionWithInaccessibleEntities = (
             : [];
 
     return (
-        <DashboardHorizontalSection title={relatedEntitiesTitle}>
-            {[...entityCards, ...inaccessibleEntitiesDiv]}
+        <DashboardHorizontalSection title={relatedEntriesTitle}>
+            {[...entryCards, ...inaccessibleEntriesDiv]}
         </DashboardHorizontalSection>
     );
 };

@@ -11,10 +11,10 @@ export default function useChangeFlexDirectionBySize(containerRef) {
     useEffect(() => {
         const containerElement = containerRef.current;
 
-        const resizeObserver = new ResizeObserver((entries) => {
-            for (let entry of entries) {
+        const resizeObserver = new ResizeObserver((artifacts) => {
+            for (let artifact of artifacts) {
                 setFlexDirection(
-                    entry.contentRect.width > 500 ? 'flex-row' : 'flex-col',
+                    artifact.contentRect.width > 500 ? 'flex-row' : 'flex-col',
                 );
             }
         });

@@ -23,7 +23,7 @@ const MockHome = () => <div data-testid='mock-home'>Mock Home</div>;
 const setupTestComponent = () =>
     render(
         <AuthProvider>
-            <MemoryRouter initialEntries={['/login']}>
+            <MemoryRouter initialArtifacts={['/login']}>
                 <Routes>
                     <Route path='/login' element={<Login />}></Route>
                     <Route path='/' element={<MockHome />}></Route>`

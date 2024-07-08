@@ -32,20 +32,20 @@
  */
 
 /**
- * The entities in the dashboard. They are used to create links to their dashboards, which are created using name and (sub)type.
- * @typedef {Object} DashboardEntity
- * @property {string} name - the name of the entity
- * @property {string} type - the type of the entity, e.g. 'actor', 'case', 'entry', 'metadata'
- * @property {string} [subtype] - the subtype for entities with 'entry' or 'metadata' type
+ * The entries in the dashboard. They are used to create links to their dashboards, which are created using name and (sub)type.
+ * @typedef {Object} DashboardEntry
+ * @property {string} name - the name of the entry
+ * @property {string} type - the type of the entry, e.g. 'actor', 'case', 'artifact', 'metadata'
+ * @property {string} [subtype] - the subtype for entries with 'artifact' or 'metadata' type
  */
 
 /**
- * The entites in the Knowledge Graph. Similar to {@link DashboardEntity} but these must have id's.
- * @typedef {Object} GraphEntity
- * @property {string} id - the unique identifier of the entity
- * @property {string} name - the name of the entity
- * @property {string} type - the type of the entity
- * @property {string} [subtype] - the subtype of the entity
+ * The entries in the Knowledge Graph. Similar to {@link DashboardEntry} but these must have id's.
+ * @typedef {Object} GraphEntry
+ * @property {string} id - the unique identifier of the entry
+ * @property {string} name - the name of the entry
+ * @property {string} type - the type of the entry
+ * @property {string} [subtype] - the subtype of the entry
  */
 
 /**
@@ -56,7 +56,7 @@
  */
 
 /**
- * The nodes (vertices) of the Knowledge Graph. These contain links to {@link GraphEntity}.
+ * The nodes (vertices) of the Knowledge Graph. These contain links to {@link GraphEntry}.
  * @typedef {Object} GraphNode
  * @property {string} id - the unique identifier of the node
  * @property {string} label - the label of the node

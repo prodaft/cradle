@@ -16,7 +16,7 @@ The Developer Guide can be found at: {@tutorial Developer Guide}
 
 Cyber Threat Intelligence (CTI) involves the collection, processing, and analysis of data to understand the motives, targets, and attack behaviors of threat agents. The role of a threat analyst is complex and multifaceted.
 
-Analysts need to investigate cyber activities, make and share notes, visualize data to establish connections between agents and entries, and compile comprehensive reports on their findings. They require quick access to relevant notes to enhance efficiency and minimize unnecessary labor.
+Analysts need to investigate cyber activities, make and share notes, visualize data to establish connections between agents and artifacts, and compile comprehensive reports on their findings. They require quick access to relevant notes to enhance efficiency and minimize unnecessary labor.
 
 CRADLE is an open-source web application designed to assist CTI analysts by providing a collaborative, domain-specific note-taking tool. It streamlines the workflow of cyber threat analysts, enabling them to conduct investigations efficiently and export their findings in a publishable format.
 
@@ -147,7 +147,7 @@ This code of conduct applies to all spaces managed by CRADLE's team. In addition
 If you believe someone is violating the code of conduct, we ask that you report it by emailing **TBA**.
 
 - Be friendly and patient.
-- Be welcoming. We strive to be a community that welcomes and supports people of all backgrounds and identities. This includes, but is not limited to members of any race, ethnicity, culture, national origin, colour, immigration status, social and economic class, educational level, sex, sexual orientation, gender identity and expression, age, size, family status, political belief, religion, and mental and physical ability.
+- Be welcoming. We strive to be a community that welcomes and supports people of all backgrounds and identries. This includes, but is not limited to members of any race, ethnicity, culture, national origin, colour, immigration status, social and economic class, educational level, sex, sexual orientation, gender identry and expression, age, size, family status, political belief, religion, and mental and physical ability.
 - Be considerate. Your work will be used by other people, and you in turn will depend on the work of others. Any decision you take will affect users and colleagues, and you should take those consequences into account when making decisions. Remember that we're a world-wide community, so you might not be communicating in someone else's primary language.
 - Be respectful. Not all of us will agree all the time, but disagreement is no excuse for poor behavior and poor manners. We might all experience some frustration now and then, but we cannot allow that frustration to turn into a personal attack. It’s important to remember that a community where people feel uncomfortable or threatened is not a productive one. Members of the CRADLE community should be respectful when dealing with other members as well as with people outside the CRADLE community.
 - Be careful in the words that you choose. We are a community of professionals, and we conduct ourselves professionally. Be kind to others. Do not insult or put down other participants. Harassment and other exclusionary behavior aren't acceptable. This includes, but is not limited to:

@@ -1,14 +1,14 @@
 import { preprocessData, visualizeGraph } from './graphUtils';
 import { describe, expect, it } from '@jest/globals';
-import { entityGraphColors } from '../entityDefinitions/entityDefinitions';
+import { entryGraphColors } from '../entryDefinitions/entryDefinitions';
 
 describe('preprocessData', () => {
     it('transforms raw data into nodes and links', () => {
         const rawData = {
-            entities: [
-                { id: '1', name: 'Entity1', type: 'case' },
-                { id: '2', name: 'Entity2', type: 'actor' },
-                { id: '3', name: 'Entity3', type: 'entry' },
+            entries: [
+                { id: '1', name: 'Entry1', type: 'case' },
+                { id: '2', name: 'Entry2', type: 'actor' },
+                { id: '3', name: 'Entry3', type: 'artifact' },
             ],
             links: [
                 { source: '1', target: '2' },
@@ -24,10 +24,10 @@ describe('preprocessData', () => {
 
     it('calculates degree of nodes based on links', () => {
         const rawData = {
-            entities: [
-                { id: '1', name: 'Entity1', type: 'case' },
-                { id: '2', name: 'Entity2', type: 'actor' },
-                { id: '3', name: 'Entity3', type: 'entry' },
+            entries: [
+                { id: '1', name: 'Entry1', type: 'case' },
+                { id: '2', name: 'Entry2', type: 'actor' },
+                { id: '3', name: 'Entry3', type: 'artifact' },
             ],
             links: [
                 { source: '1', target: '2' },
@@ -42,12 +42,12 @@ describe('preprocessData', () => {
         expect(result.nodes.find((node) => node.id === '3').degree).toEqual(1);
     });
 
-    it('assigns correct color based on entity type', () => {
+    it('assigns correct color based on entry type', () => {
         const rawData = {
-            entities: [
-                { id: '1', name: 'Entity1', type: 'case' },
-                { id: '2', name: 'Entity2', type: 'actor' },
-                { id: '3', name: 'Entity3', type: 'entry' },
+            entries: [
+                { id: '1', name: 'Entry1', type: 'case' },
+                { id: '2', name: 'Entry2', type: 'actor' },
+                { id: '3', name: 'Entry3', type: 'artifact' },
             ],
             links: [],
         };
@@ -55,19 +55,19 @@ describe('preprocessData', () => {
         const result = preprocessData(rawData);
 
         expect(result.nodes.find((node) => node.id === '1').color).toEqual(
-            entityGraphColors.case,
+            entryGraphColors.case,
         );
         expect(result.nodes.find((node) => node.id === '2').color).toEqual(
-            entityGraphColors.actor,
+            entryGraphColors.actor,
         );
         expect(result.nodes.find((node) => node.id === '3').color).toEqual(
-            entityGraphColors.entry,
+            entryGraphColors.artifact,
         );
     });
 
     it('correctly fills in the rest of the node properties', () => {
         const rawData = {
-            entities: [{ id: '1', name: 'Entity1', type: 'case' }],
+            entries: [{ id: '1', name: 'Entry1', type: 'case' }],
             links: [],
         };
 
@@ -75,9 +75,9 @@ describe('preprocessData', () => {
 
         expect(result.nodes.find((node) => node.id === '1')).toEqual({
             id: '1',
-            label: 'case: Entity1',
-            color: entityGraphColors.case,
-            name: 'Entity1',
+            label: 'case: Entry1',
+            color: entryGraphColors.case,
+            name: 'Entry1',
             type: 'case',
             subtype: undefined,
             degree: 0,
@@ -92,7 +92,7 @@ describe('preprocessData', () => {
 
     it('correctly manages type and subtype', () => {
         const rawData = {
-            entities: [{ id: '1', name: 'Entity1', type: 'entry', subtype: 'url' }],
+            entries: [{ id: '1', name: 'Entry1', type: 'artifact', subtype: 'url' }],
             links: [],
         };
 
@@ -100,10 +100,10 @@ describe('preprocessData', () => {
 
         expect(result.nodes.find((node) => node.id === '1')).toEqual({
             id: '1',
-            label: 'url: Entity1',
-            color: entityGraphColors.entry,
-            name: 'Entity1',
-            type: 'entry',
+            label: 'url: Entry1',
+            color: entryGraphColors.artifact,
+            name: 'Entry1',
+            type: 'artifact',
             subtype: 'url',
             degree: 0,
             x: expect.any(Number),

@@ -11,11 +11,11 @@ import FileInput from '../FileInput/FileInput';
 import FileTable from '../FileTable/FileTable';
 import { NavArrowDown, NavArrowUp } from 'iconoir-react/regular';
 import {
-    entityTypes,
-    entrySubtypes,
+    entryTypes,
+    artifactSubtypes,
     metadataSubtypes,
-} from '../../utils/entityDefinitions/entityDefinitions';
-import { queryEntities } from '../../services/queryService/queryService';
+} from '../../utils/entryDefinitions/entryDefinitions';
+import { queryEntries } from '../../services/queryService/queryService';
 import useAuth from '../../hooks/useAuth/useAuth';
 import { completionKeymap, acceptCompletion } from '@codemirror/autocomplete';
 import { getLinkNode, parseLink } from '../../utils/textEditorUtils/textEditorUtils';
@@ -55,7 +55,7 @@ export default function Editor({
     const auth = useAuth();
 
     const performSearch = async (name, type, subtype) => {
-        return queryEntities(name, type, subtype)
+        return queryEntries(name, type, subtype)
             .then((response) => {
                 let data = response.data.map((x) => ({
                     label: x.name,
@@ -85,7 +85,7 @@ export default function Editor({
         if (parsedLink.type == null) {
             options = new Promise((f) =>
                 f(
-                    [entityTypes, entrySubtypes, metadataSubtypes].flatMap((set) =>
+                    [entryTypes, artifactSubtypes, metadataSubtypes].flatMap((set) =>
                         Array.from(set).map((item) => ({
                             label: item,
                             type: 'keyword',
@@ -93,9 +93,9 @@ export default function Editor({
                     ),
                 ),
             );
-        } else if (entrySubtypes.has(parsedLink.type) && parsedLink.text.length >= 3) {
+        } else if (artifactSubtypes.has(parsedLink.type) && parsedLink.text.length >= 3) {
             options = performSearch(parsedLink.text, [], [parsedLink.type]);
-        } else if (!entrySubtypes.has(parsedLink.type)) {
+        } else if (!artifactSubtypes.has(parsedLink.type)) {
             options = performSearch(parsedLink.text, [parsedLink.type], []);
         }
 

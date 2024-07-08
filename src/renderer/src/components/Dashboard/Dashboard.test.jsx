@@ -59,7 +59,7 @@ describe('Dashboard Component', () => {
             actors: [{ name: 'Actor 1' }],
             cases: [{ name: 'Case 1' }],
             metadata: [{ name: 'Metadata 1' }],
-            notes: [{ content: 'Note 1', entities: [] }],
+            notes: [{ content: 'Note 1', entries: [] }],
         };
         getDashboardData.mockResolvedValue({ data: mockData });
 
@@ -82,7 +82,7 @@ describe('Dashboard Component', () => {
         expect(await screen.findByText('Note 1')).toBeInTheDocument();
     });
 
-    it('displays error message when entity is missing', async () => {
+    it('displays error message when entry is missing', async () => {
         getDashboardData.mockRejectedValue({ response: { status: 404 } });
 
         render(

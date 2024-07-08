@@ -2,7 +2,7 @@ import {
     changeAccess,
     createActor,
     createCase,
-    deleteEntity,
+    deleteEntry,
     getActors,
     getCases,
     getPermissions,
@@ -14,7 +14,7 @@ jest.mock('../axiosInstance/axiosInstance');
 describe('Admin Service', () => {
     const data = { name: 'test' };
     const id = 1;
-    const type = 'entities';
+    const type = 'entries';
     const accessLevel = 'read';
     const userId = '1';
     const caseId = '1';
@@ -28,7 +28,7 @@ describe('Admin Service', () => {
         await createActor(data);
         expect(axios.authAxios).toHaveBeenCalledWith({
             method: 'post',
-            url: '/entities/actors/',
+            url: '/entries/actors/',
             data: data,
         });
     });
@@ -38,7 +38,7 @@ describe('Admin Service', () => {
         await createCase(data);
         expect(axios.authAxios).toHaveBeenCalledWith({
             method: 'post',
-            url: '/entities/cases/',
+            url: '/entries/cases/',
             data: data,
         });
     });
@@ -48,7 +48,7 @@ describe('Admin Service', () => {
         await getActors();
         expect(axios.authAxios).toHaveBeenCalledWith({
             method: 'get',
-            url: '/entities/actors/',
+            url: '/entries/actors/',
         });
     });
 
@@ -57,7 +57,7 @@ describe('Admin Service', () => {
         await getCases();
         expect(axios.authAxios).toHaveBeenCalledWith({
             method: 'get',
-            url: '/entities/cases/',
+            url: '/entries/cases/',
         });
     });
 
@@ -70,9 +70,9 @@ describe('Admin Service', () => {
         });
     });
 
-    it('deletes an entity successfully', async () => {
+    it('deletes an entry successfully', async () => {
         axios.authAxios.mockResolvedValue({ data: {} });
-        await deleteEntity(type, id);
+        await deleteEntry(type, id);
         expect(axios.authAxios).toHaveBeenCalledWith({
             method: 'delete',
             url: `/${type}/${id}/`,

@@ -17,7 +17,7 @@ import {
 
 /**
  * Fetches and displays the data to be published in a report.
- * This data is expected to represent the contents of all notes in the `noteIds` array and their associated entities and metadata.
+ * This data is expected to represent the contents of all notes in the `noteIds` array and their associated entries and metadata.
  * The user can alternate between views, and they can choose to export the contents as any of these formats.
  *
  * The supported formats are:
@@ -35,7 +35,7 @@ export default function PublishPreview() {
     const [htmlContent, setHtmlContent] = useState('');
     const navigate = useNavigate();
     const location = useLocation();
-    const { noteIds, entityName } = location.state;
+    const { noteIds, entryName } = location.state;
 
     useEffect(() => {
         const mdReport = createMarkdownReportFromJson(responseData);
@@ -60,7 +60,7 @@ export default function PublishPreview() {
             try {
                 switch (extension) {
                     case 'html': {
-                        const report = createHtmlReport(entityName, htmlContent);
+                        const report = createHtmlReport(entryName, htmlContent);
                         downloadFile(report, extension);
                         break;
                     }
@@ -76,7 +76,7 @@ export default function PublishPreview() {
                 displayError(setAlert)(error);
             }
         },
-        [isJson, responseData, entityName],
+        [isJson, responseData, entryName],
     );
 
     const toggleView = useCallback(() => {
