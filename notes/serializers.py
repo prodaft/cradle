@@ -7,7 +7,7 @@ from .exceptions import (
     NoteDoesNotExistException,
     NoteNotPublishableException,
 )
-from entities.serializers import EntityResponseSerializer
+from entries.serializers import EntryResponseSerializer
 from typing import Any
 from file_transfer.serializers import FileReferenceSerializer
 from file_transfer.models import FileReference
@@ -28,7 +28,7 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 
         Args:
             data: a dictionary containing the attributes of
-                the Note entity
+                the Note entry
 
         Returns:
             True iff the validations pass.
@@ -37,10 +37,10 @@ class NoteCreateSerializer(serializers.ModelSerializer):
             NoteIsEmptyException: if the client did not sent the content
             of the note or if the content is empty.
             NotEnoughReferencesException: if the note does not reference at
-            least one case and at least two entities.
-            EntitiesDoNotExistException: if the note references actors or cases
+            least one case and at least two entries.
+            EntriesDoNotExistException: if the note references actors or cases
             that do not exist.
-            NoAccessToEntitiesException: if the user does not have access to the
+            NoAccessToEntriesException: if the user does not have access to the
             referenced cases.
         """
         if "content" not in data or not data["content"]:
@@ -48,30 +48,30 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 
         user = self.context["request"].user
 
-        # save the referenced entities to be used when creating the note
-        self.referenced_entities = TaskScheduler(data["content"], user).run_pipeline()
+        # save the referenced entries to be used when creating the note
+        self.referenced_entries = TaskScheduler(data["content"], user).run_pipeline()
 
         return super().validate(data)
 
     def create(self, validated_data):
-        """Creates a new Note entity based on the validated data.
-        Moreover, it sets the entities field to correspond to the
-        referenced_entities field which was persisted in the validate
+        """Creates a new Note entry based on the validated data.
+        Moreover, it sets the entries field to correspond to the
+        referenced_entries field which was persisted in the validate
         method. Additionally, it sets the files field to
         correspond to the file references that are linked to the note.
 
         Args:
             validated_data: a dictionary containing the attributes of
-                the Note entity
+                the Note entry
 
         Returns:
-            The created Note entity
+            The created Note entry
         """
 
         files = validated_data.pop("files", None)
 
         note = Note.objects.create(**validated_data)
-        note.entities.set(self.referenced_entities)
+        note.entries.set(self.referenced_entries)
 
         if files is not None:
             file_reference_models = [
@@ -170,8 +170,8 @@ class ReportQuerySerializer(serializers.Serializer):
 
 
 class ReportSerializer(serializers.Serializer):
-    actors = EntityResponseSerializer(many=True)
-    cases = EntityResponseSerializer(many=True)
-    metadata = EntityResponseSerializer(many=True)
-    entries = EntityResponseSerializer(many=True)
+    actors = EntryResponseSerializer(many=True)
+    cases = EntryResponseSerializer(many=True)
+    metadata = EntryResponseSerializer(many=True)
+    artifacts = EntryResponseSerializer(many=True)
     notes = NoteReportSerializer(many=True)

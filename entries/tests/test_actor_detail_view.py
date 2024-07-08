@@ -4,10 +4,10 @@ from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
 import io
 from rest_framework_simplejwt.tokens import AccessToken
-from .utils import EntitiesTestCase
+from .utils import EntriesTestCase
 
-from ..models import Entity
-from ..enums import EntityType
+from ..models import Entry
+from ..enums import EntryType
 import uuid
 
 
@@ -15,7 +15,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class DeleteActorDetailsTest(EntitiesTestCase):
+class DeleteActorDetailsTest(EntriesTestCase):
 
     def setUp(self):
         super().setUp()
@@ -39,8 +39,8 @@ class DeleteActorDetailsTest(EntitiesTestCase):
         self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
 
     def test_delete_actor_admin(self):
-        actor = Entity.objects.create(
-            name="Actor1", description="Description1", type=EntityType.ACTOR
+        actor = Entry.objects.create(
+            name="Actor1", description="Description1", type=EntryType.ACTOR
         )
 
         response = self.client.delete(
@@ -50,8 +50,8 @@ class DeleteActorDetailsTest(EntitiesTestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_delete_actor_authenticated_not_admin(self):
-        actor = Entity.objects.create(
-            name="Actor1", description="Description1", type=EntityType.ACTOR
+        actor = Entry.objects.create(
+            name="Actor1", description="Description1", type=EntryType.ACTOR
         )
 
         response = self.client.delete(
@@ -62,8 +62,8 @@ class DeleteActorDetailsTest(EntitiesTestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_delete_actor_not_authenticated(self):
-        actor = Entity.objects.create(
-            name="Actor1", description="Description1", type=EntityType.ACTOR
+        actor = Entry.objects.create(
+            name="Actor1", description="Description1", type=EntryType.ACTOR
         )
 
         response = self.client.delete(
@@ -73,8 +73,8 @@ class DeleteActorDetailsTest(EntitiesTestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_delete_actor_admin_wrong_id(self):
-        Entity.objects.create(
-            name="Actor1", description="Description1", type=EntityType.ACTOR
+        Entry.objects.create(
+            name="Actor1", description="Description1", type=EntryType.ACTOR
         )
 
         response = self.client.delete(

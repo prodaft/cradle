@@ -4,8 +4,8 @@ from unittest.mock import patch
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.parsers import JSONParser
 from ..models import Note, ArchivedNote
-from entities.models import Entity
-from entities.enums import EntityType, EntitySubtype
+from entries.models import Entry
+from entries.enums import EntryType, EntrySubtype
 from access.models import Access
 from access.enums import AccessType
 import io
@@ -107,13 +107,13 @@ class DeleteNoteTest(NotesTestCase):
         self.init_database()
 
     def init_database(self):
-        self.case = Entity.objects.create(
-            name="Clearly not a case", type=EntityType.CASE
+        self.case = Entry.objects.create(
+            name="Clearly not a case", type=EntryType.CASE
         )
-        # init entities
-        self.entities = [
-            Entity.objects.create(
-                name=f"Entity{i}", type=EntityType.ENTRY, subtype=EntitySubtype.IP
+        # init entries
+        self.entries = [
+            Entry.objects.create(
+                name=f"Entry{i}", type=EntryType.ARTIFACT, subtype=EntrySubtype.IP
             )
             for i in range(0, 4)
         ]
@@ -121,11 +121,11 @@ class DeleteNoteTest(NotesTestCase):
         self.notes = []
         self.notes.append(Note.objects.create())
         self.notes.append(Note.objects.create())
-        self.notes[0].entities.add(self.entities[0])
-        self.notes[0].entities.add(self.entities[1])
-        self.notes[1].entities.add(self.entities[0])
-        self.notes[1].entities.add(self.entities[2])
-        self.notes[1].entities.add(self.case)
+        self.notes[0].entries.add(self.entries[0])
+        self.notes[0].entries.add(self.entries[1])
+        self.notes[1].entries.add(self.entries[0])
+        self.notes[1].entries.add(self.entries[2])
+        self.notes[1].entries.add(self.case)
         Access.objects.create(
             user_id=self.user.id,
             case_id=self.case.id,
@@ -157,8 +157,8 @@ class DeleteNoteTest(NotesTestCase):
         self.assertEqual(response.status_code, 200)
         with self.assertRaises(Note.DoesNotExist):
             Note.objects.get(id=note_id)
-        with self.assertRaises(Entity.DoesNotExist):
-            Entity.objects.get(id=self.entities[1].id)
+        with self.assertRaises(Entry.DoesNotExist):
+            Entry.objects.get(id=self.entries[1].id)
         with self.subTest("Check archive count"):
             self.assertEqual(ArchivedNote.objects.count(), archive_count + 1)
 
@@ -175,13 +175,13 @@ class DeleteNoteTest(NotesTestCase):
         with self.assertRaises(Note.DoesNotExist):
             Note.objects.get(id=note_id)
         with self.subTest("Check case does not get deleted"):
-            self.assertEqual(Entity.objects.get(id=self.case.id).id, self.case.id)
+            self.assertEqual(Entry.objects.get(id=self.case.id).id, self.case.id)
         with self.subTest("Check archive count"):
             self.assertEqual(ArchivedNote.objects.count(), archive_count + 1)
 
     def test_delete_note_no_access(self):
-        case1 = Entity.objects.create(name="this is a case", type=EntityType.CASE)
-        self.notes[1].entities.add(case1)
+        case1 = Entry.objects.create(name="this is a case", type=EntryType.CASE)
+        self.notes[1].entries.add(case1)
         note_id = self.notes[1].id
         response = self.client.delete(
             reverse("note_detail", kwargs={"note_id": note_id}), **self.headers

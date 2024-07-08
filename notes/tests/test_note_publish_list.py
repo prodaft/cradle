@@ -4,8 +4,8 @@ from user.models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.parsers import JSONParser
 from ..models import Note
-from entities.models import Entity
-from entities.enums import EntityType
+from entries.models import Entry
+from entries.enums import EntryType
 from access.models import Access
 from access.enums import AccessType
 import io
@@ -26,16 +26,16 @@ class NotePublishableListTest(NotesTestCase):
         self.user_token = str(AccessToken.for_user(self.user))
         self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
 
-        self.case1 = Entity.objects.create(name="1", type=EntityType.CASE)
-        self.case2 = Entity.objects.create(name="2", type=EntityType.CASE)
+        self.case1 = Entry.objects.create(name="1", type=EntryType.CASE)
+        self.case2 = Entry.objects.create(name="2", type=EntryType.CASE)
         self.note1 = Note.objects.create(content="blabla")
-        self.note1.entities.add(self.case2)
+        self.note1.entries.add(self.case2)
 
         self.note2 = Note.objects.create(content="bla", publishable=True)
-        self.note2.entities.add(self.case1)
+        self.note2.entries.add(self.case1)
 
         self.note3 = Note.objects.create(content="blabla", publishable=True)
-        self.note3.entities.add(self.case1)
+        self.note3.entries.add(self.case1)
 
         self.access = Access.objects.create(
             user=self.user, case=self.case1, access_type=AccessType.READ_WRITE

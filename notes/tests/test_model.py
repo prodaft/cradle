@@ -1,6 +1,6 @@
 from notes.models import Note, ArchivedNote
-from entities.models import Entity
-from entities.enums import EntityType
+from entries.models import Entry
+from entries.enums import EntryType
 from .utils import NotesTestCase
 
 
@@ -9,15 +9,15 @@ class DeleteNoteTest(NotesTestCase):
     def setUp(self):
         super().setUp()
 
-        self.case1 = Entity.objects.create(
-            name="Case1", description="Description", type=EntityType.CASE
+        self.case1 = Entry.objects.create(
+            name="Case1", description="Description", type=EntryType.CASE
         )
-        self.case2 = Entity.objects.create(
-            name="Case2", description="Description", type=EntityType.CASE
+        self.case2 = Entry.objects.create(
+            name="Case2", description="Description", type=EntryType.CASE
         )
 
         self.note = Note.objects.create(content="Note1")
-        self.note.entities.add(self.case1, self.case2)
+        self.note.entries.add(self.case1, self.case2)
 
     def test_delete_note(self):
         self.note.delete()

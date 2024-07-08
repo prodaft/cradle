@@ -4,8 +4,8 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from user.models import CradleUser
 from notes.models import Note
-from entities.models import Entity
-from entities.enums import EntityType, EntrySubtype
+from entries.models import Entry
+from entries.enums import EntryType, ArtifactSubtype
 from access.models import Access, AccessType
 
 
@@ -40,43 +40,43 @@ class DashboardsTestCase(TestCase):
 
     def create_notes(self):
         self.note1 = Note.objects.create(content="Note1")
-        self.note1.entities.add(self.case1, self.actor1, self.metadata1)
+        self.note1.entries.add(self.case1, self.actor1, self.metadata1)
 
         self.note2 = Note.objects.create(content="Note2")
-        self.note2.entities.add(self.case2, self.actor2, self.case1, self.entry1)
+        self.note2.entries.add(self.case2, self.actor2, self.case1, self.artifact1)
 
         self.note3 = Note.objects.create(content="Note3")
-        self.note3.entities.add(self.case3, self.actor3, self.metadata1, self.entry1)
+        self.note3.entries.add(self.case3, self.actor3, self.metadata1, self.artifact1)
 
     def create_cases(self):
-        self.case1 = Entity.objects.create(
-            name="Case1", description="Description1", type=EntityType.CASE
+        self.case1 = Entry.objects.create(
+            name="Case1", description="Description1", type=EntryType.CASE
         )
 
-        self.case2 = Entity.objects.create(
-            name="Case2", description="Description2", type=EntityType.CASE
+        self.case2 = Entry.objects.create(
+            name="Case2", description="Description2", type=EntryType.CASE
         )
 
-        self.case3 = Entity.objects.create(
-            name="Case3", description="Description3", type=EntityType.CASE
+        self.case3 = Entry.objects.create(
+            name="Case3", description="Description3", type=EntryType.CASE
         )
 
     def create_actors(self):
-        self.actor1 = Entity.objects.create(
-            name="Actor1", description="Description1", type=EntityType.ACTOR
+        self.actor1 = Entry.objects.create(
+            name="Actor1", description="Description1", type=EntryType.ACTOR
         )
 
-        self.actor2 = Entity.objects.create(
-            name="Actor2", description="Description2", type=EntityType.ACTOR
+        self.actor2 = Entry.objects.create(
+            name="Actor2", description="Description2", type=EntryType.ACTOR
         )
 
-        self.actor3 = Entity.objects.create(
-            name="Actor3", description="Description3", type=EntityType.ACTOR
+        self.actor3 = Entry.objects.create(
+            name="Actor3", description="Description3", type=EntryType.ACTOR
         )
 
     def create_metadata(self):
-        self.metadata1 = Entity.objects.create(
-            name="Metadata1", description="Description1", type=EntityType.METADATA
+        self.metadata1 = Entry.objects.create(
+            name="Metadata1", description="Description1", type=EntryType.METADATA
         )
 
     def create_access(self):
@@ -96,12 +96,12 @@ class DashboardsTestCase(TestCase):
             user=self.user2, case=self.case2, access_type=AccessType.NONE
         )
 
-    def create_entries(self):
-        self.entry1 = Entity.objects.create(
-            name="Entry1",
+    def create_artifacts(self):
+        self.artifact1 = Entry.objects.create(
+            name="Artifact1",
             description="Description1",
-            type=EntityType.ENTRY,
-            subtype=EntrySubtype.IP,
+            type=EntryType.ARTIFACT,
+            subtype=ArtifactSubtype.IP,
         )
 
     def setUp(self):
@@ -119,7 +119,7 @@ class DashboardsTestCase(TestCase):
         self.create_cases()
         self.create_access()
         self.create_actors()
-        self.create_entries()
+        self.create_artifacts()
         self.create_metadata()
         self.create_notes()
 

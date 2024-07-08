@@ -4,8 +4,8 @@ from access.models import Access
 from access.enums import AccessType
 from rest_framework_simplejwt.tokens import AccessToken
 from ..models import Note
-from entities.models import Entity
-from entities.enums import EntityType, EntitySubtype
+from entries.models import Entry
+from entries.enums import EntryType, EntrySubtype
 from .utils import NotesTestCase
 from unittest.mock import patch
 
@@ -20,8 +20,8 @@ class CreateNoteTest(NotesTestCase):
         )
         self.user_token = str(AccessToken.for_user(self.user))
         self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
-        self.saved_case = Entity.objects.create(name="case", type=EntityType.CASE)
-        self.saved_actor = Entity.objects.create(name="actor", type=EntityType.ACTOR)
+        self.saved_case = Entry.objects.create(name="case", type=EntryType.CASE)
+        self.saved_actor = Entry.objects.create(name="actor", type=EntryType.ACTOR)
 
         self.file_name = "evidence.png"
         self.minio_file_name = "aad5cae6-5737-409d-8ce2-5f116ed5e2de-evidence.png"
@@ -128,7 +128,7 @@ class CreateNoteTest(NotesTestCase):
 
         self.assertEqual(response.status_code, 401)
 
-    def test_does_not_reference_enough_entities(self):
+    def test_does_not_reference_enough_entries(self):
         response = self.client.post(
             reverse("note_list"),
             {"files": [self.file_reference], "content": "Lorem ipsum"},
@@ -139,10 +139,10 @@ class CreateNoteTest(NotesTestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.json()["detail"],
-            "Note does not reference at least one case and at least two entities.",
+            "Note does not reference at least one case and at least two entries.",
         )
 
-    def test_references_entities_that_do_not_exist(self):
+    def test_references_entries_that_do_not_exist(self):
         response = self.client.post(
             reverse("note_list"),
             {
@@ -194,11 +194,11 @@ class CreateNoteTest(NotesTestCase):
         self.assertEqual(saved_note.content, note_content)
         self.assertIsNotNone(response.json()["timestamp"])
 
-        referenced_entities = saved_note.entities.all()
-        # this also checks that the ip entity has been successfully created
-        saved_entry = Entity.objects.get(
-            name="127.0.0.1", type=EntityType.ENTRY, subtype=EntitySubtype.IP
+        referenced_entries = saved_note.entries.all()
+        # this also checks that the ip entry has been successfully created
+        saved_artifact = Entry.objects.get(
+            name="127.0.0.1", type=EntryType.ARTIFACT, subtype=EntrySubtype.IP
         )
         self.assertCountEqual(
-            referenced_entities, [self.saved_case, self.saved_actor, saved_entry]
+            referenced_entries, [self.saved_case, self.saved_actor, saved_artifact]
         )

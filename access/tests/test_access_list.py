@@ -2,14 +2,14 @@ from django.urls import reverse
 from user.models import CradleUser
 from ..models import Access
 from ..enums import AccessType
-from entities.models import Entity
+from entries.models import Entry
 from rest_framework.parsers import JSONParser
 from rest_framework_simplejwt.tokens import AccessToken
 from .utils import AccessTestCase
 
 import io
 
-from entities.enums import EntityType
+from entries.enums import EntryType
 
 
 def bytes_to_json(data):
@@ -31,8 +31,8 @@ class AccessListTest(AccessTestCase):
         self.token_normal = str(AccessToken.for_user(self.user))
         self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
         self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
-        self.case, created = Entity.objects.get_or_create(
-            name="Case 1", description="Cool case", type=EntityType.CASE
+        self.case, created = Entry.objects.get_or_create(
+            name="Case 1", description="Cool case", type=EntryType.CASE
         )
 
     def test_access_list_success(self):
@@ -111,7 +111,7 @@ class AccessListTest(AccessTestCase):
         Access.objects.create(
             user=self.user, case=self.case, access_type=AccessType.READ
         )
-        case2 = Entity.objects.create(name="Case 2", type=EntityType.CASE)
+        case2 = Entry.objects.create(name="Case 2", type=EntryType.CASE)
 
         response = self.client.get(
             reverse(

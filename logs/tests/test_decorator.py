@@ -8,8 +8,8 @@ from rest_framework.parsers import JSONParser
 from .utils import LogsTestCase
 from ..decorators import (
     log_login_success,
-    log_entity_creation,
-    log_entity_deletion,
+    log_entry_creation,
+    log_entry_deletion,
     log_failed_responses,
 )
 
@@ -43,38 +43,38 @@ class TestLoggingDecorators(LogsTestCase):
         mock_view(request)
         mock_log_login_success.assert_called_once_with(request, response)
 
-    @patch("logs.utils.LoggingUtils.log_entity_creation")
-    def test_log_entity_creation_decorator(self, mock_log_entity_creation):
+    @patch("logs.utils.LoggingUtils.log_entry_creation")
+    def test_log_entry_creation_decorator(self, mock_log_entry_creation):
         response = Response({"message": "success"}, status=200)
 
-        @log_entity_creation
+        @log_entry_creation
         def mock_view(request):
             return response
 
         request = self.factory.post(
-            "/entities/actors/",
-            data=json.dumps({"name": "testentity"}),
+            "/entries/actors/",
+            data=json.dumps({"name": "testentry"}),
             content_type="application/json",
         )
         request.META["REMOTE_ADDR"] = "127.0.0.1"
         request.META["HTTP_USER_AGENT"] = "test-agent"
         request.user = "test_user"
-        request.data = {"name": "testentity"}
+        request.data = {"name": "testentry"}
 
         request = Request(request, parsers=[JSONParser()])
 
         mock_view(request)
-        mock_log_entity_creation.assert_called_once_with(request, response)
+        mock_log_entry_creation.assert_called_once_with(request, response)
 
-    @patch("logs.utils.LoggingUtils.log_entity_deletion")
-    def test_log_entity_deletion_decorator(self, mock_log_entity_deletion):
+    @patch("logs.utils.LoggingUtils.log_entry_deletion")
+    def test_log_entry_deletion_decorator(self, mock_log_entry_deletion):
         response = Response({"message": "success"}, status=200)
 
-        @log_entity_deletion
+        @log_entry_deletion
         def mock_view(request):
             return response
 
-        request = self.factory.delete("/entities/actors/1/")
+        request = self.factory.delete("/entries/actors/1/")
         request.META["REMOTE_ADDR"] = "127.0.0.1"
         request.META["HTTP_USER_AGENT"] = "test-agent"
         request.user = "test_user"
@@ -83,7 +83,7 @@ class TestLoggingDecorators(LogsTestCase):
         request = Request(request, parsers=[JSONParser()])
 
         mock_view(request)
-        mock_log_entity_deletion.assert_called_once_with(request, response)
+        mock_log_entry_deletion.assert_called_once_with(request, response)
 
     @patch("logs.utils.LoggingUtils.log_failed_responses")
     def test_log_failed_responses_decorator(self, mock_log_failed_responses):
@@ -93,7 +93,7 @@ class TestLoggingDecorators(LogsTestCase):
         def mock_view(request):
             return response
 
-        request = self.factory.post("/entities/actors/")
+        request = self.factory.post("/entries/actors/")
         request.META["REMOTE_ADDR"] = "127.0.0.1"
         request.META["HTTP_USER_AGENT"] = "test-agent"
         request.user = "test_user"

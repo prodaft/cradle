@@ -3,14 +3,14 @@ from typing import Set
 from .enums import AccessType
 from user.models import CradleUser
 from django.db.models import Q, F, FilteredRelation
-from entities.models import Entity
+from entries.models import Entry
 
 from uuid import UUID
 
 
 class AccessManager(models.Manager):
     def has_access_to_cases(
-        self, user: CradleUser, cases: Set[Entity], access_types: Set[AccessType]
+        self, user: CradleUser, cases: Set[Entry], access_types: Set[AccessType]
     ) -> bool:
         """Checks whether a user has one of the specified access types
         to each of the cases in the set of cases. Assumes that AccessType.NONE
@@ -78,7 +78,7 @@ class AccessManager(models.Manager):
             }
         """
         return (
-            Entity.cases.annotate(
+            Entry.cases.annotate(
                 access_type=FilteredRelation(
                     "access", condition=Q(access__user=user_id)
                 )
@@ -112,7 +112,7 @@ class AccessManager(models.Manager):
         )
 
     def check_user_access(
-        self, user: CradleUser, case: Entity, access_type: AccessType
+        self, user: CradleUser, case: Entry, access_type: AccessType
     ) -> bool:
         """Checks whether the user has an access access_type for the provided case.
         The method should not be called when the user is a superuser or when

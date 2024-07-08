@@ -1,7 +1,7 @@
 from .utils import NotificationsTestCase
 from user.models import CradleUser
-from entities.models import Entity
-from entities.enums import EntityType
+from entries.models import Entry
+from entries.enums import EntryType
 from notifications.models import MessageNotification, AccessRequestNotification
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
@@ -25,7 +25,7 @@ class NotificationListTest(NotificationsTestCase):
             is_staff=False,
             email="b@c.d",
         )
-        self.case = Entity.objects.create(name="Case", type=EntityType.CASE)
+        self.case = Entry.objects.create(name="Case", type=EntryType.CASE)
 
         self.token = str(AccessToken.for_user(self.user))
         self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.token}"}

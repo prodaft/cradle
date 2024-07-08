@@ -48,7 +48,7 @@ class FleetingNotesList(APIView):
     @log_failed_responses
     def post(self, request: Request) -> Response:
         """
-        Create a new FleetingNote entity based on the request data.
+        Create a new FleetingNote entry based on the request data.
         The user field is set to correspond to the authenticated user.
 
         Args:
@@ -56,7 +56,7 @@ class FleetingNotesList(APIView):
 
         Returns:
             Response(serializer.data, status=200):
-                The created FleetingNote entity
+                The created FleetingNote entry
             Response(serializer.errors, status=400):
                 if the request was unsuccessful
             Response("The bucket name of the file reference is incorrect.",
@@ -84,21 +84,21 @@ class FleetingNotesDetail(APIView):
     @log_failed_responses
     def get(self, request: Request, pk: UUID) -> Response:
         """
-        Get a FleetingNote entity by its primary key.
-        Only the owner of the FleetingNote entity can access it.
+        Get a FleetingNote entry by its primary key.
+        Only the owner of the FleetingNote entry can access it.
 
         Args:
             request: The request that was sent
-            pk: The primary key of the FleetingNote entity
+            pk: The primary key of the FleetingNote entry
 
         Returns:
             Response(serializer.data, status=200):
-                The FleetingNote entity
+                The FleetingNote entry
             Response("The Fleeting Note does not exist", status=404):
-                if the FleetingNote entity does not exist
+                if the FleetingNote entry does not exist
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
-                or the user does not own the FleetingNote entity
+                or the user does not own the FleetingNote entry
         """
         try:
             fleeting_note = FleetingNote.objects.get(
@@ -115,23 +115,23 @@ class FleetingNotesDetail(APIView):
     @log_failed_responses
     def put(self, request: Request, pk: UUID) -> Response:
         """
-        Update a FleetingNote entity by its primary key.
-        Only the owner of the FleetingNote entity can update it.
+        Update a FleetingNote entry by its primary key.
+        Only the owner of the FleetingNote entry can update it.
 
         Args:
             request: The request that was sent
-            pk: The primary key of the FleetingNote entity
+            pk: The primary key of the FleetingNote entry
 
         Returns:
             Response(serializer.data, status=200):
-                The updated FleetingNote entity
+                The updated FleetingNote entry
             Response(serializer.errors, status=400):
                 if the request was unsuccessful
             Response("FleetingNote does not exist.", status=404):
-                if the FleetingNote entity does not exist
+                if the FleetingNote entry does not exist
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
-                or the user does not own the FleetingNote entity
+                or the user does not own the FleetingNote entry
         """
         data = request.data
         if "content" not in data or not data.get("content"):
@@ -158,21 +158,21 @@ class FleetingNotesDetail(APIView):
     @log_failed_responses
     def delete(self, request: Request, pk: UUID) -> Response:
         """
-        Delete a FleetingNote entity by its primary key.
-        Only the owner of the FleetingNote entity can delete it.
+        Delete a FleetingNote entry by its primary key.
+        Only the owner of the FleetingNote entry can delete it.
 
         Args:
             request: The request that was sent
-            pk: The primary key of the FleetingNote entity
+            pk: The primary key of the FleetingNote entry
 
         Returns:
             Response(status=200):
-                if the FleetingNote entity was successfully deleted
+                if the FleetingNote entry was successfully deleted
             Response("FleetingNote does not exist.", status=404):
-                if the FleetingNote entity does not exist
+                if the FleetingNote entry does not exist
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
-                or the user does not own the FleetingNote entity
+                or the user does not own the FleetingNote entry
         """
         try:
             fleeting_note = FleetingNote.objects.get(

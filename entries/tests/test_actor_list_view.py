@@ -4,18 +4,18 @@ from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
 import io
 from rest_framework_simplejwt.tokens import AccessToken
-from .utils import EntitiesTestCase
+from .utils import EntriesTestCase
 
-from ..models import Entity
-from ..serializers import EntityResponseSerializer
-from ..enums import EntityType
+from ..models import Entry
+from ..serializers import EntryResponseSerializer
+from ..enums import EntryType
 
 
 def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class GetActorListTest(EntitiesTestCase):
+class GetActorListTest(EntriesTestCase):
 
     def setUp(self):
         super().setUp()
@@ -39,15 +39,15 @@ class GetActorListTest(EntitiesTestCase):
         self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
 
     def test_get_actors_admin(self):
-        Entity.objects.create(
-            name="Actor1", description="Description1", type=EntityType.ACTOR
+        Entry.objects.create(
+            name="Actor1", description="Description1", type=EntryType.ACTOR
         )
-        Entity.objects.create(
-            name="Actor2", description="Description2", type=EntityType.ACTOR
+        Entry.objects.create(
+            name="Actor2", description="Description2", type=EntryType.ACTOR
         )
-        actors = Entity.actors.all()
+        actors = Entry.actors.all()
 
-        expected = EntityResponseSerializer(actors, many=True).data
+        expected = EntryResponseSerializer(actors, many=True).data
 
         response = self.client.get(reverse("actor_list"), **self.headers_admin)
 
@@ -65,7 +65,7 @@ class GetActorListTest(EntitiesTestCase):
         self.assertEqual(response.status_code, 401)
 
 
-class PostActorListTest(EntitiesTestCase):
+class PostActorListTest(EntriesTestCase):
 
     def setUp(self):
         super().setUp()
@@ -97,8 +97,8 @@ class PostActorListTest(EntitiesTestCase):
         self.assertEqual(response_post.status_code, 200)
         self.assertEqual(actor_json, bytes_to_json(response_post.content))
 
-        self.assertEqual(Entity.objects.count(), 1)
-        self.assertEqual(Entity.objects.get().name, "actor1")
+        self.assertEqual(Entry.objects.count(), 1)
+        self.assertEqual(Entry.objects.get().name, "actor1")
 
     def test_create_actor_no_description_admin(self):
         actor_json = {"name": "actor1"}
@@ -110,8 +110,8 @@ class PostActorListTest(EntitiesTestCase):
         self.assertEqual(response_post.status_code, 200)
         self.assertEqual(expected_json, bytes_to_json(response_post.content))
 
-        self.assertEqual(Entity.objects.count(), 1)
-        self.assertEqual(Entity.objects.get().name, "actor1")
+        self.assertEqual(Entry.objects.count(), 1)
+        self.assertEqual(Entry.objects.get().name, "actor1")
 
     def test_create_duplicate_actor_admin(self):
         actor_json = {"name": "actor1", "description": "description1"}
@@ -135,7 +135,7 @@ class PostActorListTest(EntitiesTestCase):
         self.assertEqual(response_post.status_code, 400)
 
         self.assertRaises(
-            Entity.DoesNotExist, lambda: Entity.objects.get(name="actor1")
+            Entry.DoesNotExist, lambda: Entry.objects.get(name="actor1")
         )
 
     def test_create_actor_authenticated_not_admin(self):

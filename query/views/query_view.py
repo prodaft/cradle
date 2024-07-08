@@ -7,13 +7,13 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q, Subquery
 from typing import cast
 
-from entities.models import Entity
+from entries.models import Entry
 from access.models import Access
-from ..serializers import EntityQuerySerializer
-from entities.serializers import EntityResponseSerializer
+from ..serializers import EntryQuerySerializer
+from entries.serializers import EntryResponseSerializer
 from logs.decorators import log_failed_responses
 from uuid import UUID
-from entities.enums import EntityType
+from entries.enums import EntryType
 from notes.models import Note
 from user.models import CradleUser
 
@@ -25,15 +25,15 @@ class QueryList(APIView):
 
     @log_failed_responses
     def get(self, request: Request) -> Response:
-        """Allow a user to query for any entity they have access, by providing a name,
-        a list of possible types and, if it is an Entry, a list of possible subtypes
+        """Allow a user to query for any entry they have access, by providing a name,
+        a list of possible types and, if it is an Artifact, a list of possible subtypes
 
         Args:
             request: The request that was sent
 
         Returns:
             Response(body, status=200): a JSON response. The JSON response contains
-            all the entities which respect the criteria specified in the query
+            all the entries which respect the criteria specified in the query
             parameters and which are visible to the user.
             Response("Query parameters are invalid", status=400): if the provided
             query parameters are not valid.
@@ -41,19 +41,19 @@ class QueryList(APIView):
             request is not authenticated.
         """
 
-        param_serializer = EntityQuerySerializer(data=request.query_params)
+        param_serializer = EntryQuerySerializer(data=request.query_params)
 
         if not param_serializer.is_valid():
             return Response(
                 "Query parameters are invalid", status=status.HTTP_400_BAD_REQUEST
             )
 
-        accessible_entities = Entity.objects.all()
+        accessible_entries = Entry.objects.all()
         if not request.user.is_superuser:
-            accessible_entities = accessible_entities.filter(
-                (Q(type=EntityType.ACTOR))
+            accessible_entries = accessible_entries.filter(
+                (Q(type=EntryType.ACTOR))
                 | Q(
-                    type=EntityType.CASE,
+                    type=EntryType.CASE,
                     id__in=Subquery(
                         Access.objects.get_accessible_case_ids(
                             cast(UUID, request.user.id)
@@ -61,22 +61,22 @@ class QueryList(APIView):
                     ),
                 )
                 | Q(
-                    type=EntityType.ENTRY,
+                    type=EntryType.ARTIFACT,
                     id__in=Subquery(
-                        Note.objects.get_accessible_entry_ids(
+                        Note.objects.get_accessible_artifact_ids(
                             cast(CradleUser, request.user)
                         )
                     ),
                 )
             )
 
-        entities = Entity.objects.get_filtered_entities(
-            accessible_entities,
-            param_serializer.data["entityType"],
-            param_serializer.data["entitySubtype"],
+        entries = Entry.objects.get_filtered_entries(
+            accessible_entries,
+            param_serializer.data["entryType"],
+            param_serializer.data["entrySubtype"],
             param_serializer.data["name"],
         )
 
-        entity_serializer = EntityResponseSerializer(entities, many=True)
+        entry_serializer = EntryResponseSerializer(entries, many=True)
 
-        return Response(entity_serializer.data, status=status.HTTP_200_OK)
+        return Response(entry_serializer.data, status=status.HTTP_200_OK)

@@ -13,14 +13,14 @@ b. Actors
 
 Actors are malicious individuals or groups under investigation.
 
-c. Entry
+c. Artifact
 ---------
 
-Entries are useful artefacts for the investigation.
+Artifacts are useful artefacts for the investigation.
 
 d. Metadata
 ------------
 
 Metadata represents additional information related to actors and cases.
 
-An entity is considered a case, actor, entry, or metadata.
+An entry is considered a case, actor, artifact, or metadata.

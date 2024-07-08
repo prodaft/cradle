@@ -32,11 +32,11 @@ class FleetingNotesFinal(APIView):
             request: The request that was sent
 
         Returns:
-            Response(status=200): The newly created Note entity
+            Response(status=200): The newly created Note entry
                 if the request was successful.
-            Response("Note does not reference at least one Case and two Entities.",
+            Response("Note does not reference at least one Case and two Entries.",
                 status=400): if the note does not reference the minimum required
-                entities and cases
+                entries and cases
             Response("The bucket name of the file reference is incorrect.",
                 status=400): if the bucket_name of at least one of the file references
                 does not match the user's id
@@ -45,7 +45,7 @@ class FleetingNotesFinal(APIView):
             Response("User does not have Read-Write access
                 to a referenced Case or not all Cases exist.", status=404)
             Response("The Fleeting Note does not exist.", status=404):
-                if the FleetingNote entity does not exist
+                if the FleetingNote entry does not exist
             Response("There exists no file at the specified path.", status=404):
                 if for at least one of the file references there exists no file at
                 that location on the MinIO instance

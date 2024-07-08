@@ -13,9 +13,9 @@ class DuplicateCaseException(APIException):
     default_code = "unique"
 
 
-class DuplicateEntryException(APIException):
+class DuplicateArtifactException(APIException):
     status_code = 409
-    default_detail = "There exists another entry with the same name."
+    default_detail = "There exists another artifact with the same name."
     default_code = "unique"
 
 

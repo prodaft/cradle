@@ -44,12 +44,12 @@ class LoggingUtils:
         """
         username = request.data.get("username", "unknown")
         message = f"User: {username} logged in successfully"
-        log_entry = LoggingUtils.__format_nginx_log(request, 200, message)
-        success_logger.warning(log_entry)
+        log_artifact = LoggingUtils.__format_nginx_log(request, 200, message)
+        success_logger.warning(log_artifact)
 
     @staticmethod
-    def log_entity_creation(request: Request, response: Optional[Response] = None):
-        """Logs successful entity creation
+    def log_entry_creation(request: Request, response: Optional[Response] = None):
+        """Logs successful entry creation
 
         Args:
             request: The request object
@@ -57,20 +57,20 @@ class LoggingUtils:
         """
 
         name = request.data.get("name", "unknown")
-        message = f"created Entity: {name} successfully"
-        log_entry = LoggingUtils.__format_nginx_log(request, 200, message)
-        success_logger.warning(log_entry)
+        message = f"created Entry: {name} successfully"
+        log_artifact = LoggingUtils.__format_nginx_log(request, 200, message)
+        success_logger.warning(log_artifact)
 
     @staticmethod
-    def log_entity_deletion(request: Request, response: Optional[Response] = None):
-        """Logs successful entity deletion
+    def log_entry_deletion(request: Request, response: Optional[Response] = None):
+        """Logs successful entry deletion
 
         Args:
             request: The request object
         """
-        message = "deleted Entity successfully"
-        log_entry = LoggingUtils.__format_nginx_log(request, 200, message)
-        success_logger.warning(log_entry)
+        message = "deleted Entry successfully"
+        log_artifact = LoggingUtils.__format_nginx_log(request, 200, message)
+        success_logger.warning(log_artifact)
 
     @staticmethod
     def log_failed_responses(request: Request, response: Optional[Response] = None):
@@ -83,7 +83,7 @@ class LoggingUtils:
         assert response is not None
 
         message = f"failed with Status Code: {response.status_code}"
-        log_entry = LoggingUtils.__format_nginx_log(
+        log_artifact = LoggingUtils.__format_nginx_log(
             request, response.status_code, message
         )
-        error_logger.warning(log_entry)
+        error_logger.warning(log_artifact)

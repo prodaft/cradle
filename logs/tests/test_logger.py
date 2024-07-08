@@ -47,15 +47,15 @@ class TestCustomLogger(LogsTestCase):
         )
 
     @patch("logs.utils.success_logger")
-    def test_log_entity_creation(self, mock_success_logger):
+    def test_log_entry_creation(self, mock_success_logger):
         mock_logger = MagicMock()
         mock_success_logger.warning = mock_logger.warning
 
         response = Response({"message": "success"}, status=200)
 
         request = self.factory.post(
-            "/entities/actors/",
-            data=json.dumps({"name": "testentity"}),
+            "/entries/actors/",
+            data=json.dumps({"name": "testentry"}),
             content_type="application/json",
         )
         request.META["REMOTE_ADDR"] = "127.0.0.1"
@@ -66,24 +66,24 @@ class TestCustomLogger(LogsTestCase):
 
         request.user = "test_user"
 
-        LoggingUtils.log_entity_creation(request, response)
+        LoggingUtils.log_entry_creation(request, response)
 
         self.assertTrue(mock_success_logger.warning.called)
         log_call_args = mock_success_logger.warning.call_args[0][0]
         self.assertIn("127.0.0.1 - test_user [", log_call_args)
-        self.assertIn("POST /entities/actors/ HTTP/1.1", log_call_args)
+        self.assertIn("POST /entries/actors/ HTTP/1.1", log_call_args)
         self.assertIn(
-            '200 "test-agent" created Entity: testentity successfully', log_call_args
+            '200 "test-agent" created Entry: testentry successfully', log_call_args
         )
 
     @patch("logs.utils.success_logger")
-    def test_log_entity_deletion(self, mock_success_logger):
+    def test_log_entry_deletion(self, mock_success_logger):
         mock_logger = MagicMock()
         mock_success_logger.warning = mock_logger.warning
 
         response = Response({"message": "success"}, status=200)
 
-        request = self.factory.delete("/entities/actors/1/")
+        request = self.factory.delete("/entries/actors/1/")
         request.META["REMOTE_ADDR"] = "127.0.0.1"
         request.META["HTTP_USER_AGENT"] = "test-agent"
         request.META["SERVER_PROTOCOL"] = "HTTP/1.1"
@@ -92,13 +92,13 @@ class TestCustomLogger(LogsTestCase):
 
         request.user = "test_user"
 
-        LoggingUtils.log_entity_deletion(request, response)
+        LoggingUtils.log_entry_deletion(request, response)
 
         self.assertTrue(mock_success_logger.warning.called)
         log_call_args = mock_success_logger.warning.call_args[0][0]
         self.assertIn("127.0.0.1 - test_user [", log_call_args)
-        self.assertIn("DELETE /entities/actors/1/ HTTP/1.1", log_call_args)
-        self.assertIn('200 "test-agent" deleted Entity successfully', log_call_args)
+        self.assertIn("DELETE /entries/actors/1/ HTTP/1.1", log_call_args)
+        self.assertIn('200 "test-agent" deleted Entry successfully', log_call_args)
 
     @patch("logs.utils.error_logger")
     def test_log_failed_responses(self, mock_error_logger):
@@ -107,7 +107,7 @@ class TestCustomLogger(LogsTestCase):
 
         response = Response({"message": "invalid"}, status=400)
 
-        request = self.factory.post("/entities/actors/")
+        request = self.factory.post("/entries/actors/")
         request.META["REMOTE_ADDR"] = "127.0.0.1"
         request.META["HTTP_USER_AGENT"] = "test-agent"
         request.META["SERVER_PROTOCOL"] = "HTTP/1.1"
@@ -121,5 +121,5 @@ class TestCustomLogger(LogsTestCase):
         self.assertTrue(mock_error_logger.warning.called)
         log_call_args = mock_error_logger.warning.call_args[0][0]
         self.assertIn("127.0.0.1 - test_user [", log_call_args)
-        self.assertIn("POST /entities/actors/ HTTP/1.1", log_call_args)
+        self.assertIn("POST /entries/actors/ HTTP/1.1", log_call_args)
         self.assertIn('400 "test-agent" failed with Status Code: 400', log_call_args)

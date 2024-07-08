@@ -1,6 +1,6 @@
 from django.db import models
 from user.models import CradleUser
-from entities.models import Entity
+from entries.models import Entry
 from model_utils.managers import InheritanceManager
 import uuid
 
@@ -22,4 +22,4 @@ class AccessRequestNotification(MessageNotification):
     requesting_user: models.ForeignKey = models.ForeignKey(
         CradleUser, on_delete=models.CASCADE
     )
-    case: models.ForeignKey = models.ForeignKey(Entity, on_delete=models.CASCADE)
+    case: models.ForeignKey = models.ForeignKey(Entry, on_delete=models.CASCADE)

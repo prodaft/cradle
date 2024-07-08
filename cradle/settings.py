@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     "query.apps.QueryConfig",
     "dashboards.apps.DashboardsConfig",
     "access.apps.AccessConfig",
-    "entities.apps.EntitiesConfig",
+    "entries.apps.EntriesConfig",
     "fleeting_notes.apps.FleetingNotesConfig",
     "user.apps.UserConfig",
     "notes.apps.NotesConfig",

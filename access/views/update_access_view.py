@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 
 from user.models import CradleUser
-from entities.models import Entity
+from entries.models import Entry
 from ..models import Access
 from ..serializers import AccessSerializer
 from logs.decorators import log_failed_responses
@@ -25,7 +25,7 @@ class UpdateAccess(APIView):
     serializer_class = AccessSerializer
 
     def __can_update_access(
-        self, request_user: CradleUser, updated_user: CradleUser, updated_case: Entity
+        self, request_user: CradleUser, updated_user: CradleUser, updated_case: Entry
     ) -> bool:
         """Determines whether the request_user can change the access of updated_user
         for case updated_case. We can outline three cases:
@@ -103,8 +103,8 @@ class UpdateAccess(APIView):
             return Response("User does not exist.", status=status.HTTP_404_NOT_FOUND)
 
         try:
-            updated_case = Entity.cases.get(id=case_id)
-        except Entity.DoesNotExist:
+            updated_case = Entry.cases.get(id=case_id)
+        except Entry.DoesNotExist:
             return Response("Case does not exist.", status=status.HTTP_404_NOT_FOUND)
 
         user: CradleUser = cast(CradleUser, request.user)

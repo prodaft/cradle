@@ -1,5 +1,5 @@
-from entities.models import Entity
-from entities.enums import EntityType
+from entries.models import Entry
+from entries.enums import EntryType
 from notes.models import Note
 from ..utils.dashboard_utils import DashboardUtils
 from .utils import DashboardsTestCase
@@ -12,30 +12,30 @@ class DashboardUtilsDashboardJsonTest(DashboardsTestCase):
     def test_get_dashboard_json(self):
 
         notes = Note.objects.exclude(id=self.note3.id).order_by("-timestamp")
-        actors = Entity.actors.exclude(id=self.actor3.id)
-        cases = Entity.objects.filter(id=self.case2.id)
-        metadata = Entity.objects.filter(id=self.metadata1.id)
-        entries = Entity.objects.filter(type=EntityType.ENTRY)
-        inaccessible_cases = Entity.objects.none()
-        inaccessible_actors = Entity.objects.none()
-        inaccessible_metadata = Entity.objects.none()
-        inaccessible_entries = Entity.objects.none()
-        second_hop_cases = Entity.objects.none()
-        second_hop_actors = Entity.objects.none()
-        second_hop_metadata = Entity.objects.none()
-        second_hop_inaccessible_cases = Entity.objects.filter(id=self.case3.id)
-        second_hop_inaccessible_actors = Entity.objects.filter(id=self.actor3.id)
-        second_hop_inaccessible_metadata = Entity.objects.none()
+        actors = Entry.actors.exclude(id=self.actor3.id)
+        cases = Entry.objects.filter(id=self.case2.id)
+        metadata = Entry.objects.filter(id=self.metadata1.id)
+        artifacts = Entry.objects.filter(type=EntryType.ARTIFACT)
+        inaccessible_cases = Entry.objects.none()
+        inaccessible_actors = Entry.objects.none()
+        inaccessible_metadata = Entry.objects.none()
+        inaccessible_artifacts = Entry.objects.none()
+        second_hop_cases = Entry.objects.none()
+        second_hop_actors = Entry.objects.none()
+        second_hop_metadata = Entry.objects.none()
+        second_hop_inaccessible_cases = Entry.objects.filter(id=self.case3.id)
+        second_hop_inaccessible_actors = Entry.objects.filter(id=self.actor3.id)
+        second_hop_inaccessible_metadata = Entry.objects.none()
 
         dashboard_json, nighbor_map = DashboardUtils.get_dashboard(
-            user=self.user1, entity_id=self.case1.id
+            user=self.user1, entry_id=self.case1.id
         )
 
         self.assertQuerySetEqual(dashboard_json["notes"], notes)
         self.assertQuerySetEqual(dashboard_json["actors"], actors, ordered=False)
         self.assertQuerySetEqual(dashboard_json["cases"], cases, ordered=False)
         self.assertQuerySetEqual(dashboard_json["metadata"], metadata, ordered=False)
-        self.assertQuerySetEqual(dashboard_json["entries"], entries, ordered=False)
+        self.assertQuerySetEqual(dashboard_json["artifacts"], artifacts, ordered=False)
         self.assertQuerySetEqual(
             dashboard_json["inaccessible_cases"], inaccessible_cases, ordered=False
         )
@@ -48,7 +48,7 @@ class DashboardUtilsDashboardJsonTest(DashboardsTestCase):
             ordered=False,
         )
         self.assertQuerySetEqual(
-            dashboard_json["inaccessible_entries"], inaccessible_entries, ordered=False
+            dashboard_json["inaccessible_artifacts"], inaccessible_artifacts, ordered=False
         )
         self.assertQuerySetEqual(
             dashboard_json["second_hop_cases"], second_hop_cases, ordered=False
@@ -76,19 +76,19 @@ class DashboardUtilsDashboardJsonTest(DashboardsTestCase):
         )
 
 
-class AddEntityFieldsTest(DashboardsTestCase):
+class AddEntryFieldsTest(DashboardsTestCase):
 
-    def test_add_entity_fields(self):
-        entity = Entity.objects.create(
-            name="Entity", description="Description", type=EntityType.CASE, subtype=""
+    def test_add_entry_fields(self):
+        entry = Entry.objects.create(
+            name="Entry", description="Description", type=EntryType.CASE, subtype=""
         )
 
         expected = {
-            "id": entity.id,
-            "name": "Entity",
+            "id": entry.id,
+            "name": "Entry",
             "description": "Description",
-            "type": EntityType.CASE,
+            "type": EntryType.CASE,
             "subtype": "",
         }
 
-        self.assertEqual(DashboardUtils.add_entity_fields(entity, {}), expected)
+        self.assertEqual(DashboardUtils.add_entry_fields(entry, {}), expected)

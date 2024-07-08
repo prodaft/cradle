@@ -5,7 +5,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 
-from entities.models import Entity
+from entries.models import Entry
 from user.models import CradleUser
 from access.models import Access
 from ..utils.dashboard_utils import DashboardUtils
@@ -42,8 +42,8 @@ class CaseDashboard(APIView):
         user: CradleUser = cast(CradleUser, request.user)
 
         try:
-            case = Entity.cases.get(name=case_name)
-        except Entity.DoesNotExist:
+            case = Entry.cases.get(name=case_name)
+        except Entry.DoesNotExist:
             return Response(
                 "There is no case with specified name", status=status.HTTP_404_NOT_FOUND
             )
@@ -55,9 +55,9 @@ class CaseDashboard(APIView):
                 "There is no case with specified name", status=status.HTTP_404_NOT_FOUND
             )
 
-        entities_dict, neighbor_map = DashboardUtils.get_dashboard(user, case.id)
+        entries_dict, neighbor_map = DashboardUtils.get_dashboard(user, case.id)
 
-        dashboard = DashboardUtils.add_entity_fields(case, entities_dict)
+        dashboard = DashboardUtils.add_entry_fields(case, entries_dict)
 
         if user.is_superuser:
             dashboard["access"] = "read-write"

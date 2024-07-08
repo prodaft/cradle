@@ -14,13 +14,13 @@ class FleetingNoteTruncatedRetrieveSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         """
         Overrides the default to_representation method to truncate the content
-        field of the FleetingNote entity to 200 characters.
+        field of the FleetingNote entry to 200 characters.
 
         Args:
-            instance: the FleetingNote entity to be serialized
+            instance: the FleetingNote entry to be serialized
 
         Returns:
-            A dictionary containing the serialized FleetingNote entity
+            A dictionary containing the serialized FleetingNote entry
         """
         representation = super().to_representation(instance)
         representation["content"] = (
@@ -40,16 +40,16 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """
-        Updates the content field of the FleetingNote entity based on the
+        Updates the content field of the FleetingNote entry based on the
         validated data.
 
         Args:
-            instance: the FleetingNote entity to be updated
+            instance: the FleetingNote entry to be updated
             validated_data: a dictionary containing the attributes of
-                the FleetingNote entity
+                the FleetingNote entry
 
         Returns:
-            The updated FleetingNote entity
+            The updated FleetingNote entry
         """
         instance.content = validated_data.get("content", instance.content)
         instance.save()
@@ -66,16 +66,16 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
         return instance
 
     def create(self, validated_data):
-        """Creates a new Fleeting Note entity based on the validated data.
+        """Creates a new Fleeting Note entry based on the validated data.
         Moreover, it sets the files field to correspond to the
         file references that are linked to the Fleeting Note.
 
         Args:
             validated_data: a dictionary containing the attributes of
-                the Fleeting Note entity
+                the Fleeting Note entry
 
         Returns:
-            The created Fleeting Note entity
+            The created Fleeting Note entry
         """
         validated_data["user"] = self.context["request"].user
 

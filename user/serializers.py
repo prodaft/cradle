@@ -36,7 +36,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
         Args:
             data: a dictionary containing the attributes of
-                the User entity
+                the User entry
 
         Returns:
             True iff the validations pass. Otherwise, it raises DuplicateUserException
@@ -66,14 +66,14 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return super().validate(data)
 
     def create(self, validated_data: Any):
-        """Creates a new Users entity based on the validated data.
+        """Creates a new Users entry based on the validated data.
 
         Args:
             validated_data: a dictionary containing the attributes of
-                the User entity
+                the User entry
 
         Returns:
-            The created User entity
+            The created User entry
         """
 
         return CradleUser.objects.create_user(**validated_data)

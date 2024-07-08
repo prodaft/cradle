@@ -1,5 +1,5 @@
 from notes.utils.parser_task import ParserTask
-from entities.models import Entity
+from entries.models import Entry
 from .utils import NotesTestCase
 
 from uuid import UUID
@@ -11,27 +11,27 @@ class ParserTaskTest(NotesTestCase):
 
         self.actor_pattern = "[[actor:actor|alias]]"
         self.case_pattern = "[[case:case|alias]]"
-        self.entry_pattern = "[[ip:127.0.0.1|alias]]"
+        self.artifact_pattern = "[[ip:127.0.0.1|alias]]"
         self.metadata_pattern = "[[country:Romania|alias]]"
 
-        self.actor_entity = Entity(id=UUID(int=0), name="actor", type="actor")
-        self.case_entity = Entity(id=UUID(int=0), name="case", type="case")
-        self.entry_entity = Entity(
-            id=UUID(int=0), name="127.0.0.1", type="entry", subtype="ip"
+        self.actor_entry = Entry(id=UUID(int=0), name="actor", type="actor")
+        self.case_entry = Entry(id=UUID(int=0), name="case", type="case")
+        self.artifact_entry = Entry(
+            id=UUID(int=0), name="127.0.0.1", type="artifact", subtype="ip"
         )
-        self.metadata_entity = Entity(
+        self.metadata_entry = Entry(
             id=UUID(int=0), name="Romania", type="metadata", subtype="country"
         )
 
     def references_assertions(
-        self, refs, actors=set(), cases=set(), entries=set(), metadata=set()
+        self, refs, actors=set(), cases=set(), artifacts=set(), metadata=set()
     ):
         self.assertEqual(refs["actor"], actors)
         self.assertEqual(refs["case"], cases)
-        self.assertEqual(refs["entry"], entries)
+        self.assertEqual(refs["artifact"], artifacts)
         self.assertEqual(refs["metadata"], metadata)
 
-    def test_no_referenced_entities(self):
+    def test_no_referenced_entries(self):
         note_content = "Lorem ipsum dolor sit amet."
         refs = ParserTask().run(note_content)
         self.references_assertions(refs)
@@ -40,19 +40,19 @@ class ParserTaskTest(NotesTestCase):
         note_content = (
             self.actor_pattern
             + self.case_pattern
-            + self.entry_pattern
+            + self.artifact_pattern
             + self.metadata_pattern
         )
         refs = ParserTask().run(note_content)
         self.references_assertions(
             refs,
-            actors={self.actor_entity},
-            cases={self.case_entity},
-            entries={self.entry_entity},
-            metadata={self.metadata_entity},
+            actors={self.actor_entry},
+            cases={self.case_entry},
+            artifacts={self.artifact_entry},
+            metadata={self.metadata_entry},
         )
 
-    def test_invalid_entry(self):
+    def test_invalid_artifact(self):
         note_content = "[[invalid:127.0.0.1|alias]]"
         refs = ParserTask().run(note_content)
         self.references_assertions(refs)
@@ -66,7 +66,7 @@ class ParserTaskTest(NotesTestCase):
         note_content = "[[actor:actor]][[case:case]]"
         refs = ParserTask().run(note_content)
         self.references_assertions(
-            refs, actors={self.actor_entity}, cases={self.case_entity}
+            refs, actors={self.actor_entry}, cases={self.case_entry}
         )
 
     def test_both_references_and_text(self):
@@ -80,9 +80,9 @@ class ParserTaskTest(NotesTestCase):
 
         self.references_assertions(
             refs,
-            actors={self.actor_entity},
-            metadata={self.metadata_entity},
-            cases={self.case_entity},
+            actors={self.actor_entry},
+            metadata={self.metadata_entry},
+            cases={self.case_entry},
         )
 
     def test_remove_duplicates(self):
@@ -93,7 +93,7 @@ class ParserTaskTest(NotesTestCase):
         self.references_assertions(
             refs,
             actors={
-                self.actor_entity,
-                Entity(id=UUID(int=0), type="actor", name="actor2"),
+                self.actor_entry,
+                Entry(id=UUID(int=0), type="actor", name="actor2"),
             },
         )
