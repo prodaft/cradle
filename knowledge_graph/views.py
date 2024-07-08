@@ -17,12 +17,12 @@ class KnowledgeGraphList(APIView):
 
     @log_failed_responses
     def get(self, request: Request) -> Response:
-        """Allow a user to view the Knowledge Graph containing all Entities
+        """Allow a user to view the Knowledge Graph containing all Entries
         they can access. The Knowledge Graph is represented as two arrays:
-        "entities" and "links". The "entities" array contains a list of
-        entities which are connected using notes the User has access to,
+        "entries" and "links". The "entries" array contains a list of
+        entries which are connected using notes the User has access to,
         while the "links" array contains pairs of id's, each link
-        representing a connection between two entities through a note
+        representing a connection between two entries through a note
         visible to the user.
 
             Args:
@@ -42,7 +42,7 @@ class KnowledgeGraphList(APIView):
         return Response(
             KnowledgeGraphSerializer(
                 {
-                    "entities": Note.objects.get_entities_from_notes(notes),
+                    "entries": Note.objects.get_entries_from_notes(notes),
                     "links": links,
                 }
             ).data

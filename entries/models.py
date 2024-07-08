@@ -4,28 +4,28 @@ from .managers import (
     CaseManager,
     ActorManager,
     MetadataManager,
+    ArtifactManager,
     EntryManager,
-    EntityManager,
 )
-from .enums import EntityType, EntitySubtype
+from .enums import EntryType, EntrySubtype
 import uuid
 
 
-class Entity(models.Model):
+class Entry(models.Model):
     id: models.UUIDField = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
     name: models.CharField = models.CharField()
     description: models.TextField = models.TextField(null=True, blank=True)
-    type: models.CharField = models.CharField(max_length=20, choices=EntityType.choices)
+    type: models.CharField = models.CharField(max_length=20, choices=EntryType.choices)
     subtype: models.CharField = models.CharField(
-        max_length=20, choices=EntitySubtype.choices, blank=True
+        max_length=20, choices=EntrySubtype.choices, blank=True
     )
 
-    objects = EntityManager()
+    objects = EntryManager()
     actors = ActorManager()
     cases = CaseManager()
-    entries = EntryManager()
+    artifacts = ArtifactManager()
     metadata = MetadataManager()
 
     class Meta:
@@ -36,7 +36,7 @@ class Entity(models.Model):
         ]
 
     def __eq__(self, other):
-        if isinstance(other, Entity):
+        if isinstance(other, Entry):
             return (
                 self.id == other.id
                 and self.name == other.name

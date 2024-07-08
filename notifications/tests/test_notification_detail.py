@@ -1,7 +1,7 @@
 from .utils import NotificationsTestCase
 from user.models import CradleUser
-from entities.models import Entity
-from entities.enums import EntityType
+from entries.models import Entry
+from entries.enums import EntryType
 from notifications.models import MessageNotification, AccessRequestNotification
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
@@ -21,7 +21,7 @@ class NotificationDetailTest(NotificationsTestCase):
             is_staff=False,
             email="alabala@gmail.com",
         )
-        self.case = Entity.objects.create(name="Case", type=EntityType.CASE)
+        self.case = Entry.objects.create(name="Case", type=EntryType.CASE)
         self.message_user = MessageNotification.objects.create(
             user=self.user, message="Test message"
         )

@@ -12,7 +12,7 @@ from access.enums import AccessType
 from typing import cast
 from logs.decorators import log_failed_responses
 
-from entities.enums import EntityType
+from entries.enums import EntryType
 from access.models import Access
 
 from uuid import UUID
@@ -27,7 +27,7 @@ class NoteList(APIView):
     def post(self, request: Request) -> Response:
         """Allow a user to create a new note, by sending the text itself.
         This text should be validated to meet the requirements
-        (i.e. reference at least two Entities, one of which must be a Case).
+        (i.e. reference at least two Entries, one of which must be a Case).
         Moreover, the client should send an array of file references that
         correspond to the files uploaded to MinIO that are linked to this note.
 
@@ -35,11 +35,11 @@ class NoteList(APIView):
             request: The request that was sent
 
         Returns:
-            Response(status=200): The newly created Note entity
+            Response(status=200): The newly created Note entry
                 if the request was successful.
-            Response("Note does not reference at least one Case and two Entities.",
+            Response("Note does not reference at least one Case and two Entries.",
                 status=400): if the note does not reference the minimum required
-                entities and cases
+                entries and cases
             Response("The bucket name of the file reference is incorrect.",
                 status=400): if the bucket_name of at least one of the file references
                 does not match the user's id
@@ -94,7 +94,7 @@ class NoteDetail(APIView):
 
         if not Access.objects.has_access_to_cases(
             cast(CradleUser, request.user),
-            set(note.entities.filter(type=EntityType.CASE)),
+            set(note.entries.filter(type=EntryType.CASE)),
             {AccessType.READ, AccessType.READ_WRITE},
         ):
             return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
@@ -127,7 +127,7 @@ class NoteDetail(APIView):
 
         if not Access.objects.has_access_to_cases(
             cast(CradleUser, request.user),
-            set(note_to_delete.entities.filter(type=EntityType.CASE)),
+            set(note_to_delete.entries.filter(type=EntryType.CASE)),
             {AccessType.READ, AccessType.READ_WRITE},
         ):
             return Response(
@@ -137,6 +137,6 @@ class NoteDetail(APIView):
 
         with transaction.atomic():
             note_to_delete.delete()
-            Note.objects.delete_unreferenced_entities()
+            Note.objects.delete_unreferenced_entries()
 
         return Response("Note was deleted.", status=status.HTTP_200_OK)

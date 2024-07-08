@@ -8,7 +8,7 @@ API Reference
    Cradle <cradle.rst>
    Statistics <cradle_statistics.rst>
    Dashboards <dashboards.rst>
-   Entities <entities.rst>
+   Entries <entries.rst>
    File Transfer <file_transfer.rst>
    Fleeting Notes <fleeting_notes.rst>
    Knowledge Graph <knowledge_graph.rst>

@@ -3,8 +3,8 @@ from user.models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.parsers import JSONParser
 from ..models import Note
-from entities.models import Entity
-from entities.enums import EntityType, EntitySubtype
+from entries.models import Entry
+from entries.enums import EntryType, EntrySubtype
 from access.models import Access
 from access.enums import AccessType
 import io
@@ -38,13 +38,13 @@ class NotePublishableDetailTest(NotesTestCase):
         self.init_database()
 
     def init_database(self):
-        self.case = Entity.objects.create(
-            name="Clearly not a case", type=EntityType.CASE
+        self.case = Entry.objects.create(
+            name="Clearly not a case", type=EntryType.CASE
         )
-        # init entities
-        self.entities = [
-            Entity.objects.create(
-                name=f"Entity{i}", type=EntityType.ENTRY, subtype=EntitySubtype.IP
+        # init entries
+        self.entries = [
+            Entry.objects.create(
+                name=f"Entry{i}", type=EntryType.ARTIFACT, subtype=EntrySubtype.IP
             )
             for i in range(0, 4)
         ]
@@ -52,11 +52,11 @@ class NotePublishableDetailTest(NotesTestCase):
         self.notes = []
         self.notes.append(Note.objects.create())
         self.notes.append(Note.objects.create())
-        self.notes[0].entities.add(self.entities[0])
-        self.notes[0].entities.add(self.entities[1])
-        self.notes[1].entities.add(self.entities[0])
-        self.notes[1].entities.add(self.entities[2])
-        self.notes[1].entities.add(self.case)
+        self.notes[0].entries.add(self.entries[0])
+        self.notes[0].entries.add(self.entries[1])
+        self.notes[1].entries.add(self.entries[0])
+        self.notes[1].entries.add(self.entries[2])
+        self.notes[1].entries.add(self.case)
         Access.objects.create(
             user_id=self.user.id,
             case_id=self.case.id,
@@ -119,8 +119,8 @@ class NotePublishableDetailTest(NotesTestCase):
             self.assertEqual(response.status_code, 400)
 
     def test_delete_note_no_access(self):
-        case1 = Entity.objects.create(name="this is a case", type=EntityType.CASE)
-        self.notes[1].entities.add(case1)
+        case1 = Entry.objects.create(name="this is a case", type=EntryType.CASE)
+        self.notes[1].entries.add(case1)
         note_id = self.notes[1].id
         response = self.client.put(
             reverse("note_publish_detail", kwargs={"note_id": note_id}),

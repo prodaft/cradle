@@ -1,7 +1,7 @@
 from .utils import FleetingNotesTestCase
 from django.urls import reverse
-from entities.models import Entity
-from entities.enums import EntityType
+from entries.models import Entry
+from entries.enums import EntryType
 from access.models import Access
 from access.enums import AccessType
 from notes.models import Note
@@ -14,8 +14,8 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
 
     def setUp(self):
         super().setUp()
-        self.saved_case = Entity.objects.create(name="case", type=EntityType.CASE)
-        self.saved_actor = Entity.objects.create(name="actor", type=EntityType.ACTOR)
+        self.saved_case = Entry.objects.create(name="case", type=EntryType.CASE)
+        self.saved_actor = Entry.objects.create(name="actor", type=EntryType.ACTOR)
 
     def test_fleeting_note_final_does_not_exist(self):
         response = self.client.put(
@@ -61,7 +61,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
 
         self.assertIsNotNone(FleetingNote.objects.get(id=self.note_user.pk))
 
-    def test_fleeting_note_final_entities_that_do_not_exist(self):
+    def test_fleeting_note_final_entries_that_do_not_exist(self):
         self.note_user.content = "[[actor:actor]] [[case:wrongcase]]"
         self.note_user.save()
 

@@ -4,8 +4,8 @@ from user.models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.parsers import JSONParser
 import io
-from entities.models import Entity
-from entities.enums import EntityType
+from entries.models import Entry
+from entries.enums import EntryType
 from access.enums import AccessType
 from access.models import Access
 from notes.models import Note
@@ -27,12 +27,12 @@ class GetKnowledgeGraphTest(KnowledgeGraphTestCase):
         self.user_token = str(AccessToken.for_user(self.user))
         self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
 
-        self.case2 = Entity.objects.create(name="2", type=EntityType.CASE)
-        self.case1 = Entity.objects.create(name="1", type=EntityType.CASE)
-        self.entry = Entity.objects.create(name="1", type=EntityType.ENTRY)
+        self.case2 = Entry.objects.create(name="2", type=EntryType.CASE)
+        self.case1 = Entry.objects.create(name="1", type=EntryType.CASE)
+        self.artifact = Entry.objects.create(name="1", type=EntryType.ARTIFACT)
 
         self.note = Note.objects.create(content="")
-        self.note.entities.set([self.case1, self.entry])
+        self.note.entries.set([self.case1, self.artifact])
 
         self.access = Access.objects.create(
             user=self.user, case=self.case1, access_type=AccessType.READ_WRITE
@@ -46,16 +46,16 @@ class GetKnowledgeGraphTest(KnowledgeGraphTestCase):
         response = self.client.get(reverse("knowledge_graph_list"), **self.headers)
 
         graph = bytes_to_json(response.content)
-        expected_entities = [
-            str(entity.id) for entity in Entity.objects.exclude(id=self.case2.pk)
+        expected_entries = [
+            str(entry.id) for entry in Entry.objects.exclude(id=self.case2.pk)
         ]
-        entities = [entity["id"] for entity in graph["entities"]]
-        expected_links = [tuple(sorted((str(self.entry.id), str(self.case1.id))))]
+        entries = [entry["id"] for entry in graph["entries"]]
+        expected_links = [tuple(sorted((str(self.artifact.id), str(self.case1.id))))]
 
         with self.subTest("Test status code"):
             self.assertEqual(response.status_code, 200)
-        with self.subTest("Test correct entities"):
+        with self.subTest("Test correct entries"):
 
-            self.assertEqual(Counter(entities), Counter(expected_entities))
+            self.assertEqual(Counter(entries), Counter(expected_entries))
         with self.subTest("Test correct links"):
             self.assertLinksEqual(graph["links"], expected_links)

@@ -12,7 +12,7 @@ a. Core Applications
 ~~~~~~~~~~~~~~~~~~~~
 
 - **user**: handles general user logic.
-- **entities**: handles general entity logic.
+- **entries**: handles general entry logic.
 - **notes**: handles general note logic.
 
 
@@ -81,7 +81,7 @@ Including another URLconf
             include(
                 [
                     path("users/", include("user.urls")),
-                    path("entities/", include("entities.urls")),
+                    path("entries/", include("entries.urls")),
                     path("notes/", include("notes.urls")),
                     path("dashboards/", include("dashboards.urls")),
                     path("access/", include("access.urls")),

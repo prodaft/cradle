@@ -13,8 +13,8 @@ tags:
     description: Administrative operations.
   - name: Access
     description: Handles Case-Level Access
-  - name: Entity
-    description: Operations targeting Entities.
+  - name: Entry
+    description: Operations targeting Entries.
   - name: Note
     description: Operations targeting Notes.
   - name: Fleeting Note
@@ -22,7 +22,7 @@ tags:
   - name: Knowledge Graph
     description: Operations targeting the Knowledge Graph.
   - name: Query
-    description: Operations for fetching entities.
+    description: Operations for fetching entries.
   - name: Dashboard
     description: Operations targeting the dashboard.
   - name: File Transfer
@@ -265,10 +265,10 @@ paths:
         '404':
           description: The notification does not exist or is not owned by the user.
 
-  /entities/actors/:
+  /entries/actors/:
     get:
       tags:
-        - Entity
+        - Entry
         - Admin
       summary: Read details of all Actors
       description: Allow a user to retrieve the details of all Actors
@@ -281,7 +281,7 @@ paths:
               schema: 
                 type: array
                 items: 
-                  $ref: '#/components/schemas/Entity'
+                  $ref: '#/components/schemas/Entry'
         '401':
           description: User is not authenticated.
         '403':
@@ -289,7 +289,7 @@ paths:
 
     post:
       tags:
-        - Entity
+        - Entry
         - Admin
       summary: Create Actor
       description: Allow an admin to create a new Actor by specifying its name
@@ -312,7 +312,7 @@ paths:
           content: 
             'application/json':
               schema: 
-                $ref: '#/components/schemas/Entity'
+                $ref: '#/components/schemas/Entry'
         '401': 
           description: User is not authenticated.
         '403': 
@@ -323,11 +323,11 @@ paths:
           description: Actor already exists.
             
 
-  /entities/cases/:
+  /entries/cases/:
     get:
       tags:
         - Admin
-        - Entity
+        - Entry
       summary: Read details of all Cases
       description: Allow a user to retrieve the details of all Cases
       operationId: getCases
@@ -339,7 +339,7 @@ paths:
               schema: 
                 type: array
                 items: 
-                  $ref: '#/components/schemas/Entity'
+                  $ref: '#/components/schemas/Entry'
         '401': 
           description: User is not authenticated.
         '403': 
@@ -347,7 +347,7 @@ paths:
 
     post:
       tags:
-        - Entity
+        - Entry
         - Admin
       summary: Create Case
       description: Allow an admin to create a new Case by specifying its name
@@ -370,7 +370,7 @@ paths:
           content: 
             'application/json':
               schema: 
-                $ref: '#/components/schemas/Entity'
+                $ref: '#/components/schemas/Entry'
         '401': 
           description: User is not authenticated.
         '403': 
@@ -436,22 +436,22 @@ paths:
         '404':
           description: Actor not found.
   
-  /dashboards/entries/{entry_name}/:
+  /dashboards/artifacts/{artifact_name}/:
     get:
       tags:
         - Dashboard
-      summary: Get the dashboard of an Entry
-      description: Allow a user to retrieve the dashboard of an Entry by specifying its name
-      operationId: getEntryByName
+      summary: Get the dashboard of an Artifact
+      description: Allow a user to retrieve the dashboard of an Artifact by specifying its name
+      operationId: getArtifactByName
       parameters:
         - in: path
-          name: entry_name
+          name: artifact_name
           required: true
           schema:
             type: string
           examples:
             caseNameExample:
-              value: "Entry"
+              value: "Artifact"
         - in: query
           name: subtype
           required: true
@@ -466,11 +466,11 @@ paths:
           content: 
             'application/json':
               schema: 
-                $ref: '#/components/schemas/EntryDashboard'
+                $ref: '#/components/schemas/ArtifactDashboard'
         '401': 
           description: User is not authenticated.
         '404':
-          description: There is no entry with the provided name or the entry exists but is not referenced in any of the user's accessible notes
+          description: There is no artifact with the provided name or the artifact exists but is not referenced in any of the user's accessible notes
 
   /access/{userId}/:
     get:
@@ -554,10 +554,10 @@ paths:
           description: User is not an admin. 
             
 
-  /entities/actors/{actorId}/:
+  /entries/actors/{actorId}/:
     delete:
       tags:
-        - Entity
+        - Entry
         - Admin
       summary: Delete Actor
       description: Allow an admin to delete an Actor by specifying its id
@@ -582,10 +582,10 @@ paths:
             
 
 
-  /entities/cases/{caseId}/:
+  /entries/cases/{caseId}/:
     delete:
       tags:
-        - Entity
+        - Entry
         - Admin
       summary: Delete Case
       description: Allow an admin to delete a Case by specifying its id
@@ -613,7 +613,7 @@ paths:
       tags:
         - Note
       summary: Create a new Note
-      description: Allow a user to create a new note, by sending the text itself. This text should be validated to meet the requirements (i.e. reference at least two Entities, one of which must be a Case). Moreover, the client should send an array of file references that correspond to the files uploaded to MinIO that are linked to this note.
+      description: Allow a user to create a new note, by sending the text itself. This text should be validated to meet the requirements (i.e. reference at least two Entries, one of which must be a Case). Moreover, the client should send an array of file references that correspond to the files uploaded to MinIO that are linked to this note.
       operationId: createNote
       requestBody:
         content:
@@ -635,7 +635,7 @@ paths:
               schema: 
                $ref: '#/components/schemas/Note'
         '400': 
-          description: Note does not reference at least one Case and two Entities. / The bucket name of the file reference is incorrect.
+          description: Note does not reference at least one Case and two Entries. / The bucket name of the file reference is incorrect.
         '401': 
           description: User is not authenticated.
         '404': 
@@ -879,7 +879,7 @@ paths:
       tags:
         - Fleeting Note
       summary: Create a Fleeting Note
-      description: Create a new FleetingNote entity based on the request data.
+      description: Create a new FleetingNote entry based on the request data.
         The user field is set to correspond to the authenticated user.
       operationId: createFleetingNote
       requestBody:
@@ -916,8 +916,8 @@ paths:
       tags:
         - Fleeting Note
       summary: Get the content of a fleeting note
-      description: Get a FleetingNote entity by its primary key.
-        Only the owner of the FleetingNote entity can access it.
+      description: Get a FleetingNote entry by its primary key.
+        Only the owner of the FleetingNote entry can access it.
       operationId: getFleetingNote
       parameters:
         - in: path
@@ -942,8 +942,8 @@ paths:
       tags:
         - Fleeting Note
       summary: Delete a certain fleeting note
-      description: Delete a FleetingNote entity by its primary key.
-        Only the owner of the FleetingNote entity can delete it.
+      description: Delete a FleetingNote entry by its primary key.
+        Only the owner of the FleetingNote entry can delete it.
       operationId: deleteFleetingNote
       parameters:
         - in: path
@@ -964,8 +964,8 @@ paths:
       tags:
         - Fleeting Note
       summary: Update a Fleeting Note
-      description: Update a FleetingNote entity by its primary key.
-        Only the owner of the FleetingNote entity can update it.
+      description: Update a FleetingNote entry by its primary key.
+        Only the owner of the FleetingNote entry can update it.
       operationId: updateFleetingNote
       parameters:
         - in: path
@@ -1036,7 +1036,7 @@ paths:
               schema: 
                $ref: '#/components/schemas/Note'
         '400': 
-          description: Note does not reference at least one Case and two Entities. / The bucket name of the file reference is incorrect.
+          description: Note does not reference at least one Case and two Entries. / The bucket name of the file reference is incorrect.
         '401': 
           description: User is not authenticated. 
         '404': 
@@ -1047,12 +1047,12 @@ paths:
     get:
       tags:
         - Query
-      summary: Search for entities
-      description: Allow a user to query for any entity they have access, by providing a name, its type and, if it is an Entry, its subtype
-      operationId: searchEntity
+      summary: Search for entries
+      description: Allow a user to query for any entry they have access, by providing a name, its type and, if it is an Artifact, its subtype
+      operationId: searchEntry
       parameters:
         - in: query
-          name: entityType
+          name: entryType
           required: false
           style: form
           explode: true
@@ -1061,12 +1061,12 @@ paths:
             enum: 
             - actor
             - case
-            - entry
+            - artifact
           examples:
             typeExample:
               value: "ip"
         - in: query
-          name: entitySubtype
+          name: entrySubtype
           required: false
           style: form
           explode: true
@@ -1103,7 +1103,7 @@ paths:
               schema: 
                 type: array
                 items:
-                  $ref: "#/components/schemas/Entity"
+                  $ref: "#/components/schemas/Entry"
         '400':
           description: Query parameters are invalid.
         '401':
@@ -1114,7 +1114,7 @@ paths:
       tags:
         - Knowledge Graph
       summary: Show Knowledge Graph
-      description: "Allow a user to view the Knowledge Graph containing all Entities they can access. The Knowledge Graph is represented as two arrays: 'entities' and 'links'. The 'entities' array contains a list ofentities which are connected using notes the User has access to, while the 'links' array contains pairs of id's, each link representing a connection between two entities through a note visible to the user."
+      description: "Allow a user to view the Knowledge Graph containing all Entries they can access. The Knowledge Graph is represented as two arrays: 'entries' and 'links'. The 'entries' array contains a list ofentries which are connected using notes the User has access to, while the 'links' array contains pairs of id's, each link representing a connection between two entries through a note visible to the user."
       operationId: showKnowledgeGraph
       responses:
         '200': 
@@ -1132,7 +1132,7 @@ paths:
       tags:
         - Statistics
       summary: Get user's statistics
-      description: Fetches some of the user's statistics. More specifically, it fetches the 10 most recently written notes the user has access to and the 3 cases and actors that were most recently referenced in notes the user has access to. The entities are returned starting with the most recent ones.
+      description: Fetches some of the user's statistics. More specifically, it fetches the 10 most recently written notes the user has access to and the 3 cases and actors that were most recently referenced in notes the user has access to. The entries are returned starting with the most recent ones.
       operationId: getStatistics
       responses:
         '200':
@@ -1188,35 +1188,35 @@ components:
         actors:
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
+            $ref: "#/components/schemas/Entry"
         cases:
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
+            $ref: "#/components/schemas/Entry"
         metadata:
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
-        entries:
+            $ref: "#/components/schemas/Entry"
+        artifacts:
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
+            $ref: "#/components/schemas/Entry"
         inaccessible_cases:
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
+            $ref: "#/components/schemas/Entry"
         inaccessible_actors:
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
+            $ref: "#/components/schemas/Entry"
         inaccessible_metadata:
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
-        inaccessible_entries:
+            $ref: "#/components/schemas/Entry"
+        inaccessible_artifacts:
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
+            $ref: "#/components/schemas/Entry"
         second_hop_cases:
           type: array
           items: 
@@ -1235,7 +1235,7 @@ components:
                 - case
                 - actor
                 - metadata
-                - entry
+                - artifact
               subtype:
                 type: string
                 enum: 
@@ -1251,7 +1251,7 @@ components:
                   - cve
                   - ttp
               neighbor:
-                $ref: "#/components/schemas/Entity"
+                $ref: "#/components/schemas/Entry"
         second_hop_actors:
           type: array
           items: 
@@ -1270,7 +1270,7 @@ components:
                 - case
                 - actor
                 - metadata
-                - entry
+                - artifact
               subtype:
                 type: string
                 enum: 
@@ -1286,7 +1286,7 @@ components:
                   - cve
                   - ttp
               neighbor:
-                $ref: "#/components/schemas/Entity"
+                $ref: "#/components/schemas/Entry"
         second_hop_metadata:
           type: array
           items: 
@@ -1305,7 +1305,7 @@ components:
                 - case
                 - actor
                 - metadata
-                - entry
+                - artifact
               subtype:
                 type: string
                 enum: 
@@ -1321,7 +1321,7 @@ components:
                   - cve
                   - ttp
               neighbor:
-                $ref: "#/components/schemas/Entity"
+                $ref: "#/components/schemas/Entry"
         second_hop_inaccessible_cases:
           type: array
           items: 
@@ -1340,7 +1340,7 @@ components:
                 - case
                 - actor
                 - metadata
-                - entry
+                - artifact
               subtype:
                 type: string
                 enum: 
@@ -1356,7 +1356,7 @@ components:
                   - cve
                   - ttp
               neighbor:
-                $ref: "#/components/schemas/Entity"
+                $ref: "#/components/schemas/Entry"
         second_hop_inaccessible_actors:
           type: array
           items: 
@@ -1375,7 +1375,7 @@ components:
                 - case
                 - actor
                 - metadata
-                - entry
+                - artifact
               subtype:
                 type: string
                 enum: 
@@ -1391,7 +1391,7 @@ components:
                   - cve
                   - ttp
               neighbor:
-                $ref: "#/components/schemas/Entity"
+                $ref: "#/components/schemas/Entry"
         second_hop_inaccessible_metadata:
           type: array
           items: 
@@ -1410,7 +1410,7 @@ components:
                 - case
                 - actor
                 - metadata
-                - entry
+                - artifact
               subtype:
                 type: string
                 enum: 
@@ -1426,7 +1426,7 @@ components:
                   - cve
                   - ttp
               neighbor:
-                $ref: "#/components/schemas/Entity"
+                $ref: "#/components/schemas/Entry"
         access: 
           type: string
           enum: 
@@ -1470,27 +1470,27 @@ components:
         actors:
           type: array
           items:
-            $ref: "#/components/schemas/Entity"
+            $ref: "#/components/schemas/Entry"
         cases:
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
+            $ref: "#/components/schemas/Entry"
         metadata:
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
+            $ref: "#/components/schemas/Entry"
         inaccessible_cases:
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
+            $ref: "#/components/schemas/Entry"
         inaccessible_actors:
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
+            $ref: "#/components/schemas/Entry"
         inaccessible_metadata:
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
+            $ref: "#/components/schemas/Entry"
         second_hop_cases:
           type: array
           items: 
@@ -1509,7 +1509,7 @@ components:
                 - case
                 - actor
                 - metadata
-                - entry
+                - artifact
               subtype:
                 type: string
                 enum: 
@@ -1525,7 +1525,7 @@ components:
                   - cve
                   - ttp
               neighbor:
-                $ref: "#/components/schemas/Entity"
+                $ref: "#/components/schemas/Entry"
         second_hop_actors:
           type: array
           items: 
@@ -1544,7 +1544,7 @@ components:
                 - case
                 - actor
                 - metadata
-                - entry
+                - artifact
               subtype:
                 type: string
                 enum: 
@@ -1560,7 +1560,7 @@ components:
                   - cve
                   - ttp
               neighbor:
-                $ref: "#/components/schemas/Entity"
+                $ref: "#/components/schemas/Entry"
         second_hop_metadata:
           type: array
           items: 
@@ -1579,7 +1579,7 @@ components:
                 - case
                 - actor
                 - metadata
-                - entry
+                - artifact
               subtype:
                 type: string
                 enum: 
@@ -1595,7 +1595,7 @@ components:
                   - cve
                   - ttp
               neighbor:
-                $ref: "#/components/schemas/Entity"
+                $ref: "#/components/schemas/Entry"
         second_hop_inaccessible_cases:
           type: array
           items: 
@@ -1614,7 +1614,7 @@ components:
                 - case
                 - actor
                 - metadata
-                - entry
+                - artifact
               subtype:
                 type: string
                 enum: 
@@ -1630,7 +1630,7 @@ components:
                   - cve
                   - ttp
               neighbor:
-                $ref: "#/components/schemas/Entity"
+                $ref: "#/components/schemas/Entry"
         second_hop_inaccessible_actors:
           type: array
           items: 
@@ -1649,7 +1649,7 @@ components:
                 - case
                 - actor
                 - metadata
-                - entry
+                - artifact
               subtype:
                 type: string
                 enum: 
@@ -1665,7 +1665,7 @@ components:
                   - cve
                   - ttp
               neighbor:
-                $ref: "#/components/schemas/Entity"
+                $ref: "#/components/schemas/Entry"
         second_hop_inaccessible_metadata:
           type: array
           items: 
@@ -1684,7 +1684,7 @@ components:
                 - case
                 - actor
                 - metadata
-                - entry
+                - artifact
               subtype:
                 type: string
                 enum: 
@@ -1700,9 +1700,9 @@ components:
                   - cve
                   - ttp
               neighbor:
-                $ref: "#/components/schemas/Entity"
+                $ref: "#/components/schemas/Entry"
     
-    EntryDashboard:
+    ArtifactDashboard:
       type: object
       properties:
         id:
@@ -1738,11 +1738,11 @@ components:
         cases:
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
+            $ref: "#/components/schemas/Entry"
         inaccessible_cases:
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
+            $ref: "#/components/schemas/Entry"
         second_hop_cases:
           type: array
           items: 
@@ -1761,7 +1761,7 @@ components:
                 - case
                 - actor
                 - metadata
-                - entry
+                - artifact
               subtype:
                 type: string
                 enum: 
@@ -1777,7 +1777,7 @@ components:
                   - cve
                   - ttp
               neighbor:
-                $ref: "#/components/schemas/Entity"
+                $ref: "#/components/schemas/Entry"
         second_hop_inaccessible_cases:
           type: array
           items: 
@@ -1796,7 +1796,7 @@ components:
                 - case
                 - actor
                 - metadata
-                - entry
+                - artifact
               subtype:
                 type: string
                 enum: 
@@ -1812,7 +1812,7 @@ components:
                   - cve
                   - ttp
               neighbor:
-                $ref: "#/components/schemas/Entity"
+                $ref: "#/components/schemas/Entry"
     
     User:
       type: object
@@ -1827,7 +1827,7 @@ components:
           type: string
           format: email
 
-    Entity:
+    Entry:
       type: object
       properties:
         id:
@@ -1841,7 +1841,7 @@ components:
         type:
           type: string
           enum: 
-          - entry
+          - artifact
           - actor
           - case
           - metadata
@@ -1881,7 +1881,7 @@ components:
         timestamp: 
           type: string
           format: date-time
-        entities:
+        entries:
           type: array
           items: 
             type: object
@@ -1989,19 +1989,19 @@ components:
         actors: 
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
+            $ref: "#/components/schemas/Entry"
         cases: 
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
-        entries: 
+            $ref: "#/components/schemas/Entry"
+        artifacts: 
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
+            $ref: "#/components/schemas/Entry"
         metadata: 
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
+            $ref: "#/components/schemas/Entry"
         notes:
           type: array
           items: 
@@ -2013,11 +2013,11 @@ components:
         actors: 
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
+            $ref: "#/components/schemas/Entry"
         cases: 
           type: array
           items: 
-            $ref: "#/components/schemas/Entity"
+            $ref: "#/components/schemas/Entry"
         notes:
           type: array
           items: 
@@ -2040,11 +2040,11 @@ components:
     Graph:
       type: object
       properties: 
-        entities: 
+        entries: 
           type: array
           items: 
             type: object
-            $ref: "#/components/schemas/Entity"
+            $ref: "#/components/schemas/Entry"
         links:
           type: array
           items: 

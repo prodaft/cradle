@@ -14,7 +14,7 @@ class NoteIsEmptyException(APIException):
 class NotEnoughReferencesException(APIException):
     status_code = 400
     default_detail = (
-        "Note does not reference at least one case and at least two entities."
+        "Note does not reference at least one case and at least two entries."
     )
 
 
@@ -23,12 +23,12 @@ class NoteDoesNotExistException(APIException):
     default_detail = "The referenced note does not exist."
 
 
-class EntitiesDoNotExistException(APIException):
+class EntriesDoNotExistException(APIException):
     status_code = 404
     default_detail = "The referenced actors or cases do not exist."
 
 
-class NoAccessToEntitiesException(APIException):
+class NoAccessToEntriesException(APIException):
     status_code = 404
     default_detail = "The referenced actors or cases do not exist."
 

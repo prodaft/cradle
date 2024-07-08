@@ -4,7 +4,7 @@ from rest_framework.test import APIClient
 import io
 from .utils import DashboardsTestCase
 
-from entities.models import Entity
+from entries.models import Entry
 
 
 def bytes_to_json(data):
@@ -13,13 +13,13 @@ def bytes_to_json(data):
 
 class GetActorDashboardTest(DashboardsTestCase):
 
-    def check_ids(self, entities, entities_json):
-        with self.subTest("Check number of entities"):
-            self.assertEqual(len(entities), len(entities_json))
+    def check_ids(self, entries, entries_json):
+        with self.subTest("Check number of entries"):
+            self.assertEqual(len(entries), len(entries_json))
 
         self.assertCountEqual(
-            [entity["id"] for entity in entities_json],
-            [str(entity.id) for entity in entities],
+            [entry["id"] for entry in entries_json],
+            [str(entry.id) for entry in entries],
         )
 
     def check_inaccessible_cases_name(self, inaccessible_cases):
@@ -32,7 +32,7 @@ class GetActorDashboardTest(DashboardsTestCase):
         super().setUp()
         self.client = APIClient()
 
-        self.note2.entities.add(self.actor1)
+        self.note2.entries.add(self.actor1)
 
     def test_get_dashboard_admin(self):
         response = self.client.get(
@@ -46,14 +46,14 @@ class GetActorDashboardTest(DashboardsTestCase):
         actors = [self.actor2]
         metadata = [self.metadata1]
         inaccessible_cases = []
-        inaccessible_actors = Entity.objects.none()
-        inaccessible_metadata = Entity.objects.none()
-        second_hop_cases = Entity.objects.filter(id=self.case3.id)
-        second_hop_actors = Entity.objects.filter(id=self.actor3.id)
-        second_hop_metadata = Entity.objects.none()
-        second_hop_inaccessible_cases = Entity.objects.none()
-        second_hop_inaccessible_actors = Entity.objects.none()
-        second_hop_inaccessible_metadata = Entity.objects.none()
+        inaccessible_actors = Entry.objects.none()
+        inaccessible_metadata = Entry.objects.none()
+        second_hop_cases = Entry.objects.filter(id=self.case3.id)
+        second_hop_actors = Entry.objects.filter(id=self.actor3.id)
+        second_hop_metadata = Entry.objects.none()
+        second_hop_inaccessible_cases = Entry.objects.none()
+        second_hop_inaccessible_actors = Entry.objects.none()
+        second_hop_inaccessible_metadata = Entry.objects.none()
 
         json_response = bytes_to_json(response.content)
 
@@ -97,14 +97,14 @@ class GetActorDashboardTest(DashboardsTestCase):
         actors = []
         metadata = [self.metadata1]
         inaccessible_cases = [self.case2]
-        inaccessible_actors = Entity.objects.filter(id=self.actor2.id)
-        inaccessible_metadata = Entity.objects.none()
-        second_hop_cases = Entity.objects.none()
-        second_hop_actors = Entity.objects.none()
-        second_hop_metadata = Entity.objects.none()
-        second_hop_inaccessible_cases = Entity.objects.none()
-        second_hop_inaccessible_actors = Entity.objects.none()
-        second_hop_inaccessible_metadata = Entity.objects.none()
+        inaccessible_actors = Entry.objects.filter(id=self.actor2.id)
+        inaccessible_metadata = Entry.objects.none()
+        second_hop_cases = Entry.objects.none()
+        second_hop_actors = Entry.objects.none()
+        second_hop_metadata = Entry.objects.none()
+        second_hop_inaccessible_cases = Entry.objects.none()
+        second_hop_inaccessible_actors = Entry.objects.none()
+        second_hop_inaccessible_metadata = Entry.objects.none()
 
         json_response = bytes_to_json(response.content)
 
@@ -148,14 +148,14 @@ class GetActorDashboardTest(DashboardsTestCase):
         actors = [self.actor2]
         metadata = [self.metadata1]
         inaccessible_cases = []
-        inaccessible_actors = Entity.objects.none()
-        inaccessible_metadata = Entity.objects.none()
-        second_hop_cases = Entity.objects.none()
-        second_hop_actors = Entity.objects.none()
-        second_hop_metadata = Entity.objects.none()
-        second_hop_inaccessible_cases = Entity.objects.filter(id=self.case3.id)
-        second_hop_inaccessible_actors = Entity.objects.filter(id=self.actor3.id)
-        second_hop_inaccessible_metadata = Entity.objects.none()
+        inaccessible_actors = Entry.objects.none()
+        inaccessible_metadata = Entry.objects.none()
+        second_hop_cases = Entry.objects.none()
+        second_hop_actors = Entry.objects.none()
+        second_hop_metadata = Entry.objects.none()
+        second_hop_inaccessible_cases = Entry.objects.filter(id=self.case3.id)
+        second_hop_inaccessible_actors = Entry.objects.filter(id=self.actor3.id)
+        second_hop_inaccessible_metadata = Entry.objects.none()
 
         json_response = bytes_to_json(response.content)
 
@@ -199,14 +199,14 @@ class GetActorDashboardTest(DashboardsTestCase):
         actors = []
         metadata = []
         inaccessible_cases = [self.case2]
-        inaccessible_actors = Entity.objects.filter(id=self.actor1.id)
-        inaccessible_metadata = Entity.objects.none()
-        second_hop_cases = Entity.objects.none()
-        second_hop_actors = Entity.objects.none()
-        second_hop_metadata = Entity.objects.none()
-        second_hop_inaccessible_cases = Entity.objects.none()
-        second_hop_inaccessible_actors = Entity.objects.none()
-        second_hop_inaccessible_metadata = Entity.objects.none()
+        inaccessible_actors = Entry.objects.filter(id=self.actor1.id)
+        inaccessible_metadata = Entry.objects.none()
+        second_hop_cases = Entry.objects.none()
+        second_hop_actors = Entry.objects.none()
+        second_hop_metadata = Entry.objects.none()
+        second_hop_inaccessible_cases = Entry.objects.none()
+        second_hop_inaccessible_actors = Entry.objects.none()
+        second_hop_inaccessible_metadata = Entry.objects.none()
 
         json_response = bytes_to_json(response.content)
 

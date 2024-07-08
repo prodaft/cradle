@@ -21,7 +21,7 @@ class FileReferenceSerializer(serializers.ModelSerializer):
         fields = ["minio_file_name", "file_name", "bucket_name"]
 
     def validate(self, data: Any) -> Any:
-        """This method validates the file reference entity. Firstly, it checks
+        """This method validates the file reference entry. Firstly, it checks
         that bucket_name matches the user's id. Secondly, it checks that a file
         was uploaded at the indicated MinIO path.
 

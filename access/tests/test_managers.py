@@ -1,7 +1,7 @@
 from ..models import Access
 from ..enums import AccessType
-from entities.models import Entity
-from entities.enums import EntityType
+from entries.models import Entry
+from entries.enums import EntryType
 from user.models import CradleUser
 from .utils import AccessTestCase
 
@@ -17,10 +17,10 @@ class AccessManagerHasAccessTest(AccessTestCase):
         )
 
     def create_cases(self):
-        self.case1 = Entity.objects.create(name="case1", type=EntityType.CASE)
-        self.case2 = Entity.objects.create(name="case2", type=EntityType.CASE)
-        self.case3 = Entity.objects.create(name="case3", type=EntityType.CASE)
-        self.case4 = Entity.objects.create(name="case4", type=EntityType.CASE)
+        self.case1 = Entry.objects.create(name="case1", type=EntryType.CASE)
+        self.case2 = Entry.objects.create(name="case2", type=EntryType.CASE)
+        self.case3 = Entry.objects.create(name="case3", type=EntryType.CASE)
+        self.case4 = Entry.objects.create(name="case4", type=EntryType.CASE)
 
     def create_access(self):
         Access.objects.create(
@@ -109,7 +109,7 @@ class AccessManagerGetAccessibleTest(AccessTestCase):
             for i in range(0, 3)
         ]
         self.cases = [
-            Entity.objects.create(name=f"c{i}", type="case") for i in range(0, 3)
+            Entry.objects.create(name=f"c{i}", type="case") for i in range(0, 3)
         ]
         for i in range(0, 3):
             Access.objects.create(
@@ -188,7 +188,7 @@ class AccessManagerGetUsersWithAccessTest(AccessTestCase):
             )
         )
 
-        self.case = Entity.objects.create(name="Case", type=EntityType.CASE)
+        self.case = Entry.objects.create(name="Case", type=EntryType.CASE)
 
         Access.objects.create(
             user=self.users[0], case=self.case, access_type=AccessType.NONE
@@ -211,7 +211,7 @@ class AccessManagerCheckUserAccessTest(AccessTestCase):
         self.user = CradleUser.objects.create_user(
             username="user", password="user", email="alabala@gmail.com"
         )
-        self.case = Entity.objects.create(name="case", type=EntityType.CASE)
+        self.case = Entry.objects.create(name="case", type=EntryType.CASE)
 
     def test_check_user_access_has_access_type(self):
         Access.objects.create(

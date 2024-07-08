@@ -28,13 +28,13 @@ The ``utils.py`` file defines the ``LoggingUtils`` class. This class implements 
 These methods are:
 
 - ``log_login_success``: Logs a successful login request
-- ``log_entity_creation``: Logs a successful entity creation request
-- ``log_entity_deletion``:  Logs a successful entity deletion request
+- ``log_entry_creation``: Logs a successful entry creation request
+- ``log_entry_deletion``:  Logs a successful entry deletion request
 - ``log_failed_responses``: Logs a failed request
 
-The ``LoggingUtils`` class additionally implements a private helper method ``__format_nginx_log`` that returns a properly formatted log entry according to the nginx style based on the provided data. All methods described previously use this method for formatting.
+The ``LoggingUtils`` class additionally implements a private helper method ``__format_nginx_log`` that returns a properly formatted log artifact according to the nginx style based on the provided data. All methods described previously use this method for formatting.
 
-To extend this functionality with additional use cases, you should create a new method for each type of log entry that takes the same parameters as mentioned above and logs the desired action to the logger of choice. To keep the consistency of the code, use the ``__format_nginx_log`` method for formatting the log message and provide it the following parameters:
+To extend this functionality with additional use cases, you should create a new method for each type of log artifact that takes the same parameters as mentioned above and logs the desired action to the logger of choice. To keep the consistency of the code, use the ``__format_nginx_log`` method for formatting the log message and provide it the following parameters:
 
 - ``request``: The request that is logged
 - ``status``: The status of the response
@@ -53,8 +53,8 @@ The ``decorators.py`` file defines the following methods:
 - ``get_request_from_args``: A helper function that extracts the ``Request`` object from a list of arguments.
 - The actual decorators that will be used. These have the signature of a typical decorator, that is, they receive the decorated function as a parameter ``view_func`` and return a decorator. This is done by calling the ``create_log_decorator`` method with different parameters depending on the type of action that will be logged:
   - ``log_login_success``: Decorator that logs the successful login requests
-  - ``log_entity_creation``: Decorator that logs the successful entity creation requests
-  - ``log_entity_deletion``: Decorator that logs the successful entity deletion requests
+  - ``log_entry_creation``: Decorator that logs the successful entry creation requests
+  - ``log_entry_deletion``: Decorator that logs the successful entry deletion requests
   - ``log_failed_responses``: Decorator that logs the failed requests
 
 New decorators can be added as a separate method, and the implementation details are not relevant. For consistency, you can follow the current template and create a decorator using the ``create_log_decorator`` method.

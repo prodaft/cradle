@@ -9,13 +9,13 @@ from ..serializers import NotePublishSerializer, ReportSerializer, ReportQuerySe
 
 from logs.decorators import log_failed_responses
 from ..exceptions import (
-    NoAccessToEntitiesException,
+    NoAccessToEntriesException,
 )
 
 from ..utils.publish_utils import PublishUtils
 
-from entities.models import Entity
-from entities.enums import EntityType
+from entries.models import Entry
+from entries.enums import EntryType
 from user.models import CradleUser
 from access.models import Access
 from access.enums import AccessType
@@ -55,7 +55,7 @@ class NotePublishDetail(APIView):
 
         if not Access.objects.has_access_to_cases(
             cast(CradleUser, request.user),
-            set(note_to_update.entities.filter(type=EntityType.CASE)),
+            set(note_to_update.entries.filter(type=EntryType.CASE)),
             {AccessType.READ_WRITE},
         ):
             return Response(
@@ -104,8 +104,8 @@ class NotePublishList(APIView):
         query_serializer.is_valid(raise_exception=True)
 
         required_notes = Note.objects.get_in_order(query_serializer.data["note_ids"])
-        referenced_cases = Entity.objects.filter(
-            type=EntityType.CASE, note__in=required_notes
+        referenced_cases = Entry.objects.filter(
+            type=EntryType.CASE, note__in=required_notes
         ).distinct()
 
         if not Access.objects.has_access_to_cases(
@@ -113,7 +113,7 @@ class NotePublishList(APIView):
             set(referenced_cases),
             {AccessType.READ, AccessType.READ_WRITE},
         ):
-            raise NoAccessToEntitiesException(
+            raise NoAccessToEntriesException(
                 "One of the provided notes does not exist."
             )
 

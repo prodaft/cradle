@@ -128,7 +128,7 @@ class GetAllUsersTest(UserTestCase):
     def test_get_all_users_successful(self):
         response = self.client.get(reverse("user_list"), **self.headers_admin)
 
-        self.assertEqual(response.status_code, 200)  # Actually verify the entities sent
+        self.assertEqual(response.status_code, 200)  # Actually verify the entries sent
         expected = UserRetrieveSerializer([self.admin, self.user], many=True).data
         self.assertCountEqual(expected, bytes_to_json(response.content))
 

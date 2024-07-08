@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from logs.decorators import log_failed_responses
 from notes.models import Note
 from itertools import islice
-from entities.enums import EntityType
+from entries.enums import EntryType
 from ..serializers import HomePageStatisticsSerializer
 from typing import cast
 from user.models import CradleUser
@@ -22,7 +22,7 @@ class StatisticsList(APIView):
         """Fetches some of the user's statistics. More specifically, it
         fetches the 10 most recently written notes the user has access to
         and the 3 cases and actors that were most recently referenced in notes
-        the user has access to. The entities are returned starting with the most
+        the user has access to. The entries are returned starting with the most
         recent ones.
 
         Args:
@@ -44,7 +44,7 @@ class StatisticsList(APIView):
         response_data["cases"] = list(
             islice(
                 Note.objects.note_references_iterator(
-                    accessible_notes, EntityType.CASE
+                    accessible_notes, EntryType.CASE
                 ),
                 3,
             )
@@ -52,7 +52,7 @@ class StatisticsList(APIView):
         response_data["actors"] = list(
             islice(
                 Note.objects.note_references_iterator(
-                    accessible_notes, EntityType.ACTOR
+                    accessible_notes, EntryType.ACTOR
                 ),
                 3,
             )

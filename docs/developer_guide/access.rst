@@ -1,7 +1,7 @@
 Overview of the Access Control
 ===============================
 
-The access control policy determines the entities and notes a user has access to. CRADLE's access control policy is determined on a case-level basis.
+The access control policy determines the entries and notes a user has access to. CRADLE's access control policy is determined on a case-level basis.
 
 A User can have three types of access on a case:
 - **NONE**: the user does not see any notes which reference the case and cannot create any note which references the case.
@@ -26,7 +26,7 @@ The access of a User is stored in the database through the Access model. The mod
             CradleUser, on_delete=models.CASCADE, to_field="id"
         )
         case: models.ForeignKey = models.ForeignKey(
-            Entity, on_delete=models.CASCADE, to_field="id", null=True
+            Entry, on_delete=models.CASCADE, to_field="id", null=True
         )
         access_type: models.CharField = models.CharField(
             max_length=20, choices=AccessType.choices, default=AccessType.NONE
@@ -45,7 +45,7 @@ The access of a User is stored in the database through the Access model. The mod
 
 In general, the access control of the user on the case can be determined by checking the column in the database with the corresponding user id and case id. However, there are two exceptions to this rule:
 
-1. Superusers should have no entries in the database, but should have by default READ-WRITE access to all cases.
+1. Superusers should have no artifacts in the database, but should have by default READ-WRITE access to all cases.
 2. If a column does not exist in the database, the user will by default have NONE access to that case.
 
 There are a number of utility functions in the access app of the application which can be used to determine the access type and the accessible cases. For retrieving accessible notes, one can check methods in the notes app.

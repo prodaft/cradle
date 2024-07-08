@@ -7,7 +7,7 @@ from rest_framework.request import Request
 from logs.decorators import log_failed_responses
 from ..models import Access
 from ..enums import AccessType
-from entities.models import Entity
+from entries.models import Entry
 from notifications.models import AccessRequestNotification
 from django.db import transaction
 from user.models import CradleUser
@@ -44,8 +44,8 @@ class RequestAccess(APIView):
         user: CradleUser = cast(CradleUser, request.user)
 
         try:
-            case = Entity.objects.get(id=case_id)
-        except Entity.DoesNotExist:
+            case = Entry.objects.get(id=case_id)
+        except Entry.DoesNotExist:
             return Response("Case does not exist", status=status.HTTP_404_NOT_FOUND)
 
         if user.is_superuser or Access.objects.filter(

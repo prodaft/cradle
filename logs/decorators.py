@@ -71,8 +71,8 @@ def log_login_success(view_func):
     )(view_func)
 
 
-def log_entity_creation(view_func):
-    """Decorator that logs entity creation.
+def log_entry_creation(view_func):
+    """Decorator that logs entry creation.
 
     Args:
         view_func: The view function to be decorated
@@ -82,13 +82,13 @@ def log_entity_creation(view_func):
     """
 
     return create_log_decorator(
-        LoggingUtils.log_entity_creation,
+        LoggingUtils.log_entry_creation,
         condition=lambda response: response.status_code == 200,
     )(view_func)
 
 
-def log_entity_deletion(view_func):
-    """Decorator that logs entity deletion.
+def log_entry_deletion(view_func):
+    """Decorator that logs entry deletion.
 
     Args:
         view_func: The view function to be decorated
@@ -98,7 +98,7 @@ def log_entity_deletion(view_func):
     """
 
     return create_log_decorator(
-        LoggingUtils.log_entity_deletion,
+        LoggingUtils.log_entry_deletion,
         condition=lambda response: response.status_code == 200,
     )(view_func)
 

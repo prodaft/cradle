@@ -4,15 +4,15 @@ from typing import Type, cast
 from django.db.models.enums import ChoicesMeta
 
 
-class EntityType(models.TextChoices):
+class EntryType(models.TextChoices):
 
     ACTOR = "actor", _("Actor")
     CASE = "case", _("Case")
-    ENTRY = "entry", _("Entry")
+    ARTIFACT = "artifact", _("Artifact")
     METADATA = "metadata", _("Metadata")
 
 
-class EntrySubtype(models.TextChoices):
+class ArtifactSubtype(models.TextChoices):
     IP = "ip", _("IP Address")
     DOMAIN = "domain", _("Domain Name")
     URL = "url", _("URL")
@@ -48,16 +48,16 @@ def concatenate_enums(enum1: Type[models.TextChoices], enum2: Type[models.TextCh
         the concatenation of the choices of two TextChoices
     """
     combined = {}
-    for entry in enum1:
-        combined[entry.name] = entry.value, entry.label
-    for entry in enum2:
-        combined[entry.name] = entry.value, entry.label
+    for artifact in enum1:
+        combined[artifact.name] = artifact.value, artifact.label
+    for artifact in enum2:
+        combined[artifact.name] = artifact.value, artifact.label
     return combined
 
 
-EntitySubtype: ChoicesMeta = cast(
+EntrySubtype: ChoicesMeta = cast(
     ChoicesMeta,
     models.TextChoices(
-        "EntitySubtype", concatenate_enums(EntrySubtype, MetadataSubtype)
+        "EntrySubtype", concatenate_enums(ArtifactSubtype, MetadataSubtype)
     ),
 )

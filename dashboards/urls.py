@@ -2,7 +2,7 @@ from django.urls import path
 
 from .views.actor_dashboard_view import ActorDashboard
 from .views.case_dashboard_view import CaseDashboard
-from .views.entry_dashboard_view import EntryDashboard
+from .views.artifact_dashboard_view import ArtifactDashboard
 
 urlpatterns = [
     path(
@@ -16,8 +16,8 @@ urlpatterns = [
         name="actor_dashboard",
     ),
     path(
-        "entries/<path:entry_name>/",
-        EntryDashboard.as_view(),
-        name="entry_dashboard",
+        "artifacts/<path:artifact_name>/",
+        ArtifactDashboard.as_view(),
+        name="artifact_dashboard",
     ),
 ]

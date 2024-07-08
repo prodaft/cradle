@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from typing import cast
 
-from entities.models import Entity
+from entries.models import Entry
 from user.models import CradleUser
 from ..utils.dashboard_utils import DashboardUtils
 from ..serializers import ActorDashboardSerializer
@@ -38,15 +38,15 @@ class ActorDashboard(APIView):
         user: CradleUser = cast(CradleUser, request.user)
 
         try:
-            actor = Entity.actors.get(name=actor_name)
-        except Entity.DoesNotExist:
+            actor = Entry.actors.get(name=actor_name)
+        except Entry.DoesNotExist:
             return Response(
                 "There is no actor with specified name",
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        entities_dict, neighbor_map = DashboardUtils.get_dashboard(user, actor.id)
+        entries_dict, neighbor_map = DashboardUtils.get_dashboard(user, actor.id)
 
-        dashboard = DashboardUtils.add_entity_fields(actor, entities_dict)
+        dashboard = DashboardUtils.add_entry_fields(actor, entries_dict)
 
         return Response(ActorDashboardSerializer(dashboard, context=neighbor_map).data)

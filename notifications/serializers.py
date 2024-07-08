@@ -11,7 +11,7 @@ class NotificationSerializer(serializers.ModelSerializer):
             instance: The notification to be serialized.
 
         Returns:
-            A dictionary containing the serialized Notification entity.
+            A dictionary containing the serialized Notification entry.
         """
 
         serializer: Optional[serializers.ModelSerializer] = None

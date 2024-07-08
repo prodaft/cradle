@@ -21,7 +21,7 @@ class TokenRefreshLogView(TokenRefreshView):
 
         Args:
             request (Request): The HTTP request object. Request.data JSON
-            should contain a "refresh" entry with a refresh type JSON web
+            should contain a "refresh" artifact with a refresh type JSON web
             token.
 
         Returns:

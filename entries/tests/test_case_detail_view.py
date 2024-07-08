@@ -4,10 +4,10 @@ from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
 import io
 from rest_framework_simplejwt.tokens import AccessToken
-from .utils import EntitiesTestCase
+from .utils import EntriesTestCase
 
-from ..models import Entity
-from ..enums import EntityType
+from ..models import Entry
+from ..enums import EntryType
 
 import uuid
 
@@ -16,7 +16,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class DeleteCaseDetailsTest(EntitiesTestCase):
+class DeleteCaseDetailsTest(EntriesTestCase):
 
     def setUp(self):
         super().setUp()
@@ -40,8 +40,8 @@ class DeleteCaseDetailsTest(EntitiesTestCase):
         self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
 
     def test_delete_case_admin(self):
-        case = Entity.objects.create(
-            name="Case1", description="Description1", type=EntityType.CASE
+        case = Entry.objects.create(
+            name="Case1", description="Description1", type=EntryType.CASE
         )
 
         response = self.client.delete(
@@ -51,8 +51,8 @@ class DeleteCaseDetailsTest(EntitiesTestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_delete_case_authenticated_not_admin(self):
-        case = Entity.objects.create(
-            name="Case1", description="Description1", type=EntityType.CASE
+        case = Entry.objects.create(
+            name="Case1", description="Description1", type=EntryType.CASE
         )
 
         response = self.client.delete(
@@ -62,8 +62,8 @@ class DeleteCaseDetailsTest(EntitiesTestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_delete_case_not_authenticated(self):
-        case = Entity.objects.create(
-            name="Case1", description="Description1", type=EntityType.CASE
+        case = Entry.objects.create(
+            name="Case1", description="Description1", type=EntryType.CASE
         )
 
         response = self.client.delete(
@@ -73,8 +73,8 @@ class DeleteCaseDetailsTest(EntitiesTestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_delete_case_admin_wrong_id(self):
-        Entity.objects.create(
-            name="Case1", description="Description1", type=EntityType.CASE
+        Entry.objects.create(
+            name="Case1", description="Description1", type=EntryType.CASE
         )
 
         response = self.client.delete(

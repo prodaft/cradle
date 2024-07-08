@@ -27,10 +27,10 @@ class FileReference(models.Model):
 
     def to_dict(self) -> dict[str, str]:
         """Provides a dictionary representation of the FileReference
-        entity.
+        entry.
 
         Returns:
-            The dictionary representation of the entity.
+            The dictionary representation of the entry.
         """
 
         return {

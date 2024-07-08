@@ -4,18 +4,18 @@ from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
 import io
 from rest_framework_simplejwt.tokens import AccessToken
-from .utils import EntitiesTestCase
+from .utils import EntriesTestCase
 
-from ..models import Entity
-from ..serializers import EntityResponseSerializer
-from ..enums import EntityType
+from ..models import Entry
+from ..serializers import EntryResponseSerializer
+from ..enums import EntryType
 
 
 def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class GetCaseListTest(EntitiesTestCase):
+class GetCaseListTest(EntriesTestCase):
 
     def setUp(self):
         super().setUp()
@@ -39,15 +39,15 @@ class GetCaseListTest(EntitiesTestCase):
         self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
 
     def test_get_cases_admin(self):
-        Entity.objects.create(
-            name="Case1", description="Description1", type=EntityType.CASE
+        Entry.objects.create(
+            name="Case1", description="Description1", type=EntryType.CASE
         )
-        Entity.objects.create(
-            name="Case2", description="Description2", type=EntityType.CASE
+        Entry.objects.create(
+            name="Case2", description="Description2", type=EntryType.CASE
         )
-        cases = Entity.cases.all()
+        cases = Entry.cases.all()
 
-        expected = EntityResponseSerializer(cases, many=True).data
+        expected = EntryResponseSerializer(cases, many=True).data
 
         response = self.client.get(reverse("case_list"), **self.headers_admin)
 
@@ -65,7 +65,7 @@ class GetCaseListTest(EntitiesTestCase):
         self.assertEqual(response.status_code, 401)
 
 
-class PostCaseListTest(EntitiesTestCase):
+class PostCaseListTest(EntriesTestCase):
 
     def setUp(self):
         super().setUp()
@@ -97,8 +97,8 @@ class PostCaseListTest(EntitiesTestCase):
         self.assertEqual(response_post.status_code, 200)
         self.assertEqual(case_json, bytes_to_json(response_post.content))
 
-        self.assertEqual(Entity.cases.count(), 1)
-        self.assertEqual(Entity.cases.get().name, "case1")
+        self.assertEqual(Entry.cases.count(), 1)
+        self.assertEqual(Entry.cases.get().name, "case1")
 
     def test_create_case_no_description_admin(self):
         case_json = {"name": "case1"}
@@ -110,8 +110,8 @@ class PostCaseListTest(EntitiesTestCase):
         self.assertEqual(response_post.status_code, 200)
         self.assertEqual(expected_json, bytes_to_json(response_post.content))
 
-        self.assertEqual(Entity.cases.count(), 1)
-        self.assertEqual(Entity.cases.get().name, "case1")
+        self.assertEqual(Entry.cases.count(), 1)
+        self.assertEqual(Entry.cases.get().name, "case1")
 
     def test_create_case_duplicate_admin(self):
         case_json = {"name": "case1", "description": "description1"}
@@ -134,7 +134,7 @@ class PostCaseListTest(EntitiesTestCase):
         )
         self.assertEqual(response_post.status_code, 400)
 
-        self.assertRaises(Entity.DoesNotExist, lambda: Entity.objects.get(name="case1"))
+        self.assertRaises(Entry.DoesNotExist, lambda: Entry.objects.get(name="case1"))
 
     def test_create_case_authenticated_not_admin(self):
         case_json = {"name": "case1", "description": "description1"}
