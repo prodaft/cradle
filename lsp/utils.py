@@ -24,7 +24,6 @@ class LspUtils:
         }
 
         for i in entry_classes:
-            print(i.subtype)
             if i.subtype not in pack["classes"]:
                 if i.regex:
                     pack["classes"][i.subtype] = {"regex": i.regex}
