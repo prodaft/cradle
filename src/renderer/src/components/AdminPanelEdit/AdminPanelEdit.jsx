@@ -1,10 +1,11 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import AlertBox from '../AlertBox/AlertBox';
 import {
     getEntities,
+    getEntryClasses,
 } from '../../services/adminService/adminService';
-import { createEntity, createArtifactClass } from '../../services/adminService/adminService';
+import { editEntity, editArtifactClass } from '../../services/adminService/adminService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 
 /**
@@ -22,43 +23,63 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
  */
 
 export default function AdminPanelEdit({ type }) {
-    const { id } = useParams();
+    var { id } = useParams();
     const [name, setName] = useState('');
     const [subtype, setSubtype] = useState('');
-    const [subtypeDisabled, setSubtypeDisabled] = useState('');
     const [description, setDescription] = useState('');
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const [subclasses, setSubclasses] = useState([]);
     const navigate = useNavigate();
     const handleError = displayError(setAlert, navigate);
     const [typeFormat, setTypeFormat] = useState(null)
     const [typeFormatDetails, setTypeFormatDetails] = useState(null)
     const [typeFormatHint, setTypeFormatHint] = useState('')
 
-    const populateSubclasses = async () => {
-        getEntities()
-            .then((response) => {
-                if (response.status === 200) {
-                    let entities = response.data;
-                    setSubclasses([...
-                        new Set(entities.map(c => c.subtype))]
-                    );
-                }
-            })
-            .catch(handleError);
-    };
+    if (type === 'ArtifactType') {
+      id = id.replace('--', '/');
+    }
 
     const populateEntityDetails = async () => {
-        getEntities()
+        if (type === 'Entity') {
+            getEntities()
             .then((response) => {
                 if (response.status === 200) {
-                    let entities = response.data;
-                    setSubclasses([...
-                        new Set(entities.map(c => c.subtype))]
-                    );
+                  let entities = response.data;
+                  let entity = entities.find(obj => obj.id === id);
+                  console.log(entity)
+                  if (entity) {
+                    setSubtype(entity.subtype);
+                    setName(entity.name);
+                    setDescription(entity.description);
+                  }
                 }
             })
             .catch(handleError);
+        } else if (type === 'ArtifactType') {
+            getEntryClasses()
+            .then((response) => {
+                if (response.status === 200) {
+                  let types = response.data;
+                  console.log(types);
+                  let type = types.find(obj => obj.subtype === id);
+                  console.log(type);
+                  if (type) {
+                    setSubtype(type.subtype);
+                    setName(type.subtype);
+                    if (type.regex && type.regex.length > 0) {
+                      setTypeFormat("regex");
+                      setTypeFormatDetails(type.regex);
+                    }
+                    else if (type.options && type.options.length > 0) {
+                      setTypeFormat("options");
+                      setTypeFormatDetails(type.options);
+                    } else {
+                      setTypeFormat(null);
+                    }
+                  }
+                }
+            })
+            .catch(handleError);
+        }
     };
 
     const handleSubmit = async () => {
@@ -72,9 +93,9 @@ export default function AdminPanelEdit({ type }) {
             if (type === 'Entity') {
                 data.name = name;
                 data.description = description;
-                await createEntity(data);
+                await editEntity(data, id);
             } else if (type === 'ArtifactType') {
-                await createArtifactClass(data);
+                await editArtifactClass(data, id);
             }
             navigate('/admin');
         } catch (err) {
@@ -99,18 +120,9 @@ export default function AdminPanelEdit({ type }) {
       }
     }
 
-    const handleSubtypeSelected = (subtype) => () => {
-      setSubtype(subtype);
-      if (subtype) {
-        setSubtypeDisabled(true);
-      } else{
-        setSubtypeDisabled(false);
-      }
-    }
-
     if (type === 'Entity') {
       useEffect(() => {
-          populateSubclasses();
+        populateEntityDetails()
       }, []);
 
       return (
@@ -119,7 +131,7 @@ export default function AdminPanelEdit({ type }) {
                   <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8'>
                       <div className='sm:mx-auto sm:w-full sm:max-w-sm'>
                           <h1 className='mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-cradle2'>
-                              Add New Entity
+                            Edit an Entity
                           </h1>
                       </div>
                       <div
@@ -131,52 +143,29 @@ export default function AdminPanelEdit({ type }) {
                                   type='text'
                                   className='form-input input input-ghost-primary input-block focus:ring-0'
                                   placeholder='Name'
-                                  onChange={(e) => setName(e.target.value)}
-                                  autoFocus
+                                  disabled
+                                  value={name}
                               />
-                              <div className="flex items-center space-x-4">
-                                <input
-                                  type='text'
-                                  className='form-input input input-ghost-primary input-block focus:ring-1'
-                                  disabled={subtypeDisabled}
-                                  placeholder='Type'
-                                  value={subtype}
-                                  onChange={(e) => setSubtype(e.target.value)}
-                                />
-                                <div className="dropdown relative">
-                                  <label className="btn btn-solid-primary my-2" tabIndex="0">Select</label>
-                                  <div className="dropdown-menu dropdown-menu-bottom-right">
-                                    {subclasses &&
-                                        subclasses.length > 0 &&
-                                        subclasses.map((content, index) => (
-                                            <a
-                                                key={index}
-                                                className='dropdown-item text-sm'
-                                                onClick={handleSubtypeSelected(content)}
-                                            >
-                                                {content}
-                                            </a>
-                                        ))}
-                                        <a
-                                          key={subclasses ? subclasses.length : 0}
-                                          className='dropdown-item text-sm'
-                                          onClick={handleSubtypeSelected(null)}>
-                                          Add New
-                                        </a>
-                                  </div>
-                                </div>
-                              </div>
+                              <input
+                                type='text'
+                                className='form-input input input-ghost-primary input-block focus:ring-1'
+                                disabled
+                                placeholder='Type'
+                                value={subtype}
+                              />
                               <textarea
                                   className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
                                   placeholder='Description'
                                   onChange={(e) => setDescription(e.target.value)}
+                                  value={description}
+                                  autoFocus
                               />
                               <AlertBox alert={alert} />
                               <button
                                   className='btn btn-primary btn-block'
                                   onClick={handleSubmit}
                               >
-                                  Add
+                                  Edit
                               </button>
                               <button
                                   className='btn btn-ghost btn-block'
@@ -192,14 +181,16 @@ export default function AdminPanelEdit({ type }) {
       );
     } else if (type === 'ArtifactType') {
       useEffect(() => {
-      }, [typeFormat]);
+        populateEntityDetails()
+      }, []);
+
       return (
           <div className='flex flex-row items-center justify-center h-screen'>
               <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 md:h-fit xl:w-1/3'>
                   <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8'>
                       <div className='sm:mx-auto sm:w-full sm:max-w-sm'>
                           <h1 className='mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-cradle2'>
-                              Add New Artifact Type
+                              Edit Artifact Type
                           </h1>
                       </div>
                       <div
@@ -210,13 +201,13 @@ export default function AdminPanelEdit({ type }) {
                               <input
                                   type='text'
                                   className='form-input input input-ghost-primary input-block focus:ring-0'
-                                  placeholder='Name'
-                                  onChange={(e) => setSubtype(e.target.value)}
-                                  autoFocus
+                                  value={name}
+                                  disabled
                               />
                               <select
                                 className="form-select select select-ghost-primary select-block focus:ring-0"
                                 onChange={handleFormatChange}
+                                value={typeFormat ? typeFormat : ""}
                               >
                                 <option>Any Format</option>
                                 <option value="options">Enumerator</option>
@@ -227,13 +218,14 @@ export default function AdminPanelEdit({ type }) {
                                   placeholder={typeFormatHint}
                                   onChange={(e) => setTypeFormatDetails(e.target.value)}
                                   hidden={typeFormat == null}
+                                  value={typeFormatDetails ? typeFormatDetails : ""}
                               />
                               <AlertBox alert={alert} />
                               <button
                                   className='btn btn-primary btn-block'
                                   onClick={handleSubmit}
                               >
-                                  Add
+                                  Edit
                               </button>
                               <button
                                   className='btn btn-ghost btn-block'

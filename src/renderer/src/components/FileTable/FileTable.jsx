@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { PasteClipboard, Trash } from 'iconoir-react';
+import { PasteClipboard, Trash, InputField } from 'iconoir-react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { createDownloadPath } from '../../utils/textEditorUtils/textEditorUtils';
 
@@ -18,7 +18,7 @@ import { createDownloadPath } from '../../utils/textEditorUtils/textEditorUtils'
  * @returns {FileTable}
  * @constructor
  */
-export default function FileTable({ fileData, setFileData }) {
+export default function FileTable({ fileData, setFileData, insertTextCallback }) {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
 
     const copyToClipboard = (text) => {
@@ -78,6 +78,23 @@ export default function FileTable({ fileData, setFileData }) {
                                         {data.file_name}
                                     </div>
                                     <div className='dark:text-zinc-200 flex items-center justify-end pr-4'>
+                                        <span
+                                            className='tooltip tooltip-top'
+                                            data-tooltip='Insert link into text'
+                                        >
+                                            <button
+                                                id={`insert-${index}`}
+                                                data-testid={`insert-${index}`}
+                                                className='px-2 py-1 rounded hover:opacity-60 bg-zinc-3'
+                                                onClick={() =>
+                                                    insertTextCallback(
+                                                        `[${data.file_name}][${data.minio_file_name}]`,
+                                                    )
+                                                }
+                                            >
+                                                <InputField width='20px' />
+                                            </button>
+                                        </span>
                                         <span
                                             className='tooltip tooltip-top'
                                             data-tooltip='Copy to clipboard'

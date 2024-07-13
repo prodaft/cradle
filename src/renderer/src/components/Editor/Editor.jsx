@@ -50,7 +50,7 @@ export default function Editor({
 
 
     const autocompleteOutsideLink = (context) => {
-      let word = context.matchBefore(/\w*/)
+      let word = context.matchBefore(/\S*/)
       if (word.from == word.to && !context.explicit)
         return { from: context.pos, options: [] }
 
@@ -171,6 +171,13 @@ export default function Editor({
         setShowFileList(!showFileList);
     }, [showFileList]);
 
+    const insertTextToCodeMirror = (text) => {
+      if (editorRef.current) {
+          const doc = editorRef.current.view.state;
+          editorRef.current.view.dispatch(doc.replaceSelection(text));
+      }
+    };
+
     useEffect(() => {
       fetchLspPack()
             .then((response) => {
@@ -248,7 +255,7 @@ export default function Editor({
                         className={`overflow-auto h-full rounded-md ${showFileList && 'min-h-24'}`}
                     >
                         {showFileList && (
-                            <FileTable fileData={fileData} setFileData={setFileData} />
+                            <FileTable fileData={fileData} setFileData={setFileData} insertTextCallback={insertTextToCodeMirror}/>
                         )}
                     </div>
                 </div>

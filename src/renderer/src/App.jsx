@@ -64,7 +64,7 @@ function App() {
                                     element={<AdminPanelEdit type='Entity' />}
                                 ></Route>
                                 <Route
-                                    path='/admin/edit-artifact-type/:subtype'
+                                    path='/admin/edit-artifact-type/:id'
                                     element={<AdminPanelEdit type='ArtifactType' />}
                                 ></Route>
                                 <Route

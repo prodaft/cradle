@@ -35,10 +35,10 @@ export async function createEntity(data, token) {
  * @param {EntryData} data - entity data
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export async function editEntity(data, token) {
+export async function editEntity(data, id) {
     return authAxios({
-        method: 'update',
-        url: '/entries/entities/',
+        method: 'post',
+        url: `/entries/entities/${id}/`,
         data: data,
     });
 }
@@ -63,10 +63,10 @@ export async function createArtifactClass(data, token) {
  * @param {ArtifactClass} data - artifact class data
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export async function editArtifactClass(data, token) {
+export async function editArtifactClass(data, type) {
     return authAxios({
-        method: 'update',
-        url: '/entries/entry_classes/',
+        method: 'post',
+        url: `/entries/entry_classes/${type}/`,
         data: data,
     });
 }
@@ -82,6 +82,7 @@ export async function getEntities() {
         url: '/entries/entities/',
     });
 }
+
 
 /**
  * Sends a GET request to get all entry classes
