@@ -1,33 +1,17 @@
 import re
 from typing import Set, Dict
-from entries.models import Entry
-from entries.enums import ArtifactSubtype, MetadataSubtype
+from entries.enums import EntryType
+from entries.models import Entry, EntryClass
 from uuid import UUID
 
+LINK_REGEX = r"\[\[([^:\|\]]+?):((?:\\[\[\]\|]|[^\[\]\|])+?)(?:\|((?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]"  # noqa: E501 to avoid splitting the regex on two lines
+
+EntitySubtypes = set(["case"])
 
 class ParserTask:
-
-    __allowed_subtypes = {
-        "artifact": set([artifact_subtype.value for artifact_subtype in ArtifactSubtype]),
-        "metadata": set(
-            [metadata_subtype.value for metadata_subtype in MetadataSubtype]
-        ),
-    }
-
-    __entry_regexes = {
-        # [[actor:name|alias]]
-        "actor": r"\[\[actor:((?:\\[\[\]\|]|[^\[\]\|])+?)(?:\|((?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]",  # noqa: E501 to avoid splitting the regex on two lines
-        # [[case:name|alias]]
-        "case": r"\[\[case:((?:\\[\[\]\|]|[^\[\]\|])+?)(?:\|((?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]",  # noqa: E501 to avoid splitting the regex on two lines
-        # [[artifact_type:name|alias]]
-        "artifact": r"\[\[([^:\|\]]+?):((?:\\[\[\]\|]|[^\[\]\|])+?)(?:\|((?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]",  # noqa: E501 to avoid splitting the regex on two lines
-        # [[metadata-type:name|alias]]
-        "metadata": r"\[\[([^:\|\]]+?):((?:\\[\[\]\|]|[^\[\]\|])+?)(?:\|((?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]",  # noqa: E501 to avoid splitting the regex on two lines
-    }
-
     __mocked_uuid = UUID(int=0)
 
-    def run(self, note_content: str) -> Dict[str, Set[Entry]]:
+    def run(self, note_content: str) -> Dict[str, Dict[str, Set[Entry]]]:
         """Extract the references to various entries from the content of the note.
 
         Args:
@@ -38,45 +22,25 @@ class ParserTask:
             being referenced.
         """
 
-        referenced_entries = {}
-        for entry, regex in self.__entry_regexes.items():
-            # references will be a list of tuples which describe matches in
-            # the note content
-            references = re.findall(regex, note_content)
+        referenced_entries: Dict[str, Dict[str, Set[Entry]]] = {
+            EntryType.ARTIFACT: {},
+            EntryType.ENTITY: {},
+        }
+        # references will be a list of tuples which describe matches in
+        # the note content
+        references = re.findall(LINK_REGEX, note_content)
 
-            # for now, this applies for entries that have subtypes i.e.
-            # artifacts & metadata
-            if entry in list(self.__allowed_subtypes.keys()):
-                # each ref is of the form: (type, name, alias)
-
-                # filter out references which have invalid types
-                valid_references = filter(
-                    lambda tup: tup[0] in self.__allowed_subtypes[entry], references
-                )
-
-                # create entries that contain attributes specified in the references
-                referenced_entries[entry] = set(
-                    map(
-                        lambda tup: Entry(
-                            id=self.__mocked_uuid,
-                            name=tup[1],
-                            type=entry,
-                            subtype=tup[0],
-                        ),
-                        valid_references,
-                    )
-                )
+        for r in references:
+            if r[0] in EntitySubtypes:
+                t = EntryType.ENTITY
             else:
-                # each ref is of the form: (name, alias)
+                t = EntryType.ARTIFACT
 
-                # create entries that contain attributes specified in the references
-                referenced_entries[entry] = set(
-                    map(
-                        lambda tup: Entry(
-                            id=self.__mocked_uuid, name=tup[0], type=entry
-                        ),
-                        references,
+            if r[0] not in referenced_entries[t]:
+                referenced_entries[t][r[0]] = set()
+
+            referenced_entries[t][r[0]].add(Entry(
+                        id=self.__mocked_uuid, name=r[1], entry_class=EntryClass(type=t, subtype=r[0]))
                     )
-                )
 
         return referenced_entries

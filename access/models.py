@@ -13,7 +13,7 @@ class Access(models.Model):
     user: models.ForeignKey = models.ForeignKey(
         CradleUser, on_delete=models.CASCADE, to_field="id"
     )
-    case: models.ForeignKey = models.ForeignKey(
+    entity: models.ForeignKey = models.ForeignKey(
         Entry, on_delete=models.CASCADE, to_field="id", null=True
     )
     access_type: models.CharField = models.CharField(
@@ -23,11 +23,11 @@ class Access(models.Model):
     objects = AccessManager()
 
     def __str__(self):
-        return str(self.case) + " " + self.access_type
+        return str(self.entity) + " " + self.access_type
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "case"], name="unique_user_id_case_id"
+                fields=["user", "entity"], name="unique_user_id_entity_id"
             )
         ]

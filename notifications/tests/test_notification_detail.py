@@ -1,4 +1,4 @@
-from .utils import NotificationsTestCase
+from .utils import NotificationsTestEntity
 from user.models import CradleUser
 from entries.models import Entry
 from entries.enums import EntryType
@@ -10,7 +10,7 @@ from django.urls import reverse
 from uuid import UUID
 
 
-class NotificationDetailTest(NotificationsTestCase):
+class NotificationDetailTest(NotificationsTestEntity):
     def setUp(self):
         super().setUp()
         self.client = APIClient()
@@ -21,14 +21,14 @@ class NotificationDetailTest(NotificationsTestCase):
             is_staff=False,
             email="alabala@gmail.com",
         )
-        self.case = Entry.objects.create(name="Case", type=EntryType.CASE)
+        self.entity = Entry.objects.create(name="Entity", type=EntryType.ENTITY)
         self.message_user = MessageNotification.objects.create(
             user=self.user, message="Test message"
         )
         self.access_request_user = AccessRequestNotification.objects.create(
             user=self.user,
             requesting_user=self.user,
-            case=self.case,
+            entity=self.entity,
             message="Access Request",
         )
 

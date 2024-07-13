@@ -4,7 +4,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
 import io
 from rest_framework_simplejwt.tokens import AccessToken
-from .utils import EntriesTestCase
+from .utils import EntriesTestEntity
 
 from ..models import Entry
 from ..enums import EntryType
@@ -16,7 +16,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class DeleteCaseDetailsTest(EntriesTestCase):
+class DeleteEntityDetailsTest(EntriesTestEntity):
 
     def setUp(self):
         super().setUp()
@@ -39,46 +39,46 @@ class DeleteCaseDetailsTest(EntriesTestCase):
         self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
         self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
 
-    def test_delete_case_admin(self):
-        case = Entry.objects.create(
-            name="Case1", description="Description1", type=EntryType.CASE
+    def test_delete_entity_admin(self):
+        entity = Entry.objects.create(
+            name="Entity1", description="Description1", type=EntryType.ENTITY
         )
 
         response = self.client.delete(
-            reverse("case_detail", kwargs={"case_id": case.pk}), **self.headers_admin
+            reverse("entity_detail", kwargs={"entity_id": entity.pk}), **self.headers_admin
         )
 
         self.assertEqual(response.status_code, 200)
 
-    def test_delete_case_authenticated_not_admin(self):
-        case = Entry.objects.create(
-            name="Case1", description="Description1", type=EntryType.CASE
+    def test_delete_entity_authenticated_not_admin(self):
+        entity = Entry.objects.create(
+            name="Entity1", description="Description1", type=EntryType.ENTITY
         )
 
         response = self.client.delete(
-            reverse("case_detail", kwargs={"case_id": case.pk}), **self.headers_normal
+            reverse("entity_detail", kwargs={"entity_id": entity.pk}), **self.headers_normal
         )
 
         self.assertEqual(response.status_code, 403)
 
-    def test_delete_case_not_authenticated(self):
-        case = Entry.objects.create(
-            name="Case1", description="Description1", type=EntryType.CASE
+    def test_delete_entity_not_authenticated(self):
+        entity = Entry.objects.create(
+            name="Entity1", description="Description1", type=EntryType.ENTITY
         )
 
         response = self.client.delete(
-            reverse("case_detail", kwargs={"case_id": case.pk})
+            reverse("entity_detail", kwargs={"entity_id": entity.pk})
         )
 
         self.assertEqual(response.status_code, 401)
 
-    def test_delete_case_admin_wrong_id(self):
+    def test_delete_entity_admin_wrong_id(self):
         Entry.objects.create(
-            name="Case1", description="Description1", type=EntryType.CASE
+            name="Entity1", description="Description1", type=EntryType.ENTITY
         )
 
         response = self.client.delete(
-            reverse("case_detail", kwargs={"case_id": uuid.uuid4()}),
+            reverse("entity_detail", kwargs={"entity_id": uuid.uuid4()}),
             **self.headers_admin,
         )
 

@@ -12,9 +12,9 @@ from .exceptions import DuplicateUserException, InvalidPasswordException
 from typing import Dict, List, cast, Any, Sequence
 from .utils.validators import (
     MinimumDigitsValidator,
-    MinimumLowercaseLettersValidator,
+    MinimumLowerentityLettersValidator,
     MinimumSpecialCharacterValidator,
-    MinimumUppercaseLettersValidator,
+    MinimumUpperentityLettersValidator,
 )
 
 
@@ -29,8 +29,8 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, data: Any) -> Any:
         """First checks whether there exists another user with the
-        same username, in which case it returns error code 409. Then, the
-        password is validated. In case the password validation fails, error
+        same username, in which entity it returns error code 409. Then, the
+        password is validated. In entity the password validation fails, error
         code 400 is returned. Otherwise, it applies the other validations
         from the superclass.
 
@@ -50,10 +50,10 @@ class UserCreateSerializer(serializers.ModelSerializer):
             raise DuplicateUserException()
 
         password_validators: Sequence = (
-            MinimumLowercaseLettersValidator(1),
+            MinimumLowerentityLettersValidator(1),
             MinimumDigitsValidator(1),
             MinimumSpecialCharacterValidator(1),
-            MinimumUppercaseLettersValidator(1),
+            MinimumUpperentityLettersValidator(1),
             MinimumLengthValidator(12),
         )
         try:

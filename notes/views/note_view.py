@@ -27,7 +27,7 @@ class NoteList(APIView):
     def post(self, request: Request) -> Response:
         """Allow a user to create a new note, by sending the text itself.
         This text should be validated to meet the requirements
-        (i.e. reference at least two Entries, one of which must be a Case).
+        (i.e. reference at least two Entries, one of which must be an Entity).
         Moreover, the client should send an array of file references that
         correspond to the files uploaded to MinIO that are linked to this note.
 
@@ -37,16 +37,16 @@ class NoteList(APIView):
         Returns:
             Response(status=200): The newly created Note entry
                 if the request was successful.
-            Response("Note does not reference at least one Case and two Entries.",
+            Response("Note does not reference at least one Entity and two Entries.",
                 status=400): if the note does not reference the minimum required
-                entries and cases
+                entries and entities
             Response("The bucket name of the file reference is incorrect.",
                 status=400): if the bucket_name of at least one of the file references
                 does not match the user's id
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
             Response("User does not have Read-Write access
-                to a referenced Case or not all Cases exist.", status=404)
+                to a referenced Entity or not all Entities exist.", status=404)
             Response("There exists no file at the specified path.", status=404):
                 if for at least one of the file references there exists no file at
                 that location on the MinIO instance
@@ -72,7 +72,7 @@ class NoteDetail(APIView):
     def get(self, request: Request, note_id: UUID) -> Response:
         """Allow a user to get an already existing note, by specifying
         its id. A user should be able to retrieve the id only if he has
-        READ access an all the cases it references.
+        READ access an all the entities it references.
 
         Args:
             request: The request that was sent.
@@ -85,16 +85,16 @@ class NoteDetail(APIView):
                 if the user is not authenticated.
             Response("Note with given id does not exist.", status=404):
                 if the user does not have at least READ access on all
-                referenced cases, or the note does not exist.
+                referenced entities, or the note does not exist.
         """
         try:
             note: Note = Note.objects.get(id=note_id)
         except Note.DoesNotExist:
             return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
 
-        if not Access.objects.has_access_to_cases(
+        if not Access.objects.has_access_to_entities(
             cast(CradleUser, request.user),
-            set(note.entries.filter(type=EntryType.CASE)),
+            set(note.entries.filter(entry_class__type=EntryType.ENTITY)),
             {AccessType.READ, AccessType.READ_WRITE},
         ):
             return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
@@ -114,7 +114,7 @@ class NoteDetail(APIView):
             Response(status=200): The note was deleted
             Response("User is not authenticated.",
                 status=401): if the user is not authenticated
-            Response("User does not have Read-Write access to all cases the Note
+            Response("User does not have Read-Write access to all entities the Note
                     references.", status=403):
                 if the user is not the author of the note.
             Response("Note not found", status=404):
@@ -125,13 +125,13 @@ class NoteDetail(APIView):
         except Note.DoesNotExist:
             return Response("Note not found.", status=status.HTTP_404_NOT_FOUND)
 
-        if not Access.objects.has_access_to_cases(
+        if not Access.objects.has_access_to_entities(
             cast(CradleUser, request.user),
-            set(note_to_delete.entries.filter(type=EntryType.CASE)),
+            set(note_to_delete.entries.filter(entry_class__type=EntryType.ENTITY)),
             {AccessType.READ, AccessType.READ_WRITE},
         ):
             return Response(
-                "User does not have Read-Write access to all referenced cases",
+                "User does not have Read-Write access to all referenced entities",
                 status=status.HTTP_403_FORBIDDEN,
             )
 

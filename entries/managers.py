@@ -9,7 +9,6 @@ class EntryManager(models.Manager):
     def get_filtered_entries(
         self,
         query_set: models.QuerySet,
-        entry_types: list[str],
         entry_subtypes: list[str],
         name_substr: str,
     ) -> models.QuerySet:
@@ -17,11 +16,10 @@ class EntryManager(models.Manager):
         subtypes and a string, filter the initial query set to keep only
         entries which have the entry type in entry_types, the artifacts which
         have the the subtype in entry_subtypes and the name containing name_substr
-        as a substring. The check for containment ignores upper and lowercase.
+        as a substring. The check for containment ignores upper and lowerentity.
 
         Args:
             query_set: the query_set on which the additional filters are applied.
-            entryTypes: the entry types on which the QuerySet is filtered.
             entrySubtypes: the entry subtypes on which the QuerySet is filtered.
             name_prefix: the name_prefix on which the QuerySet is filtered.
 
@@ -31,31 +29,18 @@ class EntryManager(models.Manager):
         """
         return (
             # filter entries by entry type
-            query_set.filter(type__in=entry_types)
-            # exclude artifacts of wrong type.
-            .exclude(
-                Q(type=EntryType.ARTIFACT) & ~Q(subtype__in=entry_subtypes),
-            )
+            query_set.filter(entry_class__subtype__in=entry_subtypes)
             # filter name
             .filter(name__icontains=name_substr).order_by("name")
         )
 
-
-class CaseManager(models.Manager):
+class EntityManager(models.Manager):
     def get_queryset(self) -> models.QuerySet:
-        return super().get_queryset().filter(type=EntryType.CASE)
-
-
-class ActorManager(models.Manager):
-    def get_queryset(self) -> models.QuerySet:
-        return super().get_queryset().filter(type=EntryType.ACTOR)
+        return super().get_queryset().filter(entry_class__type=EntryType.ENTITY)
 
 
 class ArtifactManager(models.Manager):
     def get_queryset(self) -> models.QuerySet:
-        return super().get_queryset().filter(type=EntryType.ARTIFACT)
+        return super().get_queryset().filter(entry_class__type=EntryType.ARTIFACT)
 
 
-class MetadataManager(models.Manager):
-    def get_queryset(self) -> models.QuerySet:
-        return super().get_queryset().filter(type=EntryType.METADATA)

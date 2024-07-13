@@ -8,7 +8,7 @@ from entries.enums import EntryType, EntrySubtype
 from access.models import Access
 from access.enums import AccessType
 import io
-from .utils import NotesTestCase
+from .utils import NotesTestEntity
 
 import uuid
 
@@ -17,7 +17,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class NotePublishableDetailTest(NotesTestCase):
+class NotePublishableDetailTest(NotesTestEntity):
 
     def setUp(self):
         super().setUp()
@@ -38,8 +38,8 @@ class NotePublishableDetailTest(NotesTestCase):
         self.init_database()
 
     def init_database(self):
-        self.case = Entry.objects.create(
-            name="Clearly not a case", type=EntryType.CASE
+        self.entity = Entry.objects.create(
+            name="Clearly not an entity", type=EntryType.ENTITY
         )
         # init entries
         self.entries = [
@@ -56,10 +56,10 @@ class NotePublishableDetailTest(NotesTestCase):
         self.notes[0].entries.add(self.entries[1])
         self.notes[1].entries.add(self.entries[0])
         self.notes[1].entries.add(self.entries[2])
-        self.notes[1].entries.add(self.case)
+        self.notes[1].entries.add(self.entity)
         Access.objects.create(
             user_id=self.user.id,
-            case_id=self.case.id,
+            entity_id=self.entity.id,
             access_type=AccessType.READ_WRITE,
         )
 
@@ -119,8 +119,8 @@ class NotePublishableDetailTest(NotesTestCase):
             self.assertEqual(response.status_code, 400)
 
     def test_delete_note_no_access(self):
-        case1 = Entry.objects.create(name="this is a case", type=EntryType.CASE)
-        self.notes[1].entries.add(case1)
+        entity1 = Entry.objects.create(name="this is an entity", type=EntryType.ENTITY)
+        self.notes[1].entries.add(entity1)
         note_id = self.notes[1].id
         response = self.client.put(
             reverse("note_publish_detail", kwargs={"note_id": note_id}),

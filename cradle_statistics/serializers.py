@@ -5,5 +5,5 @@ from entries.serializers import EntryResponseSerializer
 
 class HomePageStatisticsSerializer(serializers.Serializer):
     notes = NoteDashboardSerializer(many=True)
-    cases = EntryResponseSerializer(many=True)
-    actors = EntryResponseSerializer(many=True)
+    entities = EntryResponseSerializer(many=True)
+    artifacts = EntryResponseSerializer(many=True)

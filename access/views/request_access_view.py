@@ -22,47 +22,47 @@ class RequestAccess(APIView):
     permission_classes = [IsAuthenticated]
 
     @log_failed_responses
-    def post(self, request: Request, case_id: UUID) -> Response:
-        """Allows a user to request access for a Case. All users with read-write
-        access for that specific Case will receive a Notification. If the user
+    def post(self, request: Request, entity_id: UUID) -> Response:
+        """Allows a user to request access for an Entity. All users with read-write
+        access for that specific Entity will receive a Notification. If the user
         making the request already has read-write access, no Notifications are
         sent but the request is deemed successful.
 
         Args:
             request: The request that was sent
-            user_id: Id of the case for which the user requests access
+            user_id: Id of the entity for which the user requests access
 
         Returns:
             Response(status=200):
                 if the request was successful
             Response("User is not authenticated", status=401):
                 if the user is not authenticated
-            Response("Case does not exist", status=404):
-                if the case does not exist
+            Response("Entity does not exist", status=404):
+                if the entity does not exist
         """
 
         user: CradleUser = cast(CradleUser, request.user)
 
         try:
-            case = Entry.objects.get(id=case_id)
+            entity = Entry.objects.get(id=entity_id)
         except Entry.DoesNotExist:
-            return Response("Case does not exist", status=status.HTTP_404_NOT_FOUND)
+            return Response("Entity does not exist", status=status.HTTP_404_NOT_FOUND)
 
         if user.is_superuser or Access.objects.filter(
-            user=user, case=case, access_type=AccessType.READ_WRITE
+            user=user, entity=entity, access_type=AccessType.READ_WRITE
         ):
             return Response(status=status.HTTP_200_OK)
 
-        notified_user_ids = Access.objects.get_users_with_access(case.id)
+        notified_user_ids = Access.objects.get_users_with_access(entity.id)
         with transaction.atomic():
             for notified_user_id in notified_user_ids:
                 AccessRequestNotification.objects.create(
                     user_id=notified_user_id,
                     requesting_user=user,
-                    case=case,
+                    entity=entity,
                     message=(
                         f"User {user.username} has requested access for "
-                        f"case {case.name}"
+                        f"entity {entity.name}"
                     ),
                 )
 

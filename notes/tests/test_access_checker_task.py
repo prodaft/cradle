@@ -5,10 +5,10 @@ from user.models import CradleUser
 from access.models import Access
 from access.enums import AccessType
 from ..exceptions import NoAccessToEntriesException
-from .utils import NotesTestCase
+from .utils import NotesTestEntity
 
 
-class AccessCheckerTaskTest(NotesTestCase):
+class AccessCheckerTaskTest(NotesTestEntity):
 
     def setUp(self):
         super().setUp()
@@ -17,33 +17,31 @@ class AccessCheckerTaskTest(NotesTestCase):
             username="user", password="user", email="alabala@gmail.com"
         )
 
-        self.case1 = Entry.objects.create(name="case1", type=EntryType.CASE)
-        self.case2 = Entry.objects.create(name="case2", type=EntryType.CASE)
-        self.actor = Entry.objects.create(name="actor", type=EntryType.ACTOR)
+        self.entity1 = Entry.objects.create(name="entity1", type=EntryType.ENTITY)
+        self.entity2 = Entry.objects.create(name="entity2", type=EntryType.ENTITY)
 
         Access.objects.create(
-            user=self.user, case=self.case1, access_type=AccessType.READ_WRITE
+            user=self.user, entity=self.entity1, access_type=AccessType.READ_WRITE
         )
         Access.objects.create(
-            user=self.user, case=self.case2, access_type=AccessType.READ
+            user=self.user, entity=self.entity2, access_type=AccessType.READ
         )
 
         self.referenced_entries = {}
-        self.entry_types = ["actor", "case", "artifact", "metadata"]
+        self.entry_types = ["entity", "artifact"]
         for t in self.entry_types:
             self.referenced_entries[t] = set()
-        self.referenced_entries["actor"] = {self.actor}
 
-    def test_has_access_to_referenced_cases(self):
-        self.referenced_entries["case"] = {self.case1}
+    def test_has_access_to_referenced_entities(self):
+        self.referenced_entries["entity"] = {self.entity1}
 
         newly_returned_entries = AccessCheckerTask(self.user).run(
             self.referenced_entries
         )
         self.assertEqual(self.referenced_entries, newly_returned_entries)
 
-    def test_does_not_have_access_to_referenced_cases(self):
-        self.referenced_entries["case"] = {self.case1, self.case2}
+    def test_does_not_have_access_to_referenced_entities(self):
+        self.referenced_entries["entity"] = {self.entity1, self.entity2}
 
         self.assertRaises(
             NoAccessToEntriesException,

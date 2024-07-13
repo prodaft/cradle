@@ -1,9 +1,9 @@
-from .utils import FileTransferTestCase
+from .utils import FileTransferTestEntity
 from ..utils import MinioClient
 from ..exceptions import MinioObjectNotFound
 
 
-class TestMinioClient(FileTransferTestCase):
+class TestMinioClient(FileTransferTestEntity):
 
     def setUp(self):
         super().setUp()

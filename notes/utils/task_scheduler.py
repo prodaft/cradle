@@ -1,7 +1,7 @@
 from .access_checker_task import AccessCheckerTask
 from .parser_task import ParserTask
 from .entry_checker_task import EntryCheckerTask
-from .entry_creation_task import EntryCreationTask
+from .artifact_creation_task import ArtifactCreationTask
 from .count_references_task import CountReferencesTask
 from user.models import CradleUser
 
@@ -15,7 +15,7 @@ class TaskScheduler:
             CountReferencesTask(),
             EntryCheckerTask(),
             AccessCheckerTask(user),
-            EntryCreationTask(),
+            ArtifactCreationTask(),
         ]
 
     def run_pipeline(self):
@@ -31,11 +31,11 @@ class TaskScheduler:
 
         Raises:
             NotEnoughReferencesException: if the note does not reference at
-            least one case and at least two entries.
-            EntriesDoNotExistException: if the note references actors or cases
-            that do not exist.
+            least one entity and at least two entries.
+            EntriesDoNotExistException: if the note references entities that do
+            not exist.
             NoAccessToEntriesException: if the user does not have access to the
-            referenced cases.
+            referenced entities.
         """
 
         entry_references_dictionary = self.preprocessing.run(self.note_content)
@@ -44,7 +44,9 @@ class TaskScheduler:
 
         # create the final list of entries
         final_entry_references = []
+
         for entry_set in entry_references_dictionary.values():
-            final_entry_references.extend(entry_set)
+            for x in entry_set.values():
+                final_entry_references.extend(x)
 
         return final_entry_references

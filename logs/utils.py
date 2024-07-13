@@ -48,6 +48,31 @@ class LoggingUtils:
         success_logger.warning(log_artifact)
 
     @staticmethod
+    def log_entryclass_creation(request: Request, response: Optional[Response] = None):
+        """Logs successful entry creation
+
+        Args:
+            request: The request object
+            data (dict): The data sent in the request
+        """
+
+        name = request.data.get("name", "unknown")
+        message = f"created Entry Class: {name} successfully"
+        log_artifact = LoggingUtils.__format_nginx_log(request, 200, message)
+        success_logger.warning(log_artifact)
+
+    @staticmethod
+    def log_entryclass_deletion(request: Request, response: Optional[Response] = None):
+        """Logs successful entry deletion
+
+        Args:
+            request: The request object
+        """
+        message = "deleted Entry class successfully"
+        log_artifact = LoggingUtils.__format_nginx_log(request, 200, message)
+        success_logger.warning(log_artifact)
+
+    @staticmethod
     def log_entry_creation(request: Request, response: Optional[Response] = None):
         """Logs successful entry creation
 

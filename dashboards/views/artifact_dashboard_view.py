@@ -7,7 +7,6 @@ from rest_framework.request import Request
 from typing import cast
 
 from entries.models import Entry
-from entries.enums import ArtifactSubtype
 from user.models import CradleUser
 from ..utils.dashboard_utils import DashboardUtils
 from ..serializers import ArtifactDashboardSerializer
@@ -26,7 +25,7 @@ class ArtifactDashboard(APIView):
 
         Args:
             request: The request that was sent
-            case_name: The name of the artifact that will be retrieved
+            entity_name: The name of the artifact that will be retrieved
 
         Returns:
             Response(status=200): A JSON response containing the dashboard of the artifact
@@ -42,14 +41,8 @@ class ArtifactDashboard(APIView):
 
         artifact_subtype = request.query_params.get("subtype")
 
-        if artifact_subtype not in ArtifactSubtype.values:
-            return Response(
-                "Invalid subtype",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         try:
-            artifact = Entry.artifacts.get(name=artifact_name, subtype=artifact_subtype)
+            artifact = Entry.artifacts.get(name=artifact_name, entry_class__subtype=artifact_subtype)
         except Entry.DoesNotExist:
             return Response(
                 "There is no artifact with specified name",

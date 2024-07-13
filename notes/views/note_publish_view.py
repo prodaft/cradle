@@ -53,13 +53,13 @@ class NotePublishDetail(APIView):
         except Note.DoesNotExist:
             return Response("Note not found.", status=status.HTTP_404_NOT_FOUND)
 
-        if not Access.objects.has_access_to_cases(
+        if not Access.objects.has_access_to_entities(
             cast(CradleUser, request.user),
-            set(note_to_update.entries.filter(type=EntryType.CASE)),
+            set(note_to_update.entries.filter(entry_class__type=EntryType.ENTITY)),
             {AccessType.READ_WRITE},
         ):
             return Response(
-                "User does not have Read-Write access to all referenced cases",
+                "User does not have Read-Write access to all referenced entities",
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -104,13 +104,13 @@ class NotePublishList(APIView):
         query_serializer.is_valid(raise_exception=True)
 
         required_notes = Note.objects.get_in_order(query_serializer.data["note_ids"])
-        referenced_cases = Entry.objects.filter(
-            type=EntryType.CASE, note__in=required_notes
+        referenced_entities = Entry.objects.filter(
+            entry_class__type=EntryType.ENTITY, note__in=required_notes
         ).distinct()
 
-        if not Access.objects.has_access_to_cases(
+        if not Access.objects.has_access_to_entities(
             cast(CradleUser, request.user),
-            set(referenced_cases),
+            set(referenced_entities),
             {AccessType.READ, AccessType.READ_WRITE},
         ):
             raise NoAccessToEntriesException(

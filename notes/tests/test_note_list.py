@@ -6,11 +6,11 @@ from rest_framework_simplejwt.tokens import AccessToken
 from ..models import Note
 from entries.models import Entry
 from entries.enums import EntryType, EntrySubtype
-from .utils import NotesTestCase
+from .utils import NotesTestEntity
 from unittest.mock import patch
 
 
-class CreateNoteTest(NotesTestCase):
+class CreateNoteTest(NotesTestEntity):
 
     def setUp(self):
         super().setUp()
@@ -20,7 +20,7 @@ class CreateNoteTest(NotesTestCase):
         )
         self.user_token = str(AccessToken.for_user(self.user))
         self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
-        self.saved_case = Entry.objects.create(name="case", type=EntryType.CASE)
+        self.saved_entity = Entry.objects.create(name="entity", type=EntryType.ENTITY)
         self.saved_actor = Entry.objects.create(name="actor", type=EntryType.ACTOR)
 
         self.file_name = "evidence.png"
@@ -76,9 +76,9 @@ class CreateNoteTest(NotesTestCase):
 
     def test_create_note_wrong_bucket_name(self):
         Access.objects.create(
-            user=self.user, case=self.saved_case, access_type=AccessType.READ_WRITE
+            user=self.user, entity=self.saved_entity, access_type=AccessType.READ_WRITE
         )
-        note_content = "Lorem ipsum [[actor:actor]] [[case:case]] [[ip:127.0.0.1]]"
+        note_content = "Lorem ipsum [[actor:actor]] [[entity:entity]] [[ip:127.0.0.1]]"
         self.file_reference["bucket_name"] = "wrong_name"
 
         response = self.client.post(
@@ -96,9 +96,9 @@ class CreateNoteTest(NotesTestCase):
 
     def test_create_note_wrong_minio_file_name(self):
         Access.objects.create(
-            user=self.user, case=self.saved_case, access_type=AccessType.READ_WRITE
+            user=self.user, entity=self.saved_entity, access_type=AccessType.READ_WRITE
         )
-        note_content = "Lorem ipsum [[actor:actor]] [[case:case]] [[ip:127.0.0.1]]"
+        note_content = "Lorem ipsum [[actor:actor]] [[entity:entity]] [[ip:127.0.0.1]]"
         self.file_reference["minio_file_name"] = "wrong_name"
 
         response = self.client.post(
@@ -115,13 +115,13 @@ class CreateNoteTest(NotesTestCase):
 
     def test_create_note_not_authenticated(self):
         Access.objects.create(
-            user=self.user, case=self.saved_case, access_type=AccessType.READ_WRITE
+            user=self.user, entity=self.saved_entity, access_type=AccessType.READ_WRITE
         )
         response = self.client.post(
             reverse("note_list"),
             {
                 "files": [self.file_reference],
-                "content": "Lorem ipsum [[actor:actor]] [[case:case]]",
+                "content": "Lorem ipsum [[actor:actor]] [[entity:entity]]",
             },
             content_type="application/json",
         )
@@ -139,7 +139,7 @@ class CreateNoteTest(NotesTestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.json()["detail"],
-            "Note does not reference at least one case and at least two entries.",
+            "Note does not reference at least one entity and at least two entries.",
         )
 
     def test_references_entries_that_do_not_exist(self):
@@ -147,7 +147,7 @@ class CreateNoteTest(NotesTestCase):
             reverse("note_list"),
             {
                 "files": [self.file_reference],
-                "content": "Lorem ipsum [[actor:actor]] [[case:wrongcase]]",
+                "content": "Lorem ipsum [[actor:actor]] [[entity:wrongentity]]",
             },
             content_type="application/json",
             **self.headers,
@@ -155,15 +155,15 @@ class CreateNoteTest(NotesTestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
-            response.json()["detail"], "The referenced actors or cases do not exist."
+            response.json()["detail"], "The referenced actors or entities do not exist."
         )
 
-    def test_references_cases_user_has_no_access_to(self):
+    def test_references_entities_user_has_no_access_to(self):
         response = self.client.post(
             reverse("note_list"),
             {
                 "files": [self.file_reference],
-                "content": "Lorem ipsum [[actor:actor]] [[case:case]]",
+                "content": "Lorem ipsum [[actor:actor]] [[entity:entity]]",
             },
             content_type="application/json",
             **self.headers,
@@ -171,14 +171,14 @@ class CreateNoteTest(NotesTestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
-            response.json()["detail"], "The referenced actors or cases do not exist."
+            response.json()["detail"], "The referenced actors or entities do not exist."
         )
 
     def test_create_note_successfully(self):
         Access.objects.create(
-            user=self.user, case=self.saved_case, access_type=AccessType.READ_WRITE
+            user=self.user, entity=self.saved_entity, access_type=AccessType.READ_WRITE
         )
-        note_content = "Lorem ipsum [[actor:actor]] [[case:case]] [[ip:127.0.0.1]]"
+        note_content = "Lorem ipsum [[actor:actor]] [[entity:entity]] [[ip:127.0.0.1]]"
 
         response = self.client.post(
             reverse("note_list"),
@@ -200,5 +200,5 @@ class CreateNoteTest(NotesTestCase):
             name="127.0.0.1", type=EntryType.ARTIFACT, subtype=EntrySubtype.IP
         )
         self.assertCountEqual(
-            referenced_entries, [self.saved_case, self.saved_actor, saved_artifact]
+            referenced_entries, [self.saved_entity, self.saved_actor, saved_artifact]
         )

@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestEntity
 from unittest.mock import patch
 
 from rest_framework.test import APIClient
@@ -8,7 +8,7 @@ from fleeting_notes.models import FleetingNote
 from user.models import CradleUser
 
 
-class FleetingNotesTestCase(TestCase):
+class FleetingNotesTestEntity(TestEntity):
     def setUp(self):
         self.patcher = patch("file_transfer.utils.MinioClient.create_user_bucket")
         self.mocked_create_user_bucket = self.patcher.start()
@@ -42,7 +42,7 @@ class FleetingNotesTestCase(TestCase):
             content="Note1", user=self.admin_user
         )
         self.note_user = FleetingNote.objects.create(
-            content="[[actor:actor]] [[case:case]]", user=self.normal_user
+            content="[[actor:actor]] [[entity:entity]]", user=self.normal_user
         )
 
     def tearDown(self):

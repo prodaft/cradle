@@ -1,10 +1,10 @@
-from django.test import TestCase
+from django.test import TestEntity
 from unittest.mock import patch
 from ..exceptions import MinioObjectNotFound
 from datetime import timedelta
 
 
-class FileTransferTestCase(TestCase):
+class FileTransferTestEntity(TestEntity):
     def setUp(self):
         self.success_logger_patcher = patch("logs.utils.success_logger")
         self.error_logger_patcher = patch("logs.utils.error_logger")

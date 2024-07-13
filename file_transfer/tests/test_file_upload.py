@@ -1,10 +1,10 @@
-from .utils import FileTransferTestCase
+from .utils import FileTransferTestEntity
 from user.models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 from django.urls import reverse
 
 
-class TestFileUpload(FileTransferTestCase):
+class TestFileUpload(FileTransferTestEntity):
 
     def setUp(self):
         super().setUp()

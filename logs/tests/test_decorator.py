@@ -5,7 +5,7 @@ from rest_framework.test import APIRequestFactory
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
 
-from .utils import LogsTestCase
+from .utils import LogsTestEntity
 from ..decorators import (
     log_login_success,
     log_entry_creation,
@@ -14,7 +14,7 @@ from ..decorators import (
 )
 
 
-class TestLoggingDecorators(LogsTestCase):
+class TestLoggingDecorators(LogsTestEntity):
     def setUp(self):
         super().setUp()
         self.factory = APIRequestFactory()

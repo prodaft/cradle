@@ -1,4 +1,4 @@
-from .utils import NotesTestCase
+from .utils import NotesTestEntity
 from user.models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -10,15 +10,15 @@ from notes.models import Note
 from collections import Counter
 
 
-class DeleteUnfilteredEntriesTest(NotesTestCase):
+class DeleteUnfilteredEntriesTest(NotesTestEntity):
     def setUp(self):
         super().setUp()
 
-        self.case = Entry.objects.create(
-            name="Clearly not a case", type=EntryType.CASE
+        self.entity = Entry.objects.create(
+            name="Clearly not an entity", type=EntryType.ENTITY
         )
-        self.case1 = Entry.objects.create(
-            name="Unreferenced case", type=EntryType.CASE
+        self.entity1 = Entry.objects.create(
+            name="Unreferenced entity", type=EntryType.ENTITY
         )
         # init entries
         self.entries = [
@@ -52,8 +52,8 @@ class DeleteUnfilteredEntriesTest(NotesTestCase):
             self.assertEqual(Entry.artifacts.count(), 2)
         with self.subTest("Check unreferenced metadata is deleted"):
             self.assertEqual(Entry.metadata.count(), 2)
-        with self.subTest("Check cases are not deleted"):
-            self.assertEqual(Entry.cases.count(), 2)
+        with self.subTest("Check entities are not deleted"):
+            self.assertEqual(Entry.entities.count(), 2)
         with self.subTest("Check actors are not deleted"):
             self.assertEqual(Entry.actors.count(), 1)
 
@@ -65,7 +65,7 @@ class DeleteUnfilteredEntriesTest(NotesTestCase):
             Entry.objects.get(id=self.metadata[2].id)
 
 
-class AccessibleNotesTest(NotesTestCase):
+class AccessibleNotesTest(NotesTestEntity):
 
     def create_users(self):
         self.admin_user = CradleUser.objects.create_superuser(
@@ -97,25 +97,25 @@ class AccessibleNotesTest(NotesTestCase):
 
     def create_notes(self):
         self.note1 = Note.objects.create(content="Note1")
-        self.note1.entries.set([self.case1, self.actor1, self.metadata1])
+        self.note1.entries.set([self.entity1, self.actor1, self.metadata1])
 
         self.note2 = Note.objects.create(content="Note2")
-        self.note2.entries.set([self.case2, self.actor2, self.case1])
+        self.note2.entries.set([self.entity2, self.actor2, self.entity1])
 
         self.note3 = Note.objects.create(content="Note3")
-        self.note3.entries.set([self.case3])
+        self.note3.entries.set([self.entity3])
 
-    def create_cases(self):
-        self.case1 = Entry.objects.create(
-            name="Case1", description="Description1", type=EntryType.CASE
+    def create_entities(self):
+        self.entity1 = Entry.objects.create(
+            name="Entity1", description="Description1", type=EntryType.ENTITY
         )
 
-        self.case2 = Entry.objects.create(
-            name="Case2", description="Description2", type=EntryType.CASE
+        self.entity2 = Entry.objects.create(
+            name="Entity2", description="Description2", type=EntryType.ENTITY
         )
 
-        self.case3 = Entry.objects.create(
-            name="Case3", description="Description3", type=EntryType.CASE
+        self.entity3 = Entry.objects.create(
+            name="Entity3", description="Description3", type=EntryType.ENTITY
         )
 
     def create_actors(self):
@@ -137,23 +137,23 @@ class AccessibleNotesTest(NotesTestCase):
 
     def create_access(self):
         self.access1 = Access.objects.create(
-            user=self.user1, case=self.case1, access_type="read-write"
+            user=self.user1, entity=self.entity1, access_type="read-write"
         )
 
         self.access2 = Access.objects.create(
-            user=self.user1, case=self.case2, access_type="none"
+            user=self.user1, entity=self.entity2, access_type="none"
         )
 
         self.access3 = Access.objects.create(
-            user=self.user2, case=self.case1, access_type="read"
+            user=self.user2, entity=self.entity1, access_type="read"
         )
 
         self.access4 = Access.objects.create(
-            user=self.user1, case=self.case3, access_type="read"
+            user=self.user1, entity=self.entity3, access_type="read"
         )
 
         self.access5 = Access.objects.create(
-            user=self.user2, case=self.case2, access_type="read"
+            user=self.user2, entity=self.entity2, access_type="read"
         )
 
     def setUp(self):
@@ -163,7 +163,7 @@ class AccessibleNotesTest(NotesTestCase):
 
         self.create_tokens()
 
-        self.create_cases()
+        self.create_entities()
 
         self.create_actors()
 
@@ -174,22 +174,22 @@ class AccessibleNotesTest(NotesTestCase):
         self.create_notes()
 
     def test_get_accessible_notes_admin(self):
-        notes = Note.objects.get_accessible_notes(self.admin_user, self.case1.id)
+        notes = Note.objects.get_accessible_notes(self.admin_user, self.entity1.id)
         expected = Note.objects.exclude(id=self.note3.id).order_by("-timestamp")
         self.assertQuerySetEqual(notes, expected)
 
     def test_get_accessible_notes_read_write_access(self):
-        notes = Note.objects.get_accessible_notes(self.user1, self.case1.id)
+        notes = Note.objects.get_accessible_notes(self.user1, self.entity1.id)
         expected = Note.objects.filter(id=self.note1.id)
         self.assertQuerySetEqual(notes, expected)
 
     def test_get_accessible_notes_read_access(self):
-        notes = Note.objects.get_accessible_notes(self.user2, self.case1.id)
+        notes = Note.objects.get_accessible_notes(self.user2, self.entity1.id)
         expected = Note.objects.exclude(id=self.note3.id).order_by("-timestamp")
         self.assertQuerySetEqual(notes, expected)
 
     def test_get_accessible_notes_no_access(self):
-        notes = Note.objects.get_accessible_notes(self.user1, self.case2.id)
+        notes = Note.objects.get_accessible_notes(self.user1, self.entity2.id)
         expected = Note.objects.none()
         self.assertQuerySetEqual(notes, expected)
 
@@ -212,22 +212,22 @@ class AccessibleNotesTest(NotesTestCase):
         self.assertQuerySetEqual(notes, expected, ordered=False)
 
 
-class GetAllNotesTest(NotesTestCase):
+class GetAllNotesTest(NotesTestEntity):
 
     def create_notes(self):
         self.note1 = Note.objects.create(content="Note1")
-        self.note1.entries.set([self.case1, self.actor1, self.metadata1])
+        self.note1.entries.set([self.entity1, self.actor1, self.metadata1])
 
         self.note2 = Note.objects.create(content="Note2")
-        self.note2.entries.set([self.case2, self.actor2, self.case1])
+        self.note2.entries.set([self.entity2, self.actor2, self.entity1])
 
-    def create_cases(self):
-        self.case1 = Entry.objects.create(
-            name="Case1", description="Description1", type=EntryType.CASE
+    def create_entities(self):
+        self.entity1 = Entry.objects.create(
+            name="Entity1", description="Description1", type=EntryType.ENTITY
         )
 
-        self.case2 = Entry.objects.create(
-            name="Case2", description="Description2", type=EntryType.CASE
+        self.entity2 = Entry.objects.create(
+            name="Entity2", description="Description2", type=EntryType.ENTITY
         )
 
     def create_actors(self):
@@ -257,7 +257,7 @@ class GetAllNotesTest(NotesTestCase):
     def setUp(self):
         super().setUp()
 
-        self.create_cases()
+        self.create_entities()
 
         self.create_actors()
 
@@ -266,12 +266,12 @@ class GetAllNotesTest(NotesTestCase):
         self.create_notes()
 
     def test_get_all_notes_multiple(self):
-        notes = Note.objects.get_all_notes(self.case1.id)
+        notes = Note.objects.get_all_notes(self.entity1.id)
         expected = Note.objects.all()
         self.assertQuerySetEqual(notes, expected, ordered=False)
 
     def test_get_all_notes_single(self):
-        notes = Note.objects.get_all_notes(self.case2.id)
+        notes = Note.objects.get_all_notes(self.entity2.id)
         expected = Note.objects.filter(id=self.note2.id)
         self.assertQuerySetEqual(notes, expected)
 
@@ -281,7 +281,7 @@ class GetAllNotesTest(NotesTestCase):
         self.assertQuerySetEqual(notes, expected)
 
 
-class GetEntriesOfTypeTest(NotesTestCase):
+class GetEntriesOfTypeTest(NotesTestEntity):
     def create_users(self):
         self.admin_user = CradleUser.objects.create_superuser(
             username="admin",
@@ -304,18 +304,18 @@ class GetEntriesOfTypeTest(NotesTestCase):
 
     def create_notes(self):
         self.note1 = Note.objects.create(content="Note1")
-        self.note1.entries.set([self.case1, self.actor1, self.metadata1])
+        self.note1.entries.set([self.entity1, self.actor1, self.metadata1])
 
         self.note2 = Note.objects.create(content="Note2")
-        self.note2.entries.set([self.case2, self.actor2, self.case1])
+        self.note2.entries.set([self.entity2, self.actor2, self.entity1])
 
-    def create_cases(self):
-        self.case1 = Entry.objects.create(
-            name="Case1", description="Description1", type=EntryType.CASE
+    def create_entities(self):
+        self.entity1 = Entry.objects.create(
+            name="Entity1", description="Description1", type=EntryType.ENTITY
         )
 
-        self.case2 = Entry.objects.create(
-            name="Case2", description="Description2", type=EntryType.CASE
+        self.entity2 = Entry.objects.create(
+            name="Entity2", description="Description2", type=EntryType.ENTITY
         )
 
     def create_actors(self):
@@ -344,19 +344,19 @@ class GetEntriesOfTypeTest(NotesTestCase):
 
     def create_access(self):
         self.access1 = Access.objects.create(
-            user=self.user1, case=self.case1, access_type="read-write"
+            user=self.user1, entity=self.entity1, access_type="read-write"
         )
 
         self.access2 = Access.objects.create(
-            user=self.user1, case=self.case2, access_type="read"
+            user=self.user1, entity=self.entity2, access_type="read"
         )
 
         self.access3 = Access.objects.create(
-            user=self.user2, case=self.case1, access_type="read"
+            user=self.user2, entity=self.entity1, access_type="read"
         )
 
         self.access4 = Access.objects.create(
-            user=self.user2, case=self.case2, access_type="none"
+            user=self.user2, entity=self.entity2, access_type="none"
         )
 
     def setUp(self):
@@ -364,7 +364,7 @@ class GetEntriesOfTypeTest(NotesTestCase):
 
         self.create_users()
 
-        self.create_cases()
+        self.create_entities()
 
         self.create_actors()
 
@@ -376,24 +376,24 @@ class GetEntriesOfTypeTest(NotesTestCase):
 
     def test_get_accessible_notes_admin(self):
         expected = Note.objects.all().order_by("-timestamp")
-        notes = Note.objects.get_accessible_notes(self.admin_user, self.case1.id)
+        notes = Note.objects.get_accessible_notes(self.admin_user, self.entity1.id)
 
         self.assertQuerySetEqual(notes, expected)
 
     def test_get_accessible_notes_read_write_access(self):
         expected = Note.objects.all().order_by("-timestamp")
-        notes = Note.objects.get_accessible_notes(self.user1, self.case1.id)
+        notes = Note.objects.get_accessible_notes(self.user1, self.entity1.id)
 
         self.assertQuerySetEqual(notes, expected)
 
-    def test_get_accessible_notes_exclude_case_without_access(self):
+    def test_get_accessible_notes_exclude_entity_without_access(self):
         expected = Note.objects.filter(id=self.note1.id)
-        notes = Note.objects.get_accessible_notes(self.user2, self.case1.id)
+        notes = Note.objects.get_accessible_notes(self.user2, self.entity1.id)
 
         self.assertQuerySetEqual(notes, expected)
 
 
-class GetRelatedAccessibleEntriesTest(NotesTestCase):
+class GetRelatedAccessibleEntriesTest(NotesTestEntity):
     def create_users(self):
         self.admin_user = CradleUser.objects.create_superuser(
             username="admin",
@@ -416,18 +416,18 @@ class GetRelatedAccessibleEntriesTest(NotesTestCase):
 
     def create_notes(self):
         self.note1 = Note.objects.create(content="Note1")
-        self.note1.entries.set([self.case1, self.actor1, self.metadata1])
+        self.note1.entries.set([self.entity1, self.actor1, self.metadata1])
 
         self.note2 = Note.objects.create(content="Note2")
-        self.note2.entries.set([self.case2, self.actor2, self.case1])
+        self.note2.entries.set([self.entity2, self.actor2, self.entity1])
 
-    def create_cases(self):
-        self.case1 = Entry.objects.create(
-            name="Case1", description="Description1", type=EntryType.CASE
+    def create_entities(self):
+        self.entity1 = Entry.objects.create(
+            name="Entity1", description="Description1", type=EntryType.ENTITY
         )
 
-        self.case2 = Entry.objects.create(
-            name="Case2", description="Description2", type=EntryType.CASE
+        self.entity2 = Entry.objects.create(
+            name="Entity2", description="Description2", type=EntryType.ENTITY
         )
 
     def create_actors(self):
@@ -456,19 +456,19 @@ class GetRelatedAccessibleEntriesTest(NotesTestCase):
 
     def create_access(self):
         self.access1 = Access.objects.create(
-            user=self.user1, case=self.case1, access_type="read-write"
+            user=self.user1, entity=self.entity1, access_type="read-write"
         )
 
         self.access2 = Access.objects.create(
-            user=self.user1, case=self.case2, access_type="read"
+            user=self.user1, entity=self.entity2, access_type="read"
         )
 
         self.access3 = Access.objects.create(
-            user=self.user2, case=self.case1, access_type="read"
+            user=self.user2, entity=self.entity1, access_type="read"
         )
 
         self.access4 = Access.objects.create(
-            user=self.user2, case=self.case2, access_type="none"
+            user=self.user2, entity=self.entity2, access_type="none"
         )
 
     def setUp(self):
@@ -476,7 +476,7 @@ class GetRelatedAccessibleEntriesTest(NotesTestCase):
 
         self.create_users()
 
-        self.create_cases()
+        self.create_entities()
 
         self.create_actors()
 
@@ -511,7 +511,7 @@ class GetRelatedAccessibleEntriesTest(NotesTestCase):
         self.assertQuerySetEqual(entries, expected)
 
 
-class GetInOrderTest(NotesTestCase):
+class GetInOrderTest(NotesTestEntity):
     def setUp(self):
         super().setUp()
         self.notes = []
@@ -541,12 +541,12 @@ class GetInOrderTest(NotesTestCase):
         self.assertEqual(notes[2].id, self.notes[2].id)
 
 
-class GetLinksTest(NotesTestCase):
+class GetLinksTest(NotesTestEntity):
 
     def setUp(self):
         super().setUp()
-        self.cases = [
-            Entry.objects.create(name=f"c{i}", type=EntryType.CASE)
+        self.entities = [
+            Entry.objects.create(name=f"c{i}", type=EntryType.ENTITY)
             for i in range(0, 2)
         ]
         self.actors = [
@@ -563,18 +563,18 @@ class GetLinksTest(NotesTestCase):
         ]
 
         self.note1 = Note.objects.create(content="1")
-        self.note1.entries.set([self.cases[1], self.actors[0], self.metadata[0]])
+        self.note1.entries.set([self.entities[1], self.actors[0], self.metadata[0]])
         self.note2 = Note.objects.create(content="2")
-        self.note2.entries.set([self.cases[0], self.metadata[1], self.artifact[1]])
+        self.note2.entries.set([self.entities[0], self.metadata[1], self.artifact[1]])
 
         self.note3 = Note.objects.create(content="3")
-        self.note3.entries.set([self.cases[0], self.cases[1]])
+        self.note3.entries.set([self.entities[0], self.entities[1]])
 
     def test_get_links_one_note(self):
         links = list(Note.objects.get_links(Note.objects.filter(id=self.note1.id)))
         expected = [
-            tuple(sorted((self.cases[1].id, self.actors[0].id))),
-            tuple(sorted((self.cases[1].id, self.metadata[0].id))),
+            tuple(sorted((self.entities[1].id, self.actors[0].id))),
+            tuple(sorted((self.entities[1].id, self.metadata[0].id))),
             tuple(sorted((self.actors[0].id, self.metadata[0].id))),
         ]
 
@@ -585,10 +585,10 @@ class GetLinksTest(NotesTestCase):
         links = list(Note.objects.get_links(Note.objects.exclude(id=self.note1.id)))
         links = [tuple(sorted(d.values())) for d in links]
         expected = [
-            tuple(sorted((self.cases[0].id, self.metadata[1].id))),
-            tuple(sorted((self.cases[0].id, self.artifact[1].id))),
+            tuple(sorted((self.entities[0].id, self.metadata[1].id))),
+            tuple(sorted((self.entities[0].id, self.artifact[1].id))),
             tuple(sorted((self.artifact[1].id, self.metadata[1].id))),
-            tuple(sorted((self.cases[0].id, self.cases[1].id))),
+            tuple(sorted((self.entities[0].id, self.entities[1].id))),
         ]
 
         self.assertEqual(Counter(links), Counter(expected))
@@ -604,12 +604,12 @@ class GetLinksTest(NotesTestCase):
         links = list(Note.objects.get_links(Note.objects.all()))
         links = [tuple(sorted(d.values())) for d in links]
         expected = [
-            tuple(sorted((self.cases[0].id, self.metadata[1].id))),
-            tuple(sorted((self.cases[0].id, self.artifact[1].id))),
+            tuple(sorted((self.entities[0].id, self.metadata[1].id))),
+            tuple(sorted((self.entities[0].id, self.artifact[1].id))),
             tuple(sorted((self.artifact[1].id, self.metadata[1].id))),
-            tuple(sorted((self.cases[0].id, self.cases[1].id))),
-            tuple(sorted((self.cases[1].id, self.actors[0].id))),
-            tuple(sorted((self.cases[1].id, self.metadata[0].id))),
+            tuple(sorted((self.entities[0].id, self.entities[1].id))),
+            tuple(sorted((self.entities[1].id, self.actors[0].id))),
+            tuple(sorted((self.entities[1].id, self.metadata[0].id))),
             tuple(sorted((self.actors[0].id, self.metadata[0].id))),
         ]
 
