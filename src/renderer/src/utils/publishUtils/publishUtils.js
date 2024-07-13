@@ -31,8 +31,7 @@ const createMarkdownSection = (array, sectionTitle) => {
 /**
  * Function to create a markdown report from a JSON object.
  * Expects the following fields in the JSON object:
- * - actors
- * - cases
+ * - entities
  * - artifacts
  * - metadata
  * - notes
@@ -41,11 +40,10 @@ const createMarkdownSection = (array, sectionTitle) => {
  * @returns {String} the markdown report
  */
 const createMarkdownReportFromJson = (data) => {
-    const { actors, cases, artifacts, metadata, notes } = data;
+    const { entities, artifacts, metadata, notes } = data;
     let markdown = '';
 
-    markdown += createMarkdownSection(actors, 'Actors');
-    markdown += createMarkdownSection(cases, 'Cases');
+    markdown += createMarkdownSection(entities, 'Entities');
     markdown += createMarkdownSection(artifacts, 'Artifacts');
     markdown += createMarkdownSection(metadata, 'Metadata');
 

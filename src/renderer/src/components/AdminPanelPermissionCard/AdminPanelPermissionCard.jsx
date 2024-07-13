@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 /**
  * AdminPanelUserPermissions component - This component is used to display the permissions for a user.
  * The component displays the following information:
- * - Case name
+ * - Entity name
  * - Access level
  * The component contains a dropdown to change the access level for the user.
  * The component will display an alert if an error occurs.
@@ -17,8 +17,8 @@ import { useNavigate } from 'react-router-dom';
  * @function AdminPanelPermissionCard
  * @param {Object} props - The props object
  * @param {string} props.userId - The id of the user
- * @param {string} props.caseName - The name of the case
- * @param {string} props.caseId - The id of the case
+ * @param {string} props.entityName - The name of the entity
+ * @param {string} props.entityId - The id of the entity
  * @param {string} props.accessLevel - The access level of the user
  * @param {string} props.searchKey - The search key for the user
  * @returns {AdminPanelPermissionCard}
@@ -26,8 +26,8 @@ import { useNavigate } from 'react-router-dom';
  */
 export default function AdminPanelPermissionCard({
     userId,
-    caseName,
-    caseId,
+    entityName,
+    entityId,
     accessLevel,
     searchKey,
 }) {
@@ -37,7 +37,7 @@ export default function AdminPanelPermissionCard({
 
     const handleChange = async (newAccess) => {
         if (currentAccess !== newAccess) {
-            changeAccess(userId, caseId, newAccess)
+            changeAccess(userId, entityId, newAccess)
                 .then((response) => {
                     if (response.status === 200) {
                         setCurrentAccess(newAccess);
@@ -51,7 +51,7 @@ export default function AdminPanelPermissionCard({
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='h-fit w-full bg-cradle3 p-4 my-1 bg-opacity-20 rounded-xl flex flex-row justify-start'>
-                <h2 className='card-header w-full mx-2'>{caseName}</h2>
+                <h2 className='card-header w-full mx-2'>{entityName}</h2>
                 <div className='w-full flex flex-row justify-end'>
                     <div className='dropdown'>
                         <label

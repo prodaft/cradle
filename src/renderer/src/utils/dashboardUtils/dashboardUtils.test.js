@@ -11,10 +11,10 @@ describe('createDashboardLink', () => {
 
     it('should create a dashboard link with encoded name and type when subtype is not provided', () => {
         const entry = {
-            name: 'Case A',
-            type: 'case',
+            name: 'Entity A',
+            type: 'entity',
         };
-        const expectedLink = '/dashboards/cases/Case%20A/';
+        const expectedLink = '/dashboards/entities/Entity%20A/';
         expect(createDashboardLink(entry)).toBe(expectedLink);
     });
 

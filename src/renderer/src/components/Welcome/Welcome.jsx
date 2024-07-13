@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 
 /**
  * The Welcome component is the landing page of the application.
- * It displays a welcome message and some statistics about the actors, cases, and notes in the system.
+ * It displays a welcome message and some statistics about the actors, entities, and notes in the system.
  *
  * @function Welcome
  * @returns {Welcome}
@@ -18,8 +18,8 @@ import { useNavigate } from 'react-router-dom';
  */
 export default function Welcome() {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const [actors, setActors] = useState([]);
-    const [cases, setCases] = useState([]);
+    const [artifacts, setArtifacts] = useState([]);
+    const [entities, setEntities] = useState([]);
     const [notes, setNotes] = useState([]);
     const entryListsDiv = useRef(null);
     const flexDirection = useChangeFlexDirectionBySize(entryListsDiv);
@@ -29,9 +29,9 @@ export default function Welcome() {
     useEffect(() => {
         getStatistics()
             .then((response) => {
-                const { actors, cases, notes } = response.data;
-                setActors(actors);
-                setCases(cases);
+                const { artifacts, entities, notes } = response.data;
+                setArtifacts(artifacts);
+                setEntities(entities);
                 setNotes(notes);
             })
             .catch(displayError(setAlert, navigate));
@@ -63,12 +63,12 @@ export default function Welcome() {
                         <div
                             className={`${entryCardWrapperWidth} flex justify-center mb-8`}
                         >
-                            <EntryListCard title='Recent Actors' items={actors} />
+                            <EntryListCard title='Recent Entities' items={entities} />
                         </div>
                         <div
                             className={`${entryCardWrapperWidth} flex justify-center mb-8`}
                         >
-                            <EntryListCard title='Recent Cases' items={cases} />
+                            <EntryListCard title='Recent Artifacts' items={artifacts} />
                         </div>
                     </div>
                     <div className='w-full flex justify-center mb-8'>

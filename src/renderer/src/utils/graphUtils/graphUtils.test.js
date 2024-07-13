@@ -6,7 +6,7 @@ describe('preprocessData', () => {
     it('transforms raw data into nodes and links', () => {
         const rawData = {
             entries: [
-                { id: '1', name: 'Entry1', type: 'case' },
+                { id: '1', name: 'Entry1', type: 'entity' },
                 { id: '2', name: 'Entry2', type: 'actor' },
                 { id: '3', name: 'Entry3', type: 'artifact' },
             ],
@@ -25,7 +25,7 @@ describe('preprocessData', () => {
     it('calculates degree of nodes based on links', () => {
         const rawData = {
             entries: [
-                { id: '1', name: 'Entry1', type: 'case' },
+                { id: '1', name: 'Entry1', type: 'entity' },
                 { id: '2', name: 'Entry2', type: 'actor' },
                 { id: '3', name: 'Entry3', type: 'artifact' },
             ],
@@ -45,7 +45,7 @@ describe('preprocessData', () => {
     it('assigns correct color based on entry type', () => {
         const rawData = {
             entries: [
-                { id: '1', name: 'Entry1', type: 'case' },
+                { id: '1', name: 'Entry1', type: 'entity' },
                 { id: '2', name: 'Entry2', type: 'actor' },
                 { id: '3', name: 'Entry3', type: 'artifact' },
             ],
@@ -55,7 +55,7 @@ describe('preprocessData', () => {
         const result = preprocessData(rawData);
 
         expect(result.nodes.find((node) => node.id === '1').color).toEqual(
-            entryGraphColors.case,
+            entryGraphColors.entity,
         );
         expect(result.nodes.find((node) => node.id === '2').color).toEqual(
             entryGraphColors.actor,
@@ -67,7 +67,7 @@ describe('preprocessData', () => {
 
     it('correctly fills in the rest of the node properties', () => {
         const rawData = {
-            entries: [{ id: '1', name: 'Entry1', type: 'case' }],
+            entries: [{ id: '1', name: 'Entry1', type: 'entity' }],
             links: [],
         };
 
@@ -75,10 +75,10 @@ describe('preprocessData', () => {
 
         expect(result.nodes.find((node) => node.id === '1')).toEqual({
             id: '1',
-            label: 'case: Entry1',
-            color: entryGraphColors.case,
+            label: 'entity: Entry1',
+            color: entryGraphColors.entity,
             name: 'Entry1',
-            type: 'case',
+            type: 'entity',
             subtype: undefined,
             degree: 0,
             x: expect.any(Number),

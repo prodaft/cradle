@@ -14,12 +14,12 @@ export function getDashboardData(path) {
 }
 
 /**
- * Function to request access to a case
+ * Function to request access to an entity
  *
- * @param {string} id - The case ID to request access to
+ * @param {string} id - The entity ID to request access to
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function requestCaseAccess(id) {
+export function requestEntityAccess(id) {
     return authAxios({
         method: 'POST',
         url: `/access/request/${id}/`,

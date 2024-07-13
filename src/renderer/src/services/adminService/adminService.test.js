@@ -1,10 +1,10 @@
 import {
     changeAccess,
     createActor,
-    createCase,
+    createEntity,
     deleteEntry,
     getActors,
-    getCases,
+    getEntities,
     getPermissions,
     getUsers,
 } from './adminService';
@@ -17,7 +17,7 @@ describe('Admin Service', () => {
     const type = 'entries';
     const accessLevel = 'read';
     const userId = '1';
-    const caseId = '1';
+    const entityId = '1';
 
     afterEach(() => {
         jest.clearAllMocks();
@@ -33,12 +33,12 @@ describe('Admin Service', () => {
         });
     });
 
-    it('creates a case successfully', async () => {
+    it('creates an entity successfully', async () => {
         axios.authAxios.mockResolvedValue({ data: {} });
-        await createCase(data);
+        await createEntity(data);
         expect(axios.authAxios).toHaveBeenCalledWith({
             method: 'post',
-            url: '/entries/cases/',
+            url: '/entries/entities/',
             data: data,
         });
     });
@@ -52,12 +52,12 @@ describe('Admin Service', () => {
         });
     });
 
-    it('gets cases successfully', async () => {
+    it('gets entities successfully', async () => {
         axios.authAxios.mockResolvedValue({ data: {} });
-        await getCases();
+        await getEntities();
         expect(axios.authAxios).toHaveBeenCalledWith({
             method: 'get',
-            url: '/entries/cases/',
+            url: '/entries/entities/',
         });
     });
 
@@ -81,10 +81,10 @@ describe('Admin Service', () => {
 
     it('changes access level successfully', async () => {
         axios.authAxios.mockResolvedValue({ data: {} });
-        await changeAccess(userId, caseId, accessLevel);
+        await changeAccess(userId, entityId, accessLevel);
         expect(axios.authAxios).toHaveBeenCalledWith({
             method: 'put',
-            url: `/access/${userId}/${caseId}/`,
+            url: `/access/${userId}/${entityId}/`,
             data: { access_type: accessLevel },
         });
     });

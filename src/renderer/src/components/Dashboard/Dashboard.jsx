@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     getDashboardData,
-    requestCaseAccess,
+    requestEntityAccess,
 } from '../../services/dashboardService/dashboardService';
 import useAuth from '../../hooks/useAuth/useAuth';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
@@ -25,11 +25,11 @@ import { Search } from 'iconoir-react';
  * Dashboard component
  * Fetches and displays the dashboard data for an entry
  * If the entry does not exist, displays a 404 page
- * The dashboard displays the entry's name, type, description, related actors, cases, artifacts, metadata, and notes
+ * The dashboard displays the entry's name, type, description, related actors, entities, artifacts, metadata, and notes
  * The dashboard only displays the fields provided by the server, different entries may have different fields
  * If the user is an admin, a delete button is displayed in the navbar
  * If the user is not in publish mode, a button to enter publish mode is displayed in the navbar
- * If the entry is linked to cases to which the user does not have access to, a button to request access to view them is displayed
+ * If the entry is linked to entities to which the user does not have access to, a button to request access to view them is displayed
  * If the entry is an artifact, a button to search the artifact name on VirusTotal is displayed
  *
  * @function Dashboard
@@ -124,8 +124,8 @@ export default function Dashboard() {
         setDeleteDialog,
     ]);
 
-    const handleRequestCaseAccess = (cases) => {
-        Promise.all(cases.map((c) => requestCaseAccess(c.id)))
+    const handleRequestEntityAccess = (entities) => {
+        Promise.all(entities.map((c) => requestEntityAccess(c.id)))
             .then(() =>
                 setAlert({
                     show: true,
@@ -200,26 +200,26 @@ export default function Dashboard() {
                     {renderDashboardSection(contentObject.actors, 'Related Actors')}
 
                     {renderDashboardSectionWithInaccessibleEntries(
-                        contentObject.cases,
-                        contentObject.inaccessible_cases,
-                        'Related Cases',
-                        'There are inaccessible cases linked to this entry. ',
+                        contentObject.entities,
+                        contentObject.inaccessible_entities,
+                        'Related Entities',
+                        'There are inaccessible entities linked to this entry. ',
                         'Request access to view them.',
-                        handleRequestCaseAccess,
+                        handleRequestEntityAccess,
                     )}
 
                     {renderDashboardSection(contentObject.artifacts, 'Related Artifacts')}
 
                     {renderDashboardSection(contentObject.metadata, 'Metadata')}
 
-                    {contentObject.second_hop_cases &&
+                    {contentObject.second_hop_entities &&
                         renderDashboardSectionWithInaccessibleEntries(
-                            contentObject.second_hop_cases,
-                            contentObject.second_hop_inaccessible_cases,
+                            contentObject.second_hop_entities,
+                            contentObject.second_hop_inaccessible_entities,
                             'Second Degree Relationships',
                             'There are inaccessible entries linked to this entry. ',
                             'Request access to view them.',
-                            handleRequestCaseAccess,
+                            handleRequestEntityAccess,
                         )}
 
                     {contentObject.notes && (

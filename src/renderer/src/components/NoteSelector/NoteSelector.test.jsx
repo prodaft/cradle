@@ -21,13 +21,13 @@ jest.mock('../../hooks/useNavbarContents/useNavbarContents');
 
 const noteEntries = [
     { id: 4, name: '127.0.0.1', type: 'artifact', subtype: 'ip' },
-    { id: 5, name: 'Case 1', type: 'case', subtype: '' },
+    { id: 5, name: 'Entity 1', type: 'entity', subtype: '' },
 ];
 
 const contentObject = {
     id: 5,
-    name: 'Case 1',
-    type: 'case',
+    name: 'Entity 1',
+    type: 'entity',
     subtype: '',
     entries: noteEntries,
     description: 'Description',
@@ -44,7 +44,7 @@ const notes = [
         content: 'Note 1',
         entries: [
             { id: 2, name: 'Actor 1' },
-            { id: 3, name: 'Case 1' },
+            { id: 3, name: 'Entity 1' },
         ],
         timestamp: '2021-10-01T00:00:00Z',
     },
@@ -52,11 +52,11 @@ const notes = [
 
 const mockData = {
     id: 1,
-    name: 'Test Case',
-    description: 'This is a test case.',
-    type: 'case',
+    name: 'Test Entity',
+    description: 'This is a test entity.',
+    type: 'entity',
     actors: [{ id: 2, name: 'Actor 1' }],
-    cases: [{ id: 3, name: 'Case 1' }],
+    entities: [{ id: 3, name: 'Entity 1' }],
     metadata: [{ id: 4, name: 'Metadata 1' }],
     notes: notes,
 };
@@ -75,6 +75,6 @@ test('displays the name, type, and description of the content object', () => {
         </MemoryRouter>,
     );
 
-    expect(screen.getByText('Test Case')).toBeInTheDocument();
-    expect(screen.getByText('Description: This is a test case.')).toBeInTheDocument();
+    expect(screen.getByText('Test Entity')).toBeInTheDocument();
+    expect(screen.getByText('Description: This is a test entity.')).toBeInTheDocument();
 });

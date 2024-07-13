@@ -25,28 +25,28 @@ describe('renderer', () => {
         expect(parsedHtml).toContain(expectedHtml);
     });
 
-    test('parse case links no alias', async () => {
-        const name = 'Case 123';
+    test('parse entity links no alias', async () => {
+        const name = 'Entity 123';
         const encodedName = encodeURIComponent(name);
 
-        const markdown = `This is a case link: [[case:${name}]]`;
-        const caseUrl = `${baseUrl}/dashboards/cases/${encodedName}`;
+        const markdown = `This is an entity link: [[entity:${name}]]`;
+        const entityUrl = `${baseUrl}/dashboards/entities/${encodedName}`;
         const parsedHtml = await parseMarkdown(markdown);
 
-        expect(parsedHtml).toContain(caseUrl);
+        expect(parsedHtml).toContain(entityUrl);
         expect(parsedHtml).toContain(name);
     });
 
-    test('parse case links alias', async () => {
-        const name = 'Case 123';
+    test('parse entity links alias', async () => {
+        const name = 'Entity 123';
         const encodedName = encodeURIComponent(name);
-        const alias = 'Super Special Secret Case';
+        const alias = 'Super Special Secret Entity';
 
-        const markdown = `This is a case link: [[case:${name}|${alias}]]`;
-        const caseUrl = `${baseUrl}/dashboards/cases/${encodedName}`;
+        const markdown = `This is an entity link: [[entity:${name}|${alias}]]`;
+        const entityUrl = `${baseUrl}/dashboards/entities/${encodedName}`;
         const parsedHtml = await parseMarkdown(markdown);
 
-        expect(parsedHtml).toContain(caseUrl);
+        expect(parsedHtml).toContain(entityUrl);
         expect(parsedHtml).toContain(alias);
     });
 
@@ -115,18 +115,18 @@ describe('renderer', () => {
     test('parse multiple', async () => {
         const markdown = `Metadata: [[country:Germany]],
         Actor: [[actor:John Doe]],
-        Case: [[case:Case123]],
+        Entity: [[entity:Entity123]],
         Artifact: [[ip:127.0.0.1]]`;
 
         const parsedHtml = await parseMarkdown(markdown);
         const actorUrl = `${baseUrl}/dashboards/actors/John%20Doe`;
-        const caseUrl = `${baseUrl}/dashboards/cases/Case123`;
+        const entityUrl = `${baseUrl}/dashboards/entities/Entity123`;
         const artifactUrl = `${baseUrl}/dashboards/artifacts/127.0.0.1/?subtype=ip`;
 
         expect(parsedHtml).toContain('Germany');
         expect(parsedHtml).not.toContain('country');
         expect(parsedHtml).toContain(actorUrl);
-        expect(parsedHtml).toContain(caseUrl);
+        expect(parsedHtml).toContain(entityUrl);
         expect(parsedHtml).toContain(artifactUrl);
     });
 });

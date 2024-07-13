@@ -16,22 +16,22 @@ describe('validatePassword', () => {
         expect(validatePassword(password)).toBe(true);
     });
 
-    it('invalidates password without lowercase letter', () => {
+    it('invalidates password without lowerentity letter', () => {
         const password = 'PASSWORD1@2345';
         expect(validatePassword(password)).toBe(false);
     });
 
-    it('invalidates password without lowercase letter variation 1', () => {
+    it('invalidates password without lowerentity letter variation 1', () => {
         const password = 'P@S1SW00RDDDDDD';
         expect(validatePassword(password)).toBe(false);
     });
 
-    it('invalidates password without uppercase letter', () => {
+    it('invalidates password without upperentity letter', () => {
         const password = 'password1@aaaaa';
         expect(validatePassword(password)).toBe(false);
     });
 
-    it('invalidates password without uppercase letter variation 1', () => {
+    it('invalidates password without upperentity letter variation 1', () => {
         const password = 'p@sddddddsw00rd';
         expect(validatePassword(password)).toBe(false);
     });

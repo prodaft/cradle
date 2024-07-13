@@ -24,6 +24,7 @@ export default function SearchFilter({ option, filters, setFilters }) {
     const handleCheckboxChange = (event) => {
         const { name, checked } = event.target;
         setFilters(updatePrevState(filters, name, checked));
+        console.log(filters)
     };
 
     return (

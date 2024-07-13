@@ -15,7 +15,7 @@ import { useLocation } from 'react-router-dom';
  * It can be clicked to navigate to the note page.
  *
  * If the dashboard is in publish mode, only publishable notes will be displayed.
- * While in publish mode, a user can delete a note. In this case, the note will be removed from the list of notes to publish.
+ * While in publish mode, a user can delete a note. In this entity, the note will be removed from the list of notes to publish.
  *
  * @function DashboardNote
  * @param {Object} props - The props object

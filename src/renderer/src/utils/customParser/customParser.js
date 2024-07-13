@@ -4,48 +4,23 @@ import { Marked } from 'marked';
 import 'prismjs/themes/prism-tomorrow.css';
 import {
     entryMarkdownColors,
-    artifactSubtypes,
-    metadataSubtypes,
 } from '../entryDefinitions/entryDefinitions';
 import { createDashboardLink } from '../dashboardUtils/dashboardUtils';
 import { prependLinks } from '../textEditorUtils/textEditorUtils';
 import { getDownloadLink } from '../../services/fileUploadService/fileUploadService';
 
-const regexes = {
-    cradleLink:
-        /^\[\[([^:|]+?):((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\]/,
-    actors: /\[\[actor:((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\]/g, // [[actor:name(|alias)]]
-    cases: /\[\[case:((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\]/g, // [[case:name(|alias)]]
-    artifacts:
-        /\[\[([^:|]+?):((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\]/g, // [[artifact-type:name(|alias)]]
-    metadata:
-        /\[\[([^:|]+?):((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\]/g, // [[metadata-type:name(|alias)]]
-};
+const LINK_REGEX = /^\[\[([^:|]+?):((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\]/
 
-// TODO handle escaped characters (e.g. '\]' '\|') when parsing. This needs to be done on the backend as well.
-const handlers = {
-    // Take the user to the actor's dashboard
-    actors: (text) => {
-        return text.replace(regexes.actors, (_, name, alias) => {
-            const url = createDashboardLink({ name: name, type: 'actor' });
-            // If an alias is provided, use it as the displayed name
-            const displayedName = alias ? alias : name;
-            return `<a class="${entryMarkdownColors.actors}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
-        });
-    },
-    // Take the user to the case's dashboard
-    cases: (text) => {
-        return text.replace(regexes.cases, (_, name, alias) => {
-            const url = createDashboardLink({ name: name, type: 'case' });
-            // If an alias is provided, use it as the displayed name
-            const displayedName = alias ? alias : name;
-            return `<a class="${entryMarkdownColors.cases}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
-        });
-    },
-    // Take the user to the artifact's dashboard
-    artifacts: (text) => {
-        return text.replace(regexes.artifacts, (matched, type, name, alias) => {
-            if (artifactSubtypes.has(type)) {
+function handle_link(text) {
+        return text.replace(LINK_REGEX, (matched, type, name, alias) => {
+            // TODO: Dynamic entity subtypes
+            // if (entitySubtypes.has(type)) {
+            if (false) {
+                const url = createDashboardLink({ name: name, type: 'entity' });
+                // If an alias is provided, use it as the displayed name
+                const displayedName = alias ? alias : name;
+                return `<a class="${entryMarkdownColors.entities}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
+            } else {
                 const url = createDashboardLink({
                     name: name,
                     type: 'artifact',
@@ -55,23 +30,8 @@ const handlers = {
                 const displayedName = alias ? alias : name;
                 return `<a class="${entryMarkdownColors.artifacts}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
             }
-
-            return matched;
         });
-    },
-    // Metadata does not have a dashboard. Here just highlight the text
-    metadata: (text) => {
-        return text.replace(regexes.metadata, (matched, type, name, alias) => {
-            if (metadataSubtypes.has(type)) {
-                // If an alias is provided, use it as the displayed name
-                const displayedName = alias ? alias : name;
-                return `<span class="${entryMarkdownColors.metadata}">${displayedName}</span>`;
-            }
-
-            return matched;
-        });
-    },
-};
+}
 
 // Currently, the default configuration is being used
 // Documentation: https://github.com/markedjs/marked
@@ -88,10 +48,10 @@ const cradleLinkExtension = {
     name: 'cradlelink',
     level: 'inline',
     start(src) {
-        return src.match(regexes.cradleLink)?.index;
+        return src.match(LINK_REGEX)?.index;
     },
     tokenizer(src, tokens) {
-        const match = src.match(regexes.cradleLink);
+        const match = src.match(LINK_REGEX);
         if (match) {
             return {
                 type: 'cradlelink',
@@ -110,10 +70,7 @@ const cradleLinkExtension = {
         // Loop through all type handlers and call them on the text
         var text = token.raw;
 
-        Object.keys(handlers).forEach((key) => {
-            const handler = handlers[key];
-            text = handler(text);
-        });
+        text = handle_link(text);
 
         return text;
     },

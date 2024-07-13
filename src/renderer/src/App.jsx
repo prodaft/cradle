@@ -7,6 +7,7 @@ import AuthProvider from './components/AuthProvider/AuthProvider.jsx';
 import FeatureNotImplemented from './components/FeatureNotImplemented/FeatureNotImplemented';
 import AdminPanel from './components/AdminPanel/AdminPanel';
 import AdminPanelAdd from './components/AdminPanelAdd/AdminPanelAdd';
+import AdminPanelEdit from './components/AdminPanelEdit/AdminPanelEdit';
 import AdminPanelUserPermissions from './components/AdminPanelUserPermissions/AdminPanelUserPermissions';
 import Dashboard from './components/Dashboard/Dashboard';
 import NotFound from './components/NotFound/NotFound.jsx';
@@ -51,12 +52,20 @@ function App() {
                             <Route path='/admin' element={<Outlet />}>
                                 <Route index element={<AdminPanel />}></Route>
                                 <Route
-                                    path='/admin/add-actor'
-                                    element={<AdminPanelAdd type='Actor' />}
+                                    path='/admin/add-entity'
+                                    element={<AdminPanelAdd type='Entity' />}
                                 ></Route>
                                 <Route
-                                    path='/admin/add-case'
-                                    element={<AdminPanelAdd type='Case' />}
+                                    path='/admin/add-artifact-type'
+                                    element={<AdminPanelAdd type='ArtifactType' />}
+                                ></Route>
+                                <Route
+                                    path='/admin/edit-entity/:id'
+                                    element={<AdminPanelEdit type='Entity' />}
+                                ></Route>
+                                <Route
+                                    path='/admin/edit-artifact-type/:subtype'
+                                    element={<AdminPanelEdit type='ArtifactType' />}
                                 ></Route>
                                 <Route
                                     path={'/admin/user-permissions/:username/:id'}

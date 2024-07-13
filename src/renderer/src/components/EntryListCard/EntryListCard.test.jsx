@@ -13,7 +13,7 @@ jest.mock('react-router-dom', () => ({
 describe('EntryListCard', () => {
     const items = [
         { name: 'Item 1', id: 1, type: 'actor' },
-        { name: 'Item 2', id: 2, type: 'case' },
+        { name: 'Item 2', id: 2, type: 'entity' },
         { name: 'Item 3', id: 3, type: 'artifact', subtype: 'ip' },
     ];
 

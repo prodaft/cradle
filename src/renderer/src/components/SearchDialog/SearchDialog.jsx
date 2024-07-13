@@ -8,6 +8,9 @@ import SearchResult from '../SearchResult/SearchResult';
 import { useNavigate } from 'react-router-dom';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
+import {
+    getEntryClasses,
+} from '../../services/adminService/adminService';
 
 /**
  * Dialog to search for entries
@@ -28,19 +31,27 @@ export default function SearchDialog({ isOpen, onClose }) {
     const [searchQuery, setSearchQuery] = useState('');
     const inputRef = useRef(null);
     const [showFilters, setShowFilters] = useState(false);
-    const [entryTypeFilters, setEntryTypeFilters] = useState([]);
     const [entrySubtypeFilters, setEntrySubtypeFilters] = useState([]);
     const [results, setResults] = useState(null);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const [entrySubtypes, setEntrySubtypes] = useState([]);
     const dialogRoot = document.getElementById('portal-root');
     const navigate = useNavigate();
+    const handleError = displayError(setAlert, navigate);
 
-    useEffect(() => {
-        if (isOpen && inputRef.current) {
-            inputRef.current.focus();
-            performSearch();
-        }
-    }, [isOpen]);
+    const populateEntrySubtypes = () => {
+        getEntryClasses()
+            .then((response) => {
+                if (response.status === 200) {
+                    let entities = response.data;
+                    setEntrySubtypes(
+                        entities
+                        .map((c) => c.subtype),
+                    );
+                }
+            })
+            .catch(handleError);
+    }
 
     const handleKeyDown = (event) => {
         if (event.key === 'Enter') {
@@ -57,7 +68,7 @@ export default function SearchDialog({ isOpen, onClose }) {
 
     const performSearch = () => {
         setAlert({ ...alert, show: false });
-        queryEntries(searchQuery, entryTypeFilters, entrySubtypeFilters)
+        queryEntries(searchQuery, entrySubtypeFilters.length == 0 ? entrySubtypes : entrySubtypeFilters)
             .then((response) => {
                 setResults(
                     response.data.map((result) => {
@@ -76,6 +87,14 @@ export default function SearchDialog({ isOpen, onClose }) {
             })
             .catch(displayError(setAlert, navigate));
     };
+
+    useEffect(() => {
+        if (isOpen && inputRef.current) {
+            inputRef.current.focus();
+            performSearch();
+        }
+        populateEntrySubtypes();
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -113,10 +132,9 @@ export default function SearchDialog({ isOpen, onClose }) {
                 <SearchFilterSection
                     showFilters={showFilters}
                     setShowFilters={setShowFilters}
-                    entryTypeFilters={entryTypeFilters}
-                    setEntryTypeFilters={setEntryTypeFilters}
-                    artifactTypeFilters={entrySubtypeFilters}
-                    setArtifactTypeFilters={setEntrySubtypeFilters}
+                    entrySubtypes={entrySubtypes}
+                    entrySubtypeFilters={entrySubtypeFilters}
+                    setEntrySubtypeFilters={setEntrySubtypeFilters}
                 />
                 <AlertBox alert={alert} />
                 <div className='flex-grow overflow-y-auto no-scrollbar space-y-2'>

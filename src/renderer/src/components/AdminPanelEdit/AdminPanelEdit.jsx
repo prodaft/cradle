@@ -21,7 +21,8 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
  * @constructor
  */
 
-export default function AdminPanelAdd({ type }) {
+export default function AdminPanelEdit({ type }) {
+    const { id } = useParams();
     const [name, setName] = useState('');
     const [subtype, setSubtype] = useState('');
     const [subtypeDisabled, setSubtypeDisabled] = useState('');
@@ -35,6 +36,19 @@ export default function AdminPanelAdd({ type }) {
     const [typeFormatHint, setTypeFormatHint] = useState('')
 
     const populateSubclasses = async () => {
+        getEntities()
+            .then((response) => {
+                if (response.status === 200) {
+                    let entities = response.data;
+                    setSubclasses([...
+                        new Set(entities.map(c => c.subtype))]
+                    );
+                }
+            })
+            .catch(handleError);
+    };
+
+    const populateEntityDetails = async () => {
         getEntities()
             .then((response) => {
                 if (response.status === 200) {
@@ -234,5 +248,4 @@ export default function AdminPanelAdd({ type }) {
           </div>
       );
     }
-
 }

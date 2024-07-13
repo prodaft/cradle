@@ -9,11 +9,10 @@ import { authAxios } from '../axiosInstance/axiosInstance';
  * @param {Array<string>} entrySubtype - the types of artifacts to search for
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function queryEntries(name, entryTypes, entrySubtype) {
+export function queryEntries(name, entrySubtype) {
     const url = `/query/`;
 
     const params = {
-        entryType: entryTypes,
         entrySubtype: entrySubtype,
     };
 
@@ -28,5 +27,18 @@ export function queryEntries(name, entryTypes, entrySubtype) {
         paramsSerializer: (params) => {
             return qs.stringify(params, { arrayFormat: 'repeat' });
         },
+    });
+}
+
+/**
+ * Function to fetch the LSP pack for the current user
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export function fetchLspPack() {
+    const url = `/lsp/pack/`;
+
+    return authAxios({
+        method: 'GET',
+        url: url,
     });
 }
