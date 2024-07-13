@@ -1,8 +1,8 @@
-from django.test import TestCase
+from django.test import TestEntity
 from unittest.mock import patch
 
 
-class QueryTestCase(TestCase):
+class QueryTestEntity(TestEntity):
     def setUp(self):
         self.patcher = patch("file_transfer.utils.MinioClient.create_user_bucket")
         self.mocked_create_user_bucket = self.patcher.start()

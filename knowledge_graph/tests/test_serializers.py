@@ -1,10 +1,10 @@
-from .utils import KnowledgeGraphTestCase
+from .utils import KnowledgeGraphTestEntity
 from ..serializers import LinkSerializer
 
 from uuid import UUID
 
 
-class LinkSerializerTest(KnowledgeGraphTestCase):
+class LinkSerializerTest(KnowledgeGraphTestEntity):
 
     def setUp(self):
         super().setUp()

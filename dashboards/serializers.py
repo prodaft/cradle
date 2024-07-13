@@ -51,10 +51,8 @@ class BaseDashboardSerializer(serializers.Serializer):
         """
 
         names = {
-            "cases": "Some Case",
+            "entities": "Some Entity",
             "artifacts": "Some Artifact",
-            "metadata": "Some Metadata",
-            "actors": "Some Actor",
         }
         return names[name.removeprefix("second_hop_").removeprefix("inaccessible_")]
 
@@ -110,87 +108,31 @@ class BaseDashboardSerializer(serializers.Serializer):
         return data
 
 
-class CaseDashboardSerializer(BaseDashboardSerializer):
+class EntityDashboardSerializer(BaseDashboardSerializer):
     id = serializers.UUIDField()
     name = serializers.CharField()
     description = serializers.CharField()
     type = serializers.CharField()
     subtype = serializers.CharField()
     notes = NoteDashboardSerializer(many=True)
-    actors = EntryResponseSerializer(many=True)
-    cases = EntryResponseSerializer(many=True)
-    metadata = EntryResponseSerializer(many=True)
+    entities = EntryResponseSerializer(many=True)
     artifacts = EntryResponseSerializer(many=True)
-    inaccessible_cases = EntryResponseSerializer(many=True)
-    inaccessible_actors = EntryResponseSerializer(many=True)
-    inaccessible_metadata = EntryResponseSerializer(many=True)
+    inaccessible_entities = EntryResponseSerializer(many=True)
     inaccessible_artifacts = EntryResponseSerializer(many=True)
-    second_hop_cases = EntryResponseSerializer(many=True)
-    second_hop_actors = EntryResponseSerializer(many=True)
-    second_hop_metadata = EntryResponseSerializer(many=True)
-    second_hop_inaccessible_cases = EntryResponseSerializer(many=True)
-    second_hop_inaccessible_actors = EntryResponseSerializer(many=True)
-    second_hop_inaccessible_metadata = EntryResponseSerializer(many=True)
+    second_hop_entities = EntryResponseSerializer(many=True)
+    second_hop_inaccessible_entities = EntryResponseSerializer(many=True)
     access = serializers.CharField()
 
     class Meta:
         inaccessible_fields = [
-            "inaccessible_cases",
-            "inaccessible_actors",
-            "inaccessible_metadata",
+            "inaccessible_entities",
             "inaccessible_artifacts",
-            "second_hop_inaccessible_cases",
-            "second_hop_inaccessible_actors",
-            "second_hop_inaccessible_metadata",
+            "second_hop_inaccessible_entities",
         ]
         second_hop_fields = [
-            "second_hop_cases",
-            "second_hop_actors",
-            "second_hop_metadata",
-            "second_hop_inaccessible_cases",
-            "second_hop_inaccessible_actors",
-            "second_hop_inaccessible_metadata",
+            "second_hop_entities",
+            "second_hop_inaccessible_entities",
         ]
-
-
-class ActorDashboardSerializer(BaseDashboardSerializer):
-    id = serializers.UUIDField()
-    name = serializers.CharField()
-    description = serializers.CharField()
-    type = serializers.CharField()
-    subtype = serializers.CharField()
-    notes = NoteDashboardSerializer(many=True)
-    actors = EntryResponseSerializer(many=True)
-    cases = EntryResponseSerializer(many=True)
-    metadata = EntryResponseSerializer(many=True)
-    inaccessible_cases = EntryResponseSerializer(many=True)
-    inaccessible_actors = EntryResponseSerializer(many=True)
-    inaccessible_metadata = EntryResponseSerializer(many=True)
-    second_hop_cases = EntryResponseSerializer(many=True)
-    second_hop_actors = EntryResponseSerializer(many=True)
-    second_hop_metadata = EntryResponseSerializer(many=True)
-    second_hop_inaccessible_cases = EntryResponseSerializer(many=True)
-    second_hop_inaccessible_actors = EntryResponseSerializer(many=True)
-    second_hop_inaccessible_metadata = EntryResponseSerializer(many=True)
-
-    class Meta:
-        inaccessible_fields = [
-            "inaccessible_cases",
-            "inaccessible_actors",
-            "inaccessible_metadata",
-            "second_hop_inaccessible_cases",
-            "second_hop_inaccessible_actors",
-            "second_hop_inaccessible_metadata",
-        ]
-        second_hop_fields = [
-            "second_hop_cases",
-            "second_hop_actors",
-            "second_hop_metadata",
-            "second_hop_inaccessible_cases",
-            "second_hop_inaccessible_actors",
-            "second_hop_inaccessible_metadata",
-        ]
-
 
 class ArtifactDashboardSerializer(BaseDashboardSerializer):
     id = serializers.UUIDField()
@@ -199,11 +141,11 @@ class ArtifactDashboardSerializer(BaseDashboardSerializer):
     type = serializers.CharField()
     subtype = serializers.CharField()
     notes = NoteDashboardSerializer(many=True)
-    cases = EntryResponseSerializer(many=True)
-    inaccessible_cases = EntryResponseSerializer(many=True)
-    second_hop_cases = EntryResponseSerializer(many=True)
-    second_hop_inaccessible_cases = EntryResponseSerializer(many=True)
+    entities = EntryResponseSerializer(many=True)
+    inaccessible_entities = EntryResponseSerializer(many=True)
+    second_hop_entities = EntryResponseSerializer(many=True)
+    second_hop_inaccessible_entities = EntryResponseSerializer(many=True)
 
     class Meta:
-        inaccessible_fields = ["inaccessible_cases", "second_hop_inaccessible_cases"]
-        second_hop_fields = ["second_hop_cases", "second_hop_inaccessible_cases"]
+        inaccessible_fields = ["inaccessible_entities", "second_hop_inaccessible_entities"]
+        second_hop_fields = ["second_hop_entities", "second_hop_inaccessible_entities"]

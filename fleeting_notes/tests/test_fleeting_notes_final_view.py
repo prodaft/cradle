@@ -1,4 +1,4 @@
-from .utils import FleetingNotesTestCase
+from .utils import FleetingNotesTestEntity
 from django.urls import reverse
 from entries.models import Entry
 from entries.enums import EntryType
@@ -10,11 +10,11 @@ from ..models import FleetingNote
 import uuid
 
 
-class FleetingNotesFinalTest(FleetingNotesTestCase):
+class FleetingNotesFinalTest(FleetingNotesTestEntity):
 
     def setUp(self):
         super().setUp()
-        self.saved_case = Entry.objects.create(name="case", type=EntryType.CASE)
+        self.saved_entity = Entry.objects.create(name="entity", type=EntryType.ENTITY)
         self.saved_actor = Entry.objects.create(name="actor", type=EntryType.ACTOR)
 
     def test_fleeting_note_final_does_not_exist(self):
@@ -62,7 +62,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         self.assertIsNotNone(FleetingNote.objects.get(id=self.note_user.pk))
 
     def test_fleeting_note_final_entries_that_do_not_exist(self):
-        self.note_user.content = "[[actor:actor]] [[case:wrongcase]]"
+        self.note_user.content = "[[actor:actor]] [[entity:wrongentity]]"
         self.note_user.save()
 
         response = self.client.put(
@@ -72,13 +72,13 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
-            response.json()["detail"], "The referenced actors or cases do not exist."
+            response.json()["detail"], "The referenced actors or entities do not exist."
         )
 
         self.assertIsNotNone(FleetingNote.objects.get(id=self.note_user.pk))
 
-    def test_fleeting_note_final_has_no_access_to_cases(self):
-        self.note_user.content = "[[actor:actor]] [[case:case]]"
+    def test_fleeting_note_final_has_no_access_to_entities(self):
+        self.note_user.content = "[[actor:actor]] [[entity:entity]]"
         self.note_user.save()
 
         response = self.client.put(
@@ -88,7 +88,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
-            response.json()["detail"], "The referenced actors or cases do not exist."
+            response.json()["detail"], "The referenced actors or entities do not exist."
         )
 
         self.assertIsNotNone(FleetingNote.objects.get(id=self.note_user.pk))
@@ -96,7 +96,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
     def test_fleeting_note_final_successfully(self):
         Access.objects.create(
             user=self.normal_user,
-            case=self.saved_case,
+            entity=self.saved_entity,
             access_type=AccessType.READ_WRITE,
         )
 
@@ -123,7 +123,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
     def test_fleeting_note_final_successfully_is_publishable(self):
         Access.objects.create(
             user=self.normal_user,
-            case=self.saved_case,
+            entity=self.saved_entity,
             access_type=AccessType.READ_WRITE,
         )
 

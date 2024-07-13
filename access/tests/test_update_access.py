@@ -6,13 +6,13 @@ from entries.enums import EntryType
 from user.models import CradleUser
 from ..models import Access
 from ..enums import AccessType
-from .utils import AccessTestCase
+from .utils import AccessTestEntity
 from notifications.models import MessageNotification
 
 import uuid
 
 
-class UpdateAccessTest(AccessTestCase):
+class UpdateAccessTest(AccessTestEntity):
 
     def setUp(self):
         super().setUp()
@@ -28,7 +28,7 @@ class UpdateAccessTest(AccessTestCase):
                 username="admin", password="admin", email="b@c.d"
             )
         )
-        self.case = Entry.objects.create(name="case", type=EntryType.CASE)
+        self.entity = Entry.objects.create(name="entity", type=EntryType.ENTITY)
 
         self.tokens = [str(AccessToken.for_user(self.users[id])) for id in range(4)]
         self.headers = [
@@ -36,20 +36,20 @@ class UpdateAccessTest(AccessTestCase):
         ]
 
         Access.objects.create(
-            user=self.users[0], case=self.case, access_type=AccessType.READ_WRITE
+            user=self.users[0], entity=self.entity, access_type=AccessType.READ_WRITE
         )
         Access.objects.create(
-            user=self.users[1], case=self.case, access_type=AccessType.READ
+            user=self.users[1], entity=self.entity, access_type=AccessType.READ
         )
         Access.objects.create(
-            user=self.users[2], case=self.case, access_type=AccessType.NONE
+            user=self.users[2], entity=self.entity, access_type=AccessType.NONE
         )
 
     def test_update_access_not_authenticated(self):
         response = self.client.put(
             reverse(
                 "update_access",
-                kwargs={"user_id": self.users[2].id, "case_id": self.case.id},
+                kwargs={"user_id": self.users[2].id, "entity_id": self.entity.id},
             ),
             {"access_type": "none"},
             content_type="application/json",
@@ -59,7 +59,7 @@ class UpdateAccessTest(AccessTestCase):
         self.assertEqual(MessageNotification.objects.count(), 0)
         self.assertTrue(
             Access.objects.filter(
-                user=self.users[2], case=self.case, access_type=AccessType.NONE
+                user=self.users[2], entity=self.entity, access_type=AccessType.NONE
             ).exists()
         )
 
@@ -67,7 +67,7 @@ class UpdateAccessTest(AccessTestCase):
         response = self.client.put(
             reverse(
                 "update_access",
-                kwargs={"user_id": uuid.uuid4(), "case_id": self.case.id},
+                kwargs={"user_id": uuid.uuid4(), "entity_id": self.entity.id},
             ),
             {"access_type": "none"},
             content_type="application/json",
@@ -77,11 +77,11 @@ class UpdateAccessTest(AccessTestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(MessageNotification.objects.count(), 0)
 
-    def test_update_access_case_not_found(self):
+    def test_update_access_entity_not_found(self):
         response = self.client.put(
             reverse(
                 "update_access",
-                kwargs={"user_id": self.users[2].id, "case_id": uuid.uuid4()},
+                kwargs={"user_id": self.users[2].id, "entity_id": uuid.uuid4()},
             ),
             {"access_type": "none"},
             content_type="application/json",
@@ -95,7 +95,7 @@ class UpdateAccessTest(AccessTestCase):
         response = self.client.put(
             reverse(
                 "update_access",
-                kwargs={"user_id": self.users[3].id, "case_id": self.case.id},
+                kwargs={"user_id": self.users[3].id, "entity_id": self.entity.id},
             ),
             {"access_type": "none"},
             content_type="application/json",
@@ -109,7 +109,7 @@ class UpdateAccessTest(AccessTestCase):
         response = self.client.put(
             reverse(
                 "update_access",
-                kwargs={"user_id": self.users[3].id, "case_id": self.case.id},
+                kwargs={"user_id": self.users[3].id, "entity_id": self.entity.id},
             ),
             {"access_type": "none"},
             content_type="application/json",
@@ -123,7 +123,7 @@ class UpdateAccessTest(AccessTestCase):
         response = self.client.put(
             reverse(
                 "update_access",
-                kwargs={"user_id": self.users[0].id, "case_id": self.case.id},
+                kwargs={"user_id": self.users[0].id, "entity_id": self.entity.id},
             ),
             {"access_type": "none"},
             content_type="application/json",
@@ -134,7 +134,7 @@ class UpdateAccessTest(AccessTestCase):
         self.assertEqual(MessageNotification.objects.count(), 0)
         self.assertTrue(
             Access.objects.filter(
-                user=self.users[0], case=self.case, access_type=AccessType.READ_WRITE
+                user=self.users[0], entity=self.entity, access_type=AccessType.READ_WRITE
             ).exists()
         )
 
@@ -142,7 +142,7 @@ class UpdateAccessTest(AccessTestCase):
         response = self.client.put(
             reverse(
                 "update_access",
-                kwargs={"user_id": self.users[2].id, "case_id": self.case.id},
+                kwargs={"user_id": self.users[2].id, "entity_id": self.entity.id},
             ),
             {"access_type": "read"},
             content_type="application/json",
@@ -153,7 +153,7 @@ class UpdateAccessTest(AccessTestCase):
         self.assertEqual(MessageNotification.objects.count(), 0)
         self.assertTrue(
             Access.objects.filter(
-                user=self.users[2], case=self.case, access_type=AccessType.NONE
+                user=self.users[2], entity=self.entity, access_type=AccessType.NONE
             ).exists()
         )
 
@@ -162,7 +162,7 @@ class UpdateAccessTest(AccessTestCase):
         response = self.client.put(
             reverse(
                 "update_access",
-                kwargs={"user_id": self.users[2].id, "case_id": self.case.id},
+                kwargs={"user_id": self.users[2].id, "entity_id": self.entity.id},
             ),
             {"access": "read"},
             content_type="application/json",
@@ -175,7 +175,7 @@ class UpdateAccessTest(AccessTestCase):
         response = self.client.put(
             reverse(
                 "update_access",
-                kwargs={"user_id": self.users[2].id, "case_id": self.case.id},
+                kwargs={"user_id": self.users[2].id, "entity_id": self.entity.id},
             ),
             {"access_type": "read"},
             content_type="application/json",
@@ -188,13 +188,13 @@ class UpdateAccessTest(AccessTestCase):
         self.assertTrue(
             MessageNotification.objects.filter(
                 user_id=self.users[2].id,
-                message="Your access for case case has been changed to read",
+                message="Your access for entity entity has been changed to read",
             )
         )
 
         self.assertTrue(
             Access.objects.filter(
-                user=self.users[2], case=self.case, access_type=AccessType.READ
+                user=self.users[2], entity=self.entity, access_type=AccessType.READ
             )
         )
 
@@ -202,7 +202,7 @@ class UpdateAccessTest(AccessTestCase):
         response = self.client.put(
             reverse(
                 "update_access",
-                kwargs={"user_id": self.users[2].id, "case_id": self.case.id},
+                kwargs={"user_id": self.users[2].id, "entity_id": self.entity.id},
             ),
             {"access_type": "read-write"},
             content_type="application/json",
@@ -215,12 +215,12 @@ class UpdateAccessTest(AccessTestCase):
         self.assertTrue(
             MessageNotification.objects.filter(
                 user_id=self.users[2].id,
-                message="Your access for case case has been changed to read-write",
+                message="Your access for entity entity has been changed to read-write",
             )
         )
 
         self.assertTrue(
             Access.objects.filter(
-                user=self.users[2], case=self.case, access_type=AccessType.READ_WRITE
+                user=self.users[2], entity=self.entity, access_type=AccessType.READ_WRITE
             ).exists()
         )

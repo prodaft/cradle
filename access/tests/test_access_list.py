@@ -5,7 +5,7 @@ from ..enums import AccessType
 from entries.models import Entry
 from rest_framework.parsers import JSONParser
 from rest_framework_simplejwt.tokens import AccessToken
-from .utils import AccessTestCase
+from .utils import AccessTestEntity
 
 import io
 
@@ -16,7 +16,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class AccessListTest(AccessTestCase):
+class AccessListTest(AccessTestEntity):
 
     def setUp(self):
         super().setUp()
@@ -31,8 +31,8 @@ class AccessListTest(AccessTestCase):
         self.token_normal = str(AccessToken.for_user(self.user))
         self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
         self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
-        self.case, created = Entry.objects.get_or_create(
-            name="Case 1", description="Cool case", type=EntryType.CASE
+        self.entity, created = Entry.objects.get_or_create(
+            name="Entity 1", description="Cool entity", type=EntryType.ENTITY
         )
 
     def test_access_list_success(self):
@@ -45,7 +45,7 @@ class AccessListTest(AccessTestCase):
         )
 
         expected_response = [
-            {"id": str(self.case.id), "name": "Case 1", "access_type": "none"}
+            {"id": str(self.entity.id), "name": "Entity 1", "access_type": "none"}
         ]
 
         self.assertEqual(response.status_code, 200)
@@ -72,7 +72,7 @@ class AccessListTest(AccessTestCase):
         )
 
         expected_response = [
-            {"id": str(self.case.id), "name": "Case 1", "access_type": "read-write"}
+            {"id": str(self.entity.id), "name": "Entity 1", "access_type": "read-write"}
         ]
 
         self.assertEqual(response.status_code, 200)
@@ -90,7 +90,7 @@ class AccessListTest(AccessTestCase):
 
     def test_access_list_access_already_there(self):
         Access.objects.create(
-            user=self.user, case=self.case, access_type=AccessType.READ
+            user=self.user, entity=self.entity, access_type=AccessType.READ
         )
         response = self.client.get(
             reverse(
@@ -101,17 +101,17 @@ class AccessListTest(AccessTestCase):
         )
 
         expected_response = [
-            {"id": str(self.case.id), "name": "Case 1", "access_type": "read"}
+            {"id": str(self.entity.id), "name": "Entity 1", "access_type": "read"}
         ]
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(bytes_to_json(data=response.content), expected_response)
 
-    def test_access_list_multiple_cases(self):
+    def test_access_list_multiple_entities(self):
         Access.objects.create(
-            user=self.user, case=self.case, access_type=AccessType.READ
+            user=self.user, entity=self.entity, access_type=AccessType.READ
         )
-        case2 = Entry.objects.create(name="Case 2", type=EntryType.CASE)
+        entity2 = Entry.objects.create(name="Entity 2", type=EntryType.ENTITY)
 
         response = self.client.get(
             reverse(
@@ -122,8 +122,8 @@ class AccessListTest(AccessTestCase):
         )
 
         expected_response = [
-            {"id": str(self.case.id), "name": "Case 1", "access_type": "read"},
-            {"id": str(case2.id), "name": "Case 2", "access_type": "none"},
+            {"id": str(self.entity.id), "name": "Entity 1", "access_type": "read"},
+            {"id": str(entity2.id), "name": "Entity 2", "access_type": "none"},
         ]
 
         self.assertEqual(response.status_code, 200)

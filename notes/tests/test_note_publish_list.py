@@ -1,5 +1,5 @@
 from django.urls import reverse
-from .utils import NotesTestCase
+from .utils import NotesTestEntity
 from user.models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.parsers import JSONParser
@@ -16,7 +16,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class NotePublishableListTest(NotesTestCase):
+class NotePublishableListTest(NotesTestEntity):
 
     def setUp(self):
         super().setUp()
@@ -26,19 +26,19 @@ class NotePublishableListTest(NotesTestCase):
         self.user_token = str(AccessToken.for_user(self.user))
         self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
 
-        self.case1 = Entry.objects.create(name="1", type=EntryType.CASE)
-        self.case2 = Entry.objects.create(name="2", type=EntryType.CASE)
+        self.entity1 = Entry.objects.create(name="1", type=EntryType.ENTITY)
+        self.entity2 = Entry.objects.create(name="2", type=EntryType.ENTITY)
         self.note1 = Note.objects.create(content="blabla")
-        self.note1.entries.add(self.case2)
+        self.note1.entries.add(self.entity2)
 
         self.note2 = Note.objects.create(content="bla", publishable=True)
-        self.note2.entries.add(self.case1)
+        self.note2.entries.add(self.entity1)
 
         self.note3 = Note.objects.create(content="blabla", publishable=True)
-        self.note3.entries.add(self.case1)
+        self.note3.entries.add(self.entity1)
 
         self.access = Access.objects.create(
-            user=self.user, case=self.case1, access_type=AccessType.READ_WRITE
+            user=self.user, entity=self.entity1, access_type=AccessType.READ_WRITE
         )
 
     def test_get_note_publish_not_authenticated(self):
@@ -92,6 +92,6 @@ class NotePublishableListTest(NotesTestCase):
             self.assertEqual(report["notes"][0]["content"], self.note2.content)
             self.assertEqual(report["notes"][1]["content"], self.note3.content)
             self.assertEqual(len(report["notes"]), 2)
-        with self.subTest("Test cases"):
-            self.assertEqual(len(report["cases"]), 1)
-            self.assertEqual(report["cases"][0]["id"], str(self.case1.pk))
+        with self.subTest("Test entities"):
+            self.assertEqual(len(report["entities"]), 1)
+            self.assertEqual(report["entities"][0]["id"], str(self.entity1.pk))

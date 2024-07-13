@@ -21,7 +21,7 @@ class StatisticsList(APIView):
     def get(self, request: Request) -> Response:
         """Fetches some of the user's statistics. More specifically, it
         fetches the 10 most recently written notes the user has access to
-        and the 3 cases and actors that were most recently referenced in notes
+        and the 3 entities and artifacts that were most recently referenced in notes
         the user has access to. The entries are returned starting with the most
         recent ones.
 
@@ -41,18 +41,19 @@ class StatisticsList(APIView):
         response_data = {}
 
         response_data["notes"] = list(accessible_notes[:10])
-        response_data["cases"] = list(
+        response_data["entities"] = list(
             islice(
                 Note.objects.note_references_iterator(
-                    accessible_notes, EntryType.CASE
+                    accessible_notes, EntryType.ENTITY
                 ),
                 3,
             )
         )
-        response_data["actors"] = list(
+
+        response_data["artifacts"] = list(
             islice(
                 Note.objects.note_references_iterator(
-                    accessible_notes, EntryType.ACTOR
+                    accessible_notes, EntryType.ARTIFACT
                 ),
                 3,
             )

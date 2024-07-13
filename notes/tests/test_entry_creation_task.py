@@ -1,16 +1,16 @@
 from entries.models import Entry
 from entries.enums import EntryType, EntrySubtype
 from notes.utils.entry_creation_task import EntryCreationTask
-from .utils import NotesTestCase
+from .utils import NotesTestEntity
 
 
-class EntryCreationTaskTest(NotesTestCase):
+class EntryCreationTaskTest(NotesTestEntity):
 
     def setUp(self):
         super().setUp()
 
         self.saved_actor = Entry.objects.create(name="actor", type=EntryType.ACTOR)
-        self.saved_case = Entry.objects.create(name="case", type=EntryType.CASE)
+        self.saved_entity = Entry.objects.create(name="entity", type=EntryType.ENTITY)
 
         self.saved_metadata = Entry.objects.create(
             name="Romania", type=EntryType.METADATA, subtype=EntrySubtype.COUNTRY
@@ -27,17 +27,17 @@ class EntryCreationTaskTest(NotesTestCase):
         )
 
         self.referenced_entries = {}
-        self.entry_types = ["actor", "case", "artifact", "metadata"]
+        self.entry_types = ["actor", "entity", "artifact", "metadata"]
         for t in self.entry_types:
             self.referenced_entries[t] = set()
         self.referenced_entries["actor"] = {self.saved_actor}
-        self.referenced_entries["case"] = {self.saved_case}
+        self.referenced_entries["entity"] = {self.saved_entity}
 
     def references_assertions(
-        self, refs, actors=set(), cases=set(), artifacts=set(), metadata=set()
+        self, refs, actors=set(), entities=set(), artifacts=set(), metadata=set()
     ):
         self.assertEqual(refs["actor"], actors)
-        self.assertEqual(refs["case"], cases)
+        self.assertEqual(refs["entity"], entities)
         self.assertEqual(refs["artifact"], artifacts)
         self.assertEqual(refs["metadata"], metadata)
 
@@ -53,7 +53,7 @@ class EntryCreationTaskTest(NotesTestCase):
             returned_referenced_entries,
             actors={self.saved_actor},
             artifacts={self.saved_artifact},
-            cases={self.saved_case},
+            entities={self.saved_entity},
             metadata={self.saved_metadata},
         )
 
@@ -79,7 +79,7 @@ class EntryCreationTaskTest(NotesTestCase):
             returned_referenced_entries,
             actors={self.saved_actor, new_actor},
             artifacts={newly_created_artifact},
-            cases={self.saved_case},
+            entities={self.saved_entity},
         )
 
         # assert that the new actor is not saved

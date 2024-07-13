@@ -3,10 +3,10 @@ from ..enums import AccessType
 from entries.models import Entry
 from entries.enums import EntryType
 from user.models import CradleUser
-from .utils import AccessTestCase
+from .utils import AccessTestEntity
 
 
-class AccessManagerHasAccessTest(AccessTestCase):
+class AccessManagerHasAccessTest(AccessTestEntity):
 
     def create_users(self):
         self.user = CradleUser.objects.create_user(
@@ -16,90 +16,90 @@ class AccessManagerHasAccessTest(AccessTestCase):
             username="admin", password="admin", email="b@c.d"
         )
 
-    def create_cases(self):
-        self.case1 = Entry.objects.create(name="case1", type=EntryType.CASE)
-        self.case2 = Entry.objects.create(name="case2", type=EntryType.CASE)
-        self.case3 = Entry.objects.create(name="case3", type=EntryType.CASE)
-        self.case4 = Entry.objects.create(name="case4", type=EntryType.CASE)
+    def create_entities(self):
+        self.entity1 = Entry.objects.create(name="entity1", type=EntryType.ENTITY)
+        self.entity2 = Entry.objects.create(name="entity2", type=EntryType.ENTITY)
+        self.entity3 = Entry.objects.create(name="entity3", type=EntryType.ENTITY)
+        self.entity4 = Entry.objects.create(name="entity4", type=EntryType.ENTITY)
 
     def create_access(self):
         Access.objects.create(
-            user=self.user, case=self.case1, access_type=AccessType.READ_WRITE
+            user=self.user, entity=self.entity1, access_type=AccessType.READ_WRITE
         )
         Access.objects.create(
-            user=self.user, case=self.case2, access_type=AccessType.READ
+            user=self.user, entity=self.entity2, access_type=AccessType.READ
         )
         Access.objects.create(
-            user=self.user, case=self.case3, access_type=AccessType.NONE
+            user=self.user, entity=self.entity3, access_type=AccessType.NONE
         )
 
     def setUp(self):
         super().setUp()
 
         self.create_users()
-        self.create_cases()
+        self.create_entities()
         self.create_access()
 
     def test_read_access(self):
         self.assertTrue(
-            Access.objects.has_access_to_cases(
-                self.user, {self.case2}, {AccessType.READ}
+            Access.objects.has_access_to_entities(
+                self.user, {self.entity2}, {AccessType.READ}
             )
         )
 
     def test_read_write_access(self):
         self.assertTrue(
-            Access.objects.has_access_to_cases(
-                self.user, {self.case1}, {AccessType.READ_WRITE}
+            Access.objects.has_access_to_entities(
+                self.user, {self.entity1}, {AccessType.READ_WRITE}
             )
         )
 
     def test_read_and_read_write_access(self):
         self.assertTrue(
-            Access.objects.has_access_to_cases(
+            Access.objects.has_access_to_entities(
                 self.user,
-                {self.case1, self.case2},
+                {self.entity1, self.entity2},
                 {AccessType.READ_WRITE, AccessType.READ},
             )
         )
 
     def test_does_not_have_access_to_read_only(self):
         self.assertFalse(
-            Access.objects.has_access_to_cases(
-                self.user, {self.case2}, {AccessType.READ_WRITE}
+            Access.objects.has_access_to_entities(
+                self.user, {self.entity2}, {AccessType.READ_WRITE}
             )
         )
 
     def test_does_not_have_access_to_all(self):
         self.assertFalse(
-            Access.objects.has_access_to_cases(
+            Access.objects.has_access_to_entities(
                 self.user,
-                {self.case1, self.case2, self.case3},
+                {self.entity1, self.entity2, self.entity3},
                 {AccessType.READ, AccessType.READ_WRITE},
             )
         )
 
-    def test_does_not_have_access_unspecified_case(self):
+    def test_does_not_have_access_unspecified_entity(self):
         self.assertFalse(
-            Access.objects.has_access_to_cases(
-                self.user, {self.case4}, {AccessType.READ, AccessType.READ_WRITE}
+            Access.objects.has_access_to_entities(
+                self.user, {self.entity4}, {AccessType.READ, AccessType.READ_WRITE}
             )
         )
 
     def test_has_access_to_empty_list(self):
-        self.assertTrue(Access.objects.has_access_to_cases(self.user, {}, {}))
+        self.assertTrue(Access.objects.has_access_to_entities(self.user, {}, {}))
 
-    def test_has_access_to_all_cases_is_superuser(self):
+    def test_has_access_to_all_entities_is_superuser(self):
         self.assertTrue(
-            Access.objects.has_access_to_cases(
+            Access.objects.has_access_to_entities(
                 self.admin,
-                {self.case1, self.case2, self.case3, self.case4},
+                {self.entity1, self.entity2, self.entity3, self.entity4},
                 {AccessType.READ_WRITE},
             )
         )
 
 
-class AccessManagerGetAccessibleTest(AccessTestCase):
+class AccessManagerGetAccessibleTest(AccessTestEntity):
 
     def setUp(self):
         super().setUp()
@@ -108,70 +108,70 @@ class AccessManagerGetAccessibleTest(AccessTestCase):
             CradleUser.objects.create_user(f"u{i}", "abcd", email=f"a{i}@gmail.com")
             for i in range(0, 3)
         ]
-        self.cases = [
-            Entry.objects.create(name=f"c{i}", type="case") for i in range(0, 3)
+        self.entities = [
+            Entry.objects.create(name=f"c{i}", type="entity") for i in range(0, 3)
         ]
         for i in range(0, 3):
             Access.objects.create(
                 user=self.users[0],
-                case=self.cases[i],
+                entity=self.entities[i],
                 access_type=AccessType.READ_WRITE,
             )
         for i in range(0, 2):
             Access.objects.create(
-                user=self.users[1], case=self.cases[i], access_type=AccessType.READ
+                user=self.users[1], entity=self.entities[i], access_type=AccessType.READ
             )
         Access.objects.create(
-            user=self.users[2], case=self.cases[0], access_type=AccessType.NONE
+            user=self.users[2], entity=self.entities[0], access_type=AccessType.NONE
         )
         Access.objects.create(
-            user=self.users[2], case=self.cases[1], access_type=AccessType.READ_WRITE
+            user=self.users[2], entity=self.entities[1], access_type=AccessType.READ_WRITE
         )
         Access.objects.create(
-            user=self.users[2], case=self.cases[2], access_type=AccessType.READ
+            user=self.users[2], entity=self.entities[2], access_type=AccessType.READ
         )
 
-    def test_get_accessible_case_ids_all(self):
+    def test_get_accessible_entity_ids_all(self):
         query_result = list(
-            Access.objects.get_accessible_case_ids(user_id=self.users[0].id)
+            Access.objects.get_accessible_entity_ids(user_id=self.users[0].id)
         )
         with self.subTest("Correct number"):
             self.assertEqual(len(query_result), 3)
         for i in range(len(query_result)):
             with self.subTest("Test access type is not NONE"):
                 access_type = Access.objects.get(
-                    user=self.users[0], case_id=query_result[i]["case_id"]
+                    user=self.users[0], entity_id=query_result[i]["entity_id"]
                 ).access_type
                 self.assertNotEqual(access_type, AccessType.NONE)
 
-    def test_get_accessible_case_ids_does_not_take_none(self):
+    def test_get_accessible_entity_ids_does_not_take_none(self):
         query_result = list(
-            Access.objects.get_accessible_case_ids(user_id=self.users[1].id)
+            Access.objects.get_accessible_entity_ids(user_id=self.users[1].id)
         )
         with self.subTest("Correct number"):
             self.assertEqual(len(query_result), 2)
         for i in range(len(query_result)):
             with self.subTest("Test access type is not NONE"):
                 access_type = Access.objects.get(
-                    user=self.users[1], case_id=query_result[i]["case_id"]
+                    user=self.users[1], entity_id=query_result[i]["entity_id"]
                 ).access_type
                 self.assertNotEqual(access_type, AccessType.NONE)
 
-    def test_get_accessible_case_ids_takes_all_not_none(self):
+    def test_get_accessible_entity_ids_takes_all_not_none(self):
         query_result = list(
-            Access.objects.get_accessible_case_ids(user_id=self.users[2].id)
+            Access.objects.get_accessible_entity_ids(user_id=self.users[2].id)
         )
         with self.subTest("Correct number"):
             self.assertEqual(len(query_result), 2)
         for i in range(len(query_result)):
             with self.subTest("Test access type is not NONE"):
                 access_type = Access.objects.get(
-                    user=self.users[2], case_id=query_result[i]["case_id"]
+                    user=self.users[2], entity_id=query_result[i]["entity_id"]
                 ).access_type
                 self.assertNotEqual(access_type, AccessType.NONE)
 
 
-class AccessManagerGetUsersWithAccessTest(AccessTestCase):
+class AccessManagerGetUsersWithAccessTest(AccessTestEntity):
 
     def setUp(self):
         super().setUp()
@@ -188,47 +188,47 @@ class AccessManagerGetUsersWithAccessTest(AccessTestCase):
             )
         )
 
-        self.case = Entry.objects.create(name="Case", type=EntryType.CASE)
+        self.entity = Entry.objects.create(name="Entity", type=EntryType.ENTITY)
 
         Access.objects.create(
-            user=self.users[0], case=self.case, access_type=AccessType.NONE
+            user=self.users[0], entity=self.entity, access_type=AccessType.NONE
         )
         Access.objects.create(
-            user=self.users[1], case=self.case, access_type=AccessType.READ_WRITE
+            user=self.users[1], entity=self.entity, access_type=AccessType.READ_WRITE
         )
 
     def test_get_users_with_access(self):
         self.assertCountEqual(
             [self.users[1].id, self.users[3].id],
-            list(Access.objects.get_users_with_access(self.case.id)),
+            list(Access.objects.get_users_with_access(self.entity.id)),
         )
 
 
-class AccessManagerCheckUserAccessTest(AccessTestCase):
+class AccessManagerCheckUserAccessTest(AccessTestEntity):
 
     def setUp(self):
         super().setUp()
         self.user = CradleUser.objects.create_user(
             username="user", password="user", email="alabala@gmail.com"
         )
-        self.case = Entry.objects.create(name="case", type=EntryType.CASE)
+        self.entity = Entry.objects.create(name="entity", type=EntryType.ENTITY)
 
     def test_check_user_access_has_access_type(self):
         Access.objects.create(
-            user=self.user, case=self.case, access_type=AccessType.READ_WRITE
+            user=self.user, entity=self.entity, access_type=AccessType.READ_WRITE
         )
         self.assertTrue(
             Access.objects.check_user_access(
-                self.user, self.case, AccessType.READ_WRITE
+                self.user, self.entity, AccessType.READ_WRITE
             )
         )
 
     def test_check_user_access_does_not_have_access_type(self):
         Access.objects.create(
-            user=self.user, case=self.case, access_type=AccessType.READ
+            user=self.user, entity=self.entity, access_type=AccessType.READ
         )
         self.assertFalse(
             Access.objects.check_user_access(
-                self.user, self.case, AccessType.READ_WRITE
+                self.user, self.entity, AccessType.READ_WRITE
             )
         )

@@ -48,7 +48,7 @@ class NoteManager(models.Manager):
     def get_accessible_notes(
         self, user: CradleUser, entry_id: Optional[UUID] = None
     ) -> models.QuerySet:
-        """Get the notes of a case that the user has access to.
+        """Get the notes of an entity that the user has access to.
         If None is provided as a parameter, then the method returns all
         accessible notes.
 
@@ -57,7 +57,7 @@ class NoteManager(models.Manager):
             entry_id: The id of the entiy whose notes are being retrieved
 
         Returns:
-            QuerySet: The notes of the case that the user has access to or
+            QuerySet: The notes of the entity that the user has access to or
             all the notes the user has access to if None is provided for
             entry_id.
         """
@@ -101,18 +101,18 @@ class NoteManager(models.Manager):
         if user.is_superuser:
             return self.get_queryset().none()
 
-        accessible_cases = Access.objects.filter(
+        accessible_entities = Access.objects.filter(
             user=user, access_type__in=[AccessType.READ_WRITE, AccessType.READ]
-        ).values_list("case_id", flat=True)
+        ).values_list("entity_id", flat=True)
 
-        inaccessible_cases = (
-            Entry.objects.filter(type=EntryType.CASE)
-            .exclude(id__in=accessible_cases)
+        inaccessible_entities = (
+            Entry.objects.filter(entry_class__type=EntryType.ENTITY)
+            .exclude(id__in=accessible_entities)
             .values_list("id", flat=True)
         )
 
         inaccessible_notes = self.get_queryset().filter(
-            entries__id__in=inaccessible_cases, entries__type=EntryType.CASE
+            entries__id__in=inaccessible_entities, entries__entry_class__type=EntryType.ENTITY
         )
 
         if entry_id is None:
@@ -121,7 +121,7 @@ class NoteManager(models.Manager):
         return inaccessible_notes.filter(entries__id=entry_id)
 
     def delete_unreferenced_entries(self) -> None:
-        """Deletes entries of type ARTIFACT and METADATA that
+        """Deletes entries of type ARTIFACT that
         are not referenced by any notes.
 
         This function filters out entries of type ARTIFACT and METADATA
@@ -137,7 +137,7 @@ class NoteManager(models.Manager):
             None: This function does not return any value.
         """
         Entry.objects.filter(
-            type__in=[EntryType.ARTIFACT, EntryType.METADATA]
+            entry_class__type=EntryType.ARTIFACT
         ).annotate(note_count=Count("note")).filter(note_count=0).delete()
 
     def get_in_order(self, note_ids: List) -> models.QuerySet:
@@ -202,7 +202,7 @@ class NoteManager(models.Manager):
         returned_entries = set()
 
         for note in note_list:
-            for entry in note.entries.filter(type=entry_type):
+            for entry in note.entries.filter(entry_class__type=entry_type):
                 if entry not in returned_entries:
                     returned_entries.add(entry)
                     yield entry

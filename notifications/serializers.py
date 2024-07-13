@@ -44,7 +44,7 @@ class AccessRequestNotificationSerializer(serializers.ModelSerializer):
             "id",
             "message",
             "is_marked_unread",
-            "case_id",
+            "entity_id",
             "requesting_user_id",
             "timestamp",
             "notification_type",

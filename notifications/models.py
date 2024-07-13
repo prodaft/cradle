@@ -22,4 +22,4 @@ class AccessRequestNotification(MessageNotification):
     requesting_user: models.ForeignKey = models.ForeignKey(
         CradleUser, on_delete=models.CASCADE
     )
-    case: models.ForeignKey = models.ForeignKey(Entry, on_delete=models.CASCADE)
+    entity: models.ForeignKey = models.ForeignKey(Entry, on_delete=models.CASCADE)

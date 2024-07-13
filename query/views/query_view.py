@@ -51,17 +51,16 @@ class QueryList(APIView):
         accessible_entries = Entry.objects.all()
         if not request.user.is_superuser:
             accessible_entries = accessible_entries.filter(
-                (Q(type=EntryType.ACTOR))
-                | Q(
-                    type=EntryType.CASE,
+                Q(
+                    entry_class__type=EntryType.ENTITY,
                     id__in=Subquery(
-                        Access.objects.get_accessible_case_ids(
+                        Access.objects.get_accessible_entity_ids(
                             cast(UUID, request.user.id)
                         )
                     ),
                 )
                 | Q(
-                    type=EntryType.ARTIFACT,
+                    entry_class__type=EntryType.ARTIFACT,
                     id__in=Subquery(
                         Note.objects.get_accessible_artifact_ids(
                             cast(CradleUser, request.user)
@@ -72,7 +71,6 @@ class QueryList(APIView):
 
         entries = Entry.objects.get_filtered_entries(
             accessible_entries,
-            param_serializer.data["entryType"],
             param_serializer.data["entrySubtype"],
             param_serializer.data["name"],
         )

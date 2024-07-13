@@ -34,16 +34,16 @@ class FleetingNotesFinal(APIView):
         Returns:
             Response(status=200): The newly created Note entry
                 if the request was successful.
-            Response("Note does not reference at least one Case and two Entries.",
+            Response("Note does not reference at least one Entity and two Entries.",
                 status=400): if the note does not reference the minimum required
-                entries and cases
+                entries and entities
             Response("The bucket name of the file reference is incorrect.",
                 status=400): if the bucket_name of at least one of the file references
                 does not match the user's id
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
             Response("User does not have Read-Write access
-                to a referenced Case or not all Cases exist.", status=404)
+                to a referenced Entity or not all Entities exist.", status=404)
             Response("The Fleeting Note does not exist.", status=404):
                 if the FleetingNote entry does not exist
             Response("There exists no file at the specified path.", status=404):
@@ -62,6 +62,7 @@ class FleetingNotesFinal(APIView):
 
         if isinstance(request.data, QueryDict):
             request.data._mutable = True
+
         request.data.update(
             {
                 "content": fleeting_note.content,

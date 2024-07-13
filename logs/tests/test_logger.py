@@ -7,10 +7,11 @@ from rest_framework.request import Request
 from rest_framework.parsers import JSONParser
 
 from ..utils import LoggingUtils
-from .utils import LogsTestCase
+from .utils import LogsTestEntity
 
+# TODO: Switch with cases
 
-class TestCustomLogger(LogsTestCase):
+class TestCustomLogger(LogsTestEntity):
     def setUp(self):
         super().setUp()
         self.factory = APIRequestFactory()

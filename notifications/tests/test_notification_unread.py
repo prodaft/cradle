@@ -1,4 +1,4 @@
-from .utils import NotificationsTestCase
+from .utils import NotificationsTestEntity
 from user.models import CradleUser
 from entries.models import Entry
 from entries.enums import EntryType
@@ -8,7 +8,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from django.urls import reverse
 
 
-class NotificationListTest(NotificationsTestCase):
+class NotificationListTest(NotificationsTestEntity):
     def setUp(self):
         super().setUp()
         self.client = APIClient()
@@ -19,7 +19,7 @@ class NotificationListTest(NotificationsTestCase):
             is_staff=False,
             email="alabala@gmail.com",
         )
-        self.case = Entry.objects.create(name="Case", type=EntryType.CASE)
+        self.entity = Entry.objects.create(name="Entity", type=EntryType.ENTITY)
 
         self.token = str(AccessToken.for_user(self.user))
         self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.token}"}
@@ -53,7 +53,7 @@ class NotificationListTest(NotificationsTestCase):
         fields = {
             "user": self.user,
             "requesting_user": self.user,
-            "case": self.case,
+            "entity": self.entity,
             "message": "",
         }
         AccessRequestNotification.objects.create(

@@ -1,17 +1,17 @@
 from entries.models import Entry
-from .utils import EntriesTestCase
+from .utils import EntriesTestEntity
 
 from entries.enums import EntryType, EntrySubtype
 
 
-class EntryManagerTest(EntriesTestCase):
+class EntryManagerTest(EntriesTestEntity):
 
     def setUp(self):
         super().setUp()
 
-        self.cases = [
+        self.entities = [
             Entry.objects.create(
-                name=f"Case {i}", description=f"{i}", type=EntryType.CASE
+                name=f"Entity {i}", description=f"{i}", type=EntryType.ENTITY
             )
             for i in range(0, 4)
         ]
@@ -34,7 +34,7 @@ class EntryManagerTest(EntriesTestCase):
         )
         self.artifacts.append(
             Entry.objects.create(
-                name="Case",
+                name="Entity",
                 description="3",
                 type=EntryType.ARTIFACT,
                 subtype=EntrySubtype.PASSWORD,
@@ -58,14 +58,14 @@ class EntryManagerTest(EntriesTestCase):
         initial_queryset = Entry.objects.all()
         result = list(
             Entry.objects.get_filtered_entries(
-                initial_queryset, ["case"], EntrySubtype.values, ""
+                initial_queryset, ["entity"], EntrySubtype.values, ""
             )
         )
         with self.subTest("Correct number of results"):
             self.assertEqual(len(result), 4)
         for i in range(0, len(result)):
             with self.subTest("Correct name"):
-                self.assertEqual(result[i].type, EntryType.CASE)
+                self.assertEqual(result[i].type, EntryType.ENTITY)
 
     def test_get_filtered_entries_filters_by_entry_subtype(self):
         initial_queryset = Entry.objects.all()
@@ -97,7 +97,7 @@ class EntryManagerTest(EntriesTestCase):
         initial_queryset = Entry.objects.all()
         result = list(
             Entry.objects.get_filtered_entries(
-                initial_queryset, ["artifact", "case"], EntrySubtype.values, "Case"
+                initial_queryset, ["artifact", "entity"], EntrySubtype.values, "Entity"
             )
         )
         with self.subTest("Correct number of results"):

@@ -1,4 +1,4 @@
-from entries.enums import ArtifactSubtype, EntryType
+from entries.enums import EntryType
 from rest_framework import serializers
 
 
@@ -10,7 +10,6 @@ class EntryQuerySerializer(serializers.Serializer):
                 # exclude metadata from the list of choices
                 choice
                 for choice in EntryType.choices
-                if choice[0] != EntryType.METADATA
             ]
         ),
         required=False,
@@ -18,7 +17,7 @@ class EntryQuerySerializer(serializers.Serializer):
         default=[value for value in EntryType.values if value != "metadata"],
     )
     entrySubtype = serializers.ListField(
-        child=serializers.ChoiceField(choices=ArtifactSubtype.choices),
+        # child=serializers.ChoiceField(choices=ArtifactSubtype.choices),
         required=False,
-        default=ArtifactSubtype.values,
+        default=[]
     )

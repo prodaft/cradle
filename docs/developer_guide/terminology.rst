@@ -3,10 +3,10 @@ Core Concepts of CRADLE
 
 CRADLE is a note-taking tool tailored for Cyber Threat Intelligence. Inside notes, one can reference objects of interest, such as actors, IP addresses, etc. The following name conventions have been made for the application:
 
-a. Cases
+a. Entities
 ---------
 
-A case encloses an investigation on an actor.
+An entity encloses an investigation on an actor.
 
 b. Actors
 ----------
@@ -21,6 +21,6 @@ Artifacts are useful artefacts for the investigation.
 d. Metadata
 ------------
 
-Metadata represents additional information related to actors and cases.
+Metadata represents additional information related to actors and entities.
 
-An entry is considered a case, actor, artifact, or metadata.
+An entry is considered an entity, actor, artifact, or metadata.

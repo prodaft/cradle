@@ -30,8 +30,8 @@ class DashboardUtils:
         dashboard_dict["id"] = entry.id
         dashboard_dict["name"] = entry.name
         dashboard_dict["description"] = entry.description
-        dashboard_dict["type"] = entry.type
-        dashboard_dict["subtype"] = entry.subtype
+        dashboard_dict["type"] = entry.entry_class.type
+        dashboard_dict["subtype"] = entry.entry_class.subtype
 
         return dashboard_dict
 
@@ -92,7 +92,7 @@ class DashboardUtils:
         """
 
         neighbor_types = [EntryType.ARTIFACT]
-        neighbor_entries = accessible_entries.filter(type__in=neighbor_types)
+        neighbor_entries = accessible_entries.filter(entry_class__type__in=neighbor_types)
 
         all_entries_second_hop = Entry.objects.none()
         all_inaccessible_entries_second_hop = Entry.objects.none()
@@ -147,20 +147,12 @@ class DashboardUtils:
             the related entries of this entry for each type
             {
                 "notes": notes,
-                "actors": actors,
-                "cases": cases,
-                "metadata": metadata,
+                "entities": entities,
                 "artifacts": artifacts
-                "inaccessible_cases": inaccessible_cases
-                "inaccessible_actors": inaccessible_actors
-                "inaccessible_metadata": inaccessible_metadata
+                "inaccessible_entities": inaccessible_entities
                 "inaccessible_artifacts": inaccessible_artifacts
-                "second_hop_cases": second_hop_cases
-                "second_hop_actors": second_hop_actors
-                "second_hop_metadata": second_hop_metadata
-                "second_hop_inaccessible_cases": second_hop_inaccessible_cases
-                "second_hop_inaccessible_actors": second_hop_inaccessible_actors
-                "second_hop_inaccessible_metadata": second_hop_inaccessible_metadata
+                "second_hop_entities": second_hop_entities
+                "second_hop_inaccessible_entities": second_hop_inaccessible_entities
             }
 
         """
@@ -174,12 +166,12 @@ class DashboardUtils:
             inaccessible_notes
         ).exclude(id=entry_id)
 
-        accessible_case_ids = Access.objects.filter(
+        accessible_entity_ids = Access.objects.filter(
             user=user, access_type__in=[AccessType.READ_WRITE, AccessType.READ]
-        ).values_list("case_id", flat=True)
+        ).values_list("entity_id", flat=True)
 
         inaccessible_entries = inaccessible_notes_entries.exclude(
-            id__in=accessible_entries or accessible_case_ids
+            id__in=accessible_entries or accessible_entity_ids
         )
 
         entries_second_hop, inaccessible_entries_second_hop, neighbor_map = (
@@ -191,39 +183,19 @@ class DashboardUtils:
         return_dict = {}
 
         return_dict["notes"] = accessible_notes
-        return_dict["actors"] = accessible_entries.filter(type=EntryType.ACTOR)
-        return_dict["cases"] = accessible_entries.filter(type=EntryType.CASE)
-        return_dict["metadata"] = accessible_entries.filter(type=EntryType.METADATA)
-        return_dict["artifacts"] = accessible_entries.filter(type=EntryType.ARTIFACT)
-        return_dict["inaccessible_cases"] = inaccessible_entries.filter(
-            type=EntryType.CASE
-        )
-        return_dict["inaccessible_actors"] = inaccessible_entries.filter(
-            type=EntryType.ACTOR
-        )
-        return_dict["inaccessible_metadata"] = inaccessible_entries.filter(
-            type=EntryType.METADATA
+        return_dict["entities"] = accessible_entries.filter(entry_class__type=EntryType.ENTITY)
+        return_dict["artifacts"] = accessible_entries.filter(entry_class__type=EntryType.ARTIFACT)
+        return_dict["inaccessible_entities"] = inaccessible_entries.filter(
+            entry_class__type=EntryType.ENTITY
         )
         return_dict["inaccessible_artifacts"] = inaccessible_entries.filter(
-            type=EntryType.ARTIFACT
+            entry_class__type=EntryType.ARTIFACT
         )
-        return_dict["second_hop_cases"] = entries_second_hop.filter(
-            type=EntryType.CASE
+        return_dict["second_hop_entities"] = entries_second_hop.filter(
+            entry_class__type=EntryType.ENTITY
         )
-        return_dict["second_hop_actors"] = entries_second_hop.filter(
-            type=EntryType.ACTOR
-        )
-        return_dict["second_hop_metadata"] = entries_second_hop.filter(
-            type=EntryType.METADATA
-        )
-        return_dict["second_hop_inaccessible_cases"] = (
-            inaccessible_entries_second_hop.filter(type=EntryType.CASE)
-        )
-        return_dict["second_hop_inaccessible_actors"] = (
-            inaccessible_entries_second_hop.filter(type=EntryType.ACTOR)
-        )
-        return_dict["second_hop_inaccessible_metadata"] = (
-            inaccessible_entries_second_hop.filter(type=EntryType.METADATA)
+        return_dict["second_hop_inaccessible_entities"] = (
+            inaccessible_entries_second_hop.filter(entry_class__type=EntryType.ENTITY)
         )
 
         return return_dict, neighbor_map

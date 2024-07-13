@@ -1,4 +1,4 @@
-from .utils import NotesTestCase
+from .utils import NotesTestEntity
 from ..models import Note
 from ..exceptions import (
     InvalidRequestException,
@@ -9,7 +9,7 @@ from ..serializers import ReportQuerySerializer
 from uuid import UUID
 
 
-class ReportQuerySerializerTest(NotesTestCase):
+class ReportQuerySerializerTest(NotesTestEntity):
     def setUp(self):
         super().setUp()
         self.notes = []
@@ -34,10 +34,10 @@ class ReportQuerySerializerTest(NotesTestCase):
             [self.notes[2].pk, self.notes[2].pk, self.notes[0].pk],
         ]
 
-        for test_case in note_ids:
-            with self.subTest(f"{test_case}"):
+        for test_entity in note_ids:
+            with self.subTest(f"{test_entity}"):
                 with self.assertRaises(InvalidRequestException):
-                    ReportQuerySerializer(test_case).validate_note_ids(test_case)
+                    ReportQuerySerializer(test_entity).validate_note_ids(test_entity)
 
     def test_validate_notes_not_in_database(self):
         note_ids = [
@@ -45,10 +45,10 @@ class ReportQuerySerializerTest(NotesTestCase):
             [self.notes[2].pk, UUID(int=0)],
             [self.notes[0].pk, UUID(int=0), self.notes[1].pk],
         ]
-        for test_case in note_ids:
-            with self.subTest(f"{test_case}"):
+        for test_entity in note_ids:
+            with self.subTest(f"{test_entity}"):
                 with self.assertRaises(NoteDoesNotExistException):
-                    ReportQuerySerializer(test_case).validate_note_ids(test_case)
+                    ReportQuerySerializer(test_entity).validate_note_ids(test_entity)
 
     def test_validate_notes_not_publishable(self):
         note_ids = [
@@ -56,10 +56,10 @@ class ReportQuerySerializerTest(NotesTestCase):
             [self.notes[0].pk, self.notes[1].pk],
             [self.notes[0].pk, self.notes[2].pk, self.notes[1].pk],
         ]
-        for test_case in note_ids:
-            with self.subTest(f"{test_case}"):
+        for test_entity in note_ids:
+            with self.subTest(f"{test_entity}"):
                 with self.assertRaises(NoteNotPublishableException):
-                    ReportQuerySerializer(test_case).validate_note_ids(test_case)
+                    ReportQuerySerializer(test_entity).validate_note_ids(test_entity)
 
     def test_validate_notes_successful(self):
         self.notes[1].publishable = True
@@ -71,11 +71,11 @@ class ReportQuerySerializerTest(NotesTestCase):
             [self.notes[2].pk],
         ]
 
-        for test_case in note_ids:
-            with self.subTest(f"{test_case}"):
+        for test_entity in note_ids:
+            with self.subTest(f"{test_entity}"):
                 self.assertEqual(
-                    ReportQuerySerializer(test_case).validate_note_ids(test_case),
-                    test_case,
+                    ReportQuerySerializer(test_entity).validate_note_ids(test_entity),
+                    test_entity,
                 )
 
     def test_validate_none(self):

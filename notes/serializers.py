@@ -37,11 +37,11 @@ class NoteCreateSerializer(serializers.ModelSerializer):
             NoteIsEmptyException: if the client did not sent the content
             of the note or if the content is empty.
             NotEnoughReferencesException: if the note does not reference at
-            least one case and at least two entries.
-            EntriesDoNotExistException: if the note references actors or cases
+            least one entity and at least two entries.
+            EntriesDoNotExistException: if the note references entities
             that do not exist.
             NoAccessToEntriesException: if the user does not have access to the
-            referenced cases.
+            referenced entities.
         """
         if "content" not in data or not data["content"]:
             raise NoteIsEmptyException()
@@ -50,6 +50,11 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 
         # save the referenced entries to be used when creating the note
         self.referenced_entries = TaskScheduler(data["content"], user).run_pipeline()
+        for i in self.referenced_entries:
+            print(i.entry_class.type)
+            print(i.entry_class.subtype)
+            print(i.name)
+            print("---")
 
         return super().validate(data)
 
@@ -170,8 +175,6 @@ class ReportQuerySerializer(serializers.Serializer):
 
 
 class ReportSerializer(serializers.Serializer):
-    actors = EntryResponseSerializer(many=True)
-    cases = EntryResponseSerializer(many=True)
-    metadata = EntryResponseSerializer(many=True)
+    entities = EntryResponseSerializer(many=True)
     artifacts = EntryResponseSerializer(many=True)
     notes = NoteReportSerializer(many=True)

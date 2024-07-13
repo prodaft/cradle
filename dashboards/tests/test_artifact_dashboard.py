@@ -2,7 +2,7 @@ from django.urls import reverse
 from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
 import io
-from .utils import DashboardsTestCase
+from .utils import DashboardsTestEntity
 
 from entries.models import Entry
 from entries.enums import EntryType, ArtifactSubtype
@@ -13,7 +13,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class GetArtifactDashboardTest(DashboardsTestCase):
+class GetArtifactDashboardTest(DashboardsTestEntity):
 
     def check_ids(self, entries, entries_json):
         with self.subTest("Check number of entries"):
@@ -24,11 +24,11 @@ class GetArtifactDashboardTest(DashboardsTestCase):
             [str(entry.id) for entry in entries],
         )
 
-    def check_inaccessible_cases_name(self, inaccessible_cases):
-        for case in inaccessible_cases:
-            with self.subTest("Check case anonymous names"):
-                self.assertEqual(case["name"], "Some Case")
-                self.assertEqual(case["description"], "Some Description")
+    def check_inaccessible_entities_name(self, inaccessible_entities):
+        for entity in inaccessible_entities:
+            with self.subTest("Check entity anonymous names"):
+                self.assertEqual(entity["name"], "Some Entity")
+                self.assertEqual(entity["description"], "Some Description")
 
     def setUp(self):
         super().setUp()
@@ -52,10 +52,10 @@ class GetArtifactDashboardTest(DashboardsTestCase):
         self.assertEqual(response.status_code, 200)
 
         notes = Note.objects.exclude(id=self.note3.id).order_by("-timestamp")
-        cases = Entry.cases.exclude(id=self.case3.id)
-        inaccessible_cases = Entry.objects.none()
-        second_hop_cases = Entry.objects.filter(id=self.case3.id)
-        second_hop_inaccessible_cases = Entry.objects.none()
+        entities = Entry.entities.exclude(id=self.entity3.id)
+        inaccessible_entities = Entry.objects.none()
+        second_hop_entities = Entry.objects.filter(id=self.entity3.id)
+        second_hop_inaccessible_entities = Entry.objects.none()
 
         json_response = bytes_to_json(response.content)
 
@@ -63,15 +63,15 @@ class GetArtifactDashboardTest(DashboardsTestCase):
             self.assertEqual("url", json_response["subtype"])
 
         self.check_ids(notes, json_response["notes"])
-        self.check_ids(cases, json_response["cases"])
-        self.check_ids(inaccessible_cases, json_response["inaccessible_cases"])
-        self.check_ids(second_hop_cases, json_response["second_hop_cases"])
+        self.check_ids(entities, json_response["entities"])
+        self.check_ids(inaccessible_entities, json_response["inaccessible_entities"])
+        self.check_ids(second_hop_entities, json_response["second_hop_entities"])
         self.check_ids(
-            second_hop_inaccessible_cases,
-            json_response["second_hop_inaccessible_cases"],
+            second_hop_inaccessible_entities,
+            json_response["second_hop_inaccessible_entities"],
         )
 
-        self.check_inaccessible_cases_name(json_response["inaccessible_cases"])
+        self.check_inaccessible_entities_name(json_response["inaccessible_entities"])
 
     def test_get_dashboard_user_read_access(self):
         response = self.client.get(
@@ -82,10 +82,10 @@ class GetArtifactDashboardTest(DashboardsTestCase):
         self.assertEqual(response.status_code, 200)
 
         notes = Note.objects.filter(id=self.note1.id)
-        cases = Entry.objects.filter(id=self.case1.id)
-        inaccessible_cases = Entry.objects.filter(id=self.case2.id)
-        second_hop_cases = Entry.objects.none()
-        second_hop_inaccessible_cases = Entry.objects.none()
+        entities = Entry.objects.filter(id=self.entity1.id)
+        inaccessible_entities = Entry.objects.filter(id=self.entity2.id)
+        second_hop_entities = Entry.objects.none()
+        second_hop_inaccessible_entities = Entry.objects.none()
 
         json_response = bytes_to_json(response.content)
 
@@ -93,15 +93,15 @@ class GetArtifactDashboardTest(DashboardsTestCase):
             self.assertEqual("url", json_response["subtype"])
 
         self.check_ids(notes, json_response["notes"])
-        self.check_ids(cases, json_response["cases"])
-        self.check_ids(inaccessible_cases, json_response["inaccessible_cases"])
-        self.check_ids(second_hop_cases, json_response["second_hop_cases"])
+        self.check_ids(entities, json_response["entities"])
+        self.check_ids(inaccessible_entities, json_response["inaccessible_entities"])
+        self.check_ids(second_hop_entities, json_response["second_hop_entities"])
         self.check_ids(
-            second_hop_inaccessible_cases,
-            json_response["second_hop_inaccessible_cases"],
+            second_hop_inaccessible_entities,
+            json_response["second_hop_inaccessible_entities"],
         )
 
-        self.check_inaccessible_cases_name(json_response["inaccessible_cases"])
+        self.check_inaccessible_entities_name(json_response["inaccessible_entities"])
 
     def test_get_dashboard_user_read_write_access(self):
         response = self.client.get(
@@ -112,10 +112,10 @@ class GetArtifactDashboardTest(DashboardsTestCase):
         self.assertEqual(response.status_code, 200)
 
         notes = Note.objects.exclude(id=self.note3.id).order_by("-timestamp")
-        cases = Entry.cases.exclude(id=self.case3.id)
-        inaccessible_cases = Entry.objects.none()
-        second_hop_cases = Entry.objects.none()
-        second_hop_inaccessible_cases = Entry.objects.filter(id=self.case3.id)
+        entities = Entry.entities.exclude(id=self.entity3.id)
+        inaccessible_entities = Entry.objects.none()
+        second_hop_entities = Entry.objects.none()
+        second_hop_inaccessible_entities = Entry.objects.filter(id=self.entity3.id)
 
         json_response = bytes_to_json(response.content)
 
@@ -123,19 +123,19 @@ class GetArtifactDashboardTest(DashboardsTestCase):
             self.assertEqual("url", json_response["subtype"])
 
         self.check_ids(notes, json_response["notes"])
-        self.check_ids(cases, json_response["cases"])
-        self.check_ids(inaccessible_cases, json_response["inaccessible_cases"])
-        self.check_ids(second_hop_cases, json_response["second_hop_cases"])
+        self.check_ids(entities, json_response["entities"])
+        self.check_ids(inaccessible_entities, json_response["inaccessible_entities"])
+        self.check_ids(second_hop_entities, json_response["second_hop_entities"])
         self.check_ids(
-            second_hop_inaccessible_cases,
-            json_response["second_hop_inaccessible_cases"],
+            second_hop_inaccessible_entities,
+            json_response["second_hop_inaccessible_entities"],
         )
 
-        self.check_inaccessible_cases_name(json_response["inaccessible_cases"])
+        self.check_inaccessible_entities_name(json_response["inaccessible_entities"])
 
     def test_get_dashboard_invalid_artifact(self):
         response = self.client.get(
-            reverse("artifact_dashboard", kwargs={"artifact_name": "Case"}),
+            reverse("artifact_dashboard", kwargs={"artifact_name": "Entity"}),
             {"subtype": ArtifactSubtype.IP},
             **self.headers_user1,
         )

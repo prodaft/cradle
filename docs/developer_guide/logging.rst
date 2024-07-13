@@ -34,7 +34,7 @@ These methods are:
 
 The ``LoggingUtils`` class additionally implements a private helper method ``__format_nginx_log`` that returns a properly formatted log artifact according to the nginx style based on the provided data. All methods described previously use this method for formatting.
 
-To extend this functionality with additional use cases, you should create a new method for each type of log artifact that takes the same parameters as mentioned above and logs the desired action to the logger of choice. To keep the consistency of the code, use the ``__format_nginx_log`` method for formatting the log message and provide it the following parameters:
+To extend this functionality with additional use entities, you should create a new method for each type of log artifact that takes the same parameters as mentioned above and logs the desired action to the logger of choice. To keep the consistency of the code, use the ``__format_nginx_log`` method for formatting the log message and provide it the following parameters:
 
 - ``request``: The request that is logged
 - ``status``: The status of the response

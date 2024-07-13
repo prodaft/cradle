@@ -4,10 +4,10 @@ from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.parsers import JSONParser
 from ..serializers import UserRetrieveSerializer
 import io
-from .utils import UserTestCase
+from .utils import UserTestEntity
 
 
-class CreateUserTest(UserTestCase):
+class CreateUserTest(UserTestEntity):
     def create_user_request(self, username=None, password=None, email=None):
         create_user_dict = {}
         if username is not None:
@@ -109,7 +109,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class GetAllUsersTest(UserTestCase):
+class GetAllUsersTest(UserTestEntity):
 
     def setUp(self):
         super().setUp()

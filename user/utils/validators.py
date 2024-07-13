@@ -48,33 +48,33 @@ class MinimumWithConditionValidator:
         return self.error_message
 
 
-class MinimumUppercaseLettersValidator(MinimumWithConditionValidator):
+class MinimumUpperentityLettersValidator(MinimumWithConditionValidator):
     def __init__(self, min_upper: int):
         """
         Initializes the validator.
 
         Args:
-            min_upper (int): Minimum number of characters that must be uppercase.
+            min_upper (int): Minimum number of characters that must be upperentity.
         """
         super().__init__(
             min_upper,
             lambda chr: chr.isupper(),
-            _(f"Your password must contain at least {min_upper} uppercase letters."),
+            _(f"Your password must contain at least {min_upper} upperentity letters."),
         )
 
 
-class MinimumLowercaseLettersValidator(MinimumWithConditionValidator):
+class MinimumLowerentityLettersValidator(MinimumWithConditionValidator):
     def __init__(self, min_lower: int):
         """
         Initializes the validator.
 
         Args:
-            min_lower (int): Minimum number of characters that must be lowercase.
+            min_lower (int): Minimum number of characters that must be lowerentity.
         """
         super().__init__(
             min_lower,
             lambda chr: chr.islower(),
-            _(f"Your password must contain at least {min_lower} lowercase letters."),
+            _(f"Your password must contain at least {min_lower} lowerentity letters."),
         )
 
 

@@ -1,11 +1,11 @@
 from django.urls import reverse
 from ..models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
-from .utils import UserTestCase
+from .utils import UserTestEntity
 import uuid
 
 
-class DeleteUserTest(UserTestCase):
+class DeleteUserTest(UserTestEntity):
 
     def setUp(self):
         super().setUp()

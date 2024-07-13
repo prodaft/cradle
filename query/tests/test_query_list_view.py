@@ -10,14 +10,14 @@ from entries.enums import EntryType, EntrySubtype
 from access.models import Access
 from access.enums import AccessType
 from notes.models import Note
-from .utils import QueryTestCase
+from .utils import QueryTestEntity
 
 
 def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class QueryListTest(QueryTestCase):
+class QueryListTest(QueryTestEntity):
 
     def setUp(self):
         super().setUp()
@@ -36,9 +36,9 @@ class QueryListTest(QueryTestCase):
         self.__init_database()
 
     def __init_database(self):
-        self.cases = [
+        self.entities = [
             Entry.objects.create(
-                name=f"Case {i}", description=f"{i}", type=EntryType.CASE
+                name=f"Entity {i}", description=f"{i}", type=EntryType.ENTITY
             )
             for i in range(0, 4)
         ]
@@ -61,13 +61,13 @@ class QueryListTest(QueryTestCase):
         )
 
         Access.objects.create(
-            user=self.normal_user, case=self.cases[0], access_type=AccessType.READ_WRITE
+            user=self.normal_user, entity=self.entities[0], access_type=AccessType.READ_WRITE
         )
         Access.objects.create(
-            user=self.normal_user, case=self.cases[1], access_type=AccessType.READ
+            user=self.normal_user, entity=self.entities[1], access_type=AccessType.READ
         )
         Access.objects.create(
-            user=self.normal_user, case=self.cases[2], access_type=AccessType.NONE
+            user=self.normal_user, entity=self.entities[2], access_type=AccessType.NONE
         )
 
         Entry.objects.create(
@@ -75,7 +75,7 @@ class QueryListTest(QueryTestCase):
         )
 
         self.note = Note.objects.create(content="Note content")
-        self.note.entries.add(self.artifacts[0], self.artifacts[1], self.cases[0])
+        self.note.entries.add(self.artifacts[0], self.artifacts[1], self.entities[0])
 
     def test_query_not_authenticated(self):
         response = self.client.get(reverse("query_list"))
@@ -157,7 +157,7 @@ class QueryListTest(QueryTestCase):
             self.assertEqual(response.status_code, 400)
 
     def test_query_filters_invalid_params_contains_metadata(self):
-        query_params = {"entryType": ["metadata", "case"]}
+        query_params = {"entryType": ["metadata", "entity"]}
         response = self.client.get(
             reverse("query_list"), query_params, **self.headers_normal
         )

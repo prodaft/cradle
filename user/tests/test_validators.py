@@ -1,17 +1,17 @@
-from .utils import UserTestCase
+from .utils import UserTestEntity
 from ..utils.validators import (
-    MinimumUppercaseLettersValidator,
+    MinimumUpperentityLettersValidator,
     MinimumDigitsValidator,
-    MinimumLowercaseLettersValidator,
+    MinimumLowerentityLettersValidator,
     MinimumSpecialCharacterValidator,
 )
 
 from django.core.exceptions import ValidationError
 
 
-class MinimumUppercaseLettersValidatorTest(UserTestCase):
+class MinimumUpperentityLettersValidatorTest(UserTestEntity):
 
-    def test_uppercase_validator_successful(self):
+    def test_upperentity_validator_successful(self):
         tests = [
             ("aaaaaaa", 0),
             ("", 0),
@@ -25,11 +25,11 @@ class MinimumUppercaseLettersValidatorTest(UserTestCase):
         for i in range(0, len(tests)):
             with self.subTest(f"{i}"):
                 self.assertEqual(
-                    MinimumUppercaseLettersValidator(tests[i][1]).validate(tests[i][0]),
+                    MinimumUpperentityLettersValidator(tests[i][1]).validate(tests[i][0]),
                     None,
                 )
 
-    def test_uppercase_validator_unsucessful(self):
+    def test_upperentity_validator_unsucessful(self):
         tests = [
             ("aaaaaaa", 1),
             ("", 1),
@@ -42,42 +42,42 @@ class MinimumUppercaseLettersValidatorTest(UserTestCase):
 
         for i in range(0, len(tests)):
             with self.subTest(f"{i}"), self.assertRaises(ValidationError):
-                MinimumUppercaseLettersValidator(tests[i][1]).validate(tests[i][0])
+                MinimumUpperentityLettersValidator(tests[i][1]).validate(tests[i][0])
 
 
-class MinimumLowercaseLettersValidatorTest(UserTestCase):
+class MinimumLowerentityLettersValidatorTest(UserTestEntity):
 
-    def test_lowercase_validator_successful(self):
+    def test_lowerentity_validator_successful(self):
         tests = [
             ("password", 4),
-            ("lowerCASEletters", 6),
-            ("mixEDcaseLETters", 5),
-            ("someLowercase", 5),
-            ("alllowercase", 5),
+            ("lowerENTITYletters", 6),
+            ("mixEDentityLETters", 5),
+            ("someLowerentity", 5),
+            ("alllowerentity", 5),
         ]
 
         for i in range(0, len(tests)):
             with self.subTest(f"{i}"):
                 self.assertEqual(
-                    MinimumLowercaseLettersValidator(tests[i][1]).validate(tests[i][0]),
+                    MinimumLowerentityLettersValidator(tests[i][1]).validate(tests[i][0]),
                     None,
                 )
 
-    def test_lowercase_validator_unsucessful(self):
+    def test_lowerentity_validator_unsucessful(self):
         tests = [
             ("PASSWORD", 1),
             ("P@SSW0RD", 1),
-            ("NOLOWERCASE", 3),
-            ("FEWlOWERCASE", 4),
+            ("NOLOWERENTITY", 3),
+            ("FEWlOWERENTITY", 4),
             ("AlmosTALLUPPER", 5),
         ]
 
         for i in range(0, len(tests)):
             with self.subTest(f"{i}"), self.assertRaises(ValidationError):
-                MinimumLowercaseLettersValidator(tests[i][1]).validate(tests[i][0])
+                MinimumLowerentityLettersValidator(tests[i][1]).validate(tests[i][0])
 
 
-class MinimumDigitsValidatorTest(UserTestCase):
+class MinimumDigitsValidatorTest(UserTestEntity):
 
     def test_digits_validator_successful(self):
         tests = [
@@ -109,7 +109,7 @@ class MinimumDigitsValidatorTest(UserTestCase):
                 MinimumDigitsValidator(tests[i][1]).validate(tests[i][0])
 
 
-class MinimumSpecialCharactersValidatorTest(UserTestCase):
+class MinimumSpecialCharactersValidatorTest(UserTestEntity):
 
     def test_special_validator_successful(self):
         tests = [

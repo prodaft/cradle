@@ -1,9 +1,9 @@
 from ..serializers import TokenObtainSerializer
 from ..models import CradleUser
-from .utils import UserTestCase
+from .utils import UserTestEntity
 
 
-class TokenObtainSerializerTest(UserTestCase):
+class TokenObtainSerializerTest(UserTestEntity):
 
     def setUp(self):
         super().setUp()
