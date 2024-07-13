@@ -1,7 +1,7 @@
-import { Trash } from 'iconoir-react/regular';
+import { Trash, EditPencil } from 'iconoir-react/regular';
 import { useState } from 'react';
 import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
-import { deleteEntry } from '../../services/adminService/adminService';
+import { deleteArtifactClass, deleteEntry } from '../../services/adminService/adminService';
 import { Link, useNavigate } from 'react-router-dom';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
@@ -34,13 +34,14 @@ export default function AdminPanelCard({
     onDelete,
     link,
     searchKey,
+    typename,
 }) {
     const [dialog, setDialog] = useState(false);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
 
     const handleDelete = async () => {
-        deleteEntry(type, id)
+        (typename ? deleteEntry(type, id): deleteArtifactClass(id))
             .then((response) => {
                 if (response.status === 200) {
                     onDelete();
@@ -61,9 +62,20 @@ export default function AdminPanelCard({
             />
             <div className='h-fit w-full bg-cradle3 p-3 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl'>
                 <h2 className='card-header w-full mx-2 px-1 break-all'>
-                    <Link to={link}>{name}</Link>
+
+                    <Link to={link}>
+                      {typename && (
+                          <span className='text-zinc-500'>{`${typename}:`}</span>
+                      )}{name}
+                    </Link>
                 </h2>
                 <div className='w-full flex flex-row justify-end'>
+                    <button
+                        className='btn btn-ghost w-fit h-full p-1'
+                        onClick={() => navigate(typename ? '/admin/edit-entity/' + id : '/admin/edit-artifact-type/' + id.replace('/', '--'))}
+                    >
+                        <EditPencil />
+                    </button>
                     <button
                         className='btn btn-ghost w-fit h-full p-1'
                         onClick={() => setDialog(!dialog)}

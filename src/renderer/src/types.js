@@ -35,7 +35,7 @@
  * The entries in the dashboard. They are used to create links to their dashboards, which are created using name and (sub)type.
  * @typedef {Object} DashboardEntry
  * @property {string} name - the name of the entry
- * @property {string} type - the type of the entry, e.g. 'actor', 'case', 'artifact', 'metadata'
+ * @property {string} type - the type of the entry, e.g. 'actor', 'entity', 'artifact', 'metadata'
  * @property {string} [subtype] - the subtype for entries with 'artifact' or 'metadata' type
  */
 

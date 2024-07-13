@@ -1,6 +1,6 @@
 /**
  * Regular expression for password validation
- * Password must contain at least 8 characters, including at least one uppercase letter, one lowercase letter, one digit and one special character
+ * Password must contain at least 8 characters, including at least one upperentity letter, one lowerentity letter, one digit and one special character
  * @type {RegExp}
  */
 const passwordRegex =
@@ -8,7 +8,7 @@ const passwordRegex =
 
 /**
  * Validates password
- * Password must contain at least 8 characters, including at least one uppercase letter, one lowercase letter, one digit and one special character
+ * Password must contain at least 8 characters, including at least one upperentity letter, one lowerentity letter, one digit and one special character
  * @param {string} password - the password to validate
  * @returns {boolean}
  */

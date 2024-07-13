@@ -108,7 +108,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
         return markdownContentRef.current && markdownContentRef.current.trim();
     };
 
-    // Function that checks if contents are valid and display error in case not
+    // Function that checks if contents are valid and display error in entity not
     const validateContent = () => {
         if (isValidContent()) {
             return true;
@@ -128,7 +128,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
             const storedFileData = fileDataRef.current;
 
             if (id === NEW_NOTE_PLACEHOLDER_ID) {
-                // Case for new notes
+                // Entity for new notes
                 addFleetingNote(storedContent, storedFileData)
                     .then((res) => {
                         if (res.status === 200) {
@@ -141,7 +141,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
                     })
                     .catch(displayError(setAlert, navigate));
             } else {
-                // Case for existing fleeting notes
+                // Entity for existing fleeting notes
                 updateFleetingNote(id, storedContent, storedFileData)
                     .then((response) => {
                         if (response.status === 200) {
@@ -221,7 +221,7 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
             handleSaveNote('');
         }, autoSaveDelay);
 
-        // In case there are new changes detected reset the timer
+        // In entity there are new changes detected reset the timer
         return () => {
             clearTimeout(autosaveTimer);
         };

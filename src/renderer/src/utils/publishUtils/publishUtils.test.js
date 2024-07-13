@@ -90,7 +90,7 @@ describe('createMarkdownReportFromJson', () => {
     it('should return an empty string if any required field is missing', () => {
         const data = {
             actors: [],
-            cases: [],
+            entities: [],
             artifacts: [],
             metadata: [],
         };
@@ -102,7 +102,7 @@ describe('createMarkdownReportFromJson', () => {
     it('should return the markdown report with all sections and notes', () => {
         const data = {
             actors: [{ name: 'Actor 1' }, { name: 'Actor 2' }],
-            cases: [{ name: 'Case 1' }, { name: 'Case 2' }],
+            entities: [{ name: 'Entity 1' }, { name: 'Entity 2' }],
             artifacts: [{ name: 'Artifact 1' }, { name: 'Artifact 2' }],
             metadata: [{ name: 'Metadata 1' }, { name: 'Metadata 2' }],
             notes: [
@@ -113,7 +113,7 @@ describe('createMarkdownReportFromJson', () => {
         const result = createMarkdownReportFromJson(data);
         const expected =
             '## Actors\n\n##### Actor 1; Actor 2; \n\n---\n\n' +
-            '## Cases\n\n##### Case 1; Case 2; \n\n---\n\n' +
+            '## Entities\n\n##### Entity 1; Entity 2; \n\n---\n\n' +
             '## Artifacts\n\n##### Artifact 1; Artifact 2; \n\n---\n\n' +
             '## Metadata\n\n##### Metadata 1; Metadata 2; \n\n---\n\n' +
             '## Notes\n\n### 01/01/2022, 01:00:00\n\nNote 1\n\n---\n\n### 01/01/2022, 01:00:00\n\nNote 2\n\n---\n\n';
@@ -124,7 +124,7 @@ describe('createMarkdownReportFromJson', () => {
     it('should avoid returning titles if any of the data arrays are empty', () => {
         const data = {
             actors: [],
-            cases: [{ name: 'Case 1' }, { name: 'Case 2' }],
+            entities: [{ name: 'Entity 1' }, { name: 'Entity 2' }],
             artifacts: [],
             metadata: [{ name: 'Metadata 1' }, { name: 'Metadata 2' }],
             notes: [
@@ -134,7 +134,7 @@ describe('createMarkdownReportFromJson', () => {
         };
         const result = createMarkdownReportFromJson(data);
         const expected =
-            '## Cases\n\n##### Case 1; Case 2; \n\n---\n\n' +
+            '## Entities\n\n##### Entity 1; Entity 2; \n\n---\n\n' +
             '## Metadata\n\n##### Metadata 1; Metadata 2; \n\n---\n\n' +
             '## Notes\n\n### 01/01/2022, 01:00:00\n\nNote 1\n\n---\n\n### 01/01/2022, 01:00:00\n\nNote 2\n\n---\n\n';
 

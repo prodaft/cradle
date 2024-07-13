@@ -10,7 +10,7 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
  * AdminPanelUserPermissions component - This component is used to display the permissions for a specific user.
  * The component displays the following information:
  * - User permissions
- * The component will display the permissions for the user for each case.
+ * The component will display the permissions for the user for each entity.
  * The component will allow changing the access level for the user.
  *
  * @function AdminPanelUserPermissions
@@ -19,25 +19,25 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
  */
 export default function AdminPanelUserPermissions() {
     const { username, id } = useParams();
-    const [cases, setCases] = useState([]);
+    const [entities, setEntities] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
 
-    const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(cases);
+    const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(entities);
 
     useEffect(() => {
         getPermissions(id)
             .then((response) => {
                 if (response.status === 200) {
                     let permissions = response.data;
-                    setCases(
+                    setEntities(
                         permissions.map((c) => {
                             return (
                                 <AdminPanelPermissionCard
                                     key={c['id']}
                                     userId={id}
-                                    caseName={c['name']}
-                                    caseId={c['id']}
+                                    entityName={c['name']}
+                                    entityId={c['id']}
                                     searchKey={c['name']}
                                     accessLevel={c['access_type']}
                                 />

@@ -10,7 +10,7 @@ describe('getStatistics', () => {
     });
 
     it('should return statistics data', async () => {
-        const responseData = { actors: [], cases: [], notes: [] };
+        const responseData = { actors: [], entities: [], notes: [] };
         mock.onGet('/statistics/').reply(200, responseData);
 
         const response = await getStatistics();

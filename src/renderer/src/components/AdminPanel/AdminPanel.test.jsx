@@ -19,9 +19,9 @@ jest.mock('../../services/adminService/adminService', () => ({
         status: 200,
         data: [{ id: '1', name: 'Test Actor', description: 'Test Description' }],
     }),
-    getCases: jest.fn().mockResolvedValue({
+    getEntities: jest.fn().mockResolvedValue({
         status: 200,
-        data: [{ id: '1', name: 'Test Case', description: 'Test Description' }],
+        data: [{ id: '1', name: 'Test Entity', description: 'Test Description' }],
     }),
     getUsers: jest.fn().mockResolvedValue({
         status: 200,
@@ -30,18 +30,18 @@ jest.mock('../../services/adminService/adminService', () => ({
 }));
 
 describe('AdminPanel', () => {
-    it('should display actors, cases, and users when user is admin', async () => {
+    it('should display actors, entities, and users when user is admin', async () => {
         const { findByText } = render(
             <MemoryRouter>
                 <AdminPanel />
             </MemoryRouter>,
         );
         expect(await findByText('Test Actor')).toBeInTheDocument();
-        expect(await findByText('Test Case')).toBeInTheDocument();
+        expect(await findByText('Test Entity')).toBeInTheDocument();
         expect(await findByText('Test User')).toBeInTheDocument();
     });
 
-    it('should not display actors, cases, and users when user is not admin', async () => {
+    it('should not display actors, entities, and users when user is not admin', async () => {
         jest.mock('../../hooks/useAuth/useAuth', () => ({
             default: () => {
                 isAdmin: false;
@@ -53,7 +53,7 @@ describe('AdminPanel', () => {
             </MemoryRouter>,
         );
         expect(queryByText('Test Actor')).not.toBeInTheDocument();
-        expect(queryByText('Test Case')).not.toBeInTheDocument();
+        expect(queryByText('Test Entity')).not.toBeInTheDocument();
         expect(queryByText('Test User')).not.toBeInTheDocument();
     });
 });

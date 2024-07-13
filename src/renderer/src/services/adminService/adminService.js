@@ -8,54 +8,90 @@ import { authAxios } from '../axiosInstance/axiosInstance';
  */
 
 /**
- * Sends a POST to create an actor
+ * The data for an artifact class. This data needs to be sent to the server to create an artifact class.
+ * @typedef {Object} ArtifactClass
+ * @property {string} name - entry name
+ * @property {string} format - format of the entity
+ * @property {string} format_argument - details for formatting entry if exists
+ */
+
+/**
+ * Sends a POST to create an entity
  *
- * @param {EntryData} data - actor data
+ * @param {EntryData} data - entity data
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export async function createActor(data) {
+export async function createEntity(data, token) {
     return authAxios({
         method: 'post',
-        url: '/entries/actors/',
+        url: '/entries/entities/',
         data: data,
     });
 }
 
 /**
- * Sends a POST to create a case
+ * Sends an UPDATE to create an entity
  *
- * @param {EntryData} data - case data
+ * @param {EntryData} data - entity data
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export async function createCase(data, token) {
+export async function editEntity(data, token) {
     return authAxios({
-        method: 'post',
-        url: '/entries/cases/',
+        method: 'update',
+        url: '/entries/entities/',
         data: data,
     });
 }
 
 /**
- * Sends a GET request to get all actors
+ * Sends a POST to create an artifact class
  *
+ * @param {ArtifactClass} data - artifact class data
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export async function getActors() {
+export async function createArtifactClass(data, token) {
     return authAxios({
-        method: 'get',
-        url: '/entries/actors/',
+        method: 'post',
+        url: '/entries/entry_classes/',
+        data: data,
     });
 }
 
 /**
- * Sends a GET request to get all cases
+ * Sends a POST to edit an artifact class
+ *
+ * @param {ArtifactClass} data - artifact class data
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export async function editArtifactClass(data, token) {
+    return authAxios({
+        method: 'update',
+        url: '/entries/entry_classes/',
+        data: data,
+    });
+}
+
+/**
+ * Sends a GET request to get all entities
  *
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export async function getCases() {
+export async function getEntities() {
     return authAxios({
         method: 'get',
-        url: '/entries/cases/',
+        url: '/entries/entities/',
+    });
+}
+
+/**
+ * Sends a GET request to get all entry classes
+ *
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export async function getEntryClasses() {
+    return authAxios({
+        method: 'get',
+        url: '/entries/entry_classes/',
     });
 }
 
@@ -74,7 +110,7 @@ export async function getUsers() {
 /**
  * Sends a DELETE request to delete an entry
  *
- * @param {string} type - entry type : `entries/actors`, `entries/cases`, `users` (use plural form)
+ * @param {string} type - entry type : `entries/entities`, `users` (use plural form)
  * @param {string} id - entry id
  * @returns {Promise<AxiosResponse<any, any>>}
  */
@@ -86,17 +122,30 @@ export async function deleteEntry(type, id) {
 }
 
 /**
+ * Sends a DELETE request to delete an artifact class
+ *
+ * @param {string} type - artifact class to be deleted
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export async function deleteArtifactClass(type) {
+    return authAxios({
+        method: 'delete',
+        url: `/entries/entry_classes/${type}/`,
+    });
+}
+
+/**
  * Sends a PUT request to change access level of a user
  *
  * @param {string} userId - user id
- * @param {string} caseId - case id
+ * @param {string} entityId - entity id
  * @param {string} accessLevel - access level : "none", "read", "read-write"
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export async function changeAccess(userId, caseId, accessLevel) {
+export async function changeAccess(userId, entityId, accessLevel) {
     return authAxios({
         method: 'put',
-        url: `/access/${userId}/${caseId}/`,
+        url: `/access/${userId}/${entityId}/`,
         data: { access_type: accessLevel },
     });
 }

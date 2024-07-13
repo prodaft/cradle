@@ -14,7 +14,7 @@ describe('AdminPanelUserPermissions', () => {
     it('should display user permissions when user has permissions', async () => {
         getPermissions.mockResolvedValue({
             status: 200,
-            data: [{ id: '1', name: 'Test Case', access_type: 'read' }],
+            data: [{ id: '1', name: 'Test Entity', access_type: 'read' }],
         });
         const { findByText } = render(
             <MemoryRouter initialArtifacts={['/user/1']}>
@@ -26,7 +26,7 @@ describe('AdminPanelUserPermissions', () => {
                 </Routes>
             </MemoryRouter>,
         );
-        expect(await findByText('Test Case')).toBeInTheDocument();
+        expect(await findByText('Test Entity')).toBeInTheDocument();
     });
 
     it('should not display user permissions when user has no permissions', async () => {
@@ -41,6 +41,6 @@ describe('AdminPanelUserPermissions', () => {
                 </Routes>
             </MemoryRouter>,
         );
-        expect(queryByText('Test Case')).not.toBeInTheDocument();
+        expect(queryByText('Test Entity')).not.toBeInTheDocument();
     });
 });

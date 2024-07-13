@@ -1,8 +1,8 @@
 import AdminPanelSection from '../AdminPanelSection/AdminPanelSection';
 import { useNavigate } from 'react-router-dom';
 import {
-    getActors,
-    getCases,
+    getEntities,
+    getEntryClasses,
     getUsers,
 } from '../../services/adminService/adminService';
 import AdminPanelCard from '../AdminPanelCard/AdminPanelCard';
@@ -15,7 +15,7 @@ import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
  * AdminPanel component - This component is used to display the AdminPanel.
  * Displays the AdminPanel with the following sections:
  * - Actors
- * - Cases
+ * - Entities
  * - Users
  * Each section contains a list of cards with the respective information and actions.
  * The actions are:
@@ -28,30 +28,31 @@ import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
  * @constructor
  */
 export default function AdminPanel() {
-    const [actors, setActors] = useState([]);
-    const [cases, setCases] = useState([]);
+    const [entities, setEntities] = useState([]);
     const [users, setUsers] = useState([]);
+    const [artifact_types, setArtifactTypes] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
     const handleError = displayError(setAlert, navigate);
 
-    const displayActors = async () => {
-        getActors()
+    const displayEntities = async () => {
+        getEntities()
             .then((response) => {
                 if (response.status === 200) {
-                    let actors = response.data;
-                    setActors(
-                        actors.map((actor) => {
+                    let entities = response.data;
+                    setEntities(
+                        entities.map((c) => {
                             return (
                                 <AdminPanelCard
-                                    id={actor.id}
-                                    key={actor.id}
-                                    name={actor.name}
-                                    searchKey={actor.name}
-                                    description={actor.description}
-                                    type={'entries/actors'}
-                                    onDelete={displayActors}
-                                    link={createDashboardLink(actor)}
+                                    id={c.id}
+                                    key={c.id}
+                                    name={c.name}
+                                    searchKey={c.name}
+                                    description={c.description}
+                                    type={'entries/entities'}
+                                    onDelete={displayEntities}
+                                    link={createDashboardLink(c)}
+                                    typename={c.subtype}
                                 />
                             );
                         }),
@@ -61,23 +62,23 @@ export default function AdminPanel() {
             .catch(handleError);
     };
 
-    const displayCases = async () => {
-        getCases()
+    const displayArtifactTypes = async () => {
+        getEntryClasses()
             .then((response) => {
                 if (response.status === 200) {
-                    let cases = response.data;
-                    setCases(
-                        cases.map((c) => {
+                    let entities = response.data;
+                    setArtifactTypes(
+                        entities
+                        .filter((c) => c.type == "artifact")
+                        .map((c) => {
                             return (
                                 <AdminPanelCard
-                                    id={c.id}
-                                    key={c.id}
-                                    name={c.name}
-                                    searchKey={c.name}
-                                    description={c.description}
-                                    type={'entries/cases'}
-                                    onDelete={displayCases}
-                                    link={createDashboardLink(c)}
+                                    id={c.subtype}
+                                    key={c.subtype}
+                                    name={c.subtype}
+                                    searchKey={c.subtype}
+                                    type={'entries/artifacts'}
+                                    onDelete={displayArtifactTypes}
                                 />
                             );
                         }),
@@ -113,9 +114,9 @@ export default function AdminPanel() {
     };
 
     useEffect(() => {
-        displayActors();
         displayUsers();
-        displayCases();
+        displayEntities();
+        displayArtifactTypes();
     }, []);
 
     return (
@@ -123,20 +124,20 @@ export default function AdminPanel() {
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='w-full h-full rounded-md flex flex-row p-1.5 gap-1.5 overflow-x-hidden overflow-y-scroll'>
                 <AdminPanelSection
-                    title={'Actors'}
+                    title={'Entities'}
                     addEnabled={true}
-                    addTooltipText={'Add Actor'}
-                    handleAdd={() => navigate('/admin/add-actor')}
+                    addTooltipText={'Add Entity'}
+                    handleAdd={() => navigate('/admin/add-entity')}
                 >
-                    {actors}
+                    {entities}
                 </AdminPanelSection>
                 <AdminPanelSection
-                    title={'Cases'}
+                    title={'Artifact Types'}
                     addEnabled={true}
-                    addTooltipText={'Add Case'}
-                    handleAdd={() => navigate('/admin/add-case')}
+                    addTooltipText={'Add Artifact Type'}
+                    handleAdd={() => navigate('/admin/add-artifact-type')}
                 >
-                    {cases}
+                    {artifact_types}
                 </AdminPanelSection>
                 <AdminPanelSection title={'Users'} addEnabled={false}>
                     {users}

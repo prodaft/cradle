@@ -3,19 +3,14 @@ import { vim } from '@replit/codemirror-vim';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
 import { drawSelection } from '@uiw/react-codemirror';
-import { useId, useState, useRef, useCallback } from 'react';
+import { useId, useState, useRef, useCallback, useEffect } from 'react';
 import { EditorView, keymap } from '@codemirror/view';
 import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import { eclipse } from '@uiw/codemirror-theme-eclipse';
 import FileInput from '../FileInput/FileInput';
 import FileTable from '../FileTable/FileTable';
 import { NavArrowDown, NavArrowUp } from 'iconoir-react/regular';
-import {
-    entryTypes,
-    artifactSubtypes,
-    metadataSubtypes,
-} from '../../utils/entryDefinitions/entryDefinitions';
-import { queryEntries } from '../../services/queryService/queryService';
+import { fetchLspPack } from '../../services/queryService/queryService';
 import useAuth from '../../hooks/useAuth/useAuth';
 import { completionKeymap, acceptCompletion } from '@codemirror/autocomplete';
 import { getLinkNode, parseLink } from '../../utils/textEditorUtils/textEditorUtils';
@@ -49,31 +44,63 @@ export default function Editor({
 }) {
     const [enableVim, setEnableVim] = useState(false);
     const [showFileList, setShowFileList] = useState(false);
+    const [lspPack, setLspPack] = useState({"classes": {}, "instances": {}});
     const vimModeId = useId();
     const editorRef = useRef(null);
 
-    const auth = useAuth();
 
-    const performSearch = async (name, type, subtype) => {
-        return queryEntries(name, type, subtype)
-            .then((response) => {
-                let data = response.data.map((x) => ({
-                    label: x.name,
-                    type: 'keyword',
-                }));
-                return data;
-            })
-            .catch((error) => {
-                console.log(error);
-                return [];
+    const autocompleteOutsideLink = (context) => {
+      let word = context.matchBefore(/\w*/)
+      if (word.from == word.to && !context.explicit)
+        return { from: context.pos, options: [] }
+
+      return new Promise((resolve) => {
+        let suggestions = [];
+
+        // Check each class type in LspPack
+        for (const [type, criteria] of Object.entries(lspPack.classes)) {
+            // Check if criteria has a regex
+            if (criteria.regex) {
+                const regex = new RegExp(criteria.regex);
+                if (regex.test(word.text)) {
+                    suggestions.push({type: "keyword", label: `[[${type}:${word.text}]]` });
+                }
+            }
+
+            // Check if criteria has an enum
+            if (criteria.enum) {
+                const matchingEnums = criteria.enum.filter(value => value.startsWith(word.text));
+                matchingEnums.forEach(match => {
+                    suggestions.push({ type: "keyword", label: `[[${type}:${match}]]` },
+                    );
+                });
+            }
+        }
+
+        // Check in instances for possible completions
+        for (const [type, instances] of Object.entries(lspPack.instances)) {
+            const matchingInstances = instances.filter(value => value.startsWith(word.text));
+            matchingInstances.forEach(match => {
+                suggestions.push({
+                    type: "keyword", label: `[[${type}:${match}]]`
+                });
             });
-    };
+        }
+
+        resolve({
+                from: word.from,
+                to: word.to,
+                options: suggestions,
+            });
+    });
+    }
 
     // Autocomplete links (e.g. syntax `[[...]]`) using information from the database. Uses the `/query` endpoint to get the data.
     const linkAutoComplete = (context) => {
+        console.log(lspPack)
         let node = getLinkNode(context);
 
-        if (node == null) return { from: context.pos, options: [] };
+        if (node == null) return autocompleteOutsideLink(context);
 
         const linkFull = context.state.sliceDoc(node.from, node.to);
         const parsedLink = parseLink(node.from, context.pos, linkFull);
@@ -85,18 +112,24 @@ export default function Editor({
         if (parsedLink.type == null) {
             options = new Promise((f) =>
                 f(
-                    [entryTypes, artifactSubtypes, metadataSubtypes].flatMap((set) =>
-                        Array.from(set).map((item) => ({
-                            label: item,
-                            type: 'keyword',
-                        })),
-                    ),
+                  Object.values(lspPack)
+                      .flatMap(obj => Object.keys(obj))
+                      .map(item => ({
+                          label: item,
+                          type: 'keyword',
+                      }))
                 ),
             );
-        } else if (artifactSubtypes.has(parsedLink.type) && parsedLink.text.length >= 3) {
-            options = performSearch(parsedLink.text, [], [parsedLink.type]);
-        } else if (!artifactSubtypes.has(parsedLink.type)) {
-            options = performSearch(parsedLink.text, [parsedLink.type], []);
+        } else if (parsedLink.type in lspPack["instances"]) {
+            options = new Promise((f) =>
+                f(
+                    lspPack["instances"][parsedLink.type]
+                    .map(item => ({
+                        label: item,
+                        type: 'keyword',
+                    }))
+                ),
+            );
         }
 
         return options.then((o) => {
@@ -137,6 +170,16 @@ export default function Editor({
     const toggleFileList = useCallback(() => {
         setShowFileList(!showFileList);
     }, [showFileList]);
+
+    useEffect(() => {
+      fetchLspPack()
+            .then((response) => {
+              setLspPack(response.data)
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    }, []);
 
     return (
         <div className='h-full w-full flex flex-col flex-1'>

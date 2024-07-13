@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
  * @property {string} timestamp - The timestamp when the notification was created.
  * @property {boolean} is_marked_unread - A flag indicating whether the notification is marked as unread.
  * @property {string} notification_type - The type of notification.
- * @property {string} case_id - The case ID associated with the notification.
+ * @property {string} entity_id - The entity ID associated with the notification.
  * @property {string} requesting_user_id - The user ID of the user requesting access.
  * @description The notification object contains the details of a notification. It is equivalent to the Notification type in the backend.
  */
@@ -50,7 +50,7 @@ export default function NotificationCard({
         timestamp,
         is_marked_unread,
         notification_type,
-        case_id,
+        entity_id,
         requesting_user_id,
     } = notification;
     const [isMarkedUnread, setIsMarkedUnread] = useState(is_marked_unread);
@@ -72,7 +72,7 @@ export default function NotificationCard({
     };
 
     const handleChangeAccess = (newAccess) => () => {
-        changeAccess(requesting_user_id, case_id, newAccess)
+        changeAccess(requesting_user_id, entity_id, newAccess)
             .then((response) => {
                 if (response.status === 200) {
                     setAlert({

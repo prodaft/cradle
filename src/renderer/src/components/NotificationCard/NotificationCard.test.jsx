@@ -19,7 +19,7 @@ describe('NotificationCard', () => {
         timestamp: '2023-06-01T12:00:00Z',
         is_marked_unread: true,
         notification_type: 'request_access_notification',
-        case_id: '123',
+        entity_id: '123',
         requesting_user_id: '456',
     };
 

@@ -1,10 +1,6 @@
 import { NavArrowDown, NavArrowUp } from 'iconoir-react';
 import React from 'react';
 import SearchFilter from '../SearchFilter/SearchFilter';
-import {
-    entryTypesReduced,
-    artifactSubtypes,
-} from '../../utils/entryDefinitions/entryDefinitions';
 
 /**
  * Section for filters in the search dialog
@@ -14,20 +10,17 @@ import {
  * @param {Object} props - The props of the component.
  * @param {boolean} props.showFilters - to show or hide the filters
  * @param {StateSetter<boolean>} props.setShowFilters - function to toggle the filters
- * @param {Array<string>} props.artifactTypeFilters - the current artifact type filters
- * @param {StateSetter<Array<string>>} props.setArtifactTypeFilters - the function to update the artifact type filters
- * @param {Array<string>} props.entryTypeFilters - the current entry type filters
- * @param {StateSetter<Array<string>>} props.setEntryTypeFilters - the function to update the entry type filters
+ * @param {Array<string>} props.entrySubtypes - the current entry subtype filters
+ * @param {StateSetter<Array<string>>} props.setEntrySubtypeFilter - the function to update the entry subtype type filters
  * @returns {SearchFilterSection}
  * @constructor
  */
 export default function SearchFilterSection({
     showFilters,
     setShowFilters,
-    artifactTypeFilters,
-    setArtifactTypeFilters,
-    entryTypeFilters,
-    setEntryTypeFilters,
+    entrySubtypes,
+    entrySubtypeFilters,
+    setEntrySubtypeFilters,
 }) {
     const toggleFilters = () => {
         setShowFilters(!showFilters);
@@ -60,25 +53,12 @@ export default function SearchFilterSection({
                     <div className='w-auto flex flex-col'>
                         <div className='font-medium text-zinc-400'>Entry type</div>
                         <div className='flex flex-wrap'>
-                            {Array.from(entryTypesReduced).map((entryType, index) => (
-                                <SearchFilter
-                                    key={index}
-                                    option={entryType}
-                                    filters={entryTypeFilters}
-                                    setFilters={setEntryTypeFilters}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                    <div className='w-auto flex flex-col'>
-                        <div className='font-medium text-zinc-400'>Artifact type</div>
-                        <div className='flex flex-wrap'>
-                            {Array.from(artifactSubtypes).map((artifactType, index) => (
+                            {Array.from(entrySubtypes).map((artifactType, index) => (
                                 <SearchFilter
                                     key={index}
                                     option={artifactType}
-                                    filters={artifactTypeFilters}
-                                    setFilters={setArtifactTypeFilters}
+                                    filters={entrySubtypeFilters}
+                                    setFilters={setEntrySubtypeFilters}
                                 />
                             ))}
                         </div>

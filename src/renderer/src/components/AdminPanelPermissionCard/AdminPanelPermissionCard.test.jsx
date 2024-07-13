@@ -16,8 +16,8 @@ describe('AdminPanelPermissionCard', () => {
             <MemoryRouter>
                 <AdminPanelPermissionCard
                     userId='1'
-                    caseName='Test Case'
-                    caseId='1'
+                    entityName='Test Entity'
+                    entityId='1'
                     accessLevel='read'
                 />
             </MemoryRouter>,
@@ -31,8 +31,8 @@ describe('AdminPanelPermissionCard', () => {
             <MemoryRouter>
                 <AdminPanelPermissionCard
                     userId='1'
-                    caseName='Test Case'
-                    caseId='1'
+                    entityName='Test Entity'
+                    entityId='1'
                     accessLevel='read'
                 />
             </MemoryRouter>,
@@ -50,8 +50,8 @@ describe('AdminPanelPermissionCard', () => {
             <MemoryRouter>
                 <AdminPanelPermissionCard
                     userId='1'
-                    caseName='Test Case'
-                    caseId='1'
+                    entityName='Test Entity'
+                    entityId='1'
                     accessLevel='read'
                 />
             </MemoryRouter>,

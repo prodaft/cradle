@@ -37,7 +37,7 @@ export default function Register() {
             setAlert({
                 show: true,
                 message:
-                    'Password must be at least 12 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
+                    'Password must be at least 12 characters long, contain at least one upperentity letter, one lowerentity letter, one number, and one special character.',
                 color: 'red',
             });
             return;

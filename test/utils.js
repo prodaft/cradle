@@ -29,16 +29,16 @@ export class SeleniumUtils {
         return children.length;
     }
 
-    async getCaseCount() {
+    async getEntityCount() {
         await this.driver.wait(until.urlIs('https://cradle.yigit.run/#/admin'));
 
         let divs = await this.driver.findElements(
             By.className('w-full h-fit bg-gray-2 rounded-md p-3'),
         );
 
-        let caseDiv = divs[0];
+        let entityDiv = divs[0];
 
-        let children = await caseDiv.findElements(By.xpath('./*'));
+        let children = await entityDiv.findElements(By.xpath('./*'));
 
         children = await children[2].findElements(By.xpath('./*'));
 
@@ -132,13 +132,13 @@ export class SeleniumUtils {
         }
     }
 
-    async createCase(name, description) {
+    async createEntity(name, description) {
         await this.driver.wait(until.urlIs('https://cradle.yigit.run/#/admin'));
         let items = await this.driver.findElements(By.css('span'));
 
         await items[1].click();
         await this.driver.wait(
-            until.urlIs('https://cradle.yigit.run/#/admin/add-case'),
+            until.urlIs('https://cradle.yigit.run/#/admin/add-entity'),
         );
 
         let inputs = await this.driver.findElements(By.css('input'));

@@ -23,7 +23,7 @@ const useFrontendSearch = (children) => {
             setFilteredChildren(children);
         } else {
             const filtered = children.filter((child) =>
-                child.props.searchKey.toLowerCase().includes(searchVal.toLowerCase()),
+                child.props.searchKey.toLowerEntity().includes(searchVal.toLowerEntity()),
             );
             setFilteredChildren(filtered);
         }

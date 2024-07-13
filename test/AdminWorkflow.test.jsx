@@ -7,23 +7,20 @@ import 'selenium-webdriver/firefox';
 
 describe('Test admin functionality', () => {
     let loginPage = new SeleniumUtils(CRADLE_URL);
-    it.skip('creates/deletes cases, actors and a note.', async () => {
+    it.skip('creates/deletes entities and a note.', async () => {
         let username = 'admin';
         const password = process.env.VITE_ADMIN_PASSWORD;
-        let content = '[[case:Bromania]] il investigheaza pe [[ip:192.168.0.0]]';
+        let content = '[[entity:Bromania]] il investigheaza pe [[ip:192.168.0.0]]';
         try {
             await loginPage.openStartPage();
             await loginPage.login(username, password);
             expect(await loginPage.getSidebarCount()).toBe(6);
 
             await loginPage.goToSidebarOption(3);
-            let currActors = await loginPage.getActorCount();
-            let currCases = await loginPage.getCaseCount();
-            await loginPage.createActor('Diaciclovn', '');
-            await loginPage.createCase('Bromania', 'Description');
+            let currEntities = await loginPage.getEntityCount();
+            await loginPage.createEntity('Bromania', 'Description');
 
-            expect(await loginPage.getActorCount()).toBe(currActors + 1);
-            expect(await loginPage.getCaseCount()).toBe(currCases + 1);
+            expect(await loginPage.getEntityCount()).toBe(currEntities + 1);
 
             await loginPage.goToSidebarOption(1);
             await loginPage.createNote(content, 0);
@@ -31,8 +28,6 @@ describe('Test admin functionality', () => {
             await loginPage.checkAlertSuccessful();
 
             await loginPage.goToSidebarOption(3);
-            await loginPage.deleteActor('Diaciclovn');
-            expect(await loginPage.getActorCount()).toBe(currActors);
             await loginPage.logout();
         } finally {
             await loginPage.driver.quit();

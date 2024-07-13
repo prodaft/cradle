@@ -33,12 +33,12 @@ describe('GraphComponent', () => {
     it('renders graph data after fetch', async () => {
         getGraphData.mockResolvedValue({
             data: {
-                entries: [{ id: '1', name: 'Entry1', type: 'case' }],
+                entries: [{ id: '1', name: 'Entry1', type: 'entity' }],
                 links: [],
             },
         });
         const { findByText } = render(<GraphComponent />);
-        const nodeLabel = await findByText('case: Entry1');
+        const nodeLabel = await findByText('entity: Entry1');
         expect(nodeLabel).toBeInTheDocument();
     });
 
@@ -46,7 +46,7 @@ describe('GraphComponent', () => {
         getGraphData.mockResolvedValue({
             data: {
                 entries: [
-                    { id: '1', name: 'Entry1', type: 'case' },
+                    { id: '1', name: 'Entry1', type: 'entity' },
                     { id: '2', name: 'Entry2', type: 'actor' },
                 ],
                 links: [],
@@ -62,6 +62,6 @@ describe('GraphComponent', () => {
         fireEvent.keyDown(searchInput, { key: 'Enter' });
         const nodeLabel = await queryByText('actor: Entry2');
         expect(nodeLabel).toBeInTheDocument();
-        expect(await queryByText('case: Entry1')).not.toBeInTheDocument();
+        expect(await queryByText('entity: Entry1')).not.toBeInTheDocument();
     });
 });

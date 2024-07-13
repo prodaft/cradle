@@ -5,7 +5,7 @@ import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
  * This component is a card component that displays a list of items.
  * Each item in the list is displayed as a clickable card.
  * When an item is clicked, the user is navigated to the corresponding dashboard.
- * It is used to display lists of entries such as actors and cases.
+ * It is used to display lists of entries such as actors and entities.
  *
  * @function EntryListCard
  * @param {Object} props - The props of the component.
