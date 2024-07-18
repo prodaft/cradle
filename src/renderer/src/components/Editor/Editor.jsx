@@ -48,13 +48,7 @@ export default function Editor({
     const vimModeId = useId();
     const editorRef = useRef(null);
 
-
-    const autocompleteOutsideLink = (context) => {
-      let word = context.matchBefore(/\S*/)
-      if (word.from == word.to && !context.explicit)
-        return { from: context.pos, options: [] }
-
-      return new Promise((resolve) => {
+    const suggestionsForWord = (word) => {
         let suggestions = [];
 
         // Check each class type in LspPack
@@ -62,16 +56,22 @@ export default function Editor({
             // Check if criteria has a regex
             if (criteria.regex) {
                 const regex = new RegExp(criteria.regex);
-                if (regex.test(word.text)) {
-                    suggestions.push({type: "keyword", label: `[[${type}:${word.text}]]` });
+                if (regex.test(word)) {
+                    suggestions.push({
+                      type: type,
+                      match: word
+                    });
                 }
             }
 
             // Check if criteria has an enum
             if (criteria.enum) {
-                const matchingEnums = criteria.enum.filter(value => value.startsWith(word.text));
+                const matchingEnums = criteria.enum.filter(value => value.startsWith(word));
                 matchingEnums.forEach(match => {
-                    suggestions.push({ type: "keyword", label: `[[${type}:${match}]]` },
+                    suggestions.push({
+                      type: type,
+                      match: match
+                    },
                     );
                 });
             }
@@ -79,20 +79,31 @@ export default function Editor({
 
         // Check in instances for possible completions
         for (const [type, instances] of Object.entries(lspPack.instances)) {
-            const matchingInstances = instances.filter(value => value.startsWith(word.text));
+            const matchingInstances = instances.filter(value => value.startsWith(word));
             matchingInstances.forEach(match => {
                 suggestions.push({
-                    type: "keyword", label: `[[${type}:${match}]]`
+                  type: type,
+                  match: match
                 });
             });
         }
 
+        return suggestions;
+    }
+
+    const autocompleteOutsideLink = (context) => {
+      let word = context.matchBefore(/\S*/)
+      if (word.from == word.to && !context.explicit)
+        return { from: context.pos, options: [] }
+
+      return new Promise((resolve) => {
+        let suggestions = suggestionsForWord(word.text).map((o) => {return {type: "keyword", label: `[[${o.type}:${o.match}]]`,}})
         resolve({
                 from: word.from,
                 to: word.to,
-                options: suggestions,
-            });
-    });
+                options: suggestions
+        });
+      })
     }
 
     // Autocomplete links (e.g. syntax `[[...]]`) using information from the database. Uses the `/query` endpoint to get the data.
@@ -115,22 +126,30 @@ export default function Editor({
                   Object.values(lspPack)
                       .flatMap(obj => Object.keys(obj))
                       .map(item => ({
-                          label: item,
+                          label: parsedLink.post(item),
                           type: 'keyword',
                       }))
                 ),
             );
         } else if (parsedLink.type in lspPack["instances"]) {
+                console.log(
+                    lspPack["instances"][parsedLink.type]
+                    .map(item => ({
+                        label: parsedLink.post(item),
+                        type: 'keyword',
+                    }))
+                )
             options = new Promise((f) =>
                 f(
                     lspPack["instances"][parsedLink.type]
                     .map(item => ({
-                        label: item,
+                        label: parsedLink.post(item),
                         type: 'keyword',
                     }))
                 ),
             );
         }
+        console.log(parsedLink)
 
         return options.then((o) => {
             return {
@@ -177,6 +196,27 @@ export default function Editor({
           editorRef.current.view.dispatch(doc.replaceSelection(text));
       }
     };
+
+    const underlinePossibleLinks = () => {
+      if ( !editorRef.current ) {
+        return;
+      }
+      const doc = editorRef.current.view.state;
+      const words = markdownContent.split(/\b(\s+)\b/);
+
+      let position = 0;
+      words.forEach((word) => {
+        if (word.trim()) {
+          const start = position;
+          const end = start + word.length;
+          console.log(`Word: ${word.trim()}, Start: ${start}, End: ${end}`);
+          if (suggestionsForWord(word.trim).length > 0) {
+             editorRef.current.view.dispatch(doc.replaceSelection(text));
+          }
+        }
+        position += word.length;
+      });
+    }
 
     useEffect(() => {
       fetchLspPack()
