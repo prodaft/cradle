@@ -2,6 +2,7 @@ from typing import Tuple, Dict, List, Any
 from entries.models import Entry, EntryClass
 from notes.models import Note
 from user.models import CradleUser
+from access.models import Access
 
 
 class LspUtils:
@@ -17,6 +18,14 @@ class LspUtils:
         return accessible_entries
 
     @staticmethod
+    def get_entities(user: CradleUser) -> List[Entry]:
+        if user.is_superuser:
+            return Entry.entities.all().distinct()
+
+        entity_ids = Access.objects.get_accessible_entity_ids(user.id)
+        return Entry.entities.filter(pk__in=entity_ids).distinct()
+
+    @staticmethod
     def entries_to_lsp_pack(entries: List[Entry], entry_classes: List[EntryClass]) -> Dict[str, Dict[str, Any]]:
         pack: Dict[str, Dict[str, Any]] = {
             "classes": {},
@@ -24,7 +33,6 @@ class LspUtils:
         }
 
         for i in entry_classes:
-            print(i.subtype)
             if i.subtype not in pack["classes"]:
                 if i.regex:
                     pack["classes"][i.subtype] = {"regex": i.regex}

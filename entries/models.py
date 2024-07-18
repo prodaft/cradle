@@ -54,7 +54,6 @@ class EntryClass(models.Model):
         return hash((self.type, self.subtype))
 
     def save(self, *args, **kwargs):
-        print(str(self.options))
         if self.regex and self.options:
             raise InvalidClassFormatException()
 

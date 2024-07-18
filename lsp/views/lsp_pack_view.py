@@ -21,6 +21,7 @@ class LspPack(APIView):
     def get(self, request: Request) -> Response:
         user: CradleUser = cast(CradleUser, request.user)
         entries = LspUtils.get_lsp_entries(user)
+        entities = LspUtils.get_entities(user)
         entry_classes = EntryClass.objects.all()
 
-        return Response(LspUtils.entries_to_lsp_pack(entries, entry_classes))
+        return Response(LspUtils.entries_to_lsp_pack(entities | entries, entry_classes))
