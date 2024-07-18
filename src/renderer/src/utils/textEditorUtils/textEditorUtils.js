@@ -83,7 +83,9 @@ const handleLinkClick = (navigateHandler) => (event) => {
     }
 };
 
-const LINK_REGEX = /^\[([^:|]+)(?::((?:\\\||[^|])+))?(?:\|((?:\\\||[^|])+))?\]$/;
+const LINK_REGEX_SINGLE = /^\[(?:([^:|]+)(?::(?:((?:\\\||[^|])+))?(?:\|((?:\\\||[^|])+))?)?)?\]$/;
+const LINK_REGEX_DOUBLE = /^\[\[(?:([^:|]+)(?::(?:((?:\\\||[^|])+))?(?:\|((?:\\\||[^|])+))?)?)?\]\]$/;
+const LINK_REGEX = LINK_REGEX_DOUBLE;
 
 /**
  * Gets the link node from the current position in the editor.
@@ -131,8 +133,8 @@ const getLinkNode = (context) => {
  * @returns {?Link}
  */
 const parseLink = (from, current, text) => {
-    // Match the regex with the text
-    const match = LINK_REGEX.exec(text);
+    // This is very bad
+    const match = text == "[[]]" ? LINK_REGEX_DOUBLE.exec(text) : LINK_REGEX_SINGLE.exec(text);
 
     if (!match) return null;
 
@@ -140,11 +142,11 @@ const parseLink = (from, current, text) => {
     const [_, type, name] = match;
 
     // Extract group positions
-    const typeStart = match.index + 1 + from;
-    const typeEnd = typeStart + type.length;
+    const typeStart = text == "[[]]" ? match.index + 2 + from : match.index + 1 + from;
+    const typeEnd = type ? typeStart + type.length : typeStart;
 
-    const nameStart = name && typeEnd + 1;
-    const nameEnd = nameStart && nameStart + name.length;
+    const nameStart = typeEnd + 1;
+    const nameEnd = name ? nameStart + name.length : nameStart;
 
     if (current >= typeStart && current <= typeEnd)
         return {
@@ -152,6 +154,7 @@ const parseLink = (from, current, text) => {
             to: typeEnd,
             type: null,
             text: text.slice(typeStart - from, typeEnd - from),
+            post: (t) => `${t}:`,
         };
     else if (nameStart && current >= nameStart && current <= nameEnd)
         return {
@@ -159,6 +162,7 @@ const parseLink = (from, current, text) => {
             to: nameEnd,
             type: text.slice(typeStart - from, typeEnd - from),
             text: text.slice(nameStart - from, nameEnd - from),
+            post: (t) => `${t}`,
         };
 
     return null;
