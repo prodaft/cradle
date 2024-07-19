@@ -224,7 +224,7 @@ class NoteManager(models.Manager):
 
         return (
             self.get_entries_from_notes(self.get_accessible_notes(user))
-            .filter(type=EntryType.ARTIFACT)
+            .filter(entry_class__type=EntryType.ARTIFACT)
             .values("id")
             .distinct()
         )
