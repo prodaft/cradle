@@ -34,8 +34,10 @@ class AccessCheckerTask:
 
         required_access = {AccessType.READ_WRITE}
 
-        if not Access.objects.has_access_to_entities(
-            self.user, referenced_entries[EntryType.ENTITY], required_access
-        ):
-            raise NoAccessToEntriesException()
+        for k,v in referenced_entries[EntryType.ENTITY].items():
+            if not Access.objects.has_access_to_entities(
+                self.user, v, required_access
+            ):
+                raise NoAccessToEntriesException()
+
         return referenced_entries
