@@ -145,8 +145,14 @@ class EntryClassDetail(APIView):
             Response("EntryClass with the same name already exists", status=409):
                 if an entity with the same name already exists
         """
-        request.data["subtype"] = class_subtype
-        serializer = ArtifactClassSerializer(data=request.data)
+        try:
+            entity = EntryClass.objects.get(subtype=class_subtype)
+        except EntryClass.DoesNotExist:
+            return Response(
+                "There is no entry class with specified subtype", status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = ArtifactClassSerializer(entity, data=request.data)
 
         if serializer.is_valid():
             serializer.save()

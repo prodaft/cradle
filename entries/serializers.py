@@ -73,7 +73,7 @@ class EntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Entry
-        fields = ['name', 'description', 'entry_class']
+        fields = ['id', 'name', 'description', 'entry_class']
 
     def to_representation(self, instance):
         """Move fields from profile to user representation."""
@@ -113,12 +113,6 @@ class EntitySerializer(serializers.ModelSerializer):
 
         if entry_class.exists() and entry_class.first().type != EntryType.ENTITY:
             raise EntryTypeMismatchException()
-
-
-        entry_exists = Entry.objects.filter(entry_class=data["entry_class"], name=data["name"]).exists()
-        if entry_exists:
-            raise DuplicateEntryException()
-
 
         return super().validate(data)
 

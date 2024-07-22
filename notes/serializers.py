@@ -50,6 +50,7 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 
         # save the referenced entries to be used when creating the note
         self.referenced_entries = TaskScheduler(data["content"], user).run_pipeline()
+
         return super().validate(data)
 
     def create(self, validated_data):
