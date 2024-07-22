@@ -3,6 +3,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
 from ..serializers import UserCreateSerializer, UserRetrieveSerializer
 
 from ..models import CradleUser
@@ -114,3 +115,53 @@ class UserDetail(APIView):
         return Response(
             "Requested user account was deleted.", status=status.HTTP_200_OK
         )
+
+class UserSimulate(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get_tokens_for_user(self, user: CradleUser):
+        refresh = RefreshToken.for_user(user)
+
+        return {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        }
+
+    @log_failed_responses
+    def get(self, request, user_id, *args, **kwargs):
+        """The admin can use this to get a pair of valid tokens for a given user
+
+        Args:
+            request: The request that was sent
+
+        Returns:
+            Response("Requested user account was deleted.", status=200):
+                if the request was successful
+            Response("User is not authenticated.", status=401):
+                if the user is not authenticated
+            Response("User is not an admin.", status=403):
+                if the authenticated user is not an admin
+            Response("You are not allowed to remove an admin.", status=403):
+                if the admin tried to remove an admin account
+            Response("There is no user with specified ID.", status=200):
+                if the user specified in path does not exist
+        """
+
+        user = None
+        try:
+            user = CradleUser.objects.get(id=user_id)
+        except CradleUser.DoesNotExist:
+            return Response(
+                "There is no user with the specified ID.",
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if user.is_superuser:
+            return Response(
+                "You are not allowed to simulate an admin.",
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        return Response(self.get_tokens_for_user(user), status=status.HTTP_200_OK)
