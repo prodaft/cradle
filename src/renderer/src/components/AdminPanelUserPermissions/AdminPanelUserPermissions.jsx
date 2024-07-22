@@ -1,10 +1,11 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { getPermissions } from '../../services/adminService/adminService';
+import { getPermissions, getSimulatedTokens } from '../../services/adminService/adminService';
 import AdminPanelPermissionCard from '../AdminPanelPermissionCard/AdminPanelPermissionCard';
 import useFrontendSearch from '../../hooks/useFrontendSearch/useFrontendSearch';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
+import useAuth from '../../hooks/useAuth/useAuth';
 
 /**
  * AdminPanelUserPermissions component - This component is used to display the permissions for a specific user.
@@ -22,8 +23,17 @@ export default function AdminPanelUserPermissions() {
     const [entities, setEntities] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
+    const auth = useAuth()
 
     const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(entities);
+
+    const simulateSession = () => {
+      getSimulatedTokens(id).then((res) => {
+        auth.logIn(res.data['access'], res.data['refresh']);
+        navigate('/', { replace: true });
+      })
+      .catch(displayError(setAlert, navigate))
+    }
 
     useEffect(() => {
         getPermissions(id)
@@ -54,8 +64,28 @@ export default function AdminPanelUserPermissions() {
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='w-full h-full overflow-x-hidden overflow-y-scroll'>
                 <div className='container w-[70%] h-fit mx-auto my-4 center bg-gray-2 p-10 rounded-md'>
-                    <h1 className='text-3xl font-bold'>User Permissions</h1>
-                    <h2 className='text-xl font-bold mt-5'>User: {username}</h2>
+                    <h1 className='text-3xl font-bold'>User Settings:
+                      <span className='text-3xl text-zinc-500'> {username}</span>
+                    </h1>
+                    <br/>
+                    <div
+                      id="actions"
+                      className='w-full h-fit mt-1 flex flex-row justify-start items-center text-zinc-400'
+                    >
+                      <h3 className='text-l font-bold mr-2'>Actions:</h3>
+                      <button
+                          id="simulate-user"
+                          data-testid='simulate-user'
+                          name='simulate-user'
+                          type='button'
+                          className='btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 tooltip tooltip-bottom tooltip-primary'
+                          data-tooltip={'Jump into a session for this user'}
+                          onClick={simulateSession}
+                      >
+                        Simulate
+                      </button>
+                    </div>
+
                     <div className='w-full h-12 my-2'>
                         <input
                             type='text'

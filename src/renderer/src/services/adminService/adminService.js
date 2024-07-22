@@ -163,3 +163,17 @@ export async function getPermissions(userId) {
         url: `/access/${userId}/`,
     });
 }
+
+
+/**
+ * Gets a pair of access/refresh tokens to simulate a user
+ *
+ * @param {string} userId - user id
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export async function getSimulatedTokens(userId) {
+    return authAxios({
+        method: 'get',
+        url: `/users/${userId}/simulate`,
+    });
+}
