@@ -12,4 +12,9 @@ urlpatterns = [
         user_view.UserDetail.as_view(),
         name="user_detail",
     ),
+    path(
+        "<uuid:user_id>/simulate",
+        user_view.UserSimulate.as_view(),
+        name="user_simulate",
+    ),
 ]
