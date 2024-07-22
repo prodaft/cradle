@@ -10,7 +10,7 @@ from .exceptions import (
 
 class ArtifactClassSerializer(serializers.ModelSerializer):
     subtype = serializers.CharField(max_length=20)
-    regex = serializers.CharField(max_length=512, default='')
+    regex = serializers.CharField(max_length=65536, default='')
     options = serializers.CharField(max_length=65536, default='')
 
     class Meta:
