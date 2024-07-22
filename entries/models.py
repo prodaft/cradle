@@ -19,7 +19,7 @@ class EntryClass(models.Model):
     type: models.CharField = models.CharField(max_length=20, choices=EntryType.choices)
     subtype: models.CharField = models.CharField(max_length=20, blank=False, primary_key=True)
     regex: models.CharField = models.CharField(max_length=512, blank=True, default='')
-    options: models.CharField = models.CharField(max_length=1024, blank=True, default='')
+    options: models.CharField = models.CharField(max_length=65536, blank=True, default='')
 
     @classmethod
     def get_default_pk(cls):
