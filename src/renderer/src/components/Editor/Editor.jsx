@@ -9,7 +9,7 @@ import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import { eclipse } from '@uiw/codemirror-theme-eclipse';
 import FileInput from '../FileInput/FileInput';
 import FileTable from '../FileTable/FileTable';
-import { NavArrowDown, NavArrowUp } from 'iconoir-react/regular';
+import { NavArrowDown, NavArrowUp, LightBulb } from 'iconoir-react/regular';
 import { fetchLspPack } from '../../services/queryService/queryService';
 import useAuth from '../../hooks/useAuth/useAuth';
 import { completionKeymap, acceptCompletion } from '@codemirror/autocomplete';
@@ -45,6 +45,7 @@ export default function Editor({
     const [enableVim, setEnableVim] = useState(false);
     const [showFileList, setShowFileList] = useState(false);
     const [lspPack, setLspPack] = useState({"classes": {}, "instances": {}});
+    const autoLinkId = useId();
     const vimModeId = useId();
     const editorRef = useRef(null);
 
@@ -197,25 +198,46 @@ export default function Editor({
       }
     };
 
-    const underlinePossibleLinks = () => {
+    const autoFormatLinks = () => {
       if ( !editorRef.current ) {
         return;
       }
       const doc = editorRef.current.view.state;
-      const words = markdownContent.split(/\b(\s+)\b/);
+      const words = markdownContent.split(/(\s+)/);
+      
+      console.log(words)
+      const trim_word = (x) => {return x.replace(/^[,.:\s]+|[,.:\s]+$/g, "")};
+      let linkedMarkdown = markdownContent
 
       let position = 0;
+
       words.forEach((word) => {
-        if (word.trim()) {
+        if (trim_word(word)) {
           const start = position;
           const end = start + word.length;
-          console.log(`Word: ${word.trim()}, Start: ${start}, End: ${end}`);
-          if (suggestionsForWord(word.trim).length > 0) {
-             editorRef.current.view.dispatch(doc.replaceSelection(text));
+          let suggestions = suggestionsForWord(trim_word(word))
+          console.log(suggestions)
+
+          suggestions = suggestions.filter((x) => trim_word(x.match) == trim_word(word))
+          console.log(`Word: ${trim_word(word)}, Start: ${start}, End: ${end}`);
+          console.log(linkedMarkdown.substring(start, end))
+          if (suggestions && suggestions.length >= 1) {
+            console.log(suggestions)
+            let link = `[[${suggestions[0].type}:${suggestions[0].match}]]`
+            linkedMarkdown = linkedMarkdown.substring(0, start) + link + linkedMarkdown.substring(end)
+            position += link.length - word.length
           }
         }
+
+        console.log(linkedMarkdown);
         position += word.length;
       });
+
+      setMarkdownContent(linkedMarkdown)
+    }
+
+    const onEditorChange = (text) => {
+      setMarkdownContent(text)
     }
 
     useEffect(() => {
@@ -232,10 +254,21 @@ export default function Editor({
         <div className='h-full w-full flex flex-col flex-1'>
             <div className='h-full w-full flex flex-col overflow-auto'>
                 <div className='flex flex-row justify-between p-2'>
-                    <span className='max-w-[55%]'>
+                    <span className='max-w-[55%] flex flex-row space-x-3 items-center'>
                         <FileInput fileData={fileData} setFileData={setFileData} />
+                        <button
+                            id={autoLinkId}
+                            data-testid='auto-link'
+                            name='auto-link'
+                            type='button'
+                            className='flex flex-row items-center hover:bg-gray-4 tooltip tooltip-bottom tooltip-primary'
+                            data-tooltip={'Auto Link'}
+                            onClick={autoFormatLinks}
+                        >
+                          <LightBulb/>
+                        </button>
                     </span>
-                    <span className='flex flex-row space-x-2 items-center'>
+                    <span className='flex flex-row space-x-3 items-center'>
                         <label
                             htmlFor={vimModeId}
                             className='flex flex-row items-center cursor-pointer'
@@ -266,7 +299,7 @@ export default function Editor({
                         height='100%'
                         extensions={extensions}
                         className='w-full h-full resize-none'
-                        onChange={setMarkdownContent}
+                        onChange={onEditorChange}
                         value={markdownContent}
                         ref={editorRef}
                     />
