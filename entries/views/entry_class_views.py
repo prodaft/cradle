@@ -127,7 +127,7 @@ class EntryClassDetail(APIView):
 
 
     @log_failed_responses
-    def update(self, request: Request, class_subtype: str) -> Response:
+    def post(self, request: Request, class_subtype: str) -> Response:
         """Allow an admin to change an EntryClass' details
         Args:
             request: The request that was sent

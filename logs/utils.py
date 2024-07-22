@@ -73,6 +73,20 @@ class LoggingUtils:
         success_logger.warning(log_artifact)
 
     @staticmethod
+    def log_entry_update(request: Request, response: Optional[Response] = None):
+        """Logs successful entry creation
+
+        Args:
+            request: The request object
+            data (dict): The data sent in the request
+        """
+
+        name = request.data.get("name", "unknown")
+        message = f"updated Entry: {name} successfully"
+        log_artifact = LoggingUtils.__format_nginx_log(request, 200, message)
+        success_logger.warning(log_artifact)
+
+    @staticmethod
     def log_entry_creation(request: Request, response: Optional[Response] = None):
         """Logs successful entry creation
 
