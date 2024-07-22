@@ -126,7 +126,7 @@ class EntityDetail(APIView):
 
     @log_failed_responses
     def post(self, request: Request, entity_id: UUID) -> Response:
-        """Allow an admin to update an Entity by specifying its id
+        """Allow an admin to edit an Entity by specifying its id
 
         Args:
             request: The request that was sent
@@ -139,10 +139,11 @@ class EntityDetail(APIView):
                 if the user is not authenticated
             Response("User is not an admin.", status=403):
                 if the authenticated user is not an admin
-            Response("There is no entity with specified ID", status=404):
-                if there is no entity with the provided id
+            Response("Bad request", status=400):
+                if the provided data is not a valid entity
+            Response("Entity with the same name already exists", status=409):
+                if an entity with the same name already exists
         """
-
         try:
             entity = Entry.entities.get(pk=entity_id)
         except Entry.DoesNotExist:
@@ -150,11 +151,11 @@ class EntityDetail(APIView):
                 "There is no entity with specified ID", status=status.HTTP_404_NOT_FOUND
             )
 
-        serializer = EntitySerializer(entity, data=request.data, partial=True)
+        serializer = EntitySerializer(entity, data=request.data)
 
-        if serializer.is_valid():
+        if serializer.is_valid(raise_exception=True):
             serializer.save()
-            LoggingUtils.log_entry_update(request)
+            LoggingUtils.log_entry_creation(request)
             return Response(serializer.data)
 
         return Response("Bad request", status=status.HTTP_400_BAD_REQUEST)
