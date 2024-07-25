@@ -30,7 +30,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("CRADLE_SECRET_KEY", "django-insecure-0in+njnc5mjf3xuh$yjy+$s@78-!9rh$qjzv@aqw+*c$zh&d*&")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("CRADLE_PRODUCTION", True)
+DEBUG = not os.environ.get("CRADLE_PRODUCTION", False)
 
 ALLOWED_HOSTS: List[str] = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(
     ","
