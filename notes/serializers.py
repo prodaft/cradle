@@ -11,6 +11,7 @@ from entries.serializers import EntryResponseSerializer
 from typing import Any
 from file_transfer.serializers import FileReferenceSerializer
 from file_transfer.models import FileReference
+from user.serializers import UserRetrieveSerializer
 
 
 class NoteCreateSerializer(serializers.ModelSerializer):
@@ -19,7 +20,7 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Note
-        fields = ["publishable", "content", "files"]
+        fields = ["author", "publishable", "content", "files"]
 
     def validate(self, data):
         """First checks whether the client sent the content of the field
@@ -47,6 +48,7 @@ class NoteCreateSerializer(serializers.ModelSerializer):
             raise NoteIsEmptyException()
 
         user = self.context["request"].user
+        data["author"] = user
 
         # save the referenced entries to be used when creating the note
         self.referenced_entries = TaskScheduler(data["content"], user).run_pipeline()
@@ -84,10 +86,11 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 
 class NoteRetrieveSerializer(serializers.ModelSerializer):
     files = FileReferenceSerializer(many=True)
+    author = UserRetrieveSerializer()
 
     class Meta:
         model = Note
-        fields = ["id", "publishable", "content", "timestamp", "files"]
+        fields = ["id", "publishable", "content", "timestamp", "author", "files"]
 
 
 class NotePublishSerializer(serializers.ModelSerializer):
