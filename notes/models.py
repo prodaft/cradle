@@ -2,6 +2,7 @@ from django.db import models
 from entries.models import Entry
 from .managers import NoteManager
 import uuid
+from user.models import CradleUser
 
 
 class Note(models.Model):
@@ -12,6 +13,9 @@ class Note(models.Model):
     publishable: models.BooleanField = models.BooleanField(default=False)
     timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
     entries: models.ManyToManyField = models.ManyToManyField(Entry)
+    author = models.ForeignKey(
+        CradleUser, related_name="author", on_delete=models.SET_NULL, null=True
+    )
 
     objects = NoteManager()
 
