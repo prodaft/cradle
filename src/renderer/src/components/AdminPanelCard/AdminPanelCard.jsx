@@ -1,4 +1,4 @@
-import { Trash, EditPencil } from 'iconoir-react/regular';
+import { Trash, EditPencil, ClockRotateRight } from 'iconoir-react/regular';
 import { useState } from 'react';
 import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 import { deleteArtifactClass, deleteEntry } from '../../services/adminService/adminService';
@@ -70,6 +70,12 @@ export default function AdminPanelCard({
                     </Link>
                 </h2>
                 <div className='w-full flex flex-row justify-end'>
+                    <button
+                        className='btn btn-ghost w-fit h-full p-1'
+                        onClick={() => navigate(typename ? '/admin/user/activity/' + id : '/admin/entity/activity/' + id.replace('/', '--'))}
+                    >
+                        <ClockRotateRight />
+                    </button>
                     <button
                         className='btn btn-ghost w-fit h-full p-1'
                         onClick={() => navigate(typename ? '/admin/edit-entity/' + id : '/admin/edit-artifact-type/' + id.replace('/', '--'))}
