@@ -56,7 +56,7 @@ export default function Editor({
         for (const [type, criteria] of Object.entries(lspPack.classes)) {
             // Check if criteria has a regex
             if (criteria.regex) {
-                const regex = new RegExp(criteria.regex);
+                const regex = new RegExp(`^${criteria.regex}$`);
                 if (regex.test(word)) {
                     suggestions.push({
                       type: type,

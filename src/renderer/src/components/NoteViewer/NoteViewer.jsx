@@ -145,7 +145,8 @@ export default function NoteViewer() {
                     </div>
                     <div className='flex-grow'>
                         {isRaw ? (
-                            <pre className='prose dark:prose-invert break-all overflow-x-hidden p-4'>
+                            <pre className='h-full w-full p-4 bg-transparent prose max-w-none dark:prose-invert break-all
+                       overflow-y-auto rounded-lg flex-1 overflow-x-hidden whitespace-pre-wrap'>
                                 {note.content}
                             </pre>
                         ) : (
