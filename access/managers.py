@@ -1,14 +1,53 @@
+from entries.enums import EntryType
 from django.db import models
 from typing import Set
 from .enums import AccessType
 from user.models import CradleUser
 from django.db.models import Q, F, FilteredRelation
 from entries.models import Entry
+from django.db.models import QuerySet
 
 from uuid import UUID
 
 
 class AccessManager(models.Manager):
+    def inaccessible_entries(
+        self, user: CradleUser, entries: QuerySet[Entry], access_types: Set[AccessType]
+    ):
+        """Checks whether a user has one of the specified access types
+        to each of the entities in the set of entities. Assumes that AccessType.NONE
+        is not given as an access type in the set. If the user is a superuser,
+        the method returns true.
+
+        Args:
+            user: the user we perform the check on
+            entities: the set of entities we perform the check on
+            access_types: the set of access types
+
+        Returns:
+            True: if the user's access types for all entities are in access_types
+            False: if there is an entity where the user has a different access type
+            than those specified
+        """
+
+        if user.is_superuser:
+            return Entry.objects.none()
+
+        entities = entries.filter(entry_class__type=EntryType.ENTITY)
+
+        accessible = (
+            self.get_queryset()
+            .filter(
+                user_id=user.pk,
+                entity__in=entities,
+                access_type__in=access_types,
+            )
+            .all()
+            .values_list("entity", flat=True)
+        )
+
+        return entities.filter(~Q(pk__in=accessible))
+
     def has_access_to_entities(
         self, user: CradleUser, entities: Set[Entry], access_types: Set[AccessType]
     ) -> bool:

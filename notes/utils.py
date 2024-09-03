@@ -1,7 +1,15 @@
-from typing import Dict
-from ..models import Note
+import re
+from typing import Dict, NamedTuple
+from .models import Note
 from entries.enums import EntryType
 from django.db.models.query import QuerySet
+
+LINK_REGEX = r"\[\[([^:\|\]]+?):((?:\\[\[\]\|]|[^\[\]\|])+?)(?:\|((?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]"  # noqa: E501 to avoid splitting the regex on two lines
+
+
+class Link(NamedTuple):
+    class_subtype: str
+    name: str
 
 
 class PublishUtils:
@@ -25,3 +33,10 @@ class PublishUtils:
             "artifacts": entries.filter(type=EntryType.ARTIFACT),
             "notes": notes,
         }
+
+
+def extract_links(s: str) -> list[Link]:
+    references = re.findall(LINK_REGEX, s)
+
+    for r in references:
+        yield Link(r[0], r[1])

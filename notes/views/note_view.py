@@ -19,7 +19,6 @@ from uuid import UUID
 
 
 class NoteList(APIView):
-
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -64,7 +63,6 @@ class NoteList(APIView):
 
 
 class NoteDetail(APIView):
-
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -98,6 +96,56 @@ class NoteDetail(APIView):
             {AccessType.READ, AccessType.READ_WRITE},
         ):
             return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
+
+        return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
+
+    @log_failed_responses
+    def post(self, request: Request, note_id: UUID) -> Response:
+        """Allow a user to get an already existing note, by specifying
+        its id. A user should be able to retrieve the id only if he has
+        READ access an all the entities it references.
+
+        Args:
+            request: The request that was sent.
+            note_id: The id of the note.
+
+        Returns:
+            Response(status=200): A JSON response containing note
+                if the request was successful
+            Response("User is not authenticated.", status=401):
+                if the user is not authenticated.
+            Response("Note with given id does not exist.", status=404):
+                if the user does not have at least READ access on all
+                referenced entities, or the note does not exist.
+        """
+        try:
+            note: Note = Note.objects.get(id=note_id)
+        except Note.DoesNotExist:
+            return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
+
+        user = cast(CradleUser, request.user)
+
+        if not Access.objects.has_access_to_entities(
+            user,
+            set(note.entries.filter(entry_class__type=EntryType.ENTITY)),
+            {AccessType.READ, AccessType.READ_WRITE},
+        ):
+            return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
+
+        if not (user.is_superuser or note.author != user):
+            return Response(
+                "You cannot edit this note", status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = NoteCreateSerializer(
+            note, data=request.data, context={"request": request}
+        )
+
+        if serializer.is_valid():
+            note = serializer.save()
+
+            json_note = NoteRetrieveSerializer(note, many=False).data
+            return Response(json_note, status=status.HTTP_200_OK)
 
         return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
 

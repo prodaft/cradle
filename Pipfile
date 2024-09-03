@@ -21,6 +21,8 @@ minio = "*"
 tblib = "*"
 django-model-utils = "*"
 django-extensions = "*"
+pytest = "*"
+pyyaml = "*"
 
 [dev-packages]
 
