@@ -14,6 +14,7 @@ import NotFound from './components/NotFound/NotFound.jsx';
 import PublishPreview from './components/PublishPreview/PublishPreview.jsx';
 import NoteViewer from './components/NoteViewer/NoteViewer';
 import TextEditor from './components/TextEditor/TextEditor';
+import NoteEditor from './components/NoteEditor/NoteEditor.jsx';
 import NoteSelector from './components/NoteSelector/NoteSelector.jsx';
 import GraphComponent from './components/GraphComponent/GraphComponent';
 import Welcome from './components/Welcome/Welcome.jsx';
@@ -43,6 +44,7 @@ function App() {
                             <Route path='/editor/:id' element={<TextEditor />} />
                             <Route path='/dashboards/*' element={<Dashboard />} />
                             <Route path='/notes/:id' element={<NoteViewer />} />
+                            <Route path='/notes/:id/edit' element={<NoteEditor />} />
                             <Route path='/notes' element={<NoteSelector />} />
                             <Route
                                 path='/knowledge-graph'

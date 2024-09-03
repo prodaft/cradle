@@ -57,7 +57,7 @@ export default function Editor({
             // Check if criteria has a regex
             if (criteria.regex) {
                 const regex = new RegExp(`^${criteria.regex}$`);
-                if (regex.test(word)) {
+                if (regex.test(word) || regex.test(word.toLowerCase())) {
                     suggestions.push({
                       type: type,
                       match: word
@@ -67,7 +67,7 @@ export default function Editor({
 
             // Check if criteria has an enum
             if (criteria.enum) {
-                const matchingEnums = criteria.enum.filter(value => value.startsWith(word));
+                const matchingEnums = criteria.enum.filter(value => value.toLowerCase().startsWith(word.toLowerCase()));
                 matchingEnums.forEach(match => {
                     suggestions.push({
                       type: type,
@@ -204,7 +204,7 @@ export default function Editor({
       }
       const doc = editorRef.current.view.state;
       const words = markdownContent.split(/(\s+)/);
-      
+
       console.log(words)
       const trim_word = (x) => {return x.replace(/^[,.:\s]+|[,.:\s]+$/g, "")};
       let linkedMarkdown = markdownContent
@@ -219,8 +219,6 @@ export default function Editor({
           console.log(suggestions)
 
           suggestions = suggestions.filter((x) => trim_word(x.match) == trim_word(word))
-          console.log(`Word: ${trim_word(word)}, Start: ${start}, End: ${end}`);
-          console.log(linkedMarkdown.substring(start, end))
           if (suggestions && suggestions.length >= 1) {
             console.log(suggestions)
             let link = `[[${suggestions[0].type}:${suggestions[0].match}]]`
