@@ -2,18 +2,18 @@ from .utils import NotesTestEntity
 from ..models import Note
 from entries.enums import EntryType, MetadataSubtype, ArtifactSubtype
 from entries.models import Entry
-from ..utils.publish_utils import PublishUtils
+from ..utils import PublishUtils
 
 
 class GetReportTest(NotesTestEntity):
-
     def setUp(self):
         super().setUp()
         self.entities = []
         self.metadata = []
         for i in range(0, 4):
-            self.entities.append(Entry.objects.create(name=f"{i}", type=EntryType.ENTITY))
-
+            self.entities.append(
+                Entry.objects.create(name=f"{i}", type=EntryType.ENTITY)
+            )
 
         self.artifact = Entry.objects.create(
             name=f"{0}", type=EntryType.ARTIFACT, subtype=ArtifactSubtype.IP
@@ -59,4 +59,3 @@ class GetReportTest(NotesTestEntity):
         with self.subTest("Correct artifacts are retrieved."):
             artifacts_queryset = Entry.objects.none()
             self.assertQuerySetEqual(report["artifacts"], artifacts_queryset)
-

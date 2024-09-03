@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Note
-from .utils.task_scheduler import TaskScheduler
+from .processor.task_scheduler import TaskScheduler
 from .exceptions import (
     NoteIsEmptyException,
     InvalidRequestException,
@@ -49,9 +49,7 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 
         user = self.context["request"].user
         data["author"] = user
-
-        # save the referenced entries to be used when creating the note
-        self.referenced_entries = TaskScheduler(data["content"], user).run_pipeline()
+        self.content = data["content"]
 
         return super().validate(data)
 
@@ -72,13 +70,38 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 
         files = validated_data.pop("files", None)
 
-        note = Note.objects.create(**validated_data)
-        note.entries.set(self.referenced_entries)
+        # save the referenced entries to be used when creating the note
+        user = self.context["request"].user
+        note = TaskScheduler(self.content, user).run_pipeline()
 
         if files is not None:
             file_reference_models = [
                 FileReference(note=note, **file_data) for file_data in files
             ]
+            FileReference.objects.bulk_create(file_reference_models)
+
+        return note
+
+    def update(self, instance: Note, validated_data: dict[str, Any]):
+        user = self.context["request"].user
+        note = TaskScheduler(validated_data["content"], user).run_pipeline(instance)
+
+        files = validated_data.pop("files", None)
+
+        existing_files = set([i.id for i in note.files.all()])
+        files_kept = set([i["id"] for i in files if "id" in i])
+
+        # Remove files that are no longer used
+        FileReference.objects.filter(id__in=(existing_files - files_kept)).delete()
+
+        if files is not None:
+            file_reference_models = [
+                FileReference(note=note, **file_data)
+                for file_data in files
+                if "id" not in file_data
+            ]
+
+            # Create the new files
             FileReference.objects.bulk_create(file_reference_models)
 
         return note

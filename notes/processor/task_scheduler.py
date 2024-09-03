@@ -1,24 +1,30 @@
-from .access_checker_task import AccessCheckerTask
-from .parser_task import ParserTask
-from .entry_checker_task import EntryCheckerTask
-from .artifact_creation_task import ArtifactCreationTask
+from typing import List, Optional
+
+from notes.models import Note
+
+from .entry_population_task import EntryPopulationTask
+from .entry_class_creation_task import EntryClassCreationTask
+
+from .base_task import BaseTask
+from .access_control_task import AccessControlTask
 from .count_references_task import CountReferencesTask
 from user.models import CradleUser
 
+from django.db import transaction
+
 
 class TaskScheduler:
-
     def __init__(self, note_content: str, user: CradleUser):
         self.note_content = note_content
-        self.preprocessing = ParserTask()
-        self.processing = [
+
+        self.processing: List[BaseTask] = [
+            EntryClassCreationTask(),
+            EntryPopulationTask(),
+            AccessControlTask(user),
             CountReferencesTask(),
-            EntryCheckerTask(),
-            AccessCheckerTask(user),
-            ArtifactCreationTask(),
         ]
 
-    def run_pipeline(self):
+    def run_pipeline(self, note: Optional[Note] = None):
         """Performs all of the checks that are necessary for creating a note.
         First, it creates a dictionary mapping entry types to all of the referenced
         entries in the note. Then, it performs the mentioned checks. Lastly, it
@@ -38,15 +44,16 @@ class TaskScheduler:
             referenced entities.
         """
 
-        entry_references_dictionary = self.preprocessing.run(self.note_content)
-        for task in self.processing:
-            entry_references_dictionary = task.run(entry_references_dictionary)
+        with transaction.atomic():
+            if not note:
+                note = Note.objects.create(content=self.note_content)
 
-        # create the final list of entries
-        final_entry_references = []
+            note.content = self.note_content
+            note.entries.clear()
 
-        for entry_set in entry_references_dictionary.values():
-            for x in entry_set.values():
-                final_entry_references.extend(x)
+            for task in self.processing:
+                task.run(note)
 
-        return final_entry_references
+            note.save()
+
+            return note

@@ -12,7 +12,7 @@ from ..exceptions import (
     NoAccessToEntriesException,
 )
 
-from ..utils.publish_utils import PublishUtils
+from ..utils import PublishUtils
 
 from entries.models import Entry
 from entries.enums import EntryType
@@ -26,7 +26,6 @@ from uuid import UUID
 
 
 class NotePublishDetail(APIView):
-
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 

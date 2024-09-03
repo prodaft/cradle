@@ -27,7 +27,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("CRADLE_SECRET_KEY", "django-insecure-0in+njnc5mjf3xuh$yjy+$s@78-!9rh$qjzv@aqw+*c$zh&d*&")
+SECRET_KEY = os.environ.get(
+    "CRADLE_SECRET_KEY",
+    "django-insecure-0in+njnc5mjf3xuh$yjy+$s@78-!9rh$qjzv@aqw+*c$zh&d*&",
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = not os.environ.get("CRADLE_PRODUCTION", False)
@@ -233,3 +236,17 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+## Application Specific Config
+
+ALLOW_REGISTRATION = True
+AUTOREGISTER_ARTIFACT_TYPES = False
+MIN_ENTRY_COUNT_PER_NOTE = 2
+MIN_ENTITY_COUNT_PER_NOTE = 1
+
+
+SMTP_USERNAME = ""
+SMTP_PASSWORD = ""
+SMTP_HOST = ""
+SMTP_PORT = ""
