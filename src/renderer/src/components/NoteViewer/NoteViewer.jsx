@@ -8,7 +8,7 @@ import {
 import Preview from '../Preview/Preview';
 import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
-import { Code } from 'iconoir-react';
+import { Code, EditPencil } from 'iconoir-react';
 import NavbarButton from '../NavbarButton/NavbarButton';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
@@ -95,6 +95,13 @@ export default function NoteViewer() {
             checked={isPublishable}
             onChange={togglePublishable}
             testid='publishable-btn'
+        />,
+        <NavbarButton
+            key='edit-btn'
+            text='Edit Note'
+            icon={<EditPencil />}
+            onClick={() => navigate(`/notes/${id}/edit`)}
+            tesid='delete-btn'
         />,
         <NavbarButton
             key='delete-btn'

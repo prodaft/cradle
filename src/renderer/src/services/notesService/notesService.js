@@ -14,6 +14,22 @@ const getNote = (id) => {
 };
 
 /**
+ * Function to get notes from the API
+ * Passes the token and id to the API
+ *
+ * @param {string} id - note id
+ * @param {Note} data - note data
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+const updateNote = (id, data) => {
+    return authAxios({
+        method: 'post',
+        url: `/notes/${id}/`,
+        data: data
+    });
+};
+
+/**
  * Function to set the publishable status of a note
  * Passes the token, path, and status to the API
  *
@@ -46,4 +62,4 @@ const deleteNote = (id) => {
     });
 };
 
-export { getNote, setPublishable, deleteNote };
+export { getNote, setPublishable, deleteNote, updateNote };
