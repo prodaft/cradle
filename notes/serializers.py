@@ -12,6 +12,7 @@ from typing import Any
 from file_transfer.serializers import FileReferenceSerializer
 from file_transfer.models import FileReference
 from user.serializers import UserRetrieveSerializer
+from entries.models import Entry
 
 
 class NoteCreateSerializer(serializers.ModelSerializer):
@@ -84,6 +85,8 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 
     def update(self, instance: Note, validated_data: dict[str, Any]):
         user = self.context["request"].user
+        artifact_ids = set(instance.entries.is_artifact().values_list("id", flat=True))
+
         note = TaskScheduler(validated_data["content"], user).run_pipeline(instance)
 
         files = validated_data.pop("files", None)
@@ -103,6 +106,8 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 
             # Create the new files
             FileReference.objects.bulk_create(file_reference_models)
+
+        Entry.objects.filter(id__in=artifact_ids).unreferenced().delete()
 
         return note
 

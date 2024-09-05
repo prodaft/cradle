@@ -35,8 +35,11 @@ class Note(models.Model):
             publishable=self.publishable,
         )
 
+        artifact_ids = self.entries.is_artifact().values_list("id", flat=True)
         archived_note.save()
         super().delete()
+
+        Entry.objects.filter(id__in=artifact_ids).unreferenced().delete()
 
 
 class ArchivedNote(models.Model):

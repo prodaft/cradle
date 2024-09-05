@@ -4,7 +4,51 @@ from django.db.models import Q
 from .enums import EntryType
 
 
+class EntryQuerySet(models.QuerySet):
+    def is_artifact(self) -> models.QuerySet:
+        """
+        Get artifacts
+        """
+        return self.filter(entry_class__type=EntryType.ARTIFACT)
+
+    def is_entity(self) -> models.QuerySet:
+        """
+        Get entity
+        """
+        return self.filter(entry_class__type=EntryType.ENTITY)
+
+    def unreferenced(self) -> models.QuerySet:
+        """
+        Get entries that are not referenced by any note
+        """
+        return self.filter(note=None)
+
+
 class EntryManager(models.Manager):
+    def get_queryset(self):
+        """
+        Returns a queryset that uses the custom TeamQuerySet,
+        allowing access to its methods for all querysets retrieved by this manager.
+        """
+        return EntryQuerySet(self.model, using=self._db)
+
+    def is_artifact(self) -> models.QuerySet:
+        """
+        Get artifacts
+        """
+        return self.get_queryset().is_artifact()
+
+    def is_entity(self) -> models.QuerySet:
+        """
+        Get entity
+        """
+        return self.get_queryset().is_entity()
+
+    def unreferenced(self) -> models.QuerySet:
+        """
+        Get entries that are not referenced by any note
+        """
+        return self.get_queryset().unreferenced()
 
     def get_filtered_entries(
         self,
@@ -31,8 +75,10 @@ class EntryManager(models.Manager):
             # filter entries by entry type
             query_set.filter(entry_class__subtype__in=entry_subtypes)
             # filter name
-            .filter(name__icontains=name_substr).order_by("name")
+            .filter(name__icontains=name_substr)
+            .order_by("name")
         )
+
 
 class EntityManager(models.Manager):
     def get_queryset(self) -> models.QuerySet:
@@ -42,5 +88,3 @@ class EntityManager(models.Manager):
 class ArtifactManager(models.Manager):
     def get_queryset(self) -> models.QuerySet:
         return super().get_queryset().filter(entry_class__type=EntryType.ARTIFACT)
-
-
