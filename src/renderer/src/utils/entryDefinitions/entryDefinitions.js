@@ -4,7 +4,7 @@
  * Comprehensive set of all entry types
  * @type {Set<string>}
  */
-export const entryTypes = new Set(['entity', 'metadata']);
+export const entryTypes = new Set(['entity', 'artifact']);
 
 /**
  * Type for objects with style options for each entry type

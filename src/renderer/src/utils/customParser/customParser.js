@@ -8,15 +8,16 @@ import {
 import { createDashboardLink } from '../dashboardUtils/dashboardUtils';
 import { prependLinks } from '../textEditorUtils/textEditorUtils';
 import { getDownloadLink } from '../../services/fileUploadService/fileUploadService';
+import { getEntryClasses } from '../../services/adminService/adminService';
 
 const LINK_REGEX = /^\[\[([^:|]+?):((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\]/
 
-function handle_link(text) {
+function handle_link(text, entityClasses) {
         return text.replace(LINK_REGEX, (matched, type, name, alias) => {
             // TODO: Dynamic entity subtypes
             // if (entitySubtypes.has(type)) {
-            if (false) {
-                const url = createDashboardLink({ name: name, type: 'entity' });
+            if (entityClasses.includes(type)) {
+                const url = createDashboardLink({ name: name, type: 'entity', subtype: type });
                 // If an alias is provided, use it as the displayed name
                 const displayedName = alias ? alias : name;
                 return `<a class="${entryMarkdownColors.entities}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
@@ -44,7 +45,10 @@ const marked = new Marked(
     }),
 );
 
-const cradleLinkExtension = {
+const cradleLinkExtension = (entryClasses) => {
+  let entity_class_subtypes = entryClasses.filter((entry) => entry.type === 'entity').map((entry) => entry.subtype);
+
+  return {
     name: 'cradlelink',
     level: 'inline',
     start(src) {
@@ -70,10 +74,12 @@ const cradleLinkExtension = {
         // Loop through all type handlers and call them on the text
         var text = token.raw;
 
-        text = handle_link(text);
+        console.log(entity_class_subtypes);
+        text = handle_link(text, entity_class_subtypes)
 
         return text;
     },
+  }
 };
 
 // Define a custom extension that resolves all local links to `/file-transfer/download` to their respective Minio links.
@@ -133,7 +139,12 @@ const resolveMinioLinks = {
     },
 };
 
-marked.use({ ...resolveMinioLinks, extensions: [cradleLinkExtension] });
+await getEntryClasses().then((response) => {
+  if (response.status === 200) {
+    let types = response.data;
+      marked.use({ ...resolveMinioLinks, extensions: [cradleLinkExtension(types)] });
+  }
+})
 
 /**
  * Parses markdown content into HTML. If fileData is provided, links will be prepended to the content.
