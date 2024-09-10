@@ -144,6 +144,18 @@ await getEntryClasses().then((response) => {
     let types = response.data;
       marked.use({ ...resolveMinioLinks, extensions: [cradleLinkExtension(types)] });
   }
+}).catch((error) => {
+  console.log(error)
+  // If 401, or network error, ignore. Otherwise, throw error.
+
+    if (error.code === "ERR_NETWORK") {
+      return;
+    }
+
+    if (error.response.status === 401) {
+      return;
+    }
+    throw error;
 })
 
 /**
