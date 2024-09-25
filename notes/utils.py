@@ -29,8 +29,8 @@ class PublishUtils:
         entries = Note.objects.get_entries_from_notes(notes)
 
         return {
-            "entities": entries.filter(type=EntryType.ENTITY),
-            "artifacts": entries.filter(type=EntryType.ARTIFACT),
+            "entities": entries.filter(entry_class__type=EntryType.ENTITY),
+            "artifacts": entries.filter(entry_class__type=EntryType.ARTIFACT),
             "notes": notes,
         }
 
