@@ -13,11 +13,11 @@ class Note(models.Model):
     publishable: models.BooleanField = models.BooleanField(default=False)
     timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
     entries: models.ManyToManyField = models.ManyToManyField(Entry)
-    author = models.ForeignKey(
+    author = models.ForeignKey[CradleUser](
         CradleUser, related_name="author", on_delete=models.SET_NULL, null=True
     )
 
-    objects = NoteManager()
+    objects: NoteManager = NoteManager()
 
     def delete(self):
         """Override the delete method to archive the note before deleting it.

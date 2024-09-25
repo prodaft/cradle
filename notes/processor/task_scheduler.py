@@ -15,6 +15,7 @@ from django.db import transaction
 
 class TaskScheduler:
     def __init__(self, note_content: str, user: CradleUser):
+        self.user = user
         self.note_content = note_content
 
         self.processing: List[BaseTask] = [
@@ -46,7 +47,7 @@ class TaskScheduler:
 
         with transaction.atomic():
             if not note:
-                note = Note.objects.create(content=self.note_content)
+                note = Note.objects.create(content=self.note_content, author=self.user)
 
             note.content = self.note_content
             note.entries.clear()

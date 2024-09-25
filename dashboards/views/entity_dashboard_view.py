@@ -17,7 +17,6 @@ from typing import cast
 
 
 class EntityDashboard(APIView):
-
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -44,17 +43,21 @@ class EntityDashboard(APIView):
         entity_subtype = request.query_params.get("subtype")
 
         try:
-            entity = Entry.entities.get(name=entity_name, entry_class__subtype=entity_subtype)
+            entity = Entry.entities.get(
+                name=entity_name, entry_class__subtype=entity_subtype
+            )
         except Entry.DoesNotExist:
             return Response(
-                "There is no entity with specified name", status=status.HTTP_404_NOT_FOUND
+                "There is no entity with specified name",
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         if not Access.objects.has_access_to_entities(
             user, {entity}, {AccessType.READ, AccessType.READ_WRITE}
         ):
             return Response(
-                "There is no entity with specified name", status=status.HTTP_404_NOT_FOUND
+                "There is no entity with specified name",
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         entries_dict, neighbor_map = DashboardUtils.get_dashboard(user, entity.id)
@@ -64,8 +67,8 @@ class EntityDashboard(APIView):
         if user.is_superuser:
             dashboard["access"] = "read-write"
         else:
-            dashboard["access"] = Access.objects.get_or_create(user=user, entity=entity)[
-                0
-            ].access_type
+            dashboard["access"] = Access.objects.get_or_create(
+                user=user, entity=entity
+            )[0].access_type
 
         return Response(EntityDashboardSerializer(dashboard, context=neighbor_map).data)
