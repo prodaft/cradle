@@ -5,6 +5,7 @@ import { deleteArtifactClass, deleteEntry } from '../../services/adminService/ad
 import { Link, useNavigate } from 'react-router-dom';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
+import { Archive } from 'iconoir-react';
 
 /**
  * AdminPanelCard component - This component is used to display a card for the AdminPanel.
@@ -41,7 +42,7 @@ export default function AdminPanelCard({
     const navigate = useNavigate();
 
     const handleDelete = async () => {
-        (typename ? deleteEntry(type, id): deleteArtifactClass(id))
+        (type == "entity" ? deleteEntry(type, id): (type == "artifact" ? deleteArtifactClass(id) : null))
             .then((response) => {
                 if (response.status === 200) {
                     onDelete();
@@ -64,7 +65,7 @@ export default function AdminPanelCard({
                 <h2 className='card-header w-full mx-2 px-1 break-all'>
 
                     <Link to={link}>
-                      {typename && (
+                      {type == "entity" && (
                           <span className='text-zinc-500'>{`${typename}:`}</span>
                       )}{name}
                     </Link>
@@ -72,21 +73,22 @@ export default function AdminPanelCard({
                 <div className='w-full flex flex-row justify-end'>
                     <button
                         className='btn btn-ghost w-fit h-full p-1'
-                        onClick={() => navigate(typename ? '/admin/user/activity/' + id : '/admin/entity/activity/' + id.replace('/', '--'))}
+                        onClick={() => navigate(`/admin/${type}/activity/`)}
                     >
-                        <ClockRotateRight />
+                        { type != "artifact" && (<ClockRotateRight />)}
                     </button>
                     <button
                         className='btn btn-ghost w-fit h-full p-1'
                         onClick={() => navigate(typename ? '/admin/edit-entity/' + id : '/admin/edit-artifact-type/' + id.replace('/', '--'))}
                     >
-                        <EditPencil />
+
+                        { type != "user" && (<EditPencil />)}
                     </button>
                     <button
                         className='btn btn-ghost w-fit h-full p-1'
                         onClick={() => setDialog(!dialog)}
                     >
-                        <Trash />
+                        { type == "entity" ? (<Archive />) : (<Trash />)}
                     </button>
                 </div>
             </div>

@@ -1,5 +1,7 @@
 import { authAxios } from '../axiosInstance/axiosInstance';
 
+let EntryClassesCached = null;
+
 /**
  * The data for an entry. This data needs to be sent to the server to create an entry.
  * @typedef {Object} EntryData
@@ -90,10 +92,17 @@ export async function getEntities() {
  * @returns {Promise<AxiosResponse<any, any>>}
  */
 export async function getEntryClasses() {
-    return authAxios({
-        method: 'get',
-        url: '/entries/entry_classes/',
-    });
+    if (EntryClassesCached) {
+      return EntryClassesCached;
+    } else {
+      authAxios({
+          method: 'get',
+          url: '/entries/entry_classes/',
+      }).then((response) => {
+        EntryClassesCached = response;
+        return response;
+      });
+    }
 }
 
 /**

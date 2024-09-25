@@ -49,7 +49,7 @@ export default function AdminPanel() {
                                     name={c.name}
                                     searchKey={c.name}
                                     description={c.description}
-                                    type={'entries/entities'}
+                                    type={'entity'}
                                     onDelete={displayEntities}
                                     link={createDashboardLink(c)}
                                     typename={c.subtype}
@@ -77,7 +77,7 @@ export default function AdminPanel() {
                                     key={c.subtype}
                                     name={c.subtype}
                                     searchKey={c.subtype}
-                                    type={'entries/artifacts'}
+                                    type={'artifact'}
                                     onDelete={displayArtifactTypes}
                                 />
                             );
@@ -101,7 +101,7 @@ export default function AdminPanel() {
                                     key={user.id}
                                     name={user.username}
                                     searchKey={user.username}
-                                    type={'users'}
+                                    type={'user'}
                                     onDelete={displayUsers}
                                     link={`/admin/user-permissions/${encodeURIComponent(user.username)}/${encodeURIComponent(user.id)}`}
                                 />
