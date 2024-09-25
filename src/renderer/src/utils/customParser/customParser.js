@@ -45,10 +45,8 @@ const marked = new Marked(
     }),
 );
 
-const cradleLinkExtension = (entryClasses) => {
-  let entity_class_subtypes = entryClasses.filter((entry) => entry.type === 'entity').map((entry) => entry.subtype);
 
-  return {
+const cradleLinkExtension = {
     name: 'cradlelink',
     level: 'inline',
     start(src) {
@@ -67,31 +65,48 @@ const cradleLinkExtension = (entryClasses) => {
         return false;
     },
     renderer(token) {
+      return token.html;
+    },
+};
+
+async function renderCradleLink(token) {
         if (token.type !== 'cradlelink') {
-            return false;
+            return;
         }
 
-        // Loop through all type handlers and call them on the text
-        var text = token.raw;
+        await getEntryClasses().then((response) => {
+          if (response.status === 200) {
+            let entryClasses = response.data;
+            let entity_class_subtypes = entryClasses.filter((entry) => entry.type === 'entity').map((entry) => entry.subtype);
 
-        console.log(entity_class_subtypes);
-        text = handle_link(text, entity_class_subtypes)
+            // Loop through all type handlers and call them on the text
+            var text = token.raw;
 
-        return text;
-    },
-  }
-};
+            token.html = handle_link(text, entity_class_subtypes)
+          }
+        }).catch((error) => {
+          // If 401, or network error, ignore. Otherwise, throw error.
+
+            if (error.code === "ERR_NETWORK") {
+              return;
+            }
+
+            if (error.response.status === 401) {
+              return;
+            }
+            throw error;
+        })
+}
 
 // Define a custom extension that resolves all local links to `/file-transfer/download` to their respective Minio links.
 // This also works for images. These are shown in the preview if the ref is valid.
 // These links are cached.
-const resolveMinioLinks = {
-    async: true,
-    async walkTokens(token) {
+async function resolveMinioLinks(token) {
         if (
             (token.type === 'link' || token.type === 'image') &&
             URL.canParse(token.href)
         ) {
+            console.log("test");
             const url = new URL(token.href);
             const apiBaseUrl = new URL(import.meta.env.VITE_API_BASE_URL);
 
@@ -136,27 +151,13 @@ const resolveMinioLinks = {
                 token.href = presigned;
             }
         }
-    },
-};
+}
 
-await getEntryClasses().then((response) => {
-  if (response.status === 200) {
-    let types = response.data;
-      marked.use({ ...resolveMinioLinks, extensions: [cradleLinkExtension(types)] });
-  }
-}).catch((error) => {
-  console.log(error)
-  // If 401, or network error, ignore. Otherwise, throw error.
+async function walkTokens(token){
+  await renderCradleLink(token);
+  await resolveMinioLinks(token);
+}
 
-    if (error.code === "ERR_NETWORK") {
-      return;
-    }
-
-    if (error.response.status === 401) {
-      return;
-    }
-    throw error;
-})
 
 /**
  * Parses markdown content into HTML. If fileData is provided, links will be prepended to the content.
@@ -167,6 +168,8 @@ await getEntryClasses().then((response) => {
  * @returns {string} parsed HTML
  */
 const parseMarkdown = async (mdContent, fileData) => {
+    // marked.use({ walkTokens, async: true, extensions: [cradleLinkExtension] });
+    marked.use({ walkTokens, async: true, extensions: [cradleLinkExtension] });
     const content = fileData ? prependLinks(mdContent, fileData) : mdContent;
     return marked.parse(content);
 };
