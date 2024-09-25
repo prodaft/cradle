@@ -42,7 +42,7 @@ export default function Editor({
     setFileData,
     isLightMode,
 }) {
-    const [enableVim, setEnableVim] = useState(false);
+    const [enableVim, setEnableVim] = useState(localStorage.getItem('editor.vim') === 'true');
     const [showFileList, setShowFileList] = useState(false);
     const [lspPack, setLspPack] = useState({"classes": {}, "instances": {}});
     const autoLinkId = useId();
@@ -284,7 +284,10 @@ export default function Editor({
                             type='checkbox'
                             className='switch switch-ghost-primary my-1'
                             checked={enableVim}
-                            onChange={() => setEnableVim(!enableVim)}
+                            onChange={() =>  {
+                              localStorage.setItem('editor.vim', !enableVim)
+                              setEnableVim(!enableVim)
+                            }}
                         />
                     </span>
                 </div>
