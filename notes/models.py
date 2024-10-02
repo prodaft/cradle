@@ -12,10 +12,17 @@ class Note(models.Model):
     content: models.CharField = models.CharField()
     publishable: models.BooleanField = models.BooleanField(default=False)
     timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+
     entries: models.ManyToManyField = models.ManyToManyField(Entry)
     author = models.ForeignKey[CradleUser](
         CradleUser, related_name="author", on_delete=models.SET_NULL, null=True
     )
+
+    editor = models.ForeignKey[CradleUser](
+        CradleUser, related_name="editor", on_delete=models.SET_NULL, null=True
+    )
+
+    edit_timestamp: models.DateTimeField = models.DateTimeField(null=True)
 
     objects: NoteManager = NoteManager()
 

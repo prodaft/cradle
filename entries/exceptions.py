@@ -45,3 +45,9 @@ class InvalidClassFormatException(APIException):
     status_code = 409
     default_detail = "An entry class can only have regex or enum set as their format"
     default_code = "unique"
+
+
+class EntryMustHaveASubtype(APIException):
+    status_code = 409
+    default_detail = "An entry must always specify a subtype"
+    default_code = "unique"
