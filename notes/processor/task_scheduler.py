@@ -11,6 +11,7 @@ from .count_references_task import CountReferencesTask
 from user.models import CradleUser
 
 from django.db import transaction
+from django.utils import timezone
 
 
 class TaskScheduler:
@@ -48,6 +49,9 @@ class TaskScheduler:
         with transaction.atomic():
             if not note:
                 note = Note.objects.create(content=self.note_content, author=self.user)
+            else:
+                note.editor = self.user
+                note.edit_timestamp = timezone.now()
 
             note.content = self.note_content
             note.entries.clear()

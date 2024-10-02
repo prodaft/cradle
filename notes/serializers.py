@@ -118,7 +118,15 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Note
-        fields = ["id", "publishable", "content", "timestamp", "author", "files"]
+        fields = [
+            "id",
+            "publishable",
+            "content",
+            "timestamp",
+            "author",
+            "editor",
+            "files",
+        ]
 
 
 class NotePublishSerializer(serializers.ModelSerializer):

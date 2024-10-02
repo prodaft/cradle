@@ -21,6 +21,7 @@ class EntryClass(models.Model):
     subtype: models.CharField = models.CharField(
         max_length=20, blank=False, primary_key=True
     )
+    timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
     regex: models.CharField = models.CharField(max_length=65536, blank=True, default="")
     options: models.CharField = models.CharField(
         max_length=65536, blank=True, default=""
@@ -77,12 +78,12 @@ class Entry(models.Model):
     entry_class: models.ForeignKey[uuid.UUID, EntryClass] = models.ForeignKey(
         EntryClass,
         on_delete=models.PROTECT,
-        default=EntryClass.get_default_pk,
         null=False,
     )
 
     name: models.CharField = models.CharField()
     description: models.TextField = models.TextField(null=True, blank=True)
+    timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         constraints = [
