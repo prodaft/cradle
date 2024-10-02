@@ -7,7 +7,6 @@ import uuid
 class CradleUser(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
-    timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
 
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["password", "email"]
