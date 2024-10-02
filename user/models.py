@@ -16,3 +16,9 @@ class CradleUser(AbstractUser):
 
     def __str__(self):
         return self.username
+
+    def __eq__(self, value: object) -> bool:
+        if not isinstance(object, CradleUser):
+            return False
+
+        return value.pk == self.pk
