@@ -75,7 +75,10 @@ class Entry(models.Model):
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
     is_public: models.BooleanField = models.BooleanField(default=False)
     entry_class: models.ForeignKey[uuid.UUID, EntryClass] = models.ForeignKey(
-        EntryClass, on_delete=models.PROTECT, default=EntryClass.get_default_pk
+        EntryClass,
+        on_delete=models.PROTECT,
+        default=EntryClass.get_default_pk,
+        null=False,
     )
 
     name: models.CharField = models.CharField()
