@@ -1,6 +1,6 @@
 import { authAxios } from '../axiosInstance/axiosInstance';
 
-let EntryClassesCached = null;
+var EntryClassesCached = null;
 
 /**
  * The data for an entry. This data needs to be sent to the server to create an entry.
@@ -93,15 +93,17 @@ export async function getEntities() {
  */
 export async function getEntryClasses() {
     if (EntryClassesCached) {
-      return EntryClassesCached;
+      return EntryClassesCached
     } else {
-      authAxios({
+      EntryClassesCached = authAxios({
           method: 'get',
           url: '/entries/entry_classes/',
       }).then((response) => {
-        EntryClassesCached = response;
+        EntryClassesCached = new Promise((callback) => callback(JSON.parse(JSON.stringify(response))));
+        console.log("ASD")
         return response;
       });
+       return EntryClassesCached;
     }
 }
 
