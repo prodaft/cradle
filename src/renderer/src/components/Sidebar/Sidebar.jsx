@@ -6,6 +6,7 @@ import {
     UserCrown,
     Bell,
     BellNotification,
+    Settings,
 } from 'iconoir-react';
 import SidebarItem from '../SidebarItem/SidebarItem';
 import SidebarSection from '../SidebarSection/SidebarSection';
@@ -48,6 +49,11 @@ export default function Sidebar({
         navigate(graphViewLocation);
     }, [navigate]);
 
+    const accountSettingsLocation = '/account';
+    const handleAccountSettings = useCallback(() => {
+        navigate(accountSettingsLocation);
+    }, [navigate]);
+
     const adminLocation = '/admin';
     const handleAdminPanel = useCallback(() => {
         navigate(adminLocation);
@@ -86,6 +92,13 @@ export default function Sidebar({
                                 icon={<Network />}
                                 text='Graph View'
                                 highlightedLocation={graphViewLocation}
+                            />
+
+                            <SidebarItem
+                                handleClick={handleAccountSettings}
+                                icon={<Settings />}
+                                text='Settings'
+                                highlightedLocation={accountSettingsLocation}
                             />
                         </SidebarSection>
                         {auth.isAdmin && (

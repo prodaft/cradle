@@ -6,6 +6,7 @@ import PrivateRoute from './components/PrivateRoute/PrivateRoute.jsx';
 import AuthProvider from './components/AuthProvider/AuthProvider.jsx';
 import FeatureNotImplemented from './components/FeatureNotImplemented/FeatureNotImplemented';
 import AdminPanel from './components/AdminPanel/AdminPanel';
+import AccountSettings from './components/AccountSettings/AccountSettings';
 import AdminPanelAdd from './components/AdminPanelAdd/AdminPanelAdd';
 import AdminPanelEdit from './components/AdminPanelEdit/AdminPanelEdit';
 import AdminPanelUserPermissions from './components/AdminPanelUserPermissions/AdminPanelUserPermissions';
@@ -51,6 +52,10 @@ function App() {
                                 element={<GraphComponent />}
                             />
                             <Route path='/publish' element={<PublishPreview />}></Route>
+                            <Route
+                                path='/account'
+                                element={<AccountSettings />}
+                            ></Route>
                             <Route path='/admin' element={<Outlet />}>
                                 <Route index element={<AdminPanel />}></Route>
                                 <Route
