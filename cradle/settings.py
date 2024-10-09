@@ -160,6 +160,7 @@ ROOT_URLCONF = "cradle.urls"
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SAMESITE = "None"
+CSRF_TRUSTED_ORIGINS = ALLOWED_HOSTS
 SESSION_COOKIE_SAMESITE = "None"
 
 TEMPLATES = [
@@ -230,7 +231,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = "static/"
+
+BASE_URL = (os.environ.get("BASE_URL", "").strip("/") + "/").removeprefix("/")
+STATIC_URL = f"{BASE_URL}static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field

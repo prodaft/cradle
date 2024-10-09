@@ -18,16 +18,13 @@ Including another URLconf
 from django.conf import settings
 from django.urls import include, path
 from django.contrib import admin
-import os
-
-BASE_URL = (os.environ.get("BASE_URL", "").strip("/") + "/").removeprefix("/")
 
 urlpatterns = [
     path(
-        BASE_URL,
+        settings.BASE_URL,
         include(
+            path(settings.ADMIN_PATH, admin.site.urls),
             [
-                path(settings.ADMIN_PATH, admin.site.urls),
                 path("users/", include("user.urls")),
                 path("entries/", include("entries.urls")),
                 path("notes/", include("notes.urls")),
@@ -40,7 +37,7 @@ urlpatterns = [
                 path("knowledge-graph/", include("knowledge_graph.urls")),
                 path("statistics/", include("cradle_statistics.urls")),
                 path("lsp/", include("lsp.urls")),
-            ]
+            ],
         ),
-    )
+    ),
 ]
