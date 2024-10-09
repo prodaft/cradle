@@ -235,7 +235,7 @@ USE_TZ = True
 
 
 BASE_URL = (os.environ.get("BASE_URL", "").strip("/") + "/").removeprefix("/")
-STATIC_URL = f"{BASE_URL}static/"
+STATIC_URL = "static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -250,7 +250,7 @@ AUTOREGISTER_ARTIFACT_TYPES = False
 MIN_ENTRY_COUNT_PER_NOTE = 2
 MIN_ENTITY_COUNT_PER_NOTE = 1
 
-ADMIN_PATH = "29acee84-15db-481b-b602-2c1a579178d0"
+ADMIN_PATH = "29acee84-15db-481b-b602-2c1a579178d0/"
 
 
 SMTP_USERNAME = ""
