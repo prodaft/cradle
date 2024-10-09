@@ -8,6 +8,9 @@ class CradleUser(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
 
+    vt_api_key = models.TextField(null=True, blank=True)
+    catalyst_api_key = models.TextField(null=True, blank=True)
+
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["password", "email"]
     EMAIL_FIELD = "email"

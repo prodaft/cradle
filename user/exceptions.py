@@ -11,3 +11,12 @@ class InvalidPasswordException(APIException):
     status_code = 400
     default_detail = "The password is invalid."
     default_code = "unique"
+
+
+class DisallowedActionException(APIException):
+    status_code = 403
+    default_code = "unique"
+
+    def __init__(self, detail: str, *args, **kwargs) -> None:
+        self.detail = detail
+        super().__init__(*args, **kwargs)
