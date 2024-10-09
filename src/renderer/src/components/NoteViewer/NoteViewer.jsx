@@ -81,7 +81,7 @@ export default function NoteViewer() {
                     navigate(from, { replace: true, state: state });
                     return;
                 }
-                const stateNotes = state.notes.filter((note) => note.id != id); // todo when id's are uuids change to !==
+                const stateNotes = state.notes.filter((note) => note.id !== id); // todo when id's are uuids change to !==
                 const newState = { ...state, notes: stateNotes };
                 navigate(from, { replace: true, state: newState });
             })
