@@ -155,6 +155,15 @@ export default function NoteViewer() {
                         <span className='text-sm text-zinc-500 p-2'>
                           <strong>Created by:</strong> {note && note.author ? note.author.username : "Unknown"}
                         </span>
+                      {note.editor && (<span>
+                        <span className='text-sm text-zinc-700'>|</span>
+                        <span className='text-sm text-zinc-500 p-2'>
+                          <strong>Edited on:</strong> {new Date(note.timestamp).toLocaleString()}
+                        </span>
+                        <span className='text-sm text-zinc-700'>|</span>
+                        <span className='text-sm text-zinc-500 p-2'>
+                          <strong>Edited by:</strong> {note && note.author ? note.author.username : "Unknown"}
+                        </span></span>) }
                       </div>
                     <div className='flex-grow'>
                         {isRaw ? (
