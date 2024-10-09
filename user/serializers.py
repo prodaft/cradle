@@ -8,7 +8,11 @@ from django.contrib.auth.password_validation import (
     MinimumLengthValidator,
 )
 from .models import CradleUser
-from .exceptions import DuplicateUserException, InvalidPasswordException
+from .exceptions import (
+    DisallowedActionException,
+    DuplicateUserException,
+    InvalidPasswordException,
+)
 from typing import Dict, List, cast, Any, Sequence
 from .utils.validators import (
     MinimumDigitsValidator,
@@ -19,12 +23,11 @@ from .utils.validators import (
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
-
     email = serializers.EmailField(required=True)
 
     class Meta:
         model = CradleUser
-        fields = ["username", "email", "password"]
+        fields = ["username", "email", "password", "catalyst_api_key", "vt_api_key"]
         extra_kwargs: Dict[str, Dict[str, List]] = {"username": {"validators": []}}
 
     def validate(self, data: Any) -> Any:
@@ -43,25 +46,28 @@ class UserCreateSerializer(serializers.ModelSerializer):
                 which returns error code 409.
         """
 
-        user_exists: bool = CradleUser.objects.filter(
-            username=data["username"]
-        ).exists()
-        if user_exists:
-            raise DuplicateUserException()
+        if "username" in data:
+            user_exists: bool = CradleUser.objects.filter(
+                username=data["username"]
+            ).exists()
 
-        password_validators: Sequence = (
-            MinimumLowerentityLettersValidator(1),
-            MinimumDigitsValidator(1),
-            MinimumSpecialCharacterValidator(1),
-            MinimumUpperentityLettersValidator(1),
-            MinimumLengthValidator(12),
-        )
-        try:
-            password_validation.validate_password(
-                data["password"], password_validators=password_validators
+            if user_exists:
+                raise DuplicateUserException()
+
+        if "password" in data:
+            password_validators: Sequence = (
+                MinimumLowerentityLettersValidator(1),
+                MinimumDigitsValidator(1),
+                MinimumSpecialCharacterValidator(1),
+                MinimumUpperentityLettersValidator(1),
+                MinimumLengthValidator(12),
             )
-        except ValidationError:
-            raise InvalidPasswordException()
+            try:
+                password_validation.validate_password(
+                    data["password"], password_validators=password_validators
+                )
+            except ValidationError:
+                raise InvalidPasswordException()
 
         return super().validate(data)
 
@@ -78,11 +84,39 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
         return CradleUser.objects.create_user(**validated_data)
 
+    def update(self, instance: CradleUser, validated_data: dict[str, Any]):
+        if validated_data.get("username", instance.username) != instance.username:
+            raise DisallowedActionException("You cannot change your username!")
+
+        if validated_data.get("email", instance.email) != instance.email:
+            raise DisallowedActionException("You cannot change your email")
+
+        if "password" in validated_data:
+            instance.set_password(validated_data["password"])
+
+        instance.vt_api_key = validated_data.get("vt_api_key", instance.vt_api_key)
+        instance.catalyst_api_key = validated_data.get(
+            "catalyst_api_key", instance.catalyst_api_key
+        )
+
+        instance.save()
+
+        return instance
+
 
 class UserRetrieveSerializer(serializers.ModelSerializer):
+    catalyst_api_key = serializers.SerializerMethodField()
+    vt_api_key = serializers.SerializerMethodField()
+
     class Meta:
         model = CradleUser
-        fields = ["id", "username"]
+        fields = ["id", "username", "email", "catalyst_api_key", "vt_api_key"]
+
+    def get_catalyst_api_key(self, obj):
+        return True if obj.catalyst_api_key else False
+
+    def get_vt_api_key(self, obj):
+        return True if obj.vt_api_key else False
 
 
 class TokenObtainSerializer(TokenObtainPairSerializer):

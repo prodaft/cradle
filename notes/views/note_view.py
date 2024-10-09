@@ -101,7 +101,7 @@ class NoteDetail(APIView):
 
     @log_failed_responses
     def post(self, request: Request, note_id: UUID) -> Response:
-        """Allow a user to get an already existing note, by specifying
+        """Allow a user to edit an already existing note, by specifying
         its id. A user should be able to retrieve the id only if he has
         READ access an all the entities it references.
 
