@@ -23,8 +23,8 @@ urlpatterns = [
     path(
         settings.BASE_URL,
         include(
-            path(settings.ADMIN_PATH, admin.site.urls),
             [
+                path(settings.ADMIN_PATH, admin.site.urls),
                 path("users/", include("user.urls")),
                 path("entries/", include("entries.urls")),
                 path("notes/", include("notes.urls")),
