@@ -85,7 +85,6 @@ export async function getEntities() {
     });
 }
 
-
 /**
  * Sends a GET request to get all entry classes
  *
@@ -93,20 +92,24 @@ export async function getEntities() {
  */
 export async function getEntryClasses() {
     if (EntryClassesCached) {
-      return EntryClassesCached
+        return EntryClassesCached;
     } else {
-      EntryClassesCached = authAxios({
-          method: 'get',
-          url: '/entries/entry_classes/',
-      }).then((response) => {
-        EntryClassesCached = new Promise((callback) => callback(JSON.parse(JSON.stringify(response))));
-        return response;
-      }).catch(function(err) {
-        EntryClassesCached = null // Clear the cache if we get an error
-        throw err
-      });
+        EntryClassesCached = authAxios({
+            method: 'get',
+            url: '/entries/entry_classes/',
+        })
+            .then((response) => {
+                EntryClassesCached = new Promise((callback) =>
+                    callback(JSON.parse(JSON.stringify(response))),
+                );
+                return response;
+            })
+            .catch(function (err) {
+                EntryClassesCached = null; // Clear the cache if we get an error
+                throw err;
+            });
 
-      return EntryClassesCached;
+        return EntryClassesCached;
     }
 }
 
@@ -177,7 +180,6 @@ export async function getPermissions(userId) {
         url: `/access/${userId}/`,
     });
 }
-
 
 /**
  * Gets a pair of access/refresh tokens to simulate a user
