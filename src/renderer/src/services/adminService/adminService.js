@@ -100,10 +100,13 @@ export async function getEntryClasses() {
           url: '/entries/entry_classes/',
       }).then((response) => {
         EntryClassesCached = new Promise((callback) => callback(JSON.parse(JSON.stringify(response))));
-        console.log("ASD")
         return response;
+      }).catch(function(err) {
+        EntryClassesCached = null // Clear the cache if we get an error
+        throw err
       });
-       return EntryClassesCached;
+
+      return EntryClassesCached;
     }
 }
 
