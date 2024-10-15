@@ -17,7 +17,7 @@ class ArtifactClassSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EntryClass
-        fields = ["subtype", "regex", "options"]
+        fields = ["subtype", "regex", "options", "catalyst_type"]
 
     def validate(self, data):
         data["type"] = EntryType.ARTIFACT
@@ -38,7 +38,7 @@ class ArtifactClassSerializer(serializers.ModelSerializer):
 class EntryClassSerializer(serializers.ModelSerializer):
     class Meta:
         model = EntryClass
-        fields = ["type", "subtype", "regex", "options"]
+        fields = ["type", "subtype", "regex", "options", "catalyst_type"]
 
 
 class EntryResponseSerializer(serializers.ModelSerializer):

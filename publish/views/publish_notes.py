@@ -5,7 +5,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 
 from publish.strategies.catalyst import CatalystPublish
-from ..models import Note
+from notes.models import Note
 
 from logs.decorators import log_failed_responses
 from user.models import CradleUser
@@ -19,7 +19,7 @@ class PublishView(APIView):
     permission_classes = [IsAuthenticated]
 
     @log_failed_responses
-    def post(self, request: Request) -> Response:
+    def post(self, request: Request, strategy_name: str) -> Response:
         """Allow a user to publish a set of notes, using a given strategy.
 
         Args:
@@ -29,6 +29,8 @@ class PublishView(APIView):
             Response(status=200): Publishable status was updated.
             Response("User is not authenticated.",
                 status=401): if the user is not authenticated
+            Response("Note is not publishable",
+                status=403): if a note cannot be published
             Response("No notes provided", status=500):
                 if the note does not exist.
             Response("Missing title", status=404):
@@ -50,9 +52,7 @@ class PublishView(APIView):
         if len(note_ids) == 0:
             return Response("No notes provided", status=500)
 
-        stratname = request.data.get("strategy", None)
-
-        if stratname == "catalyst":
+        if strategy_name == "catalyst":
             strategy = CatalystPublish()
         else:  # strategy does not exist
             return Response("Strategy not found", status=404)
@@ -71,5 +71,7 @@ class PublishView(APIView):
         for note in notes:
             if not Access.objects.has_access_to_entities(user):
                 return Response(f"Note not found {str(note.pk)}", status=404)
+            if not note.is_publishable():
+                return Response(f"Note {str(note.pk)}is not publishable", status=403)
 
         strategy.publish(title, note_ids_ordered, user)

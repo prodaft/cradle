@@ -25,6 +25,7 @@ urlpatterns = [
         include(
             [
                 path(settings.ADMIN_PATH, admin.site.urls),
+                path("publish/", include("publish.urls")),
                 path("users/", include("user.urls")),
                 path("entries/", include("entries.urls")),
                 path("notes/", include("notes.urls")),
