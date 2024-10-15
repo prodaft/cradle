@@ -2,6 +2,11 @@ import django_stubs_ext
 
 django_stubs_ext.monkeypatch()
 
+import os
+from datetime import timedelta
+from pathlib import Path
+from typing import List
+
 """
 Django settings for cradle project.
 
@@ -13,11 +18,6 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
-
-from pathlib import Path
-import os
-from datetime import timedelta
-from typing import List
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
