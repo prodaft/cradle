@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "fleeting_notes.apps.FleetingNotesConfig",
     "user.apps.UserConfig",
     "notes.apps.NotesConfig",
+    "publish.apps.PublishConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
