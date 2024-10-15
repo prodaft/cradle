@@ -12,7 +12,7 @@ import { Code, EditPencil } from 'iconoir-react';
 import NavbarButton from '../NavbarButton/NavbarButton';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { Trash } from 'iconoir-react/regular';
+import { Trash, StatsReport } from 'iconoir-react/regular';
 import NavbarSwitch from '../NavbarSwitch/NavbarSwitch';
 import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 
@@ -89,6 +89,15 @@ export default function NoteViewer() {
     }, [id, navigate]);
 
     const navbarContents = [
+        isPublishable && (
+            <NavbarButton
+                icon={<StatsReport />}
+                text='Publish Report'
+                data-testid='publish-btn'
+                key='publish-btn'
+                onClick={() => navigate(`/publish`, { state: { noteIds: [id] } })}
+            />
+        ),
         <NavbarSwitch
             key='publishable-btn'
             text='Publishable'

@@ -109,7 +109,7 @@ export default function GraphComponent() {
             }
             const matchedNodes = new Set(
                 data.nodes.filter((node) =>
-                    node.label.toLowerEntity().includes(searchValue.toLowerEntity()),
+                    node.label.toLowerCase().includes(searchValue.toLowerCase()),
                 ),
             );
             if (matchedNodes.size === 0) return;
