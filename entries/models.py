@@ -27,6 +27,10 @@ class EntryClass(models.Model):
         max_length=65536, blank=True, default=""
     )
 
+    catalyst_type: models.CharField = models.CharField(
+        max_length=32, blank=True, default=""
+    )
+
     @classmethod
     def get_default_pk(cls):
         eclass, created = cls.objects.get_or_create(

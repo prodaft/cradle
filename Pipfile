@@ -23,6 +23,7 @@ django-model-utils = "*"
 django-extensions = "*"
 pytest = "*"
 pyyaml = "*"
+mistune = "*"
 
 [dev-packages]
 
