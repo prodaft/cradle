@@ -7,8 +7,11 @@ import NavbarButton from '../NavbarButton/NavbarButton';
 import NavbarDropdown from '../NavbarDropdown/NavbarDropdown';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { getPublishData } from '../../services/publishService/publishService';
-import { Code, CodeBracketsSquare, Download } from 'iconoir-react/regular';
+import {
+    getPublishData,
+    sendToCatalyst,
+} from '../../services/publishService/publishService';
+import { Code, CodeBracketsSquare, Download, Upload } from 'iconoir-react/regular';
 import {
     createMarkdownReportFromJson,
     downloadFile,
@@ -79,9 +82,38 @@ export default function PublishPreview() {
         [isJson, responseData, entryName],
     );
 
+    // Publishes the preview in the provided format.
+    const handleUpload = useCallback(
+        (extension) => {
+            try {
+                switch (extension) {
+                    case 'catalyst': {
+                        sendToCatalyst(
+                            noteIds,
+                            'Cradle Publish on: ' + new Date().toLocaleString(),
+                        );
+                        break;
+                    }
+                    default:
+                        throw new Error(`Invalid format: ${extension}`);
+                }
+            } catch (error) {
+                displayError(setAlert)(error);
+            }
+        },
+        [isJson, responseData, entryName],
+    );
+
     const toggleView = useCallback(() => {
         setIsJson((prevIsJson) => !prevIsJson);
     }, []);
+
+    const uploadDropdownButtons = [
+        {
+            label: 'Catalyst',
+            handler: () => handleUpload('catalyst'),
+        },
+    ];
 
     const publishDropdownButtons = [
         {
@@ -121,6 +153,14 @@ export default function PublishPreview() {
                 data-testid='publish-btn'
                 key='publish-btn'
                 contents={publishDropdownButtons}
+            />,
+
+            <NavbarDropdown
+                icon={<Upload />}
+                text='Upload Report To...'
+                data-testid='upload-btn'
+                key='upload-btn'
+                contents={uploadDropdownButtons}
             />,
         ],
         [isJson, toggleView, handlePublish],
