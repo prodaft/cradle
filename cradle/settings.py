@@ -255,6 +255,9 @@ MIN_ENTITY_COUNT_PER_NOTE = 1
 ADMIN_PATH = "29acee84-15db-481b-b602-2c1a579178d0/"
 
 
+CATALYST_HOST = "https://catalyst.prodaft.com"
+
+
 SMTP_USERNAME = ""
 SMTP_PASSWORD = ""
 SMTP_HOST = ""
