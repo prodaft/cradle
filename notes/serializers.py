@@ -115,6 +115,7 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 class NoteRetrieveSerializer(serializers.ModelSerializer):
     files = FileReferenceSerializer(many=True)
     author = UserRetrieveSerializer()
+    editor = UserRetrieveSerializer()
 
     class Meta:
         model = Note
@@ -124,6 +125,7 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
             "content",
             "timestamp",
             "author",
+            "edit_timestamp",
             "editor",
             "files",
         ]
