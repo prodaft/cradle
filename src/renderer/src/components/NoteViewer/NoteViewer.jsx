@@ -162,13 +162,13 @@ export default function NoteViewer() {
                                 <span className='text-sm text-zinc-700'>|</span>
                                 <span className='text-sm text-zinc-500 p-2'>
                                     <strong>Edited on:</strong>{' '}
-                                    {new Date(note.timestamp).toLocaleString()}
+                                    {new Date(note.edit_timestamp).toLocaleString()}
                                 </span>
                                 <span className='text-sm text-zinc-700'>|</span>
                                 <span className='text-sm text-zinc-500 p-2'>
                                     <strong>Edited by:</strong>{' '}
                                     {note && note.author
-                                        ? note.author.username
+                                        ? note.editor.username
                                         : 'Unknown'}
                                 </span>
                             </span>
