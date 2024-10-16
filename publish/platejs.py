@@ -1,12 +1,30 @@
-from collections.abc import Iterable
+import base64
+from collections.abc import Callable, Iterable
+from io import BytesIO
 from typing import Any, ClassVar, Dict, List, Literal, Match, Optional, Tuple
 import mistune
 from mistune.core import BaseRenderer, BlockState
 
 from mistune.markdown import Markdown
-from mistune import InlineParser, InlineState
+from mistune import InlineParser, InlineState, unikey
+from mistune.helpers import LINK_LABEL
 
-LINK_REGEX = r"\[\[([^:\|\]]+?):((?:\\[\[\]\|]|[^\[\]\|])+?)(?:\|((?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]"  # noqa: E501 to avoid splitting the regex on two lines
+from notes.utils import LINK_REGEX
+
+INLINE_FOOTNOTE = (
+    r"\[(?P<footnote_value>"
+    + LINK_LABEL
+    + r")\]\[(?P<footnote_key>"
+    + LINK_LABEL
+    + r")\]"
+)
+INLINE_FOOTNOTE_IMG = (
+    r"!\[(?P<img_footnote_value>"
+    + LINK_LABEL
+    + r")\]\[(?P<img_footnote_key>"
+    + LINK_LABEL
+    + r")\]"
+)
 
 
 def parse_cradle_link(
@@ -18,9 +36,9 @@ def parse_cradle_link(
         {
             "type": "cradle_link",
             "attrs": {
-                "key": m.group(5),
-                "value": m.group(6),
-                "alias": m.group(7) if m.group(7) else None,
+                "key": m.group(7),
+                "value": m.group(8),
+                "alias": m.group(9) if m.group(9) else None,
             },
         }
     )
@@ -28,8 +46,56 @@ def parse_cradle_link(
     return pos
 
 
+def parse_footnote(inline: "InlineParser", m: Match[str], state: "InlineState") -> int:
+    key = m.group("footnote_key")
+    value = m.group("footnote_key")
+    ref = state.env.get("ref_footnotes")
+
+    if ref and key in ref:
+        state.append_token(
+            {
+                "type": "footnote_ref",
+                "raw": key,
+                "attrs": {"value": value},
+            }
+        )
+    else:
+        state.append_token({"type": "text", "raw": m.group(0)})
+
+    return m.end()
+
+
+def parse_img_footnote(
+    inline: "InlineParser", m: Match[str], state: "InlineState"
+) -> int:
+    key = m.group("img_footnote_key")
+    value = m.group("img_footnote_key")
+    ref = state.env.get("ref_footnotes")
+
+    if ref and key in ref:
+        state.append_token(
+            {
+                "type": "img_footnote_ref",
+                "raw": key,
+                "attrs": {"value": value},
+            }
+        )
+    else:
+        state.append_token({"type": "text", "raw": m.group(0)})
+
+    return m.end()
+
+
 def cradle_link(md: "Markdown") -> None:
     md.inline.register("url_link", LINK_REGEX, parse_cradle_link, before="link")
+
+
+def img_footnote(md: "Markdown") -> None:
+    md.inline.register(
+        "img_footnote", INLINE_FOOTNOTE_IMG, parse_img_footnote, before="link"
+    )
+
+    md.inline.register("footnote", INLINE_FOOTNOTE, parse_footnote, before="link")
 
 
 class PlateJSRender(BaseRenderer):
@@ -38,7 +104,8 @@ class PlateJSRender(BaseRenderer):
     NAME: ClassVar[Literal["platejs"]] = "platejs"
 
     def __init__(
-        self, entries: Dict[Tuple[str, str], Dict[str, Optional[str]]]
+        self,
+        entries: Dict[Tuple[str, str], Dict[str, Optional[str]]],
     ) -> None:
         self.entries = entries
         super(PlateJSRender, self).__init__()
@@ -109,7 +176,7 @@ class PlateJSRender(BaseRenderer):
         return {"type": "img", "url": url, "title": title or "", "alt": text}
 
     def codespan(self, text: List) -> Dict[str, Any]:
-        return {"type": "code", "children": text}
+        return {"text": text, "italic": True}
 
     def linebreak(self) -> Dict[str, Any]:
         return None
@@ -121,7 +188,7 @@ class PlateJSRender(BaseRenderer):
         return {"type": "p", "children": text}
 
     def heading(self, text: List, level: int, **attrs: Any) -> Dict[str, Any]:
-        return {"type": f"h{level}", "children": text}
+        return {"type": f"h{min(3, level)}", "children": text}
 
     def cradle_link(self, key: str, value: str, alias: Optional[str]) -> str:
         d = self.entries.get((key, value), {})
@@ -133,7 +200,7 @@ class PlateJSRender(BaseRenderer):
         value = alias or alias2 or value
 
         if id is None:
-            return {"text": value, "bold": True}
+            return {"text": value}
 
         return {
             "type": "mention",
@@ -223,20 +290,79 @@ class PlateJSRender(BaseRenderer):
     ) -> str:
         return {"type": "td", "children": text}
 
+    def footnote_ref(self, key: str, value: str) -> str:
+        return {"text": value}
+
+    def img_footnote_ref(self, key: str, value: str) -> str:
+        return {"type": "footnote_img_ref", "caption": value, "key": key}
+
+
+def resolve_footnote_imgs(
+    pjs: List, fetch_image: Callable[[str, str], Optional[BytesIO]], state: BlockState
+) -> None:
+    ref_footnotes = state.env["ref_footnotes"]
+
+    for i in pjs:
+        if "type" not in i:
+            continue
+
+        if i["type"] == "footnote_img_ref":
+            i["type"] = "img"
+
+            bucket, path = ref_footnotes[i["key"]]
+            i.pop("key")
+
+            img = fetch_image(bucket, path)
+
+            if img is None:
+                i.pop("type")
+                i["text"] = i.pop("caption")
+                continue
+
+            b64 = base64.b64encode(img.read()).decode("utf-8")
+
+            i["url"] = f"data:image/png;base64,{b64}"
+            img.close()
+
+        elif "children" in i:
+            resolve_footnote_imgs(i["children"], fetch_image, state)
+
 
 def markdown_to_pjs(
-    md: str, entries: Dict[Tuple[str, str], Dict[str, Optional[str]]]
+    md: str,
+    entries: Dict[Tuple[str, str], Dict[str, Optional[str]]],
+    footnotes: Dict[str, str],
+    fetch_image: Callable[[str, str], Optional[BytesIO]],
 ) -> str:
     # Create a renderer instance
     renderer = PlateJSRender(entries)
 
     # Create a Markdown instance using the renderer
     markdown = mistune.create_markdown(
-        renderer=renderer, plugins=["table", cradle_link]
+        renderer=renderer, plugins=["table", cradle_link, img_footnote]
     )
 
+    state = markdown.block.state_cls()
+    state.env["ref_footnotes"] = footnotes
+
     # Render the sample Markdown string
-    result = markdown(md)
+    result, state = markdown.parse(md, state)
+
+    resolve_footnote_imgs(result, fetch_image, state)
 
     # Print or return the result
     return result
+
+
+if __name__ == "__main__":
+    entries = {
+        ("user", "1"): {"id": "1", "type": "user", "value": "John Doe"},
+        ("note", "1"): {"id": "1", "type": "note", "value": "Note 1"},
+    }
+    md = """
+# Hello, [[user:1]]!
+
+Test footnote ![^1].
+"""
+
+    print(markdown_to_pjs(md, entries, {"1": "test", "2": "test2"}))

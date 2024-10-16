@@ -1,6 +1,6 @@
 #!/bin/sh
 
-pipenv run python manage.py collectstatic
+pipenv run python manage.py collectstatic --noinput
 pipenv run python manage.py migrate
 pipenv run python manage.py loaddata entries
 pipenv run python manage.py initadmin

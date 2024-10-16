@@ -1,3 +1,5 @@
+from io import BytesIO
+from typing import Optional
 from minio import Minio
 import uuid
 from datetime import timedelta
@@ -6,7 +8,7 @@ from .config import minio_config
 
 
 class MinioClient:
-    client = None
+    client: Optional[Minio] = None
 
     def __new__(cls):
         if not hasattr(cls, "_instance"):
@@ -103,3 +105,21 @@ class MinioClient:
             return True
         except Exception:
             return False
+
+    def fetch_file(self, bucket_name: str, path: str) -> Optional[BytesIO]:
+        """Fetches a file from the MinIO instance.
+        Args:
+            bucket_name: The name of the bucket where the file is stored
+            path: The path to the file inside the bucket
+
+        Returns:
+            The file as a byte string
+        """
+
+        assert self.client is not None
+
+        try:
+            return self.client.get_object(bucket_name, object_name=path)
+        except Exception as e:
+            print(e)
+            return None

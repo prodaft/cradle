@@ -1,6 +1,7 @@
 from typing import Dict, Iterable, List, Optional
 
 from entries.models import Entry
+from file_transfer.utils import MinioClient
 from notes.models import Note
 from user.models import CradleUser
 from .base import BasePublishStrategy
@@ -140,7 +141,15 @@ class CatalystPublish(BasePublishStrategy):
             if entry:
                 entry_map[key] = entry
 
-        platejs = markdown_to_pjs(joint_md, entry_map)
+        footnotes = {}
+
+        for i in notes:
+            for f in i.files.all():
+                footnotes[f.minio_file_name] = (f.bucket_name, f.minio_file_name)
+
+        platejs = markdown_to_pjs(
+            joint_md, entry_map, footnotes, MinioClient().fetch_file
+        )
 
         # Prepare the request body
         payload = {
@@ -154,6 +163,7 @@ class CatalystPublish(BasePublishStrategy):
             "content": joint_md,
             "content_structure": platejs,
         }
+        return
 
         # Send the POST request
         response = requests.post(
