@@ -15,6 +15,7 @@ import useAuth from '../../hooks/useAuth/useAuth';
 import { completionKeymap, acceptCompletion } from '@codemirror/autocomplete';
 import { getLinkNode, parseLink } from '../../utils/textEditorUtils/textEditorUtils';
 import { Prec } from '@uiw/react-codemirror';
+import { NavArrowLeft, NavArrowRight } from 'iconoir-react';
 
 /**
  * This component makes use of a pre-existing code editor component (CodeMirror, see https://github.com/uiwjs/react-codemirror)
@@ -40,11 +41,15 @@ export default function Editor({
     setMarkdownContent,
     fileData,
     setFileData,
+    viewCollapsed,
+    setViewCollapsed,
     isLightMode,
 }) {
-    const [enableVim, setEnableVim] = useState(localStorage.getItem('editor.vim') === 'true');
+    const [enableVim, setEnableVim] = useState(
+        localStorage.getItem('editor.vim') === 'true',
+    );
     const [showFileList, setShowFileList] = useState(false);
-    const [lspPack, setLspPack] = useState({"classes": {}, "instances": {}});
+    const [lspPack, setLspPack] = useState({ classes: {}, instances: {} });
     const autoLinkId = useId();
     const vimModeId = useId();
     const editorRef = useRef(null);
@@ -59,57 +64,62 @@ export default function Editor({
                 const regex = new RegExp(`^${criteria.regex}$`);
                 if (regex.test(word) || regex.test(word.toLowerCase())) {
                     suggestions.push({
-                      type: type,
-                      match: word
+                        type: type,
+                        match: word,
                     });
                 }
             }
 
             // Check if criteria has an enum
             if (criteria.enum) {
-                const matchingEnums = criteria.enum.filter(value => value.toLowerCase().startsWith(word.toLowerCase()));
-                matchingEnums.forEach(match => {
+                const matchingEnums = criteria.enum.filter((value) =>
+                    value.toLowerCase().startsWith(word.toLowerCase()),
+                );
+                matchingEnums.forEach((match) => {
                     suggestions.push({
-                      type: type,
-                      match: match
-                    },
-                    );
+                        type: type,
+                        match: match,
+                    });
                 });
             }
         }
 
         // Check in instances for possible completions
         for (const [type, instances] of Object.entries(lspPack.instances)) {
-            const matchingInstances = instances.filter(value => value.startsWith(word));
-            matchingInstances.forEach(match => {
+            const matchingInstances = instances.filter((value) =>
+                value.startsWith(word),
+            );
+            matchingInstances.forEach((match) => {
                 suggestions.push({
-                  type: type,
-                  match: match
+                    type: type,
+                    match: match,
                 });
             });
         }
 
         return suggestions;
-    }
+    };
 
     const autocompleteOutsideLink = (context) => {
-      let word = context.matchBefore(/\S*/)
-      if (word.from == word.to && !context.explicit)
-        return { from: context.pos, options: [] }
+        let word = context.matchBefore(/\S*/);
+        if (word.from == word.to && !context.explicit)
+            return { from: context.pos, options: [] };
 
-      return new Promise((resolve) => {
-        let suggestions = suggestionsForWord(word.text).map((o) => {return {type: "keyword", label: `[[${o.type}:${o.match}]]`,}})
-        resolve({
+        return new Promise((resolve) => {
+            let suggestions = suggestionsForWord(word.text).map((o) => {
+                return { type: 'keyword', label: `[[${o.type}:${o.match}]]` };
+            });
+            resolve({
                 from: word.from,
                 to: word.to,
-                options: suggestions
+                options: suggestions,
+            });
         });
-      })
-    }
+    };
 
     // Autocomplete links (e.g. syntax `[[...]]`) using information from the database. Uses the `/query` endpoint to get the data.
     const linkAutoComplete = (context) => {
-        console.log(lspPack)
+        console.log(lspPack);
         let node = getLinkNode(context);
 
         if (node == null) return autocompleteOutsideLink(context);
@@ -124,33 +134,31 @@ export default function Editor({
         if (parsedLink.type == null) {
             options = new Promise((f) =>
                 f(
-                  Object.values(lspPack)
-                      .flatMap(obj => Object.keys(obj))
-                      .map(item => ({
-                          label: parsedLink.post(item),
-                          type: 'keyword',
-                      }))
+                    Object.values(lspPack)
+                        .flatMap((obj) => Object.keys(obj))
+                        .map((item) => ({
+                            label: parsedLink.post(item),
+                            type: 'keyword',
+                        })),
                 ),
             );
-        } else if (parsedLink.type in lspPack["instances"]) {
-                console.log(
-                    lspPack["instances"][parsedLink.type]
-                    .map(item => ({
-                        label: parsedLink.post(item),
-                        type: 'keyword',
-                    }))
-                )
+        } else if (parsedLink.type in lspPack['instances']) {
+            console.log(
+                lspPack['instances'][parsedLink.type].map((item) => ({
+                    label: parsedLink.post(item),
+                    type: 'keyword',
+                })),
+            );
             options = new Promise((f) =>
                 f(
-                    lspPack["instances"][parsedLink.type]
-                    .map(item => ({
+                    lspPack['instances'][parsedLink.type].map((item) => ({
                         label: parsedLink.post(item),
                         type: 'keyword',
-                    }))
+                    })),
                 ),
             );
         }
-        console.log(parsedLink)
+        console.log(parsedLink);
 
         return options.then((o) => {
             return {
@@ -192,56 +200,63 @@ export default function Editor({
     }, [showFileList]);
 
     const insertTextToCodeMirror = (text) => {
-      if (editorRef.current) {
-          const doc = editorRef.current.view.state;
-          editorRef.current.view.dispatch(doc.replaceSelection(text));
-      }
+        if (editorRef.current) {
+            const doc = editorRef.current.view.state;
+            editorRef.current.view.dispatch(doc.replaceSelection(text));
+        }
     };
 
     const autoFormatLinks = () => {
-      if ( !editorRef.current ) {
-        return;
-      }
-      const doc = editorRef.current.view.state;
-      const words = markdownContent.split(/(\s+)/);
-
-      console.log(words)
-      const trim_word = (x) => {return x.replace(/^[,.:\s]+|[,.:\s]+$/g, "")};
-      let linkedMarkdown = markdownContent
-
-      let position = 0;
-
-      words.forEach((word) => {
-        if (trim_word(word)) {
-          const start = position;
-          const end = start + word.length;
-          let suggestions = suggestionsForWord(trim_word(word))
-          console.log(suggestions)
-
-          suggestions = suggestions.filter((x) => trim_word(x.match) == trim_word(word))
-          if (suggestions && suggestions.length >= 1) {
-            console.log(suggestions)
-            let link = `[[${suggestions[0].type}:${suggestions[0].match}]]`
-            linkedMarkdown = linkedMarkdown.substring(0, start) + link + linkedMarkdown.substring(end)
-            position += link.length - word.length
-          }
+        if (!editorRef.current) {
+            return;
         }
+        const doc = editorRef.current.view.state;
+        const words = markdownContent.split(/(\s+)/);
 
-        console.log(linkedMarkdown);
-        position += word.length;
-      });
+        console.log(words);
+        const trim_word = (x) => {
+            return x.replace(/^[,.:\s]+|[,.:\s]+$/g, '');
+        };
+        let linkedMarkdown = markdownContent;
 
-      setMarkdownContent(linkedMarkdown)
-    }
+        let position = 0;
+
+        words.forEach((word) => {
+            if (trim_word(word)) {
+                const start = position;
+                const end = start + word.length;
+                let suggestions = suggestionsForWord(trim_word(word));
+                console.log(suggestions);
+
+                suggestions = suggestions.filter(
+                    (x) => trim_word(x.match) == trim_word(word),
+                );
+                if (suggestions && suggestions.length >= 1) {
+                    console.log(suggestions);
+                    let link = `[[${suggestions[0].type}:${suggestions[0].match}]]`;
+                    linkedMarkdown =
+                        linkedMarkdown.substring(0, start) +
+                        link +
+                        linkedMarkdown.substring(end);
+                    position += link.length - word.length;
+                }
+            }
+
+            console.log(linkedMarkdown);
+            position += word.length;
+        });
+
+        setMarkdownContent(linkedMarkdown);
+    };
 
     const onEditorChange = (text) => {
-      setMarkdownContent(text)
-    }
+        setMarkdownContent(text);
+    };
 
     useEffect(() => {
-      fetchLspPack()
+        fetchLspPack()
             .then((response) => {
-              setLspPack(response.data)
+                setLspPack(response.data);
             })
             .catch((error) => {
                 console.log(error);
@@ -263,7 +278,7 @@ export default function Editor({
                             data-tooltip={'Auto Link'}
                             onClick={autoFormatLinks}
                         >
-                          <LightBulb/>
+                            <LightBulb />
                         </button>
                     </span>
                     <span className='flex flex-row space-x-3 items-center'>
@@ -284,11 +299,24 @@ export default function Editor({
                             type='checkbox'
                             className='switch switch-ghost-primary my-1'
                             checked={enableVim}
-                            onChange={() =>  {
-                              localStorage.setItem('editor.vim', !enableVim)
-                              setEnableVim(!enableVim)
+                            onChange={() => {
+                                localStorage.setItem('editor.vim', !enableVim);
+                                setEnableVim(!enableVim);
                             }}
                         />
+                        <button
+                            id={autoLinkId}
+                            data-testid='toggle-preview'
+                            name='toggle-preview'
+                            type='button'
+                            className='flex flex-row items-center hover:bg-gray-4 tooltip tooltip-left tooltip-primary'
+                            data-tooltip={
+                                viewCollapsed ? 'Show Preview' : 'Hide Preview'
+                            }
+                            onClick={() => setViewCollapsed(!viewCollapsed)}
+                        >
+                            {!viewCollapsed ? <NavArrowRight /> : <NavArrowLeft />}
+                        </button>
                     </span>
                 </div>
                 <div className='overflow-hidden w-full rounded-lg'>
@@ -329,7 +357,11 @@ export default function Editor({
                         className={`overflow-auto h-full rounded-md ${showFileList && 'min-h-24'}`}
                     >
                         {showFileList && (
-                            <FileTable fileData={fileData} setFileData={setFileData} insertTextCallback={insertTextToCodeMirror}/>
+                            <FileTable
+                                fileData={fileData}
+                                setFileData={setFileData}
+                                insertTextCallback={insertTextToCodeMirror}
+                            />
                         )}
                     </div>
                 </div>

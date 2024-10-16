@@ -4,7 +4,7 @@ import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import useLightMode from '../../hooks/useLightMode/useLightMode';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import NavbarButton from '../NavbarButton/NavbarButton';
-import { FloppyDisk, Trash } from 'iconoir-react/regular';
+import { FloppyDisk, Trash, NavArrowLeft } from 'iconoir-react/regular';
 import NavbarDropdown from '../NavbarDropdown/NavbarDropdown';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Editor from '../Editor/Editor';
@@ -55,6 +55,9 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
     const fileDataRef = useRef(fileData);
     const [parsedContent, setParsedContent] = useState('');
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(true);
+    const [previewCollapsed, setPreviewCollapsed] = useState(
+        localStorage.getItem('preview.collapse') === 'true',
+    );
     const prevIdRef = useRef(null);
     const flexDirection = useChangeFlexDirectionBySize(textEditorRef);
 
@@ -234,6 +237,12 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
         };
     }, []);
 
+    const previewCollapseUpdated = (collapsed) => {
+        console.log('TEST');
+        setPreviewCollapsed(collapsed);
+        localStorage.setItem('preview.collapse', collapsed);
+    };
+
     // Use utilities for navbar contents
     // Set the id as dependency
     useNavbarContents(
@@ -299,13 +308,17 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
                         isLightMode={isLightMode}
                         fileData={fileData}
                         setFileData={setFileData}
+                        viewCollapsed={previewCollapsed}
+                        setViewCollapsed={previewCollapseUpdated}
                     />
                 </div>
-                <div
-                    className={`${flexDirection === 'flex-col' ? 'h-1/2' : 'h-full'} w-full bg-gray-2 rounded-md`}
-                >
-                    <Preview htmlContent={parsedContent} />
-                </div>
+                {!previewCollapsed && (
+                    <div
+                        className={`${flexDirection === 'flex-col' ? 'h-1/2' : 'h-full'} w-full bg-gray-2 rounded-md`}
+                    >
+                        <Preview htmlContent={parsedContent} />
+                    </div>
+                )}
             </div>
         </>
     );
