@@ -66,8 +66,8 @@ class UserCreateSerializer(serializers.ModelSerializer):
                 password_validation.validate_password(
                     data["password"], password_validators=password_validators
                 )
-            except ValidationError:
-                raise InvalidPasswordException()
+            except ValidationError as e:
+                raise InvalidPasswordException(e.messages)
 
         return super().validate(data)
 

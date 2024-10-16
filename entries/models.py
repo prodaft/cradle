@@ -28,7 +28,7 @@ class EntryClass(models.Model):
     )
 
     catalyst_type: models.CharField = models.CharField(
-        max_length=32, blank=True, default=""
+        max_length=64, blank=True, default=""
     )
 
     @classmethod

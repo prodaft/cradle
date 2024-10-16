@@ -1,3 +1,4 @@
+from typing import List
 from rest_framework.exceptions import APIException
 
 
@@ -11,6 +12,10 @@ class InvalidPasswordException(APIException):
     status_code = 400
     default_detail = "The password is invalid."
     default_code = "unique"
+
+    def __init__(self, reason: List[str], *args, **kwargs) -> None:
+        self.default_detail = "The password is invalid:\n-" + "\n-".join(reason)
+        super().__init__(*args, **kwargs)
 
 
 class DisallowedActionException(APIException):
