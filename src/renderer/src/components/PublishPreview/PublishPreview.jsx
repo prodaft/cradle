@@ -91,7 +91,18 @@ export default function PublishPreview() {
                         sendToCatalyst(
                             noteIds,
                             'Cradle Publish on: ' + new Date().toLocaleString(),
-                        );
+                        )
+                            .then((response) => {
+                                if (response.status === 200) {
+                                    setAlert({
+                                        show: true,
+                                        message: 'Successfully published to Catalyst!',
+                                        color: 'green',
+                                    });
+                                }
+                            })
+                            .catch(displayError(setAlert));
+
                         break;
                     }
                     default:

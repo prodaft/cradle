@@ -34,6 +34,6 @@ export function sendToCatalyst(noteIds, title) {
     return authAxios({
         method: 'POST',
         url: path,
-        data: queryParams,
+        data: body,
     });
 }
