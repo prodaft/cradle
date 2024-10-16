@@ -71,9 +71,9 @@ class CatalystPublish(BasePublishStrategy):
                 }
 
                 if csubtype:
-                    res["value"] = (data["value"],)
+                    res["value"] = data["value"]
                 else:
-                    res["value"] = (data["name"],)
+                    res["value"] = data["name"]
 
                 return res
 
@@ -163,7 +163,6 @@ class CatalystPublish(BasePublishStrategy):
             "content": joint_md,
             "content_structure": platejs,
         }
-        return
 
         # Send the POST request
         response = requests.post(

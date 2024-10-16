@@ -36,9 +36,9 @@ def parse_cradle_link(
         {
             "type": "cradle_link",
             "attrs": {
-                "key": m.group(7),
-                "value": m.group(8),
-                "alias": m.group(9) if m.group(9) else None,
+                "key": m.group("cl_type"),
+                "value": m.group("cl_value"),
+                "alias": m.group("cl_alias"),
             },
         }
     )
@@ -291,10 +291,15 @@ class PlateJSRender(BaseRenderer):
         return {"type": "td", "children": text}
 
     def footnote_ref(self, key: str, value: str) -> str:
-        return {"text": value}
+        return {"type": "p", "children": [{"text": value}]}
 
     def img_footnote_ref(self, key: str, value: str) -> str:
-        return {"type": "footnote_img_ref", "caption": value, "key": key}
+        return {
+            "type": "footnote_img_ref",
+            "caption": [{"text": value}],
+            "key": key,
+            "children": [{"text": ""}],
+        }
 
 
 def resolve_footnote_imgs(
@@ -315,8 +320,9 @@ def resolve_footnote_imgs(
             img = fetch_image(bucket, path)
 
             if img is None:
-                i.pop("type")
-                i["text"] = i.pop("caption")
+                i["type"] = "p"
+                i["children"] = i.pop("caption")
+
                 continue
 
             b64 = base64.b64encode(img.read()).decode("utf-8")
