@@ -119,7 +119,6 @@ export default function Editor({
 
     // Autocomplete links (e.g. syntax `[[...]]`) using information from the database. Uses the `/query` endpoint to get the data.
     const linkAutoComplete = (context) => {
-        console.log(lspPack);
         let node = getLinkNode(context);
 
         if (node == null) return autocompleteOutsideLink(context);
