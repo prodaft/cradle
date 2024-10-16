@@ -65,10 +65,18 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
 
     // When the contents change update the preview
     useEffect(() => {
-        parseContent(markdownContent, fileData)
-            .then((parsedContent) => setParsedContent(parsedContent))
-            .catch(displayError(setAlert, navigate));
-    }, [markdownContent, fileData, setParsedContent, setAlert, navigate]);
+        if (!previewCollapsed)
+            parseContent(markdownContent, fileData)
+                .then((parsedContent) => setParsedContent(parsedContent))
+                .catch(displayError(setAlert, navigate));
+    }, [
+        previewCollapsed,
+        markdownContent,
+        fileData,
+        setParsedContent,
+        setAlert,
+        navigate,
+    ]);
 
     // When the id changes prepare the editor
     useEffect(() => {
@@ -238,7 +246,6 @@ export default function TextEditor({ autoSaveDelay = 1000 }) {
     }, []);
 
     const previewCollapseUpdated = (collapsed) => {
-        console.log('TEST');
         setPreviewCollapsed(collapsed);
         localStorage.setItem('preview.collapse', collapsed);
     };

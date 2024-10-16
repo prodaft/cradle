@@ -13,7 +13,9 @@ import { syntaxTree } from '@codemirror/language';
  * @returns {string} parsed and sanitized HTML
  */
 const parseContent = async (content, fileData) =>
-    DOMPurify.sanitize(await parseMarkdown(content, fileData));
+    parseMarkdown(content, fileData).then((html) => {
+        return DOMPurify.sanitize(html);
+    });
 
 /**
  * Creates a download path for a file. This path correspond to the download endpoint in the backend.
@@ -83,8 +85,10 @@ const handleLinkClick = (navigateHandler) => (event) => {
     }
 };
 
-const LINK_REGEX_SINGLE = /^\[(?:([^:|]+)(?::(?:((?:\\\||[^|])+))?(?:\|((?:\\\||[^|])+))?)?)?\]$/;
-const LINK_REGEX_DOUBLE = /^\[\[(?:([^:|]+)(?::(?:((?:\\\||[^|])+))?(?:\|((?:\\\||[^|])+))?)?)?\]\]$/;
+const LINK_REGEX_SINGLE =
+    /^\[(?:([^:|]+)(?::(?:((?:\\\||[^|])+))?(?:\|((?:\\\||[^|])+))?)?)?\]$/;
+const LINK_REGEX_DOUBLE =
+    /^\[\[(?:([^:|]+)(?::(?:((?:\\\||[^|])+))?(?:\|((?:\\\||[^|])+))?)?)?\]\]$/;
 const LINK_REGEX = LINK_REGEX_DOUBLE;
 
 /**
@@ -134,7 +138,8 @@ const getLinkNode = (context) => {
  */
 const parseLink = (from, current, text) => {
     // This is very bad
-    const match = text == "[[]]" ? LINK_REGEX_DOUBLE.exec(text) : LINK_REGEX_SINGLE.exec(text);
+    const match =
+        text == '[[]]' ? LINK_REGEX_DOUBLE.exec(text) : LINK_REGEX_SINGLE.exec(text);
 
     if (!match) return null;
 
@@ -142,7 +147,7 @@ const parseLink = (from, current, text) => {
     const [_, type, name] = match;
 
     // Extract group positions
-    const typeStart = text == "[[]]" ? match.index + 2 + from : match.index + 1 + from;
+    const typeStart = text == '[[]]' ? match.index + 2 + from : match.index + 1 + from;
     const typeEnd = type ? typeStart + type.length : typeStart;
 
     const nameStart = typeEnd + 1;

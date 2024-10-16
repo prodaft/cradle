@@ -10,7 +10,7 @@ import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Editor from '../Editor/Editor';
 import Preview from '../Preview/Preview';
 import useChangeFlexDirectionBySize from '../../hooks/useChangeFlexDirectionBySize/useChangeFlexDirectionBySize';
-import { updateNote } from '../../services/notesService/notesService'
+import { updateNote } from '../../services/notesService/notesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { FloppyDiskArrowIn } from 'iconoir-react';
 import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
@@ -48,6 +48,9 @@ export default function NoteEditor({ autoSaveDelay = 1000 }) {
     const fileDataRef = useRef(fileData);
     const [parsedContent, setParsedContent] = useState('');
     const flexDirection = useChangeFlexDirectionBySize(textEditorRef);
+    const [previewCollapsed, setPreviewCollapsed] = useState(
+        localStorage.getItem('preview.collapse') === 'true',
+    );
 
     // When the contents change update the preview
     useEffect(() => {
@@ -60,12 +63,12 @@ export default function NoteEditor({ autoSaveDelay = 1000 }) {
     useEffect(() => {
         getNote(id)
             .then((response) => {
-                console.log(response.data)
+                console.log(response.data);
                 setMarkdownContent(response.data.content);
                 setFileData(response.data.files);
             })
             .catch(displayError(setAlert, navigate));
-    }, [id, setMarkdownContent, setFileData,  setAlert, navigate]);
+    }, [id, setMarkdownContent, setFileData, setAlert, navigate]);
 
     // Ensure the ref to the markdown content is correct
     useEffect(() => {
@@ -101,7 +104,7 @@ export default function NoteEditor({ autoSaveDelay = 1000 }) {
         const storedContent = markdownContentRef.current;
         const storedFileData = fileDataRef.current;
 
-        updateNote(id, {content: storedContent, files: storedFileData})
+        updateNote(id, { content: storedContent, files: storedFileData })
             .then((response) => {
                 if (response.status === 200) {
                     if (displayAlert) {
@@ -117,14 +120,17 @@ export default function NoteEditor({ autoSaveDelay = 1000 }) {
             .catch(displayError(setAlert, navigate));
     };
 
+    const previewCollapseUpdated = (collapsed) => {
+        setPreviewCollapsed(collapsed);
+        localStorage.setItem('preview.collapse', collapsed);
+    };
+
     // Autosave feature
-    useEffect(() => {
-    }, [markdownContent, fileData]);
+    useEffect(() => {}, [markdownContent, fileData]);
 
     // On component dismount reset the prevIdRef
     useEffect(() => {
-        return () => {
-        };
+        return () => {};
     }, []);
 
     // Use utilities for navbar contents
@@ -157,13 +163,17 @@ export default function NoteEditor({ autoSaveDelay = 1000 }) {
                         isLightMode={isLightMode}
                         fileData={fileData}
                         setFileData={setFileData}
+                        viewCollapsed={previewCollapsed}
+                        setViewCollapsed={previewCollapseUpdated}
                     />
                 </div>
-                <div
-                    className={`${flexDirection === 'flex-col' ? 'h-1/2' : 'h-full'} w-full bg-gray-2 rounded-md`}
-                >
-                    <Preview htmlContent={parsedContent} />
-                </div>
+                {!previewCollapsed && (
+                    <div
+                        className={`${flexDirection === 'flex-col' ? 'h-1/2' : 'h-full'} w-full bg-gray-2 rounded-md`}
+                    >
+                        <Preview htmlContent={parsedContent} />
+                    </div>
+                )}
             </div>
         </>
     );
