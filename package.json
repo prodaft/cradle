@@ -54,7 +54,7 @@
         "@babel/preset-react": "^7.24.7",
         "@eslint/js": "^9.1.1",
         "@jest/globals": "^29.7.0",
-        "@tailwindcss/typography": "^0.5.13",
+        "@tailwindcss/typography": "github:tailwindcss/typography",
         "@testing-library/jest-dom": "^6.4.5",
         "@testing-library/react": "^15.0.6",
         "@types/react": "^18.2.66",
