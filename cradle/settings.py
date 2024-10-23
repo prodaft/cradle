@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt",
+    "django_extensions",
 ]
 
 MIDDLEWARE = [
@@ -120,6 +121,9 @@ LOGGING = {
             "class": "logging.FileHandler",
             "filename": os.path.join(log_directory, "error.log"),
         },
+        "console": {
+            "class": "logging.StreamHandler",
+        },
     },
     "loggers": {
         "django.success": {
@@ -131,6 +135,10 @@ LOGGING = {
             "handlers": ["error_file"],
             "level": "WARNING",
             "propagate": False,
+        },
+        "django.db.backends": {
+            "handlers": ["console"],
+            "level": "DEBUG",
         },
     },
 }
