@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import Count
+from django.db.models import CharField, Count, OuterRef, Subquery, Value
 
 from entries.enums import EntryType
 from entries.models import Entry
@@ -7,13 +7,92 @@ from user.models import CradleUser
 from access.models import Access
 from access.enums import AccessType
 from django.db.models import Case, When, Q, F
+from django.contrib.postgres.aggregates import ArrayAgg
+from django.db.models.functions import Coalesce
 
 from typing import List
 from uuid import UUID
 from typing import Optional, Generator
 
 
+class NoteQuerySet(models.QuerySet):
+    def for_entry(self, entry_id: UUID | None) -> models.QuerySet:
+        """
+        Get the notes that belong to an entry
+        """
+        return self.filter(entries__id=entry_id)
+
+    def inaccessible(self, user: CradleUser) -> models.QuerySet:
+        """
+        Get the notes that are not accessible by the current user
+        """
+        if user.is_superuser:
+            return self.none()
+
+        # Subquery to get access types
+        access_subquery = Access.objects.filter(
+            user=user,
+            entity_id=OuterRef("entry_id"),
+        ).values("access_type")
+
+        rels = (
+            self.model.entries.through.objects.filter(
+                entry__entry_class__type=EntryType.ENTITY, note__in=self
+            )
+            .values("note_id")
+            .annotate(
+                access_type=ArrayAgg(
+                    Coalesce(
+                        Subquery(access_subquery, output_field=CharField()),
+                        Value("<none>"),
+                        distinct=True,
+                    ),
+                )
+            )
+            .filter(Q(access_type__contains=["<none>"]))
+        )
+
+        return self.filter(id__in=rels.values_list("note", flat=True))
+
+    def accessible(self, user: CradleUser) -> models.QuerySet:
+        """
+        Get the notes that are accessible by the current user
+        """
+        if user.is_superuser:
+            return self
+
+        # Subquery to get access types
+        access_subquery = Access.objects.filter(
+            user=user,
+            entity_id=OuterRef("entry_id"),
+        ).values("access_type")
+
+        rels = (
+            self.model.entries.through.objects.filter(
+                entry__entry_class__type=EntryType.ENTITY, note__in=self
+            )
+            .values("note_id")
+            .annotate(
+                access_type=ArrayAgg(
+                    Coalesce(
+                        Subquery(access_subquery, output_field=CharField()),
+                        Value("<none>"),
+                        distinct=True,
+                    ),
+                )
+            )
+            .filter(~Q(access_type__contains=["<none>"]))
+        )
+        return self.filter(id__in=rels.values_list("note", flat=True))
+
+
 class NoteManager(models.Manager):
+    def get_queryset(self):
+        """
+        Returns a queryset that uses the custom TeamQuerySet,
+        allowing access to its methods for all querysets retrieved by this manager.
+        """
+        return NoteQuerySet(self.model, using=self._db)
 
     def get_all_notes(self, entry_id: UUID | str) -> models.QuerySet:
         """Gets the notes of an entry ordered by timestamp in descending order
@@ -62,33 +141,14 @@ class NoteManager(models.Manager):
             entry_id.
         """
 
-        if user.is_superuser:
-            return (
-                (
-                    self.get_all_notes(entry_id)
-                    if entry_id is not None
-                    else self.get_queryset().all()
-                )
-                .order_by("-timestamp")
-                .distinct()
-            )
-
-        inaccessible_notes = self.get_inaccessible_notes(user).values_list(
-            "id", flat=True
-        )
-
-        if entry_id is None:
-            notes = self.get_queryset().all()
+        if entry_id:
+            qs = self.get_queryset().for_entry(entry_id)
         else:
-            notes = self.get_queryset().filter(entries__id=entry_id)
+            qs = self.get_queryset()
 
-        return (
-            notes.exclude(id__in=inaccessible_notes).order_by("-timestamp").distinct()
-        )
+        return qs.accessible(user).order_by("-timestamp").distinct()
 
-    def get_inaccessible_notes(
-        self, user: CradleUser, entry_id: Optional[UUID] = None
-    ):
+    def get_inaccessible_notes(self, user: CradleUser, entry_id: Optional[UUID] = None):
         """Get the notes a user does not have any access to.
 
         Args:
@@ -98,37 +158,22 @@ class NoteManager(models.Manager):
         Returns:
             QuerySet: The notes that the user does not have access to
         """
-        if user.is_superuser:
-            return self.get_queryset().none()
+        if entry_id:
+            qs = self.get_queryset().for_entry(entry_id)
+        else:
+            qs = self.get_queryset()
 
-        accessible_entities = Access.objects.filter(
-            user=user, access_type__in=[AccessType.READ_WRITE, AccessType.READ]
-        ).values_list("entity_id", flat=True)
-
-        inaccessible_entities = (
-            Entry.objects.filter(entry_class__type=EntryType.ENTITY)
-            .exclude(id__in=accessible_entities)
-            .values_list("id", flat=True)
-        )
-
-        inaccessible_notes = self.get_queryset().filter(
-            entries__id__in=inaccessible_entities, entries__entry_class__type=EntryType.ENTITY
-        )
-
-        if entry_id is None:
-            return inaccessible_notes
-
-        return inaccessible_notes.filter(entries__id=entry_id)
+        return qs.inaccessible(user).order_by("-timestamp").distinct()
 
     def delete_unreferenced_entries(self) -> None:
         """Deletes entries of type ARTIFACT that
         are not referenced by any notes.
 
-        This function filters out entries of type ARTIFACT and METADATA
+        This function filters out entries of type ARTIFACT
         that have no associated notes and deletes them from the database.
         It performs the following steps:
 
-        1. Filter entries by type (ARTIFACT and METADATA).
+        1. Filter entries by type (ARTIFACT).
         2. Annotate each entry with the count of related notes.
         3. Filter entries to keep only those with no associated notes.
         4. Delete the filtered unreferenced entries from the database.
@@ -136,9 +181,9 @@ class NoteManager(models.Manager):
         Returns:
             None: This function does not return any value.
         """
-        Entry.objects.filter(
-            entry_class__type=EntryType.ARTIFACT
-        ).annotate(note_count=Count("note")).filter(note_count=0).delete()
+        Entry.objects.filter(entry_class__type=EntryType.ARTIFACT).annotate(
+            note_count=Count("note")
+        ).filter(note_count=0).delete()
 
     def get_in_order(self, note_ids: List) -> models.QuerySet:
         """Gets the notes in the order specified by the given list of note IDs.

@@ -72,19 +72,6 @@ class BaseDashboardSerializer(serializers.Serializer):
                 item["name"] = self._get_name_for_field(field)
                 item["description"] = "Some Description"
 
-    def update_second_hop_fields(self, data: Dict[str, Any], fields: List[str]) -> None:
-        """Adds the `neighbor` field to the second hop entries.
-
-        Args:
-            data (Dict[str, Any]): The data to update.
-            fields (List[str]): The fields to update.
-        """
-
-        for field in fields:
-            for item in data[field]:
-                neighbor = self.context[str(item["id"])]
-                item["neighbor"] = EntryResponseSerializer(neighbor, many=True).data
-
     def to_representation(self, instance: Any) -> Dict[str, Any]:
         """Changes the fields of the dashboard to hide inaccessible entries
         and add the neighbor of the second hop entries.
@@ -103,7 +90,6 @@ class BaseDashboardSerializer(serializers.Serializer):
             second_hop_fields = getattr(meta, "second_hop_fields", [])
 
             self.update_inaccessible_fields(data, inaccessible_fields)
-            self.update_second_hop_fields(data, second_hop_fields)
 
         return data
 
@@ -134,6 +120,7 @@ class EntityDashboardSerializer(BaseDashboardSerializer):
             "second_hop_inaccessible_entities",
         ]
 
+
 class ArtifactDashboardSerializer(BaseDashboardSerializer):
     id = serializers.UUIDField()
     name = serializers.CharField()
@@ -147,5 +134,8 @@ class ArtifactDashboardSerializer(BaseDashboardSerializer):
     second_hop_inaccessible_entities = EntryResponseSerializer(many=True)
 
     class Meta:
-        inaccessible_fields = ["inaccessible_entities", "second_hop_inaccessible_entities"]
+        inaccessible_fields = [
+            "inaccessible_entities",
+            "second_hop_inaccessible_entities",
+        ]
         second_hop_fields = ["second_hop_entities", "second_hop_inaccessible_entities"]

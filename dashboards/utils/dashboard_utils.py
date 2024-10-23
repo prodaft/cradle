@@ -13,7 +13,6 @@ from uuid import UUID
 
 
 class DashboardUtils:
-
     @staticmethod
     def add_entry_fields(
         entry: Entry, dashboard_dict: Dict[str, Any]
@@ -90,48 +89,27 @@ class DashboardUtils:
                 the second hop inaccessible entries,
                 the neighbor map
         """
-
         neighbor_types = [EntryType.ARTIFACT]
-        neighbor_entries = accessible_entries.filter(entry_class__type__in=neighbor_types)
 
-        all_entries_second_hop = Entry.objects.none()
-        all_inaccessible_entries_second_hop = Entry.objects.none()
-
-        neighbor_map: dict[str, List[Entry]] = {}
-
-        for id in neighbor_entries.values_list("id", flat=True):
-            entry_notes = Note.objects.get_accessible_notes(user, id)
-            entry_inaccessible_notes = Note.objects.get_inaccessible_notes(user, id)
-
-            notes_entries = Note.objects.get_entries_from_notes(entry_notes)
-            inaccessible_notes_entries = Note.objects.get_entries_from_notes(
-                entry_inaccessible_notes
-            )
-
-            neighbor_map = DashboardUtils.add_neighbors_to_map(
-                neighbor_map, notes_entries, id
-            )
-            neighbor_map = DashboardUtils.add_neighbors_to_map(
-                neighbor_map, inaccessible_notes_entries, id
-            )
-
-            all_entries_second_hop = all_entries_second_hop | notes_entries
-            all_inaccessible_entries_second_hop = (
-                all_inaccessible_entries_second_hop | inaccessible_notes_entries
-            )
-
-        entries_second_hop = all_entries_second_hop.filter(
-            ~Q(id__in=accessible_entries) & ~Q(id=entry_id)
+        neighbor_entries = accessible_entries.filter(
+            entry_class__type__in=neighbor_types
         )
 
-        inaccessible_entries_second_hop = all_inaccessible_entries_second_hop.filter(
-            ~Q(id__in=inaccessible_entries)
-            & ~Q(id=entry_id)
-            & ~Q(id__in=entries_second_hop)
-            & ~Q(id__in=accessible_entries)
+        second_hop_all = neighbor_entries.get_neighbours(None)
+        second_hop_accessible = list(neighbor_entries.get_neighbours(user))
+        second_hop_inaccessible = []
+
+        entry_ids = set(inaccessible_entries.values_list("id", flat=True)) | set(
+            accessible_entries.values_list("id", flat=True)
         )
 
-        return entries_second_hop, inaccessible_entries_second_hop, neighbor_map
+        for i in second_hop_all:
+            if i.id == entry_id or i.id in entry_ids:
+                second_hop_accessible.remove(i)
+            elif i not in second_hop_accessible:
+                second_hop_inaccessible.append(i)
+
+        return second_hop_accessible, second_hop_inaccessible, {}
 
     @staticmethod
     def get_dashboard(
@@ -183,19 +161,20 @@ class DashboardUtils:
         return_dict = {}
 
         return_dict["notes"] = accessible_notes
-        return_dict["entities"] = accessible_entries.filter(entry_class__type=EntryType.ENTITY)
-        return_dict["artifacts"] = accessible_entries.filter(entry_class__type=EntryType.ARTIFACT)
+        return_dict["entities"] = accessible_entries.filter(
+            entry_class__type=EntryType.ENTITY
+        )
+        return_dict["artifacts"] = accessible_entries.filter(
+            entry_class__type=EntryType.ARTIFACT
+        )
         return_dict["inaccessible_entities"] = inaccessible_entries.filter(
             entry_class__type=EntryType.ENTITY
         )
         return_dict["inaccessible_artifacts"] = inaccessible_entries.filter(
             entry_class__type=EntryType.ARTIFACT
         )
-        return_dict["second_hop_entities"] = entries_second_hop.filter(
-            entry_class__type=EntryType.ENTITY
-        )
+        return_dict["second_hop_entities"] = entries_second_hop
         return_dict["second_hop_inaccessible_entities"] = (
-            inaccessible_entries_second_hop.filter(entry_class__type=EntryType.ENTITY)
+            inaccessible_entries_second_hop
         )
-
         return return_dict, neighbor_map

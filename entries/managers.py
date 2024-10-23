@@ -1,6 +1,8 @@
 from django.db import models
 from django.db.models import Q
 
+from user.models import CradleUser
+
 from .enums import EntryType
 
 
@@ -22,6 +24,45 @@ class EntryQuerySet(models.QuerySet):
         Get entries that are not referenced by any note
         """
         return self.filter(note=None)
+
+    def _neighbour_query(self, user: CradleUser | None) -> str:
+        query_parts = []
+        query_args = []
+        for i in self.all():
+            if user is None or user.is_superuser:
+                query_parts.append(
+                    "SELECT entry_id AS id FROM get_related_entry_ids(%s)"
+                )
+                query_args.append(i.id)
+            else:
+                query_parts.append(
+                    "SELECT entry_id AS id FROM get_related_entry_ids_for_user(%s, %s)"
+                )
+                query_args.extend((i.id, user.id))
+
+        query = " UNION ".join(query_parts)
+
+        return query, query_args
+
+    def get_neighbours(self, user: CradleUser | None) -> models.QuerySet:
+        """
+        Get the neighbours of an entry
+        """
+        query, query_args = self._neighbour_query(user)
+
+        return self.raw(query, query_args)
+
+    def get_neighbour_entities(self, user: CradleUser | None) -> models.QuerySet:
+        """
+        Get the neighbours of an entry
+        """
+        query, query_args = self._neighbour_query(user)
+
+        final_query = f"""
+        SELECT id, type FROM ({query}) JOIN entries_entry ee JOIN entries_entry_class eec ON ee.entry_class_id = eec.subtype WHERE type = 'entity'
+        """
+
+        return self.raw(final_query, query_args)
 
 
 class EntryManager(models.Manager):
@@ -78,6 +119,12 @@ class EntryManager(models.Manager):
             .filter(name__icontains=name_substr)
             .order_by("name")
         )
+
+    def get_neighbours(self, user: CradleUser | None) -> models.QuerySet:
+        """
+        Get the neighbours of an entry
+        """
+        return self.get_queryset().get_neighbours(user)
 
 
 class EntityManager(models.Manager):
