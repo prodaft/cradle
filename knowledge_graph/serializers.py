@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from entries.serializers import EntryResponseSerializer
 from typing import Any
+from notes.serializers import LinkedEntrySerializer
 
 
 class LinkSerializer(serializers.Serializer):
@@ -23,5 +23,5 @@ class LinkSerializer(serializers.Serializer):
 
 
 class KnowledgeGraphSerializer(serializers.Serializer):
-    entries = EntryResponseSerializer(many=True)
+    entries = LinkedEntrySerializer(many=True)
     links = LinkSerializer(many=True)
