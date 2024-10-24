@@ -23,6 +23,12 @@ import { truncateText } from '../dashboardUtils/dashboardUtils';
  *      }
  *      } The preprocessed data, containing an array of nodes and an array of links.
  */
+
+const DEFAULT_BORDER = '#71717a';
+const DEFAULT_SELECT = '#f68d2e';
+const DEFAULT_RADIUS = 5;
+const LABEL_ZOOM_MIN = 3;
+
 export const preprocessData = (data) => {
     // Initialize an empty array for the nodes
     let nodes = [];
@@ -65,29 +71,16 @@ export const preprocessData = (data) => {
     return { nodes, links };
 };
 
-/**
- * visualizeGraph - This function is used to visualize the graph data using D3.js.
- * The function is used in the GraphComponent component to render the graph in the SVG element.
- * The function sets up the SVG element, adds the links, nodes, and labels to the graph, and creates the D3 force simulation.
- * The function also adds zoom behavior to the SVG element and sets up the resize observer to update the graph layout.
- * The function returns a cleanup function to stop the simulation and remove the resize observer when the component is unmounted.
- *
- * @function visualizeGraph
- * @param {
- *      {
- *          nodes: Array<GraphNode>,
- *          links: Array<GraphLink>
- *      }
- *      } data - The preprocessed data to be visualized. The data should have a 'nodes' property and a 'links' property.
- * @param {React.Ref} svgRef - The ref to the SVG element where the graph will be rendered.
- * @param {StateSetter<GraphNode>} setHighlightedNode - The function to set the highlighted node when a node is clicked.
- * @param {d3-force.simulation} simulation - The ref to the D3 force simulation used to update the graph layout.
- * @param {number} nodeRadiusCoefficient - The coefficient used to calculate the radius of the nodes based on the degree of the node.
- * @param {number} spacingCoefficient - The coefficient used to calculate the desired distance between connected nodes.
- * @param {number} componentDistanceCoefficient - The coefficient used to calculate the strength of the repulsion between nodes.
- * @param {number} centerGravity - The strength of the force that pulls the nodes towards the center.
- * @returns {Function} - The cleanup function to stop the simulation and remove the resize observer when the component is unmounted.
- */
+function connected(node, link) {
+    if (node === null || link === null) return false;
+    return link.source.id === node.id || link.target.id === node.id;
+}
+
+function interpolate(x1, x2, y1, y2, x) {
+    if (x1 === x2) return (y1 + y2) / 2;
+    return y1 + ((x - x1) * (y2 - y1)) / (x2 - x1);
+}
+
 export const visualizeGraph = (
     data,
     svgRef,
@@ -351,3 +344,254 @@ export const visualizeGraph = (
         simulation.current.stop();
     };
 };
+
+/**
+ * Visualize the graph using canvas and D3.js for force simulation with zooming and panning.
+ *
+ * @param {Object} data - The graph data with nodes and links.
+ * @param {Object} context - The 2D rendering context from the canvas.
+ * @param {HTMLCanvasElement} canvas - The canvas element to draw on.
+ * @param {Function} setHighlightedNode - Function to handle node highlighting.
+ * @param {Object} simulation - D3 force simulation reference.
+ * @param {number} nodeRadiusCoefficient - Base coefficient for node size.
+ * @param {number} spacingCoefficient - Coefficient for node spacing.
+ * @param {number} componentDistanceCoefficient - Coefficient for component spacing.
+ * @param {number} centerGravity - Gravitational force for centering the graph.
+ */
+export function visualizeGraphCanvas(
+    data,
+    context,
+    canvas,
+    setHighlightedNode,
+    simulation,
+    nodeRadiusCoefficient,
+    spacingCoefficient,
+    componentDistanceCoefficient,
+    centerGravity,
+) {
+    const width = canvas.width;
+    const height = canvas.height;
+    let transform = d3.zoomIdentity; // Keep track of the current zoom transform
+    let hoveredNode = null; // To track the currently hovered node
+    let clickedNode = null; // To track the currently clicked (locked) node
+
+    let connectedNodes = new Set();
+    var maxDegree = -1;
+    var minDegree = Infinity;
+
+    // Calculate the degree (number of connected edges) for each node
+    const nodeDegrees = {};
+    data.nodes.forEach((node) => {
+        nodeDegrees[node.id] = 0; // Initialize degree
+    });
+    data.links.forEach((link) => {
+        if (!(link.source.id in nodeDegrees)) {
+            nodeDegrees[link.source.id] = 0;
+        }
+        if (!(link.target.id in nodeDegrees)) {
+            nodeDegrees[link.target.id] = 0;
+        }
+        nodeDegrees[link.source.id]++;
+        nodeDegrees[link.target.id]++;
+
+        maxDegree = Math.max(
+            maxDegree,
+            nodeDegrees[link.source.id],
+            nodeDegrees[link.target.id],
+        );
+        minDegree = Math.min(
+            minDegree,
+            nodeDegrees[link.source.id],
+            nodeDegrees[link.target.id],
+        );
+    });
+
+    // Function to handle zooming and panning
+    function zoomed(event) {
+        transform = event.transform;
+        ticked(); // Re-draw the graph with the new zoom transform
+    }
+
+    // Set up D3 zoom behavior
+    d3.select(canvas).call(
+        d3
+            .zoom()
+            .scaleExtent([0.1, 10]) // Set zoom limits
+            .translateExtent([
+                [-Infinity, -Infinity],
+                [Infinity, Infinity],
+            ]) // Allow panning beyond canvas boundaries if needed
+            .on('zoom', zoomed),
+    );
+
+    const nodeCount = data.nodes.length;
+
+    // The following values are used to set up the D3 force simulation
+    // These values are based on the size of the graph
+    // These values are used to determine the layout of the graph and the strength of the forces in the simulation
+    // The way the values are calculated is based on experimentation and might need tweaking based on the actual data
+    // I tried my best to explain the reasoning behind the values
+    // This seems like a good starting point, but it will probably need tweaking to make it look good in a real-world scenario
+
+    // Calculate the link distance and charge strength based on the number of nodes
+    // linkDistance represents the desired distance between connected nodes, based on the spacing coefficient and the number of nodes
+    // linkDistance is determined by multiplying the spacing coefficient and the square root of the number of nodes
+    // The higher the linkDistance, the longer the links will be
+    const linkDistance = (d) => spacingCoefficient;
+    // chargeStrength represents the strength of the repulsion between nodes, based on the spacing coefficient, the number of nodes, and the component distance coefficient
+    // chargeStrength is determined by multiplying the component distance coefficient, the negative spacing coefficient, and the square root of the number of nodes
+    // The higher the chargeStrength, the more the nodes will repel each other, creating more space between them
+    const chargeStrength = (d) =>
+        -1 * componentDistanceCoefficient * Math.sqrt(d.degree);
+
+    // Create a D3 force simulation
+    simulation.current = d3
+        .forceSimulation(data.nodes)
+        .force(
+            'link',
+            d3
+                .forceLink(data.links)
+                .distance(spacingCoefficient)
+                .id((d) => d.id),
+        )
+        .force('charge', d3.forceManyBody().strength(chargeStrength))
+        // Enable collision detection to prevent nodes from overlapping
+        .force(
+            'collision',
+            d3
+                .forceCollide()
+                .radius((d) =>
+                    Math.max(
+                        10,
+                        interpolate(
+                            minDegree,
+                            maxDegree,
+                            DEFAULT_RADIUS,
+                            DEFAULT_RADIUS * nodeRadiusCoefficient,
+                            d.degree,
+                        ),
+                    ),
+                ),
+        )
+        .force('center', d3.forceCenter(width / 2, height / 2).strength(centerGravity))
+        .force('x', d3.forceX().strength(centerGravity / 2))
+        .force('y', d3.forceY().strength(centerGravity / 2))
+        .on('tick', ticked);
+
+    // Function to draw the graph on each tick of the simulation
+
+    function ticked() {
+        // Clear the canvas before redrawing
+        context.clearRect(0, 0, width, height);
+
+        connectedNodes.clear();
+
+        // Apply the current zoom transform
+        context.save();
+        context.translate(transform.x, transform.y);
+        context.scale(transform.k, transform.k);
+
+        // Draw the links (edges)
+        context.strokeStyle = DEFAULT_BORDER; // Default edge color
+        context.lineWidth = 1.5 / transform.k; // Regular stroke width
+        data.links.forEach((link) => {
+            context.beginPath();
+            context.moveTo(link.source.x, link.source.y);
+            context.lineTo(link.target.x, link.target.y);
+            context.stroke();
+        });
+
+        // Draw the highlighted edges first (to act as a border or fill effect)
+        if (hoveredNode || clickedNode) {
+            context.strokeStyle = DEFAULT_SELECT; // Highlight color for the border
+            context.lineWidth = 3 / transform.k; // Thicker border for highlighted edges
+            data.links.forEach((link) => {
+                if (connected(clickedNode, link) || connected(hoveredNode, link)) {
+                    context.beginPath();
+                    context.moveTo(link.source.x, link.source.y);
+                    context.lineTo(link.target.x, link.target.y);
+                    context.stroke();
+
+                    connectedNodes.add(link.source.id);
+                    connectedNodes.add(link.target.id);
+                }
+            });
+        }
+
+        // Draw the nodes (circles) and labels
+        data.nodes.forEach((node) => {
+            const nodeDegree = nodeDegrees[node.id];
+
+            let radius = interpolate(
+                minDegree,
+                maxDegree,
+                DEFAULT_RADIUS,
+                DEFAULT_RADIUS * nodeRadiusCoefficient,
+                nodeDegree,
+            );
+
+            // Draw the node fill
+            context.beginPath();
+            context.arc(node.x, node.y, radius, 0, 2 * Math.PI);
+            context.fillStyle = node.color || 'blue'; // Default node color
+            context.fill();
+
+            // Draw the node border
+            if (connectedNodes.has(node.id)) {
+                context.lineWidth = 3 / transform.k; // Thicker stroke for highlighted node border
+                context.strokeStyle = DEFAULT_SELECT; // Highlight color for the border
+            } else {
+                context.lineWidth = 1.5 / transform.k; // Regular stroke width
+                context.strokeStyle = DEFAULT_BORDER; // Default border color
+            }
+            context.stroke();
+        });
+
+        context.restore(); // Restore context to avoid applying transformations to other drawings
+    }
+
+    // Add event listeners for interactions (hover, click)
+    canvas.addEventListener('mousemove', (event) => {
+        const [x, y] = d3.pointer(event, canvas);
+        const transformedX = (x - transform.x) / transform.k;
+        const transformedY = (y - transform.y) / transform.k;
+
+        const foundNode = data.nodes.find(
+            (node) =>
+                Math.hypot(node.x - transformedX, node.y - transformedY) <
+                nodeRadiusCoefficient * 5,
+        );
+
+        if (foundNode) {
+            hoveredNode = foundNode; // Set the hovered node
+            setHighlightedNode(clickedNode || foundNode); // Highlight the node in the UI
+        } else {
+            setHighlightedNode(clickedNode);
+            hoveredNode = null;
+        }
+
+        ticked(); // Re-draw the graph to apply highlights
+    });
+
+    canvas.addEventListener('click', (event) => {
+        const [x, y] = d3.pointer(event, canvas);
+        const transformedX = (x - transform.x) / transform.k;
+        const transformedY = (y - transform.y) / transform.k;
+
+        const foundNode = data.nodes.find(
+            (node) =>
+                Math.hypot(node.x - transformedX, node.y - transformedY) <
+                nodeRadiusCoefficient * 5,
+        );
+
+        if (foundNode) {
+            clickedNode = foundNode; // Lock in the clicked node
+            setHighlightedNode(foundNode); // Highlight the node in the UI
+        } else {
+            clickedNode = null;
+            setHighlightedNode(null);
+        }
+
+        ticked(); // Re-draw the graph to apply highlights
+    });
+}

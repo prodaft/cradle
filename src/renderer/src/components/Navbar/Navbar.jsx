@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Notes } from 'iconoir-react';
+import { ArrowLeft, ArrowRight, DesignNib } from 'iconoir-react';
 import SearchDialog from '../SearchDialog/SearchDialog';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -68,7 +68,7 @@ export default function Navbar({
                     key='fleeting-notes-button'
                     text={'Fleeting Notes'}
                     icon={
-                        <Notes
+                        <DesignNib
                             className={`${showFleetingNotesButton ? '' : 'text-gray-500'}`}
                         />
                     }

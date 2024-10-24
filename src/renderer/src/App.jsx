@@ -1,5 +1,6 @@
 import { Outlet, Route, Routes, HashRouter } from 'react-router-dom';
 import Login from './components/Login/Login.jsx';
+import Notes from './components/Notes/Notes.jsx';
 import Register from './components/Register/Register.jsx';
 import Home from './components/Home/Home.jsx';
 import PrivateRoute from './components/PrivateRoute/PrivateRoute.jsx';
@@ -42,6 +43,7 @@ function App() {
                                 path='/not-implemented'
                                 element={<FeatureNotImplemented />}
                             />
+                            <Route path='/notes' element={<Notes />}></Route>
                             <Route path='/editor/:id' element={<TextEditor />} />
                             <Route path='/dashboards/*' element={<Dashboard />} />
                             <Route path='/notes/:id' element={<NoteViewer />} />

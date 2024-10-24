@@ -6,7 +6,6 @@ import {
 } from '../../services/dashboardService/dashboardService';
 import useAuth from '../../hooks/useAuth/useAuth';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import DashboardNote from '../DashboardNote/DashboardNote';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import NavbarButton from '../NavbarButton/NavbarButton';
@@ -20,6 +19,7 @@ import {
     renderDashboardSectionWithInaccessibleEntries,
 } from '../../utils/dashboardUtils/dashboardUtils';
 import { Search } from 'iconoir-react';
+import NotesList from '../NotesList/NotesList';
 
 /**
  * Dashboard component
@@ -44,6 +44,14 @@ export default function Dashboard() {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [deleteDialog, setDeleteDialog] = useState(false);
     const [virusTotalDialog, setVirusTotalDialog] = useState(false);
+    const [searchFilters, setSearchFilters] = useState({
+        content: '',
+        author__username: '',
+    });
+    const [submittedFilters, setSubmittedFilters] = useState({
+        content: '',
+        author__username: '',
+    });
     const navigate = useNavigate();
     const auth = useAuth();
     const dashboard = useRef(null);
@@ -57,6 +65,15 @@ export default function Dashboard() {
         getDashboardData(path)
             .then((response) => {
                 setContentObject(response.data);
+
+                setSearchFilters((prev) => ({
+                    ...prev,
+                    ['references']: response.data.id,
+                }));
+                setSubmittedFilters((prev) => ({
+                    ...prev,
+                    ['references']: response.data.id,
+                }));
                 dashboard.current.scrollTo(0, 0);
             })
             .catch((err) => {
@@ -140,6 +157,16 @@ export default function Dashboard() {
         window.open(`https://www.virustotal.com/gui/search/${name}`);
     };
 
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        setSubmittedFilters(searchFilters);
+    };
+
+    const handleSearchChange = (e) => {
+        const { name, value } = e.target;
+        setSearchFilters((prev) => ({ ...prev, [name]: value }));
+    };
+
     if (entryMissing) {
         return (
             <NotFound
@@ -208,7 +235,10 @@ export default function Dashboard() {
                         handleRequestEntityAccess,
                     )}
 
-                    {renderDashboardSection(contentObject.artifacts, 'Related Artifacts')}
+                    {renderDashboardSection(
+                        contentObject.artifacts,
+                        'Related Artifacts',
+                    )}
 
                     {renderDashboardSection(contentObject.metadata, 'Metadata')}
 
@@ -222,17 +252,38 @@ export default function Dashboard() {
                             handleRequestEntityAccess,
                         )}
 
-                    {contentObject.notes && (
+                    {contentObject.id && contentObject.notes && (
                         <div className='bg-cradle3 p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col flex-1'>
                             <h2 className='text-xl font-semibold mb-2'>Notes</h2>
-                            {contentObject.notes.map((note, index) => (
-                                <DashboardNote
-                                    key={index}
-                                    note={note}
-                                    setAlert={setAlert}
-                                    publishMode={false}
-                                />
-                            ))}
+
+                            <div className=''>
+                                <form
+                                    onSubmit={handleSearchSubmit}
+                                    className='flex space-x-4 px-3 pb-2'
+                                >
+                                    <input
+                                        type='text'
+                                        name='content'
+                                        value={searchFilters.content}
+                                        onChange={handleSearchChange}
+                                        placeholder='Search by content'
+                                        className='input !max-w-full w-full'
+                                    />
+                                    <input
+                                        type='text'
+                                        name='author__username'
+                                        value={searchFilters.author__username}
+                                        onChange={handleSearchChange}
+                                        placeholder='Search by author'
+                                        className='input !max-w-full w-full'
+                                    />
+                                    <button type='submit' className='btn w-1/2'>
+                                        <Search /> Search
+                                    </button>
+                                </form>
+                            </div>
+
+                            <NotesList query={submittedFilters} />
                         </div>
                     )}
                 </div>

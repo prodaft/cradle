@@ -14,6 +14,20 @@ const getNote = (id) => {
 };
 
 /**
+ * Search notes
+ *
+ * @param {query} Object - Fields to query
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+const searchNote = (query) => {
+    return authAxios({
+        method: 'get',
+        url: `/notes/`,
+        params: query,
+    });
+};
+
+/**
  * Function to get notes from the API
  * Passes the token and id to the API
  *
@@ -25,7 +39,7 @@ const updateNote = (id, data) => {
     return authAxios({
         method: 'post',
         url: `/notes/${id}/`,
-        data: data
+        data: data,
     });
 };
 
@@ -62,4 +76,4 @@ const deleteNote = (id) => {
     });
 };
 
-export { getNote, setPublishable, deleteNote, updateNote };
+export { getNote, setPublishable, deleteNote, updateNote, searchNote };
