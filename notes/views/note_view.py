@@ -5,12 +5,17 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
+
+from notes.pagination import NotesPagination
+
+from ..filters import NoteFilter
 from ..serializers import NoteCreateSerializer, NoteRetrieveSerializer
 from ..models import Note
 from user.models import CradleUser
 from access.enums import AccessType
 from typing import cast
 from logs.decorators import log_failed_responses
+from rest_framework.pagination import PageNumberPagination
 
 from entries.enums import EntryType
 from access.models import Access
@@ -21,6 +26,55 @@ from uuid import UUID
 class NoteList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        """Allow a user to get all the notes that they have access to.
+        This should be paginated.
+
+        Args:
+            request: The request that was sent
+
+        Returns:
+            Response(status=200): A paginated JSON response containing
+                the notes if the request was successful.
+            Response("User is not authenticated.", status=401):
+                if the user is not authenticated
+            Response("Invalid filterset", status=400):
+                if the filterset is invalid
+        """
+        user = cast(CradleUser, request.user)
+
+        queryset = Note.objects.get_accessible_notes(user)
+
+        if "references" in request.query_params:
+            queryset = queryset.filter(
+                entries__id__in=request.query_params.getlist("references")
+            )
+
+        filterset = NoteFilter(request.query_params, queryset=queryset)
+
+        if filterset.is_valid():
+            notes = filterset.qs
+
+            # Set up pagination
+            paginator = NotesPagination(page_size=10)
+
+            paginated_notes = paginator.paginate_queryset(notes, request)
+
+            if paginated_notes is not None:
+                # Serialize the paginated queryset
+                serializer = NoteRetrieveSerializer(
+                    paginated_notes, truncate=200, many=True
+                )
+
+                # Return paginated response
+                return paginator.get_paginated_response(serializer.data)
+
+            # If pagination is not applied, return the full set
+            serializer = NoteRetrieveSerializer(notes, truncate=200, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(filterset.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @log_failed_responses
     def post(self, request: Request) -> Response:

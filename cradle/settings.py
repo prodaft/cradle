@@ -70,6 +70,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "django_extensions",
+    "drf_spectacular",
+    "django_filters",
 ]
 
 MIDDLEWARE = [
@@ -81,6 +83,11 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+REST_FRAMEWORK = {
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 1,  # Number of results per page
+}
 
 
 def get_log_directory():
@@ -136,10 +143,10 @@ LOGGING = {
             "level": "WARNING",
             "propagate": False,
         },
-        "django.db.backends": {
-            "handlers": ["console"],
-            "level": "DEBUG",
-        },
+        #        "django.db.backends": {
+        #            "handlers": ["console"],
+        #            "level": "DEBUG",
+        #        },
     },
 }
 
@@ -148,11 +155,20 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PARSER_CLASSES": (
         "rest_framework.parsers.FormParser",
         "rest_framework.parsers.MultiPartParser",
         "rest_framework.parsers.JSONParser",
     ),
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "CRADLE",
+    "DESCRIPTION": "Threat Intelligence Knowledge Management",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    # OTHER SETTINGS
 }
 
 SIMPLE_JWT = {

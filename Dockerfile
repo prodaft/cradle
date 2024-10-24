@@ -1,7 +1,5 @@
 FROM python:3.11
 
-USER 1000:1000
-
 WORKDIR /app
 
 RUN pip install pipenv

@@ -85,6 +85,19 @@ class NoteQuerySet(models.QuerySet):
         )
         return self.filter(id__in=rels.values_list("note", flat=True))
 
+    def get_links(self):
+        """Retrieve pairs of entries connected
+        by those notes.
+
+        Args:
+            note_list (models.QuerySet): The list of note ids.
+
+        Returns:
+            models.QuerySet: The pairs of entries linked using notes.
+
+        """
+        return
+
 
 class NoteManager(models.Manager):
     def get_queryset(self):

@@ -56,3 +56,26 @@ class ArchivedNote(models.Model):
     content: models.CharField = models.CharField()
     timestamp: models.DateTimeField = models.DateTimeField()
     publishable: models.BooleanField = models.BooleanField(default=False)
+
+
+class Relation(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    src_entry = models.ForeignKey(
+        Entry, related_name="src_relations", on_delete=models.CASCADE
+    )
+    dst_entry = models.ForeignKey(
+        Entry, related_name="dst_relations", on_delete=models.CASCADE
+    )
+    note = models.ForeignKey(Note, related_name="relations", on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["src_entry", "dst_entry", "note"], name="unique_src_dst_note"
+            )
+        ]
+
+    indexes = [
+        models.Index(fields=["src_entry"], name="idx_src_entry"),
+        models.Index(fields=["note"], name="idx_note"),
+    ]

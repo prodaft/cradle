@@ -1,9 +1,10 @@
+from django.db.models import F
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
-from notes.models import Note
+from notes.models import Note, Relation
 from user.models import CradleUser
 from .serializers import KnowledgeGraphSerializer
 from typing import cast
@@ -11,7 +12,6 @@ from logs.decorators import log_failed_responses
 
 
 class KnowledgeGraphList(APIView):
-
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -37,7 +37,12 @@ class KnowledgeGraphList(APIView):
         notes = Note.objects.get_accessible_notes(
             cast(CradleUser, request.user)
         ).values("id")
-        links = Note.objects.get_links(notes)
+        links = {
+            (k["src"], k["dst"]) if k["src"] > k["dst"] else (k["dst"], k["src"])
+            for k in Relation.objects.filter(note__in=notes).values(
+                src=F("src_entry_id"), dst=F("dst_entry_id")
+            )
+        }
 
         return Response(
             KnowledgeGraphSerializer(

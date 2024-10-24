@@ -1,6 +1,7 @@
 from typing import List, Optional
 
-from notes.models import Note
+from notes.models import Note, Relation
+from notes.processor.smart_linker_task import SmartLinkerTask
 
 from .entry_population_task import EntryPopulationTask
 from .entry_class_creation_task import EntryClassCreationTask
@@ -24,6 +25,7 @@ class TaskScheduler:
             EntryPopulationTask(),
             AccessControlTask(user),
             CountReferencesTask(),
+            SmartLinkerTask(),
         ]
 
     def run_pipeline(self, note: Optional[Note] = None):
@@ -55,6 +57,7 @@ class TaskScheduler:
 
             note.content = self.note_content
             note.entries.clear()
+            Relation.objects.filter(note=note).delete()
 
             for task in self.processing:
                 task.run(note)
