@@ -6,26 +6,17 @@ import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { useNavigate } from 'react-router-dom';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
-import { preprocessData, visualizeGraph } from '../../utils/graphUtils/graphUtils';
+import {
+    preprocessData,
+    visualizeGraphCanvas,
+} from '../../utils/graphUtils/graphUtils';
 import { entryGraphColors } from '../../utils/entryDefinitions/entryDefinitions';
 
 /**
  * The component displays a graph visualization using D3.js.
- * The graph is rendered using an SVG element and D3.js force simulation.
+ * The graph is rendered using a canvas element and D3.js force simulation.
  * The component fetches the graph data from the server and preprocesses it before rendering the graph.
  * The component also provides controls to adjust the graph layout and search for nodes.
- * The component provides controls for:
- * - Node spacing - The spacing between nodes, which affects the overall size of the graph, based on the number of nodes
- * - Node size - Multiplier for the node radius, which is based on the node degree
- * - Component spacing - The spacing between components in the graph, which affects the overall size of the graph, based on the number of components
- * - Gravitational force - The power of the center gravity, which affects how much the nodes are attracted to the center of the screen.
- * The component also provides a search input to focus on a specific node in the graph.
- * When searching for a node, the graph is filtered to show only the first node that matches the search query and its first-degree connections.
- * The component also provides a button to refresh the graph display, which fetches the latest graph data from the server.
- * The component also provides a button to show/hide the controls for adjusting the graph layout.
- * When hovering over a node, the component highlights the node and its first-degree connections.
- * When hovering over an edge, the component highlights the edge and its source and target nodes.
- * When clicking on a node, the component displays a panel with information about the node and provides a link to navigate to the node's dashboard.
  *
  * @function GraphComponent
  * @returns {GraphComponent}
@@ -44,67 +35,70 @@ export default function GraphComponent() {
     const [highlightedNode, setHighlightedNode] = useState(null);
     const navigate = useNavigate();
 
-    // Reference to the SVG element used to render the graph
-    // D3.js uses svg elements to render graphics, the svg element is used to render the graph
-    const svgRef = useRef();
-
-    // Reference to the D3 force simulation, used to update the graph layout
+    const canvasRef = useRef(null);
+    const contextRef = useRef(null);
     const simulation = useRef();
 
-    // Function to render the graph using D3.js
+    // Function to adjust the canvas size and scale for high DPI screens
+    const setCanvasSize = useCallback(() => {
+        const canvas = canvasRef.current;
+        if (canvas) {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+
+            const context = canvas.getContext('2d');
+            context.scale(dpr, dpr);
+
+            contextRef.current = context;
+        }
+    }, []);
+
+    useEffect(() => {
+        setCanvasSize();
+
+        const handleResize = () => {
+            setCanvasSize();
+            renderGraph(data);
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        };
+    }, [data, setCanvasSize]);
+
     const renderGraph = useCallback(
-        (data) =>
-            visualizeGraph(
-                data,
-                svgRef,
-                setHighlightedNode,
-                simulation,
-                nodeRadiusCoefficient,
-                spacingCoefficient,
-                componentDistanceCoefficient,
-                centerGravity,
-            ),
+        (data) => {
+            if (contextRef.current) {
+                visualizeGraphCanvas(
+                    data,
+                    contextRef.current,
+                    canvasRef.current,
+                    setHighlightedNode,
+                    simulation,
+                    nodeRadiusCoefficient,
+                    spacingCoefficient,
+                    componentDistanceCoefficient,
+                    centerGravity,
+                );
+            }
+        },
         [
             defaultStrokeWidth,
             nodeRadiusCoefficient,
             spacingCoefficient,
             componentDistanceCoefficient,
             centerGravity,
-            svgRef,
         ],
     );
 
-    // Function to fetch the graph data from the server
-    const fetchGraphData = useCallback(() => {
-        getGraphData()
-            .then((response) => {
-                const data = preprocessData(response.data);
-                setData(data);
-            })
-            .catch(displayError(setAlert, navigate));
-    }, [setAlert]);
-
-    // Fetch the graph data on component mount
-    useEffect(() => {
-        fetchGraphData();
-    }, []);
-
-    // Render the graph when the data changes
-    useEffect(() => {
-        renderGraph(data, svgRef);
-    }, [renderGraph, data, svgRef]);
-
-    // Function to refresh the graph display
-    const refreshDisplay = useCallback(() => {
-        fetchGraphData();
-    }, [data, svgRef, renderGraph]);
-
-    // Function to filter the nodes in the graph based on the search query
-    // Only shows the nodes whose labels contain the search query and their first-degree connections
     const filterGraph = useCallback(
         (searchValue) => {
             if (!searchValue) {
-                renderGraph(data, svgRef);
+                renderGraph(data);
                 return;
             }
             const matchedNodes = new Set(
@@ -115,8 +109,8 @@ export default function GraphComponent() {
             if (matchedNodes.size === 0) return;
 
             const connectedNodes = new Set(matchedNodes);
-
             const filteredLinks = [];
+
             data.links.forEach((link) => {
                 if (matchedNodes.has(link.source)) {
                     connectedNodes.add(link.target);
@@ -127,15 +121,38 @@ export default function GraphComponent() {
                 }
             });
 
-            renderGraph({ nodes: [...connectedNodes], links: filteredLinks }, svgRef);
+            renderGraph({ nodes: [...connectedNodes], links: filteredLinks });
         },
-        [data, svgRef, renderGraph],
+        [data, renderGraph],
     );
+
+    const fetchGraphData = useCallback(() => {
+        getGraphData()
+            .then((response) => {
+                const data = preprocessData(response.data);
+                setData(data);
+                renderGraph(data);
+            })
+            .catch(displayError(setAlert, navigate));
+    }, [setAlert]);
+
+    useEffect(() => {
+        fetchGraphData();
+    }, []);
+
+    useEffect(() => {
+        renderGraph(data);
+    }, [renderGraph, data]);
+
+    const refreshDisplay = useCallback(() => {
+        fetchGraphData();
+    }, [fetchGraphData]);
 
     return (
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='w-full h-full relative overflow-hidden text-white'>
+                {/* Legend Box */}
                 <div className='absolute bottom-4 right-4 flex flex-col p-4 w-fit h-fit space-y-1 bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-md'>
                     <div className='flex flex-col'>
                         {Object.entries(entryGraphColors).map(([type, color]) => (
@@ -152,6 +169,8 @@ export default function GraphComponent() {
                         ))}
                     </div>
                 </div>
+
+                {/* Node Info Box */}
                 <div className='absolute top-4 left-4 w-fit h-fit'>
                     {highlightedNode && (
                         <div className='bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg p-4 rounded-md w-96 max-h-[90vh] flex flex-col space-y-2'>
@@ -195,6 +214,8 @@ export default function GraphComponent() {
                         </div>
                     )}
                 </div>
+
+                {/* Controls Toggle Button */}
                 <div className='absolute top-4 right-4'>
                     <button
                         onClick={() => setShowControls(!showControls)}
@@ -204,8 +225,10 @@ export default function GraphComponent() {
                         <Menu height='1.2em' width='1.2em' className='text-zinc-300' />
                     </button>
                 </div>
+
+                {/* Controls Panel */}
                 {showControls && (
-                    <div className='absolute top-4 right-16 bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-md p-4 shadow-lg z-10 w-96 '>
+                    <div className='absolute top-4 right-16 bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-md p-4 shadow-lg z-10 w-96'>
                         <div className='flex flex-col space-y-4'>
                             <div className='flex flex-row space-x-2 items-center'>
                                 <input
@@ -238,6 +261,7 @@ export default function GraphComponent() {
                                     />
                                 </button>
                             </div>
+
                             <div className='flex flex-row space-x-2 w-full'>
                                 <label className='flex items-center justify-between space-x-2 w-full'>
                                     <span className='text-sm'>Node Spacing:</span>
@@ -256,13 +280,14 @@ export default function GraphComponent() {
                                     />
                                 </label>
                             </div>
+
                             <div className='flex flex-row space-x-2 w-full'>
                                 <label className='flex items-center justify-between space-x-2 w-full'>
                                     <span className='text-sm'>Node Size:</span>
                                     <input
                                         type='range'
-                                        min='0'
-                                        max='5'
+                                        min='1'
+                                        max='10'
                                         step='0.5'
                                         className='range range-primary'
                                         value={nodeRadiusCoefficient}
@@ -274,6 +299,7 @@ export default function GraphComponent() {
                                     />
                                 </label>
                             </div>
+
                             <div className='flex flex-row space-x-2 w-full'>
                                 <label className='flex items-center justify-between space-x-2 w-full'>
                                     <span className='text-sm'>Component Spacing:</span>
@@ -292,6 +318,7 @@ export default function GraphComponent() {
                                     />
                                 </label>
                             </div>
+
                             <div className='flex flex-row space-x-2 w-full'>
                                 <label className='flex items-center justify-between space-x-2 w-full'>
                                     <span className='text-sm'>
@@ -313,8 +340,10 @@ export default function GraphComponent() {
                         </div>
                     </div>
                 )}
+
+                {/* Graph Canvas */}
                 <div className='w-full h-full'>
-                    <svg ref={svgRef} className='w-full h-full'></svg>
+                    <canvas ref={canvasRef} className='w-full h-full'></canvas>
                 </div>
             </div>
         </>

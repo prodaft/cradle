@@ -7,6 +7,7 @@ import {
     Bell,
     BellNotification,
     Settings,
+    Notes,
 } from 'iconoir-react';
 import SidebarItem from '../SidebarItem/SidebarItem';
 import SidebarSection from '../SidebarSection/SidebarSection';
@@ -42,6 +43,11 @@ export default function Sidebar({
     const newNoteLocation = '/editor/new';
     const handleNewNote = useCallback(() => {
         navigate(newNoteLocation);
+    }, [navigate]);
+
+    const notesLocation = '/notes';
+    const handleNotes = useCallback(() => {
+        navigate(notesLocation);
     }, [navigate]);
 
     const graphViewLocation = '/knowledge-graph';
@@ -86,6 +92,12 @@ export default function Sidebar({
                                 icon={<Edit />}
                                 text='New Note'
                                 highlightedLocation={newNoteLocation}
+                            />
+                            <SidebarItem
+                                handleClick={handleNotes}
+                                icon={<Notes />}
+                                text='Notes'
+                                highlightedLocation={notesLocation}
                             />
                             <SidebarItem
                                 handleClick={handleGraphView}
