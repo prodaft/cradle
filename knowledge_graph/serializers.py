@@ -19,8 +19,7 @@ class LinkSerializer(serializers.Serializer):
             representation of the data.
 
         """
-        json = super().to_representation(data)
-        return {"source": json["first_node"], "target": json["second_node"]}
+        return {"source": data[0], "target": data[1]}
 
 
 class KnowledgeGraphSerializer(serializers.Serializer):

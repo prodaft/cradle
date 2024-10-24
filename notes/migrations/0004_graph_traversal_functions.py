@@ -34,15 +34,9 @@ class Migration(migrations.Migration):
             RETURNS TABLE (entry_id UUID) AS $$
             BEGIN
                 RETURN QUERY
-                SELECT n.entry_id
-                FROM notes_note_entries n
-                WHERE n.note_id IN (
-                    SELECT ne.note_id
-                    FROM notes_note_entries ne
-                    GROUP BY ne.note_id
-                    HAVING MAX(CASE ne.entry_id WHEN target_entry_id THEN 1 ELSE 0 END) = 1
-                )
-                AND n.entry_id <> target_entry_id;
+                SELECT n.dst_entry_id AS entry_id
+                FROM notes_relation n
+                WHERE n.src_entry_id = target_entry_id;
             END;
             $$ LANGUAGE plpgsql;
             """
@@ -53,8 +47,8 @@ class Migration(migrations.Migration):
             RETURNS TABLE (entry_id UUID) AS $$
             BEGIN
                 RETURN QUERY
-                SELECT n.entry_id
-                FROM notes_note_entries n
+                SELECT n.dst_entry_id AS entry_id
+                FROM notes_relation n
                 WHERE n.note_id IN (
                     SELECT ne.note_id
                     FROM notes_note_entries ne
@@ -63,9 +57,7 @@ class Migration(migrations.Migration):
                       WHERE '<none>'<>ANY(nen.access_types)
                     )
                     GROUP BY ne.note_id
-                    HAVING MAX(CASE ne.entry_id WHEN target_entry_id THEN 1 ELSE 0 END) = 1
-                )
-                AND n.entry_id <> target_entry_id;
+                ) AND n.src_entry_id = target_entry_id;
             END;
             $$ LANGUAGE plpgsql;
             """

@@ -1,12 +1,11 @@
 from rest_framework import serializers
-from entries.serializers import EntryResponseSerializer, EntrySerializer
+from entries.serializers import EntryResponseSerializer
 from notes.models import Note
 from typing import List, Dict, Any
 from file_transfer.serializers import FileReferenceSerializer
 
 
 class NoteDashboardSerializer(serializers.ModelSerializer):
-    entries = EntrySerializer(many=True)
     files = FileReferenceSerializer(many=True)
 
     class Meta:
@@ -16,7 +15,6 @@ class NoteDashboardSerializer(serializers.ModelSerializer):
             "content",
             "publishable",
             "timestamp",
-            "entries",
             "files",
         ]
 

@@ -7,12 +7,12 @@ from .exceptions import (
     NoteDoesNotExistException,
     NoteNotPublishableException,
 )
-from entries.serializers import EntryResponseSerializer
-from typing import Any
+from entries.serializers import EntryResponseSerializer, EntrySerializer
+from typing import Any, Dict
 from file_transfer.serializers import FileReferenceSerializer
 from file_transfer.models import FileReference
 from user.serializers import UserRetrieveSerializer
-from entries.models import Entry
+from entries.models import Entry, EntryClass
 
 
 class NoteCreateSerializer(serializers.ModelSerializer):
@@ -112,10 +112,47 @@ class NoteCreateSerializer(serializers.ModelSerializer):
         return note
 
 
+class LinkedEntryClassSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EntryClass
+        fields = ["type", "subtype"]
+
+
+class LinkedEntrySerializer(serializers.ModelSerializer):
+    description = serializers.CharField(required=False, allow_blank=True)
+    entry_class = LinkedEntryClassSerializer(read_only=True)
+
+    class Meta:
+        model = Entry
+        fields = ["id", "name", "description", "entry_class"]
+
+    def to_representation(self, instance):
+        """Move fields from profile to user representation."""
+        representation = super().to_representation(instance)
+        entry_class_repr = representation.pop("entry_class")
+
+        for key in entry_class_repr:
+            representation[key] = entry_class_repr[key]
+
+        return representation
+
+    def to_internal_value(self, data):
+        """Move fields related to profile to their own profile dictionary."""
+        entry_class_internal = {}
+        for key in LinkedEntryClassSerializer.Meta.fields:
+            if key in data:
+                entry_class_internal[key] = data.pop(key)
+
+        internal = super().to_internal_value(data)
+        internal["entry_class"] = entry_class_internal
+        return internal
+
+
 class NoteRetrieveSerializer(serializers.ModelSerializer):
     files = FileReferenceSerializer(many=True)
     author = UserRetrieveSerializer()
     editor = UserRetrieveSerializer()
+    entries = LinkedEntrySerializer(many=True)
 
     class Meta:
         model = Note
@@ -125,10 +162,35 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
             "content",
             "timestamp",
             "author",
+            "entries",
             "edit_timestamp",
             "editor",
             "files",
         ]
+
+    def __init__(self, *args, truncate=-1, **kwargs) -> None:
+        self.truncate = truncate
+        super().__init__(*args, **kwargs)
+
+    def to_representation(self, obj: Any) -> Dict[str, Any]:
+        """When the note is serialized if it contains more than 200 characters
+        the content is truncated to 200 characters and "..." is appended to the end.
+
+        Args:
+            obj (Any): The note object.
+
+        Returns:
+            Dict[str, Any]: The serialized note object.
+        """
+        data = super().to_representation(obj)
+
+        if self.truncate == -1:
+            return data
+
+        if len(data["content"]) > self.truncate:
+            data["content"] = data["content"][: self.truncate] + "..."
+
+        return data
 
 
 class NotePublishSerializer(serializers.ModelSerializer):

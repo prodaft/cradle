@@ -25,6 +25,8 @@ pytest = "*"
 pyyaml = "*"
 mistune = "*"
 ipython = "*"
+drf-spectacular = "*"
+django-filter = "*"
 
 [dev-packages]
 

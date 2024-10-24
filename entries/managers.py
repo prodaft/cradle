@@ -7,6 +7,10 @@ from .enums import EntryType
 
 
 class EntryQuerySet(models.QuerySet):
+    def with_entry_class(self):
+        return self
+        return self.prefetch_related("entry_class")
+
     def is_artifact(self) -> models.QuerySet:
         """
         Get artifacts
@@ -71,7 +75,7 @@ class EntryManager(models.Manager):
         Returns a queryset that uses the custom TeamQuerySet,
         allowing access to its methods for all querysets retrieved by this manager.
         """
-        return EntryQuerySet(self.model, using=self._db)
+        return EntryQuerySet(self.model, using=self._db).with_entry_class()
 
     def is_artifact(self) -> models.QuerySet:
         """
