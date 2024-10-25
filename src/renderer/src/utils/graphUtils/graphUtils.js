@@ -27,7 +27,6 @@ import { truncateText } from '../dashboardUtils/dashboardUtils';
 const DEFAULT_BORDER = '#71717a';
 const DEFAULT_SELECT = '#f68d2e';
 const DEFAULT_RADIUS = 5;
-const LABEL_ZOOM_MIN = 3;
 
 export const preprocessData = (data) => {
     // Initialize an empty array for the nodes

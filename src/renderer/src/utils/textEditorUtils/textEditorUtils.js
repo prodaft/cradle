@@ -137,7 +137,7 @@ const getLinkNode = (context) => {
  * @returns {?Link}
  */
 const parseLink = (from, current, text) => {
-    // This is very bad
+    // This is terrible, but it works
     const match =
         text == '[[]]' ? LINK_REGEX_DOUBLE.exec(text) : LINK_REGEX_SINGLE.exec(text);
 
