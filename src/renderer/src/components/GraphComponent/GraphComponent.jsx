@@ -1,148 +1,73 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import 'tailwindcss/tailwind.css';
 import { getGraphData } from '../../services/graphService/graphService';
-import { Menu, RefreshDouble, Search, Xmark } from 'iconoir-react';
+import { Menu, RefreshDouble, Search } from 'iconoir-react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { useNavigate } from 'react-router-dom';
-import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
-import {
-    preprocessData,
-    visualizeGraphCanvas,
-} from '../../utils/graphUtils/graphUtils';
+import { preprocessData } from '../../utils/graphUtils/graphUtils';
 import { entryGraphColors } from '../../utils/entryDefinitions/entryDefinitions';
+import Graph from '../Graph/Graph';
 
-/**
- * The component displays a graph visualization using D3.js.
- * The graph is rendered using a canvas element and D3.js force simulation.
- * The component fetches the graph data from the server and preprocesses it before rendering the graph.
- * The component also provides controls to adjust the graph layout and search for nodes.
- *
- * @function GraphComponent
- * @returns {GraphComponent}
- * @constructor
- */
 export default function GraphComponent() {
     const [data, setData] = useState({ nodes: [], links: [] });
-    const defaultStrokeWidth = 2;
     const [spacingCoefficient, setSpacingCoefficient] = useState(48);
     const [componentDistanceCoefficient, setComponentDistanceCoefficient] = useState(8);
-    const [nodeRadiusCoefficient, setNodeRadiusCoefficient] = useState(1.5);
+    const [nodeRadiusCoefficient, setNodeRadiusCoefficient] = useState(4);
     const [centerGravity, setCenterGravity] = useState(0.05);
     const [showControls, setShowControls] = useState(false);
+    const [is3DMode, setIs3DMode] = useState(true); // New state for 2D/3D mode
     const [searchValue, setSearchValue] = useState('');
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const [highlightedNode, setHighlightedNode] = useState(null);
     const navigate = useNavigate();
 
-    const canvasRef = useRef(null);
-    const contextRef = useRef(null);
-    const simulation = useRef();
+    const filterData = (searchValue, data) => {
+        const matchedNodes = new Set(
+            data.nodes.filter((node) =>
+                node.label.toLowerCase().includes(searchValue.toLowerCase()),
+            ),
+        );
+        if (matchedNodes.size === 0) return data;
 
-    // Function to adjust the canvas size and scale for high DPI screens
-    const setCanvasSize = useCallback(() => {
-        const canvas = canvasRef.current;
-        if (canvas) {
-            const dpr = window.devicePixelRatio || 1;
-            const rect = canvas.getBoundingClientRect();
+        const connectedNodes = new Set(matchedNodes);
+        const filteredLinks = [];
 
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-
-            const context = canvas.getContext('2d');
-            context.scale(dpr, dpr);
-
-            contextRef.current = context;
-        }
-    }, []);
-
-    useEffect(() => {
-        setCanvasSize();
-
-        const handleResize = () => {
-            setCanvasSize();
-            renderGraph(data);
-        };
-
-        window.addEventListener('resize', handleResize);
-        return () => {
-            window.removeEventListener('resize', handleResize);
-        };
-    }, [data, setCanvasSize]);
-
-    const renderGraph = useCallback(
-        (data) => {
-            if (contextRef.current) {
-                visualizeGraphCanvas(
-                    data,
-                    contextRef.current,
-                    canvasRef.current,
-                    setHighlightedNode,
-                    simulation,
-                    nodeRadiusCoefficient,
-                    spacingCoefficient,
-                    componentDistanceCoefficient,
-                    centerGravity,
-                );
+        data.links.forEach((link) => {
+            if (matchedNodes.has(link.source)) {
+                connectedNodes.add(link.target);
+                filteredLinks.push(link);
+            } else if (matchedNodes.has(link.target)) {
+                connectedNodes.add(link.source);
+                filteredLinks.push(link);
             }
-        },
-        [
-            defaultStrokeWidth,
-            nodeRadiusCoefficient,
-            spacingCoefficient,
-            componentDistanceCoefficient,
-            centerGravity,
-        ],
-    );
+        });
+        return { nodes: [...connectedNodes], links: filteredLinks };
+    };
 
     const filterGraph = useCallback(
         (searchValue) => {
             if (!searchValue) {
-                renderGraph(data);
+                fetchGraphData();
                 return;
             }
-            const matchedNodes = new Set(
-                data.nodes.filter((node) =>
-                    node.label.toLowerCase().includes(searchValue.toLowerCase()),
-                ),
-            );
-            if (matchedNodes.size === 0) return;
-
-            const connectedNodes = new Set(matchedNodes);
-            const filteredLinks = [];
-
-            data.links.forEach((link) => {
-                if (matchedNodes.has(link.source)) {
-                    connectedNodes.add(link.target);
-                    filteredLinks.push(link);
-                } else if (matchedNodes.has(link.target)) {
-                    connectedNodes.add(link.source);
-                    filteredLinks.push(link);
-                }
-            });
-
-            renderGraph({ nodes: [...connectedNodes], links: filteredLinks });
+            setData(filterData(searchValue, data));
         },
-        [data, renderGraph],
+        [data],
     );
 
     const fetchGraphData = useCallback(() => {
         getGraphData()
             .then((response) => {
                 const data = preprocessData(response.data);
-                setData(data);
-                renderGraph(data);
+                if (searchValue) setData(filterData(searchValue, data));
+                else setData(data);
             })
             .catch(displayError(setAlert, navigate));
-    }, [setAlert]);
+    }, [setAlert, searchValue, navigate]);
 
     useEffect(() => {
         fetchGraphData();
     }, []);
-
-    useEffect(() => {
-        renderGraph(data);
-    }, [renderGraph, data]);
 
     const refreshDisplay = useCallback(() => {
         fetchGraphData();
@@ -152,6 +77,15 @@ export default function GraphComponent() {
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='w-full h-full relative overflow-hidden text-white'>
+                <Graph
+                    data={data}
+                    node_r={nodeRadiusCoefficient}
+                    is3D={is3DMode}
+                    spacingCoefficient={spacingCoefficient}
+                    componentDistanceCoefficient={componentDistanceCoefficient}
+                    centerGravity={centerGravity}
+                />
+
                 {/* Legend Box */}
                 <div className='absolute bottom-4 right-4 flex flex-col p-4 w-fit h-fit space-y-1 bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-md'>
                     <div className='flex flex-col'>
@@ -168,51 +102,6 @@ export default function GraphComponent() {
                             </div>
                         ))}
                     </div>
-                </div>
-
-                {/* Node Info Box */}
-                <div className='absolute top-4 left-4 w-fit h-fit'>
-                    {highlightedNode && (
-                        <div className='bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg p-4 rounded-md w-96 max-h-[90vh] flex flex-col space-y-2'>
-                            <div className='flex flex-row items-start justify-between space-x-4'>
-                                <p className='text-xl font-bold max-h-[75vh] overflow-hidden break-all'>
-                                    <span className='text-l text-zinc-300'>
-                                        {highlightedNode.subtype
-                                            ? highlightedNode.subtype + ': '
-                                            : highlightedNode.type + ': '}
-                                    </span>
-                                    {highlightedNode.name}
-                                </p>
-                                <button
-                                    onClick={() => setHighlightedNode(null)}
-                                    className='w-fit h-fit'
-                                >
-                                    <Xmark
-                                        height='1.2em'
-                                        width='1.2em'
-                                        className='text-zinc-400'
-                                    />
-                                </button>
-                            </div>
-                            <div>Connections: {highlightedNode.degree}</div>
-                            {highlightedNode.type !== 'metadata' && (
-                                <div
-                                    className='underline cursor-pointer'
-                                    onClick={() =>
-                                        navigate(
-                                            createDashboardLink({
-                                                name: highlightedNode.name,
-                                                type: highlightedNode.type,
-                                                subtype: highlightedNode.subtype,
-                                            }),
-                                        )
-                                    }
-                                >
-                                    Navigate to dashboard
-                                </div>
-                            )}
-                        </div>
-                    )}
                 </div>
 
                 {/* Controls Toggle Button */}
@@ -264,25 +153,6 @@ export default function GraphComponent() {
 
                             <div className='flex flex-row space-x-2 w-full'>
                                 <label className='flex items-center justify-between space-x-2 w-full'>
-                                    <span className='text-sm'>Node Spacing:</span>
-                                    <input
-                                        type='range'
-                                        min='0'
-                                        max='128'
-                                        step='16'
-                                        value={spacingCoefficient}
-                                        className='range range-primary'
-                                        onChange={(e) => {
-                                            setSpacingCoefficient(
-                                                Number(e.target.value),
-                                            );
-                                        }}
-                                    />
-                                </label>
-                            </div>
-
-                            <div className='flex flex-row space-x-2 w-full'>
-                                <label className='flex items-center justify-between space-x-2 w-full'>
                                     <span className='text-sm'>Node Size:</span>
                                     <input
                                         type='range'
@@ -293,6 +163,26 @@ export default function GraphComponent() {
                                         value={nodeRadiusCoefficient}
                                         onChange={(e) => {
                                             setNodeRadiusCoefficient(
+                                                Number(e.target.value),
+                                            );
+                                        }}
+                                    />
+                                </label>
+                            </div>
+
+                            {/*
+                            <div className='flex flex-row space-x-2 w-full'>
+                                <label className='flex items-center justify-between space-x-2 w-full'>
+                                    <span className='text-sm'>Node Spacing:</span>
+                                    <input
+                                        type='range'
+                                        min='0'
+                                        max='128'
+                                        step='16'
+                                        value={spacingCoefficient}
+                                        className='range range-primary'
+                                        onChange={(e) => {
+                                            setSpacingCoefficient(
                                                 Number(e.target.value),
                                             );
                                         }}
@@ -337,14 +227,23 @@ export default function GraphComponent() {
                                     />
                                 </label>
                             </div>
+                    */}
+
+                            {/* 2D/3D Mode Toggle */}
+                            <div className='flex flex-row space-x-2 items-center'>
+                                <label className='flex items-center justify-between space-x-2 w-full'>
+                                    <span className='text-sm w-full'>3D View:</span>
+                                    <input
+                                        type='checkbox'
+                                        checked={is3DMode}
+                                        onChange={(e) => setIs3DMode(e.target.checked)}
+                                        className='toggle toggle-primary w-1/2'
+                                    />
+                                </label>
+                            </div>
                         </div>
                     </div>
                 )}
-
-                {/* Graph Canvas */}
-                <div className='w-full h-full'>
-                    <canvas ref={canvasRef} className='w-full h-full'></canvas>
-                </div>
             </div>
         </>
     );
