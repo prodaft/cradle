@@ -30,7 +30,7 @@ import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 export default function AdminPanel() {
     const [entities, setEntities] = useState([]);
     const [users, setUsers] = useState([]);
-    const [artifact_types, setArtifactTypes] = useState([]);
+    const [entryTypes, setEntryTypes] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
     const handleError = displayError(setAlert, navigate);
@@ -62,23 +62,21 @@ export default function AdminPanel() {
             .catch(handleError);
     };
 
-    const displayArtifactTypes = async () => {
+    const displayEntryTypes = async () => {
         getEntryClasses()
             .then((response) => {
                 if (response.status === 200) {
                     let entities = response.data;
-                    setArtifactTypes(
-                        entities
-                        .filter((c) => c.type == "artifact")
-                        .map((c) => {
+                    setEntryTypes(
+                        entities.map((c) => {
                             return (
                                 <AdminPanelCard
                                     id={c.subtype}
                                     key={c.subtype}
                                     name={c.subtype}
                                     searchKey={c.subtype}
-                                    type={'artifact'}
-                                    onDelete={displayArtifactTypes}
+                                    type={'entrytype'}
+                                    onDelete={displayEntryTypes}
                                 />
                             );
                         }),
@@ -116,7 +114,7 @@ export default function AdminPanel() {
     useEffect(() => {
         displayUsers();
         displayEntities();
-        displayArtifactTypes();
+        displayEntryTypes();
     }, []);
 
     return (
@@ -132,12 +130,12 @@ export default function AdminPanel() {
                     {entities}
                 </AdminPanelSection>
                 <AdminPanelSection
-                    title={'Artifact Types'}
+                    title={'Entry Types'}
                     addEnabled={true}
-                    addTooltipText={'Add Artifact Type'}
-                    handleAdd={() => navigate('/admin/add-artifact-type')}
+                    addTooltipText={'Add Entry Class'}
+                    handleAdd={() => navigate('/admin/add-entry-type')}
                 >
-                    {artifact_types}
+                    {entryTypes}
                 </AdminPanelSection>
                 <AdminPanelSection title={'Users'} addEnabled={false}>
                     {users}

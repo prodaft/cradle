@@ -27,6 +27,7 @@ import { truncateText } from '../dashboardUtils/dashboardUtils';
 const DEFAULT_BORDER = '#71717a';
 const DEFAULT_SELECT = '#f68d2e';
 const DEFAULT_RADIUS = 5;
+const COLORSET = { entity: '#744abf' };
 
 function connected(node, link) {
     if (node === null || link === null) return false;
@@ -51,7 +52,7 @@ export const preprocessData = (data) => {
         label: entry.subtype
             ? truncateText(`${entry.subtype}: ${entry.name}`, 40)
             : truncateText(`${entry.type}: ${entry.name}`, 40),
-        color: entryGraphColors[entry.type],
+        color: data.colors[entry.subtype],
         name: entry.name,
         type: entry.type,
         subtype: entry.subtype,
@@ -98,7 +99,7 @@ export const preprocessData = (data) => {
     // Assign the calculated degree to each node
     nodes.forEach((node) => {
         node.degree = nodesDegrees[node.id] || 0;
-        // node.degree_norm = interpolate(minDegree, maxDegree, 0, 1, node.degree);
+        node.degree_norm = interpolate(minDegree, maxDegree, 1, 2, node.degree);
     });
 
     // Return the preprocessed data

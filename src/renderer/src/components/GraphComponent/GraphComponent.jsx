@@ -6,7 +6,6 @@ import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { useNavigate } from 'react-router-dom';
 import { preprocessData } from '../../utils/graphUtils/graphUtils';
-import { entryGraphColors } from '../../utils/entryDefinitions/entryDefinitions';
 import Graph from '../Graph/Graph';
 
 export default function GraphComponent() {
@@ -17,8 +16,10 @@ export default function GraphComponent() {
     const [centerGravity, setCenterGravity] = useState(0.05);
     const [showControls, setShowControls] = useState(false);
     const [is3DMode, setIs3DMode] = useState(true); // New state for 2D/3D mode
+    const [entryGraphColors, setEntryGraphColors] = useState({});
     const [searchValue, setSearchValue] = useState('');
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const [showLegend, setShowLegend] = useState(true);
     const navigate = useNavigate();
 
     const filterData = (searchValue, data) => {
@@ -61,6 +62,7 @@ export default function GraphComponent() {
                 const data = preprocessData(response.data);
                 if (searchValue) setData(filterData(searchValue, data));
                 else setData(data);
+                setEntryGraphColors(response.data.colors);
             })
             .catch(displayError(setAlert, navigate));
     }, [setAlert, searchValue, navigate]);
@@ -87,22 +89,25 @@ export default function GraphComponent() {
                 />
 
                 {/* Legend Box */}
-                <div className='absolute bottom-4 right-4 flex flex-col p-4 w-fit h-fit space-y-1 bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-md'>
-                    <div className='flex flex-col'>
-                        {Object.entries(entryGraphColors).map(([type, color]) => (
-                            <div
-                                key={type}
-                                className='flex flex-row items-center space-x-2'
-                            >
+
+                {showLegend && (
+                    <div className='absolute bottom-4 right-4 p-4 w-fit bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-md'>
+                        <div className='grid grid-cols-2 gap-2 max-h-40 overflow-y-auto'>
+                            {Object.entries(entryGraphColors).map(([type, color]) => (
                                 <div
-                                    className='w-4 h-4 rounded-full'
-                                    style={{ backgroundColor: color }}
-                                ></div>
-                                <span>{type}</span>
-                            </div>
-                        ))}
+                                    key={type}
+                                    className='flex flex-row items-center space-x-2'
+                                >
+                                    <div
+                                        className='w-4 h-4 rounded-full'
+                                        style={{ backgroundColor: color }}
+                                    ></div>
+                                    <span>{type}</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* Controls Toggle Button */}
                 <div className='absolute top-4 right-4'>
@@ -237,6 +242,20 @@ export default function GraphComponent() {
                                         type='checkbox'
                                         checked={is3DMode}
                                         onChange={(e) => setIs3DMode(e.target.checked)}
+                                        className='toggle toggle-primary w-1/2'
+                                    />
+                                </label>
+                            </div>
+
+                            <div className='flex flex-row space-x-2 items-center'>
+                                <label className='flex items-center justify-between space-x-2 w-full'>
+                                    <span className='text-sm w-full'>Show Legend:</span>
+                                    <input
+                                        type='checkbox'
+                                        checked={showLegend}
+                                        onChange={(e) =>
+                                            setShowLegend(e.target.checked)
+                                        }
                                         className='toggle toggle-primary w-1/2'
                                     />
                                 </label>

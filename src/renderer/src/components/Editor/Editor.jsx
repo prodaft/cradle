@@ -142,12 +142,6 @@ export default function Editor({
                 ),
             );
         } else if (parsedLink.type in lspPack['instances']) {
-            console.log(
-                lspPack['instances'][parsedLink.type].map((item) => ({
-                    label: parsedLink.post(item),
-                    type: 'keyword',
-                })),
-            );
             options = new Promise((f) =>
                 f(
                     lspPack['instances'][parsedLink.type].map((item) => ({
@@ -157,7 +151,6 @@ export default function Editor({
                 ),
             );
         }
-        console.log(parsedLink);
 
         return options.then((o) => {
             return {
@@ -210,13 +203,26 @@ export default function Editor({
             return;
         }
         const doc = editorRef.current.view.state;
-        const words = markdownContent.split(/(\s+)/);
+        let to = doc.selection.main.to;
+        let from = doc.selection.main.from;
+        let content;
 
-        console.log(words);
+        if (to == from) {
+            content = markdownContent;
+            from = 0;
+            to = content.length;
+        } else {
+            content = doc.sliceDoc(from, to);
+        }
+
+        console.log(from, to, content);
+
+        const words = content.split(/(\s+)/);
+
         const trim_word = (x) => {
             return x.replace(/^[,.:\s]+|[,.:\s]+$/g, '');
         };
-        let linkedMarkdown = markdownContent;
+        let linkedMarkdown = content;
 
         let position = 0;
 
@@ -225,13 +231,11 @@ export default function Editor({
                 const start = position;
                 const end = start + word.length;
                 let suggestions = suggestionsForWord(trim_word(word));
-                console.log(suggestions);
 
                 suggestions = suggestions.filter(
                     (x) => trim_word(x.match) == trim_word(word),
                 );
                 if (suggestions && suggestions.length >= 1) {
-                    console.log(suggestions);
                     let link = `[[${suggestions[0].type}:${suggestions[0].match}]]`;
                     linkedMarkdown =
                         linkedMarkdown.substring(0, start) +
@@ -241,11 +245,14 @@ export default function Editor({
                 }
             }
 
-            console.log(linkedMarkdown);
             position += word.length;
         });
 
-        setMarkdownContent(linkedMarkdown);
+        setMarkdownContent(
+            markdownContent.substring(0, from) +
+                linkedMarkdown +
+                markdownContent.substring(to),
+        );
     };
 
     const onEditorChange = (text) => {

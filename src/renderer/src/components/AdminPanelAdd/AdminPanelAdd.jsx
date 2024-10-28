@@ -1,12 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import AlertBox from '../AlertBox/AlertBox';
-import { getEntities } from '../../services/adminService/adminService';
+import { getEntities, getEntryClasses } from '../../services/adminService/adminService';
 import {
     createEntity,
     createArtifactClass,
 } from '../../services/adminService/adminService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
+import { PopoverPicker } from '../PopoverPicker/PopoverPicker';
 
 /**
  * AdminPanelAdd component - This component is used to display the form for adding a new Entity.
@@ -25,9 +26,14 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 export default function AdminPanelAdd({ type }) {
     const [name, setName] = useState('');
     const [catalystType, setCatalystType] = useState('');
+    const [classType, setClassType] = useState('entity');
     const [subtype, setSubtype] = useState('');
-    const [subtypeDisabled, setSubtypeDisabled] = useState('');
     const [catalystTypeDisabled, setCatalystTypeDisabled] = useState('');
+    const [color, setColor] = useState(
+        Math.floor(Math.random() * 0x1000000)
+            .toString(16)
+            .padStart(6, 0),
+    );
     const [description, setDescription] = useState('');
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [subclasses, setSubclasses] = useState([]);
@@ -38,18 +44,23 @@ export default function AdminPanelAdd({ type }) {
     const [typeFormatHint, setTypeFormatHint] = useState('');
 
     const populateSubclasses = async () => {
-        getEntities()
+        getEntryClasses()
             .then((response) => {
                 if (response.status === 200) {
                     let entities = response.data;
-                    setSubclasses(entities);
+                    // Filter type == entity
+                    setSubclasses(entities.filter((entity) => entity.type == 'entity'));
                 }
             })
             .catch(handleError);
     };
 
     const handleSubmit = async () => {
-        var data = { subtype: subtype, catalyst_type: catalystType };
+        var data = {
+            type: classType,
+            subtype: subtype,
+            catalyst_type: catalystType,
+        };
 
         if (typeFormat) {
             data[typeFormat] = typeFormatDetails;
@@ -60,7 +71,8 @@ export default function AdminPanelAdd({ type }) {
                 data.name = name;
                 data.description = description;
                 await createEntity(data);
-            } else if (type === 'ArtifactType') {
+            } else if (type === 'EntryType') {
+                data.color = color;
                 await createArtifactClass(data);
             }
             navigate('/admin');
@@ -85,18 +97,6 @@ export default function AdminPanelAdd({ type }) {
 
             default:
                 setTypeFormat(null);
-        }
-    };
-
-    const handleSubtypeSelected = (subclass) => () => {
-        setCatalystType(subclass.catalyst_type);
-        setSubtype(subclass.subtype);
-        if (subclass) {
-            setSubtypeDisabled(true);
-            setCatalystTypeDisabled(true);
-        } else {
-            setSubtypeDisabled(false);
-            setCatalystTypeDisabled(false);
         }
     };
 
@@ -126,46 +126,19 @@ export default function AdminPanelAdd({ type }) {
                                     onChange={(e) => setName(e.target.value)}
                                     autoFocus
                                 />
-                                <div className='flex items-center space-x-4'>
-                                    <input
-                                        type='text'
-                                        className='form-input input input-ghost-primary input-block focus:ring-1'
-                                        disabled={subtypeDisabled}
-                                        placeholder='Type'
-                                        value={subtype}
-                                        onChange={(e) => setSubtype(e.target.value)}
-                                    />
-                                    <div className='dropdown relative'>
-                                        <label
-                                            className='btn btn-solid-primary my-2'
-                                            tabIndex='0'
-                                        >
-                                            Select
-                                        </label>
-                                        <div className='dropdown-menu dropdown-menu-bottom-right'>
-                                            {subclasses &&
-                                                subclasses.length > 0 &&
-                                                subclasses.map((subclass, index) => (
-                                                    <a
-                                                        key={index}
-                                                        className='dropdown-item text-sm'
-                                                        onClick={handleSubtypeSelected(
-                                                            subclass,
-                                                        )}
-                                                    >
-                                                        {subclass.subtype}
-                                                    </a>
-                                                ))}
-                                            <a
-                                                key={subclasses ? subclasses.length : 0}
-                                                className='dropdown-item text-sm'
-                                                onClick={handleSubtypeSelected(null)}
-                                            >
-                                                Add New
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
+                                <select
+                                    className='form-select select select-ghost-primary select-block focus:ring-0'
+                                    onChange={setSubtype}
+                                    value={subtype}
+                                >
+                                    {subclasses &&
+                                        subclasses.length > 0 &&
+                                        subclasses.map((subclass) => (
+                                            <option value={subclass.subtype}>
+                                                {subclass.subtype}
+                                            </option>
+                                        ))}
+                                </select>
                                 <input
                                     type='text'
                                     className='form-input input input-ghost-primary input-block focus:ring-0'
@@ -198,7 +171,7 @@ export default function AdminPanelAdd({ type }) {
                 </div>
             </div>
         );
-    } else if (type === 'ArtifactType') {
+    } else if (type === 'EntryType') {
         useEffect(() => {}, [typeFormat]);
         return (
             <div className='flex flex-row items-center justify-center h-screen'>
@@ -206,7 +179,7 @@ export default function AdminPanelAdd({ type }) {
                     <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8'>
                         <div className='sm:mx-auto sm:w-full sm:max-w-sm'>
                             <h1 className='mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-cradle2'>
-                                Add New Artifact Type
+                                Add New Entry Type
                             </h1>
                         </div>
                         <div
@@ -214,6 +187,14 @@ export default function AdminPanelAdd({ type }) {
                             className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'
                         >
                             <div className='space-y-6'>
+                                <select
+                                    className='form-select select select-ghost-primary select-block focus:ring-0'
+                                    onChange={(e) => setClassType(e.target.value)}
+                                    value={classType}
+                                >
+                                    <option value='entity'>Entity</option>
+                                    <option value='artifact'>Artifact</option>
+                                </select>
                                 <input
                                     type='text'
                                     className='form-input input input-ghost-primary input-block focus:ring-0'
@@ -227,14 +208,17 @@ export default function AdminPanelAdd({ type }) {
                                     placeholder='Catalyst Type'
                                     onChange={(e) => setCatalystType(e.target.value)}
                                 />
-                                <select
-                                    className='form-select select select-ghost-primary select-block focus:ring-0'
-                                    onChange={handleFormatChange}
-                                >
-                                    <option>Any Format</option>
-                                    <option value='options'>Enumerator</option>
-                                    <option value='regex'>Regex</option>
-                                </select>
+
+                                {classType == 'artifact' && (
+                                    <select
+                                        className='form-select select select-ghost-primary select-block focus:ring-0'
+                                        onChange={handleFormatChange}
+                                    >
+                                        <option>Any Format</option>
+                                        <option value='options'>Enumerator</option>
+                                        <option value='regex'>Regex</option>
+                                    </select>
+                                )}
                                 <textarea
                                     className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
                                     placeholder={typeFormatHint}
@@ -243,6 +227,8 @@ export default function AdminPanelAdd({ type }) {
                                     }
                                     hidden={typeFormat == null}
                                 />
+
+                                <PopoverPicker color={color} onChange={setColor} />
                                 <AlertBox alert={alert} />
                                 <button
                                     className='btn btn-primary btn-block'
