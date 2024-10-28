@@ -8,13 +8,14 @@ import {
 import Preview from '../Preview/Preview';
 import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
-import { Code, EditPencil } from 'iconoir-react';
+import { ClockRotateRight, Code, EditPencil } from 'iconoir-react';
 import NavbarButton from '../NavbarButton/NavbarButton';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { Trash, StatsReport } from 'iconoir-react/regular';
 import NavbarSwitch from '../NavbarSwitch/NavbarSwitch';
 import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
+import useAuth from '../../hooks/useAuth/useAuth';
 
 /**
  * NoteViewer component
@@ -36,6 +37,7 @@ export default function NoteViewer() {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [parsedContent, setParsedContent] = useState('');
     const [dialog, setDialog] = useState(false);
+    const auth = useAuth();
 
     useEffect(() => {
         getNote(id)
@@ -112,6 +114,15 @@ export default function NoteViewer() {
             onClick={() => navigate(`/notes/${id}/edit`)}
             tesid='delete-btn'
         />,
+        auth.isAdmin && (
+            <NavbarButton
+                key='history-btn'
+                text='View History'
+                icon={<ClockRotateRight />}
+                onClick={() => navigate(`/activity?content_type=note&object_id=${id}`)}
+                tesid='delete-btn'
+            />
+        ),
         <NavbarButton
             key='delete-btn'
             text='Delete Note'

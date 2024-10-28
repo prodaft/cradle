@@ -20,6 +20,7 @@ import NoteEditor from './components/NoteEditor/NoteEditor.jsx';
 import NoteSelector from './components/NoteSelector/NoteSelector.jsx';
 import GraphComponent from './components/GraphComponent/GraphComponent';
 import Welcome from './components/Welcome/Welcome.jsx';
+import ActivityList from './components/ActivityList/ActivityList.jsx';
 
 /**
  * The App component is the artifact point of the application. It wraps the entire application in the AuthProvider
@@ -58,6 +59,11 @@ function App() {
                                 path='/account'
                                 element={<AccountSettings />}
                             ></Route>
+                            <Route path='/activity' element={<ActivityList />}></Route>
+                            <Route
+                                path='/activity/:username'
+                                element={<ActivityList />}
+                            ></Route>
                             <Route path='/admin' element={<Outlet />}>
                                 <Route index element={<AdminPanel />}></Route>
                                 <Route
@@ -65,16 +71,16 @@ function App() {
                                     element={<AdminPanelAdd type='Entity' />}
                                 ></Route>
                                 <Route
-                                    path='/admin/add-artifact-type'
-                                    element={<AdminPanelAdd type='ArtifactType' />}
+                                    path='/admin/add-entry-type'
+                                    element={<AdminPanelAdd type='EntryType' />}
                                 ></Route>
                                 <Route
                                     path='/admin/edit-entity/:id'
                                     element={<AdminPanelEdit type='Entity' />}
                                 ></Route>
                                 <Route
-                                    path='/admin/edit-artifact-type/:id'
-                                    element={<AdminPanelEdit type='ArtifactType' />}
+                                    path='/admin/edit-entry-type/:id'
+                                    element={<AdminPanelEdit type='EntryType' />}
                                 ></Route>
                                 <Route
                                     path={'/admin/user-permissions/:username/:id'}

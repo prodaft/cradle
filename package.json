@@ -44,6 +44,8 @@
         "prismjs": "^1.29.0",
         "qs": "^6.12.1",
         "react": "^18.2.0",
+        "react-color": "^2.19.3",
+        "react-colorful": "^5.6.1",
         "react-dom": "^18.2.0",
         "react-force-graph": "^1.44.6",
         "react-router-dom": "^6.23.0",

@@ -7,6 +7,8 @@ import {
     editArtifactClass,
 } from '../../services/adminService/adminService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
+import { SketchPicker } from 'react-color';
+import { PopoverPicker } from '../PopoverPicker/PopoverPicker';
 
 /**
  * AdminPanelAdd component - This component is used to display the form for adding a new Entity.
@@ -25,6 +27,8 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 export default function AdminPanelEdit({ type }) {
     var { id } = useParams();
     const [name, setName] = useState('');
+    const [color, setColor] = useState('');
+    const [classType, setClassType] = useState('artifact');
     const [subtype, setSubtype] = useState('');
     const [description, setDescription] = useState('');
     const [catalystType, setCatalystType] = useState('');
@@ -34,8 +38,9 @@ export default function AdminPanelEdit({ type }) {
     const [typeFormat, setTypeFormat] = useState(null);
     const [typeFormatDetails, setTypeFormatDetails] = useState(null);
     const [typeFormatHint, setTypeFormatHint] = useState('');
+    const [pickerVisible, setPickerVisible] = useState(false); // visibility for color picker
 
-    if (type === 'ArtifactType') {
+    if (type === 'EntryType') {
         id = id.replace('--', '/');
     }
 
@@ -46,7 +51,6 @@ export default function AdminPanelEdit({ type }) {
                     if (response.status === 200) {
                         let entities = response.data;
                         let entity = entities.find((obj) => obj.id === id);
-                        console.log(entity);
                         if (entity) {
                             setSubtype(entity.subtype);
                             setName(entity.name);
@@ -56,7 +60,7 @@ export default function AdminPanelEdit({ type }) {
                     }
                 })
                 .catch(handleError);
-        } else if (type === 'ArtifactType') {
+        } else if (type === 'EntryType') {
             getEntryClasses()
                 .then((response) => {
                     if (response.status === 200) {
@@ -66,6 +70,8 @@ export default function AdminPanelEdit({ type }) {
                             setCatalystType(type.catalyst_type);
                             setSubtype(type.subtype);
                             setName(type.subtype);
+                            setClassType(type.type);
+                            setColor(type.color);
                             if (type.regex && type.regex.length > 0) {
                                 setTypeFormat('regex');
                                 setTypeFormatDetails(type.regex);
@@ -83,7 +89,7 @@ export default function AdminPanelEdit({ type }) {
     };
 
     const handleSubmit = async () => {
-        var data = { subtype: subtype, catalyst_type: catalystType };
+        var data = { type: classType, subtype: subtype, catalyst_type: catalystType };
 
         if (typeFormat) {
             data[typeFormat] = typeFormatDetails;
@@ -94,7 +100,8 @@ export default function AdminPanelEdit({ type }) {
                 data.name = name;
                 data.description = description;
                 await editEntity(data, id);
-            } else if (type === 'ArtifactType') {
+            } else if (type === 'EntryType') {
+                data.color = color;
                 await editArtifactClass(data, id);
             }
             navigate('/admin');
@@ -148,20 +155,14 @@ export default function AdminPanelEdit({ type }) {
                                     disabled
                                     value={name}
                                 />
-                                <input
-                                    type='text'
-                                    className='form-input input input-ghost-primary input-block focus:ring-1'
+
+                                <select
+                                    className='form-select select select-ghost-primary select-block focus:ring-0'
                                     disabled
-                                    placeholder='Type'
                                     value={subtype}
-                                />
-                                <input
-                                    type='text'
-                                    className='form-input input input-ghost-primary input-block focus:ring-0'
-                                    placeholder='Catalyst Type'
-                                    value={catalystType}
-                                    disabled
-                                />
+                                >
+                                    <option value={subtype}>{subtype}</option>
+                                </select>
                                 <textarea
                                     className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
                                     placeholder='Description'
@@ -188,7 +189,7 @@ export default function AdminPanelEdit({ type }) {
                 </div>
             </div>
         );
-    } else if (type === 'ArtifactType') {
+    } else if (type === 'EntryType') {
         useEffect(() => {
             populateEntityDetails();
         }, []);
@@ -199,7 +200,7 @@ export default function AdminPanelEdit({ type }) {
                     <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8'>
                         <div className='sm:mx-auto sm:w-full sm:max-w-sm'>
                             <h1 className='mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-cradle2'>
-                                Edit Artifact Type
+                                Edit Entry Type
                             </h1>
                         </div>
                         <div
@@ -207,6 +208,14 @@ export default function AdminPanelEdit({ type }) {
                             className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'
                         >
                             <div className='space-y-6'>
+                                <select
+                                    className='form-select select select-ghost-primary select-block focus:ring-0'
+                                    onChange={(e) => setClassType(e.target.value)}
+                                    value={classType}
+                                >
+                                    <option value='entity'>Entity</option>
+                                    <option value='artifact'>Artifact</option>
+                                </select>
                                 <input
                                     type='text'
                                     className='form-input input input-ghost-primary input-block focus:ring-0'
@@ -220,15 +229,16 @@ export default function AdminPanelEdit({ type }) {
                                     value={catalystType}
                                     onChange={(e) => setCatalystType(e.target.value)}
                                 />
-                                <select
-                                    className='form-select select select-ghost-primary select-block focus:ring-0'
-                                    onChange={handleFormatChange}
-                                    value={typeFormat ? typeFormat : ''}
-                                >
-                                    <option>Any Format</option>
-                                    <option value='options'>Enumerator</option>
-                                    <option value='regex'>Regex</option>
-                                </select>
+                                {classType == 'artifact' && (
+                                    <select
+                                        className='form-select select select-ghost-primary select-block focus:ring-0'
+                                        onChange={handleFormatChange}
+                                    >
+                                        <option>Any Format</option>
+                                        <option value='options'>Enumerator</option>
+                                        <option value='regex'>Regex</option>
+                                    </select>
+                                )}
                                 <textarea
                                     className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
                                     placeholder={typeFormatHint}
@@ -238,6 +248,9 @@ export default function AdminPanelEdit({ type }) {
                                     hidden={typeFormat == null}
                                     value={typeFormatDetails ? typeFormatDetails : ''}
                                 />
+
+                                <PopoverPicker color={color} onChange={setColor} />
+
                                 <AlertBox alert={alert} />
                                 <button
                                     className='btn btn-primary btn-block'

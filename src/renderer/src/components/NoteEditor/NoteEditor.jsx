@@ -61,7 +61,7 @@ export default function NoteEditor({ autoSaveDelay = 1000 }) {
 
     // When the id changes prepare the editor
     useEffect(() => {
-        getNote(id)
+        getNote(id, false)
             .then((response) => {
                 console.log(response.data);
                 setMarkdownContent(response.data.content);

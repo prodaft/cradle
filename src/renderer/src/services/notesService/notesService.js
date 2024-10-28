@@ -4,12 +4,14 @@ import { authAxios } from '../axiosInstance/axiosInstance';
  * Passes the token and id to the API
  *
  * @param {string} id - note id
+ * @param {boolean} footnotes - Whether to retrieve files as footnotes
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-const getNote = (id) => {
+const getNote = (id, footnotes = true) => {
     return authAxios({
         method: 'get',
         url: `/notes/${id}/`,
+        params: { footnotes: footnotes },
     });
 };
 
