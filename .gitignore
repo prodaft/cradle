@@ -8,7 +8,7 @@ error.log
 success.log
 .idea
 static
-*/__pycache__
+**/__pycache__
 
 /docs/_build
 /docs/api_reference/*
