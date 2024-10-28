@@ -6,18 +6,24 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from typing import cast
 from entries.models import EntryClass
-from logs.decorators import log_failed_responses
-
+from drf_spectacular.utils import extend_schema
 from ..utils import LspUtils
 from user.models import CradleUser
 
 
 class LspPack(APIView):
-
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @log_failed_responses
+    @extend_schema(
+        description="Retrieve a packed list of entries, entities, and entry classes for the LSP (Language Server Protocol).",
+        responses={
+            200: "A JSON response containing packed LSP entries and entities",
+            401: "User is not authenticated.",
+            403: "Permission denied.",
+        },
+        summary="Get LSP Pack",
+    )
     def get(self, request: Request) -> Response:
         user: CradleUser = cast(CradleUser, request.user)
         entries = LspUtils.get_lsp_entries(user)

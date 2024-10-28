@@ -4,7 +4,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
 import io
 from rest_framework_simplejwt.tokens import AccessToken
-from .utils import EntriesTestEntity
+from .utils import EntriesTestCase
 
 from ..models import Entry
 from ..enums import EntryType
@@ -16,7 +16,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class DeleteEntityDetailsTest(EntriesTestEntity):
+class DeleteEntityDetailsTest(EntriesTestCase):
 
     def setUp(self):
         super().setUp()

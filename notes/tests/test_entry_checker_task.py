@@ -2,10 +2,10 @@ from entries.models import Entry
 from entries.enums import EntryType
 from notes.utils.entry_checker_task import EntryCheckerTask
 from ..exceptions import EntriesDoNotExistException
-from .utils import NotesTestEntity
+from .utils import NotesTestCase
 
 
-class EntryCheckerTaskTest(NotesTestEntity):
+class EntryCheckerTaskTest(NotesTestCase):
 
     def setUp(self):
         super().setUp()

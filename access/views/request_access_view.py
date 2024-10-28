@@ -4,7 +4,6 @@ from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
-from logs.decorators import log_failed_responses
 from ..models import Access
 from ..enums import AccessType
 from entries.models import Entry
@@ -21,7 +20,6 @@ class RequestAccess(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @log_failed_responses
     def post(self, request: Request, entity_id: UUID) -> Response:
         """Allows a user to request access for an Entity. All users with read-write
         access for that specific Entity will receive a Notification. If the user

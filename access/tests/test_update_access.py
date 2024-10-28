@@ -6,13 +6,13 @@ from entries.enums import EntryType
 from user.models import CradleUser
 from ..models import Access
 from ..enums import AccessType
-from .utils import AccessTestEntity
+from .utils import AccessTestCase
 from notifications.models import MessageNotification
 
 import uuid
 
 
-class UpdateAccessTest(AccessTestEntity):
+class UpdateAccessTest(AccessTestCase):
 
     def setUp(self):
         super().setUp()

@@ -10,16 +10,13 @@ from entries.models import Entry
 from user.models import CradleUser
 from ..utils.dashboard_utils import DashboardUtils
 from ..serializers import ArtifactDashboardSerializer
-from logs.decorators import log_failed_responses
 from notes.models import Note
 
 
 class ArtifactDashboard(APIView):
-
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @log_failed_responses
     def get(self, request: Request, artifact_name: str) -> Response:
         """Allow a user to retrieve the dashboard of an Artifact by specifying its name.
 
@@ -40,16 +37,23 @@ class ArtifactDashboard(APIView):
         user: CradleUser = cast(CradleUser, request.user)
 
         artifact_subtype = request.query_params.get("subtype")
+        print(artifact_subtype)
+        print(artifact_name)
 
         try:
-            artifact = Entry.artifacts.get(name=artifact_name, entry_class__subtype=artifact_subtype)
+            artifact = Entry.artifacts.get(
+                name=artifact_name, entry_class__subtype=artifact_subtype
+            )
+            print(artifact)
         except Entry.DoesNotExist:
             return Response(
                 "There is no artifact with specified name",
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        print("YEEE")
         if not Note.objects.get_accessible_notes(user, artifact.id).exists():
+            print("ASD")
             return Response(
                 "There is no artifact with specified name",
                 status=status.HTTP_404_NOT_FOUND,
@@ -59,4 +63,6 @@ class ArtifactDashboard(APIView):
 
         dashboard = DashboardUtils.add_entry_fields(artifact, entries_dict)
 
-        return Response(ArtifactDashboardSerializer(dashboard, context=neighbor_map).data)
+        return Response(
+            ArtifactDashboardSerializer(dashboard, context=neighbor_map).data
+        )

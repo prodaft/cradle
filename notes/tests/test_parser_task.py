@@ -1,11 +1,11 @@
 from notes.utils.parser_task import ParserTask
 from entries.models import Entry
-from .utils import NotesTestEntity
+from .utils import NotesTestCase
 
 from uuid import UUID
 
 
-class ParserTaskTest(NotesTestEntity):
+class ParserTaskTest(NotesTestCase):
     def setUp(self):
         super().setUp()
 

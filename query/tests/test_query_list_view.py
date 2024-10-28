@@ -5,20 +5,19 @@ from rest_framework.test import APIClient
 import io
 from rest_framework_simplejwt.tokens import AccessToken
 
-from entries.models import Entry
-from entries.enums import EntryType, EntrySubtype
+from entries.models import Entry, EntryClass
+from entries.enums import EntryType
 from access.models import Access
 from access.enums import AccessType
 from notes.models import Note
-from .utils import QueryTestEntity
+from .utils import QueryTestCase
 
 
 def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class QueryListTest(QueryTestEntity):
-
+class QueryListTest(QueryTestCase):
     def setUp(self):
         super().setUp()
 
@@ -36,9 +35,22 @@ class QueryListTest(QueryTestEntity):
         self.__init_database()
 
     def __init_database(self):
+        self.entityclass1 = EntryClass.objects.create(
+            type=EntryType.ENTITY, subtype="case"
+        )
+        self.artifactclass1 = EntryClass.objects.create(
+            type=EntryType.ARTIFACT, subtype="ip"
+        )
+        self.artifactclass2 = EntryClass.objects.create(
+            type=EntryType.ARTIFACT, subtype="password"
+        )
+        self.artifactclass3 = EntryClass.objects.create(
+            type=EntryType.ARTIFACT, subtype="country"
+        )
+
         self.entities = [
             Entry.objects.create(
-                name=f"Entity {i}", description=f"{i}", type=EntryType.ENTITY
+                name=f"Entity {i}", description=f"{i}", entry_class=self.entityclass1
             )
             for i in range(0, 4)
         ]
@@ -47,21 +59,21 @@ class QueryListTest(QueryTestEntity):
             Entry.objects.create(
                 name="Artifact1",
                 description="1",
-                type=EntryType.ARTIFACT,
-                subtype=EntrySubtype.IP,
+                entry_class=self.artifactclass1,
             )
         )
         self.artifacts.append(
             Entry.objects.create(
                 name="3nTry2",
                 description="2",
-                type=EntryType.ARTIFACT,
-                subtype=EntrySubtype.PASSWORD,
+                entry_class=self.artifactclass2,
             )
         )
 
         Access.objects.create(
-            user=self.normal_user, entity=self.entities[0], access_type=AccessType.READ_WRITE
+            user=self.normal_user,
+            entity=self.entities[0],
+            access_type=AccessType.READ_WRITE,
         )
         Access.objects.create(
             user=self.normal_user, entity=self.entities[1], access_type=AccessType.READ
@@ -71,7 +83,8 @@ class QueryListTest(QueryTestEntity):
         )
 
         Entry.objects.create(
-            name="Romania", type=EntryType.METADATA, subtype=EntrySubtype.COUNTRY
+            name="Romania",
+            entry_class=self.artifactclass3,
         )
 
         self.note = Note.objects.create(content="Note content")
@@ -86,34 +99,16 @@ class QueryListTest(QueryTestEntity):
         response = self.client.get(reverse("query_list"), **self.headers_admin)
 
         result = list(bytes_to_json(response.content))
-        self.assertEqual(len(result), 6)
+        self.assertEqual(len(result), 7)
 
     def test_query_shows_only_entries_with_access_normal(self):
-
         response = self.client.get(reverse("query_list"), **self.headers_normal)
 
         result = list(bytes_to_json(response.content))
         self.assertEqual(len(result), 4)
 
-    def test_query_filters_entries_based_on_type(self):
-
-        query_params = {"entryType": ["artifact"]}
-
-        response = self.client.get(
-            reverse("query_list"), query_params, **self.headers_normal
-        )
-        result = list(bytes_to_json(response.content))
-        with self.subTest("Correct amount"):
-            self.assertEqual(len(result), 2)
-
-        for entry in result:
-            with self.subTest("Correct type"):
-                self.assertEqual(entry["type"], "artifact")
-        with self.subTest("Status code"):
-            self.assertEqual(response.status_code, 200)
-
     def test_query_filters_entries_based_on_subtype(self):
-        query_params = {"entryType": ["artifact"], "entrySubtype": ["ip"]}
+        query_params = {"entrySubtype": ["ip"]}
         response = self.client.get(
             reverse("query_list"), query_params, **self.headers_normal
         )
@@ -130,7 +125,7 @@ class QueryListTest(QueryTestEntity):
             self.assertEqual(response.status_code, 200)
 
     def test_query_filters_entries_based_on_name(self):
-        query_params = {"entryType": ["artifact"], "name": "Entr"}
+        query_params = {"name": "Arti"}
 
         response = self.client.get(
             reverse("query_list"), query_params, **self.headers_normal
@@ -142,31 +137,13 @@ class QueryListTest(QueryTestEntity):
 
         with self.subTest("Correct name"):
             for entry in result:
-                self.assertTrue(entry["name"].startswith("Entr"))
+                self.assertTrue(entry["name"].startswith("Arti"))
 
         with self.subTest("Status code"):
             self.assertEqual(response.status_code, 200)
 
     def test_query_filters_invalid_params(self):
-        query_params = {"entryType": ["entr"]}
-        response = self.client.get(
-            reverse("query_list"), query_params, **self.headers_normal
-        )
-
-        with self.subTest("Status code"):
-            self.assertEqual(response.status_code, 400)
-
-    def test_query_filters_invalid_params_contains_metadata(self):
-        query_params = {"entryType": ["metadata", "entity"]}
-        response = self.client.get(
-            reverse("query_list"), query_params, **self.headers_normal
-        )
-
-        with self.subTest("Status code"):
-            self.assertEqual(response.status_code, 400)
-
-    def test_query_filters_invalid_params_contains_metadata_subtypes(self):
-        query_params = {"entryType": ["artifact"], "entrySubtype": ["ip", "country"]}
+        query_params = {"entryType": ["arti"]}
         response = self.client.get(
             reverse("query_list"), query_params, **self.headers_normal
         )

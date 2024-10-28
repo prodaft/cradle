@@ -3,7 +3,6 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
-from logs.decorators import log_failed_responses
 from notes.models import Note
 from itertools import islice
 from entries.enums import EntryType
@@ -13,11 +12,9 @@ from user.models import CradleUser
 
 
 class StatisticsList(APIView):
-
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @log_failed_responses
     def get(self, request: Request) -> Response:
         """Fetches some of the user's statistics. More specifically, it
         fetches the 10 most recently written notes the user has access to

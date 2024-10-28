@@ -1,5 +1,5 @@
 from django.urls import reverse
-from .utils import NotesTestEntity
+from .utils import NotesTestCase
 from user.models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.parsers import JSONParser
@@ -16,7 +16,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class NotePublishableListTest(NotesTestEntity):
+class NotePublishableListTest(NotesTestCase):
 
     def setUp(self):
         super().setUp()

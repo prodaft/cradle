@@ -13,7 +13,6 @@ from fleeting_notes.serializers import (
     FleetingNoteSerializer,
 )
 from user.models import CradleUser
-from logs.decorators import log_failed_responses
 
 from uuid import UUID
 
@@ -23,7 +22,6 @@ class FleetingNotesList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @log_failed_responses
     def get(self, request: Request) -> Response:
         """
         Get all the FleetingNotes that belong to the authenticated user.
@@ -45,7 +43,6 @@ class FleetingNotesList(APIView):
         serializer = FleetingNoteTruncatedRetrieveSerializer(fleeting_notes, many=True)
         return Response(serializer.data)
 
-    @log_failed_responses
     def post(self, request: Request) -> Response:
         """
         Create a new FleetingNote entry based on the request data.
@@ -81,7 +78,6 @@ class FleetingNotesDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @log_failed_responses
     def get(self, request: Request, pk: UUID) -> Response:
         """
         Get a FleetingNote entry by its primary key.
@@ -112,7 +108,6 @@ class FleetingNotesDetail(APIView):
         serializer = FleetingNoteSerializer(fleeting_note)
         return Response(serializer.data)
 
-    @log_failed_responses
     def put(self, request: Request, pk: UUID) -> Response:
         """
         Update a FleetingNote entry by its primary key.
@@ -155,7 +150,6 @@ class FleetingNotesDetail(APIView):
             return Response(serializer.data, status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @log_failed_responses
     def delete(self, request: Request, pk: UUID) -> Response:
         """
         Delete a FleetingNote entry by its primary key.

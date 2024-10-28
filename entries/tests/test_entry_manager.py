@@ -1,10 +1,10 @@
 from entries.models import Entry
-from .utils import EntriesTestEntity
+from .utils import EntriesTestCase
 
 from entries.enums import EntryType, EntrySubtype
 
 
-class EntryManagerTest(EntriesTestEntity):
+class EntryManagerTest(EntriesTestCase):
 
     def setUp(self):
         super().setUp()

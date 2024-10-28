@@ -1,10 +1,10 @@
 from entries.models import Entry
 from notes.utils.count_references_task import CountReferencesTask
 from ..exceptions import NotEnoughReferencesException
-from .utils import NotesTestEntity
+from .utils import NotesTestCase
 
 
-class CountReferencesTaskTest(NotesTestEntity):
+class CountReferencesTaskTest(NotesTestCase):
 
     def setUp(self):
         super().setUp()

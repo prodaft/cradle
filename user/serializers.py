@@ -119,6 +119,12 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
         return True if obj.vt_api_key else False
 
 
+class EssentialUserRetrieveSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CradleUser
+        fields = ["id", "username"]
+
+
 class TokenObtainSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user: AuthUser) -> Token:

@@ -1,10 +1,12 @@
 from django.contrib.auth.models import AbstractUser
+
+from logs.models import LoggableModelMixin
 from .managers import CradleUserManager
 from django.db import models
 import uuid
 
 
-class CradleUser(AbstractUser):
+class CradleUser(AbstractUser, LoggableModelMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
 
@@ -28,3 +30,9 @@ class CradleUser(AbstractUser):
 
     def __hash__(self) -> int:
         return hash(self.pk)
+
+    def propagate_from(self, log):
+        return
+
+    def _propagate_log(self, log):
+        return

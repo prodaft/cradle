@@ -1,11 +1,11 @@
-from .utils import NotesTestEntity
+from .utils import NotesTestCase
 from ..models import Note
 from entries.enums import EntryType, MetadataSubtype, ArtifactSubtype
 from entries.models import Entry
 from ..utils import PublishUtils
 
 
-class GetReportTest(NotesTestEntity):
+class GetReportTest(NotesTestCase):
     def setUp(self):
         super().setUp()
         self.entities = []

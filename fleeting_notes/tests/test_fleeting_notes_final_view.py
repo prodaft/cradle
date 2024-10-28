@@ -1,4 +1,4 @@
-from .utils import FleetingNotesTestEntity
+from .utils import FleetingNotesTestCase
 from django.urls import reverse
 from entries.models import Entry
 from entries.enums import EntryType
@@ -10,7 +10,7 @@ from ..models import FleetingNote
 import uuid
 
 
-class FleetingNotesFinalTest(FleetingNotesTestEntity):
+class FleetingNotesFinalTest(FleetingNotesTestCase):
 
     def setUp(self):
         super().setUp()

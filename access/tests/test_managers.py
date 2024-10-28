@@ -3,10 +3,10 @@ from ..enums import AccessType
 from entries.models import Entry
 from entries.enums import EntryType
 from user.models import CradleUser
-from .utils import AccessTestEntity
+from .utils import AccessTestCase
 
 
-class AccessManagerHasAccessTest(AccessTestEntity):
+class AccessManagerHasAccessTest(AccessTestCase):
 
     def create_users(self):
         self.user = CradleUser.objects.create_user(
@@ -99,7 +99,7 @@ class AccessManagerHasAccessTest(AccessTestEntity):
         )
 
 
-class AccessManagerGetAccessibleTest(AccessTestEntity):
+class AccessManagerGetAccessibleTest(AccessTestCase):
 
     def setUp(self):
         super().setUp()
@@ -171,7 +171,7 @@ class AccessManagerGetAccessibleTest(AccessTestEntity):
                 self.assertNotEqual(access_type, AccessType.NONE)
 
 
-class AccessManagerGetUsersWithAccessTest(AccessTestEntity):
+class AccessManagerGetUsersWithAccessTest(AccessTestCase):
 
     def setUp(self):
         super().setUp()
@@ -204,7 +204,7 @@ class AccessManagerGetUsersWithAccessTest(AccessTestEntity):
         )
 
 
-class AccessManagerCheckUserAccessTest(AccessTestEntity):
+class AccessManagerCheckUserAccessTest(AccessTestCase):
 
     def setUp(self):
         super().setUp()

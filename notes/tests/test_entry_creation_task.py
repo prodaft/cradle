@@ -1,10 +1,10 @@
 from entries.models import Entry
 from entries.enums import EntryType, EntrySubtype
 from notes.utils.entry_creation_task import EntryCreationTask
-from .utils import NotesTestEntity
+from .utils import NotesTestCase
 
 
-class EntryCreationTaskTest(NotesTestEntity):
+class EntryCreationTaskTest(NotesTestCase):
 
     def setUp(self):
         super().setUp()

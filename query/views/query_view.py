@@ -11,7 +11,6 @@ from entries.models import Entry
 from access.models import Access
 from ..serializers import EntryQuerySerializer
 from entries.serializers import EntryResponseSerializer
-from logs.decorators import log_failed_responses
 from uuid import UUID
 from entries.enums import EntryType
 from notes.models import Note
@@ -19,11 +18,9 @@ from user.models import CradleUser
 
 
 class QueryList(APIView):
-
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @log_failed_responses
     def get(self, request: Request) -> Response:
         """Allow a user to query for any entry they have access, by providing a name,
         a list of possible types and, if it is an Artifact, a list of possible subtypes
@@ -68,6 +65,9 @@ class QueryList(APIView):
                     ),
                 )
             )
+
+        for i in accessible_entries:
+            print(i.entry_class.subtype, i.name)
 
         entries = Entry.objects.get_filtered_entries(
             accessible_entries,

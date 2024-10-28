@@ -1,4 +1,4 @@
-from .utils import NotesTestEntity
+from .utils import NotesTestCase
 from user.models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -10,7 +10,7 @@ from notes.models import Note
 from collections import Counter
 
 
-class DeleteUnfilteredEntriesTest(NotesTestEntity):
+class DeleteUnfilteredEntriesTest(NotesTestCase):
     def setUp(self):
         super().setUp()
 
@@ -65,7 +65,7 @@ class DeleteUnfilteredEntriesTest(NotesTestEntity):
             Entry.objects.get(id=self.metadata[2].id)
 
 
-class AccessibleNotesTest(NotesTestEntity):
+class AccessibleNotesTest(NotesTestCase):
 
     def create_users(self):
         self.admin_user = CradleUser.objects.create_superuser(
@@ -212,7 +212,7 @@ class AccessibleNotesTest(NotesTestEntity):
         self.assertQuerySetEqual(notes, expected, ordered=False)
 
 
-class GetAllNotesTest(NotesTestEntity):
+class GetAllNotesTest(NotesTestCase):
 
     def create_notes(self):
         self.note1 = Note.objects.create(content="Note1")
@@ -281,7 +281,7 @@ class GetAllNotesTest(NotesTestEntity):
         self.assertQuerySetEqual(notes, expected)
 
 
-class GetEntriesOfTypeTest(NotesTestEntity):
+class GetEntriesOfTypeTest(NotesTestCase):
     def create_users(self):
         self.admin_user = CradleUser.objects.create_superuser(
             username="admin",
@@ -393,7 +393,7 @@ class GetEntriesOfTypeTest(NotesTestEntity):
         self.assertQuerySetEqual(notes, expected)
 
 
-class GetRelatedAccessibleEntriesTest(NotesTestEntity):
+class GetRelatedAccessibleEntriesTest(NotesTestCase):
     def create_users(self):
         self.admin_user = CradleUser.objects.create_superuser(
             username="admin",
@@ -511,7 +511,7 @@ class GetRelatedAccessibleEntriesTest(NotesTestEntity):
         self.assertQuerySetEqual(entries, expected)
 
 
-class GetInOrderTest(NotesTestEntity):
+class GetInOrderTest(NotesTestCase):
     def setUp(self):
         super().setUp()
         self.notes = []
@@ -541,7 +541,7 @@ class GetInOrderTest(NotesTestEntity):
         self.assertEqual(notes[2].id, self.notes[2].id)
 
 
-class GetLinksTest(NotesTestEntity):
+class GetLinksTest(NotesTestCase):
 
     def setUp(self):
         super().setUp()

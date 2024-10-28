@@ -2,10 +2,10 @@ from entries.models import Entry
 from entries.enums import EntryType
 from notes.models import Note
 from ..utils.dashboard_utils import DashboardUtils
-from .utils import DashboardsTestEntity
+from .utils import DashboardsTestCase
 
 
-class DashboardUtilsDashboardJsonTest(DashboardsTestEntity):
+class DashboardUtilsDashboardJsonTest(DashboardsTestCase):
     def setUp(self):
         super().setUp()
 
@@ -60,7 +60,7 @@ class DashboardUtilsDashboardJsonTest(DashboardsTestEntity):
         )
 
 
-class AddEntryFieldsTest(DashboardsTestEntity):
+class AddEntryFieldsTest(DashboardsTestCase):
 
     def test_add_entry_fields(self):
         entry = Entry.objects.create(

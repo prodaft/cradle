@@ -8,7 +8,7 @@ from entries.enums import EntryType, EntrySubtype
 from access.models import Access
 from access.enums import AccessType
 import io
-from .utils import NotesTestEntity
+from .utils import NotesTestCase
 
 import uuid
 
@@ -17,7 +17,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class NotePublishableDetailTest(NotesTestEntity):
+class NotePublishableDetailTest(NotesTestCase):
 
     def setUp(self):
         super().setUp()

@@ -7,14 +7,18 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 
 from notes.pagination import NotesPagination
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from ..filters import NoteFilter
-from ..serializers import NoteCreateSerializer, NoteRetrieveSerializer
+from ..serializers import (
+    NoteCreateSerializer,
+    NoteRetrieveSerializer,
+    NoteRetrieveWithLinksSerializer,
+)
 from ..models import Note
 from user.models import CradleUser
 from access.enums import AccessType
 from typing import cast
-from logs.decorators import log_failed_responses
 from rest_framework.pagination import PageNumberPagination
 
 from entries.enums import EntryType
@@ -23,27 +27,37 @@ from access.models import Access
 from uuid import UUID
 
 
+@extend_schema_view(
+    get=extend_schema(
+        description="Retrieve all notes accessible to the user, with optional pagination.",
+        responses={
+            200: NoteRetrieveSerializer(many=True),
+            400: "Invalid filterset",
+            401: "User is not authenticated",
+        },
+        summary="Get Accessible Notes",
+    ),
+    post=extend_schema(
+        description="Create a new note. Requires referencing at least two entries, "
+        "one of which must be an entity, and linking file references to files "
+        "uploaded to MinIO.",
+        request=NoteCreateSerializer,
+        responses={
+            200: NoteRetrieveSerializer,
+            400: "Invalid request data or minimum references not met",
+            401: "User is not authenticated",
+            403: "User lacks Read-Write access",
+            404: "File reference does not exist",
+        },
+        summary="Create New Note",
+    ),
+)
 class NoteList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
-        """Allow a user to get all the notes that they have access to.
-        This should be paginated.
-
-        Args:
-            request: The request that was sent
-
-        Returns:
-            Response(status=200): A paginated JSON response containing
-                the notes if the request was successful.
-            Response("User is not authenticated.", status=401):
-                if the user is not authenticated
-            Response("Invalid filterset", status=400):
-                if the filterset is invalid
-        """
         user = cast(CradleUser, request.user)
-
         queryset = Note.objects.get_accessible_notes(user)
 
         if "references" in request.query_params:
@@ -55,90 +69,70 @@ class NoteList(APIView):
 
         if filterset.is_valid():
             notes = filterset.qs
-
-            # Set up pagination
             paginator = NotesPagination(page_size=10)
-
             paginated_notes = paginator.paginate_queryset(notes, request)
 
             if paginated_notes is not None:
-                # Serialize the paginated queryset
                 serializer = NoteRetrieveSerializer(
                     paginated_notes, truncate=200, many=True
                 )
-
-                # Return paginated response
                 return paginator.get_paginated_response(serializer.data)
 
-            # If pagination is not applied, return the full set
             serializer = NoteRetrieveSerializer(notes, truncate=200, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response(filterset.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @log_failed_responses
     def post(self, request: Request) -> Response:
-        """Allow a user to create a new note, by sending the text itself.
-        This text should be validated to meet the requirements
-        (i.e. reference at least two Entries, one of which must be an Entity).
-        Moreover, the client should send an array of file references that
-        correspond to the files uploaded to MinIO that are linked to this note.
-
-        Args:
-            request: The request that was sent
-
-        Returns:
-            Response(status=200): The newly created Note entry
-                if the request was successful.
-            Response("Note does not reference at least one Entity and two Entries.",
-                status=400): if the note does not reference the minimum required
-                entries and entities
-            Response("The bucket name of the file reference is incorrect.",
-                status=400): if the bucket_name of at least one of the file references
-                does not match the user's id
-            Response("User is not authenticated.", status=401):
-                if the user is not authenticated
-            Response("User does not have Read-Write access
-                to a referenced Entity or not all Entities exist.", status=404)
-            Response("There exists no file at the specified path.", status=404):
-                if for at least one of the file references there exists no file at
-                that location on the MinIO instance
-        """
         serializer = NoteCreateSerializer(
             data=request.data, context={"request": request}
         )
         if serializer.is_valid():
             note = serializer.save()
-
+            note.log_create(cast(CradleUser, request.user))
             json_note = NoteRetrieveSerializer(note, many=False).data
             return Response(json_note, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema_view(
+    get=extend_schema(
+        description="Retrieve a specific note by ID if the user has READ access.",
+        responses={
+            200: NoteRetrieveSerializer,
+            401: "User is not authenticated",
+            404: "Note not found or access denied",
+        },
+        summary="Retrieve Note",
+    ),
+    post=extend_schema(
+        description="Edit an existing note by ID. Requires READ access for all entities.",
+        request=NoteCreateSerializer,
+        responses={
+            200: NoteRetrieveSerializer,
+            401: "User is not authenticated",
+            403: "User cannot edit this note",
+            404: "Note not found",
+        },
+        summary="Edit Note",
+    ),
+    delete=extend_schema(
+        description="Delete a note by ID if the user has Read-Write access.",
+        responses={
+            200: "Note deleted",
+            401: "User is not authenticated",
+            403: "User lacks permission",
+            404: "Note not found",
+        },
+        summary="Delete Note",
+    ),
+)
 class NoteDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @log_failed_responses
     def get(self, request: Request, note_id: UUID) -> Response:
-        """Allow a user to get an already existing note, by specifying
-        its id. A user should be able to retrieve the id only if he has
-        READ access an all the entities it references.
-
-        Args:
-            request: The request that was sent.
-            note_id: The id of the note.
-
-        Returns:
-            Response(status=200): A JSON response containing note
-                if the request was successful
-            Response("User is not authenticated.", status=401):
-                if the user is not authenticated.
-            Response("Note with given id does not exist.", status=404):
-                if the user does not have at least READ access on all
-                referenced entities, or the note does not exist.
-        """
         try:
             note: Note = Note.objects.get(id=note_id)
         except Note.DoesNotExist:
@@ -151,27 +145,14 @@ class NoteDetail(APIView):
         ):
             return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
 
+        if request.query_params.get("footnotes", "true") == "true":
+            return Response(
+                NoteRetrieveWithLinksSerializer(note).data, status=status.HTTP_200_OK
+            )
+
         return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
 
-    @log_failed_responses
     def post(self, request: Request, note_id: UUID) -> Response:
-        """Allow a user to edit an already existing note, by specifying
-        its id. A user should be able to retrieve the id only if he has
-        READ access an all the entities it references.
-
-        Args:
-            request: The request that was sent.
-            note_id: The id of the note.
-
-        Returns:
-            Response(status=200): A JSON response containing note
-                if the request was successful
-            Response("User is not authenticated.", status=401):
-                if the user is not authenticated.
-            Response("Note with given id does not exist.", status=404):
-                if the user does not have at least READ access on all
-                referenced entities, or the note does not exist.
-        """
         try:
             note: Note = Note.objects.get(id=note_id)
         except Note.DoesNotExist:
@@ -197,31 +178,13 @@ class NoteDetail(APIView):
 
         if serializer.is_valid():
             note = serializer.save()
-
+            note.log_edit(user)
             json_note = NoteRetrieveSerializer(note, many=False).data
             return Response(json_note, status=status.HTTP_200_OK)
 
         return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
 
-    @log_failed_responses
     def delete(self, request: Request, note_id: UUID) -> Response:
-        """Allow a user to delete an already existing note,
-        by specifying its id.
-
-        Args:
-            request: The request that was sent
-            note_id: The id of the note to be deleted.
-
-        Returns:
-            Response(status=200): The note was deleted
-            Response("User is not authenticated.",
-                status=401): if the user is not authenticated
-            Response("User does not have Read-Write access to all entities the Note
-                    references.", status=403):
-                if the user is not the author of the note.
-            Response("Note not found", status=404):
-                if the note does not exist.
-        """
         try:
             note_to_delete = Note.objects.get(id=note_id)
         except Note.DoesNotExist:

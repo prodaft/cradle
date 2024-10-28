@@ -1,4 +1,4 @@
-from .utils import KnowledgeGraphTestEntity
+from .utils import KnowledgeGraphTestCase
 from django.urls import reverse
 from user.models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
@@ -17,7 +17,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class GetKnowledgeGraphTest(KnowledgeGraphTestEntity):
+class GetKnowledgeGraphTest(KnowledgeGraphTestCase):
 
     def setUp(self):
         super().setUp()

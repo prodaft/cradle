@@ -5,10 +5,10 @@ from user.models import CradleUser
 from access.models import Access
 from access.enums import AccessType
 from ..exceptions import NoAccessToEntriesException
-from .utils import NotesTestEntity
+from .utils import NotesTestCase
 
 
-class AccessCheckerTaskTest(NotesTestEntity):
+class AccessCheckerTaskTest(NotesTestCase):
 
     def setUp(self):
         super().setUp()

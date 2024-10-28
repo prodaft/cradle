@@ -1,15 +1,15 @@
-from django.test import TestEntity
+from django.test import TestCase
 from unittest.mock import patch
 from rest_framework_simplejwt.tokens import AccessToken
 
 from user.models import CradleUser
 from notes.models import Note
-from entries.models import Entry
-from entries.enums import EntryType, ArtifactSubtype
+from entries.models import Entry, EntryClass
+from entries.enums import EntryType
 from access.models import Access, AccessType
 
 
-class DashboardsTestEntity(TestEntity):
+class DashboardsTestCase(TestCase):
     def create_users(self):
         self.admin_user = CradleUser.objects.create_superuser(
             username="admin",
@@ -49,18 +49,21 @@ class DashboardsTestEntity(TestEntity):
         self.note3.entries.add(self.entity3, self.artifact1)
 
     def create_entities(self):
+        self.entityclass1 = EntryClass.objects.create(
+            type=EntryType.ENTITY, subtype="case"
+        )
+
         self.entity1 = Entry.objects.create(
-            name="Entity1", description="Description1", type=EntryType.ENTITY
+            name="Entity1", description="Description1", entry_class=self.entityclass1
         )
 
         self.entity2 = Entry.objects.create(
-            name="Entity2", description="Description2", type=EntryType.ENTITY
+            name="Entity2", description="Description2", entry_class=self.entityclass1
         )
 
         self.entity3 = Entry.objects.create(
-            name="Entity3", description="Description3", type=EntryType.ENTITY
+            name="Entity3", description="Description3", entry_class=self.entityclass1
         )
-
 
     def create_access(self):
         self.access1 = Access.objects.create(
@@ -80,11 +83,18 @@ class DashboardsTestEntity(TestEntity):
         )
 
     def create_artifacts(self):
+        self.artifactclass1 = EntryClass.objects.create(
+            type=EntryType.ARTIFACT, subtype="ip"
+        )
+
+        self.artifactclass2 = EntryClass.objects.create(
+            type=EntryType.ARTIFACT, subtype="url"
+        )
+
         self.artifact1 = Entry.objects.create(
             name="Artifact1",
             description="Description1",
-            type=EntryType.ARTIFACT,
-            subtype=ArtifactSubtype.IP,
+            entry_class=self.artifactclass1,
         )
 
     def setUp(self):

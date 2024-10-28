@@ -95,6 +95,9 @@ class DashboardUtils:
             entry_class__type__in=neighbor_types
         )
 
+        if not neighbor_entries:
+            return Entry.objects.none(), Entry.objects.none(), {}
+
         second_hop_all = neighbor_entries.get_neighbours(None)
         second_hop_accessible = list(neighbor_entries.get_neighbours(user))
         second_hop_inaccessible = []
