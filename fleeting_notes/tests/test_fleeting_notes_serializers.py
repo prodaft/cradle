@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from .utils import FleetingNotesTestEntity
+from .utils import FleetingNotesTestCase
 from fleeting_notes.models import FleetingNote
 from fleeting_notes.serializers import (
     FleetingNoteSerializer,
@@ -13,7 +13,7 @@ import uuid
 User = get_user_model()
 
 
-class FleetingNoteSerializerTest(FleetingNotesTestEntity):
+class FleetingNoteSerializerTest(FleetingNotesTestCase):
     def setUp(self):
         super().setUp()
         self.fixed_time = datetime(2024, 5, 30, 12, 0, 0, tzinfo=timezone.utc)

@@ -3,7 +3,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
 import io
 
-from .utils import DashboardsTestEntity
+from .utils import DashboardsTestCase
 from entries.models import Entry
 from entries.enums import EntryType
 from notes.models import Note
@@ -13,7 +13,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class GetEntityDashboardTest(DashboardsTestEntity):
+class GetEntityDashboardTest(DashboardsTestCase):
 
     def check_ids(self, entries, entries_json):
         with self.subTest("Check number of entries"):

@@ -1,4 +1,4 @@
-from .utils import UserTestEntity
+from .utils import UserTestCase
 from ..utils.validators import (
     MinimumUpperentityLettersValidator,
     MinimumDigitsValidator,
@@ -9,7 +9,7 @@ from ..utils.validators import (
 from django.core.exceptions import ValidationError
 
 
-class MinimumUpperentityLettersValidatorTest(UserTestEntity):
+class MinimumUpperentityLettersValidatorTest(UserTestCase):
 
     def test_upperentity_validator_successful(self):
         tests = [
@@ -45,7 +45,7 @@ class MinimumUpperentityLettersValidatorTest(UserTestEntity):
                 MinimumUpperentityLettersValidator(tests[i][1]).validate(tests[i][0])
 
 
-class MinimumLowerentityLettersValidatorTest(UserTestEntity):
+class MinimumLowerentityLettersValidatorTest(UserTestCase):
 
     def test_lowerentity_validator_successful(self):
         tests = [
@@ -77,7 +77,7 @@ class MinimumLowerentityLettersValidatorTest(UserTestEntity):
                 MinimumLowerentityLettersValidator(tests[i][1]).validate(tests[i][0])
 
 
-class MinimumDigitsValidatorTest(UserTestEntity):
+class MinimumDigitsValidatorTest(UserTestCase):
 
     def test_digits_validator_successful(self):
         tests = [
@@ -109,7 +109,7 @@ class MinimumDigitsValidatorTest(UserTestEntity):
                 MinimumDigitsValidator(tests[i][1]).validate(tests[i][0])
 
 
-class MinimumSpecialCharactersValidatorTest(UserTestEntity):
+class MinimumSpecialCharactersValidatorTest(UserTestCase):
 
     def test_special_validator_successful(self):
         tests = [

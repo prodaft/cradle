@@ -2,14 +2,14 @@ from fleeting_notes.models import FleetingNote
 from django.urls import reverse
 from rest_framework.parsers import JSONParser
 import io
-from .utils import FleetingNotesTestEntity
+from .utils import FleetingNotesTestCase
 
 
 def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class GetFleetingNotesTest(FleetingNotesTestEntity):
+class GetFleetingNotesTest(FleetingNotesTestCase):
     def test_delete_user_cascades_fleeting_notes(self):
 
         self.assertEqual(FleetingNote.objects.count(), 2)
@@ -57,7 +57,7 @@ class GetFleetingNotesTest(FleetingNotesTestEntity):
         self.assertEqual(response.status_code, 401)
 
 
-class PostFleetingNotesTest(FleetingNotesTestEntity):
+class PostFleetingNotesTest(FleetingNotesTestCase):
 
     def test_post_not_authenticated(self):
         response_post = self.client.post(

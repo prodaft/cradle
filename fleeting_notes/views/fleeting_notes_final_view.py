@@ -10,7 +10,6 @@ from typing import cast
 from notes.views.note_view import NoteList
 from django.db import transaction
 from django.http import QueryDict
-from logs.decorators import log_failed_responses
 
 from uuid import UUID
 
@@ -20,7 +19,6 @@ class FleetingNotesFinal(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @log_failed_responses
     def put(self, request: Request, pk: UUID) -> Response:
         """Allow a user to save the contents of a fleeting note as a normal
         note. The user must be the owner of the Fleeting Note. Optionally

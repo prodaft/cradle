@@ -5,12 +5,32 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from ..serializers import UserCreateSerializer, UserRetrieveSerializer
-
 from ..models import CradleUser
-from logs.decorators import log_failed_responses
 
 
+@extend_schema_view(
+    get=extend_schema(
+        description="Allows an admin to view a list of all users.",
+        responses={
+            200: UserRetrieveSerializer(many=True),
+            401: "User is not authenticated.",
+            403: "User is not an admin.",
+        },
+        summary="List All Users",
+    ),
+    post=extend_schema(
+        description="Allows a user to create a new account with a unique username and password.",
+        request=UserCreateSerializer,
+        responses={
+            200: "User created successfully.",
+            400: "Invalid data or missing fields.",
+            409: "User already exists.",
+        },
+        summary="Create New User",
+    ),
+)
 class UserList(APIView):
     authentication_classes = [JWTAuthentication]
 
@@ -21,46 +41,12 @@ class UserList(APIView):
             self.permission_classes = []
         return super().get_permissions()
 
-    @log_failed_responses
     def get(self, request):
-        """Allow an admin to view a list including all users of the application.
-
-        Args:
-            request: The request that was sent
-
-        Returns:
-            Response(status=200): A JSON response containing the list of all users
-            if the request was successful.
-            Response("User is not authenticated.", status=401):
-                if the user is not authenticated
-            Response("User is not an admin.", status=403):
-                if the authenticated user is not an admin
-        """
-
         users = CradleUser.objects.all()
         serializer = UserRetrieveSerializer(users, many=True)
         return Response(serializer.data)
 
-    @log_failed_responses
     def post(self, request):
-        """Allows a user to create a new account,
-        by sending a request with their username and password.
-        This will be checked for validity and,
-        if accepted, this new account will be added to the database,
-        allowing the user to connect using the same credentials in the future
-
-        Args:
-            request: The request that was sent.
-                The body must contain a "username" and a "password" field.
-
-        Returns:
-            Response(status=200): if the request was successful or the email is
-            valid, but already exists.
-            Response("Requested parameters not provided", status=400):
-                if username or password was not provided
-            Response("User already exists", status=409): if user already exists
-        """
-
         serializer = UserCreateSerializer(data=request.data)
         if serializer.is_valid():
             if not CradleUser.objects.filter(
@@ -68,22 +54,49 @@ class UserList(APIView):
             ).exists():
                 serializer.save()
             return Response(status=status.HTTP_200_OK)
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema_view(
+    get=extend_schema(
+        description="Retrieve details for a specific user by ID, or the current user if 'me' is specified.",
+        responses={
+            200: UserRetrieveSerializer,
+            401: "User is not authenticated.",
+            403: "Access denied.",
+            404: "User not found.",
+        },
+        summary="Retrieve User Details",
+    ),
+    post=extend_schema(
+        description="Edit a user's details, either their own or another user's if allowed.",
+        request=UserCreateSerializer,
+        responses={
+            200: UserRetrieveSerializer,
+            401: "User is not authenticated.",
+            403: "Unauthorized edit attempt.",
+            404: "User not found.",
+        },
+        summary="Edit User Details",
+    ),
+    delete=extend_schema(
+        description="Delete a user account by ID. Admins can delete other users' accounts.",
+        responses={
+            200: "User account deleted successfully.",
+            401: "User is not authenticated.",
+            403: "Access denied.",
+            404: "User not found.",
+        },
+        summary="Delete User Account",
+    ),
+)
 class UserDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @log_failed_responses
     def get(self, request, user_id):
-        """Get a user's details"""
-
         initiator = cast(CradleUser, request.user)
-
         user = None
-
         if user_id == "me":
             user = initiator
         else:
@@ -107,27 +120,8 @@ class UserDetail(APIView):
         json_user = UserRetrieveSerializer(user, many=False).data
         return Response(json_user, status=status.HTTP_200_OK)
 
-    @log_failed_responses
     def post(self, request, user_id):
-        """Users can be edited via this endpoint.
-
-        Args:
-            request: The request that was sent
-
-        Returns:
-            Response(status=200): if the edit was successful
-            Response("User is not authenticated.", status=401):
-                if the user is not authenticated
-            Response("User is not an admin.", status=403):
-                if the authenticated user is not allowed to take this action
-            Response("You are not allowed to edit this user.", status=403):
-                if the person tried to edit an account they cannot
-            Response("There is no user with specified ID.", status=200):
-                if the user specified in path does not exist
-        """
-
         editor = cast(CradleUser, request.user)
-
         edited = None
 
         if user_id == "me":
@@ -153,32 +147,13 @@ class UserDetail(APIView):
 
         if serializer.is_valid():
             user = serializer.save()
-
             json_user = UserRetrieveSerializer(user, many=False).data
             return Response(json_user, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @log_failed_responses
     def delete(self, request, user_id):
-        """The admin can use this to delete the account with id userId.
-
-        Args:
-            request: The request that was sent
-
-        Returns:
-            Response("Requested user account was deleted.", status=200):
-                if the request was successful
-            Response("User is not authenticated.", status=401):
-                if the user is not authenticated
-            Response("You are not allowed to delete this user.", status=403):
-                if the user tries to delete someone they are not allowed to
-            Response("There is no user with specified ID.", status=200):
-                if the user specified in path does not exist
-        """
-
         deleter = cast(CradleUser, request.user)
-
         removed_user = None
         if user_id == "me":
             removed_user = deleter
@@ -206,38 +181,30 @@ class UserDetail(APIView):
         )
 
 
+@extend_schema_view(
+    get=extend_schema(
+        description="Allows an admin to simulate a login for a non-admin user by obtaining a token pair.",
+        responses={
+            200: "Token pair for user",
+            401: "User is not authenticated.",
+            403: "Admin privilege required, cannot simulate admin login.",
+            404: "User not found.",
+        },
+        summary="Simulate User Login",
+    )
+)
 class UserSimulate(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdminUser]
 
     def get_tokens_for_user(self, user: CradleUser):
         refresh = RefreshToken.for_user(user)
-
         return {
             "refresh": str(refresh),
             "access": str(refresh.access_token),
         }
 
-    @log_failed_responses
     def get(self, request, user_id, *args, **kwargs):
-        """The admin can use this to get a pair of valid tokens for a given user
-
-        Args:
-            request: The request that was sent
-
-        Returns:
-            Response("Requested user account was deleted.", status=200):
-                if the request was successful
-            Response("User is not authenticated.", status=401):
-                if the user is not authenticated
-            Response("User is not an admin.", status=403):
-                if the authenticated user is not an admin
-            Response("You are not allowed to remove an admin.", status=403):
-                if the admin tried to remove an admin account
-            Response("There is no user with specified ID.", status=200):
-                if the user specified in path does not exist
-        """
-
         user = None
         try:
             user = CradleUser.objects.get(id=user_id)

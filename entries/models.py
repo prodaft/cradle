@@ -1,5 +1,7 @@
 from django.db import models
 
+from logs.models import LoggableModelMixin
+
 from .managers import (
     EntityManager,
     ArtifactManager,
@@ -16,7 +18,7 @@ import uuid
 import re
 
 
-class EntryClass(models.Model):
+class EntryClass(models.Model, LoggableModelMixin):
     type: models.CharField = models.CharField(max_length=20, choices=EntryType.choices)
     subtype: models.CharField = models.CharField(
         max_length=20, blank=False, primary_key=True
@@ -30,6 +32,7 @@ class EntryClass(models.Model):
     catalyst_type: models.CharField = models.CharField(
         max_length=64, blank=True, default=""
     )
+    color: models.CharField = models.CharField(max_length=7, default="#e66100")
 
     @classmethod
     def get_default_pk(cls):
@@ -60,6 +63,9 @@ class EntryClass(models.Model):
     def __hash__(self):
         return hash((self.type, self.subtype))
 
+    def _propagate_log(self, log):
+        return
+
     def save(self, *args, **kwargs):
         if self.regex and self.options:
             raise InvalidClassFormatException()
@@ -73,10 +79,16 @@ class EntryClass(models.Model):
         if self.options is not None:
             self.options = "\n".join(map(lambda x: x.strip(), self.options.split("\n")))
 
+        if self.color and self.color[0] != "#":
+            self.color = "#" + self.color
+
         return super().save(*args, **kwargs)
 
+    def __repr__(self):
+        return self.subtype
 
-class Entry(models.Model):
+
+class Entry(models.Model, LoggableModelMixin):
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
     is_public: models.BooleanField = models.BooleanField(default=False)
     entry_class: models.ForeignKey[uuid.UUID, EntryClass] = models.ForeignKey(
@@ -100,6 +112,9 @@ class Entry(models.Model):
     entities = EntityManager()
     artifacts = ArtifactManager()
 
+    def __repr__(self):
+        return f"[[{self.entry_class.subtype}:{self.name}]]"
+
     def __eq__(self, other):
         if isinstance(other, Entry):
             return (
@@ -118,3 +133,19 @@ class Entry(models.Model):
             raise InvalidEntryException(self.entry_class.subtype, self.name)
 
         return super().save(*args, **kwargs)
+
+    def propagate_from(self, log):
+        if self.entry_class.type == EntryType.ENTITY:
+            super().propagate_from(log)
+
+    def log_create(self, user):
+        super().log_create(user)
+
+    def log_delete(self, user, details=None):
+        super().log_delete(user, details)
+
+    def log_edit(self, user, details=None):
+        super().log_edit(user, details)
+
+    def log_fetch(self, user, details=None):
+        super().log_fetch(user, details)

@@ -1,4 +1,4 @@
-from .utils import NotificationsTestEntity
+from .utils import NotificationsTestCase
 from user.models import CradleUser
 from entries.models import Entry
 from entries.enums import EntryType
@@ -10,7 +10,7 @@ from django.urls import reverse
 from uuid import UUID
 
 
-class NotificationDetailTest(NotificationsTestEntity):
+class NotificationDetailTest(NotificationsTestCase):
     def setUp(self):
         super().setUp()
         self.client = APIClient()

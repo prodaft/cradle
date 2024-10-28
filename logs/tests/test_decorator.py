@@ -5,7 +5,7 @@ from rest_framework.test import APIRequestFactory
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
 
-from .utils import LogsTestEntity
+from .utils import LogsTestCase
 from ..decorators import (
     log_login_success,
     log_entry_creation,
@@ -14,7 +14,7 @@ from ..decorators import (
 )
 
 
-class TestLoggingDecorators(LogsTestEntity):
+class TestLoggingDecorators(LogsTestCase):
     def setUp(self):
         super().setUp()
         self.factory = APIRequestFactory()
@@ -23,7 +23,6 @@ class TestLoggingDecorators(LogsTestEntity):
     def test_log_login_success_decorator(self, mock_log_login_success):
         response = Response({"message": "success"}, status=200)
 
-        @log_login_success
         def mock_view(request):
             return response
 
@@ -47,7 +46,6 @@ class TestLoggingDecorators(LogsTestEntity):
     def test_log_entry_creation_decorator(self, mock_log_entry_creation):
         response = Response({"message": "success"}, status=200)
 
-        @log_entry_creation
         def mock_view(request):
             return response
 
@@ -70,7 +68,6 @@ class TestLoggingDecorators(LogsTestEntity):
     def test_log_entry_deletion_decorator(self, mock_log_entry_deletion):
         response = Response({"message": "success"}, status=200)
 
-        @log_entry_deletion
         def mock_view(request):
             return response
 
@@ -89,7 +86,6 @@ class TestLoggingDecorators(LogsTestEntity):
     def test_log_failed_responses_decorator(self, mock_log_failed_responses):
         response = Response({"message": "invalid"}, status=400)
 
-        @log_failed_responses
         def mock_view(request):
             return response
 

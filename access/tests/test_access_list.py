@@ -5,7 +5,7 @@ from ..enums import AccessType
 from entries.models import Entry
 from rest_framework.parsers import JSONParser
 from rest_framework_simplejwt.tokens import AccessToken
-from .utils import AccessTestEntity
+from .utils import AccessTestCase
 
 import io
 
@@ -16,7 +16,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class AccessListTest(AccessTestEntity):
+class AccessListTest(AccessTestCase):
 
     def setUp(self):
         super().setUp()

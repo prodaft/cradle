@@ -27,6 +27,7 @@ mistune = "*"
 ipython = "*"
 drf-spectacular = "*"
 django-filter = "*"
+pytest-django = "*"
 
 [dev-packages]
 

@@ -9,7 +9,7 @@ from entries.enums import EntryType, EntrySubtype
 from access.models import Access
 from access.enums import AccessType
 import io
-from .utils import NotesTestEntity
+from .utils import NotesTestCase
 import uuid
 
 
@@ -17,7 +17,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class GetNoteTest(NotesTestEntity):
+class GetNoteTest(NotesTestCase):
     def setUp(self):
         super().setUp()
 
@@ -86,7 +86,7 @@ class GetNoteTest(NotesTestEntity):
             self.assertEqual(bytes_to_json(response.content)["id"], str(uuid1))
 
 
-class DeleteNoteTest(NotesTestEntity):
+class DeleteNoteTest(NotesTestCase):
 
     def setUp(self):
         super().setUp()

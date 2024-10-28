@@ -37,6 +37,7 @@ class EntryPopulationTask(BaseTask):
 
                 if entry_class.type == EntryType.ARTIFACT:
                     entry = Entry.objects.create(name=r.name, entry_class=entry_class)
+                    entry.log_create(self.user)
                 else:
                     raise EntriesDoNotExistException([r])
             else:

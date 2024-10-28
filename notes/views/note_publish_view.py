@@ -4,10 +4,10 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from ..models import Note
 from ..serializers import NotePublishSerializer, ReportSerializer, ReportQuerySerializer
 
-from logs.decorators import log_failed_responses
 from ..exceptions import (
     NoAccessToEntriesException,
 )
@@ -21,32 +21,29 @@ from access.models import Access
 from access.enums import AccessType
 
 from typing import cast
-
 from uuid import UUID
 
 
+@extend_schema_view(
+    put=extend_schema(
+        description="Allow a user to change a Note's publishable status, "
+        "from publishable to not publishable or vice versa.",
+        responses={
+            200: "Publishable status was updated.",
+            401: "User is not authenticated.",
+            403: "User does not have Read-Write access to the Note.",
+            404: "Note not found.",
+            400: "Request body is invalid",
+        },
+        request=NotePublishSerializer,
+        summary="Update Note Publishable Status",
+    )
+)
 class NotePublishDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @log_failed_responses
     def put(self, request: Request, note_id: UUID) -> Response:
-        """Allow a user to change a Note's publishable status,
-        from publishable to not publishable or vice versa.
-
-        Args:
-            request: The request that was sent
-            note_id: The id of the note to modify.
-
-        Returns:
-            Response(status=200): Publishable status was updated.
-            Response("User is not authenticated.",
-                status=401): if the user is not authenticated
-            Response("User does not have Read-Write access to the Note.", status=403):
-                if the user does not have Read-Write access to the Note.
-            Response("Note not found", status=404):
-                if the note does not exist.
-        """
         try:
             note_to_update: Note = Note.objects.get(id=note_id)
         except Note.DoesNotExist:
@@ -72,34 +69,26 @@ class NotePublishDetail(APIView):
         return Response("Request body is invalid", status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema_view(
+    get=extend_schema(
+        description="Allows a user to publish a list of notes, in the specified order.",
+        responses={
+            200: ReportSerializer,
+            400: "The query format is invalid.",
+            401: "User is not authenticated.",
+            403: "The note is not publishable.",
+            404: "One of the provided notes does not exist.",
+        },
+        parameters=[ReportQuerySerializer],
+        summary="Publish List of Notes",
+    )
+)
 class NotePublishList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
-        """Allows a user to publish a list of notes, in the specified order.
-
-        Args:
-            request (Request): The HTTP request object containing the query
-                parameters and user information.
-
-        Returns:
-            Response(status=200): A response object containing the serialized report
-                data.
-            Response("The query format is invalid.", status=400):
-                If the query parameters are invalid.
-            Response("User is not authenticated.", status=401):
-                If the user is not authenticated.
-            Response("The note is not publishable.", status=403):
-                If not all provided notes is not publishable.
-            Response("One of the provided notes does not exist.", status=404):
-                If the user does not have access to one
-                or more of the requested notes or no note with
-                one of the provided ids exists.
-        """
-
         query_serializer = ReportQuerySerializer(data=request.query_params)
-
         query_serializer.is_valid(raise_exception=True)
 
         required_notes = Note.objects.get_in_order(query_serializer.data["note_ids"])

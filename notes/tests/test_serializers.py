@@ -1,4 +1,4 @@
-from .utils import NotesTestEntity
+from .utils import NotesTestCase
 from ..models import Note
 from ..exceptions import (
     InvalidRequestException,
@@ -9,7 +9,7 @@ from ..serializers import ReportQuerySerializer
 from uuid import UUID
 
 
-class ReportQuerySerializerTest(NotesTestEntity):
+class ReportQuerySerializerTest(NotesTestCase):
     def setUp(self):
         super().setUp()
         self.notes = []

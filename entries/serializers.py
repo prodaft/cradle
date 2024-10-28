@@ -36,9 +36,12 @@ class ArtifactClassSerializer(serializers.ModelSerializer):
 
 
 class EntryClassSerializer(serializers.ModelSerializer):
+    regex = serializers.CharField(max_length=65536, default="")
+    options = serializers.CharField(max_length=65536, default="")
+
     class Meta:
         model = EntryClass
-        fields = ["type", "subtype", "regex", "options", "catalyst_type"]
+        fields = ["type", "subtype", "regex", "options", "color", "catalyst_type"]
 
 
 class EntryResponseSerializer(serializers.ModelSerializer):

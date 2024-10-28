@@ -8,7 +8,6 @@ from rest_framework.request import Request
 from user.models import CradleUser
 from ..models import Access
 from ..serializers import AccessEntitySerializer
-from logs.decorators import log_failed_responses
 from uuid import UUID
 
 
@@ -18,7 +17,6 @@ class AccessList(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
     serializer_class = AccessEntitySerializer
 
-    @log_failed_responses
     def get(self, request: Request, user_id: UUID) -> Response:
         """Allows an admin to get the access priviliges of a User
             on all Entities.

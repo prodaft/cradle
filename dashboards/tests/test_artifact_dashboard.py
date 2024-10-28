@@ -2,10 +2,9 @@ from django.urls import reverse
 from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
 import io
-from .utils import DashboardsTestEntity
+from .utils import DashboardsTestCase
 
 from entries.models import Entry
-from entries.enums import EntryType, ArtifactSubtype
 from notes.models import Note
 
 
@@ -13,8 +12,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class GetArtifactDashboardTest(DashboardsTestEntity):
-
+class GetArtifactDashboardTest(DashboardsTestCase):
     def check_ids(self, entries, entries_json):
         with self.subTest("Check number of entries"):
             self.assertEqual(len(entries), len(entries_json))
@@ -37,18 +35,20 @@ class GetArtifactDashboardTest(DashboardsTestEntity):
         self.artifact2 = Entry.objects.create(
             name="Artifact2",
             description="Description2",
-            type=EntryType.ARTIFACT,
-            subtype=ArtifactSubtype.URL,
+            entry_class=self.artifactclass2,
         )
         self.note1.entries.add(self.artifact2)
         self.note2.entries.add(self.artifact2)
 
     def test_get_dashboard_admin(self):
         response = self.client.get(
-            reverse("artifact_dashboard", kwargs={"artifact_name": self.artifact2.name}),
-            {"subtype": ArtifactSubtype.URL},
+            reverse(
+                "artifact_dashboard", kwargs={"artifact_name": self.artifact2.name}
+            ),
+            {"subtype": "url"},
             **self.headers_admin,
         )
+        print(response)
         self.assertEqual(response.status_code, 200)
 
         notes = Note.objects.exclude(id=self.note3.id).order_by("-timestamp")
@@ -75,8 +75,10 @@ class GetArtifactDashboardTest(DashboardsTestEntity):
 
     def test_get_dashboard_user_read_access(self):
         response = self.client.get(
-            reverse("artifact_dashboard", kwargs={"artifact_name": self.artifact2.name}),
-            {"subtype": ArtifactSubtype.URL},
+            reverse(
+                "artifact_dashboard", kwargs={"artifact_name": self.artifact2.name}
+            ),
+            {"subtype": "url"},
             **self.headers_user2,
         )
         self.assertEqual(response.status_code, 200)
@@ -105,8 +107,10 @@ class GetArtifactDashboardTest(DashboardsTestEntity):
 
     def test_get_dashboard_user_read_write_access(self):
         response = self.client.get(
-            reverse("artifact_dashboard", kwargs={"artifact_name": self.artifact2.name}),
-            {"subtype": ArtifactSubtype.URL},
+            reverse(
+                "artifact_dashboard", kwargs={"artifact_name": self.artifact2.name}
+            ),
+            {"subtype": "url"},
             **self.headers_user1,
         )
         self.assertEqual(response.status_code, 200)
@@ -143,7 +147,9 @@ class GetArtifactDashboardTest(DashboardsTestEntity):
 
     def test_get_dashboard_invalid_artifact_subtype(self):
         response = self.client.get(
-            reverse("artifact_dashboard", kwargs={"artifact_name": self.artifact1.name}),
+            reverse(
+                "artifact_dashboard", kwargs={"artifact_name": self.artifact1.name}
+            ),
             {"subtype": "invalid"},
             **self.headers_user1,
         )
@@ -151,7 +157,9 @@ class GetArtifactDashboardTest(DashboardsTestEntity):
 
     def test_get_dashboard_no_subtype_provided(self):
         response = self.client.get(
-            reverse("artifact_dashboard", kwargs={"artifact_name": self.artifact1.name}),
+            reverse(
+                "artifact_dashboard", kwargs={"artifact_name": self.artifact1.name}
+            ),
             **self.headers_user1,
         )
         self.assertEqual(response.status_code, 400)

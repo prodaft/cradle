@@ -1,11 +1,12 @@
 from django.db import models
 from entries.models import Entry
+from logs.models import LoggableModelMixin
 from .managers import NoteManager
 import uuid
 from user.models import CradleUser
 
 
-class Note(models.Model):
+class Note(models.Model, LoggableModelMixin):
     id: models.UUIDField = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -25,6 +26,9 @@ class Note(models.Model):
     edit_timestamp: models.DateTimeField = models.DateTimeField(null=True)
 
     objects: NoteManager = NoteManager()
+
+    def propagate_from(self, log):
+        return
 
     def delete(self):
         """Override the delete method to archive the note before deleting it.

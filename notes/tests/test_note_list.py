@@ -6,11 +6,11 @@ from rest_framework_simplejwt.tokens import AccessToken
 from ..models import Note
 from entries.models import Entry
 from entries.enums import EntryType, EntrySubtype
-from .utils import NotesTestEntity
+from .utils import NotesTestCase
 from unittest.mock import patch
 
 
-class CreateNoteTest(NotesTestEntity):
+class CreateNoteTest(NotesTestCase):
 
     def setUp(self):
         super().setUp()

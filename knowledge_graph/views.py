@@ -4,18 +4,17 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
+from entries.models import EntryClass
 from notes.models import Note, Relation
 from user.models import CradleUser
 from .serializers import KnowledgeGraphSerializer
 from typing import cast
-from logs.decorators import log_failed_responses
 
 
 class KnowledgeGraphList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @log_failed_responses
     def get(self, request: Request) -> Response:
         """Allow a user to view the Knowledge Graph containing all Entries
         they can access. The Knowledge Graph is represented as two arrays:
@@ -44,11 +43,13 @@ class KnowledgeGraphList(APIView):
             )
         }
 
+        entries = Note.objects.get_entries_from_notes(notes)
         return Response(
             KnowledgeGraphSerializer(
                 {
-                    "entries": Note.objects.get_entries_from_notes(notes),
+                    "entries": entries,
                     "links": links,
+                    "colors": EntryClass.objects.filter(entry__in=entries),
                 }
             ).data
         )

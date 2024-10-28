@@ -1,4 +1,4 @@
-from .utils import NotificationsTestEntity
+from .utils import NotificationsTestCase
 from user.models import CradleUser
 from entries.models import Entry
 from entries.enums import EntryType
@@ -8,7 +8,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from django.urls import reverse
 
 
-class NotificationListTest(NotificationsTestEntity):
+class NotificationListTest(NotificationsTestCase):
     def setUp(self):
         super().setUp()
         self.client = APIClient()

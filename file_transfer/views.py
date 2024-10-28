@@ -7,7 +7,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .utils import MinioClient
 from .serializers import FileUploadSerializer, FileDownloadSerializer
-from logs.decorators import log_failed_responses
 
 
 class FileUpload(APIView):
@@ -15,7 +14,6 @@ class FileUpload(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @log_failed_responses
     def get(self, request: Request) -> Response:
         """Generate a new UUID which concatenated with the original file
         name describe the path where the user should upload a new file.
@@ -60,7 +58,6 @@ class FileDownload(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @log_failed_responses
     def get(self, request: Request) -> Response:
         """Provides a presigned download URL that allows clients to download files
         from Minio without requiring the credentials.

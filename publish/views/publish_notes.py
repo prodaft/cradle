@@ -10,7 +10,6 @@ from entries.enums import EntryType
 from publish.strategies.catalyst import CatalystPublish
 from notes.models import Note
 
-from logs.decorators import log_failed_responses
 from user.models import CradleUser
 from access.models import Access
 
@@ -26,7 +25,6 @@ class PublishView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @log_failed_responses
     def post(self, request: Request, strategy_name: str) -> Response:
         """Allow a user to publish a set of notes, using a given strategy.
 

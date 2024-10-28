@@ -1,5 +1,5 @@
 from fleeting_notes.models import FleetingNote
-from fleeting_notes.tests.utils import FleetingNotesTestEntity
+from fleeting_notes.tests.utils import FleetingNotesTestCase
 from django.urls import reverse
 from rest_framework.parsers import JSONParser
 import io
@@ -11,7 +11,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class GetFleetingNoteByIdTest(FleetingNotesTestEntity):
+class GetFleetingNoteByIdTest(FleetingNotesTestCase):
 
     def test_get_not_authenticated(self):
         response = self.client.get(reverse("fleeting_notes_list"))
@@ -77,7 +77,7 @@ class GetFleetingNoteByIdTest(FleetingNotesTestEntity):
         self.assertEqual(response.status_code, 404)
 
 
-class PutFleetingNotesByIdTest(FleetingNotesTestEntity):
+class PutFleetingNotesByIdTest(FleetingNotesTestCase):
 
     def test_put_not_authenticated(self):
         response = self.client.put(
@@ -188,7 +188,7 @@ class PutFleetingNotesByIdTest(FleetingNotesTestEntity):
         self.assertEqual(response.status_code, 400)
 
 
-class DeleteFleetingNotesByIdTest(FleetingNotesTestEntity):
+class DeleteFleetingNotesByIdTest(FleetingNotesTestCase):
 
     def test_delete_not_authenticated(self):
         response = self.client.delete(

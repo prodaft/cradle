@@ -4,7 +4,6 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
-from logs.decorators import log_failed_responses
 from ..models import MessageNotification
 from ..serializers import NotificationSerializer
 from user.models import CradleUser
@@ -18,7 +17,6 @@ class NotificationList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @log_failed_responses
     def get(self, request: Request) -> Response:
         """Fetches all of the user's notifications. The notifications
         are sorted from the newest to the oldest one.
@@ -48,7 +46,6 @@ class NotificationDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @log_failed_responses
     def put(self, request: Request, notification_id: int) -> Response:
         """Updates the notification's is_marked_unread field. Should be
         used when the client wishes to explicitely mark a notification
@@ -95,7 +92,6 @@ class NotificationUnread(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @log_failed_responses
     def get(self, request: Request) -> Response:
         """Returns the number of unread notifications that a user has.
         A notification is considered unread when is_marked_unread OR is_unread

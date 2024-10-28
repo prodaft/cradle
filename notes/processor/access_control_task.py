@@ -15,10 +15,6 @@ from django.conf import settings
 
 
 class AccessControlTask(BaseTask):
-    def __init__(self, user) -> None:
-        self.user = user
-        super().__init__()
-
     def run(self, note: Note) -> Note:
         """
         Check if the user has access to all the entries being refenced

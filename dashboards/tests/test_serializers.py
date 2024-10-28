@@ -1,18 +1,17 @@
 from unittest.mock import patch, PropertyMock
 
 from entries.models import Entry
-from entries.enums import EntryType, ArtifactSubtype
+from entries.enums import EntryType
 from notes.models import Note
 from ..serializers import (
     NoteDashboardSerializer,
     EntityDashboardSerializer,
     ArtifactDashboardSerializer,
 )
-from .utils import DashboardsTestEntity
+from .utils import DashboardsTestCase
 
 
-class NoteDashboardSerializersTest(DashboardsTestEntity):
-
+class NoteDashboardSerializersTest(DashboardsTestCase):
     def update_notes(self):
         self.note1 = Note.objects.create(content="a" * 1000)
 
@@ -38,8 +37,7 @@ class NoteDashboardSerializersTest(DashboardsTestEntity):
                     "name": "Entity1",
                     "type": "entity",
                 },
-                {
-                },
+                {},
             ],
             "files": [],
         }
@@ -61,8 +59,7 @@ class NoteDashboardSerializersTest(DashboardsTestEntity):
                     "name": "Entity2",
                     "type": "entity",
                 },
-                {
-                },
+                {},
             ],
             "files": [],
         }
@@ -70,8 +67,7 @@ class NoteDashboardSerializersTest(DashboardsTestEntity):
         self.assertEqual(expected, NoteDashboardSerializer(self.note2).data)
 
 
-class EntityDashboardSerializerTest(DashboardsTestEntity):
-
+class EntityDashboardSerializerTest(DashboardsTestCase):
     def setUp(self):
         super().setUp()
 
@@ -303,16 +299,14 @@ class EntityDashboardSerializerTest(DashboardsTestEntity):
         self.assertEqual(expected_json, dashboard_json)
 
 
-class ArtifactDashboardSerializerTest(DashboardsTestEntity):
-
+class ArtifactDashboardSerializerTest(DashboardsTestCase):
     def setUp(self):
         super().setUp()
 
         self.artifact2 = Entry.objects.create(
             name="Artifact2",
             description="Description2",
-            type=EntryType.ARTIFACT,
-            subtype=ArtifactSubtype.URL,
+            entry_class=self.artifactclass2,
         )
         self.note1.entries.add(self.artifact2)
         self.note2.entries.add(self.artifact2)

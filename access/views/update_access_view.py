@@ -9,7 +9,6 @@ from user.models import CradleUser
 from entries.models import Entry
 from ..models import Access
 from ..serializers import AccessSerializer
-from logs.decorators import log_failed_responses
 from typing import cast
 from ..enums import AccessType
 from notifications.models import MessageNotification
@@ -67,7 +66,6 @@ class UpdateAccess(APIView):
 
         return True
 
-    @log_failed_responses
     def put(self, request: Request, user_id: UUID, entity_id: UUID) -> Response:
         """Allows a user to change the access privileges of another user for
         the specified entity. If the user making the request is an admin, they

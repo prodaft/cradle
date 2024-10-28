@@ -21,11 +21,11 @@ class TaskScheduler:
         self.note_content = note_content
 
         self.processing: List[BaseTask] = [
-            EntryClassCreationTask(),
-            EntryPopulationTask(),
+            EntryClassCreationTask(user),
+            EntryPopulationTask(user),
             AccessControlTask(user),
-            CountReferencesTask(),
-            SmartLinkerTask(),
+            CountReferencesTask(user),
+            SmartLinkerTask(user),
         ]
 
     def run_pipeline(self, note: Optional[Note] = None):

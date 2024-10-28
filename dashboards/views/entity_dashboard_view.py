@@ -11,7 +11,6 @@ from access.models import Access
 from ..utils.dashboard_utils import DashboardUtils
 from ..serializers import EntityDashboardSerializer
 from access.enums import AccessType
-from logs.decorators import log_failed_responses
 
 from typing import cast
 
@@ -20,7 +19,6 @@ class EntityDashboard(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @log_failed_responses
     def get(self, request: Request, entity_name: str) -> Response:
         """Allow a user to retrieve the dashboard of an Entity by specifying its name.
 

@@ -4,7 +4,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
 import io
 from rest_framework_simplejwt.tokens import AccessToken
-from .utils import EntriesTestEntity
+from .utils import EntriesTestCase
 
 from ..models import Entry
 from ..serializers import EntryResponseSerializer
@@ -15,7 +15,7 @@ def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
-class GetEntityListTest(EntriesTestEntity):
+class GetEntityListTest(EntriesTestCase):
 
     def setUp(self):
         super().setUp()
@@ -65,7 +65,7 @@ class GetEntityListTest(EntriesTestEntity):
         self.assertEqual(response.status_code, 401)
 
 
-class PostEntityListTest(EntriesTestEntity):
+class PostEntityListTest(EntriesTestCase):
 
     def setUp(self):
         super().setUp()
