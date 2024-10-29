@@ -37,7 +37,7 @@ class EventLogSerializer(serializers.ModelSerializer):
         if obj.src_log is not None:
             return EventLogSerializer(obj.src_log).data
         else:
-            return "DELETED"
+            return None
 
     def get_content_type(self, obj):
         return obj.content_type.model
