@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from typing import cast
 
-from entries.models import Entry
+from entries.models import Entry, EntryClass
 from user.models import CradleUser
 from ..utils.dashboard_utils import DashboardUtils
 from ..serializers import ArtifactDashboardSerializer
@@ -37,6 +37,12 @@ class ArtifactDashboard(APIView):
         user: CradleUser = cast(CradleUser, request.user)
 
         artifact_subtype = request.query_params.get("subtype")
+
+        if EntryClass.objects.filter(subtype=artifact_subtype).count() == 0:
+            return Response(
+                "There is no artifact with specified subtype",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             artifact = Entry.artifacts.get(

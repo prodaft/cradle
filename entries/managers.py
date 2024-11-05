@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import connection, models
 from django.db.models import Q
 
 from user.models import CradleUser
@@ -37,12 +37,12 @@ class EntryQuerySet(models.QuerySet):
                 query_parts.append(
                     "SELECT entry_id AS id FROM get_related_entry_ids(%s)"
                 )
-                query_args.append(i.id)
+                query_args.append(str(i.id))
             else:
                 query_parts.append(
                     "SELECT entry_id AS id FROM get_related_entry_ids_for_user(%s, %s)"
                 )
-                query_args.extend((i.id, user.id))
+                query_args.extend((str(i.id), str(user.id)))
 
         query = " UNION ".join(query_parts)
 

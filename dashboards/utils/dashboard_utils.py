@@ -108,7 +108,8 @@ class DashboardUtils:
 
         for i in second_hop_all:
             if i.id == entry_id or i.id in entry_ids:
-                second_hop_accessible.remove(i)
+                if i in second_hop_accessible:
+                    second_hop_accessible.remove(i)
             elif i not in second_hop_accessible:
                 second_hop_inaccessible.append(i)
 
