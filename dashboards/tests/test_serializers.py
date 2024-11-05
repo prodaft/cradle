@@ -1,5 +1,6 @@
 from unittest.mock import patch, PropertyMock
 
+import json
 from entries.models import Entry
 from entries.enums import EntryType
 from notes.models import Note
@@ -31,14 +32,6 @@ class NoteDashboardSerializersTest(DashboardsTestCase):
             "content": "a" * 200 + "...",
             "publishable": False,
             "timestamp": "2024-01-01T00:00:00Z",
-            "entries": [
-                {
-                    "id": str(self.entity1.id),
-                    "name": "Entity1",
-                    "type": "entity",
-                },
-                {},
-            ],
             "files": [],
         }
 
@@ -53,14 +46,6 @@ class NoteDashboardSerializersTest(DashboardsTestCase):
             "content": "Note2",
             "publishable": False,
             "timestamp": "2024-01-01T00:00:00Z",
-            "entries": [
-                {
-                    "id": str(self.entity2.id),
-                    "name": "Entity2",
-                    "type": "entity",
-                },
-                {},
-            ],
             "files": [],
         }
 
@@ -76,36 +61,25 @@ class EntityDashboardSerializerTest(DashboardsTestCase):
         mock_timestamp.return_value = "2024-01-01T00:00:00Z"
 
         notes = Note.objects.all()
-        entities = Entry.objects.filter(type=EntryType.ENTITY)
-        artifacts = Entry.objects.filter(type=EntryType.ARTIFACT)
+        entities = Entry.objects.filter(entry_class__type=EntryType.ENTITY)
+        artifacts = Entry.objects.filter(entry_class__type=EntryType.ARTIFACT)
         inaccessible_entities = Entry.objects.filter(id=self.entity2.id)
-        inaccessible_metadata = Entry.objects.filter(id=self.metadata1.id)
         inaccessible_artifacts = Entry.objects.filter(id=self.artifact1.id)
         second_hop_entities = Entry.objects.filter(id=self.entity3.id)
-        second_hop_metadata = Entry.objects.filter(id=self.metadata1.id)
         second_hop_inaccessible_entities = Entry.objects.filter(id=self.entity2.id)
-        second_hop_inaccessible_metadata = Entry.objects.filter(id=self.metadata1.id)
 
         expected_json = {
             "id": str(self.entity1.id),
             "name": "Entity1",
             "description": "Description1",
             "type": "entity",
-            "subtype": "",
+            "subtype": "case",
             "notes": [
                 {
                     "id": str(self.note1.id),
                     "content": "Note1",
                     "publishable": False,
                     "timestamp": "2024-01-01T00:00:00Z",
-                    "entries": [
-                        {
-                            "id": str(self.entity1.id),
-                            "name": "Entity1",
-                            "type": "entity",
-                            "subtype": "",
-                        }
-                    ],
                     "files": [],
                 },
                 {
@@ -113,26 +87,6 @@ class EntityDashboardSerializerTest(DashboardsTestCase):
                     "content": "Note2",
                     "publishable": False,
                     "timestamp": "2024-01-01T00:00:00Z",
-                    "entries": [
-                        {
-                            "id": str(self.entity1.id),
-                            "name": "Entity1",
-                            "type": "entity",
-                            "subtype": "",
-                        },
-                        {
-                            "id": str(self.entity2.id),
-                            "name": "Entity2",
-                            "type": "entity",
-                            "subtype": "",
-                        },
-                        {
-                            "id": str(self.artifact1.id),
-                            "name": "Artifact1",
-                            "type": "artifact",
-                            "subtype": "ip",
-                        },
-                    ],
                     "files": [],
                 },
                 {
@@ -140,26 +94,6 @@ class EntityDashboardSerializerTest(DashboardsTestCase):
                     "content": "Note3",
                     "publishable": False,
                     "timestamp": "2024-01-01T00:00:00Z",
-                    "entries": [
-                        {
-                            "id": str(self.entity3.id),
-                            "name": "Entity3",
-                            "type": "entity",
-                            "subtype": "",
-                        },
-                        {
-                            "id": str(self.artifact1.id),
-                            "name": "Artifact1",
-                            "type": "artifact",
-                            "subtype": "ip",
-                        },
-                        {
-                            "id": str(self.metadata1.id),
-                            "name": "Metadata1",
-                            "type": "metadata",
-                            "subtype": "",
-                        },
-                    ],
                     "files": [],
                 },
             ],
@@ -169,31 +103,34 @@ class EntityDashboardSerializerTest(DashboardsTestCase):
                     "name": "Entity1",
                     "description": "Description1",
                     "type": "entity",
-                    "subtype": "",
+                    "subtype": "case",
+                    "regex": "",
+                    "options": "",
+                    "color": "#e66100",
+                    "catalyst_type": "",
                 },
                 {
                     "id": str(self.entity2.id),
                     "name": "Entity2",
                     "description": "Description2",
                     "type": "entity",
-                    "subtype": "",
+                    "subtype": "case",
+                    "regex": "",
+                    "options": "",
+                    "color": "#e66100",
+                    "catalyst_type": "",
                 },
                 {
                     "id": str(self.entity3.id),
                     "name": "Entity3",
                     "description": "Description3",
                     "type": "entity",
-                    "subtype": "",
+                    "subtype": "case",
+                    "regex": "",
+                    "options": "",
+                    "color": "#e66100",
+                    "catalyst_type": "",
                 },
-            ],
-            "metadata": [
-                {
-                    "id": str(self.metadata1.id),
-                    "name": "Metadata1",
-                    "description": "Description1",
-                    "type": "metadata",
-                    "subtype": "",
-                }
             ],
             "artifacts": [
                 {
@@ -202,6 +139,10 @@ class EntityDashboardSerializerTest(DashboardsTestCase):
                     "description": "Description1",
                     "type": "artifact",
                     "subtype": "ip",
+                    "regex": "",
+                    "options": "",
+                    "color": "#e66100",
+                    "catalyst_type": "",
                 }
             ],
             "inaccessible_entities": [
@@ -210,16 +151,11 @@ class EntityDashboardSerializerTest(DashboardsTestCase):
                     "name": "Some Entity",
                     "description": "Some Description",
                     "type": "entity",
-                    "subtype": "",
-                }
-            ],
-            "inaccessible_metadata": [
-                {
-                    "id": str(self.metadata1.id),
-                    "name": "Some Metadata",
-                    "description": "Some Description",
-                    "type": "metadata",
-                    "subtype": "",
+                    "subtype": "case",
+                    "regex": "",
+                    "options": "",
+                    "color": "#e66100",
+                    "catalyst_type": "",
                 }
             ],
             "inaccessible_artifacts": [
@@ -229,6 +165,10 @@ class EntityDashboardSerializerTest(DashboardsTestCase):
                     "description": "Some Description",
                     "type": "artifact",
                     "subtype": "ip",
+                    "regex": "",
+                    "options": "",
+                    "color": "#e66100",
+                    "catalyst_type": "",
                 }
             ],
             "second_hop_entities": [
@@ -237,16 +177,11 @@ class EntityDashboardSerializerTest(DashboardsTestCase):
                     "name": "Entity3",
                     "description": "Description3",
                     "type": "entity",
-                    "subtype": "",
-                    "neighbor": [
-                        {
-                            "id": str(self.artifact1.id),
-                            "name": "Artifact1",
-                            "description": "Description1",
-                            "type": "artifact",
-                            "subtype": "ip",
-                        }
-                    ],
+                    "subtype": "case",
+                    "regex": "",
+                    "options": "",
+                    "color": "#e66100",
+                    "catalyst_type": "",
                 }
             ],
             "second_hop_inaccessible_entities": [
@@ -255,16 +190,11 @@ class EntityDashboardSerializerTest(DashboardsTestCase):
                     "name": "Some Entity",
                     "description": "Some Description",
                     "type": "entity",
-                    "subtype": "",
-                    "neighbor": [
-                        {
-                            "id": str(self.artifact1.id),
-                            "name": "Artifact1",
-                            "description": "Description1",
-                            "type": "artifact",
-                            "subtype": "ip",
-                        }
-                    ],
+                    "subtype": "case",
+                    "regex": "",
+                    "options": "",
+                    "color": "#e66100",
+                    "catalyst_type": "",
                 }
             ],
             "access": "read-write",
@@ -274,8 +204,8 @@ class EntityDashboardSerializerTest(DashboardsTestCase):
             "id": self.entity1.id,
             "name": self.entity1.name,
             "description": self.entity1.description,
-            "type": self.entity1.type,
-            "subtype": self.entity1.subtype,
+            "type": self.entity1.entry_class.type,
+            "subtype": self.entity1.entry_class.subtype,
             "notes": notes,
             "entities": entities,
             "artifacts": artifacts,
@@ -289,12 +219,12 @@ class EntityDashboardSerializerTest(DashboardsTestCase):
         neighbor_map = {}
 
         neighbor_map[str(self.entity3.id)] = [self.artifact1]
-        neighbor_map[str(self.metadata1.id)] = [self.artifact1]
         neighbor_map[str(self.entity2.id)] = [self.artifact1]
 
         dashboard_json = EntityDashboardSerializer(
             entries_dict, context=neighbor_map
         ).data
+        self.maxDiff = None
 
         self.assertEqual(expected_json, dashboard_json)
 
@@ -316,13 +246,10 @@ class ArtifactDashboardSerializerTest(DashboardsTestCase):
         mock_timestamp.return_value = "2024-01-01T00:00:00Z"
 
         notes = Note.objects.all()
-        entities = Entry.objects.filter(type=EntryType.ENTITY)
+        entities = Entry.objects.filter(entry_class__type=EntryType.ENTITY)
         inaccessible_entities = Entry.objects.filter(id=self.entity2.id)
-        inaccessible_metadata = Entry.objects.filter(id=self.metadata1.id)
         second_hop_entities = Entry.objects.filter(id=self.entity3.id)
-        second_hop_metadata = Entry.objects.filter(id=self.metadata1.id)
         second_hop_inaccessible_entities = Entry.objects.filter(id=self.entity2.id)
-        second_hop_inaccessible_metadata = Entry.objects.filter(id=self.metadata1.id)
 
         expected_json = {
             "id": str(self.artifact2.id),
@@ -336,29 +263,6 @@ class ArtifactDashboardSerializerTest(DashboardsTestCase):
                     "content": "Note1",
                     "publishable": False,
                     "timestamp": "2024-01-01T00:00:00Z",
-                    "entries": [
-                        {
-                            "id": str(self.entity1.id),
-                            "name": "Entity1",
-                            "type": "entity",
-                            "subtype": "",
-                        },
-                        {
-                            "subtype": "",
-                        },
-                        {
-                            "id": str(self.metadata1.id),
-                            "name": "Metadata1",
-                            "type": "metadata",
-                            "subtype": "",
-                        },
-                        {
-                            "id": str(self.artifact2.id),
-                            "name": "Artifact2",
-                            "type": "artifact",
-                            "subtype": "url",
-                        },
-                    ],
                     "files": [],
                 },
                 {
@@ -366,35 +270,6 @@ class ArtifactDashboardSerializerTest(DashboardsTestCase):
                     "content": "Note2",
                     "publishable": False,
                     "timestamp": "2024-01-01T00:00:00Z",
-                    "entries": [
-                        {
-                            "id": str(self.entity1.id),
-                            "name": "Entity1",
-                            "type": "entity",
-                            "subtype": "",
-                        },
-                        {
-                            "id": str(self.entity2.id),
-                            "name": "Entity2",
-                            "type": "entity",
-                            "subtype": "",
-                        },
-                        {
-                            "subtype": "",
-                        },
-                        {
-                            "id": str(self.artifact1.id),
-                            "name": "Artifact1",
-                            "type": "artifact",
-                            "subtype": "ip",
-                        },
-                        {
-                            "id": str(self.artifact2.id),
-                            "name": "Artifact2",
-                            "type": "artifact",
-                            "subtype": "url",
-                        },
-                    ],
                     "files": [],
                 },
                 {
@@ -402,29 +277,6 @@ class ArtifactDashboardSerializerTest(DashboardsTestCase):
                     "content": "Note3",
                     "publishable": False,
                     "timestamp": "2024-01-01T00:00:00Z",
-                    "entries": [
-                        {
-                            "id": str(self.entity3.id),
-                            "name": "Entity3",
-                            "type": "entity",
-                            "subtype": "",
-                        },
-                        {
-                            "subtype": "",
-                        },
-                        {
-                            "id": str(self.artifact1.id),
-                            "name": "Artifact1",
-                            "type": "artifact",
-                            "subtype": "ip",
-                        },
-                        {
-                            "id": str(self.metadata1.id),
-                            "name": "Metadata1",
-                            "type": "metadata",
-                            "subtype": "",
-                        },
-                    ],
                     "files": [],
                 },
             ],
@@ -434,21 +286,33 @@ class ArtifactDashboardSerializerTest(DashboardsTestCase):
                     "name": "Entity1",
                     "description": "Description1",
                     "type": "entity",
-                    "subtype": "",
+                    "subtype": "case",
+                    "regex": "",
+                    "options": "",
+                    "color": "#e66100",
+                    "catalyst_type": "",
                 },
                 {
                     "id": str(self.entity2.id),
                     "name": "Entity2",
                     "description": "Description2",
                     "type": "entity",
-                    "subtype": "",
+                    "subtype": "case",
+                    "regex": "",
+                    "options": "",
+                    "color": "#e66100",
+                    "catalyst_type": "",
                 },
                 {
                     "id": str(self.entity3.id),
                     "name": "Entity3",
                     "description": "Description3",
                     "type": "entity",
-                    "subtype": "",
+                    "subtype": "case",
+                    "regex": "",
+                    "options": "",
+                    "color": "#e66100",
+                    "catalyst_type": "",
                 },
             ],
             "inaccessible_entities": [
@@ -457,7 +321,11 @@ class ArtifactDashboardSerializerTest(DashboardsTestCase):
                     "name": "Some Entity",
                     "description": "Some Description",
                     "type": "entity",
-                    "subtype": "",
+                    "subtype": "case",
+                    "regex": "",
+                    "options": "",
+                    "color": "#e66100",
+                    "catalyst_type": "",
                 }
             ],
             "second_hop_entities": [
@@ -466,16 +334,11 @@ class ArtifactDashboardSerializerTest(DashboardsTestCase):
                     "name": "Entity3",
                     "description": "Description3",
                     "type": "entity",
-                    "subtype": "",
-                    "neighbor": [
-                        {
-                            "id": str(self.artifact1.id),
-                            "name": "Artifact1",
-                            "description": "Description1",
-                            "type": "artifact",
-                            "subtype": "ip",
-                        }
-                    ],
+                    "subtype": "case",
+                    "regex": "",
+                    "options": "",
+                    "color": "#e66100",
+                    "catalyst_type": "",
                 }
             ],
             "second_hop_inaccessible_entities": [
@@ -484,16 +347,11 @@ class ArtifactDashboardSerializerTest(DashboardsTestCase):
                     "name": "Some Entity",
                     "description": "Some Description",
                     "type": "entity",
-                    "subtype": "",
-                    "neighbor": [
-                        {
-                            "id": str(self.artifact1.id),
-                            "name": "Artifact1",
-                            "description": "Description1",
-                            "type": "artifact",
-                            "subtype": "ip",
-                        }
-                    ],
+                    "subtype": "case",
+                    "regex": "",
+                    "options": "",
+                    "color": "#e66100",
+                    "catalyst_type": "",
                 }
             ],
         }
@@ -502,22 +360,19 @@ class ArtifactDashboardSerializerTest(DashboardsTestCase):
             "id": str(self.artifact2.id),
             "name": self.artifact2.name,
             "description": self.artifact2.description,
-            "type": self.artifact2.type,
+            "type": self.artifact2.entry_class.type,
+            "subtype": self.artifact2.entry_class.subtype,
             "notes": notes,
             "entities": entities,
             "inaccessible_entities": inaccessible_entities,
-            "inaccessible_metadata": inaccessible_metadata,
             "second_hop_entities": second_hop_entities,
-            "second_hop_metadata": second_hop_metadata,
             "second_hop_inaccessible_entities": second_hop_inaccessible_entities,
-            "second_hop_inaccessible_metadata": second_hop_inaccessible_metadata,
             "access": "read-write",
         }
 
         neighbor_map = {}
 
         neighbor_map[str(self.entity3.id)] = [self.artifact1]
-        neighbor_map[str(self.metadata1.id)] = [self.artifact1]
         neighbor_map[str(self.entity2.id)] = [self.artifact1]
 
         dashboard_json = ArtifactDashboardSerializer(

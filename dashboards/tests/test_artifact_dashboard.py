@@ -1,3 +1,5 @@
+import itertools
+from django.db.models import Q
 from django.urls import reverse
 from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
@@ -7,12 +9,28 @@ from dashboards.utils.dashboard_utils import DashboardUtils
 from .utils import DashboardsTestCase
 
 from entries.models import Entry
-from notes.models import Note
+from notes.models import Note, Relation
 import pytest
 
 
 def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
+
+
+def gen_rels(notes):
+    rels = []
+    for note in notes:
+        for i, j in itertools.product(note.entries.all(), note.entries.all()):
+            if i == j:
+                continue
+            rels.append(
+                Relation(
+                    src_entry=i,
+                    dst_entry=j,
+                    note=note,
+                )
+            )
+    return rels
 
 
 pytestmark = pytest.mark.django_db
@@ -49,10 +67,10 @@ class GetArtifactDashboardTest(DashboardsTestCase):
         self.note1.entries.add(self.artifact2)
         self.note2.entries.add(self.artifact2)
 
-        self.artifact2.save()
-        self.note1.save()
-        self.note2.save()
+        rels = gen_rels([self.note1, self.note2, self.note3])
+        Relation.objects.bulk_create(rels)
 
+    @pytest.mark.django_db
     def test_get_dashboard_admin(self):
         response = self.client.get(
             reverse(
@@ -61,7 +79,6 @@ class GetArtifactDashboardTest(DashboardsTestCase):
             {"subtype": "url"},
             **self.headers_admin,
         )
-        print(DashboardUtils.get_dashboard(self.admin_user, self.artifact2.id))
         self.assertEqual(response.status_code, 200)
 
         notes = Note.objects.exclude(id=self.note3.id).order_by("-timestamp")
@@ -98,9 +115,9 @@ class GetArtifactDashboardTest(DashboardsTestCase):
 
         notes = Note.objects.filter(id=self.note1.id)
         entities = Entry.objects.filter(id=self.entity1.id)
-        inaccessible_entities = Entry.objects.filter(id=self.entity2.id)
+        inaccessible_entities = []
         second_hop_entities = Entry.objects.none()
-        second_hop_inaccessible_entities = Entry.objects.none()
+        second_hop_inaccessible_entities = [self.entity3]
 
         json_response = bytes_to_json(response.content)
 
@@ -153,7 +170,7 @@ class GetArtifactDashboardTest(DashboardsTestCase):
     def test_get_dashboard_invalid_artifact(self):
         response = self.client.get(
             reverse("artifact_dashboard", kwargs={"artifact_name": "Entity"}),
-            {"subtype": ArtifactSubtype.IP},
+            {"subtype": "ip"},
             **self.headers_user1,
         )
         self.assertEqual(response.status_code, 404)

@@ -43,7 +43,7 @@ class DashboardsTestCase(TestCase):
 
     def create_notes(self):
         self.note1 = Note.objects.create(content="Note1")
-        self.note1.entries.add(self.entity1)
+        self.note1.entries.add(self.entity1, self.artifact1)
 
         self.note2 = Note.objects.create(content="Note2")
         self.note2.entries.add(self.entity2, self.entity1)
