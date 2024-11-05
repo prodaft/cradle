@@ -16,9 +16,9 @@ from django.utils import timezone
 
 
 class TaskScheduler:
-    def __init__(self, note_content: str, user: CradleUser):
+    def __init__(self, note_content: str, user: CradleUser, **kwargs):
         self.user = user
-        self.note_content = note_content
+        self.kwargs = kwargs
 
         self.processing: List[BaseTask] = [
             EntryClassCreationTask(user),
@@ -47,15 +47,13 @@ class TaskScheduler:
             NoAccessToEntriesException: if the user does not have access to the
             referenced entities.
         """
-
         with transaction.atomic():
             if not note:
-                note = Note.objects.create(content=self.note_content, author=self.user)
+                note = Note.objects.create(author=self.user, **self.kwargs)
             else:
                 note.editor = self.user
                 note.edit_timestamp = timezone.now()
 
-            note.content = self.note_content
             note.entries.clear()
             Relation.objects.filter(note=note).delete()
 

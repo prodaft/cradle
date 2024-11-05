@@ -23,7 +23,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         return self.username
 
     def __eq__(self, value: object) -> bool:
-        if not isinstance(object, CradleUser):
+        if not isinstance(value, CradleUser):
             return False
 
         return value.pk == self.pk

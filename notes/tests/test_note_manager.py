@@ -45,7 +45,6 @@ class DeleteUnfilteredEntriesTest(NotesTestCase):
     def test_delete_unfiltered_entries(self):
         Note.objects.delete_unreferenced_entries()
 
-        print(Entry.artifacts.all())
         with self.subTest("Check unreferenced artifacts are deleted"):
             self.assertEqual(Entry.artifacts.count(), 4)
         with self.subTest("Check entities are not deleted"):

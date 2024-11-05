@@ -1,4 +1,5 @@
 from .utils import FleetingNotesTestCase
+import json
 from django.urls import reverse
 from entries.models import Entry
 from entries.enums import EntryType
@@ -11,11 +12,14 @@ import uuid
 
 
 class FleetingNotesFinalTest(FleetingNotesTestCase):
-
     def setUp(self):
         super().setUp()
-        self.saved_entity = Entry.objects.create(name="entity", type=EntryType.ENTITY)
-        self.saved_actor = Entry.objects.create(name="actor", type=EntryType.ACTOR)
+        self.saved_entity = Entry.objects.create(
+            name="entity", entry_class=self.entryclass1
+        )
+        self.saved_actor = Entry.objects.create(
+            name="actor", entry_class=self.entryclass2
+        )
 
     def test_fleeting_note_final_does_not_exist(self):
         response = self.client.put(
@@ -62,7 +66,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         self.assertIsNotNone(FleetingNote.objects.get(id=self.note_user.pk))
 
     def test_fleeting_note_final_entries_that_do_not_exist(self):
-        self.note_user.content = "[[actor:actor]] [[entity:wrongentity]]"
+        self.note_user.content = "[[actor:actor]] [[case:wrongentity]]"
         self.note_user.save()
 
         response = self.client.put(
@@ -72,13 +76,14 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
-            response.json()["detail"], "The referenced actors or entities do not exist."
+            response.json()["detail"],
+            "Some of the referenced entries do not exist or you don't have the right permissions to access them:\n(case: wrongentity)",
         )
 
         self.assertIsNotNone(FleetingNote.objects.get(id=self.note_user.pk))
 
     def test_fleeting_note_final_has_no_access_to_entities(self):
-        self.note_user.content = "[[actor:actor]] [[entity:entity]]"
+        self.note_user.content = "[[actor:actor]] [[case:entity]]"
         self.note_user.save()
 
         response = self.client.put(
@@ -88,7 +93,8 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
-            response.json()["detail"], "The referenced actors or entities do not exist."
+            response.json()["detail"],
+            "Some of the referenced entries do not exist or you don't have the right permissions to access them:\n(case: entity)",
         )
 
         self.assertIsNotNone(FleetingNote.objects.get(id=self.note_user.pk))
@@ -129,7 +135,8 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
 
         response = self.client.put(
             reverse("fleeting_notes_final", kwargs={"pk": self.note_user.pk}),
-            {"publishable": True},
+            json.dumps({"publishable": True}),
+            content_type="application/json",
             **self.headers_normal,
         )
 

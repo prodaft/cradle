@@ -51,8 +51,6 @@ class NoteCreateSerializer(serializers.ModelSerializer):
         if "content" not in data or not data["content"]:
             raise NoteIsEmptyException()
 
-        user = self.context["request"].user
-        data["author"] = user
         self.content = data["content"]
 
         return super().validate(data)
@@ -71,12 +69,12 @@ class NoteCreateSerializer(serializers.ModelSerializer):
         Returns:
             The created Note entry
         """
-
         files = validated_data.pop("files", None)
+        validated_data = validated_data
 
         # save the referenced entries to be used when creating the note
         user = self.context["request"].user
-        note = TaskScheduler(self.content, user).run_pipeline()
+        note = TaskScheduler(self.content, user, **validated_data).run_pipeline()
 
         if files is not None:
             file_reference_models = [
@@ -90,9 +88,9 @@ class NoteCreateSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         artifact_ids = set(instance.entries.is_artifact().values_list("id", flat=True))
 
-        note = TaskScheduler(validated_data["content"], user).run_pipeline(instance)
-
         files = validated_data.pop("files", None)
+
+        note = TaskScheduler(user, **validated_data).run_pipeline(instance)
 
         existing_files = set([i.id for i in note.files.all()])
         files_kept = set([i["id"] for i in files if "id" in i])

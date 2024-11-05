@@ -4,6 +4,8 @@ from unittest.mock import patch
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
+from entries.enums import EntryType
+from entries.models import EntryClass
 from fleeting_notes.models import FleetingNote
 from user.models import CradleUser
 
@@ -42,8 +44,29 @@ class FleetingNotesTestCase(TestCase):
             content="Note1", user=self.admin_user
         )
         self.note_user = FleetingNote.objects.create(
-            content="[[actor:actor]] [[entity:entity]]", user=self.normal_user
+            content="[[actor:actor]] [[case:entity]]", user=self.normal_user
         )
+
+        self.entryclass_ip = EntryClass.objects.create(
+            type=EntryType.ARTIFACT, subtype="ip"
+        )
+
+        self.entryclass_country = EntryClass.objects.create(
+            type=EntryType.ARTIFACT, subtype="country"
+        )
+
+        self.entryclass1 = EntryClass.objects.create(
+            type=EntryType.ENTITY, subtype="case"
+        )
+
+        self.entryclass2 = EntryClass.objects.create(
+            type=EntryType.ARTIFACT, subtype="actor"
+        )
+
+        self.entryclass1.save()
+        self.entryclass2.save()
+        self.entryclass_ip.save()
+        self.entryclass_country.save()
 
     def tearDown(self):
         self.patcher.stop()

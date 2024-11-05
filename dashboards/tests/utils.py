@@ -29,6 +29,9 @@ class DashboardsTestCase(TestCase):
             is_staff=False,
             email="c@d.e",
         )
+        self.user1.save()
+        self.user2.save()
+        self.admin_user.save()
 
     def create_tokens(self):
         self.token_user2 = str(AccessToken.for_user(self.user2))
@@ -48,6 +51,10 @@ class DashboardsTestCase(TestCase):
         self.note3 = Note.objects.create(content="Note3")
         self.note3.entries.add(self.entity3, self.artifact1)
 
+        self.note1.save()
+        self.note2.save()
+        self.note3.save()
+
     def create_entities(self):
         self.entityclass1 = EntryClass.objects.create(
             type=EntryType.ENTITY, subtype="case"
@@ -64,6 +71,11 @@ class DashboardsTestCase(TestCase):
         self.entity3 = Entry.objects.create(
             name="Entity3", description="Description3", entry_class=self.entityclass1
         )
+
+        self.entityclass1.save()
+        self.entity1.save()
+        self.entity2.save()
+        self.entity3.save()
 
     def create_access(self):
         self.access1 = Access.objects.create(
@@ -82,6 +94,11 @@ class DashboardsTestCase(TestCase):
             user=self.user2, entity=self.entity2, access_type=AccessType.NONE
         )
 
+        self.access1.save()
+        self.access2.save()
+        self.access3.save()
+        self.access4.save()
+
     def create_artifacts(self):
         self.artifactclass1 = EntryClass.objects.create(
             type=EntryType.ARTIFACT, subtype="ip"
@@ -96,6 +113,9 @@ class DashboardsTestCase(TestCase):
             description="Description1",
             entry_class=self.artifactclass1,
         )
+
+        self.artifactclass1.save()
+        self.artifactclass2.save()
 
     def setUp(self):
         self.patcher = patch("file_transfer.utils.MinioClient.create_user_bucket")

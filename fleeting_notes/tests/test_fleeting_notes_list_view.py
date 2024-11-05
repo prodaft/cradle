@@ -11,7 +11,6 @@ def bytes_to_json(data):
 
 class GetFleetingNotesTest(FleetingNotesTestCase):
     def test_delete_user_cascades_fleeting_notes(self):
-
         self.assertEqual(FleetingNote.objects.count(), 2)
         self.normal_user.delete()
         self.assertEqual(FleetingNote.objects.count(), 1)
@@ -23,7 +22,6 @@ class GetFleetingNotesTest(FleetingNotesTestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_get_only_owned_fleeting_notes_authenticated_admin(self):
-
         response = self.client.get(reverse("fleeting_notes_list"), **self.headers_admin)
 
         self.assertEqual(response.status_code, 200)
@@ -35,7 +33,6 @@ class GetFleetingNotesTest(FleetingNotesTestCase):
         self.assertEqual(len(bytes_to_json(response.content)), 1)
 
     def test_get_only_owned_fleeting_notes_authenticated_not_admin(self):
-
         response = self.client.get(
             reverse("fleeting_notes_list"), **self.headers_normal
         )
@@ -43,7 +40,7 @@ class GetFleetingNotesTest(FleetingNotesTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             bytes_to_json(response.content)[0]["content"],
-            "[[case:case]]",
+            "[[actor:actor]] [[case:entity]]",
         )
         self.assertEqual(
             bytes_to_json(response.content)[0]["last_edited"],
@@ -58,7 +55,6 @@ class GetFleetingNotesTest(FleetingNotesTestCase):
 
 
 class PostFleetingNotesTest(FleetingNotesTestCase):
-
     def test_post_not_authenticated(self):
         response_post = self.client.post(
             reverse("fleeting_notes_list"), {"content": "Note1"}
