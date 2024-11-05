@@ -1,88 +1,64 @@
 from entries.models import Entry
-from entries.enums import EntryType, EntrySubtype
-from notes.utils.entry_creation_task import EntryCreationTask
+from entries.enums import EntryType
+from notes import utils
+from notes.models import Note
+from notes.utils import Link
 from .utils import NotesTestCase
+import notes.processor.entry_population_task as task
 
 
 class EntryCreationTaskTest(NotesTestCase):
-
     def setUp(self):
         super().setUp()
 
-        self.saved_actor = Entry.objects.create(name="actor", type=EntryType.ACTOR)
-        self.saved_entity = Entry.objects.create(name="entity", type=EntryType.ENTITY)
+        self.saved_actor = Entry.objects.create(
+            name="actor", entry_class=self.entryclass2
+        )
+        self.saved_entity = Entry.objects.create(
+            name="entity", entry_class=self.entryclass1
+        )
+        self.saved_actor.save()
+        self.saved_entity.save()
 
         self.saved_metadata = Entry.objects.create(
-            name="Romania", type=EntryType.METADATA, subtype=EntrySubtype.COUNTRY
+            name="Romania", entry_class=self.entryclass_country
         )
-        self.metadata = Entry(
-            name="Romania", type=EntryType.METADATA, subtype=EntrySubtype.COUNTRY
+
+        self.unsaved_metadata = Entry.objects.create(
+            name="Turkey", entry_class=self.entryclass_country
         )
 
         self.saved_artifact = Entry.objects.create(
-            name="127.0.0.1", type=EntryType.ARTIFACT, subtype=EntrySubtype.IP
-        )
-        self.artifact = Entry(
-            name="127.0.0.1", type=EntryType.ARTIFACT, subtype=EntrySubtype.IP
+            name="127.0.0.1", entry_class=self.entryclass_ip
         )
 
-        self.referenced_entries = {}
-        self.entry_types = ["actor", "entity", "artifact", "metadata"]
-        for t in self.entry_types:
-            self.referenced_entries[t] = set()
-        self.referenced_entries["actor"] = {self.saved_actor}
-        self.referenced_entries["entity"] = {self.saved_entity}
+        self.saved_metadata.save()
 
-    def references_assertions(
-        self, refs, actors=set(), entities=set(), artifacts=set(), metadata=set()
-    ):
-        self.assertEqual(refs["actor"], actors)
-        self.assertEqual(refs["entity"], entities)
-        self.assertEqual(refs["artifact"], artifacts)
-        self.assertEqual(refs["metadata"], metadata)
-
-    def test_retrieve_entries(self):
-        self.referenced_entries["artifact"] = {self.artifact}
-        self.referenced_entries["metadata"] = {self.metadata}
-
-        returned_referenced_entries = EntryCreationTask().run(
-            self.referenced_entries
-        )
-
-        self.references_assertions(
-            returned_referenced_entries,
-            actors={self.saved_actor},
-            artifacts={self.saved_artifact},
-            entities={self.saved_entity},
-            metadata={self.saved_metadata},
-        )
+    def tearDown(self):
+        return super().tearDown()
+        task.extract_links = utils.extract_links
 
     def test_save_entries(self):
-        new_artifact = Entry(
-            name="1234", type=EntryType.ARTIFACT, subtype=EntrySubtype.PASSWORD
-        )
-        # this actor should not be saved
-        new_actor = Entry(name="other-actor", type=EntryType.ACTOR)
+        task.extract_links = lambda x: [
+            Link("actor", "actor"),
+            Link("case", "entity"),
+            Link("country", "Turkey"),
+            Link("country", "Romania"),
+        ]
 
-        self.referenced_entries["actor"] = {self.saved_actor, new_actor}
-        self.referenced_entries["artifact"] = {new_artifact}
+        note = Note(content="123", author=self.user)
+        note.save()
 
-        returned_referenced_entries = EntryCreationTask().run(
-            self.referenced_entries
-        )
+        note = task.EntryPopulationTask(self.user).run(note)
 
-        newly_created_artifact = Entry.objects.get(
-            name=new_artifact.name, type=new_artifact.type, subtype=new_artifact.subtype
-        )
-
-        self.references_assertions(
-            returned_referenced_entries,
-            actors={self.saved_actor, new_actor},
-            artifacts={newly_created_artifact},
-            entities={self.saved_entity},
-        )
-
-        # assert that the new actor is not saved
-        self.assertFalse(
-            Entry.objects.filter(name="other-actor", type=EntryType.ACTOR).exists()
+        self.assertSetEqual(
+            set(note.entries.all()),
+            set(
+                [
+                    self.saved_actor,
+                    self.saved_entity,
+                    self.saved_metadata,
+                    self.unsaved_metadata,
+                ]
+            ),
         )

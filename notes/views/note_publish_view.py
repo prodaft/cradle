@@ -10,6 +10,7 @@ from ..serializers import NotePublishSerializer, ReportSerializer, ReportQuerySe
 
 from ..exceptions import (
     NoAccessToEntriesException,
+    NoteDoesNotExistException,
 )
 
 from ..utils import PublishUtils
@@ -101,8 +102,6 @@ class NotePublishList(APIView):
             set(referenced_entities),
             {AccessType.READ, AccessType.READ_WRITE},
         ):
-            raise NoAccessToEntriesException(
-                "One of the provided notes does not exist."
-            )
+            raise NoteDoesNotExistException()
 
         return Response(ReportSerializer(PublishUtils.get_report(required_notes)).data)

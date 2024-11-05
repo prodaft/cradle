@@ -7,7 +7,7 @@ from user.models import CradleUser
 from access.models import Access
 from access.enums import AccessType
 from django.db.models import Case, When, Q, F
-from django.contrib.postgres.aggregates import ArrayAgg
+from django.contrib.postgres.aggregates import ArrayAgg, StringAgg
 from django.db.models.functions import Coalesce
 
 from typing import List
@@ -76,12 +76,12 @@ class NoteQuerySet(models.QuerySet):
                 access_type=ArrayAgg(
                     Coalesce(
                         Subquery(access_subquery, output_field=CharField()),
-                        Value("<none>"),
+                        Value("none"),
                         distinct=True,
                     ),
                 )
             )
-            .filter(~Q(access_type__contains=["<none>"]))
+            .filter(~Q(access_type__contains=["none"]))
         )
         return self.filter(id__in=rels.values_list("note", flat=True))
 

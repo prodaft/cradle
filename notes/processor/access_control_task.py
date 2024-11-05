@@ -1,17 +1,11 @@
 from access.enums import AccessType
 from access.models import Access
 from notes.exceptions import (
-    EntriesDoNotExistException,
     NoAccessToEntriesException,
 )
-from ..utils import extract_links
-from entries.enums import EntryType
-from entries.models import Entry, EntryClass
 
 from .base_task import BaseTask
 from ..models import Note
-
-from django.conf import settings
 
 
 class AccessControlTask(BaseTask):

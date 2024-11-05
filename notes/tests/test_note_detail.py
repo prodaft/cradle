@@ -5,7 +5,6 @@ from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.parsers import JSONParser
 from ..models import Note, ArchivedNote
 from entries.models import Entry
-from entries.enums import EntryType, EntrySubtype
 from access.models import Access
 from access.enums import AccessType
 import io
@@ -21,9 +20,6 @@ class GetNoteTest(NotesTestCase):
     def setUp(self):
         super().setUp()
 
-        self.user = CradleUser.objects.create_user(
-            username="user", password="user", email="alabala@gmail.com"
-        )
         self.user_token = str(AccessToken.for_user(self.user))
         self.not_owner = CradleUser.objects.create_user(
             username="not_owner", password="pass", email="b@c.d"
@@ -87,13 +83,9 @@ class GetNoteTest(NotesTestCase):
 
 
 class DeleteNoteTest(NotesTestCase):
-
     def setUp(self):
         super().setUp()
 
-        self.user = CradleUser.objects.create_user(
-            username="user", password="user", email="alabala@gmail.com"
-        )
         self.user_token = str(AccessToken.for_user(self.user))
         self.not_owner = CradleUser.objects.create_user(
             username="not_owner", password="pass", email="b@c.d"
@@ -108,13 +100,11 @@ class DeleteNoteTest(NotesTestCase):
 
     def init_database(self):
         self.entity = Entry.objects.create(
-            name="Clearly not an entity", type=EntryType.ENTITY
+            name="Clearly not an entity", entry_class=self.entryclass1
         )
         # init entries
         self.entries = [
-            Entry.objects.create(
-                name=f"Entry{i}", type=EntryType.ARTIFACT, subtype=EntrySubtype.IP
-            )
+            Entry.objects.create(name=f"Entry{i}", entry_class=self.entryclass_ip)
             for i in range(0, 4)
         ]
 
@@ -180,7 +170,9 @@ class DeleteNoteTest(NotesTestCase):
             self.assertEqual(ArchivedNote.objects.count(), archive_count + 1)
 
     def test_delete_note_no_access(self):
-        entity1 = Entry.objects.create(name="this is an entity", type=EntryType.ENTITY)
+        entity1 = Entry.objects.create(
+            name="this is an entity", entry_class=self.entryclass1
+        )
         self.notes[1].entries.add(entity1)
         note_id = self.notes[1].id
         response = self.client.delete(
