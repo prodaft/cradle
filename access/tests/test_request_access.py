@@ -13,7 +13,6 @@ import uuid
 
 
 class RequestAccessTest(AccessTestCase):
-
     def setUp(self):
         super().setUp()
 
@@ -29,7 +28,7 @@ class RequestAccessTest(AccessTestCase):
             )
         )
 
-        self.entity = Entry.objects.create(name="entity", type=EntryType.ENTITY)
+        self.entity = Entry.objects.create(name="entity", entry_class=self.entryclass1)
 
         Access.objects.create(
             user=self.users[1], entity=self.entity, access_type=AccessType.READ_WRITE

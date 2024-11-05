@@ -27,7 +27,7 @@ class EntryQuerySerializer(serializers.Serializer):
         super().__init__(*args, **kwargs)
 
     def validate(self, data):
-        if len(data["entrySubtype"]) == 0:
+        if len(data.get("entrySubtype", [])) == 0:
             data["entrySubtype"] = [x.subtype for x in EntryClass.objects.all()]
 
         return super().validate(data)

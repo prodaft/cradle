@@ -66,9 +66,6 @@ class QueryList(APIView):
                 )
             )
 
-        for i in accessible_entries:
-            print(i.entry_class.subtype, i.name)
-
         entries = Entry.objects.get_filtered_entries(
             accessible_entries,
             param_serializer.data["entrySubtype"],

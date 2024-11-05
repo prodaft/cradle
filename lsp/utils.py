@@ -29,7 +29,7 @@ class LspUtils:
 
         for i in entry_classes:
             if i.subtype.strip() == "":
-                print(i)
+                continue
             if i.subtype not in pack["classes"]:
                 if i.regex:
                     pack["classes"][i.subtype] = {"regex": i.regex}

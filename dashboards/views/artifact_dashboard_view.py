@@ -37,23 +37,18 @@ class ArtifactDashboard(APIView):
         user: CradleUser = cast(CradleUser, request.user)
 
         artifact_subtype = request.query_params.get("subtype")
-        print(artifact_subtype)
-        print(artifact_name)
 
         try:
             artifact = Entry.artifacts.get(
                 name=artifact_name, entry_class__subtype=artifact_subtype
             )
-            print(artifact)
         except Entry.DoesNotExist:
             return Response(
                 "There is no artifact with specified name",
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        print("YEEE")
         if not Note.objects.get_accessible_notes(user, artifact.id).exists():
-            print("ASD")
             return Response(
                 "There is no artifact with specified name",
                 status=status.HTTP_404_NOT_FOUND,

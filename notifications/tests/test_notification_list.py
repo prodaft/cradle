@@ -25,7 +25,7 @@ class NotificationListTest(NotificationsTestCase):
             is_staff=False,
             email="b@c.d",
         )
-        self.entity = Entry.objects.create(name="Entity", type=EntryType.ENTITY)
+        self.entity = Entry.objects.create(name="Entity", entry_class=self.entryclass1)
 
         self.token = str(AccessToken.for_user(self.user))
         self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.token}"}

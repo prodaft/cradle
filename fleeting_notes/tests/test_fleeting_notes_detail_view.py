@@ -12,14 +12,12 @@ def bytes_to_json(data):
 
 
 class GetFleetingNoteByIdTest(FleetingNotesTestCase):
-
     def test_get_not_authenticated(self):
         response = self.client.get(reverse("fleeting_notes_list"))
 
         self.assertEqual(response.status_code, 401)
 
     def test_get_fleeting_note_by_id_authenticated_admin(self):
-
         response = self.client.get(
             reverse("fleeting_notes_detail", kwargs={"pk": self.note_admin.pk}),
             **self.headers_admin,
@@ -42,7 +40,6 @@ class GetFleetingNoteByIdTest(FleetingNotesTestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_get_fleeting_note_by_id_authenticated_not_admin(self):
-
         response = self.client.get(
             reverse("fleeting_notes_detail", kwargs={"pk": self.note_user.pk}),
             **self.headers_normal,
@@ -50,7 +47,8 @@ class GetFleetingNoteByIdTest(FleetingNotesTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            bytes_to_json(response.content)["content"], "[[actor:actor]] [[entity:entity]]"
+            bytes_to_json(response.content)["content"],
+            "[[actor:actor]] [[case:entity]]",
         )
         self.assertEqual(
             bytes_to_json(response.content)["last_edited"],
@@ -59,7 +57,6 @@ class GetFleetingNoteByIdTest(FleetingNotesTestCase):
         self.assertEqual(bytes_to_json(response.content)["id"], str(self.note_user.pk))
 
     def test_get_fleeting_note_by_id_authenticated_not_admin_not_own_note(self):
-
         response = self.client.get(
             reverse("fleeting_notes_detail", kwargs={"pk": self.note_admin.pk}),
             **self.headers_normal,
@@ -68,7 +65,6 @@ class GetFleetingNoteByIdTest(FleetingNotesTestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_get_fleeting_note_by_id_authenticated_admin_not_own_note(self):
-
         response = self.client.get(
             reverse("fleeting_notes_detail", kwargs={"pk": self.note_user.pk}),
             **self.headers_admin,
@@ -78,7 +74,6 @@ class GetFleetingNoteByIdTest(FleetingNotesTestCase):
 
 
 class PutFleetingNotesByIdTest(FleetingNotesTestCase):
-
     def test_put_not_authenticated(self):
         response = self.client.put(
             reverse("fleeting_notes_detail", kwargs={"pk": uuid.uuid4()})
@@ -87,7 +82,6 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_put_fleeting_note_by_id_authenticated_admin(self):
-
         response = self.client.put(
             reverse("fleeting_notes_detail", kwargs={"pk": self.note_admin.pk}),
             {"content": "New content"},
@@ -189,7 +183,6 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
 
 
 class DeleteFleetingNotesByIdTest(FleetingNotesTestCase):
-
     def test_delete_not_authenticated(self):
         response = self.client.delete(
             reverse("fleeting_notes_detail", kwargs={"pk": uuid.uuid4()})

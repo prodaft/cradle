@@ -82,6 +82,14 @@ class EntitySerializer(serializers.ModelSerializer):
         model = Entry
         fields = ["id", "name", "description", "entry_class"]
 
+    def exists(self) -> bool:
+        if Entry.objects.filter(
+            name=self.validated_data["name"],
+            entry_class__subtype=self.validated_data["entry_class"].subtype,
+        ).exists():
+            return True
+        return False
+
     def to_representation(self, instance):
         """Move fields from profile to user representation."""
         representation = super().to_representation(instance)
@@ -99,6 +107,10 @@ class EntitySerializer(serializers.ModelSerializer):
             raise EntryMustHaveASubtype()
 
         entry_class_internal = {}
+
+        for i in data:  # For lists in querydict
+            if isinstance(data[i], list):
+                data[i] = data[i][0]
 
         for key in EntryClassSerializer.Meta.fields:
             if key in data:

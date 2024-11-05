@@ -17,7 +17,6 @@ def bytes_to_json(data):
 
 
 class AccessListTest(AccessTestCase):
-
     def setUp(self):
         super().setUp()
 
@@ -32,7 +31,7 @@ class AccessListTest(AccessTestCase):
         self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
         self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
         self.entity, created = Entry.objects.get_or_create(
-            name="Entity 1", description="Cool entity", type=EntryType.ENTITY
+            name="Entity 1", description="Cool entity", entry_class=self.entryclass1
         )
 
     def test_access_list_success(self):
@@ -111,7 +110,7 @@ class AccessListTest(AccessTestCase):
         Access.objects.create(
             user=self.user, entity=self.entity, access_type=AccessType.READ
         )
-        entity2 = Entry.objects.create(name="Entity 2", type=EntryType.ENTITY)
+        entity2 = Entry.objects.create(name="Entity 2", entry_class=self.entryclass1)
 
         response = self.client.get(
             reverse(

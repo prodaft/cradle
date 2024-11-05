@@ -48,6 +48,6 @@ class InvalidClassFormatException(APIException):
 
 
 class EntryMustHaveASubtype(APIException):
-    status_code = 409
+    status_code = 400
     default_detail = "An entry must always specify a subtype"
     default_code = "unique"

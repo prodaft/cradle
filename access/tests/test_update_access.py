@@ -13,7 +13,6 @@ import uuid
 
 
 class UpdateAccessTest(AccessTestCase):
-
     def setUp(self):
         super().setUp()
 
@@ -28,7 +27,7 @@ class UpdateAccessTest(AccessTestCase):
                 username="admin", password="admin", email="b@c.d"
             )
         )
-        self.entity = Entry.objects.create(name="entity", type=EntryType.ENTITY)
+        self.entity = Entry.objects.create(name="entity", entry_class=self.entryclass1)
 
         self.tokens = [str(AccessToken.for_user(self.users[id])) for id in range(4)]
         self.headers = [
@@ -134,7 +133,9 @@ class UpdateAccessTest(AccessTestCase):
         self.assertEqual(MessageNotification.objects.count(), 0)
         self.assertTrue(
             Access.objects.filter(
-                user=self.users[0], entity=self.entity, access_type=AccessType.READ_WRITE
+                user=self.users[0],
+                entity=self.entity,
+                access_type=AccessType.READ_WRITE,
             ).exists()
         )
 
@@ -158,7 +159,6 @@ class UpdateAccessTest(AccessTestCase):
         )
 
     def test_update_access_bad_request(self):
-
         response = self.client.put(
             reverse(
                 "update_access",
@@ -221,6 +221,8 @@ class UpdateAccessTest(AccessTestCase):
 
         self.assertTrue(
             Access.objects.filter(
-                user=self.users[2], entity=self.entity, access_type=AccessType.READ_WRITE
+                user=self.users[2],
+                entity=self.entity,
+                access_type=AccessType.READ_WRITE,
             ).exists()
         )

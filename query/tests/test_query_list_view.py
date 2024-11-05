@@ -35,22 +35,9 @@ class QueryListTest(QueryTestCase):
         self.__init_database()
 
     def __init_database(self):
-        self.entityclass1 = EntryClass.objects.create(
-            type=EntryType.ENTITY, subtype="case"
-        )
-        self.artifactclass1 = EntryClass.objects.create(
-            type=EntryType.ARTIFACT, subtype="ip"
-        )
-        self.artifactclass2 = EntryClass.objects.create(
-            type=EntryType.ARTIFACT, subtype="password"
-        )
-        self.artifactclass3 = EntryClass.objects.create(
-            type=EntryType.ARTIFACT, subtype="country"
-        )
-
         self.entities = [
             Entry.objects.create(
-                name=f"Entity {i}", description=f"{i}", entry_class=self.entityclass1
+                name=f"Entity {i}", description=f"{i}", entry_class=self.entryclass1
             )
             for i in range(0, 4)
         ]
@@ -59,14 +46,14 @@ class QueryListTest(QueryTestCase):
             Entry.objects.create(
                 name="Artifact1",
                 description="1",
-                entry_class=self.artifactclass1,
+                entry_class=self.entryclass_ip,
             )
         )
         self.artifacts.append(
             Entry.objects.create(
                 name="3nTry2",
                 description="2",
-                entry_class=self.artifactclass2,
+                entry_class=self.entryclass_country,
             )
         )
 
@@ -84,7 +71,7 @@ class QueryListTest(QueryTestCase):
 
         Entry.objects.create(
             name="Romania",
-            entry_class=self.artifactclass3,
+            entry_class=self.entryclass_country,
         )
 
         self.note = Note.objects.create(content="Note content")

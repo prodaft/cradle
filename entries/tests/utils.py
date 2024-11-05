@@ -1,6 +1,9 @@
 from django.test import TestCase
 from unittest.mock import patch
 
+from entries.enums import EntryType
+from entries.models import EntryClass
+
 
 class EntriesTestCase(TestCase):
     def setUp(self):
@@ -12,6 +15,22 @@ class EntriesTestCase(TestCase):
 
         self.mocked_success_logger = self.success_logger_patcher.start()
         self.mocked_error_logger = self.error_logger_patcher.start()
+
+        self.entryclass_username = EntryClass.objects.create(
+            type=EntryType.ARTIFACT, subtype="username"
+        )
+
+        self.entryclass_password = EntryClass.objects.create(
+            type=EntryType.ARTIFACT, subtype="password"
+        )
+
+        self.entryclass1 = EntryClass.objects.create(
+            type=EntryType.ENTITY, subtype="case"
+        )
+
+        self.entryclass1.save()
+        self.entryclass_username.save()
+        self.entryclass_password.save()
 
     def tearDown(self):
         self.patcher.stop()

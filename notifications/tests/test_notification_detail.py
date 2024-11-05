@@ -21,7 +21,7 @@ class NotificationDetailTest(NotificationsTestCase):
             is_staff=False,
             email="alabala@gmail.com",
         )
-        self.entity = Entry.objects.create(name="Entity", type=EntryType.ENTITY)
+        self.entity = Entry.objects.create(name="Entity", entry_class=self.entryclass1)
         self.message_user = MessageNotification.objects.create(
             user=self.user, message="Test message"
         )

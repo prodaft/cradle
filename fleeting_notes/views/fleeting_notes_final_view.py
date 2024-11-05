@@ -15,7 +15,6 @@ from uuid import UUID
 
 
 class FleetingNotesFinal(APIView):
-
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 

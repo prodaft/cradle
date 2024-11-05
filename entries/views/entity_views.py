@@ -6,6 +6,8 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.request import Request
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
+from entries.exceptions import DuplicateEntryException
+
 from ..serializers import EntitySerializer, EntryResponseSerializer
 from ..models import Entry
 from logs.utils import LoggingUtils
@@ -45,9 +47,12 @@ class EntityList(APIView):
         return Response(serializer.data)
 
     def post(self, request: Request) -> Response:
-        serializer = EntitySerializer(data=request.data)
+        serializer = EntitySerializer(data=dict(request.data))
         if serializer.is_valid():
+            if serializer.exists():
+                raise DuplicateEntryException()
             serializer.save()
+
             LoggingUtils.log_entry_creation(request)
             return Response(serializer.data)
         return Response("Bad request", status=status.HTTP_400_BAD_REQUEST)

@@ -7,7 +7,6 @@ from .utils import AccessTestCase
 
 
 class AccessManagerHasAccessTest(AccessTestCase):
-
     def create_users(self):
         self.user = CradleUser.objects.create_user(
             username="user", password="user", email="alabala@gmail.com"
@@ -17,10 +16,18 @@ class AccessManagerHasAccessTest(AccessTestCase):
         )
 
     def create_entities(self):
-        self.entity1 = Entry.objects.create(name="entity1", type=EntryType.ENTITY)
-        self.entity2 = Entry.objects.create(name="entity2", type=EntryType.ENTITY)
-        self.entity3 = Entry.objects.create(name="entity3", type=EntryType.ENTITY)
-        self.entity4 = Entry.objects.create(name="entity4", type=EntryType.ENTITY)
+        self.entity1 = Entry.objects.create(
+            name="entity1", entry_class=self.entryclass1
+        )
+        self.entity2 = Entry.objects.create(
+            name="entity2", entry_class=self.entryclass1
+        )
+        self.entity3 = Entry.objects.create(
+            name="entity3", entry_class=self.entryclass1
+        )
+        self.entity4 = Entry.objects.create(
+            name="entity4", entry_class=self.entryclass1
+        )
 
     def create_access(self):
         Access.objects.create(
@@ -100,7 +107,6 @@ class AccessManagerHasAccessTest(AccessTestCase):
 
 
 class AccessManagerGetAccessibleTest(AccessTestCase):
-
     def setUp(self):
         super().setUp()
 
@@ -109,7 +115,8 @@ class AccessManagerGetAccessibleTest(AccessTestCase):
             for i in range(0, 3)
         ]
         self.entities = [
-            Entry.objects.create(name=f"c{i}", type="entity") for i in range(0, 3)
+            Entry.objects.create(name=f"c{i}", entry_class=self.entryclass1)
+            for i in range(0, 3)
         ]
         for i in range(0, 3):
             Access.objects.create(
@@ -125,7 +132,9 @@ class AccessManagerGetAccessibleTest(AccessTestCase):
             user=self.users[2], entity=self.entities[0], access_type=AccessType.NONE
         )
         Access.objects.create(
-            user=self.users[2], entity=self.entities[1], access_type=AccessType.READ_WRITE
+            user=self.users[2],
+            entity=self.entities[1],
+            access_type=AccessType.READ_WRITE,
         )
         Access.objects.create(
             user=self.users[2], entity=self.entities[2], access_type=AccessType.READ
@@ -172,7 +181,6 @@ class AccessManagerGetAccessibleTest(AccessTestCase):
 
 
 class AccessManagerGetUsersWithAccessTest(AccessTestCase):
-
     def setUp(self):
         super().setUp()
 
@@ -188,7 +196,7 @@ class AccessManagerGetUsersWithAccessTest(AccessTestCase):
             )
         )
 
-        self.entity = Entry.objects.create(name="Entity", type=EntryType.ENTITY)
+        self.entity = Entry.objects.create(name="Entity", entry_class=self.entryclass1)
 
         Access.objects.create(
             user=self.users[0], entity=self.entity, access_type=AccessType.NONE
@@ -205,13 +213,12 @@ class AccessManagerGetUsersWithAccessTest(AccessTestCase):
 
 
 class AccessManagerCheckUserAccessTest(AccessTestCase):
-
     def setUp(self):
         super().setUp()
         self.user = CradleUser.objects.create_user(
             username="user", password="user", email="alabala@gmail.com"
         )
-        self.entity = Entry.objects.create(name="entity", type=EntryType.ENTITY)
+        self.entity = Entry.objects.create(name="entity", entry_class=self.entryclass1)
 
     def test_check_user_access_has_access_type(self):
         Access.objects.create(

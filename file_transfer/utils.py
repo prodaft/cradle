@@ -121,5 +121,4 @@ class MinioClient:
         try:
             return self.client.get_object(bucket_name, object_name=path)
         except Exception as e:
-            print(e)
             return None

@@ -17,7 +17,6 @@ def bytes_to_json(data):
 
 
 class DeleteEntityDetailsTest(EntriesTestCase):
-
     def setUp(self):
         super().setUp()
 
@@ -41,29 +40,31 @@ class DeleteEntityDetailsTest(EntriesTestCase):
 
     def test_delete_entity_admin(self):
         entity = Entry.objects.create(
-            name="Entity1", description="Description1", type=EntryType.ENTITY
+            name="Entity1", description="Description1", entry_class=self.entryclass1
         )
 
         response = self.client.delete(
-            reverse("entity_detail", kwargs={"entity_id": entity.pk}), **self.headers_admin
+            reverse("entity_detail", kwargs={"entity_id": entity.pk}),
+            **self.headers_admin,
         )
 
         self.assertEqual(response.status_code, 200)
 
     def test_delete_entity_authenticated_not_admin(self):
         entity = Entry.objects.create(
-            name="Entity1", description="Description1", type=EntryType.ENTITY
+            name="Entity1", description="Description1", entry_class=self.entryclass1
         )
 
         response = self.client.delete(
-            reverse("entity_detail", kwargs={"entity_id": entity.pk}), **self.headers_normal
+            reverse("entity_detail", kwargs={"entity_id": entity.pk}),
+            **self.headers_normal,
         )
 
         self.assertEqual(response.status_code, 403)
 
     def test_delete_entity_not_authenticated(self):
         entity = Entry.objects.create(
-            name="Entity1", description="Description1", type=EntryType.ENTITY
+            name="Entity1", description="Description1", entry_class=self.entryclass1
         )
 
         response = self.client.delete(
@@ -74,7 +75,7 @@ class DeleteEntityDetailsTest(EntriesTestCase):
 
     def test_delete_entity_admin_wrong_id(self):
         Entry.objects.create(
-            name="Entity1", description="Description1", type=EntryType.ENTITY
+            name="Entity1", description="Description1", entry_class=self.entryclass1
         )
 
         response = self.client.delete(

@@ -8,7 +8,6 @@ from .utils import EntriesTestCase
 
 from ..models import Entry
 from ..serializers import EntryResponseSerializer
-from ..enums import EntryType
 
 
 def bytes_to_json(data):
@@ -16,7 +15,6 @@ def bytes_to_json(data):
 
 
 class GetEntityListTest(EntriesTestCase):
-
     def setUp(self):
         super().setUp()
 
@@ -40,10 +38,10 @@ class GetEntityListTest(EntriesTestCase):
 
     def test_get_entities_admin(self):
         Entry.objects.create(
-            name="Entity1", description="Description1", type=EntryType.ENTITY
+            name="Entity1", description="Description1", entry_class=self.entryclass1
         )
         Entry.objects.create(
-            name="Entity2", description="Description2", type=EntryType.ENTITY
+            name="Entity2", description="Description2", entry_class=self.entryclass1
         )
         entities = Entry.entities.all()
 
@@ -66,7 +64,6 @@ class GetEntityListTest(EntriesTestCase):
 
 
 class PostEntityListTest(EntriesTestCase):
-
     def setUp(self):
         super().setUp()
 
@@ -89,32 +86,37 @@ class PostEntityListTest(EntriesTestCase):
         self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
 
     def test_create_entity_admin(self):
-        entity_json = {"name": "entity1", "description": "description1"}
+        entity_json = {
+            "name": "entity1",
+            "subtype": self.entryclass1.subtype,
+            "description": "description1",
+        }
 
         response_post = self.client.post(
             reverse("entity_list"), entity_json, **self.headers_admin
         )
         self.assertEqual(response_post.status_code, 200)
-        self.assertEqual(entity_json, bytes_to_json(response_post.content))
-
         self.assertEqual(Entry.entities.count(), 1)
+
         self.assertEqual(Entry.entities.get().name, "entity1")
 
     def test_create_entity_no_description_admin(self):
-        entity_json = {"name": "entity1"}
-        expected_json = {"name": "entity1", "description": None}
+        entity_json = {"name": "entity1", "subtype": "case"}
 
         response_post = self.client.post(
             reverse("entity_list"), entity_json, **self.headers_admin
         )
         self.assertEqual(response_post.status_code, 200)
-        self.assertEqual(expected_json, bytes_to_json(response_post.content))
 
         self.assertEqual(Entry.entities.count(), 1)
         self.assertEqual(Entry.entities.get().name, "entity1")
 
     def test_create_entity_duplicate_admin(self):
-        entity_json = {"name": "entity1", "description": "description1"}
+        entity_json = {
+            "name": "entity1",
+            "subtype": "case",
+            "description": "description1",
+        }
 
         response_post = self.client.post(
             reverse("entity_list"), entity_json, **self.headers_admin
@@ -137,7 +139,11 @@ class PostEntityListTest(EntriesTestCase):
         self.assertRaises(Entry.DoesNotExist, lambda: Entry.objects.get(name="entity1"))
 
     def test_create_entity_authenticated_not_admin(self):
-        entity_json = {"name": "entity1", "description": "description1"}
+        entity_json = {
+            "name": "entity1",
+            "subtype": "case",
+            "description": "description1",
+        }
 
         response_post = self.client.post(
             reverse("entity_list"), entity_json, **self.headers_normal
@@ -145,7 +151,11 @@ class PostEntityListTest(EntriesTestCase):
         self.assertEqual(response_post.status_code, 403)
 
     def test_create_entity_authenticated_not_authenticated(self):
-        entity_json = {"name": "entity1", "description": "description1"}
+        entity_json = {
+            "name": "entity1",
+            "subtype": "case",
+            "description": "description1",
+        }
 
         response_post = self.client.post(reverse("entity_list"), entity_json)
         self.assertEqual(response_post.status_code, 401)

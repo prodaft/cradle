@@ -2,17 +2,26 @@ from django.urls import reverse
 from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
 import io
+
+from dashboards.utils.dashboard_utils import DashboardUtils
 from .utils import DashboardsTestCase
 
 from entries.models import Entry
 from notes.models import Note
+import pytest
 
 
 def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
 
 
+pytestmark = pytest.mark.django_db
+
+
+@pytest.mark.django_db
 class GetArtifactDashboardTest(DashboardsTestCase):
+    pytestmark = pytest.mark.django_db
+
     def check_ids(self, entries, entries_json):
         with self.subTest("Check number of entries"):
             self.assertEqual(len(entries), len(entries_json))
@@ -40,6 +49,10 @@ class GetArtifactDashboardTest(DashboardsTestCase):
         self.note1.entries.add(self.artifact2)
         self.note2.entries.add(self.artifact2)
 
+        self.artifact2.save()
+        self.note1.save()
+        self.note2.save()
+
     def test_get_dashboard_admin(self):
         response = self.client.get(
             reverse(
@@ -48,7 +61,7 @@ class GetArtifactDashboardTest(DashboardsTestCase):
             {"subtype": "url"},
             **self.headers_admin,
         )
-        print(response)
+        print(DashboardUtils.get_dashboard(self.admin_user, self.artifact2.id))
         self.assertEqual(response.status_code, 200)
 
         notes = Note.objects.exclude(id=self.note3.id).order_by("-timestamp")
