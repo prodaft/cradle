@@ -39,9 +39,6 @@ class FileReferenceSerializer(serializers.ModelSerializer):
         """
         user = self.context["request"].user
 
-        if data["bucket_name"] != str(user.id):
-            raise IncorrectBucketException()
-
         if not MinioClient().file_exists_at_path(
             bucket_name=data["bucket_name"], minio_file_name=data["minio_file_name"]
         ):
