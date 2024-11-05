@@ -23,7 +23,6 @@ class CountReferencesTask(BaseTask):
 
         # references will be a list of tuples which describe matches in
         # the note content
-
         entity_count = note.entries.filter(entry_class__type=EntryType.ENTITY).count()
 
         if entity_count < settings.MIN_ENTITY_COUNT_PER_NOTE:

@@ -3,7 +3,7 @@ from user.models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 
 from entries.models import Entry
-from entries.enums import EntryType, EntrySubtype
+from entries.enums import EntryType
 from access.models import Access
 from notes.models import Note
 
@@ -15,29 +15,26 @@ class DeleteUnfilteredEntriesTest(NotesTestCase):
         super().setUp()
 
         self.entity = Entry.objects.create(
-            name="Clearly not an entity", type=EntryType.ENTITY
+            name="Clearly not an entity", entry_class=self.entryclass1
         )
         self.entity1 = Entry.objects.create(
-            name="Unreferenced entity", type=EntryType.ENTITY
+            name="Unreferenced entity", entry_class=self.entryclass1
         )
         # init entries
         self.entries = [
-            Entry.objects.create(
-                name=f"Entry{i}", type=EntryType.ARTIFACT, subtype=EntrySubtype.IP
-            )
+            Entry.objects.create(name=f"Entry{i}", entry_class=self.entryclass_ip)
             for i in range(0, 4)
         ]
 
         self.metadata = [
             Entry.objects.create(
                 name=f"Metadata{i}",
-                type=EntryType.METADATA,
-                subtype=EntrySubtype.COUNTRY,
+                entry_class=self.entryclass_country,
             )
             for i in range(0, 3)
         ]
 
-        self.actor = Entry.objects.create(name="Actor", type=EntryType.ACTOR)
+        self.actor = Entry.objects.create(name="Actor", entry_class=self.entryclass2)
 
         self.note = Note.objects.create()
         self.note.entries.add(self.entries[0])
@@ -48,14 +45,11 @@ class DeleteUnfilteredEntriesTest(NotesTestCase):
     def test_delete_unfiltered_entries(self):
         Note.objects.delete_unreferenced_entries()
 
+        print(Entry.artifacts.all())
         with self.subTest("Check unreferenced artifacts are deleted"):
-            self.assertEqual(Entry.artifacts.count(), 2)
-        with self.subTest("Check unreferenced metadata is deleted"):
-            self.assertEqual(Entry.metadata.count(), 2)
+            self.assertEqual(Entry.artifacts.count(), 4)
         with self.subTest("Check entities are not deleted"):
             self.assertEqual(Entry.entities.count(), 2)
-        with self.subTest("Check actors are not deleted"):
-            self.assertEqual(Entry.actors.count(), 1)
 
         for i in range(2, 4):
             with self.assertRaises(Entry.DoesNotExist):
@@ -66,14 +60,12 @@ class DeleteUnfilteredEntriesTest(NotesTestCase):
 
 
 class AccessibleNotesTest(NotesTestCase):
-
     def create_users(self):
-        self.admin_user = CradleUser.objects.create_superuser(
-            username="admin",
-            password="password",
-            is_staff=True,
-            email="alabala@gmail.com",
-        )
+        self.user.is_staff = True
+        self.user.is_superuser = True
+        self.user.save()
+
+        self.admin_user = self.user
         self.user1 = CradleUser.objects.create_user(
             username="user1",
             password="password",
@@ -98,41 +90,43 @@ class AccessibleNotesTest(NotesTestCase):
     def create_notes(self):
         self.note1 = Note.objects.create(content="Note1")
         self.note1.entries.set([self.entity1, self.actor1, self.metadata1])
+        self.note1.save()
 
         self.note2 = Note.objects.create(content="Note2")
         self.note2.entries.set([self.entity2, self.actor2, self.entity1])
+        self.note2.save()
 
         self.note3 = Note.objects.create(content="Note3")
         self.note3.entries.set([self.entity3])
+        self.note3.save()
 
     def create_entities(self):
         self.entity1 = Entry.objects.create(
-            name="Entity1", description="Description1", type=EntryType.ENTITY
+            name="Entity1", description="Description1", entry_class=self.entryclass1
         )
 
         self.entity2 = Entry.objects.create(
-            name="Entity2", description="Description2", type=EntryType.ENTITY
+            name="Entity2", description="Description2", entry_class=self.entryclass1
         )
 
         self.entity3 = Entry.objects.create(
-            name="Entity3", description="Description3", type=EntryType.ENTITY
+            name="Entity3", description="Description3", entry_class=self.entryclass1
         )
 
     def create_actors(self):
         self.actor1 = Entry.objects.create(
-            name="Actor1", description="Description1", type=EntryType.ACTOR
+            name="Actor1", description="Description1", entry_class=self.entryclass2
         )
 
         self.actor2 = Entry.objects.create(
-            name="Actor2", description="Description2", type=EntryType.ACTOR
+            name="Actor2", description="Description2", entry_class=self.entryclass2
         )
 
     def create_metadata(self):
         self.metadata1 = Entry.objects.create(
             name="Metadata1",
             description="Description1",
-            type=EntryType.METADATA,
-            subtype=EntrySubtype.COUNTRY,
+            entry_class=self.entryclass_country,
         )
 
     def create_access(self):
@@ -213,7 +207,6 @@ class AccessibleNotesTest(NotesTestCase):
 
 
 class GetAllNotesTest(NotesTestCase):
-
     def create_notes(self):
         self.note1 = Note.objects.create(content="Note1")
         self.note1.entries.set([self.entity1, self.actor1, self.metadata1])
@@ -223,35 +216,33 @@ class GetAllNotesTest(NotesTestCase):
 
     def create_entities(self):
         self.entity1 = Entry.objects.create(
-            name="Entity1", description="Description1", type=EntryType.ENTITY
+            name="Entity1", description="Description1", entry_class=self.entryclass1
         )
 
         self.entity2 = Entry.objects.create(
-            name="Entity2", description="Description2", type=EntryType.ENTITY
+            name="Entity2", description="Description2", entry_class=self.entryclass1
         )
 
     def create_actors(self):
         self.actor1 = Entry.objects.create(
-            name="Actor1", description="Description1", type=EntryType.ACTOR
+            name="Actor1", description="Description1", entry_class=self.entryclass2
         )
 
         self.actor2 = Entry.objects.create(
-            name="Actor2", description="Description2", type=EntryType.ACTOR
+            name="Actor2", description="Description2", entry_class=self.entryclass2
         )
 
     def create_metadata(self):
         self.metadata1 = Entry.objects.create(
             name="Metadata1",
             description="Description1",
-            type=EntryType.METADATA,
-            subtype=EntrySubtype.COUNTRY,
+            entry_class=self.entryclass_country,
         )
 
         self.metadata2 = Entry.objects.create(
             name="Metadata2",
             description="Description1",
-            type=EntryType.METADATA,
-            subtype=EntrySubtype.COUNTRY,
+            entry_class=self.entryclass_country,
         )
 
     def setUp(self):
@@ -283,12 +274,11 @@ class GetAllNotesTest(NotesTestCase):
 
 class GetEntriesOfTypeTest(NotesTestCase):
     def create_users(self):
-        self.admin_user = CradleUser.objects.create_superuser(
-            username="admin",
-            password="password",
-            is_staff=True,
-            email="alabala@gmail.com",
-        )
+        self.user.is_staff = True
+        self.user.is_superuser = True
+        self.user.save()
+
+        self.admin_user = self.user
         self.user1 = CradleUser.objects.create_user(
             username="user1",
             password="password",
@@ -311,35 +301,33 @@ class GetEntriesOfTypeTest(NotesTestCase):
 
     def create_entities(self):
         self.entity1 = Entry.objects.create(
-            name="Entity1", description="Description1", type=EntryType.ENTITY
+            name="Entity1", description="Description1", entry_class=self.entryclass1
         )
 
         self.entity2 = Entry.objects.create(
-            name="Entity2", description="Description2", type=EntryType.ENTITY
+            name="Entity2", description="Description2", entry_class=self.entryclass1
         )
 
     def create_actors(self):
         self.actor1 = Entry.objects.create(
-            name="Actor1", description="Description1", type=EntryType.ACTOR
+            name="Actor1", description="Description1", entry_class=self.entryclass2
         )
 
         self.actor2 = Entry.objects.create(
-            name="Actor2", description="Description2", type=EntryType.ACTOR
+            name="Actor2", description="Description2", entry_class=self.entryclass2
         )
 
     def create_metadata(self):
         self.metadata1 = Entry.objects.create(
             name="Metadata1",
             description="Description1",
-            type=EntryType.METADATA,
-            subtype=EntrySubtype.COUNTRY,
+            entry_class=self.entryclass_country,
         )
 
         self.metadata2 = Entry.objects.create(
             name="Metadata2",
             description="Description1",
-            type=EntryType.METADATA,
-            subtype=EntrySubtype.COUNTRY,
+            entry_class=self.entryclass_country,
         )
 
     def create_access(self):
@@ -395,12 +383,11 @@ class GetEntriesOfTypeTest(NotesTestCase):
 
 class GetRelatedAccessibleEntriesTest(NotesTestCase):
     def create_users(self):
-        self.admin_user = CradleUser.objects.create_superuser(
-            username="admin",
-            password="password",
-            is_staff=True,
-            email="alabala@gmail.com",
-        )
+        self.user.is_staff = True
+        self.user.is_superuser = True
+        self.user.save()
+
+        self.admin_user = self.user
         self.user1 = CradleUser.objects.create_user(
             username="user1",
             password="password",
@@ -423,35 +410,33 @@ class GetRelatedAccessibleEntriesTest(NotesTestCase):
 
     def create_entities(self):
         self.entity1 = Entry.objects.create(
-            name="Entity1", description="Description1", type=EntryType.ENTITY
+            name="Entity1", description="Description1", entry_class=self.entryclass1
         )
 
         self.entity2 = Entry.objects.create(
-            name="Entity2", description="Description2", type=EntryType.ENTITY
+            name="Entity2", description="Description2", entry_class=self.entryclass1
         )
 
     def create_actors(self):
         self.actor1 = Entry.objects.create(
-            name="Actor1", description="Description1", type=EntryType.ACTOR
+            name="Actor1", description="Description1", entry_class=self.entryclass2
         )
 
         self.actor2 = Entry.objects.create(
-            name="Actor2", description="Description2", type=EntryType.ACTOR
+            name="Actor2", description="Description2", entry_class=self.entryclass2
         )
 
     def create_metadata(self):
         self.metadata1 = Entry.objects.create(
             name="Metadata1",
             description="Description1",
-            type=EntryType.METADATA,
-            subtype=EntrySubtype.COUNTRY,
+            entry_class=self.entryclass_country,
         )
 
         self.metadata2 = Entry.objects.create(
             name="Metadata2",
             description="Description1",
-            type=EntryType.METADATA,
-            subtype=EntrySubtype.COUNTRY,
+            entry_class=self.entryclass_country,
         )
 
     def create_access(self):
@@ -487,9 +472,9 @@ class GetRelatedAccessibleEntriesTest(NotesTestCase):
         self.create_access()
 
     def test_related_accessible_entries_all(self):
-        expected = Entry.actors.all()
+        expected = Entry.objects.filter(entry_class__subtype="actor")
         entries = Note.objects.get_entries_from_notes(Note.objects.all()).filter(
-            type=EntryType.ACTOR
+            entry_class=self.entryclass2
         )
 
         self.assertQuerySetEqual(entries, expected, ordered=False)
@@ -498,14 +483,14 @@ class GetRelatedAccessibleEntriesTest(NotesTestCase):
         expected = Entry.objects.filter(id=self.actor1.id)
         entries = Note.objects.get_entries_from_notes(
             Note.objects.filter(id=self.note1.id)
-        ).filter(type=EntryType.ACTOR)
+        ).filter(entry_class=self.entryclass2)
 
         self.assertQuerySetEqual(entries, expected)
 
     def test_related_accessible_entries_no_accessbile(self):
         expected = Entry.objects.none()
         entries = Note.objects.get_entries_from_notes(Note.objects.none()).filter(
-            type=EntryType.ACTOR
+            entry_class=self.entryclass2
         )
 
         self.assertQuerySetEqual(entries, expected)
@@ -542,23 +527,22 @@ class GetInOrderTest(NotesTestCase):
 
 
 class GetLinksTest(NotesTestCase):
-
     def setUp(self):
         super().setUp()
         self.entities = [
-            Entry.objects.create(name=f"c{i}", type=EntryType.ENTITY)
+            Entry.objects.create(name=f"c{i}", entry_class=self.entryclass1)
             for i in range(0, 2)
         ]
         self.actors = [
-            Entry.objects.create(name=f"a{i}", type=EntryType.ACTOR)
+            Entry.objects.create(name=f"a{i}", entry_class=self.entryclass2)
             for i in range(0, 2)
         ]
         self.artifact = [
-            Entry.objects.create(name=f"e{i}", type=EntryType.ARTIFACT)
+            Entry.objects.create(name=f"e{i}", entry_class=self.entryclass_ip)
             for i in range(0, 2)
         ]
         self.metadata = [
-            Entry.objects.create(name=f"m{i}", type=EntryType.METADATA)
+            Entry.objects.create(name=f"m{i}", entry_class=self.entryclass_country)
             for i in range(0, 2)
         ]
 

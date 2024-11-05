@@ -14,7 +14,7 @@ from django.conf import settings
 class EntryPopulationTask(BaseTask):
     def run(self, note: Note) -> Note:
         """
-        Create the entry classes that are missing for a note.
+        Create the entries that are missing for a note.
 
         Args:
             note: The note object being processde

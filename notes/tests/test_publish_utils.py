@@ -1,6 +1,5 @@
 from .utils import NotesTestCase
 from ..models import Note
-from entries.enums import EntryType, MetadataSubtype, ArtifactSubtype
 from entries.models import Entry
 from ..utils import PublishUtils
 
@@ -9,14 +8,13 @@ class GetReportTest(NotesTestCase):
     def setUp(self):
         super().setUp()
         self.entities = []
-        self.metadata = []
         for i in range(0, 4):
             self.entities.append(
-                Entry.objects.create(name=f"{i}", type=EntryType.ENTITY)
+                Entry.objects.create(name=f"{i}", entry_class=self.entryclass1)
             )
 
         self.artifact = Entry.objects.create(
-            name=f"{0}", type=EntryType.ARTIFACT, subtype=ArtifactSubtype.IP
+            name=f"{0}", entry_class=self.entryclass_ip
         )
 
         self.notes = []
@@ -26,7 +24,6 @@ class GetReportTest(NotesTestCase):
         self.notes[0].entries.add(self.entities[0])
         self.notes[1].entries.add(self.entities[0])
         self.notes[1].entries.add(self.artifact)
-        self.notes[1].entries.add(self.metadata[0])
 
     def test_get_report_all_notes(self):
         note_queryset = Note.objects.all()

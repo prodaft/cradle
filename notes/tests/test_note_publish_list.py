@@ -5,7 +5,6 @@ from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.parsers import JSONParser
 from ..models import Note
 from entries.models import Entry
-from entries.enums import EntryType
 from access.models import Access
 from access.enums import AccessType
 import io
@@ -17,17 +16,13 @@ def bytes_to_json(data):
 
 
 class NotePublishableListTest(NotesTestCase):
-
     def setUp(self):
         super().setUp()
-        self.user = CradleUser.objects.create_user(
-            username="user", password="user", email="alabala@gmail.com"
-        )
         self.user_token = str(AccessToken.for_user(self.user))
         self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
 
-        self.entity1 = Entry.objects.create(name="1", type=EntryType.ENTITY)
-        self.entity2 = Entry.objects.create(name="2", type=EntryType.ENTITY)
+        self.entity1 = Entry.objects.create(name="1", entry_class=self.entryclass1)
+        self.entity2 = Entry.objects.create(name="2", entry_class=self.entryclass1)
         self.note1 = Note.objects.create(content="blabla")
         self.note1.entries.add(self.entity2)
 

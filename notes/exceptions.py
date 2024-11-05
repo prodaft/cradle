@@ -19,12 +19,12 @@ class NoteIsEmptyException(APIException):
 class NotEnoughReferencesException(APIException):
     status_code = 400
 
-    default_detail = f"Note does not reference at least {settings.MIN_ENTITY_COUNT_PER_NOTE} entity and at least {settings.MIN_ENTRY_COUNT_PER_NOTE}"
+    default_detail = f"Note does not reference at least {settings.MIN_ENTITY_COUNT_PER_NOTE} entity and at least {settings.MIN_ENTRY_COUNT_PER_NOTE} entries."
 
 
 class NoteDoesNotExistException(APIException):
     status_code = 404
-    default_detail = "The referenced note does not exist."
+    default_detail = "The referenced note does not exist or you do not have access."
 
 
 class EntryClassesDoNotExistException(APIException):

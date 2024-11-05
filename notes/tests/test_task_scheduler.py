@@ -1,7 +1,6 @@
 from entries.models import Entry
-from entries.enums import EntryType
-from notes.utils.access_checker_task import AccessCheckerTask
-from user.models import CradleUser
+from notes.models import Note
+from notes.processor.access_control_task import AccessControlTask
 from access.models import Access
 from access.enums import AccessType
 from ..exceptions import NoAccessToEntriesException
@@ -12,12 +11,12 @@ class AccessCheckerTaskTest(NotesTestCase):
     def setUp(self):
         super().setUp()
 
-        self.user = CradleUser.objects.create_user(
-            username="user", password="user", email="alabala@gmail.com"
+        self.entity1 = Entry.objects.create(
+            name="entity1", entry_class=self.entryclass1
         )
-
-        self.entity1 = Entry.objects.create(name="entity1", type=EntryType.ENTITY)
-        self.entity2 = Entry.objects.create(name="entity2", type=EntryType.ENTITY)
+        self.entity2 = Entry.objects.create(
+            name="entity2", entry_class=self.entryclass1
+        )
 
         Access.objects.create(
             user=self.user, entity=self.entity1, access_type=AccessType.READ_WRITE
@@ -25,24 +24,22 @@ class AccessCheckerTaskTest(NotesTestCase):
         Access.objects.create(
             user=self.user, entity=self.entity2, access_type=AccessType.READ
         )
-
-        self.referenced_entries = {}
-        self.entry_types = ["entity", "artifact"]
-        for t in self.entry_types:
-            self.referenced_entries[t] = set()
+        self.note = Note(content="note", author=self.user)
+        self.note.save()
 
     def test_has_access_to_referenced_entities(self):
-        self.referenced_entries["entity"] = {self.entity1}
+        self.note.entries.add(self.entity1)
+        self.note.save()
 
-        newly_returned_entries = AccessCheckerTask(self.user).run(
-            self.referenced_entries
-        )
-        self.assertEqual(self.referenced_entries, newly_returned_entries)
+        foo = AccessControlTask(self.user).run(self.note)
+        self.assertIsNone(foo)
 
     def test_does_not_have_access_to_referenced_entities(self):
-        self.referenced_entries["entity"] = {self.entity1, self.entity2}
+        self.note.entries.add(self.entity1)
+        self.note.entries.add(self.entity2)
+        self.note.save()
 
         self.assertRaises(
             NoAccessToEntriesException,
-            lambda: AccessCheckerTask(self.user).run(self.referenced_entries),
+            lambda: AccessControlTask(self.user).run(self.note),
         )
