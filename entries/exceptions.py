@@ -7,6 +7,12 @@ class EntryTypeMismatchException(APIException):
     default_code = "unique"
 
 
+class EntryTypeDoesNotExist(APIException):
+    status_code = 404
+    default_detail = "The entry type you requested could not be found."
+    default_code = "unique"
+
+
 class DuplicateEntryException(APIException):
     status_code = 409
     default_detail = "There exists another entry with the same name."

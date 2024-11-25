@@ -47,7 +47,8 @@ class EntityList(APIView):
         return Response(serializer.data)
 
     def post(self, request: Request) -> Response:
-        serializer = EntitySerializer(data=dict(request.data))
+        serializer = EntitySerializer(autoname=True, data=dict(request.data))
+
         if serializer.is_valid():
             if serializer.exists():
                 raise DuplicateEntryException()
@@ -55,7 +56,7 @@ class EntityList(APIView):
 
             LoggingUtils.log_entry_creation(request)
             return Response(serializer.data)
-        return Response("Bad request", status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema_view(
