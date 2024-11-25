@@ -50,7 +50,11 @@ export default function AdminPanelAdd({ type }) {
                 if (response.status === 200) {
                     let entities = response.data;
                     // Filter type == entity
-                    setSubclasses(entities.filter((entity) => entity.type == 'entity'));
+                    let subclasses = entities.filter(
+                        (entity) => entity.type == 'entity',
+                    );
+                    setSubclasses(subclasses);
+                    if (subclasses.length > 0) setSubtype(subclasses[0].subtype);
                 }
             })
             .catch(handleError);
@@ -69,6 +73,7 @@ export default function AdminPanelAdd({ type }) {
 
         try {
             if (type === 'Entity') {
+                data.type = 'entity';
                 data.name = name;
                 data.description = description;
                 await createEntity(data);
