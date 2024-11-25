@@ -4,7 +4,7 @@ from minio import Minio
 import uuid
 from datetime import timedelta
 from .exceptions import MinioObjectNotFound
-from .config import minio_config
+from cradle.settings import MINIO_CONFIG
 
 
 class MinioClient:
@@ -13,7 +13,7 @@ class MinioClient:
     def __new__(cls):
         if not hasattr(cls, "_instance"):
             cls._instance = super().__new__(cls)
-            cls._instance.client = Minio(**minio_config)
+            cls._instance.client = Minio(**MINIO_CONFIG)
 
         return cls._instance
 

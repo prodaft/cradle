@@ -29,6 +29,7 @@ drf-spectacular = "*"
 django-filter = "*"
 pytest-django = "*"
 sentry-sdk = {extras = ["django"], version = "*"}
+gunicorn = "*"
 
 [dev-packages]
 
