@@ -60,7 +60,6 @@ class EntryClassList(APIView):
         if serializer.is_valid(raise_exception=True):
             serializer.save()
             serializer.instance.log_create(user)
-            LoggingUtils.log_entryclass_creation(request)
             return Response(serializer.data)
         return Response("The data is not valid", status=status.HTTP_400_BAD_REQUEST)
 
@@ -124,7 +123,6 @@ class EntryClassDetail(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
         entity.delete()
-        LoggingUtils.log_entryclass_deletion(request)
         return Response("Requested entry class was deleted", status=status.HTTP_200_OK)
 
     def post(self, request: Request, class_subtype: str) -> Response:
@@ -144,6 +142,5 @@ class EntryClassDetail(APIView):
         if serializer.is_valid():
             serializer.save()
             serializer.instance.log_edit(user)
-            LoggingUtils.log_entryclass_creation(request)
             return Response(serializer.data)
         return Response(serializer.error_messages, status=status.HTTP_400_BAD_REQUEST)
