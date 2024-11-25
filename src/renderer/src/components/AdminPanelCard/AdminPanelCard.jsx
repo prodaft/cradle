@@ -47,7 +47,7 @@ export default function AdminPanelCard({
 
     const handleDelete = async () => {
         (type == 'entity'
-            ? deleteEntry(type, id)
+            ? deleteEntry('entities', id)
             : type == 'entrytype'
               ? deleteArtifactClass(id)
               : deleteUser(id)

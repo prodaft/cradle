@@ -1,5 +1,5 @@
 import AdminPanelSection from '../AdminPanelSection/AdminPanelSection';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
     getEntities,
     getEntryClasses,
@@ -32,6 +32,7 @@ export default function AdminPanel() {
     const [users, setUsers] = useState([]);
     const [entryTypes, setEntryTypes] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const location = useLocation();
     const navigate = useNavigate();
     const handleError = displayError(setAlert, navigate);
 
@@ -63,7 +64,7 @@ export default function AdminPanel() {
     };
 
     const displayEntryTypes = async () => {
-        getEntryClasses()
+        getEntryClasses(true)
             .then((response) => {
                 if (response.status === 200) {
                     let entities = response.data;
@@ -112,10 +113,12 @@ export default function AdminPanel() {
     };
 
     useEffect(() => {
+        console.log('AdminPanel mounted');
+        console.log(location);
         displayUsers();
         displayEntities();
         displayEntryTypes();
-    }, []);
+    }, [location.state]);
 
     return (
         <>
