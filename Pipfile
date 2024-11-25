@@ -30,6 +30,7 @@ django-filter = "*"
 pytest-django = "*"
 sentry-sdk = {extras = ["django"], version = "*"}
 gunicorn = "*"
+psycopg2 = "*"
 
 [dev-packages]
 
