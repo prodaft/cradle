@@ -90,7 +90,9 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 
         files = validated_data.pop("files", None)
 
-        note = TaskScheduler(user, **validated_data).run_pipeline(instance)
+        note = TaskScheduler(self.content, user, **validated_data).run_pipeline(
+            instance
+        )
 
         existing_files = set([i.id for i in note.files.all()])
         files_kept = set([i["id"] for i in files if "id" in i])

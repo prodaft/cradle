@@ -1,12 +1,14 @@
 from rest_framework import serializers
 from .models import Entry, EntryClass
 from .enums import EntryType
-from typing import Any, Dict
+
+from django.db.models.functions import Length
 
 from .exceptions import (
     DuplicateEntryException,
     EntryTypeMismatchException,
     EntryMustHaveASubtype,
+    EntryTypeDoesNotExist,
 )
 
 
@@ -41,7 +43,15 @@ class EntryClassSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EntryClass
-        fields = ["type", "subtype", "regex", "options", "color", "catalyst_type"]
+        fields = [
+            "type",
+            "subtype",
+            "regex",
+            "options",
+            "prefix",
+            "color",
+            "catalyst_type",
+        ]
 
 
 class EntryResponseSerializer(serializers.ModelSerializer):
@@ -77,10 +87,15 @@ class EntryResponseSerializer(serializers.ModelSerializer):
 class EntitySerializer(serializers.ModelSerializer):
     description = serializers.CharField(required=False, allow_blank=True)
     entry_class = EntryClassSerializer(read_only=True)
+    name = serializers.CharField(max_length=255, allow_blank=True)
 
     class Meta:
         model = Entry
         fields = ["id", "name", "description", "entry_class"]
+
+    def __init__(self, *args, autoname=False, **kwargs):
+        self.autoname = autoname
+        super().__init__(*args, **kwargs)
 
     def exists(self) -> bool:
         if Entry.objects.filter(
@@ -117,7 +132,9 @@ class EntitySerializer(serializers.ModelSerializer):
                 entry_class_internal[key] = data.pop(key)
 
         internal = super().to_internal_value(data)
-        internal["entry_class"] = EntryClass(**entry_class_internal)
+        entryclass = EntryClass.objects.filter(**entry_class_internal)
+
+        internal["entry_class"] = entryclass.first()
         return internal
 
     def validate(self, data):
@@ -135,8 +152,19 @@ class EntitySerializer(serializers.ModelSerializer):
         """
         entry_class = EntryClass.objects.filter(subtype=data["entry_class"].subtype)
 
-        if entry_class.exists() and entry_class.first().type != EntryType.ENTITY:
+        if not entry_class.exists():
+            raise EntryTypeDoesNotExist()
+
+        if entry_class.first().type != EntryType.ENTITY:
             raise EntryTypeMismatchException()
+
+        data["entry_class"] = entry_class.first()
+
+        if self.autoname:
+            self.autoassign_name(data)
+
+        if not data.get("name"):
+            raise serializers.ValidationError("Name is required.")
 
         return super().validate(data)
 
@@ -151,12 +179,34 @@ class EntitySerializer(serializers.ModelSerializer):
         Returns:
             The created Entry entry
         """
-        entry_class_serializer = EntryClassSerializer(
-            instance=validated_data["entry_class"]
-        )
-        EntryClass.objects.get_or_create(**entry_class_serializer.data)
-
         return super().create(validated_data)
+
+    def autoassign_name(self, data):
+        if data.get("name"):
+            return
+
+        prefix = data["entry_class"].prefix
+
+        if not prefix:
+            return
+
+        all_entries = Entry.objects.filter(
+            entry_class__subtype=data["entry_class"].subtype
+        )
+
+        if not all_entries.exists():
+            data["name"] = f"{prefix}1"
+            return
+
+        max_entry = (
+            all_entries.annotate(name_length=Length("name"))
+            .order_by("-name_length", "-name")
+            .first()
+        )
+
+        max_number = int(max_entry.name[len(prefix) :])
+        data["name"] = f"{prefix}{max_number + 1}"
+        return
 
 
 class ArtifactSerializer(serializers.ModelSerializer):

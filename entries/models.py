@@ -34,6 +34,8 @@ class EntryClass(models.Model, LoggableModelMixin):
     )
     color: models.CharField = models.CharField(max_length=7, default="#e66100")
 
+    prefix: models.CharField = models.CharField(max_length=64, default="")
+
     @classmethod
     def get_default_pk(cls):
         eclass, created = cls.objects.get_or_create(
@@ -48,10 +50,13 @@ class EntryClass(models.Model, LoggableModelMixin):
 
         :param t: The entry data to validate
         """
-        if self.regex:
-            return re.match(f"^{self.regex}$", t)
-        if self.options:
-            return t.strip() in self.options.split("\n")
+        if self.type == EntryType.ARTIFACT:
+            if self.regex:
+                return re.match(f"^{self.regex}$", t)
+            if self.options:
+                return t.strip() in self.options.split("\n")
+        if self.type == EntryType.ENTITY:
+            return t.startswith(self.prefix)
 
         return True
 
@@ -67,17 +72,20 @@ class EntryClass(models.Model, LoggableModelMixin):
         return
 
     def save(self, *args, **kwargs):
-        if self.regex and self.options:
-            raise InvalidClassFormatException()
+        if self.type == EntryType.ARTIFACT:
+            if self.regex and self.options:
+                raise InvalidClassFormatException()
 
-        try:
-            if self.regex:
-                re.compile(self.regex)
-        except re.error:
-            raise InvalidRegexException()
+            try:
+                if self.regex:
+                    re.compile(self.regex)
+            except re.error:
+                raise InvalidRegexException()
 
-        if self.options is not None:
-            self.options = "\n".join(map(lambda x: x.strip(), self.options.split("\n")))
+            if self.options is not None:
+                self.options = "\n".join(
+                    map(lambda x: x.strip(), self.options.split("\n"))
+                )
 
         if self.color and self.color[0] != "#":
             self.color = "#" + self.color

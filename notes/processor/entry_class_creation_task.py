@@ -35,9 +35,10 @@ class EntryClassCreationTask(BaseTask):
                 if not settings.AUTOREGISTER_ARTIFACT_TYPES:
                     nonexistent_entries.add(r.class_subtype)
                 else:
-                    EntryClass.objects.create(
+                    entry = EntryClass.objects.create(
                         type=EntryType.ARTIFACT, subtype=r.class_subtype
                     )
+                    entry.log_create(self.user)
 
         if nonexistent_entries:
             raise EntryClassesDoNotExistException(nonexistent_entries)
