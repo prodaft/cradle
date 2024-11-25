@@ -90,8 +90,8 @@ export async function getEntities() {
  *
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export async function getEntryClasses() {
-    if (EntryClassesCached) {
+export async function getEntryClasses(nonCached = false) {
+    if (!nonCached && EntryClassesCached) {
         return EntryClassesCached;
     } else {
         EntryClassesCached = authAxios({
@@ -135,7 +135,7 @@ export async function getUsers() {
 export async function deleteEntry(type, id) {
     return authAxios({
         method: 'delete',
-        url: `/${type}/${id}/`,
+        url: `/entries/${type}/${id}/`,
     });
 }
 

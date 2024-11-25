@@ -29,6 +29,7 @@ export default function AdminPanelEdit({ type }) {
     const [name, setName] = useState('');
     const [color, setColor] = useState('');
     const [classType, setClassType] = useState('artifact');
+    const [prefix, setPrefix] = useState('');
     const [subtype, setSubtype] = useState('');
     const [description, setDescription] = useState('');
     const [catalystType, setCatalystType] = useState('');
@@ -102,6 +103,7 @@ export default function AdminPanelEdit({ type }) {
                 await editEntity(data, id);
             } else if (type === 'EntryType') {
                 data.color = color;
+                data.prefix = prefix;
                 await editArtifactClass(data, id);
             }
             navigate('/admin');
@@ -238,6 +240,16 @@ export default function AdminPanelEdit({ type }) {
                                         <option value='options'>Enumerator</option>
                                         <option value='regex'>Regex</option>
                                     </select>
+                                )}
+                                {classType == 'entity' && (
+                                    <input
+                                        type='text'
+                                        className='form-input input input-ghost-primary input-block focus:ring-0'
+                                        placeholder='Prefix'
+                                        onChange={(e) => setPrefix(e.target.value)}
+                                        value={prefix}
+                                        autoFocus
+                                    />
                                 )}
                                 <textarea
                                     className='textarea-ghost-primary textarea-block focus:ring-0 textarea'

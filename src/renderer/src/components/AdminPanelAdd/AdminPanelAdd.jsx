@@ -26,7 +26,8 @@ import { PopoverPicker } from '../PopoverPicker/PopoverPicker';
 export default function AdminPanelAdd({ type }) {
     const [name, setName] = useState('');
     const [catalystType, setCatalystType] = useState('');
-    const [classType, setClassType] = useState('entity');
+    const [prefix, setPrefix] = useState('');
+    const [classType, setClassType] = useState('artifact');
     const [subtype, setSubtype] = useState('');
     const [catalystTypeDisabled, setCatalystTypeDisabled] = useState('');
     const [color, setColor] = useState(
@@ -44,7 +45,7 @@ export default function AdminPanelAdd({ type }) {
     const [typeFormatHint, setTypeFormatHint] = useState('');
 
     const populateSubclasses = async () => {
-        getEntryClasses()
+        getEntryClasses(true)
             .then((response) => {
                 if (response.status === 200) {
                     let entities = response.data;
@@ -73,9 +74,10 @@ export default function AdminPanelAdd({ type }) {
                 await createEntity(data);
             } else if (type === 'EntryType') {
                 data.color = color;
+                data.prefix = prefix;
                 await createArtifactClass(data);
             }
-            navigate('/admin');
+            navigate('/admin', { state: Date.now() });
         } catch (err) {
             displayError(setAlert, navigate)(err);
         }
@@ -128,7 +130,7 @@ export default function AdminPanelAdd({ type }) {
                                 />
                                 <select
                                     className='form-select select select-ghost-primary select-block focus:ring-0'
-                                    onChange={setSubtype}
+                                    onChange={(e) => setSubtype(e.target.value)}
                                     value={subtype}
                                 >
                                     {subclasses &&
@@ -172,7 +174,6 @@ export default function AdminPanelAdd({ type }) {
             </div>
         );
     } else if (type === 'EntryType') {
-        useEffect(() => {}, [typeFormat]);
         return (
             <div className='flex flex-row items-center justify-center h-screen'>
                 <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 md:h-fit xl:w-1/3'>
@@ -192,14 +193,21 @@ export default function AdminPanelAdd({ type }) {
                                     onChange={(e) => setClassType(e.target.value)}
                                     value={classType}
                                 >
-                                    <option value='entity'>Entity</option>
                                     <option value='artifact'>Artifact</option>
+                                    <option value='entity'>Entity</option>
                                 </select>
                                 <input
                                     type='text'
                                     className='form-input input input-ghost-primary input-block focus:ring-0'
                                     placeholder='Name'
                                     onChange={(e) => setSubtype(e.target.value)}
+                                    autoFocus
+                                />
+                                <input
+                                    type='text'
+                                    className='form-input input input-ghost-primary input-block focus:ring-0'
+                                    placeholder='Prefix'
+                                    onChange={(e) => setPrefix(e.target.value)}
                                     autoFocus
                                 />
                                 <input
