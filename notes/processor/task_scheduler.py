@@ -16,7 +16,7 @@ from django.utils import timezone
 
 
 class TaskScheduler:
-    def __init__(self, note_content: str, user: CradleUser, **kwargs):
+    def __init__(self, user: CradleUser, **kwargs):
         self.user = user
         self.kwargs = kwargs
 
@@ -51,6 +51,9 @@ class TaskScheduler:
             if not note:
                 note = Note.objects.create(author=self.user, **self.kwargs)
             else:
+                for i in self.kwargs:
+                    setattr(note, i, self.kwargs[i])
+
                 note.editor = self.user
                 note.edit_timestamp = timezone.now()
 
