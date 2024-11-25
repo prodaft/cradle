@@ -108,6 +108,7 @@ class PlateJSRender(BaseRenderer):
         entries: Dict[Tuple[str, str], Dict[str, Optional[str]]],
     ) -> None:
         self.entries = entries
+        self.mentions = set()
         super(PlateJSRender, self).__init__()
 
     def render_token(self, token: Dict[str, Any], state: BlockState) -> str:
@@ -201,6 +202,11 @@ class PlateJSRender(BaseRenderer):
 
         if id is None:
             return {"text": value}
+
+        if (id, type) in self.mentions:
+            return {"text": value}
+
+        self.mentions.add((id, type))
 
         return {
             "type": "mention",
