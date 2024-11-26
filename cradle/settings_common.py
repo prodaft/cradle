@@ -209,6 +209,8 @@ USE_TZ = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
+
 
 ## Application Specific Config
 ADMIN_PATH = "29acee84-15db-481b-b602-2c1a579178d0/"
