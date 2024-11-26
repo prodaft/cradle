@@ -11,10 +11,10 @@ import FileInput from '../FileInput/FileInput';
 import FileTable from '../FileTable/FileTable';
 import { NavArrowDown, NavArrowUp, LightBulb } from 'iconoir-react/regular';
 import { fetchLspPack } from '../../services/queryService/queryService';
-import useAuth from '../../hooks/useAuth/useAuth';
 import { completionKeymap, acceptCompletion } from '@codemirror/autocomplete';
 import { getLinkNode, parseLink } from '../../utils/textEditorUtils/textEditorUtils';
 import { Prec } from '@uiw/react-codemirror';
+import * as events from '@uiw/codemirror-extensions-events';
 import { NavArrowLeft, NavArrowRight } from 'iconoir-react';
 
 /**
@@ -45,11 +45,13 @@ export default function Editor({
     setViewCollapsed,
     isLightMode,
 }) {
+    const EMPTY_FILE_LIST = new DataTransfer().files;
     const [enableVim, setEnableVim] = useState(
         localStorage.getItem('editor.vim') === 'true',
     );
     const [showFileList, setShowFileList] = useState(false);
     const [lspPack, setLspPack] = useState({ classes: {}, instances: {} });
+    const [pendingFiles, setPendingFiles] = useState(EMPTY_FILE_LIST);
     const autoLinkId = useId();
     const vimModeId = useId();
     const editorRef = useRef(null);
@@ -179,6 +181,14 @@ export default function Editor({
                 },
             ]),
         ),
+        events.dom({
+            paste(e) {
+                if (e.clipboardData.files.length > 0) {
+                    e.preventDefault();
+                    setPendingFiles(e.clipboardData.files);
+                }
+            },
+        }),
     ];
 
     if (enableVim) {
@@ -274,7 +284,12 @@ export default function Editor({
             <div className='h-full w-full flex flex-col overflow-auto'>
                 <div className='flex flex-row justify-between p-2'>
                     <span className='max-w-[55%] flex flex-row space-x-3 items-center'>
-                        <FileInput fileData={fileData} setFileData={setFileData} />
+                        <FileInput
+                            fileData={fileData}
+                            setFileData={setFileData}
+                            pendingFiles={pendingFiles}
+                            setPendingFiles={setPendingFiles}
+                        />
                         <button
                             id={autoLinkId}
                             data-testid='auto-link'
@@ -337,6 +352,7 @@ export default function Editor({
                         onChange={onEditorChange}
                         value={markdownContent}
                         ref={editorRef}
+                        onCopy={(e) => console.log(e)}
                     />
                 </div>
             </div>

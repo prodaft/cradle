@@ -22,9 +22,13 @@ import { useNavigate } from 'react-router-dom';
  * @returns {FileInput}
  * @constructor
  */
-export default function FileInput({ fileData, setFileData }) {
+export default function FileInput({
+    fileData,
+    setFileData,
+    pendingFiles,
+    setPendingFiles,
+}) {
     const EMPTY_FILE_LIST = new DataTransfer().files;
-    const [pendingFiles, setPendingFiles] = useState(EMPTY_FILE_LIST);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [isUploading, setIsUploading] = useState(false);
     const inputRef = useRef(null);
