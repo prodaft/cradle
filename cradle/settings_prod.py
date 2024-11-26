@@ -2,7 +2,7 @@ from .settings_common import *
 
 SECRET_KEY = "qfz@bjg4e-+#cx%z4ffro0^j_x_i^vdu^++_2ro)d)%$rj*6qz"
 
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["cradle.prodaft.com"]
 
