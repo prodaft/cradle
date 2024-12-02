@@ -1,10 +1,22 @@
 from django.contrib.auth.base_user import BaseUserManager
 from django.utils.translation import gettext_lazy as _
 from file_transfer.utils import MinioClient
-from django.db import transaction
+from django.db import models, transaction
+
+
+class CradleUserQuerySet(models.QuerySet):
+    def active(self):
+        """Return only active users."""
+        return self.filter(is_active=True)
 
 
 class CradleUserManager(BaseUserManager):
+    def get_queryset(self):
+        """
+        Returns a queryset that uses the custom TeamQuerySet,
+        allowing access to its methods for all querysets retrieved by this manager.
+        """
+        return CradleUserQuerySet(self.model, using=self._db)
 
     def create_user(self, username, password, email, **extra_fields):
         """Create a user with given username and password. Additionally,
@@ -62,3 +74,7 @@ class CradleUserManager(BaseUserManager):
         if extra_fields.get("is_superuser") is not True:
             raise ValueError(_("Superuser must have is_superuser=True."))
         return self.create_user(username, password, email, **extra_fields)
+
+    def active(self):
+        """Return only active users."""
+        return self.get_queryset().active()

@@ -218,3 +218,12 @@ ADMIN_PATH = "29acee84-15db-481b-b602-2c1a579178d0/"
 CATALYST_HOST = "https://prod.blindspot.prodaft.com"
 CATALYST_PUBLISH_CATEGORY = "RESEARCH"
 CATALYST_PUBLISH_SUBCATEGORY = "4dff0ddf-fc2f-4a8e-b43f-1bc25973537b"
+
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "mail.prodaft.com"
+EMAIL_PORT = 587
+EMAIL_HOST_USER = "cradle@prodaft.com"
+DEFAULT_FROM_EMAIL = "cradle@prodaft.com"
+EMAIL_HOST_PASSWORD = None
+EMAIL_USE_TLS = True

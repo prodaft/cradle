@@ -38,3 +38,4 @@ MIN_ENTITY_COUNT_PER_NOTE = 1
 
 BASE_URL = "api"
 STATIC_URL = "static/"
+FRONTEND_URL = "https://cradle.prodaft.com"

@@ -277,6 +277,9 @@ class ProcessCradleLinks(BaseRenderer):
     ) -> List:
         return children
 
+    def inline_html(self, html: str) -> str:
+        return None
+
 
 def heading_hierarchy(children: List[LinkTreeNode]) -> List[LinkTreeNode]:
     root = LinkTreeNode(children=[])

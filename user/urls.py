@@ -8,6 +8,16 @@ urlpatterns = [
     path("refresh/", TokenRefreshLogView.as_view(), name="user_refresh"),
     path("", user_view.UserList.as_view(), name="user_list"),
     path(
+        "email_confirm/",
+        user_view.EmailConfirm.as_view(),
+        name="email_confirm",
+    ),
+    path(
+        "reset_password/",
+        user_view.PasswordReset.as_view(),
+        name="reset_password",
+    ),
+    path(
         "<str:user_id>/",
         user_view.UserDetail.as_view(),
         name="user_detail",

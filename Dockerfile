@@ -12,6 +12,8 @@ RUN pipenv install gunicorn
 
 COPY . .
 
+COPY ./cradle/settings_docker.py ./cradle/settings.py
+
 EXPOSE 8000
 
 RUN chmod +x entrypoint.sh

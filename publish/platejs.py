@@ -307,6 +307,9 @@ class PlateJSRender(BaseRenderer):
             "children": [{"text": ""}],
         }
 
+    def inline_html(self, html: str) -> str:
+        return None
+
 
 def resolve_footnote_imgs(
     pjs: List, fetch_image: Callable[[str, str], Optional[BytesIO]], state: BlockState

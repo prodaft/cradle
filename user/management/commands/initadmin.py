@@ -7,7 +7,6 @@ from user.models import CradleUser
 
 
 class Command(BaseCommand):
-
     def handle(self, *args, **options):
         """Creates an admin user if no users exist.
 
@@ -39,7 +38,11 @@ class Command(BaseCommand):
             print("With password %s" % password)
             print("And email %s" % email)
             admin = CradleUser.objects.create_superuser(
-                username=username, password=password, email=email
+                username=username,
+                password=password,
+                email=email,
+                email_confirmed=True,
+                is_active=True,
             )
             admin.is_active = True
             admin.is_admin = True
