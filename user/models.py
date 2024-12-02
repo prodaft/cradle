@@ -2,8 +2,12 @@ from django.contrib.auth.models import AbstractUser
 
 from logs.models import LoggableModelMixin
 from .managers import CradleUserManager
-from django.db import models
+from django.core.mail import send_mail
+from django.conf import settings
+from django.db import models, transaction
 import uuid
+
+from django.utils.timezone import now, timedelta
 
 
 class CradleUser(AbstractUser, LoggableModelMixin):
@@ -12,6 +16,15 @@ class CradleUser(AbstractUser, LoggableModelMixin):
 
     vt_api_key = models.TextField(null=True, blank=True)
     catalyst_api_key = models.TextField(null=True, blank=True)
+
+    password_reset_token = models.TextField(null=True, blank=True)
+    password_reset_token_expiry = models.DateTimeField(null=True, blank=True)
+
+    email_confirmed = models.BooleanField(default=False)
+    email_confirmation_token = models.TextField(null=True, blank=True)
+    email_confirmation_token_expiry = models.DateTimeField(null=True, blank=True)
+
+    is_active = models.BooleanField(default=False)
 
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["password", "email"]
@@ -27,6 +40,43 @@ class CradleUser(AbstractUser, LoggableModelMixin):
             return False
 
         return value.pk == self.pk
+
+    def send_email_confirmation(self):
+        """Send an email confirmation to the user."""
+        # Generate a token and set its expiration
+        self.email_confirmation_token = uuid.uuid4().hex
+        self.email_confirmation_token_expiry = now() + timedelta(hours=24)
+        self.save(
+            update_fields=[
+                "email_confirmation_token",
+                "email_confirmation_token_expiry",
+            ]
+        )
+
+        # Construct email content
+        confirmation_url = f"{settings.FRONTEND_URL}/#confirm-email?token={self.email_confirmation_token}"
+        subject = "CRADLE Email Confirmation"
+        message = f"Hey {self.username}!\nPlease confirm your email by visiting the following link: {confirmation_url}"
+        from_email = settings.DEFAULT_FROM_EMAIL
+
+        # Send email
+        send_mail(subject, message, from_email, [self.email])
+
+    def send_password_reset(self):
+        """Send a password reset email to the user."""
+        # Generate a token and set its expiration
+        self.password_reset_token = uuid.uuid4().hex
+        self.password_reset_token_expiry = now() + timedelta(hours=1)
+        self.save(update_fields=["password_reset_token", "password_reset_token_expiry"])
+
+        # Construct email content
+        reset_url = f"{settings.FRONTEND_URL}/#change-password?token={self.password_reset_token}"
+        subject = "CRADLE Password Reset"
+        message = f"Hey {self.username}!\nYou can reset your password using the following link: {reset_url}\nThis link will expire in 1 hour."
+        from_email = settings.DEFAULT_FROM_EMAIL
+
+        # Send email
+        send_mail(subject, message, from_email, [self.email])
 
     def __hash__(self) -> int:
         return hash(self.pk)

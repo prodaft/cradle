@@ -104,13 +104,49 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return instance
 
 
+class UserCreateSerializerAdmin(UserCreateSerializer):
+    email = serializers.EmailField(required=True)
+
+    class Meta:
+        model = CradleUser
+        fields = [
+            "username",
+            "email",
+            "password",
+            "catalyst_api_key",
+            "vt_api_key",
+            "email_confirmed",
+            "is_active",
+        ]
+        extra_kwargs: Dict[str, Dict[str, List]] = {"username": {"validators": []}}
+
+    def update(self, instance: CradleUser, validated_data: dict[str, Any]):
+        if "password" in validated_data:
+            instance.set_password(validated_data["password"])
+
+        for i in validated_data:
+            instance.__setattr__(i, validated_data[i])
+
+        instance.save()
+
+        return instance
+
+
 class UserRetrieveSerializer(serializers.ModelSerializer):
     catalyst_api_key = serializers.SerializerMethodField()
     vt_api_key = serializers.SerializerMethodField()
 
     class Meta:
         model = CradleUser
-        fields = ["id", "username", "email", "catalyst_api_key", "vt_api_key"]
+        fields = [
+            "id",
+            "username",
+            "email",
+            "is_active",
+            "email_confirmed",
+            "catalyst_api_key",
+            "vt_api_key",
+        ]
 
     def get_catalyst_api_key(self, obj):
         return True if obj.catalyst_api_key else False
@@ -142,3 +178,23 @@ class TokenObtainSerializer(TokenObtainPairSerializer):
         token["is_admin"] = cast(CradleUser, user).is_superuser
 
         return token
+
+
+class EmailConfirmSerializer(serializers.Serializer):
+    token = serializers.CharField(required=True)
+
+    def validate(self, data):
+        token = data["token"]
+
+        try:
+            self.user = CradleUser.objects.get(email_confirmation_token=token)
+        except CradleUser.DoesNotExist:
+            raise ValidationError("We had trouble confirming with this token.")
+
+        if self.user.email_confirmed:
+            raise ValidationError("We had trouble confirming with this token.")
+
+        if not token or self.user.email_confirmation_token != token:
+            raise ValidationError("We had trouble confirming with this token.")
+
+        return True

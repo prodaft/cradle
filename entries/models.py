@@ -34,7 +34,7 @@ class EntryClass(models.Model, LoggableModelMixin):
     )
     color: models.CharField = models.CharField(max_length=7, default="#e66100")
 
-    prefix: models.CharField = models.CharField(max_length=64, default="")
+    prefix: models.CharField = models.CharField(max_length=64, blank=True)
 
     @classmethod
     def get_default_pk(cls):

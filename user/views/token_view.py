@@ -1,3 +1,5 @@
+from rest_framework import status
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -20,8 +22,27 @@ class TokenObtainPairLogView(TokenObtainPairView):
         summary="Obtain JWT Pair",
     )
     def post(self, request: Request, *args, **kwargs) -> Response:
-        response = super().post(request, *args, **kwargs)
-        return response
+        serializer = self.get_serializer(data=request.data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+            if serializer.user:
+                print("USER ", serializer.user)
+
+        except TokenError as e:
+            raise InvalidToken(e.args[0])
+
+        if not serializer.user.email_confirmed:
+            return Response(
+                "Your email is not confirmed", status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        if not serializer.user.is_active:
+            return Response(
+                "Your account is not activated", status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
 class TokenRefreshLogView(TokenRefreshView):

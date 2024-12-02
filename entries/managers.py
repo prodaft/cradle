@@ -9,7 +9,6 @@ from .enums import EntryType
 class EntryQuerySet(models.QuerySet):
     def with_entry_class(self):
         return self
-        return self.prefetch_related("entry_class")
 
     def is_artifact(self) -> models.QuerySet:
         """
