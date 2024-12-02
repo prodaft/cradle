@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import FormField from '../FormField/FormField';
 import React, { useState, useEffect } from 'react';
 import AlertBox from '../AlertBox/AlertBox';
 import { getEntities, getEntryClasses } from '../../services/adminService/adminService';
@@ -126,39 +127,65 @@ export default function AdminPanelAdd({ type }) {
                             className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'
                         >
                             <div className='space-y-6'>
-                                <input
+                                <FormField
                                     type='text'
                                     className='form-input input input-ghost-primary input-block focus:ring-0'
-                                    placeholder='Name'
-                                    onChange={(e) => setName(e.target.value)}
+                                    labelText='Name'
+                                    value={name}
+                                    handleInput={setName}
                                     autoFocus
                                 />
-                                <select
-                                    className='form-select select select-ghost-primary select-block focus:ring-0'
-                                    onChange={(e) => setSubtype(e.target.value)}
-                                    value={subtype}
-                                >
-                                    {subclasses &&
-                                        subclasses.length > 0 &&
-                                        subclasses.map((subclass) => (
-                                            <option value={subclass.subtype}>
-                                                {subclass.subtype}
-                                            </option>
-                                        ))}
-                                </select>
-                                <input
+                                <div className='w-full'>
+                                    <label
+                                        htmlFor='subtype'
+                                        className='block text-sm font-medium leading-6'
+                                    >
+                                        Subtype
+                                    </label>
+                                    <div className='mt-2'>
+                                        <select
+                                            className='form-select select select-ghost-primary select-block focus:ring-0'
+                                            onChange={(e) => setSubtype(e.target.value)}
+                                            name='subtype'
+                                            value={subtype}
+                                        >
+                                            {subclasses &&
+                                                subclasses.length > 0 &&
+                                                subclasses.map((subclass) => (
+                                                    <option value={subclass.subtype}>
+                                                        {subclass.subtype}
+                                                    </option>
+                                                ))}
+                                        </select>
+                                    </div>
+                                </div>
+                                <FormField
                                     type='text'
                                     className='form-input input input-ghost-primary input-block focus:ring-0'
-                                    placeholder='Catalyst Type'
+                                    labelText='Catalyst Type'
+                                    placeholder='type/subtype|model_class|level'
                                     value={catalystType}
                                     disabled={catalystTypeDisabled}
-                                    onChange={(e) => setCatalystType(e.target.value)}
+                                    handleInput={setCatalystType}
                                 />
-                                <textarea
-                                    className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
-                                    placeholder='Description'
-                                    onChange={(e) => setDescription(e.target.value)}
-                                />
+                                <div className='w-full'>
+                                    <label
+                                        htmlFor='description'
+                                        className='block text-sm font-medium leading-6'
+                                    >
+                                        Description
+                                    </label>
+                                    <div className='mt-2'>
+                                        <textarea
+                                            name='description'
+                                            className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
+                                            placeholder='Description'
+                                            onChange={(e) =>
+                                                setDescription(e.target.value)
+                                            }
+                                        />
+                                    </div>
+                                </div>
                                 <AlertBox alert={alert} />
                                 <button
                                     className='btn btn-primary btn-block'
@@ -201,36 +228,57 @@ export default function AdminPanelAdd({ type }) {
                                     <option value='artifact'>Artifact</option>
                                     <option value='entity'>Entity</option>
                                 </select>
-                                <input
+                                <FormField
+                                    name='subtype'
+                                    type='text'
+                                    labelText='Subtype'
+                                    className='form-input input input-ghost-primary input-block focus:ring-0'
+                                    value={subtype}
+                                    disabled
+                                    handleInput={setSubtype}
+                                />
+                                <FormField
+                                    name='cataylst_type'
+                                    labelText='Catalyst Type'
                                     type='text'
                                     className='form-input input input-ghost-primary input-block focus:ring-0'
-                                    placeholder='Name'
-                                    onChange={(e) => setSubtype(e.target.value)}
-                                    autoFocus
+                                    placeholder='type/subtype|model_class|level'
+                                    value={catalystType}
+                                    handleInput={setCatalystType}
                                 />
-                                <input
-                                    type='text'
-                                    className='form-input input input-ghost-primary input-block focus:ring-0'
-                                    placeholder='Prefix'
-                                    onChange={(e) => setPrefix(e.target.value)}
-                                    autoFocus
-                                />
-                                <input
-                                    type='text'
-                                    className='form-input input input-ghost-primary input-block focus:ring-0'
-                                    placeholder='Catalyst Type'
-                                    onChange={(e) => setCatalystType(e.target.value)}
-                                />
+                                {classType == 'entity' && (
+                                    <FormField
+                                        type='text'
+                                        name='prefix'
+                                        className='form-input input input-ghost-primary input-block focus:ring-0'
+                                        labelText='Prefix'
+                                        handleInput={setPrefix}
+                                        value={prefix}
+                                    />
+                                )}
 
                                 {classType == 'artifact' && (
-                                    <select
-                                        className='form-select select select-ghost-primary select-block focus:ring-0'
-                                        onChange={handleFormatChange}
-                                    >
-                                        <option>Any Format</option>
-                                        <option value='options'>Enumerator</option>
-                                        <option value='regex'>Regex</option>
-                                    </select>
+                                    <div className='w-full'>
+                                        <label
+                                            htmlFor='format'
+                                            className='block text-sm font-medium leading-6'
+                                        >
+                                            Format
+                                        </label>
+                                        <div className='mt-2'>
+                                            <select
+                                                className='form-select select select-ghost-primary select-block focus:ring-0'
+                                                onChange={handleFormatChange}
+                                                name='format'
+                                            >
+                                                <option>Any Format</option>
+                                                <option value='options'>
+                                                    Enumerator
+                                                </option>
+                                                <option value='regex'>Regex</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                 )}
                                 <textarea
                                     className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
@@ -238,10 +286,25 @@ export default function AdminPanelAdd({ type }) {
                                     onChange={(e) =>
                                         setTypeFormatDetails(e.target.value)
                                     }
-                                    hidden={typeFormat == null}
+                                    hidden={
+                                        classType != 'artifact' || typeFormat == null
+                                    }
                                 />
 
-                                <PopoverPicker color={color} onChange={setColor} />
+                                <div className='w-full'>
+                                    <label
+                                        htmlFor='color'
+                                        className='block text-sm font-medium leading-6'
+                                    >
+                                        Color
+                                    </label>
+                                    <div className='mt-2'>
+                                        <PopoverPicker
+                                            color={color}
+                                            onChange={setColor}
+                                        />
+                                    </div>
+                                </div>
                                 <AlertBox alert={alert} />
                                 <button
                                     className='btn btn-primary btn-block'

@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import AlertBox from '../AlertBox/AlertBox';
+import FormField from '../FormField/FormField';
 import { getEntities, getEntryClasses } from '../../services/adminService/adminService';
 import {
     editEntity,
@@ -150,28 +151,52 @@ export default function AdminPanelEdit({ type }) {
                             className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'
                         >
                             <div className='space-y-6'>
-                                <input
+                                <FormField
                                     type='text'
                                     className='form-input input input-ghost-primary input-block focus:ring-0'
-                                    placeholder='Name'
+                                    labelText='Name'
                                     disabled
                                     value={name}
                                 />
 
-                                <select
-                                    className='form-select select select-ghost-primary select-block focus:ring-0'
-                                    disabled
-                                    value={subtype}
-                                >
-                                    <option value={subtype}>{subtype}</option>
-                                </select>
-                                <textarea
-                                    className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
-                                    placeholder='Description'
-                                    onChange={(e) => setDescription(e.target.value)}
-                                    value={description}
-                                    autoFocus
-                                />
+                                <div className='w-full'>
+                                    <label
+                                        htmlFor='subtype'
+                                        className='block text-sm font-medium leading-6'
+                                    >
+                                        Subtype
+                                    </label>
+                                    <div className='mt-2'>
+                                        <select
+                                            className='form-select select select-ghost-primary select-block focus:ring-0'
+                                            name='subtype'
+                                            disabled
+                                            value={subtype}
+                                        >
+                                            <option value={subtype}>{subtype}</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className='w-full'>
+                                    <label
+                                        htmlFor='description'
+                                        className='block text-sm font-medium leading-6'
+                                    >
+                                        Description
+                                    </label>
+                                    <div className='mt-2'>
+                                        <textarea
+                                            className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
+                                            name='description'
+                                            placeholder='Description'
+                                            onChange={(e) =>
+                                                setDescription(e.target.value)
+                                            }
+                                            value={description}
+                                            autoFocus
+                                        />
+                                    </div>
+                                </div>
                                 <AlertBox alert={alert} />
                                 <button
                                     className='btn btn-primary btn-block'
@@ -218,38 +243,58 @@ export default function AdminPanelEdit({ type }) {
                                     <option value='entity'>Entity</option>
                                     <option value='artifact'>Artifact</option>
                                 </select>
-                                <input
+
+                                <FormField
+                                    name='name'
                                     type='text'
+                                    labelText='Name'
                                     className='form-input input input-ghost-primary input-block focus:ring-0'
                                     value={name}
                                     disabled
+                                    handleInput={() => {}}
                                 />
-                                <input
+                                <FormField
+                                    name='catalyst_type'
+                                    labelText='Catalyst Type'
                                     type='text'
                                     className='form-input input input-ghost-primary input-block focus:ring-0'
-                                    placeholder='Catalyst Type'
+                                    placeholder='type/subtype|model_class|level'
                                     value={catalystType}
-                                    onChange={(e) => setCatalystType(e.target.value)}
+                                    handleInput={setCatalystType}
                                 />
-                                {classType == 'artifact' && (
-                                    <select
-                                        className='form-select select select-ghost-primary select-block focus:ring-0'
-                                        onChange={handleFormatChange}
-                                    >
-                                        <option>Any Format</option>
-                                        <option value='options'>Enumerator</option>
-                                        <option value='regex'>Regex</option>
-                                    </select>
-                                )}
                                 {classType == 'entity' && (
-                                    <input
+                                    <FormField
                                         type='text'
+                                        name='prefix'
                                         className='form-input input input-ghost-primary input-block focus:ring-0'
-                                        placeholder='Prefix'
-                                        onChange={(e) => setPrefix(e.target.value)}
+                                        labelText='Prefix'
+                                        handleInput={setPrefix}
                                         value={prefix}
-                                        autoFocus
                                     />
+                                )}
+
+                                {classType == 'artifact' && (
+                                    <div className='w-full'>
+                                        <label
+                                            htmlFor='format'
+                                            className='block text-sm font-medium leading-6'
+                                        >
+                                            Format
+                                        </label>
+                                        <div className='mt-2'>
+                                            <select
+                                                className='form-select select select-ghost-primary select-block focus:ring-0'
+                                                onChange={handleFormatChange}
+                                                name='format'
+                                            >
+                                                <option>Any Format</option>
+                                                <option value='options'>
+                                                    Enumerator
+                                                </option>
+                                                <option value='regex'>Regex</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                 )}
                                 <textarea
                                     className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
@@ -257,11 +302,25 @@ export default function AdminPanelEdit({ type }) {
                                     onChange={(e) =>
                                         setTypeFormatDetails(e.target.value)
                                     }
-                                    hidden={typeFormat == null}
-                                    value={typeFormatDetails ? typeFormatDetails : ''}
+                                    hidden={
+                                        classType != 'artifact' || typeFormat == null
+                                    }
                                 />
 
-                                <PopoverPicker color={color} onChange={setColor} />
+                                <div className='w-full'>
+                                    <label
+                                        htmlFor='color'
+                                        className='block text-sm font-medium leading-6'
+                                    >
+                                        Color
+                                    </label>
+                                    <div className='mt-2'>
+                                        <PopoverPicker
+                                            color={color}
+                                            onChange={setColor}
+                                        />
+                                    </div>
+                                </div>
 
                                 <AlertBox alert={alert} />
                                 <button

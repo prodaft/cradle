@@ -24,12 +24,35 @@ const displayError = (setAlert, navigate) => {
             return;
         }
 
-        let message = 'An unknown error occurred.';
+        let message = null;
 
-        if (err.response && err.response.data && err.response.data.detail) {
-            message = `${err.response.status}: ${err.response.data.detail}`;
-        } else if (err.message) {
+        if (err.response && err.response.status === 500) {
+            message = 'Server error. Please try again later.';
+        }
+
+        if (!message && err.response && err.response.data) {
+            if (err.response.data.detail) {
+                message = `${err.response.status}: ${err.response.data.detail}`;
+            }
+            for (const key in err.response.data) {
+                if (message) {
+                    break;
+                }
+                if (key.includes('error')) {
+                    console.log(`Guessing the error message is in key: ${key}`);
+                    message = err.response.data[key];
+                }
+            }
+            if (!message) {
+                message = err.response.data;
+            }
+        }
+
+        if (!message && err.message) {
             message = err.message;
+        }
+        if (!message) {
+            message = 'An unknown error occurred.';
         }
 
         setAlert({ show: true, message, color: 'red' });

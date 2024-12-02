@@ -68,6 +68,7 @@ export default function Register() {
                                 name='username'
                                 labelText='Username'
                                 type='text'
+                                value={username}
                                 handleInput={setUsername}
                                 autofocus={true}
                             />
@@ -75,18 +76,21 @@ export default function Register() {
                                 name='email'
                                 labelText='Email'
                                 type='email'
+                                value={email}
                                 handleInput={setEmail}
                             />
                             <FormField
                                 name='password'
                                 labelText='Password'
                                 type='password'
+                                value={password}
                                 handleInput={setPassword}
                             />
                             <FormField
                                 name='password-check'
                                 labelText='Confirm Password'
                                 type='password'
+                                value={passwordCheck}
                                 handleInput={setPasswordCheck}
                             />
                             <AlertBox alert={alert} />

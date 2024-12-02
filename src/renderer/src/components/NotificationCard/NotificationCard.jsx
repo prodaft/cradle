@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { markUnread } from '../../services/notificationsService/notificationsService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { Mail, MailOpen } from 'iconoir-react';
-import { changeAccess } from '../../services/adminService/adminService';
+import { changeAccess, activateUser } from '../../services/adminService/adminService';
 import { useNavigate } from 'react-router-dom';
 
 /**
@@ -50,6 +50,7 @@ export default function NotificationCard({
         timestamp,
         is_marked_unread,
         notification_type,
+        new_user,
         entity_id,
         requesting_user_id,
     } = notification;
@@ -78,6 +79,20 @@ export default function NotificationCard({
                     setAlert({
                         show: true,
                         message: 'Access level changed successfully',
+                        color: 'green',
+                    });
+                }
+            })
+            .catch(displayError(setAlert, navigate));
+    };
+
+    const handleActivateUser = () => {
+        activateUser(new_user.id)
+            .then((response) => {
+                if (response.status === 200) {
+                    setAlert({
+                        show: true,
+                        message: 'User activated successfully.',
                         color: 'green',
                     });
                 }
@@ -132,6 +147,16 @@ export default function NotificationCard({
                             Read/Write
                         </button>
                     </div>
+                </div>
+            )}
+            {notification_type === 'new_user_notification' && (
+                <div className='flex flex-row justify-end items-center flex-wrap'>
+                    <button
+                        className='btn btn-solid-success btn-sm'
+                        onClick={handleActivateUser}
+                    >
+                        Activate
+                    </button>
                 </div>
             )}
         </div>

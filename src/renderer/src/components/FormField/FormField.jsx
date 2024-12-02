@@ -20,9 +20,13 @@
 export default function FormField({
     name,
     type,
+    value,
     labelText,
     handleInput,
+    placeholder = '',
     autofocus = false,
+    required = true,
+    disabled = false,
 }) {
     return (
         <div className='w-full'>
@@ -36,9 +40,12 @@ export default function FormField({
                     type={type}
                     autoComplete={name}
                     onChange={(e) => handleInput(e.target.value)}
-                    required
+                    required={required}
+                    disabled={disabled}
                     className='form-input input-ghost-primary input-block input focus:ring-0'
                     autoFocus={autofocus}
+                    placeholder={placeholder}
+                    value={value}
                 />
             </div>
         </div>
