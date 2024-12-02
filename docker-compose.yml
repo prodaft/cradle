@@ -9,20 +9,15 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    ports:
-      - 9000:9000
-      - 9001:9001
     volumes:
-      - miniodata:/data
+      - minio_data:/data
     environment:
       MINIO_ROOT_USER: admin
       MINIO_ROOT_PASSWORD: minioAdminPassword
-      MINIO_SERVER_URL: http://192.168.100.1:9000
-      MINIO_BROWSER_REDIRECT_URL: http://192.168.100.1:9001
+      MINIO_SERVER_URL: http://localhost:8000
+      MINIO_BROWSER_REDIRECT_URL: http://localhost:8000/minio/ui
     networks:
-      other:
-      cradle-network:
-        ipv4_address: 192.168.100.3
+      - cradle_network
 
   postgres:
     image: postgres:15
@@ -33,11 +28,14 @@ services:
       POSTGRES_PASSWORD: cradlePostgresPassword
       POSTGRES_DB: cradle
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cradle"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
-      other:
-      cradle-network:
-        ipv4_address: 192.168.100.4
+      - cradle_network
 
   cradle:
     image: cradle:latest
@@ -53,7 +51,7 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
 
-      MINIO_ENDPOINT: 192.168.100.1:9000
+      MINIO_ENDPOINT: localhost:8000
       MINIO_ROOT_USER: admin
       MINIO_ROOT_PASSWORD: minioAdminPassword
       MINIO_SECURE: false
@@ -62,37 +60,39 @@ services:
       CRADLE_ADMIN_EMAIL: admin@cradle.sh
       CRADLE_ADMIN_PASSWORD: admin
 
-      CRADLE_SECRET_KEY: "..."
+      CRADLE_SECRET_KEY: "super-secret-key"
 
       ALLOWED_HOSTS: localhost
       CRADLE_TRUSTED_ORIGINS: http://localhost
       BASE_URL: api
       FRONTEND_URL: http://localhost:8000
 
-      ALLOW_REGISTRATION: True
-      AUTOREGISTER_ARTIFACT_TYPES: True
+      DEBUG: true
+      ALLOW_REGISTRATION: true
+      AUTOREGISTER_ARTIFACT_TYPES: true
       MIN_ENTRY_COUNT_PER_NODE: 2
       MIN_ENTITY_COUNT_PER_NODE: 1
 
-      NODE_ENV: "production"
-      VITE_ENV: "production"
+      EMAIL_HOST: ""
+      EMAIL_PORT: 587
+      EMAIL_HOST_USER: ""
+      DEFAULT_FROM_EMAIL: ""
+      EMAIL_HOST_PASSWORD: ""
+      EMAIL_USE_TLS: false
+
+      NODE_ENV: production
+      VITE_ENV: production
     ports:
-      - 8000:80
+      - 8000:8000
     depends_on:
       - postgres
+      - minio
     networks:
-      other:
-      cradle-network:
-        ipv4_address: 192.168.100.5
+      - cradle_network
 
 volumes:
-  pgdata:
-  miniodata:
+  postgres_data:
+  minio_data:
 
 networks:
-  other:
-  cradle-network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 192.168.100.0/24
+  cradle_network:

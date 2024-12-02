@@ -16,6 +16,9 @@ RUN pipenv install gunicorn
 RUN apt-get update
 RUN apt-get install -y nodejs npm
 RUN apt-get install -y nginx
+RUN apt install -y vim
+
+RUN rm -rf /var/lib/apt/lists/*
 
 # Copy application source code
 COPY frontend frontend
@@ -42,7 +45,6 @@ RUN chmod +x ./docker/entrypoint.sh
 # Expose ports
 EXPOSE 80
 
-RUN rm -rf /var/lib/apt/lists/*
 
 # Start Nginx and the Gunicorn application server
 CMD ./docker/entrypoint.sh

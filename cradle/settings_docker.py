@@ -28,8 +28,8 @@ DATABASES = {
 
 MINIO_CONFIG = {
     "endpoint": env.str("MINIO_ENDPOINT", "localhost"),
-    "access_key": env.str("MINIO_ACCESS_KEY", "admin"),
-    "secret_key": env.str("MINIO_SECRET_KEY", "admin"),
+    "access_key": env.str("MINIO_ROOT_USER", "admin"),
+    "secret_key": env.str("MINIO_ROOT_PASSWORD", "admin"),
     "secure": env.bool("MINIO_SECURE", True),
 }
 
@@ -41,3 +41,12 @@ MIN_ENTITY_COUNT_PER_NOTE = env.int("MIN_ENTITY_COUNT_PER_NOTE", 1)
 BASE_URL = env.str("BASE_URL", "")
 STATIC_URL = env.str("STATIC_URL", "static/")
 FRONTEND_URL = env.str("FRONTEND_URL", "http://localhost:5173")
+
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = env.str("EMAIL_HOST", None)
+EMAIL_PORT = env.int("EMAIL_PORT", -1)
+EMAIL_HOST_USER = env.str("EMAIL_HOST_USER", None)
+DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL", None)
+EMAIL_HOST_PASSWORD = env.str("EMAIL_HOST_PASSWORD", None)
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", False)

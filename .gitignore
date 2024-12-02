@@ -1,6 +1,7 @@
 db.sqlite3
 .vscode
 env
+.env
 Pipfile.lock
 .coverage
 reports

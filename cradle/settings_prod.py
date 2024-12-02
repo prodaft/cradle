@@ -39,3 +39,11 @@ MIN_ENTITY_COUNT_PER_NOTE = 1
 BASE_URL = "api"
 STATIC_URL = "static/"
 FRONTEND_URL = "https://cradle.prodaft.com"
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "mail.prodaft.com"
+EMAIL_PORT = 587
+EMAIL_HOST_USER = "cradle@prodaft.com"
+DEFAULT_FROM_EMAIL = "cradle@prodaft.com"
+EMAIL_HOST_PASSWORD = None
+EMAIL_USE_TLS = True
