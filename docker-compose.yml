@@ -1,0 +1,98 @@
+services:
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-07-16T23-46-41Z
+    container_name: minio
+    command: server /data --console-address "0.0.0.0:9001"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - 9000:9000
+      - 9001:9001
+    volumes:
+      - miniodata:/data
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: minioAdminPassword
+      MINIO_SERVER_URL: http://192.168.100.1:9000
+      MINIO_BROWSER_REDIRECT_URL: http://192.168.100.1:9001
+    networks:
+      other:
+      cradle-network:
+        ipv4_address: 192.168.100.3
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cradle
+      POSTGRES_PASSWORD: cradlePostgresPassword
+      POSTGRES_DB: cradle
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      other:
+      cradle-network:
+        ipv4_address: 192.168.100.4
+
+  cradle:
+    image: cradle:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: cradle
+    restart: unless-stopped
+    environment:
+      DB_NAME: cradle
+      DB_USER: cradle
+      DB_PASSWORD: cradlePostgresPassword
+      DB_HOST: postgres
+      DB_PORT: 5432
+
+      MINIO_ENDPOINT: 192.168.100.1:9000
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: minioAdminPassword
+      MINIO_SECURE: false
+
+      CRADLE_ADMIN_USER: admin
+      CRADLE_ADMIN_EMAIL: admin@cradle.sh
+      CRADLE_ADMIN_PASSWORD: admin
+
+      CRADLE_SECRET_KEY: "..."
+
+      ALLOWED_HOSTS: localhost
+      CRADLE_TRUSTED_ORIGINS: http://localhost
+      BASE_URL: api
+      FRONTEND_URL: http://localhost:8000
+
+      ALLOW_REGISTRATION: True
+      AUTOREGISTER_ARTIFACT_TYPES: True
+      MIN_ENTRY_COUNT_PER_NODE: 2
+      MIN_ENTITY_COUNT_PER_NODE: 1
+
+      NODE_ENV: "production"
+      VITE_ENV: "production"
+    ports:
+      - 8000:80
+    depends_on:
+      - postgres
+    networks:
+      other:
+      cradle-network:
+        ipv4_address: 192.168.100.5
+
+volumes:
+  pgdata:
+  miniodata:
+
+networks:
+  other:
+  cradle-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.100.0/24

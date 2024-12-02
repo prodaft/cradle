@@ -1,0 +1,5 @@
+docker/Dockerfile
+docker/docker-compose.yml
+.git
+*Dockerfile*
+*docker-compose*

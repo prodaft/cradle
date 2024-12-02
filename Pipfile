@@ -31,6 +31,7 @@ pytest-django = "*"
 sentry-sdk = {extras = ["django"], version = "*"}
 gunicorn = "*"
 psycopg2 = "*"
+environs = "*"
 
 [dev-packages]
 
