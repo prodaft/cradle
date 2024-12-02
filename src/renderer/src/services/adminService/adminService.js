@@ -23,6 +23,20 @@ var EntryClassesCached = null;
  * @param {EntryData} data - entity data
  * @returns {Promise<AxiosResponse<any, any>>}
  */
+export async function activateUser(id) {
+    return authAxios({
+        method: 'post',
+        url: `/users/${id}/`,
+        data: { is_active: true },
+    });
+}
+
+/**
+ * Sends a POST to create an entity
+ *
+ * @param {EntryData} data - entity data
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
 export async function createEntity(data, token) {
     return authAxios({
         method: 'post',

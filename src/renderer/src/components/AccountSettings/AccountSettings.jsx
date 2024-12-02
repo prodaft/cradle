@@ -35,7 +35,6 @@ export default function AccountSettings() {
     const populateAccountDetails = async () => {
         getUser('me')
             .then((res) => {
-                console.log(res.data);
                 setId(res.data.id);
                 setName(res.data.username);
                 setEmail(res.data.email);
@@ -91,40 +90,47 @@ export default function AccountSettings() {
                         className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'
                     >
                         <div className='space-y-6'>
-                            <input
+                            <FormField
+                                name='name'
                                 type='text'
-                                className='form-input input input-ghost-primary input-block focus:ring-0'
+                                labelText='Username'
                                 placeholder='Username'
-                                disabled
                                 value={name}
+                                handleInput={setName}
+                                disabled={true}
                             />
-                            <input
+                            <FormField
+                                name='email'
                                 type='text'
-                                className='form-input input input-ghost-primary input-block focus:ring-1'
-                                disabled
+                                labelText='Email'
                                 placeholder='Email'
                                 value={email}
+                                handleInput={setEmail}
+                                disabled={true}
                             />
-                            <input
+                            <FormField
+                                name='password'
                                 type='password'
-                                className='form-input input input-ghost-primary input-block focus:ring-1'
+                                labelText='Password'
                                 placeholder='Password'
-                                onChange={(e) => setPassword(e.target.value)}
                                 value={password}
+                                handleInput={setPassword}
                             />
-                            <input
+                            <FormField
+                                name='vtKey'
                                 type='password'
-                                className='form-input input input-ghost-primary input-block focus:ring-1'
+                                labelText='VirusTotal API Key'
                                 placeholder='VirusTotal API Key'
-                                onChange={(e) => setVtKey(e.target.value)}
                                 value={vtKey}
+                                handleInput={setVtKey}
                             />
-                            <input
+                            <FormField
+                                name='catalystKey'
                                 type='password'
-                                className='form-input input input-ghost-primary input-block focus:ring-1'
+                                labelText='Catalyst API Key'
                                 placeholder='Catalyst API Key'
-                                onChange={(e) => setCatalystKey(e.target.value)}
                                 value={catalystKey}
+                                handleInput={setCatalystKey}
                             />
                             <AlertBox alert={alert} />
                             <button

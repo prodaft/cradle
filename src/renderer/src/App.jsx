@@ -21,6 +21,9 @@ import NoteSelector from './components/NoteSelector/NoteSelector.jsx';
 import GraphComponent from './components/GraphComponent/GraphComponent';
 import Welcome from './components/Welcome/Welcome.jsx';
 import ActivityList from './components/ActivityList/ActivityList.jsx';
+import ConfirmEmail from './components/ConfirmEmail/ConfirmEmail.jsx';
+import ChangePassword from './components/ChangePassword/ChangePassword.jsx';
+import ForgotPassword from './components/ForgotPassword/ForgotPassword.jsx';
 
 /**
  * The App component is the artifact point of the application. It wraps the entire application in the AuthProvider
@@ -92,6 +95,9 @@ function App() {
                     </Route>
                     {/* Add any routes for components that DO NOT NEED authentication here */}
                     <Route path='/login' element={<Login />}></Route>
+                    <Route path='/confirm-email' element={<ConfirmEmail />}></Route>
+                    <Route path='/change-password' element={<ChangePassword />}></Route>
+                    <Route path='/forgot-password' element={<ForgotPassword />}></Route>
                     <Route path='/register' element={<Register />}></Route>
                     <Route
                         path='/not-found'
