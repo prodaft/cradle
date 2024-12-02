@@ -11,12 +11,11 @@ mv out/renderer /var/www/cradle
 cd ..
 
 chown -R www-data:www-data /var/www
+service nginx start
 
 pipenv run python manage.py migrate
 # pipenv run python manage.py loaddata entries
 pipenv run python manage.py initadmin
 pipenv run python manage.py delete_hanging_entries
 
-service nginx start
-
-pipenv run gunicorn -b 0.0.0.0:8000 cradle.wsgi:application
+pipenv run gunicorn -b 0.0.0.0:8888 cradle.wsgi:application
