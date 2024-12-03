@@ -42,6 +42,8 @@ BASE_URL = env.str("BASE_URL", "")
 STATIC_URL = env.str("STATIC_URL", "static/")
 FRONTEND_URL = env.str("FRONTEND_URL", "http://localhost:5173")
 
+REQUIRE_EMAIL_CONFIRMATION = env.bool("REQUIRE_EMAIL_CONFIRMATION", False)
+REQUIRE_ADMIN_ACTIVATION = env.bool("REQUIRE_ADMIN_ACTIVATION", False)
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = env.str("EMAIL_HOST", None)

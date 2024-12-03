@@ -20,11 +20,13 @@ class CradleUser(AbstractUser, LoggableModelMixin):
     password_reset_token = models.TextField(null=True, blank=True)
     password_reset_token_expiry = models.DateTimeField(null=True, blank=True)
 
-    email_confirmed = models.BooleanField(default=False)
+    email_confirmed = models.BooleanField(
+        default=(not settings.REQUIRE_EMAIL_CONFIRMATION)
+    )
     email_confirmation_token = models.TextField(null=True, blank=True)
     email_confirmation_token_expiry = models.DateTimeField(null=True, blank=True)
 
-    is_active = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=(not settings.REQUIRE_ADMIN_ACTIVATION))
 
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["password", "email"]
@@ -43,6 +45,9 @@ class CradleUser(AbstractUser, LoggableModelMixin):
 
     def send_email_confirmation(self):
         """Send an email confirmation to the user."""
+        if self.email_confirmed:
+            return
+
         # Generate a token and set its expiration
         self.email_confirmation_token = uuid.uuid4().hex
         self.email_confirmation_token_expiry = now() + timedelta(hours=24)
