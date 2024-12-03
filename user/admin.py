@@ -11,6 +11,12 @@ def create_minio_bucket(modeladmin, request, queryset):
         MinioClient().create_user_bucket(str(user.id))
 
 
+@admin.action(description="Send Confirmation Email")
+def send_email_confirmation(modeladmin, request, queryset):
+    for user in queryset:
+        user.send_email_confirmation()
+
+
 class CradleUserAdmin(UserAdmin):
     model = CradleUser
     list_display = ("username", "email", "is_active", "email_confirmed", "last_login")
@@ -29,10 +35,18 @@ class CradleUserAdmin(UserAdmin):
         (None, {"fields": ("username", "password")}),
         ("Personal Info", {"fields": ("first_name", "last_name", "email")}),
         (
-            "Permissions",
+            "Status",
             {
                 "fields": (
                     "is_active",
+                    "email_confirmed",
+                )
+            },
+        ),
+        (
+            "Permissions",
+            {
+                "fields": (
                     "is_staff",
                     "is_superuser",
                     "groups",
