@@ -80,6 +80,9 @@ services:
       EMAIL_HOST_PASSWORD: ""
       EMAIL_USE_TLS: false
 
+      REQUIRE_EMAIL_CONFIRMATION: true
+      REQUIRE_ADMIN_ACTIVATION: true
+
       NODE_ENV: production
       VITE_ENV: production
     ports:
