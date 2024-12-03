@@ -88,7 +88,7 @@ class CradleUserAdmin(UserAdmin):
         ),
     )
 
-    actions = [create_minio_bucket]
+    actions = [create_minio_bucket, send_email_confirmation]
 
 
 # Register the CradleUser model and the custom admin interface
