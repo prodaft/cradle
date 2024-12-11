@@ -76,7 +76,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
             response.json()["detail"],
-            "Some of the referenced entries do not exist or you don't have the"
+            "Some of the referenced entries do not exist or you don't have the "
             + "right permissions to access them:\n(case: wrongentity)",
         )
 
@@ -94,7 +94,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
             response.json()["detail"],
-            "Some of the referenced entries do not exist or you don't have the"
+            "Some of the referenced entries do not exist or you don't have the "
             + "right permissions to access them:\n(case: entity)",
         )
 

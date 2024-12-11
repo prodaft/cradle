@@ -105,6 +105,7 @@ class EntityDashboardSerializerTest(DashboardsTestCase):
                     "subtype": "case",
                     "regex": "",
                     "options": "",
+                    "prefix": "",
                     "color": "#e66100",
                     "catalyst_type": "",
                 },
@@ -116,6 +117,7 @@ class EntityDashboardSerializerTest(DashboardsTestCase):
                     "subtype": "case",
                     "regex": "",
                     "options": "",
+                    "prefix": "",
                     "color": "#e66100",
                     "catalyst_type": "",
                 },
@@ -127,6 +129,7 @@ class EntityDashboardSerializerTest(DashboardsTestCase):
                     "subtype": "case",
                     "regex": "",
                     "options": "",
+                    "prefix": "",
                     "color": "#e66100",
                     "catalyst_type": "",
                 },
@@ -138,6 +141,7 @@ class EntityDashboardSerializerTest(DashboardsTestCase):
                     "description": "Description1",
                     "type": "artifact",
                     "subtype": "ip",
+                    "prefix": "",
                     "regex": "",
                     "options": "",
                     "color": "#e66100",
@@ -153,6 +157,7 @@ class EntityDashboardSerializerTest(DashboardsTestCase):
                     "subtype": "case",
                     "regex": "",
                     "options": "",
+                    "prefix": "",
                     "color": "#e66100",
                     "catalyst_type": "",
                 }
@@ -166,6 +171,7 @@ class EntityDashboardSerializerTest(DashboardsTestCase):
                     "subtype": "ip",
                     "regex": "",
                     "options": "",
+                    "prefix": "",
                     "color": "#e66100",
                     "catalyst_type": "",
                 }
@@ -179,6 +185,7 @@ class EntityDashboardSerializerTest(DashboardsTestCase):
                     "subtype": "case",
                     "regex": "",
                     "options": "",
+                    "prefix": "",
                     "color": "#e66100",
                     "catalyst_type": "",
                 }
@@ -192,6 +199,7 @@ class EntityDashboardSerializerTest(DashboardsTestCase):
                     "subtype": "case",
                     "regex": "",
                     "options": "",
+                    "prefix": "",
                     "color": "#e66100",
                     "catalyst_type": "",
                 }
@@ -225,6 +233,7 @@ class EntityDashboardSerializerTest(DashboardsTestCase):
         ).data
         self.maxDiff = None
 
+        print(dashboard_json)
         self.assertEqual(expected_json, dashboard_json)
 
 
@@ -286,6 +295,7 @@ class ArtifactDashboardSerializerTest(DashboardsTestCase):
                     "description": "Description1",
                     "type": "entity",
                     "subtype": "case",
+                    "prefix": "",
                     "regex": "",
                     "options": "",
                     "color": "#e66100",
@@ -296,6 +306,7 @@ class ArtifactDashboardSerializerTest(DashboardsTestCase):
                     "name": "Entity2",
                     "description": "Description2",
                     "type": "entity",
+                    "prefix": "",
                     "subtype": "case",
                     "regex": "",
                     "options": "",
@@ -308,6 +319,7 @@ class ArtifactDashboardSerializerTest(DashboardsTestCase):
                     "description": "Description3",
                     "type": "entity",
                     "subtype": "case",
+                    "prefix": "",
                     "regex": "",
                     "options": "",
                     "color": "#e66100",
@@ -321,6 +333,7 @@ class ArtifactDashboardSerializerTest(DashboardsTestCase):
                     "description": "Some Description",
                     "type": "entity",
                     "subtype": "case",
+                    "prefix": "",
                     "regex": "",
                     "options": "",
                     "color": "#e66100",
@@ -334,6 +347,7 @@ class ArtifactDashboardSerializerTest(DashboardsTestCase):
                     "description": "Description3",
                     "type": "entity",
                     "subtype": "case",
+                    "prefix": "",
                     "regex": "",
                     "options": "",
                     "color": "#e66100",
@@ -346,6 +360,7 @@ class ArtifactDashboardSerializerTest(DashboardsTestCase):
                     "name": "Some Entity",
                     "description": "Some Description",
                     "type": "entity",
+                    "prefix": "",
                     "subtype": "case",
                     "regex": "",
                     "options": "",

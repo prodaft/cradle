@@ -81,7 +81,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         reset_url = f"{settings.FRONTEND_URL}/#change-password?token={self.password_reset_token}"
         subject = "CRADLE Password Reset"
         message = (
-            f"Hey {self.username}!\nYou can reset your password using the"
+            f"Hey {self.username}!\nYou can reset your password using the "
             + f"following link: {reset_url}\nThis link will expire in 1 hour."
         )
         from_email = settings.DEFAULT_FROM_EMAIL

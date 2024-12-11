@@ -20,7 +20,7 @@ class NotEnoughReferencesException(APIException):
     status_code = 400
 
     default_detail = (
-        f"Note does not reference at least {settings.MIN_ENTITY_COUNT_PER_NOTE}"
+        f"Note does not reference at least {settings.MIN_ENTITY_COUNT_PER_NOTE} "
         + f"entity and at least {settings.MIN_ENTRY_COUNT_PER_NOTE} entries."
     )
 
@@ -49,7 +49,7 @@ class EntriesDoNotExistException(APIException):
         assert len(links) > 0
 
         self.default_detail = (
-            "Some of the referenced entries do not exist or"
+            "Some of the referenced entries do not exist or "
             + "you don't have the right permissions to access them:\n"
         )
 
@@ -67,7 +67,7 @@ class NoAccessToEntriesException(APIException):
         assert len(links) > 0
 
         self.default_detail = (
-            "Some of the referenced entries do not exist or you don't"
+            "Some of the referenced entries do not exist or you don't "
             + "have the right permissions to access them:\n"
         )
 

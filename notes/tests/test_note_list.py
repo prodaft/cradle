@@ -90,10 +90,10 @@ class CreateNoteTest(NotesTestCase):
             **self.headers,
         )
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 404)
         self.assertEqual(
             response.json()["detail"],
-            "The bucket name of the file reference is incorrect",
+            "There exists no file at the specified path",
         )
 
     def test_create_note_wrong_minio_file_name(self):
@@ -176,7 +176,7 @@ class CreateNoteTest(NotesTestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
             response.json()["detail"],
-            "Some of the referenced entries do not exist or you don't have the right"
+            "Some of the referenced entries do not exist or you don't have the right "
             + "permissions to access them:\n(case: entity)",
         )
 
