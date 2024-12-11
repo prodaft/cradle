@@ -10,13 +10,10 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from user.models import CradleUser
 
 from ..serializers import (
-    EntitySerializer,
     EntryClassSerializer,
     ArtifactClassSerializer,
 )
-from ..models import Entry, EntryClass
-from logs.utils import LoggingUtils
-from uuid import UUID
+from ..models import EntryClass
 
 
 @extend_schema_view(
@@ -30,7 +27,8 @@ from uuid import UUID
         summary="Retrieve All Entry Classes",
     ),
     post=extend_schema(
-        description="Allows an admin to create a new EntryClass of type Artifact by specifying its subtype and format.",
+        description="Allows an admin to create a new EntryClass"
+        + "of type Artifact by specifying its subtype and format.",
         request=ArtifactClassSerializer,
         responses={
             200: ArtifactClassSerializer,

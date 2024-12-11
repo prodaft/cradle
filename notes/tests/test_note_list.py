@@ -6,7 +6,6 @@ from rest_framework_simplejwt.tokens import AccessToken
 from notes import utils
 from ..models import Note
 from entries.models import Entry
-from entries.enums import EntryType
 from .utils import NotesTestCase
 from unittest.mock import patch
 import notes.processor.entry_population_task as task
@@ -159,7 +158,8 @@ class CreateNoteTest(NotesTestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
             response.json()["detail"],
-            "Some of the referenced entries do not exist or you don't have the right permissions to access them:\n(case: wrongentity)",
+            "Some of the referenced entries do not exist or you don't have the right permissions to "
+            + "access them:\n(case: wrongentity)",
         )
 
     def test_references_entities_user_has_no_access_to(self):
@@ -176,7 +176,8 @@ class CreateNoteTest(NotesTestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
             response.json()["detail"],
-            "Some of the referenced entries do not exist or you don't have the right permissions to access them:\n(case: entity)",
+            "Some of the referenced entries do not exist or you don't have the right"
+            + "permissions to access them:\n(case: entity)",
         )
 
     def test_create_note_successfully(self):

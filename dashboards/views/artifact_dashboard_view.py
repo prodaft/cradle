@@ -25,13 +25,14 @@ class ArtifactDashboard(APIView):
             entity_name: The name of the artifact that will be retrieved
 
         Returns:
-            Response(status=200): A JSON response containing the dashboard of the artifact
+            Response(status=200): A JSON response containing the dashboard
+            of the artifact
                 if the request was successful
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
             Response("There is no artifact with specified name", status=404):
-                if there is no artifact with the provided name or the artifact exists but is
-                not referenced in any of the user's accessible notes
+                if there is no artifact with the provided name or the artifact
+                exists but is not referenced in any of the user's accessible notes
         """
 
         user: CradleUser = cast(CradleUser, request.user)

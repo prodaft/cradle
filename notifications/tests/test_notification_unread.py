@@ -1,7 +1,6 @@
 from .utils import NotificationsTestCase
 from user.models import CradleUser
 from entries.models import Entry
-from entries.enums import EntryType
 from notifications.models import MessageNotification, AccessRequestNotification
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken

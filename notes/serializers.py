@@ -10,7 +10,7 @@ from .exceptions import (
     NoteDoesNotExistException,
     NoteNotPublishableException,
 )
-from entries.serializers import EntryResponseSerializer, EntrySerializer
+from entries.serializers import EntryResponseSerializer
 from typing import Any, Dict
 from file_transfer.serializers import FileReferenceSerializer
 from file_transfer.models import FileReference

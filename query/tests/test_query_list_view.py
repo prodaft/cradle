@@ -5,8 +5,7 @@ from rest_framework.test import APIClient
 import io
 from rest_framework_simplejwt.tokens import AccessToken
 
-from entries.models import Entry, EntryClass
-from entries.enums import EntryType
+from entries.models import Entry
 from access.models import Access
 from access.enums import AccessType
 from notes.models import Note

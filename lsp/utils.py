@@ -1,4 +1,4 @@
-from typing import Tuple, Dict, List, Any
+from typing import Dict, List, Any
 from entries.models import Entry, EntryClass
 from notes.models import Note
 from user.models import CradleUser

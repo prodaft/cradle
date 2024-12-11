@@ -4,7 +4,7 @@ from logs.models import LoggableModelMixin
 from .managers import CradleUserManager
 from django.core.mail import send_mail
 from django.conf import settings
-from django.db import models, transaction
+from django.db import models
 import uuid
 
 from django.utils.timezone import now, timedelta
@@ -61,7 +61,10 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         # Construct email content
         confirmation_url = f"{settings.FRONTEND_URL}/#confirm-email?token={self.email_confirmation_token}"
         subject = "CRADLE Email Confirmation"
-        message = f"Hey {self.username}!\nPlease confirm your email by visiting the following link: {confirmation_url}"
+        message = (
+            f"Hey {self.username}!\nPlease confirm your email"
+            + f"by visiting the following link: {confirmation_url}"
+        )
         from_email = settings.DEFAULT_FROM_EMAIL
 
         # Send email
@@ -77,7 +80,10 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         # Construct email content
         reset_url = f"{settings.FRONTEND_URL}/#change-password?token={self.password_reset_token}"
         subject = "CRADLE Password Reset"
-        message = f"Hey {self.username}!\nYou can reset your password using the following link: {reset_url}\nThis link will expire in 1 hour."
+        message = (
+            f"Hey {self.username}!\nYou can reset your password using the"
+            + f"following link: {reset_url}\nThis link will expire in 1 hour."
+        )
         from_email = settings.DEFAULT_FROM_EMAIL
 
         # Send email

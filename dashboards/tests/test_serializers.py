@@ -1,6 +1,5 @@
 from unittest.mock import patch, PropertyMock
 
-import json
 from entries.models import Entry
 from entries.enums import EntryType
 from notes.models import Note

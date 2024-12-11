@@ -6,7 +6,7 @@ import mistune
 from mistune.core import BaseRenderer, BlockState
 
 from mistune.markdown import Markdown
-from mistune import InlineParser, InlineState, unikey
+from mistune import InlineParser, InlineState
 from mistune.helpers import LINK_LABEL
 
 from notes.utils import LINK_REGEX

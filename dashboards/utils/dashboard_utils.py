@@ -1,6 +1,5 @@
 from django.db.models.query import QuerySet
 from typing import Dict, Any, Tuple, List
-from django.db.models import Q
 
 from user.models import CradleUser
 from entries.models import Entry

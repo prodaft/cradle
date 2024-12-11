@@ -1,8 +1,6 @@
-from entries.models import Entry, EntryClass
-from entries.enums import EntryType
+from entries.models import Entry
 from notes.models import Note
 from notes.processor.access_control_task import AccessControlTask
-from user.models import CradleUser
 from access.models import Access
 from access.enums import AccessType
 from ..exceptions import NoAccessToEntriesException

@@ -1,4 +1,3 @@
-from .settings_common import *
 from environs import Env
 
 # Initialize environs

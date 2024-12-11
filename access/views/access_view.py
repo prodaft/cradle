@@ -12,7 +12,6 @@ from uuid import UUID
 
 
 class AccessList(APIView):
-
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdminUser]
     serializer_class = AccessEntitySerializer
@@ -28,8 +27,8 @@ class AccessList(APIView):
         Returns:
             Response(body, status=200):
                 if the request was successful. The body will contain a JSON
-                representation of a list of all entities with an additional "access_type"
-                attribute.
+                representation of a list of all entities with an additional
+                "access_type" attribute.
                 Example: [{"id" : 2, "name" : "Entity 1", "access_type" : "none"}]
             Response("User is not authenticated", status=401):
                 if the user was not authenticated.

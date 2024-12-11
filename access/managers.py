@@ -102,7 +102,8 @@ class AccessManager(models.Manager):
         )
 
     def get_accesses(self, user_id: UUID) -> models.QuerySet:
-        """Retrieves from the database the access_type of all entities for a given user id.
+        """Retrieves from the database the access_type of all
+        entities for a given user id.
 
         Args:
             user_id: Id of the user whose access is to be updated.

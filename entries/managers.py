@@ -1,5 +1,4 @@
-from django.db import connection, models
-from django.db.models import Q
+from django.db import models
 
 from user.models import CradleUser
 
@@ -62,7 +61,10 @@ class EntryQuerySet(models.QuerySet):
         query, query_args = self._neighbour_query(user)
 
         final_query = f"""
-        SELECT id, type FROM ({query}) JOIN entries_entry ee JOIN entries_entry_class eec ON ee.entry_class_id = eec.subtype WHERE type = 'entity'
+        SELECT id, type FROM ({query})
+        JOIN entries_entry ee
+        JOIN entries_entry_class eec ON ee.entry_class_id = eec.subtype
+        WHERE type = 'entity'
         """
 
         return self.raw(final_query, query_args)

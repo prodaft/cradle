@@ -1,6 +1,5 @@
 from notes.models import Note, ArchivedNote
 from entries.models import Entry
-from entries.enums import EntryType
 from .utils import NotesTestCase
 
 

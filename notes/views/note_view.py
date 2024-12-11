@@ -19,7 +19,6 @@ from ..models import Note
 from user.models import CradleUser
 from access.enums import AccessType
 from typing import cast
-from rest_framework.pagination import PageNumberPagination
 
 from entries.enums import EntryType
 from access.models import Access

@@ -34,10 +34,10 @@ def cradle_link(md: "Markdown") -> None:
     md.inline.register("url_link", LINK_REGEX, parse_cradle_link, before="link")
 
 
-def flatten(l: List) -> List:
+def flatten(arr: List) -> List:
     nl = []
 
-    for i in l:
+    for i in arr:
         if isinstance(i, list):
             nl.extend(flatten(i))
         else:

@@ -9,7 +9,6 @@ from ..models import Note
 from ..serializers import NotePublishSerializer, ReportSerializer, ReportQuerySerializer
 
 from ..exceptions import (
-    NoAccessToEntriesException,
     NoteDoesNotExistException,
 )
 
