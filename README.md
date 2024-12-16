@@ -1,7 +1,7 @@
 # CRADLE (Front-end)
 Welcome to CRADLE's frontend codebase. We are happy to see you here!
 
-**This is the front-end client for CRADLE. The back-end server can be found [here](https://gitlab.ewi.tudelft.nl/cse2000-software-project/2023-2024/cluster-j/08b/backend).**
+**This is the front-end client for CRADLE. The back-end server can be found [here](https://github.com/prodaft/cradle-backend).**
 
 ---
 
@@ -14,7 +14,7 @@ This section provides a comprehensive installation guide and instructions on how
 1. Clone the project:
 
     ```shell
-    git clone https://gitlab.ewi.tudelft.nl/cse2000-software-project/2023-2024/cluster-j/08b/frontend.git
+    git clone https://github.com/prodaft/cradle-ui.git
     ```
 
 2. Use the package manager [**npm**](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) to install the dependencies:
@@ -109,15 +109,23 @@ The following environment variables are expected by the codebase:
 
 ---
 
+
 ## Authors and Acknowledgments
 
-This project is maintained by a dedicated team of developers and contributors. Special thanks to everyone who has contributed to this project so far.
+CRADLE is developed in PRODAFT, in collaboration with TU Delft students. We thank everyone who contributes to the development process of CRADLE.
 
-### Special Thanks
+### Contributors
+
+- [Tudor Măgirescu](https://github.com/TudorMagirescu)
+- [Călin-Marian Diacicov](https://github.com/klinashka)
+- [Daniel Popovici](https://github.com/Babu-on-Github)
+- [Matei Grigore](https://github.com/mateigrigore)
+- [Razvan Dinu](https://github.com/razvand13)
+- [Yigit Colakoglu](https://github.com/arg3t)
 
 We would like to extend our heartfelt thanks to the developers and maintainers of the following core libraries, utilities, and tools that have played a crucial role in the development of this project:
 
-#### Core Libraries
+### Core Libraries
 
 -   **React Ecosystem**
 
@@ -146,7 +154,7 @@ We would like to extend our heartfelt thanks to the developers and maintainers o
     -   `@codemirror/view`
     -   `@replit/codemirror-vim`
 
-#### Utilities and Enhancements
+### Utilities and Enhancements
 
 -   **Styling and Design**
 
@@ -159,7 +167,7 @@ We would like to extend our heartfelt thanks to the developers and maintainers o
     -   `iconoir`
     -   `iconoir-react`
 
-#### Testing and Development Tools
+### Testing and Development Tools
 
 -   **Testing Frameworks**
 
