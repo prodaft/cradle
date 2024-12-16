@@ -65,7 +65,7 @@ jobs:
   tests:
     name: Run Django Tests
     runs-on: ubuntu-latest
-    needs: codequality
+    #    needs: codequality
     services:
       postgres:
         image: postgres:16.2
