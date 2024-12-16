@@ -1,5 +1,4 @@
 # CRADLE (Front-end)
-
 Welcome to CRADLE's frontend codebase. We are happy to see you here!
 
 **This is the front-end client for CRADLE. The back-end server can be found [here](https://gitlab.ewi.tudelft.nl/cse2000-software-project/2023-2024/cluster-j/08b/backend).**
@@ -23,7 +22,6 @@ This section provides a comprehensive installation guide and instructions on how
     ```shell
     npm install
     ```
-
 
 ### Scripts and Usage
 
