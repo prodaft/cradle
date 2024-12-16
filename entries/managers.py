@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models.query import RawQuerySet
 
 from user.models import CradleUser
 
@@ -27,7 +28,7 @@ class EntryQuerySet(models.QuerySet):
         """
         return self.filter(note=None)
 
-    def _neighbour_query(self, user: CradleUser | None) -> str:
+    def _neighbour_query(self, user: CradleUser | None) -> tuple[str, list[str]]:
         query_parts = []
         query_args = []
         for i in self.all():
@@ -46,7 +47,7 @@ class EntryQuerySet(models.QuerySet):
 
         return query, query_args
 
-    def get_neighbours(self, user: CradleUser | None) -> models.QuerySet:
+    def get_neighbours(self, user: CradleUser | None) -> RawQuerySet:
         """
         Get the neighbours of an entry
         """
@@ -54,7 +55,7 @@ class EntryQuerySet(models.QuerySet):
 
         return self.raw(query, query_args)
 
-    def get_neighbour_entities(self, user: CradleUser | None) -> models.QuerySet:
+    def get_neighbour_entities(self, user: CradleUser | None) -> RawQuerySet:
         """
         Get the neighbours of an entry
         """

@@ -1,32 +1,42 @@
+import uuid
+from datetime import datetime, timedelta
+from typing import Optional
+
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.core.mail import send_mail
+from django.db import models
 
 from logs.models import LoggableModelMixin
-from .managers import CradleUserManager
-from django.core.mail import send_mail
-from django.conf import settings
-from django.db import models
-import uuid
 
-from django.utils.timezone import now, timedelta
+from .managers import CradleUserManager
 
 
 class CradleUser(AbstractUser, LoggableModelMixin):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    email = models.EmailField(unique=True)
+    id: models.UUIDField = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    email: models.EmailField = models.EmailField(unique=True)
 
-    vt_api_key = models.TextField(null=True, blank=True)
-    catalyst_api_key = models.TextField(null=True, blank=True)
+    vt_api_key: Optional[str] = models.TextField(null=True, blank=True)
+    catalyst_api_key: Optional[str] = models.TextField(null=True, blank=True)
 
-    password_reset_token = models.TextField(null=True, blank=True)
-    password_reset_token_expiry = models.DateTimeField(null=True, blank=True)
+    password_reset_token: Optional[str] = models.TextField(null=True, blank=True)
+    password_reset_token_expiry: Optional[models.DateTimeField] = models.DateTimeField(
+        null=True, blank=True
+    )
 
-    email_confirmed = models.BooleanField(
+    email_confirmed: models.BooleanField = models.BooleanField(
         default=(not settings.REQUIRE_EMAIL_CONFIRMATION)
     )
-    email_confirmation_token = models.TextField(null=True, blank=True)
-    email_confirmation_token_expiry = models.DateTimeField(null=True, blank=True)
+    email_confirmation_token: Optional[str] = models.TextField(null=True, blank=True)
+    email_confirmation_token_expiry: Optional[models.DateTimeField] = (
+        models.DateTimeField(null=True, blank=True)
+    )
 
-    is_active = models.BooleanField(default=(not settings.REQUIRE_ADMIN_ACTIVATION))
+    is_active: models.BooleanField = models.BooleanField(
+        default=(not settings.REQUIRE_ADMIN_ACTIVATION)
+    )
 
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["password", "email"]
@@ -50,7 +60,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
 
         # Generate a token and set its expiration
         self.email_confirmation_token = uuid.uuid4().hex
-        self.email_confirmation_token_expiry = now() + timedelta(hours=24)
+        self.email_confirmation_token_expiry = datetime.now() + timedelta(hours=24)
         self.save(
             update_fields=[
                 "email_confirmation_token",
@@ -74,7 +84,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         """Send a password reset email to the user."""
         # Generate a token and set its expiration
         self.password_reset_token = uuid.uuid4().hex
-        self.password_reset_token_expiry = now() + timedelta(hours=1)
+        self.password_reset_token_expiry = datetime.now() + timedelta(hours=1)
         self.save(update_fields=["password_reset_token", "password_reset_token_expiry"])
 
         # Construct email content

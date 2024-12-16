@@ -1,4 +1,4 @@
-from io import BytesIO
+import io
 from typing import Optional
 from minio import Minio
 import uuid
@@ -106,7 +106,7 @@ class MinioClient:
         except Exception:
             return False
 
-    def fetch_file(self, bucket_name: str, path: str) -> Optional[BytesIO]:
+    def fetch_file(self, bucket_name: str, path: str) -> Optional[io.IOBase]:
         """Fetches a file from the MinIO instance.
         Args:
             bucket_name: The name of the bucket where the file is stored

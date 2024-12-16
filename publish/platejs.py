@@ -1,7 +1,7 @@
 import base64
 from collections.abc import Callable, Iterable
 from io import BytesIO
-from typing import Any, ClassVar, Dict, List, Literal, Match, Optional, Tuple
+from typing import Any, ClassVar, Dict, List, Literal, Match, Optional, Set, Tuple
 import mistune
 from mistune.core import BaseRenderer, BlockState
 
@@ -101,14 +101,14 @@ def img_footnote(md: "Markdown") -> None:
 class PlateJSRender(BaseRenderer):
     """A renderer for converting Markdown to HTML."""
 
-    NAME: ClassVar[Literal["platejs"]] = "platejs"
+    NAME = "platejs"
 
     def __init__(
         self,
         entries: Dict[Tuple[str, str], Dict[str, Optional[str]]],
     ) -> None:
         self.entries = entries
-        self.mentions = set()
+        self.mentions: Set[Tuple[str, str]] = set()
         super(PlateJSRender, self).__init__()
 
     def render_token(self, token: Dict[str, Any], state: BlockState) -> str:
@@ -130,7 +130,9 @@ class PlateJSRender(BaseRenderer):
         else:
             return func(text)
 
-    def render_tokens(self, tokens: Iterable[Dict[str, Any]], state: BlockState) -> str:
+    def render_tokens(
+        self, tokens: Iterable[Dict[str, Any]], state: BlockState
+    ) -> List[Dict[str, Any]]:
         results = []
         for i in self.iter_tokens(tokens, state):
             if i is None:
@@ -145,7 +147,7 @@ class PlateJSRender(BaseRenderer):
     def text(self, text: List) -> Dict[str, Any]:
         return {"text": text}
 
-    def emphasis(self, text: List) -> Dict[str, Any]:
+    def emphasis(self, text: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         for i in text:
             if "text" in i:
                 i["italic"] = True
@@ -154,7 +156,7 @@ class PlateJSRender(BaseRenderer):
 
         return text
 
-    def strong(self, text: List) -> Dict[str, Any]:
+    def strong(self, text: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         for i in text:
             if "text" in i:
                 i["bold"] = True
@@ -179,10 +181,10 @@ class PlateJSRender(BaseRenderer):
     def codespan(self, text: List) -> Dict[str, Any]:
         return {"text": text, "italic": True}
 
-    def linebreak(self) -> Dict[str, Any]:
+    def linebreak(self) -> None:
         return None
 
-    def softbreak(self) -> Dict[str, Any]:
+    def softbreak(self) -> None:
         return None
 
     def paragraph(self, text: List) -> Dict[str, Any]:
@@ -191,7 +193,7 @@ class PlateJSRender(BaseRenderer):
     def heading(self, text: List, level: int, **attrs: Any) -> Dict[str, Any]:
         return {"type": f"h{min(3, level)}", "children": text}
 
-    def cradle_link(self, key: str, value: str, alias: Optional[str]) -> str:
+    def cradle_link(self, key: str, value: str, alias: Optional[str]) -> Dict[str, Any]:
         d = self.entries.get((key, value), {})
 
         id = d.get("id")
@@ -217,13 +219,13 @@ class PlateJSRender(BaseRenderer):
             "children": [{"text": ""}],
         }
 
-    def blank_line(self) -> Dict[str, Any]:
+    def blank_line(self) -> None:
         return None
 
-    def thematic_break(self) -> Dict[str, Any]:
+    def thematic_break(self) -> None:
         return None
 
-    def block_text(self, text: List) -> Dict[str, Any]:
+    def block_text(self, text: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         return text
 
     def block_code(self, code: str, info: Optional[str] = None) -> Dict[str, Any]:
@@ -232,7 +234,7 @@ class PlateJSRender(BaseRenderer):
     def block_quote(self, text: List) -> Dict[str, Any]:
         return {"type": "blockquote", "children": text}
 
-    def block_html(self, html: str) -> Dict[str, Any]:
+    def block_html(self, html: str) -> None:
         return None
 
     def block_error(self, text: List) -> Dict[str, Any]:
@@ -276,16 +278,16 @@ class PlateJSRender(BaseRenderer):
     def list_item(self, text: List) -> Dict[str, Any]:
         return {"type": "p", "children": text}
 
-    def table(self, text: List) -> str:
+    def table(self, text: List) -> Dict[str, Any]:
         return {"type": "table", "children": text}
 
-    def table_head(self, text: List) -> str:
+    def table_head(self, text: List) -> Dict[str, Any]:
         return self.table_row(text)
 
-    def table_body(self, text: List) -> str:
+    def table_body(self, text: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         return text
 
-    def table_row(self, text: List) -> str:
+    def table_row(self, text: List) -> Dict[str, Any]:
         return {"type": "tr", "children": text}
 
     def table_cell(
@@ -293,13 +295,13 @@ class PlateJSRender(BaseRenderer):
         text: List,
         align: Optional[str] = None,
         head: bool = False,
-    ) -> str:
+    ) -> Dict[str, Any]:
         return {"type": "td", "children": text}
 
-    def footnote_ref(self, key: str, value: str) -> str:
+    def footnote_ref(self, key: str, value: str) -> Dict[str, Any]:
         return {"type": "p", "children": [{"text": value}]}
 
-    def img_footnote_ref(self, key: str, value: str) -> str:
+    def img_footnote_ref(self, key: str, value: str) -> Dict[str, Any]:
         return {
             "type": "footnote_img_ref",
             "caption": [{"text": value}],
@@ -307,7 +309,7 @@ class PlateJSRender(BaseRenderer):
             "children": [{"text": ""}],
         }
 
-    def inline_html(self, html: str) -> str:
+    def inline_html(self, html: str) -> None:
         return None
 
 

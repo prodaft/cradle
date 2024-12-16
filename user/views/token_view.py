@@ -22,7 +22,7 @@ class TokenObtainPairLogView(TokenObtainPairView):
         summary="Obtain JWT Pair",
     )
     def post(self, request: Request, *args, **kwargs) -> Response:
-        serializer = self.get_serializer(data=request.data)
+        serializer: TokenObtainPairSerializer = self.get_serializer(data=request.data)
 
         try:
             serializer.is_valid(raise_exception=True)
