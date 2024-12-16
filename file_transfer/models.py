@@ -1,10 +1,9 @@
 from django.db import models
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 import uuid
 
 if TYPE_CHECKING:
-    from notes.models import Note
-    from fleeting_notes.models import FleetingNote
+    pass
 
 
 class FileReference(models.Model):

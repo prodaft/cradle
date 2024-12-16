@@ -11,9 +11,9 @@ CSRF_TRUSTED_ORIGINS = ["http://localhost", "http://127.0.0.1"]
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "cradle",
+        "NAME": "cradledb",
         "USER": "postgres",
-        "PASSWORD": "postres",
+        "PASSWORD": "postgres",
         "HOST": "localhost",
         "PORT": "5432",
     }

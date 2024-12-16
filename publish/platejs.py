@@ -1,7 +1,7 @@
 import base64
 from collections.abc import Callable, Iterable
 from io import BytesIO
-from typing import Any, ClassVar, Dict, List, Literal, Match, Optional, Set, Tuple
+from typing import Any, Dict, List, Match, Optional, Set, Tuple
 import mistune
 from mistune.core import BaseRenderer, BlockState
 

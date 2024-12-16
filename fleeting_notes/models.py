@@ -3,7 +3,7 @@ from django.db.models.query import QuerySet
 
 from user.models import CradleUser
 import uuid
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from file_transfer.models import FileReference
