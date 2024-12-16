@@ -29,9 +29,20 @@ efficiently and export their findings in a publishable format.
 
 This section provides a comprehensive installation guide and instructions on how to use the application.
 
-### Installation (Docker)
+### Installation
+#### Docker (Recommended)
 
-### Installation (Native)
+If you want to run CRADLE in docker, you can use our docker-compose file which
+starts up all the necessary services for you. 
+
+```
+git clone git@github.com:prodaft/cradle-backend.git cradle
+cd cradle
+git submodule update --init --recursive
+sudo docker compose up -d
+```
+
+#### Native
 
 1. Clone the project:
 
