@@ -234,7 +234,6 @@ export default function AdminPanelAdd({ type }) {
                                     labelText='Subtype'
                                     className='form-input input input-ghost-primary input-block focus:ring-0'
                                     value={subtype}
-                                    disabled
                                     handleInput={setSubtype}
                                 />
                                 <FormField
