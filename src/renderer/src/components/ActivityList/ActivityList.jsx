@@ -4,6 +4,7 @@ import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { useLocation, useParams } from 'react-router-dom';
 import { getEventLogs } from '../../services/logService/logService';
 import Activity from '../Activity/Activity';
+import Pagination from '../Pagination/Pagination';
 
 /**
  * ActivityList component
@@ -38,6 +39,7 @@ export default function ActivityList() {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
 
     const fetchEvents = useCallback(() => {
+        console.log('Getting event logs');
         setLoading(true);
         getEventLogs({ page, ...submittedFilters })
             .then((response) => {
@@ -56,12 +58,14 @@ export default function ActivityList() {
     }, [page, submittedFilters]);
 
     const handlePageChange = (newPage) => {
+        console.log('Page Changed');
         setPage(newPage);
+        console.log(page);
     };
 
     useEffect(() => {
         fetchEvents();
-    }, [submittedFilters]);
+    }, [page, submittedFilters]);
 
     const handleSearchSubmit = (e) => {
         e.preventDefault();
@@ -147,18 +151,11 @@ export default function ActivityList() {
                                 ))}
                             </div>
 
-                            <div className='pagination flex justify-center mt-4 mb-4'>
-                                {Array.from({ length: totalPages }, (_, index) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => handlePageChange(index + 1)}
-                                        disabled={page === index + 1}
-                                        className={`btn ${page === index + 1 ? 'btn-disabled' : ''}`}
-                                    >
-                                        {index + 1}
-                                    </button>
-                                ))}
-                            </div>
+                            <Pagination
+                                currentPage={page}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}
+                            />
                         </div>
                     ) : (
                         <div className='container mx-auto flex flex-col items-center'>

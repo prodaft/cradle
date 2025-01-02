@@ -8,9 +8,8 @@ import SearchResult from '../SearchResult/SearchResult';
 import { useNavigate } from 'react-router-dom';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
-import {
-    getEntryClasses,
-} from '../../services/adminService/adminService';
+import { getEntryClasses } from '../../services/adminService/adminService';
+import Pagination from '../Pagination/Pagination';
 
 /**
  * Dialog to search for entries
@@ -35,6 +34,9 @@ export default function SearchDialog({ isOpen, onClose }) {
     const [results, setResults] = useState(null);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [entrySubtypes, setEntrySubtypes] = useState([]);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
     const dialogRoot = document.getElementById('portal-root');
     const navigate = useNavigate();
     const handleError = displayError(setAlert, navigate);
@@ -44,19 +46,17 @@ export default function SearchDialog({ isOpen, onClose }) {
             .then((response) => {
                 if (response.status === 200) {
                     let entities = response.data;
-                    setEntrySubtypes(
-                        entities
-                        .map((c) => c.subtype),
-                    );
+                    setEntrySubtypes(entities.map((c) => c.subtype));
                 }
             })
             .catch(handleError);
-    }
+    };
 
     const handleKeyDown = (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
             performSearch();
+            setPage(1);
         }
     };
 
@@ -68,10 +68,15 @@ export default function SearchDialog({ isOpen, onClose }) {
 
     const performSearch = () => {
         setAlert({ ...alert, show: false });
-        queryEntries(searchQuery, entrySubtypeFilters.length == 0 ? entrySubtypes : entrySubtypeFilters)
+        queryEntries(
+            searchQuery,
+            entrySubtypeFilters.length == 0 ? entrySubtypes : entrySubtypeFilters,
+            page,
+        )
             .then((response) => {
+                setTotalPages(response.data.total_pages);
                 setResults(
-                    response.data.map((result) => {
+                    response.data.results.map((result) => {
                         const dashboardLink = createDashboardLink(result);
                         return (
                             <SearchResult
@@ -94,7 +99,7 @@ export default function SearchDialog({ isOpen, onClose }) {
             performSearch();
         }
         populateEntrySubtypes();
-    }, [isOpen]);
+    }, [isOpen, page]);
 
     if (!isOpen) return null;
 
@@ -146,6 +151,11 @@ export default function SearchDialog({ isOpen, onClose }) {
                         </div>
                     )}
                 </div>
+                <Pagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                />
             </div>
         </div>,
         dialogRoot,

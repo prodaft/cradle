@@ -7,13 +7,15 @@ import { authAxios } from '../axiosInstance/axiosInstance';
  * @param {?string} name - the name of the entry to search for
  * @param {Array<string>} entryTypes - the types of entries to search for
  * @param {Array<string>} entrySubtype - the types of artifacts to search for
+ * @param {number} page - the page number to fetch
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function queryEntries(name, entrySubtype) {
+export function queryEntries(name, subtype, page) {
     const url = `/query/`;
 
     const params = {
-        entrySubtype: entrySubtype,
+        subtype: subtype,
+        page: page,
     };
 
     if (name) {
@@ -25,7 +27,7 @@ export function queryEntries(name, entrySubtype) {
         url: url,
         params: params,
         paramsSerializer: (params) => {
-            return qs.stringify(params, { arrayFormat: 'repeat' });
+            return qs.stringify(params, { arrayFormat: 'comma' });
         },
     });
 }

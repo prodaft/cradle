@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     getDashboardData,
+    getSecondHopData,
     requestEntityAccess,
 } from '../../services/dashboardService/dashboardService';
 import useAuth from '../../hooks/useAuth/useAuth';
@@ -38,7 +39,7 @@ import NotesList from '../NotesList/NotesList';
  */
 export default function Dashboard() {
     const location = useLocation();
-    const path = location.pathname + location.search;
+    const path = location.pathname;
     const [entryMissing, setEntryMissing] = useState(false);
     const [contentObject, setContentObject] = useState({});
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
@@ -62,7 +63,7 @@ export default function Dashboard() {
         setAlert('');
 
         // Populate dashboard
-        getDashboardData(path)
+        getDashboardData(location.pathname, location.search)
             .then((response) => {
                 setContentObject(response.data);
 
@@ -75,6 +76,17 @@ export default function Dashboard() {
                     ['references']: response.data.id,
                 }));
                 dashboard.current.scrollTo(0, 0);
+
+                if (response.data.second_hop_lazyload) {
+                    getSecondHopData(location.pathname, location.search)
+                        .then((response) => {
+                            setContentObject((prev) => ({
+                                ...prev,
+                                ...response.data,
+                            }));
+                        })
+                        .catch(displayError(setAlert, navigate));
+                }
             })
             .catch((err) => {
                 setContentObject({});

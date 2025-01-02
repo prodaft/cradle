@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import DashboardNote from '../DashboardNote/DashboardNote';
 import { searchNote } from '../../services/notesService/notesService';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import Pagination from '../Pagination/Pagination';
 
 export default function NotesList({ query }) {
     const [notes, setNotes] = useState([]);
@@ -41,7 +42,7 @@ export default function NotesList({ query }) {
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='flex flex-col space-y-4'>
                 {loading ? (
-                    <p></p>
+                    <p>Loading...</p>
                 ) : notes.length > 0 ? (
                     <div>
                         <div className='notes-list'>
@@ -54,18 +55,11 @@ export default function NotesList({ query }) {
                             ))}
                         </div>
 
-                        <div className='pagination flex justify-center mt-4 mb-4'>
-                            {Array.from({ length: totalPages }, (_, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => handlePageChange(index + 1)}
-                                    disabled={page === index + 1}
-                                    className={`btn ${page === index + 1 ? 'btn-disabled' : ''}`}
-                                >
-                                    {index + 1}
-                                </button>
-                            ))}
-                        </div>
+                        <Pagination
+                            currentPage={page}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                        />
                     </div>
                 ) : (
                     <div className='container mx-auto flex flex-col items-center'>
