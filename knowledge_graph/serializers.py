@@ -1,13 +1,9 @@
 from rest_framework import serializers
 from typing import Any
-from entries.models import EntryClass
 from notes.serializers import LinkedEntrySerializer
 
 
 class LinkSerializer(serializers.Serializer):
-    first_node = serializers.UUIDField()
-    second_node = serializers.UUIDField()
-
     def to_representation(self, data: Any) -> dict[str, Any]:
         """Takes the validated data in the serializer and
         constructs the JSON representation.
@@ -28,7 +24,6 @@ class EntryClassColorSerializer(serializers.Serializer):
     color = serializers.CharField()
 
     class Meta:
-        model = EntryClass
         fields = ["subtype", "color"]
 
 

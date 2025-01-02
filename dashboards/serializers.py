@@ -103,20 +103,19 @@ class EntityDashboardSerializer(BaseDashboardSerializer):
     artifacts = EntryResponseSerializer(many=True)
     inaccessible_entities = EntryResponseSerializer(many=True)
     inaccessible_artifacts = EntryResponseSerializer(many=True)
-    second_hop_entities = EntryResponseSerializer(many=True)
-    second_hop_inaccessible_entities = EntryResponseSerializer(many=True)
     access = serializers.CharField()
 
     class Meta:
         inaccessible_fields = [
             "inaccessible_entities",
             "inaccessible_artifacts",
-            "second_hop_inaccessible_entities",
         ]
-        second_hop_fields = [
-            "second_hop_entities",
-            "second_hop_inaccessible_entities",
-        ]
+        second_hop_fields = []
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["second_hop_lazyload"] = True
+        return data
 
 
 class ArtifactDashboardSerializer(BaseDashboardSerializer):
@@ -128,12 +127,26 @@ class ArtifactDashboardSerializer(BaseDashboardSerializer):
     notes = NoteDashboardSerializer(many=True)
     entities = EntryResponseSerializer(many=True)
     inaccessible_entities = EntryResponseSerializer(many=True)
+
+    class Meta:
+        inaccessible_fields = [
+            "inaccessible_entities",
+        ]
+
+        second_hop_fields = []
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["second_hop_lazyload"] = True
+        return data
+
+
+class SecondHopDashboardSerializer(BaseDashboardSerializer):
     second_hop_entities = EntryResponseSerializer(many=True)
     second_hop_inaccessible_entities = EntryResponseSerializer(many=True)
 
     class Meta:
         inaccessible_fields = [
-            "inaccessible_entities",
             "second_hop_inaccessible_entities",
         ]
         second_hop_fields = ["second_hop_entities", "second_hop_inaccessible_entities"]

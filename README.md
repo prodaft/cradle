@@ -112,7 +112,7 @@ We welcome contributions from everyone! To ensure a smooth process, please follo
 
 ## Authors and Acknowledgments
 
-CRADLE was develop in PRODAFT, in collaboration with TU Delft students. We thank everyone who contributes to the development process of CRADLE.
+CRADLE is developed in PRODAFT, in collaboration with TU Delft students. We thank everyone who contributes to the development process of CRADLE.
 
 ### Contributors
 

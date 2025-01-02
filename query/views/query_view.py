@@ -9,6 +9,8 @@ from typing import cast
 
 from entries.models import Entry
 from access.models import Access
+from query.filters import EntryFilter
+from query.pagination import QueryPagination
 from ..serializers import EntryQuerySerializer
 from entries.serializers import EntryResponseSerializer
 from uuid import UUID
@@ -17,7 +19,7 @@ from notes.models import Note
 from user.models import CradleUser
 
 
-class QueryList(APIView):
+class EntryListQuery(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -66,12 +68,20 @@ class QueryList(APIView):
                 )
             )
 
-        entries = Entry.objects.get_filtered_entries(
-            accessible_entries,
-            param_serializer.data["entrySubtype"],
-            param_serializer.data["name"],
-        )
+        filterset = EntryFilter(request.query_params, queryset=accessible_entries)
 
-        entry_serializer = EntryResponseSerializer(entries, many=True)
+        if filterset.is_valid():
+            entries = filterset.qs
+            entries = entries.order_by("timestamp")
+            paginator = QueryPagination(page_size=10)
+            paginated_entries = paginator.paginate_queryset(entries, request)
 
-        return Response(entry_serializer.data, status=status.HTTP_200_OK)
+            if paginated_entries is not None:
+                serializer = EntryResponseSerializer(paginated_entries, many=True)
+                return paginator.get_paginated_response(serializer.data)
+
+            entry_serializer = EntryResponseSerializer(entries, many=True)
+
+            return Response(entry_serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(filterset.errors, status=status.HTTP_400_BAD_REQUEST)
