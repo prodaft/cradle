@@ -11,30 +11,116 @@ from user.models import CradleUser
 from ..utils.dashboard_utils import DashboardUtils
 from ..serializers import ArtifactDashboardSerializer
 from notes.models import Note
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiParameter,
+    OpenApiExample,
+    OpenApiResponse,
+    OpenApiTypes,
+)
 
 
+@extend_schema(
+    operation_id="retrieve_artifact_dashboard",
+    summary="Retrieve the dashboard for a specific artifact by name",
+    description=(
+        "Allows an authenticated user to retrieve the dashboard of an Artifact by "
+        "specifying its name and (optionally) a subtype. Returns a 200 response with "
+        "the artifact's dashboard if successful, 401 if the user is not authenticated, "
+        "400 if the provided subtype does not exist, and 404 if the artifact does not "
+        "exist or is not accessible to the user."
+    ),
+    parameters=[
+        OpenApiParameter(
+            name="artifact_name",
+            description="Name of the artifact (path parameter)",
+            required=True,
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.PATH,
+        ),
+        OpenApiParameter(
+            name="subtype",
+            description="Optional subtype of the artifact (query parameter). If provided, "
+            "it must match an existing EntryClass subtype.",
+            required=False,
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+        ),
+    ],
+    responses={
+        200: OpenApiResponse(
+            response=ArtifactDashboardSerializer,
+            description="Successful retrieval of the artifact dashboard.",
+            examples=[
+                OpenApiExample(
+                    name="Successful Artifact Dashboard",
+                    value={
+                        "id": "123e4567-e89b-12d3-a456-426614174000",
+                        "name": "MyArtifact",
+                        "description": "Some artifact description.",
+                        "type": "ArtifactType",
+                        "subtype": "ArtifactSubType",
+                        "notes": [
+                            {
+                                "id": 1,
+                                "content": "This is a note content that may be truncated.",
+                                "publishable": True,
+                                "timestamp": "2025-01-01T12:34:56Z",
+                                "files": [
+                                    {
+                                        "file_id": "abc123",
+                                        "file_name": "example.pdf",
+                                        "file_url": "https://example.com/example.pdf",
+                                    }
+                                ],
+                            }
+                        ],
+                        "entities": [],
+                        "inaccessible_entities": [],
+                        "second_hop_lazyload": True,
+                    },
+                )
+            ],
+        ),
+        400: OpenApiResponse(
+            description="Artifact subtype does not exist.",
+            response=OpenApiTypes.STR,
+            examples=[
+                OpenApiExample(
+                    name="Bad Subtype Example",
+                    value="There is no artifact with specified subtype",
+                )
+            ],
+        ),
+        401: OpenApiResponse(
+            description="User is not authenticated.",
+            response=OpenApiTypes.STR,
+            examples=[
+                OpenApiExample(
+                    name="Unauthenticated", value="User is not authenticated."
+                )
+            ],
+        ),
+        404: OpenApiResponse(
+            description=(
+                "Artifact not found (by name/subtype) or not referenced in any of the "
+                "user’s accessible notes."
+            ),
+            response=OpenApiTypes.STR,
+            examples=[
+                OpenApiExample(
+                    name="Artifact Not Found",
+                    value="There is no artifact with specified name",
+                )
+            ],
+        ),
+    },
+)
 class ArtifactDashboard(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, artifact_name: str) -> Response:
-        """Allow a user to retrieve the dashboard of an Artifact by specifying its name.
-
-        Args:
-            request: The request that was sent
-            entity_name: The name of the artifact that will be retrieved
-
-        Returns:
-            Response(status=200): A JSON response containing the dashboard
-            of the artifact
-                if the request was successful
-            Response("User is not authenticated.", status=401):
-                if the user is not authenticated
-            Response("There is no artifact with specified name", status=404):
-                if there is no artifact with the provided name or the artifact
-                exists but is not referenced in any of the user's accessible notes
-        """
-
         user: CradleUser = cast(CradleUser, request.user)
 
         artifact_subtype = request.query_params.get("subtype")

@@ -14,7 +14,87 @@ from access.enums import AccessType
 
 from typing import cast
 
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiParameter,
+    OpenApiExample,
+    OpenApiResponse,
+    OpenApiTypes,
+)
 
+
+@extend_schema(
+    operation_id="retrieve_entity_dashboard",
+    summary="Retrieve the dashboard of a specific entity by name",
+    description=(
+        "Allows an **authenticated user** to retrieve the dashboard of an Entity by "
+        "specifying its name. Optionally, the entity subtype can be provided as a "
+        "query parameter (`?subtype=someSubType`). Returns a **200** response with the "
+        "entity’s dashboard if successful, **404** if the entity does not exist or is "
+        "inaccessible, and **401** if the user is not authenticated."
+    ),
+    parameters=[
+        OpenApiParameter(
+            name="entity_name",
+            description="Name of the entity (path parameter)",
+            required=True,
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.PATH,
+        ),
+        OpenApiParameter(
+            name="subtype",
+            description="Optional subtype of the entity (query parameter)",
+            required=False,
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+        ),
+    ],
+    responses={
+        200: OpenApiResponse(
+            response=EntityDashboardSerializer,
+            description=(
+                "Successful retrieval of the entity dashboard. "
+                "See `EntityDashboardSerializer` for field details."
+            ),
+            examples=[
+                OpenApiExample(
+                    name="Successful Response Example",
+                    value={
+                        "id": "123e4567-e89b-12d3-a456-426614174000",
+                        "name": "MyEntity",
+                        "description": "An example entity.",
+                        "type": "SomeType",
+                        "subtype": "SomeSubType",
+                        "entities": [],
+                        "artifacts": [],
+                        "inaccessible_entities": [],
+                        "inaccessible_artifacts": [],
+                        "access": "read-write",
+                        "second_hop_lazyload": True,
+                    },
+                )
+            ],
+        ),
+        401: OpenApiResponse(
+            description="User is not authenticated.",
+            response=OpenApiTypes.STR,
+            examples=[
+                OpenApiExample(
+                    name="Unauthenticated", value="User is not authenticated."
+                )
+            ],
+        ),
+        404: OpenApiResponse(
+            description="Entity not found or user has no access to it.",
+            response=OpenApiTypes.STR,
+            examples=[
+                OpenApiExample(
+                    name="Not Found", value="There is no entity with specified name"
+                )
+            ],
+        ),
+    },
+)
 class EntityDashboard(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -74,6 +154,68 @@ class EntityDashboard(APIView):
         return Response(EntityDashboardSerializer(dashboard).data)
 
 
+@extend_schema(
+    operation_id="retrieve_entity_dashboard_second_hop",
+    summary="Retrieve the second-hop dashboard of a specific entity by name",
+    description=(
+        "Allows an **authenticated user** to retrieve second-hop data for an "
+        "Entity by specifying its name and optional subtype. Returns a **200** "
+        "response with the second-hop dashboard if successful, **404** if not found "
+        "or not accessible, and **401** if the user is not authenticated."
+    ),
+    parameters=[
+        OpenApiParameter(
+            name="entity_name",
+            description="Name of the entity (path parameter)",
+            required=True,
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.PATH,
+        ),
+        OpenApiParameter(
+            name="subtype",
+            description="Optional subtype of the entity (query parameter)",
+            required=False,
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+        ),
+    ],
+    responses={
+        200: OpenApiResponse(
+            response=SecondHopDashboardSerializer,
+            description=(
+                "Successful retrieval of the second-hop data. "
+                "See `SecondHopDashboardSerializer` for field details."
+            ),
+            examples=[
+                OpenApiExample(
+                    name="Successful Second Hop Example",
+                    value={
+                        "second_hop_entities": [],
+                        "second_hop_inaccessible_entities": [],
+                    },
+                )
+            ],
+        ),
+        401: OpenApiResponse(
+            description="User is not authenticated.",
+            response=OpenApiTypes.STR,
+            examples=[
+                OpenApiExample(
+                    name="Unauthenticated", value="User is not authenticated."
+                )
+            ],
+        ),
+        404: OpenApiResponse(
+            description="Entity not found or user has no access to it.",
+            response=OpenApiTypes.STR,
+            examples=[
+                OpenApiExample(
+                    name="Not Found", value="There is no entity with specified name"
+                )
+            ],
+        ),
+    },
+)
 class EntityDashboardSecondHop(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

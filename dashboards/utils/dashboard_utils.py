@@ -152,7 +152,6 @@ class DashboardUtils:
 
         return_dict = {}
 
-        return_dict["notes"] = accessible_notes
         return_dict["entities"] = accessible_entries.filter(
             entry_class__type=EntryType.ENTITY
         )

@@ -98,7 +98,6 @@ class EntityDashboardSerializer(BaseDashboardSerializer):
     description = serializers.CharField()
     type = serializers.CharField()
     subtype = serializers.CharField()
-    notes = NoteDashboardSerializer(many=True)
     entities = EntryResponseSerializer(many=True)
     artifacts = EntryResponseSerializer(many=True)
     inaccessible_entities = EntryResponseSerializer(many=True)
@@ -124,7 +123,6 @@ class ArtifactDashboardSerializer(BaseDashboardSerializer):
     description = serializers.CharField()
     type = serializers.CharField()
     subtype = serializers.CharField()
-    notes = NoteDashboardSerializer(many=True)
     entities = EntryResponseSerializer(many=True)
     inaccessible_entities = EntryResponseSerializer(many=True)
 

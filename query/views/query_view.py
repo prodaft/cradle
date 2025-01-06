@@ -11,7 +11,7 @@ from entries.models import Entry
 from access.models import Access
 from query.filters import EntryFilter
 from query.pagination import QueryPagination
-from ..serializers import EntryQuerySerializer
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from entries.serializers import EntryResponseSerializer
 from uuid import UUID
 from entries.enums import EntryType
@@ -23,23 +23,42 @@ class EntryListQuery(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Query Entries",
+        description="Allow a user to query entries they have access to by providing a name, type, or other filters.",
+        parameters=[
+            OpenApiParameter(
+                name="name",
+                description="Filter by entry name",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="type",
+                description="Filter by entry type",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="page",
+                description="Pagination page number",
+                required=False,
+                type=int,
+            ),
+            OpenApiParameter(
+                name="page_size",
+                description="Number of results per page",
+                required=False,
+                type=int,
+            ),
+        ],
+        responses={
+            200: EntryResponseSerializer(many=True),
+            401: "Unauthorized",
+        },
+        request=None,
+    )
     def get(self, request: Request) -> Response:
-        """Allow a user to query for any entry they have access, by providing a name,
-        a list of possible types and, if it is an Artifact, a list of possible subtypes
-
-        Args:
-            request: The request that was sent
-
-        Returns:
-            Response(body, status=200): a JSON response. The JSON response contains
-            all the entries which respect the criteria specified in the query
-            parameters and which are visible to the user.
-            Response("Query parameters are invalid", status=400): if the provided
-            query parameters are not valid.
-            Response("User is not authenticated", status=401): if the user making the
-            request is not authenticated.
-        """
-
         accessible_entries = Entry.objects.all()
         if not request.user.is_superuser:
             accessible_entries = accessible_entries.filter(
