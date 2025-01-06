@@ -76,17 +76,6 @@ export default function Dashboard() {
                     ['references']: response.data.id,
                 }));
                 dashboard.current.scrollTo(0, 0);
-
-                if (response.data.second_hop_lazyload) {
-                    getSecondHopData(location.pathname, location.search)
-                        .then((response) => {
-                            setContentObject((prev) => ({
-                                ...prev,
-                                ...response.data,
-                            }));
-                        })
-                        .catch(displayError(setAlert, navigate));
-                }
             })
             .catch((err) => {
                 setContentObject({});
@@ -98,6 +87,19 @@ export default function Dashboard() {
                 }
             });
     }, [location, path, setAlert, setEntryMissing, setContentObject]);
+
+    useEffect(() => {
+        if (contentObject.second_hop_lazyload) {
+            getSecondHopData(location.pathname, location.search)
+                .then((response) => {
+                    setContentObject((prev) => ({
+                        ...prev,
+                        ...response.data,
+                    }));
+                })
+                .catch(displayError(setAlert, navigate));
+        }
+    }, [location, path, contentObject]);
 
     const handleEnterPublishMode = useCallback(() => {
         const publishableNotes = contentObject.notes.filter((note) => note.publishable);
@@ -236,23 +238,21 @@ export default function Dashboard() {
                         </div>
                     )}
 
-                    {renderDashboardSection(contentObject.actors, 'Related Actors')}
+                    {contentObject.entities &&
+                        renderDashboardSectionWithInaccessibleEntries(
+                            contentObject.entities,
+                            contentObject.inaccessible_entities,
+                            'Related Entities',
+                            'There are inaccessible entities linked to this entry. ',
+                            'Request access to view them.',
+                            handleRequestEntityAccess,
+                        )}
 
-                    {renderDashboardSectionWithInaccessibleEntries(
-                        contentObject.entities,
-                        contentObject.inaccessible_entities,
-                        'Related Entities',
-                        'There are inaccessible entities linked to this entry. ',
-                        'Request access to view them.',
-                        handleRequestEntityAccess,
-                    )}
-
-                    {renderDashboardSection(
-                        contentObject.artifacts,
-                        'Related Artifacts',
-                    )}
-
-                    {renderDashboardSection(contentObject.metadata, 'Metadata')}
+                    {contentObject.artifacts &&
+                        renderDashboardSection(
+                            contentObject.artifacts,
+                            'Related Artifacts',
+                        )}
 
                     {contentObject.second_hop_entities &&
                         renderDashboardSectionWithInaccessibleEntries(
@@ -264,7 +264,7 @@ export default function Dashboard() {
                             handleRequestEntityAccess,
                         )}
 
-                    {contentObject.id && contentObject.notes && (
+                    {contentObject.id && (
                         <div className='bg-cradle3 p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col flex-1'>
                             <h2 className='text-xl font-semibold mb-2'>Notes</h2>
 
