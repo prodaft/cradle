@@ -9,7 +9,7 @@ from typing import cast
 from entries.models import Entry, EntryClass
 from user.models import CradleUser
 from ..utils.dashboard_utils import DashboardUtils
-from ..serializers import ArtifactDashboardSerializer
+from ..serializers import ArtifactDashboardSerializer, SecondHopDashboardSerializer
 from notes.models import Note
 from drf_spectacular.utils import (
     extend_schema,
@@ -147,10 +147,46 @@ class ArtifactDashboard(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        entries_dict, neighbor_map = DashboardUtils.get_dashboard(user, artifact.id)
+        entries_dict = DashboardUtils.get_dashboard(user, artifact.id)
 
         dashboard = DashboardUtils.add_entry_fields(artifact, entries_dict)
 
-        return Response(
-            ArtifactDashboardSerializer(dashboard, context=neighbor_map).data
-        )
+        return Response(ArtifactDashboardSerializer(dashboard).data)
+
+
+class ArtifactDashboardSecondHop(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, artifact_name: str) -> Response:
+        user: CradleUser = cast(CradleUser, request.user)
+
+        artifact_subtype = request.query_params.get("subtype")
+
+        if EntryClass.objects.filter(subtype=artifact_subtype).count() == 0:
+            return Response(
+                "There is no artifact with specified subtype",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            artifact = Entry.artifacts.get(
+                name=artifact_name, entry_class__subtype=artifact_subtype
+            )
+        except Entry.DoesNotExist:
+            return Response(
+                "There is no artifact with specified name 1",
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if not Note.objects.get_accessible_notes(user, artifact.id).exists():
+            return Response(
+                "There is no artifact with specified name 2",
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        entries_dict = DashboardUtils.get_dashboard_second_hop(user, artifact.id)
+
+        dashboard = DashboardUtils.add_entry_fields(artifact, entries_dict)
+
+        return Response(SecondHopDashboardSerializer(dashboard).data)

@@ -1,7 +1,7 @@
 from django.urls import path
 
 from .views.entity_dashboard_view import EntityDashboard, EntityDashboardSecondHop
-from .views.artifact_dashboard_view import ArtifactDashboard
+from .views.artifact_dashboard_view import ArtifactDashboard, ArtifactDashboardSecondHop
 
 urlpatterns = [
     path(
@@ -17,6 +17,9 @@ urlpatterns = [
     path(
         "artifacts/<path:artifact_name>/",
         ArtifactDashboard.as_view(),
-        name="artifact_dashboard",
+    ),
+    path(
+        "artifacts/<path:artifact_name>/level2",
+        ArtifactDashboardSecondHop.as_view(),
     ),
 ]
