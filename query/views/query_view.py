@@ -40,13 +40,6 @@ class EntryListQuery(APIView):
             request is not authenticated.
         """
 
-        param_serializer = EntryQuerySerializer(data=request.query_params)
-
-        if not param_serializer.is_valid():
-            return Response(
-                "Query parameters are invalid", status=status.HTTP_400_BAD_REQUEST
-            )
-
         accessible_entries = Entry.objects.all()
         if not request.user.is_superuser:
             accessible_entries = accessible_entries.filter(
