@@ -99,7 +99,7 @@ export default function Dashboard() {
                 })
                 .catch(displayError(setAlert, navigate));
         }
-    }, [location, path, contentObject]);
+    }, [location, path, contentObject.second_hop_lazyload]);
 
     const handleEnterPublishMode = useCallback(() => {
         const publishableNotes = contentObject.notes.filter((note) => note.publishable);
