@@ -59,6 +59,11 @@ export default function NoteEditor({ autoSaveDelay = 1000 }) {
             .catch(displayError(setAlert, navigate));
     }, [markdownContent, fileData, setParsedContent, setAlert, navigate]);
 
+    // Ensure the ref to the markdown content is correct
+    useEffect(() => {
+        markdownContentRef.current = markdownContent;
+    }, [markdownContent]);
+
     // When the id changes prepare the editor
     useEffect(() => {
         getNote(id, false)
@@ -69,11 +74,6 @@ export default function NoteEditor({ autoSaveDelay = 1000 }) {
             })
             .catch(displayError(setAlert, navigate));
     }, [id, setMarkdownContent, setFileData, setAlert, navigate]);
-
-    // Ensure the ref to the markdown content is correct
-    useEffect(() => {
-        markdownContentRef.current = markdownContent;
-    }, [markdownContent]);
 
     // Ensure the ref to the file data is correct
     useEffect(() => {

@@ -73,7 +73,7 @@ const cradleLinkExtension = {
 
 async function renderCradleLink(token) {
     if (token.type !== 'cradlelink') {
-        return;
+        return false;
     }
 
     await getEntryClasses()

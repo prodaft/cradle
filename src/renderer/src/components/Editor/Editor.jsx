@@ -16,6 +16,7 @@ import { getLinkNode, parseLink } from '../../utils/textEditorUtils/textEditorUt
 import { Prec } from '@uiw/react-codemirror';
 import * as events from '@uiw/codemirror-extensions-events';
 import { NavArrowLeft, NavArrowRight } from 'iconoir-react';
+import { debounce } from 'lodash'; // or any debounce package
 
 /**
  * This component makes use of a pre-existing code editor component (CodeMirror, see https://github.com/uiwjs/react-codemirror)
@@ -265,9 +266,20 @@ export default function Editor({
         );
     };
 
-    const onEditorChange = (text) => {
-        setMarkdownContent(text);
-    };
+    // Create a debounced function (adjust wait time as needed).
+    const debouncedSetMarkdownContent = useRef(
+        debounce((text) => {
+            setMarkdownContent(text);
+        }, 300),
+    ).current;
+
+    const onEditorChange = useCallback(
+        (text) => {
+            // Instead of calling setMarkdownContent directly, use the debounced function
+            debouncedSetMarkdownContent(text);
+        },
+        [debouncedSetMarkdownContent],
+    );
 
     useEffect(() => {
         fetchLspPack()
@@ -352,7 +364,6 @@ export default function Editor({
                         onChange={onEditorChange}
                         value={markdownContent}
                         ref={editorRef}
-                        onCopy={(e) => console.log(e)}
                     />
                 </div>
             </div>
