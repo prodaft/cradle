@@ -1,10 +1,5 @@
 import itertools
-from notes.exceptions import (
-    EntriesDoNotExistException,
-)
-from ..utils import extract_links
 from entries.enums import EntryType
-from entries.models import Entry, EntryClass
 
 from .base_task import BaseTask
 from ..models import Note, Relation

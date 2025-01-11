@@ -9,7 +9,6 @@ from ..models import Note
 from ..serializers import NotePublishSerializer, ReportSerializer, ReportQuerySerializer
 
 from ..exceptions import (
-    NoAccessToEntriesException,
     NoteDoesNotExistException,
 )
 
@@ -27,17 +26,14 @@ from uuid import UUID
 
 @extend_schema_view(
     put=extend_schema(
-        description="Allow a user to change a Note's publishable status, "
-        "from publishable to not publishable or vice versa.",
-        responses={
-            200: "Publishable status was updated.",
-            401: "User is not authenticated.",
-            403: "User does not have Read-Write access to the Note.",
-            404: "Note not found.",
-            400: "Request body is invalid",
-        },
-        request=NotePublishSerializer,
         summary="Update Note Publishable Status",
+        description="Allow a user to change a Note's publishable status, either to publishable or not publishable.",
+        request=NotePublishSerializer,
+        responses={
+            200: "Successfully updated the note's publishable status.",
+            404: "Note does not exist.",
+            401: "Unauthorized",
+        },
     )
 )
 class NotePublishDetail(APIView):
@@ -72,16 +68,12 @@ class NotePublishDetail(APIView):
 
 @extend_schema_view(
     get=extend_schema(
-        description="Allows a user to publish a list of notes, in the specified order.",
+        summary="List Publishable Notes",
+        description="Retrieve a list of all notes that are marked as publishable.",
         responses={
-            200: ReportSerializer,
-            400: "The query format is invalid.",
-            401: "User is not authenticated.",
-            403: "The note is not publishable.",
-            404: "One of the provided notes does not exist.",
+            200: NotePublishSerializer(many=True),
+            401: "Unauthorized",
         },
-        parameters=[ReportQuerySerializer],
-        summary="Publish List of Notes",
     )
 )
 class NotePublishList(APIView):

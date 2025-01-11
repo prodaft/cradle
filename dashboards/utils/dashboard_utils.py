@@ -1,6 +1,5 @@
 from django.db.models.query import QuerySet
 from typing import Dict, Any, Tuple, List
-from django.db.models import Q
 
 from user.models import CradleUser
 from entries.models import Entry
@@ -128,11 +127,58 @@ class DashboardUtils:
         Returns: A dictionary containing
             the related entries of this entry for each type
             {
-                "notes": notes,
-                "entities": entities,
-                "artifacts": artifacts
-                "inaccessible_entities": inaccessible_entities
-                "inaccessible_artifacts": inaccessible_artifacts
+                "second_hop_entities": second_hop_entities
+                "second_hop_inaccessible_entities": second_hop_inaccessible_entities
+            }
+
+        """
+        accessible_notes = Note.objects.get_accessible_notes(user, entry_id)
+        accessible_entries = Note.objects.get_entries_from_notes(
+            accessible_notes
+        ).exclude(id=entry_id)
+
+        inaccessible_notes = Note.objects.get_inaccessible_notes(user, entry_id)
+        inaccessible_notes_entries = Note.objects.get_entries_from_notes(
+            inaccessible_notes
+        ).exclude(id=entry_id)
+
+        accessible_entity_ids = Access.objects.filter(
+            user=user, access_type__in=[AccessType.READ_WRITE, AccessType.READ]
+        ).values_list("entity_id", flat=True)
+
+        inaccessible_entries = inaccessible_notes_entries.exclude(
+            id__in=accessible_entries or accessible_entity_ids
+        )
+
+        return_dict = {}
+
+        return_dict["entities"] = accessible_entries.filter(
+            entry_class__type=EntryType.ENTITY
+        )
+        return_dict["artifacts"] = accessible_entries.filter(
+            entry_class__type=EntryType.ARTIFACT
+        )
+        return_dict["inaccessible_entities"] = inaccessible_entries.filter(
+            entry_class__type=EntryType.ENTITY
+        )
+        return_dict["inaccessible_artifacts"] = inaccessible_entries.filter(
+            entry_class__type=EntryType.ARTIFACT
+        )
+        return return_dict
+
+    @staticmethod
+    def get_dashboard_second_hop(
+        user: CradleUser, entry_id: UUID
+    ) -> Tuple[Dict[str, QuerySet], Dict[str, List[Entry]]]:
+        """Get the entries related to the specified entry that the user has access to
+
+        Args:
+            user: The user whose access is being checked
+            entry_id: The id of the entry whose entries are being retrieved
+
+        Returns: A dictionary containing
+            the related entries of this entry for each type
+            {
                 "second_hop_entities": second_hop_entities
                 "second_hop_inaccessible_entities": second_hop_inaccessible_entities
             }
@@ -164,21 +210,8 @@ class DashboardUtils:
 
         return_dict = {}
 
-        return_dict["notes"] = accessible_notes
-        return_dict["entities"] = accessible_entries.filter(
-            entry_class__type=EntryType.ENTITY
-        )
-        return_dict["artifacts"] = accessible_entries.filter(
-            entry_class__type=EntryType.ARTIFACT
-        )
-        return_dict["inaccessible_entities"] = inaccessible_entries.filter(
-            entry_class__type=EntryType.ENTITY
-        )
-        return_dict["inaccessible_artifacts"] = inaccessible_entries.filter(
-            entry_class__type=EntryType.ARTIFACT
-        )
         return_dict["second_hop_entities"] = entries_second_hop
         return_dict["second_hop_inaccessible_entities"] = (
             inaccessible_entries_second_hop
         )
-        return return_dict, neighbor_map
+        return return_dict

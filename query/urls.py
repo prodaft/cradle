@@ -1,6 +1,6 @@
 from django.urls import path
-from .views.query_view import QueryList
+from .views.query_view import EntryListQuery
 
 urlpatterns = [
-    path("", QueryList.as_view(), name="query_list"),
+    path("", EntryListQuery.as_view(), name="query_list"),
 ]

@@ -1,11 +1,7 @@
-import re
-from typing import Set, Dict
-
 from notes.exceptions import EntryClassesDoNotExistException
 from ..utils import extract_links
 from entries.enums import EntryType
-from entries.models import Entry, EntryClass
-from uuid import UUID
+from entries.models import EntryClass
 
 from .base_task import BaseTask
 from ..models import Note

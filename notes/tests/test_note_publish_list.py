@@ -1,6 +1,5 @@
 from django.urls import reverse
 from .utils import NotesTestCase
-from user.models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.parsers import JSONParser
 from ..models import Note

@@ -193,8 +193,6 @@ class GetEntityDashboardTest(DashboardsTestCase):
         with self.subTest("Check entity access"):
             self.assertEqual(json_response["access"], "read")
 
-        print(json_response)
-
         self.check_ids(notes, json_response["notes"])
         self.check_ids(entities, json_response["entities"])
         self.check_ids(artifacts, json_response["artifacts"])

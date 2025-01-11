@@ -19,7 +19,10 @@ class NoteIsEmptyException(APIException):
 class NotEnoughReferencesException(APIException):
     status_code = 400
 
-    default_detail = f"Note does not reference at least {settings.MIN_ENTITY_COUNT_PER_NOTE} entity and at least {settings.MIN_ENTRY_COUNT_PER_NOTE} entries."
+    default_detail = (
+        f"Note does not reference at least {settings.MIN_ENTITY_COUNT_PER_NOTE} "
+        + f"entity and at least {settings.MIN_ENTRY_COUNT_PER_NOTE} entries."
+    )
 
 
 class NoteDoesNotExistException(APIException):
@@ -45,7 +48,10 @@ class EntriesDoNotExistException(APIException):
     def __init__(self, links: Iterable[Link], *args, **kwargs) -> None:
         assert len(links) > 0
 
-        self.default_detail = "Some of the referenced entries do not exist or you don't have the right permissions to access them:\n"
+        self.default_detail = (
+            "Some of the referenced entries do not exist or "
+            + "you don't have the right permissions to access them:\n"
+        )
 
         for i in links:
             self.default_detail += f"({i.class_subtype}: {i.name})\n"
@@ -60,7 +66,10 @@ class NoAccessToEntriesException(APIException):
     def __init__(self, links: Iterable[Entry], *args, **kwargs) -> None:
         assert len(links) > 0
 
-        self.default_detail = "Some of the referenced entries do not exist or you don't have the right permissions to access them:\n"
+        self.default_detail = (
+            "Some of the referenced entries do not exist or you don't "
+            + "have the right permissions to access them:\n"
+        )
 
         for i in links:
             self.default_detail += f"({i.entry_class.subtype}: {i.name})\n"

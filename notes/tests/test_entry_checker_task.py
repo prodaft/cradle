@@ -1,4 +1,3 @@
-from django.db.models import QuerySet
 from entries.models import Entry
 from notes import utils
 from notes.models import Note

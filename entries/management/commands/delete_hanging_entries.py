@@ -1,9 +1,5 @@
-import random
-import string
-
 from django.core.management.base import BaseCommand
 from entries.models import Entry
-from user.models import CradleUser
 
 
 class Command(BaseCommand):

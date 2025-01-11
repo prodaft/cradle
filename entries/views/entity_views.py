@@ -10,7 +10,6 @@ from entries.exceptions import DuplicateEntryException
 
 from ..serializers import EntitySerializer, EntryResponseSerializer
 from ..models import Entry
-from logs.utils import LoggingUtils
 from uuid import UUID
 
 
@@ -53,8 +52,8 @@ class EntityList(APIView):
             if serializer.exists():
                 raise DuplicateEntryException()
             serializer.save()
+            serializer.instance.log_create(request.user)
 
-            LoggingUtils.log_entry_creation(request)
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -118,7 +117,6 @@ class EntityDetail(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
         entity.delete()
-        LoggingUtils.log_entry_deletion(request)
         return Response("Requested entity was deleted", status=status.HTTP_200_OK)
 
     def post(self, request: Request, entity_id: UUID) -> Response:
@@ -133,6 +131,6 @@ class EntityDetail(APIView):
         serializer = EntitySerializer(entity, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            LoggingUtils.log_entry_creation(request)
+            serializer.instance.log_edit(request.user)
             return Response(serializer.data)
         return Response("Bad request", status=status.HTTP_400_BAD_REQUEST)

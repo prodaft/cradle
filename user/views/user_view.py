@@ -1,4 +1,6 @@
 from typing import cast
+from django.db import transaction
+from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -6,7 +8,14 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from ..serializers import UserCreateSerializer, UserRetrieveSerializer
+
+from notifications.models import NewUserNotification
+from ..serializers import (
+    EmailConfirmSerializer,
+    UserCreateSerializer,
+    UserCreateSerializerAdmin,
+    UserRetrieveSerializer,
+)
 from ..models import CradleUser
 
 
@@ -48,12 +57,16 @@ class UserList(APIView):
 
     def post(self, request):
         serializer = UserCreateSerializer(data=request.data)
+
         if serializer.is_valid():
             if not CradleUser.objects.filter(
                 email=serializer.validated_data["email"]
             ).exists():
-                serializer.save()
+                user = serializer.save()
+                user.send_email_confirmation()
+
             return Response(status=status.HTTP_200_OK)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -143,7 +156,12 @@ class UserDetail(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        serializer = UserCreateSerializer(edited, data=request.data, partial=True)
+        if editor.is_superuser:
+            serializer = UserCreateSerializerAdmin(
+                edited, data=request.data, partial=True
+            )
+        else:
+            serializer = UserCreateSerializer(edited, data=request.data, partial=True)
 
         if serializer.is_valid():
             user = serializer.save()
@@ -221,3 +239,101 @@ class UserSimulate(APIView):
             )
 
         return Response(self.get_tokens_for_user(user), status=status.HTTP_200_OK)
+
+
+class EmailConfirm(APIView):
+    permission_classes = ()
+    authentication_classes = ()
+
+    def post(self, request):
+        serializer = EmailConfirmSerializer(data=request.data)
+
+        if serializer.is_valid():
+            user = serializer.user
+
+            # Check if token expired
+            if user.email_confirmation_token_expiry < timezone.now():
+                user.send_email_confirmation()
+
+                return Response(
+                    "Email confirmation token has expired a new one was sent.",
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            user.email_confirmed = True
+            user.email_confirmation_token = ""
+            user.save()
+
+            admins = CradleUser.objects.filter(is_superuser=True)
+
+            with transaction.atomic():
+                for i in admins:
+                    NewUserNotification.objects.create(
+                        user_id=i.id,
+                        new_user=user,
+                        message=f"A new user has registered: {user.username}",
+                    )
+
+            return Response("Email confirmed.", status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PasswordReset(APIView):
+    permission_classes = ()
+    authentication_classes = ()
+
+    def post(self, request):
+        email = request.data.get("email")
+        username = request.data.get("username")
+
+        if not email and not username:
+            return Response(
+                "Email or username must be provided", status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user = None
+        if email:
+            user = CradleUser.objects.active().filter(email=email)
+        elif username:
+            user = CradleUser.objects.active().filter(username=username)
+
+        if user.exists():
+            user = user[0]
+            user.send_password_reset()
+
+        return Response("Password reset email sent.", status=status.HTTP_200_OK)
+
+    def put(self, request):
+        token = request.data.get("token")
+        password = request.data.get("password")
+
+        if not token or not password:
+            return Response(
+                "Token and password are required.", status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if CradleUser.objects.active().filter(password_reset_token=token).exists():
+            user = CradleUser.objects.active().get(password_reset_token=token)
+
+            # Check if token was expired
+            if user.password_reset_token_expiry < timezone.now():
+                return Response(
+                    "Password reset token has expired.",
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            user.password_reset_token = ""
+            serializer = UserCreateSerializer(
+                user, data={"password": password}, partial=True
+            )
+
+            if serializer.is_valid():
+                user = serializer.save()
+                return Response(
+                    "Password reset successfully.", status=status.HTTP_200_OK
+                )
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response("Token not found!", status=status.HTTP_400_BAD_REQUEST)

@@ -5,7 +5,6 @@ from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.parsers import JSONParser
 import io
 from entries.models import Entry
-from entries.enums import EntryType
 from access.enums import AccessType
 from access.models import Access
 from notes.models import Note, Relation

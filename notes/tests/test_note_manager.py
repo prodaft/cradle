@@ -3,7 +3,6 @@ from user.models import CradleUser
 from rest_framework_simplejwt.tokens import AccessToken
 
 from entries.models import Entry
-from entries.enums import EntryType
 from access.models import Access
 from notes.models import Note
 

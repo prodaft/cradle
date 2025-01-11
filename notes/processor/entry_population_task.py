@@ -8,8 +8,6 @@ from entries.models import Entry, EntryClass
 from .base_task import BaseTask
 from ..models import Note
 
-from django.conf import settings
-
 
 class EntryPopulationTask(BaseTask):
     def run(self, note: Note) -> Note:

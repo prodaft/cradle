@@ -11,30 +11,42 @@ def create_minio_bucket(modeladmin, request, queryset):
         MinioClient().create_user_bucket(str(user.id))
 
 
+@admin.action(description="Send Confirmation Email")
+def send_email_confirmation(modeladmin, request, queryset):
+    for user in queryset:
+        user.send_email_confirmation()
+
+
 class CradleUserAdmin(UserAdmin):
-    # Fields to display in the admin interface
-    list_display = (
-        "username",
-        "email",
-        "is_staff",
-        "is_active",
-        "vt_api_key",
-        "catalyst_api_key",
+    model = CradleUser
+    list_display = ("username", "email", "is_active", "email_confirmed", "last_login")
+    list_filter = ("is_active", "email_confirmed", "is_staff", "is_superuser", "groups")
+    search_fields = ("username", "email")
+    ordering = ("username",)
+    readonly_fields = (
+        "id",
+        "last_login",
+        "date_joined",
+        "password_reset_token_expiry",
+        "email_confirmation_token_expiry",
     )
 
-    # Fields to search by in the admin interface
-    search_fields = ("username", "email")
-
-    # Define the fields and their grouping in the form layout for user creation and modification
     fieldsets = (
         (None, {"fields": ("username", "password")}),
-        ("Personal Info", {"fields": ("email",)}),
-        ("API Keys", {"fields": ("vt_api_key", "catalyst_api_key")}),
+        ("Personal Info", {"fields": ("first_name", "last_name", "email")}),
+        (
+            "Status",
+            {
+                "fields": (
+                    "is_active",
+                    "email_confirmed",
+                )
+            },
+        ),
         (
             "Permissions",
             {
                 "fields": (
-                    "is_active",
                     "is_staff",
                     "is_superuser",
                     "groups",
@@ -42,10 +54,21 @@ class CradleUserAdmin(UserAdmin):
                 )
             },
         ),
-        ("Important dates", {"fields": ("last_login", "date_joined")}),
+        ("API Keys", {"fields": ("vt_api_key", "catalyst_api_key")}),
+        (
+            "Tokens & Expiry",
+            {
+                "fields": (
+                    "password_reset_token",
+                    "password_reset_token_expiry",
+                    "email_confirmation_token",
+                    "email_confirmation_token_expiry",
+                )
+            },
+        ),
+        ("Important Dates", {"fields": ("last_login", "date_joined")}),
     )
 
-    # Fields to be displayed when creating a new user
     add_fieldsets = (
         (
             None,
@@ -56,22 +79,16 @@ class CradleUserAdmin(UserAdmin):
                     "email",
                     "password1",
                     "password2",
-                    "vt_api_key",
-                    "catalyst_api_key",
                     "is_active",
                     "is_staff",
+                    "is_superuser",
+                    "groups",
                 ),
             },
         ),
     )
 
-    # Define which fields are read-only
-    readonly_fields = ("last_login", "date_joined")
-
-    # Specify the order in which users are listed
-    ordering = ("email",)
-
-    actions = [create_minio_bucket]
+    actions = [create_minio_bucket, send_email_confirmation]
 
 
 # Register the CradleUser model and the custom admin interface

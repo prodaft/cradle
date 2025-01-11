@@ -26,7 +26,7 @@ from drf_spectacular.views import (
 
 urlpatterns = [
     path(
-        settings.BASE_URL,
+        (settings.BASE_URL.strip("/") + "/").removeprefix("/"),
         include(
             [
                 path(settings.ADMIN_PATH, admin.site.urls),

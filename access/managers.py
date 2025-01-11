@@ -12,7 +12,7 @@ from uuid import UUID
 
 class AccessManager(models.Manager):
     def inaccessible_entries(
-        self, user: CradleUser, entries: QuerySet[Entry], access_types: Set[AccessType]
+        self, user: CradleUser, entries: QuerySet, access_types: Set[AccessType]
     ):
         """Checks whether a user has one of the specified access types
         to each of the entities in the set of entities. Assumes that AccessType.NONE
@@ -102,7 +102,8 @@ class AccessManager(models.Manager):
         )
 
     def get_accesses(self, user_id: UUID) -> models.QuerySet:
-        """Retrieves from the database the access_type of all entities for a given user id.
+        """Retrieves from the database the access_type of all
+        entities for a given user id.
 
         Args:
             user_id: Id of the user whose access is to be updated.

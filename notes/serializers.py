@@ -10,7 +10,7 @@ from .exceptions import (
     NoteDoesNotExistException,
     NoteNotPublishableException,
 )
-from entries.serializers import EntryResponseSerializer, EntrySerializer
+from entries.serializers import EntryResponseSerializer
 from typing import Any, Dict
 from file_transfer.serializers import FileReferenceSerializer
 from file_transfer.models import FileReference
@@ -74,7 +74,7 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 
         # save the referenced entries to be used when creating the note
         user = self.context["request"].user
-        note = TaskScheduler(self.content, user, **validated_data).run_pipeline()
+        note = TaskScheduler(user, **validated_data).run_pipeline()
 
         if files is not None:
             file_reference_models = [
@@ -90,9 +90,7 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 
         files = validated_data.pop("files", None)
 
-        note = TaskScheduler(self.content, user, **validated_data).run_pipeline(
-            instance
-        )
+        note = TaskScheduler(user, **validated_data).run_pipeline(instance)
 
         existing_files = set([i.id for i in note.files.all()])
         files_kept = set([i["id"] for i in files if "id" in i])

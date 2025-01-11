@@ -1,6 +1,5 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -16,7 +15,7 @@ class LspPack(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        description="Retrieve a packed list of entries, entities, and entry classes for the LSP (Language Server Protocol).",
+        description="Retrieve a packed list of entries, entities, and entry classes for the LSP.",
         responses={
             200: "A JSON response containing packed LSP entries and entities",
             401: "User is not authenticated.",

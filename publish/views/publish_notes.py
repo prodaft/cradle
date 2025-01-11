@@ -16,6 +16,9 @@ from access.models import Access
 from typing import cast
 
 
+from drf_spectacular.utils import extend_schema
+
+
 class ErrorResponse(Response):
     def __init__(msg, *args, **kwargs):
         super().__init__({"detail": msg}, *args, **kwargs)
@@ -25,27 +28,31 @@ class PublishView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Publish Notes",
+        description="Allow a user to publish a set of notes using a specified strategy.",
+        request={
+            "type": "object",
+            "properties": {
+                "note_ids": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of note IDs to publish.",
+                },
+                "strategy_name": {
+                    "type": "string",
+                    "description": "Name of the strategy to use for publishing.",
+                },
+            },
+            "required": ["note_ids", "strategy_name"],
+        },
+        responses={
+            200: {"type": "object", "properties": {"status": {"type": "string"}}},
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+    )
     def post(self, request: Request, strategy_name: str) -> Response:
-        """Allow a user to publish a set of notes, using a given strategy.
-
-        Args:
-            request: The request that was sent
-
-        Returns:
-            Response(status=200): Publishable status was updated.
-            Response("User is not authenticated.",
-                status=401): if the user is not authenticated
-            Response("Note is not publishable",
-                status=403): if a note cannot be published
-            Response("No notes provided", status=500):
-                if the note does not exist.
-            Response("Missing title", status=404):
-                if the title is missing.
-            Response("Strategy not found", status=404):
-                if the note does not exist.
-            Response("Note not found", status=404):
-                if the note does not exist.
-        """
         note_ids = request.data.get("note_ids", [])
         user = cast(CradleUser, request.user)
 

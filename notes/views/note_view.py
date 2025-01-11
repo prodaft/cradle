@@ -19,7 +19,6 @@ from ..models import Note
 from user.models import CradleUser
 from access.enums import AccessType
 from typing import cast
-from rest_framework.pagination import PageNumberPagination
 
 from entries.enums import EntryType
 from access.models import Access
@@ -167,7 +166,7 @@ class NoteDetail(APIView):
         ):
             return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
 
-        if not (user.is_superuser or note.author != user):
+        if not user.is_superuser and note.author != user:
             return Response(
                 "You cannot edit this note", status=status.HTTP_403_FORBIDDEN
             )

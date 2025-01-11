@@ -1,5 +1,7 @@
 from rest_framework import serializers
-from .models import MessageNotification, AccessRequestNotification
+
+from user.serializers import EssentialUserRetrieveSerializer
+from .models import MessageNotification, AccessRequestNotification, NewUserNotification
 from typing import Any, Optional
 
 
@@ -17,6 +19,8 @@ class NotificationSerializer(serializers.ModelSerializer):
         serializer: Optional[serializers.ModelSerializer] = None
         if isinstance(instance, AccessRequestNotification):
             serializer = AccessRequestNotificationSerializer(instance)
+        elif isinstance(instance, NewUserNotification):
+            serializer = NewUserNotificationSerializer(instance)
         else:
             serializer = MessageNotificationSerializer(instance)
 
@@ -31,6 +35,24 @@ class MessageNotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = MessageNotification
         fields = ["id", "message", "is_marked_unread", "timestamp", "notification_type"]
+
+
+class NewUserNotificationSerializer(serializers.ModelSerializer):
+    notification_type = serializers.CharField(
+        default="new_user_notification", read_only=True
+    )
+    new_user = EssentialUserRetrieveSerializer()
+
+    class Meta:
+        model = AccessRequestNotification
+        fields = [
+            "id",
+            "message",
+            "is_marked_unread",
+            "timestamp",
+            "notification_type",
+            "new_user",
+        ]
 
 
 class AccessRequestNotificationSerializer(serializers.ModelSerializer):

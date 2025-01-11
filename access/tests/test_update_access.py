@@ -2,7 +2,6 @@ from django.urls import reverse
 from entries.models import Entry
 from rest_framework_simplejwt.tokens import AccessToken
 
-from entries.enums import EntryType
 from user.models import CradleUser
 from ..models import Access
 from ..enums import AccessType

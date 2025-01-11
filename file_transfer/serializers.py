@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .exceptions import IncorrectBucketException, MinioObjectNotFound
+from .exceptions import MinioObjectNotFound
 from .models import FileReference
 from .utils import MinioClient
 from typing import Any
@@ -9,10 +9,12 @@ class FileUploadSerializer(serializers.Serializer):
     bucket_name = serializers.CharField()
     minio_file_name = serializers.CharField()
     presigned = serializers.CharField()
+    expires_at = serializers.IntegerField()
 
 
 class FileDownloadSerializer(serializers.Serializer):
     presigned = serializers.CharField()
+    expires_at = serializers.IntegerField()
 
 
 class FileReferenceSerializer(serializers.ModelSerializer):
@@ -37,7 +39,7 @@ class FileReferenceSerializer(serializers.ModelSerializer):
                 MinIO path.
 
         """
-        user = self.context["request"].user
+        self.context["request"].user
 
         if not MinioClient().file_exists_at_path(
             bucket_name=data["bucket_name"], minio_file_name=data["minio_file_name"]
