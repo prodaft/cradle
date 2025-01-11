@@ -11,31 +11,8 @@ import { getEntryClasses } from '../../services/adminService/adminService';
 const LINK_REGEX =
     /^\[\[([^:|]+?):((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\]/;
 
-function handle_link(text, entityClasses) {
-    return text.replace(LINK_REGEX, (matched, type, name, alias) => {
-        // TODO: Dynamic entity subtypes
-        // if (entitySubtypes.has(type)) {
-        if (entityClasses.includes(type)) {
-            const url = createDashboardLink({
-                name: name,
-                type: 'entity',
-                subtype: type,
-            });
-            // If an alias is provided, use it as the displayed name
-            const displayedName = alias ? alias : name;
-            return `<a class="${entryMarkdownColors.entities}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
-        } else {
-            const url = createDashboardLink({
-                name: name,
-                type: 'artifact',
-                subtype: type,
-            });
-            // If an alias is provided, use it as the displayed name
-            const displayedName = alias ? alias : name;
-            return `<a class="${entryMarkdownColors.artifacts}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
-        }
-    });
-}
+let DownloadLinkPromiseCache = {};
+let MinioCache = {};
 
 // Currently, the default configuration is being used
 // Documentation: https://github.com/markedjs/marked
@@ -61,6 +38,9 @@ const cradleLinkExtension = {
                 type: 'cradlelink',
                 raw: match[0],
                 text: match[0].trim(),
+                cradle_type: match[1],
+                cradle_name: match[2],
+                cradle_alias: match[3],
             };
         }
 
@@ -71,37 +51,50 @@ const cradleLinkExtension = {
     },
 };
 
-async function renderCradleLink(token) {
+async function renderCradleLink(entityClasses, token) {
     if (token.type !== 'cradlelink') {
         return false;
     }
 
-    await getEntryClasses()
-        .then((response) => {
-            if (response.status === 200) {
-                let entryClasses = response.data;
-                let entity_class_subtypes = entryClasses
-                    .filter((entry) => entry.type === 'entity')
-                    .map((entry) => entry.subtype);
+    let type = token.cradle_type;
+    let name = token.cradle_name;
+    let alias = token.cradle_alias;
 
-                // Loop through all type handlers and call them on the text
-                var text = token.raw;
-
-                token.html = handle_link(text, entity_class_subtypes);
-            }
-        })
-        .catch((error) => {
-            // If 401, or network error, ignore. Otherwise, throw error.
-
-            if (error.code === 'ERR_NETWORK') {
-                return;
-            }
-
-            if (error.response.status === 401) {
-                return;
-            }
-            throw error;
+    // TODO: Dynamic entity subtypes
+    // if (entitySubtypes.has(type)) {
+    if (entityClasses.has(type)) {
+        const url = createDashboardLink({
+            name: name,
+            type: 'entity',
+            subtype: type,
         });
+        // If an alias is provided, use it as the displayed name
+        const displayedName = alias ? alias : name;
+        token.html = `<a class="${entryMarkdownColors.entities}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
+    } else {
+        const url = createDashboardLink({
+            name: name,
+            type: 'artifact',
+            subtype: type,
+        });
+        // If an alias is provided, use it as the displayed name
+        const displayedName = alias ? alias : name;
+        token.html = `<a class="${entryMarkdownColors.artifacts}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
+    }
+
+    return true;
+}
+
+function fetchMinioDownloadLink(href) {
+    if (!DownloadLinkPromiseCache[href]) {
+        DownloadLinkPromiseCache[href] = getDownloadLink(href).then((response) => {
+            const presigned = response.data.presigned;
+            const expiry = response.data.expiry;
+            return { presigned, expiry };
+        });
+    }
+
+    return DownloadLinkPromiseCache[href];
 }
 
 // Define a custom extension that resolves all local links to `/file-transfer/download` to their respective Minio links.
@@ -122,26 +115,17 @@ async function resolveMinioLinks(token) {
             url.pathname === `${apiBasePath}/file-transfer/download/`
         ) {
             const apiDownloadPath = url.href;
-            const minioCache = JSON.parse(localStorage.getItem('minio-cache')) || {};
-
-            const fetchMinioDownloadLink = async () => {
-                const response = await getDownloadLink(url.href);
-                const presigned = response.data.presigned;
-                const expiry = Date.now() + 1000 * 60 * 5; // 5 minutes
-                return { presigned, expiry };
-            };
 
             // Null-safe operations
-            let presigned = minioCache[apiDownloadPath]?.presigned;
-            let expiry = minioCache[apiDownloadPath]?.expiry;
+            let presigned = MinioCache[apiDownloadPath]?.presigned;
+            let expiry = MinioCache[apiDownloadPath]?.expiry;
 
             if (!presigned || Date.now() > expiry) {
                 try {
-                    const result = await fetchMinioDownloadLink();
+                    const result = await fetchMinioDownloadLink(url.href);
                     presigned = result.presigned;
                     expiry = result.expiry;
-                    minioCache[apiDownloadPath] = { presigned, expiry };
-                    localStorage.setItem('minio-cache', JSON.stringify(minioCache));
+                    MinioCache[apiDownloadPath] = { presigned, expiry };
                 } catch {
                     throw new Error(
                         'There was an error when parsing token ' + token.text,
@@ -154,9 +138,11 @@ async function resolveMinioLinks(token) {
     }
 }
 
-async function walkTokens(token) {
-    await renderCradleLink(token);
-    await resolveMinioLinks(token);
+function walkTokens(entityClasses) {
+    return async (token) => {
+        if (!(await renderCradleLink(entityClasses, token)))
+            await resolveMinioLinks(token);
+    };
 }
 
 /**
@@ -168,10 +154,38 @@ async function walkTokens(token) {
  * @returns {string} parsed HTML
  */
 const parseMarkdown = async (mdContent, fileData) => {
-    // marked.use({ walkTokens, async: true, extensions: [cradleLinkExtension] });
-    marked.use({ walkTokens, async: true, extensions: [cradleLinkExtension] });
-    const content = fileData ? prependLinks(mdContent, fileData) : mdContent;
-    return marked.parse(content);
+    DownloadLinkPromiseCache = {};
+    try {
+        let response = await getEntryClasses();
+
+        if (response.status === 200) {
+            let entryClasses = response.data;
+            let entityClasses = new Set(
+                entryClasses
+                    .filter((entry) => entry.type === 'entity')
+                    .map((entry) => entry.subtype),
+            );
+
+            marked.use({
+                walkTokens: walkTokens(entityClasses),
+                async: true,
+                extensions: [cradleLinkExtension],
+            });
+            const content = fileData ? prependLinks(mdContent, fileData) : mdContent;
+            return marked.parse(content);
+        }
+    } catch (error) {
+        // If 401, or network error, ignore. Otherwise, throw error.
+
+        if (error.code === 'ERR_NETWORK') {
+            return;
+        }
+
+        if (error.response.status === 401) {
+            return;
+        }
+        throw error;
+    }
 };
 
 export default parseMarkdown;
