@@ -9,10 +9,12 @@ class FileUploadSerializer(serializers.Serializer):
     bucket_name = serializers.CharField()
     minio_file_name = serializers.CharField()
     presigned = serializers.CharField()
+    expires_at = serializers.IntegerField()
 
 
 class FileDownloadSerializer(serializers.Serializer):
     presigned = serializers.CharField()
+    expires_at = serializers.IntegerField()
 
 
 class FileReferenceSerializer(serializers.ModelSerializer):
