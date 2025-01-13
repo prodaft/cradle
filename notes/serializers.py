@@ -1,5 +1,6 @@
 from datetime import timedelta
 from rest_framework import serializers
+from rest_framework.fields import SerializerMethodField
 
 from file_transfer.utils import MinioClient
 from .models import Note
@@ -16,6 +17,33 @@ from file_transfer.serializers import FileReferenceSerializer
 from file_transfer.models import FileReference
 from user.serializers import UserRetrieveSerializer
 from entries.models import Entry, EntryClass
+from entries.enums import EntryType
+
+
+class RetrieveEntryTree:
+    def __init__(self, fields=("name",)):
+        self.fields = fields
+        self.tree = {"entities": {}, "artifacts": {}}
+
+    def serialize_entry(self, entry):
+        if len(self.fields) == 1:
+            return getattr(entry, self.fields[0])
+
+        return {field: getattr(entry, field) for field in self.fields}
+
+    def add_entry(self, entry):
+        if entry.entry_class.type == EntryType.ENTITY:
+            self.tree["entities"].setdefault(entry.entry_class.subtype, []).append(
+                entry.name
+            )
+        else:
+            self.tree["artifacts"].setdefault(entry.entry_class.subtype, []).append(
+                entry.name
+            )
+
+    def add_entries(self, entries):
+        for entry in entries:
+            self.add_entry(entry)
 
 
 class NoteCreateSerializer(serializers.ModelSerializer):
@@ -120,12 +148,11 @@ class LinkedEntryClassSerializer(serializers.ModelSerializer):
 
 
 class LinkedEntrySerializer(serializers.ModelSerializer):
-    description = serializers.CharField(required=False, allow_blank=True)
     entry_class = LinkedEntryClassSerializer(read_only=True)
 
     class Meta:
         model = Entry
-        fields = ["id", "name", "description", "entry_class"]
+        fields = ["name", "entry_class"]
 
     def to_representation(self, instance):
         """Move fields from profile to user representation."""
@@ -153,7 +180,7 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
     files = FileReferenceSerializer(many=True)
     author = UserRetrieveSerializer()
     editor = UserRetrieveSerializer()
-    entries = LinkedEntrySerializer(many=True)
+    entries = SerializerMethodField()
 
     class Meta:
         model = Note
@@ -192,6 +219,17 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
             data["content"] = data["content"][: self.truncate] + "..."
 
         return data
+
+    def get_entries(self, obj: Note) -> Dict[str, Any]:
+        """Returns the entries linked to the note.
+        Args:
+            obj (Note): The note object.
+        Returns:
+            Dict[str, Any]: The entries linked to the note.
+        """
+        entry_tree = RetrieveEntryTree()
+        entry_tree.add_entries(obj.entries.all())
+        return entry_tree.tree
 
 
 class NoteRetrieveWithLinksSerializer(NoteRetrieveSerializer):

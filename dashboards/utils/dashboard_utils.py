@@ -76,11 +76,9 @@ class DashboardUtils:
 
         Args:
             user: The user whose access is being checked
-            entry_id: The id of the entry whose entries are being retrieved
+            entry_id: The id of the entry whose related entries are being retrieved
             accessible_entries: The entries that the user has access to
-                from the second hop
-            inaccessible_entries: The entries that
-                the user does not have access to form the second hop
+            inaccessible_entries: The entries that the user does not have access to
 
         Returns:
             Tuple[QuerySet, QuerySet, Dict[str, Entry]]:
@@ -97,19 +95,24 @@ class DashboardUtils:
         if not neighbor_entries:
             return Entry.objects.none(), Entry.objects.none(), {}
 
-        second_hop_all = neighbor_entries.get_neighbours(None)
+        second_hop_all = neighbor_entries.get_neighbours(None).prefetch_related(
+            "entry_class"
+        )
         second_hop_accessible = list(neighbor_entries.get_neighbours(user))
         second_hop_inaccessible = []
 
-        entry_ids = set(inaccessible_entries.values_list("id", flat=True)) | set(
-            accessible_entries.values_list("id", flat=True)
-        )
+        single_hop_entry_ids = set(
+            inaccessible_entries.values_list("id", flat=True)
+        ) | set(accessible_entries.values_list("id", flat=True))
 
         for i in second_hop_all:
-            if i.id == entry_id or i.id in entry_ids:
+            if i.id == entry_id or i.id in single_hop_entry_ids:
                 if i in second_hop_accessible:
                     second_hop_accessible.remove(i)
-            elif i not in second_hop_accessible:
+            elif (
+                i not in second_hop_accessible
+                and i.entry_class.type == EntryType.ENTITY
+            ):
                 second_hop_inaccessible.append(i)
 
         return second_hop_accessible, second_hop_inaccessible, {}
