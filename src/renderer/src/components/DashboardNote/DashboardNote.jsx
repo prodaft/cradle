@@ -136,7 +136,7 @@ export default function DashboardNote({
                         <Preview htmlContent={parsedContent} />
                     </div>
                     {note.entries && parsedContent && (
-                        <div className='text-zinc-300 text-xs w-full p-1 pl-3'>
+                        <div className='text-zinc-300 text-xs w-full pt-1 pl-3'>
                             <Collapsible label='References' open={false}>
                                 {groupSubtypes(
                                     LinkTreeFlattener.flatten(note.entries),
@@ -145,20 +145,22 @@ export default function DashboardNote({
                                             subtype={e.subtype}
                                             key={`${e.name}:${e.subtype}`}
                                             to={createDashboardLink(e)}
-                                            className='text-zinc-300 hover:underline hover:text-cradle2 backdrop-filter bg-cradle3 bg-opacity-60 backdrop-blur-lg h-6 px-2 py-1 mx-1 rounded-md'
+                                            className='text-zinc-300 hover:underline hover:text-cradle2 backdrop-filter bg-cradle3 bg-opacity-60 backdrop-blur-lg h-6 px-1 py-1 mx-1 my-1 rounded-md'
                                         >
                                             {truncateText(e.name, 30)}
                                         </Link>
                                     ),
                                 ).map((l) => (
-                                    <Collapsible
-                                        label={l[0].props.subtype}
-                                        key={l[0].props.subtype}
-                                    >
-                                        <div className='text-zinc-300 text-xs w-full break-all flex flex-row flex-wrap justify-start items-center'>
-                                            {l}
-                                        </div>
-                                    </Collapsible>
+                                    <div className='text-zinc-300 text-xs w-full pt-1'>
+                                        <Collapsible
+                                            label={l[0].props.subtype}
+                                            key={l[0].props.subtype}
+                                        >
+                                            <div className='text-zinc-300 text-xs w-full break-all flex flex-row flex-wrap justify-start items-center'>
+                                                {l}
+                                            </div>
+                                        </Collapsible>
+                                    </div>
                                 ))}
                             </Collapsible>
                         </div>
