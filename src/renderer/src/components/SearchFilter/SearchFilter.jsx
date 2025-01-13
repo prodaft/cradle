@@ -12,7 +12,7 @@ import React from 'react';
  * @returns {SearchFilter}
  * @constructor
  */
-export default function SearchFilter({ option, filters, setFilters }) {
+export default function SearchFilter({ text, option, filters, setFilters }) {
     const updatePrevState = (prevState, name, checked) => {
         if (checked) {
             return [...prevState, name];
@@ -24,7 +24,7 @@ export default function SearchFilter({ option, filters, setFilters }) {
     const handleCheckboxChange = (event) => {
         const { name, checked } = event.target;
         setFilters(updatePrevState(filters, name, checked));
-        console.log(filters)
+        console.log(filters);
     };
 
     return (
@@ -36,7 +36,7 @@ export default function SearchFilter({ option, filters, setFilters }) {
                 checked={filters.includes(option)}
                 onChange={handleCheckboxChange}
             />
-            <span className='text-zinc-300'>{option}</span>
+            <span className='text-zinc-300'>{text}</span>
         </label>
     );
 }

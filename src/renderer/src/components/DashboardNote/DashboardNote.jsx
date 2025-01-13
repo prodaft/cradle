@@ -136,7 +136,7 @@ export default function DashboardNote({
                         <Preview htmlContent={parsedContent} />
                     </div>
                     {note.entries && parsedContent && (
-                        <div className='text-zinc-300 text-xs w-full'>
+                        <div className='text-zinc-300 text-xs w-full p-1 pl-3'>
                             <Collapsible label='References' open={false}>
                                 {groupSubtypes(
                                     LinkTreeFlattener.flatten(note.entries),

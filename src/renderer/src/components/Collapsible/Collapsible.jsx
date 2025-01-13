@@ -9,7 +9,7 @@ function Collapsible({ label, children, open = false }) {
         <div className='w-full'>
             {/* Summary / Header */}
             <button
-                className='flex items-center w-full text-left text-zinc-300 p-1 pl-3 transition-colors'
+                className='flex items-center w-full text-left text-zinc-300 transition-colors'
                 onClick={toggle}
             >
                 {/* Arrow rotation */}
@@ -27,7 +27,7 @@ function Collapsible({ label, children, open = false }) {
             <div className='border-b border-zinc-700 mx-3' />
 
             {/* Collapsible content */}
-            {isOpen && <div className='pl-5 p-2'>{children}</div>}
+            {isOpen && <div className='pl-3 pt-1'>{children}</div>}
         </div>
     );
 }
