@@ -4,6 +4,38 @@ import DashboardCard from '../../components/DashboardCard/DashboardCard';
 import DashboardHorizontalSection from '../../components/DashboardHorizontalSection/DashboardHorizontalSection';
 
 /**
+ * Flattens a 3-level link tree into a list of objects.
+ * @param {Object} tree The 3-level link tree to flatten.
+ * @returns {Object[]} A list of flattened objects, each with at least { type, subtype, name }.
+ */
+export class LinkTreeFlattener {
+    static flatten(tree) {
+        const result = [];
+        for (const [type, subtypes] of Object.entries(tree)) {
+            for (const [subtype, items] of Object.entries(subtypes)) {
+                for (const item of items) {
+                    if (typeof item === 'string') {
+                        result.push({
+                            type,
+                            subtype,
+                            name: item,
+                        });
+                    } else {
+                        result.push({
+                            type,
+                            subtype,
+                            ...item,
+                        });
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+}
+
+/**
  * Function to create a dashboard link for an entry.
  * It does not assert the correctness of the entry object.
  * Any invalid link will send the user to the '404 Not Found' Page.
@@ -48,7 +80,11 @@ export const renderDashboardSection = (entries, relatedEntriesTitle) => {
     const entryCards = entries.map((artifact, index) => (
         <DashboardCard
             key={index}
-            name={artifact.subtype ? `${artifact.subtype}: ${artifact.name}` : artifact.name}
+            name={
+                artifact.subtype
+                    ? `${artifact.subtype}: ${artifact.name}`
+                    : artifact.name
+            }
             link={createDashboardLink(artifact)}
         />
     ));

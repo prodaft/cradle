@@ -1,5 +1,5 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
     deleteNote,
     getNote,
@@ -37,9 +37,12 @@ export default function NoteViewer() {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [parsedContent, setParsedContent] = useState('');
     const [dialog, setDialog] = useState(false);
+    const [isLoading, setIsLoading] = useState(true); // <-- Add loading state
+
     const auth = useAuth();
 
     useEffect(() => {
+        setIsLoading(true);
         getNote(id)
             .then((response) => {
                 const responseNote = response.data;
@@ -48,11 +51,15 @@ export default function NoteViewer() {
                 return responseNote;
             })
             .then((note) => {
-                parseContent(note.content, note.files)
-                    .then((parsedContent) => setParsedContent(parsedContent))
-                    .catch(displayError(setAlert, navigate));
+                return parseContent(note.content, note.files).then((parsed) =>
+                    setParsedContent(parsed),
+                );
             })
-            .catch(displayError(setAlert, navigate));
+            .catch(displayError(setAlert, navigate))
+            .finally(() => {
+                // Turn off loading spinner regardless of success or failure
+                setIsLoading(false);
+            });
     }, [id, navigate, setAlert]);
 
     const toggleView = useCallback(() => {
@@ -67,7 +74,7 @@ export default function NoteViewer() {
     const togglePublishable = useCallback(() => {
         setPublishable(id, !isPublishable)
             .then(() => {
-                setIsPublishable((prevIsPublishable) => !prevIsPublishable);
+                setIsPublishable((prev) => !prev);
             })
             .catch(displayError(setAlert, navigate));
     }, [id, isPublishable]);
@@ -83,7 +90,7 @@ export default function NoteViewer() {
                     navigate(from, { replace: true, state: state });
                     return;
                 }
-                const stateNotes = state.notes.filter((note) => note.id !== id); // todo when id's are uuids change to !==
+                const stateNotes = state.notes.filter((note) => note.id !== id);
                 const newState = { ...state, notes: stateNotes };
                 navigate(from, { replace: true, state: newState });
             })
@@ -151,6 +158,15 @@ export default function NoteViewer() {
         setAlert,
     ]);
 
+    // Conditionally render spinner or component
+    if (isLoading) {
+        return (
+            <div className='flex items-center justify-center h-full w-full py-8'>
+                <div className='animate-spin rounded-full h-16 w-16 border-b-2 border-gray-900' />
+            </div>
+        );
+    }
+
     return (
         <>
             <ConfirmationDialog
@@ -175,7 +191,7 @@ export default function NoteViewer() {
                         <span className='text-sm text-zinc-700'>|</span>
                         <span className='text-sm text-zinc-500 p-2'>
                             <strong>Created by:</strong>{' '}
-                            {note && note.author ? note.author.username : 'Unknown'}
+                            {note?.author ? note.author.username : 'Unknown'}
                         </span>
                         {note.editor && (
                             <span>
@@ -187,9 +203,7 @@ export default function NoteViewer() {
                                 <span className='text-sm text-zinc-700'>|</span>
                                 <span className='text-sm text-zinc-500 p-2'>
                                     <strong>Edited by:</strong>{' '}
-                                    {note && note.author
-                                        ? note.editor.username
-                                        : 'Unknown'}
+                                    {note?.editor ? note.editor.username : 'Unknown'}
                                 </span>
                             </span>
                         )}
