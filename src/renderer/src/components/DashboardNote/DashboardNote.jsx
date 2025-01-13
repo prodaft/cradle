@@ -6,10 +6,12 @@ import { setPublishable } from '../../services/notesService/notesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import {
     createDashboardLink,
+    groupSubtypes,
     LinkTreeFlattener,
     truncateText,
 } from '../../utils/dashboardUtils/dashboardUtils';
 import { useLocation } from 'react-router-dom';
+import Collapsible from '../Collapsible/Collapsible';
 
 /**
  * DashboardNote component - This component is used to display a note on the dashboard.
@@ -87,19 +89,6 @@ export default function DashboardNote({
         }
     }, [selectedNoteIds]);
 
-    const referenceLinks = LinkTreeFlattener.flatten(note.entries).map((entry) => {
-        const dashboardLink = createDashboardLink(entry);
-        return (
-            <Link
-                key={`${entry.name}:${entry.subtype}`}
-                to={dashboardLink}
-                className='text-zinc-300 hover:underline hover:text-cradle2 backdrop-filter bg-cradle3 bg-opacity-60 backdrop-blur-lg h-6 px-2 py-1 rounded-md'
-            >
-                {truncateText(entry.name, 30)}
-            </Link>
-        );
-    });
-
     return (
         <>
             {(!publishMode || (publishMode && isPublishable)) && (
@@ -137,7 +126,7 @@ export default function DashboardNote({
                         )}
                     </div>
                     <div
-                        className='bg-transparent h-fit p-2 backdrop-filter mb-4 overflow-hidden flex-grow flex space-y-2 flex-col cursor-pointer'
+                        className='bg-transparent h-fit p-2 backdrop-filter overflow-hidden flex-grow flex space-y-2 flex-col cursor-pointer'
                         onClick={() =>
                             navigate(`/notes/${note.id}`, {
                                 state: { from: location, state: location.state },
@@ -146,10 +135,34 @@ export default function DashboardNote({
                     >
                         <Preview htmlContent={parsedContent} />
                     </div>
-                    <div className='text-zinc-300 text-xs w-full break-all flex flex-row flex-wrap justify-start space-x-1 space-y-1 items-center'>
-                        <div>References:</div>
-                        {referenceLinks}
-                    </div>
+                    {note.entries && parsedContent && (
+                        <div className='text-zinc-300 text-xs w-full'>
+                            <Collapsible label='References' open={false}>
+                                {groupSubtypes(
+                                    LinkTreeFlattener.flatten(note.entries),
+                                    (e) => (
+                                        <Link
+                                            subtype={e.subtype}
+                                            key={`${e.name}:${e.subtype}`}
+                                            to={createDashboardLink(e)}
+                                            className='text-zinc-300 hover:underline hover:text-cradle2 backdrop-filter bg-cradle3 bg-opacity-60 backdrop-blur-lg h-6 px-2 py-1 mx-1 rounded-md'
+                                        >
+                                            {truncateText(e.name, 30)}
+                                        </Link>
+                                    ),
+                                ).map((l) => (
+                                    <Collapsible
+                                        label={l[0].props.subtype}
+                                        key={l[0].props.subtype}
+                                    >
+                                        <div className='text-zinc-300 text-xs w-full break-all flex flex-row flex-wrap justify-start items-center'>
+                                            {l}
+                                        </div>
+                                    </Collapsible>
+                                ))}
+                            </Collapsible>
+                        </div>
+                    )}
                 </div>
             )}
         </>

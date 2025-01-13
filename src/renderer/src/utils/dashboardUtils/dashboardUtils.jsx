@@ -63,6 +63,31 @@ export const createDashboardLink = (entry) => {
     return `/dashboards/${encodeURIComponent(pluralize(type))}/${encodeURIComponent(name)}/`;
 };
 
+export const groupSubtypes = (entries, entry_transformer) => {
+    let sublistIndices = {};
+    let entryCards = [];
+
+    for (let i in entries) {
+        const entry = entries[i];
+        if (sublistIndices[entry.subtype] === undefined) {
+            if (entry.type == 'entity') {
+                for (let j in sublistIndices) {
+                    sublistIndices[j]++;
+                }
+                sublistIndices[entry.subtype] = 0;
+                entryCards.unshift([]);
+            } else {
+                sublistIndices[entry.subtype] = entryCards.length;
+                entryCards.push([]);
+            }
+        }
+
+        entryCards[sublistIndices[entry.subtype]].push(entry_transformer(entry));
+    }
+
+    return entryCards.filter((l) => l.length !== 0);
+};
+
 /**
  * Function to render a dashboard section with entries.
  * It creates a DashboardCard for each entry and wraps them in a DashboardHorizontalSection.
@@ -77,21 +102,23 @@ export const renderDashboardSection = (entries, relatedEntriesTitle) => {
         return null;
     }
 
-    const entryCards = entries.map((artifact, index) => (
-        <DashboardCard
-            key={index}
-            name={
-                artifact.subtype
-                    ? `${artifact.subtype}: ${artifact.name}`
-                    : artifact.name
-            }
-            link={createDashboardLink(artifact)}
-        />
-    ));
-
     return (
         <DashboardHorizontalSection title={relatedEntriesTitle}>
-            {entryCards}
+            {groupSubtypes(entries, (e) => (
+                <DashboardCard
+                    key={`${e.subtype}:${e.name}`}
+                    subtype={e.subtype}
+                    name={e.name}
+                    link={createDashboardLink(e)}
+                />
+            )).map((l) => (
+                <DashboardHorizontalSection
+                    title={l[0].props.subtype}
+                    key={l[0].props.subtype}
+                >
+                    {l}
+                </DashboardHorizontalSection>
+            ))}
         </DashboardHorizontalSection>
     );
 };
@@ -122,14 +149,6 @@ export const renderDashboardSectionWithInaccessibleEntries = (
         return null;
     }
 
-    const entryCards = entries.map((entry, index) => (
-        <DashboardCard
-            key={index}
-            name={entry.name}
-            link={createDashboardLink(entry)}
-        />
-    ));
-
     const inaccessibleEntriesDiv =
         inaccessibleEntries && inaccessibleEntries.length > 0
             ? [
@@ -154,7 +173,24 @@ export const renderDashboardSectionWithInaccessibleEntries = (
 
     return (
         <DashboardHorizontalSection title={relatedEntriesTitle}>
-            {[...entryCards, ...inaccessibleEntriesDiv]}
+            {[
+                ...groupSubtypes(entries, (e) => (
+                    <DashboardCard
+                        key={`${e.subtype}:${e.name}`}
+                        subtype={e.subtype}
+                        name={e.name}
+                        link={createDashboardLink(e)}
+                    />
+                )).map((l) => (
+                    <DashboardHorizontalSection
+                        title={l[0].props.subtype}
+                        key={l[0].props.subtype}
+                    >
+                        {l}
+                    </DashboardHorizontalSection>
+                )),
+                ...inaccessibleEntriesDiv,
+            ]}
         </DashboardHorizontalSection>
     );
 };
