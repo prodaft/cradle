@@ -1,22 +1,24 @@
 from rest_framework import serializers
 from typing import Any
-from notes.serializers import LinkedEntrySerializer
+from entries.serializers import EntryListCompressedTreeSerializer
 
 
-class LinkSerializer(serializers.Serializer):
-    def to_representation(self, data: Any) -> dict[str, Any]:
-        """Takes the validated data in the serializer and
-        constructs the JSON representation.
+class LinksSerializerAdjacencyList(serializers.BaseSerializer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        Args:
-            data (Any): the validated serializer data.
+    def to_representation(self, data):
+        adjacency_list = {}
 
-        Returns:
-            (dict[str, Any]): A dictionary corresponding to the JSON
-            representation of the data.
+        for src, dst in data:
+            src, dst = str(src), str(dst)
 
-        """
-        return {"source": data[0], "target": data[1]}
+            if src not in adjacency_list:
+                adjacency_list[src] = []
+
+            adjacency_list[src].append(dst)
+
+        return adjacency_list
 
 
 class EntryClassColorSerializer(serializers.Serializer):
@@ -28,8 +30,8 @@ class EntryClassColorSerializer(serializers.Serializer):
 
 
 class KnowledgeGraphSerializer(serializers.Serializer):
-    entries = LinkedEntrySerializer(many=True)
-    links = LinkSerializer(many=True)
+    entries = EntryListCompressedTreeSerializer(fields=("name", "id"))
+    links = LinksSerializerAdjacencyList()
     colors = EntryClassColorSerializer(many=True)
 
     def to_representation(self, instance) -> dict[str, Any]:

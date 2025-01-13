@@ -1,4 +1,4 @@
-from django.db.models import F
+from django.db.models import F, Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
@@ -38,9 +38,9 @@ class KnowledgeGraphList(APIView):
         ).values("id")
         links = {
             (k["src"], k["dst"]) if k["src"] > k["dst"] else (k["dst"], k["src"])
-            for k in Relation.objects.filter(note__in=notes).values(
-                src=F("src_entry_id"), dst=F("dst_entry_id")
-            )
+            for k in Relation.objects.filter(note__in=notes)
+            .values(src=F("src_entry_id"), dst=F("dst_entry_id"))
+            .filter(~Q(src_entry_id=F("dst_entry_id")))
         }
 
         entries = Note.objects.get_entries_from_notes(notes)

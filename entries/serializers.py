@@ -12,6 +12,36 @@ from .exceptions import (
 )
 
 
+class EntryListCompressedTreeSerializer(serializers.BaseSerializer):
+    def __init__(self, *args, fields=("name",), **kwargs):
+        self.fields = fields
+        super().__init__(*args, **kwargs)
+
+    def serialize_entry(self, entry):
+        if len(self.fields) == 1:
+            return getattr(entry, self.fields[0])
+
+        return {field: getattr(entry, field) for field in self.fields}
+
+    def add_to_tree(self, tree, entry):
+        if entry.entry_class.type == EntryType.ENTITY:
+            tree["entities"].setdefault(entry.entry_class.subtype, []).append(
+                self.serialize_entry(entry)
+            )
+        else:
+            tree["artifacts"].setdefault(entry.entry_class.subtype, []).append(
+                self.serialize_entry(entry)
+            )
+
+    def to_representation(self, data):
+        tree = {"entities": {}, "artifacts": {}}
+
+        for entry in data.all():
+            self.add_to_tree(tree, entry)
+
+        return tree
+
+
 class ArtifactClassSerializer(serializers.ModelSerializer):
     subtype = serializers.CharField(max_length=20)
     regex = serializers.CharField(max_length=65536, default="")
