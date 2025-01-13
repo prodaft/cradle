@@ -7,6 +7,7 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 import { useNavigate } from 'react-router-dom';
 import { preprocessData } from '../../utils/graphUtils/graphUtils';
 import Graph from '../Graph/Graph';
+import { LinkTreeFlattener } from '../../utils/dashboardUtils/dashboardUtils';
 
 export default function GraphComponent() {
     const [data, setData] = useState({ nodes: [], links: [] });
@@ -59,6 +60,9 @@ export default function GraphComponent() {
     const fetchGraphData = useCallback(() => {
         getGraphData()
             .then((response) => {
+                response.data.entries = LinkTreeFlattener.flatten(
+                    response.data.entries,
+                );
                 const data = preprocessData(response.data);
                 if (searchValue) setData(filterData(searchValue, data));
                 else setData(data);
