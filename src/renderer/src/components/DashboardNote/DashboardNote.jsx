@@ -8,27 +8,17 @@ import {
     createDashboardLink,
     groupSubtypes,
     LinkTreeFlattener,
+    SubtypeHierarchy,
     truncateText,
 } from '../../utils/dashboardUtils/dashboardUtils';
 import { useLocation } from 'react-router-dom';
 import Collapsible from '../Collapsible/Collapsible';
+import { queryEntries } from '../../services/queryService/queryService';
+import ReferenceTree from '../ReferenceTree/ReferenceTree';
 
 /**
  * DashboardNote component - This component is used to display a note on the dashboard.
- * It can be clicked to navigate to the note page.
- *
- * If the dashboard is in publish mode, only publishable notes will be displayed.
- * While in publish mode, a user can delete a note. In this entity, the note will be removed from the list of notes to publish.
- *
  * @function DashboardNote
- * @param {Object} props - The props object
- * @param {Note} props.note - Note object
- * @param {StateSetter<Alert>} props.setAlert - Function to set an alert
- * @param {boolean} props.publishMode - determine if the dashboard is in publish mode
- * @param {Array<number>} props.selectedNoteIds - an array of note ids - used to keep track of notes to publish
- * @param {StateSetter<Array<number>>} props.setSelectedNoteIds - Function to set the note ids
- * @returns {DashboardNote}
- * @constructor
  */
 export default function DashboardNote({
     note,
@@ -49,8 +39,7 @@ export default function DashboardNote({
             .catch(displayError(setAlert, navigate));
     }, [note.content, note.files, setAlert, navigate]);
 
-    // Attempt to change the publishable status of a note.
-    // If successful, update the switch to reflect this. Otherwise, display an error.
+    // Toggle the note's "publishable" status
     const handleTogglePublishable = useCallback(
         (noteId) => {
             setPublishable(noteId, !isPublishable)
@@ -61,11 +50,10 @@ export default function DashboardNote({
                 })
                 .catch(displayError(setAlert, navigate));
         },
-        [isPublishable, setIsPublishable, setAlert],
+        [isPublishable, setIsPublishable, setAlert, navigate],
     );
 
-    // If the note is to be included in the report and the button is clicked, remove it from the list of notes to publish.
-    // If it's not selected and it is clicked, add it to the list of notes to publish.
+    // Handle selecting this note for publishing
     const handleSelectNote = () => {
         setSelectedNoteIds((prevNoteIds) => {
             const noteIdx = prevNoteIds.indexOf(note.id);
@@ -79,26 +67,32 @@ export default function DashboardNote({
         });
     };
 
+    // Keep note.publishable up to date
     useEffect(() => {
         note.publishable = isPublishable;
-    }, [isPublishable]);
+    }, [isPublishable, note]);
 
+    // Update the isSelected state if selectedNoteIds changes from the outside
     useEffect(() => {
         if (selectedNoteIds) {
             setIsSelected(selectedNoteIds.includes(note.id));
         }
-    }, [selectedNoteIds]);
+    }, [selectedNoteIds, note.id]);
 
     return (
         <>
             {(!publishMode || (publishMode && isPublishable)) && (
                 <div
-                    className={`bg-cradle3 ${isSelected ? 'bg-opacity-30' : 'bg-opacity-10'} p-4 backdrop-blur-lg rounded-xl m-3 shadow-md`}
+                    className={`bg-cradle3 ${
+                        isSelected ? 'bg-opacity-30' : 'bg-opacity-10'
+                    } p-4 backdrop-blur-lg rounded-xl m-3 shadow-md`}
                 >
+                    {/* Header row with timestamp and publish/check UI */}
                     <div className='flex flex-row justify-between'>
                         <div className='text-zinc-300 text-xs w-full'>
                             {new Date(note.timestamp).toLocaleString()}
                         </div>
+
                         {publishMode ? (
                             <input
                                 data-testid='select-btn'
@@ -125,6 +119,15 @@ export default function DashboardNote({
                             </span>
                         )}
                     </div>
+
+                    {!parsedContent && (
+                        <div className='flex items-center justify-center min-h-screen'>
+                            <div className='spinner-dot-pulse'>
+                                <div className='spinner-pulse-dot'></div>
+                            </div>
+                        </div>
+                    )}
+                    {/* Main content preview */}
                     <div
                         className='bg-transparent h-fit p-2 backdrop-filter overflow-hidden flex-grow flex space-y-2 flex-col cursor-pointer'
                         onClick={() =>
@@ -135,35 +138,10 @@ export default function DashboardNote({
                     >
                         <Preview htmlContent={parsedContent} />
                     </div>
-                    {note.entries && parsedContent && (
-                        <div className='text-zinc-300 text-xs w-full pt-1 pl-3'>
-                            <Collapsible label='References' open={false}>
-                                {groupSubtypes(
-                                    LinkTreeFlattener.flatten(note.entries),
-                                    (e) => (
-                                        <Link
-                                            subtype={e.subtype}
-                                            key={`${e.name}:${e.subtype}`}
-                                            to={createDashboardLink(e)}
-                                            className='text-zinc-300 hover:underline hover:text-cradle2 backdrop-filter bg-cradle3 bg-opacity-60 backdrop-blur-lg h-6 px-1 py-1 mx-1 my-1 rounded-md'
-                                        >
-                                            {truncateText(e.name, 30)}
-                                        </Link>
-                                    ),
-                                ).map((l) => (
-                                    <div className='text-zinc-300 text-xs w-full pt-1'>
-                                        <Collapsible
-                                            label={l[0].props.subtype}
-                                            key={l[0].props.subtype}
-                                        >
-                                            <div className='text-zinc-300 text-xs w-full break-all flex flex-row flex-wrap justify-start items-center'>
-                                                {l}
-                                            </div>
-                                        </Collapsible>
-                                    </div>
-                                ))}
-                            </Collapsible>
-                        </div>
+
+                    {/* References Section (Now a separate component) */}
+                    {note.entry_classes && parsedContent && (
+                        <ReferenceTree note={note} setAlert={setAlert} />
                     )}
                 </div>
             )}

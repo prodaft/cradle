@@ -10,22 +10,15 @@ import { authAxios } from '../axiosInstance/axiosInstance';
  * @param {number} page - the page number to fetch
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function queryEntries(name, subtype, page) {
+export function queryEntries(filters, page = 1) {
     const url = `/query/`;
 
-    const params = {
-        subtype: subtype,
-        page: page,
-    };
-
-    if (name) {
-        params.name = name;
-    }
+    filters.page = page;
 
     return authAxios({
         method: 'GET',
         url: url,
-        params: params,
+        params: filters,
         paramsSerializer: (params) => {
             return qs.stringify(params, { arrayFormat: 'comma' });
         },

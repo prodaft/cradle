@@ -42,7 +42,11 @@ export default function NotesList({ query }) {
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='flex flex-col space-y-4'>
                 {loading ? (
-                    <p>Loading...</p>
+                    <div className='flex items-center justify-center min-h-screen'>
+                        <div className='spinner-dot-pulse'>
+                            <div className='spinner-pulse-dot'></div>
+                        </div>
+                    </div>
                 ) : notes.length > 0 ? (
                     <div>
                         <div className='notes-list'>

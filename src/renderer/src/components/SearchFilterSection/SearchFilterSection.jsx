@@ -2,60 +2,7 @@ import { NavArrowDown, NavArrowUp } from 'iconoir-react';
 import React from 'react';
 import SearchFilter from '../SearchFilter/SearchFilter';
 import Collapsible from '../Collapsible/Collapsible';
-
-class SubtypeHierarchy {
-    constructor(paths) {
-        this.tree = {};
-
-        for (let path of paths) {
-            path.split('/').reduce((acc, cur) => {
-                if (!acc[cur]) {
-                    acc[cur] = {};
-                }
-                return acc[cur];
-            }, this.tree);
-        }
-    }
-
-    convert(node_callback, leaf_callback) {
-        const traverse = (value, children, path) => {
-            if (Object.keys(children).length === 0) {
-                // Leaf node
-                return leaf_callback(value, path);
-            }
-
-            // Internal node
-            const childResults = [];
-
-            // Sort children by depth before traversing
-            const sortedKeys = Object.keys(children).sort(
-                (a, b) => this.getDepth(children[a]) - this.getDepth(children[b]),
-            );
-
-            for (const key of sortedKeys) {
-                childResults.push(traverse(key, children[key], path + value + '/'));
-            }
-
-            return node_callback(value, childResults);
-        };
-
-        const sortedKeys = Object.keys(this.tree).sort(
-            (a, b) => this.getDepth(this.tree[a]) - this.getDepth(this.tree[b]),
-        );
-
-        return sortedKeys.map((key) => traverse(key, this.tree[key], ''));
-    }
-
-    // Helper to calculate depth of a subtree
-    getDepth(node) {
-        if (Object.keys(node).length === 0) {
-            return 0; // Leaf node
-        }
-        return (
-            1 + Math.max(...Object.values(node).map((child) => this.getDepth(child)))
-        );
-    }
-}
+import { SubtypeHierarchy } from '../../utils/dashboardUtils/dashboardUtils';
 
 /**
  * Section for filters in the search dialog

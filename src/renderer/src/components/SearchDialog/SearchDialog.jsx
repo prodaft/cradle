@@ -69,8 +69,13 @@ export default function SearchDialog({ isOpen, onClose }) {
     const performSearch = () => {
         setAlert({ ...alert, show: false });
         queryEntries(
-            searchQuery,
-            entrySubtypeFilters.length == 0 ? entrySubtypes : entrySubtypeFilters,
+            {
+                name: searchQuery,
+                subtype:
+                    entrySubtypeFilters.length == 0
+                        ? entrySubtypes
+                        : entrySubtypeFilters,
+            },
             page,
         )
             .then((response) => {

@@ -16,6 +16,7 @@ import { Trash, StatsReport } from 'iconoir-react/regular';
 import NavbarSwitch from '../NavbarSwitch/NavbarSwitch';
 import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 import useAuth from '../../hooks/useAuth/useAuth';
+import ReferenceTree from '../ReferenceTree/ReferenceTree';
 
 /**
  * NoteViewer component
@@ -217,7 +218,10 @@ export default function NoteViewer() {
                                 {note.content}
                             </pre>
                         ) : (
-                            <Preview htmlContent={parsedContent} />
+                            <div className='mt-2'>
+                                <ReferenceTree note={note} setAlert={setAlert} />
+                                <Preview htmlContent={parsedContent} />
+                            </div>
                         )}
                     </div>
                 </div>

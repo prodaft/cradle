@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 
-function Collapsible({ label, children, open = false }) {
+function Collapsible({ label, children, onChangeCollapse = null, open = false }) {
     const [isOpen, setIsOpen] = useState(open);
 
-    const toggle = () => setIsOpen((prev) => !prev);
+    const toggle = () => {
+        if (onChangeCollapse) {
+            onChangeCollapse(!isOpen);
+        }
+        setIsOpen((prev) => !prev);
+    };
 
     return (
         <div className='w-full'>
