@@ -14,6 +14,7 @@ from .exceptions import (
 from entries.serializers import (
     EntryListCompressedTreeSerializer,
     EntryResponseSerializer,
+    EntryTypesCompressedTreeSerializer,
 )
 from typing import Any, Dict
 from file_transfer.serializers import FileReferenceSerializer
@@ -157,7 +158,7 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
     files = FileReferenceSerializer(many=True)
     author = UserRetrieveSerializer()
     editor = UserRetrieveSerializer()
-    entries = EntryListCompressedTreeSerializer()
+    entries = EntryTypesCompressedTreeSerializer()
 
     class Meta:
         model = Note
@@ -195,6 +196,8 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
         if len(data["content"]) > self.truncate:
             data["content"] = data["content"][: self.truncate] + "..."
 
+        data["entry_classes"] = data.pop("entries")
+
         return data
 
 
@@ -211,6 +214,7 @@ class NoteRetrieveWithLinksSerializer(NoteRetrieveSerializer):
                 )} "{i.file_name}"\n"""
 
         data.pop("files")
+        data["entry_classes"] = data.pop("entries")
 
         return data
 

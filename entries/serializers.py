@@ -42,6 +42,17 @@ class EntryListCompressedTreeSerializer(serializers.BaseSerializer):
         return tree
 
 
+class EntryTypesCompressedTreeSerializer(serializers.BaseSerializer):
+    def __init__(self, *args, fields=("name",), **kwargs):
+        self.fields = fields
+        super().__init__(*args, **kwargs)
+
+    def to_representation(self, data):
+        unique_subtypes = data.values_list("entry_class__subtype", flat=True).distinct()
+
+        return list(unique_subtypes)
+
+
 class ArtifactClassSerializer(serializers.ModelSerializer):
     subtype = serializers.CharField(max_length=20)
     regex = serializers.CharField(max_length=65536, default="")

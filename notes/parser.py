@@ -116,9 +116,15 @@ class LinkTreeNode:
                 pairs.update(bar)
 
         pairs.update({(x, y) for (x, y) in itertools.permutations(parents, 2)})
-        pairs.update({(x, y) for (x, y) in itertools.product(d0_children, d0_children)})
-        pairs.update({(x, y) for (x, y) in itertools.product(parents, children)})
-        pairs.update({(x, y) for (x, y) in itertools.product(children, parents)})
+        pairs.update(
+            {(x, y) for (x, y) in itertools.product(d0_children, d0_children) if x != y}
+        )
+        pairs.update(
+            {(x, y) for (x, y) in itertools.product(parents, children) if x != y}
+        )
+        pairs.update(
+            {(x, y) for (x, y) in itertools.product(children, parents) if x != y}
+        )
 
         if not parents:
             return 1, d0_children, pairs
