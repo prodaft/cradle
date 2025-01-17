@@ -34,6 +34,17 @@ function interpolate(x1, x2, y1, y2, x) {
     return y1 + ((x - x1) * (y2 - y1)) / (x2 - x1);
 }
 
+export const flattenGraphEntries = (entries) => {
+    let elist = [];
+    for (let et of Object.keys(entries)) {
+        for (let e of entries[et]) {
+            elist.push({ subtype: et, ...e });
+        }
+    }
+
+    return elist;
+};
+
 export const preprocessData = (data) => {
     // Initialize an empty array for the nodes
     let nodes = [];

@@ -18,6 +18,11 @@ export default function Graph({
     data,
     node_r,
     is3D,
+    highlightLinks,
+    highlightNodes,
+    setHighlightLinks,
+    setHighlightNodes,
+    onLinkClick,
     spacingCoefficient = 0,
     componentDistanceCoefficient = 0,
     centerGravity = 0,
@@ -25,8 +30,6 @@ export default function Graph({
     const { useState, useCallback, useEffect } = React;
     const navigate = useNavigate();
 
-    const [highlightNodes, setHighlightNodes] = useState(new Set());
-    const [highlightLinks, setHighlightLinks] = useState(new Set());
     const [hoverNode, setHoverNode] = useState(null);
 
     const updateHighlight = () => {
@@ -36,11 +39,9 @@ export default function Graph({
 
     const handleNodeHover = (node) => {
         highlightNodes.clear();
-        highlightLinks.clear();
+
         if (node) {
             highlightNodes.add(node);
-            node.neighbors.forEach((neighbor) => highlightNodes.add(neighbor));
-            node.links.forEach((link) => highlightLinks.add(link));
         }
 
         setHoverNode(node || null);
@@ -48,8 +49,8 @@ export default function Graph({
     };
 
     const handleLinkHover = (link) => {
-        highlightNodes.clear();
         highlightLinks.clear();
+        highlightNodes.clear();
 
         if (link) {
             highlightLinks.add(link);
@@ -63,14 +64,7 @@ export default function Graph({
     const paintRing = useCallback(
         (node, ctx) => {
             ctx.beginPath();
-            ctx.arc(
-                node.x,
-                node.y,
-                node.degree_norm * node_r * 1.25,
-                0,
-                2 * Math.PI,
-                false,
-            );
+            ctx.arc(node.x, node.y, node_r * 1.25, 0, 2 * Math.PI, false);
             ctx.fillStyle = node === hoverNode ? 'red' : 'orange';
             ctx.fill();
         },
@@ -83,7 +77,6 @@ export default function Graph({
         <GraphComponent
             graphData={data}
             nodeRelSize={node_r}
-            nodeVal={(node) => Math.pow(node.degree_norm, 2)}
             autoPauseRedraw={false}
             linkWidth={(link) => (highlightLinks.has(link) ? 2 : 1)}
             linkColor={(link) => (highlightLinks.has(link) ? 'orange' : '#3A3A3A')}
@@ -91,14 +84,15 @@ export default function Graph({
             nodeCanvasObjectMode={(node) =>
                 highlightNodes.has(node) ? 'before' : undefined
             }
-            nodeLabel={(n) => `${n.subtype ? n.subtype + ': ' : ''}${n.name}`}
-            nodeCanvasObject={paintRing}
+            nodeLabel={(n) => n.label}
             backgroundColor='#151515'
-            onNodeHover={handleNodeHover}
+            nodeCanvasObject={paintRing}
             onLinkHover={handleLinkHover}
+            onNodeHover={handleNodeHover}
             onNodeClick={(node) => {
                 navigate(createDashboardLink(node));
             }}
+            onLinkClick={onLinkClick}
         />
     );
 }

@@ -18,12 +18,12 @@ import NoteViewer from './components/NoteViewer/NoteViewer';
 import TextEditor from './components/TextEditor/TextEditor';
 import NoteEditor from './components/NoteEditor/NoteEditor.jsx';
 import NoteSelector from './components/NoteSelector/NoteSelector.jsx';
-import GraphComponent from './components/GraphComponent/GraphComponent';
 import Welcome from './components/Welcome/Welcome.jsx';
 import ActivityList from './components/ActivityList/ActivityList.jsx';
 import ConfirmEmail from './components/ConfirmEmail/ConfirmEmail.jsx';
 import ChangePassword from './components/ChangePassword/ChangePassword.jsx';
 import ForgotPassword from './components/ForgotPassword/ForgotPassword.jsx';
+import GraphExplorer from './components/GraphExplorer/GraphExplorer.jsx';
 
 /**
  * The App component is the artifact point of the application. It wraps the entire application in the AuthProvider
@@ -58,7 +58,7 @@ function App() {
                             <Route path='/notes' element={<NoteSelector />} />
                             <Route
                                 path='/knowledge-graph'
-                                element={<GraphComponent />}
+                                element={<GraphExplorer />}
                             />
                             <Route path='/publish' element={<PublishPreview />}></Route>
                             <Route

@@ -27,6 +27,7 @@ import { queryEntries } from '../../services/queryService/queryService';
 import DashboardHorizontalSection from '../DashboardHorizontalSection/DashboardHorizontalSection';
 import DashboardCard from '../DashboardCard/DashboardCard';
 import { queryGraph } from '../../services/graphService/graphService';
+import { flattenGraphEntries } from '../../utils/graphUtils/graphUtils';
 
 function DashboardDropDownLeaf({ entry, path, value, depth, inaccessible }) {
     const [entries, setEntries] = useState(null);
@@ -34,17 +35,6 @@ function DashboardDropDownLeaf({ entry, path, value, depth, inaccessible }) {
     if (!path && !value) {
         return null;
     }
-
-    const flattenGraphEntries = (entries) => {
-        let elist = [];
-        for (let et of Object.keys(entries)) {
-            for (let e of entries[et]) {
-                elist.push({ subtype: et, ...e });
-            }
-        }
-
-        return elist;
-    };
 
     const fetchEntries = (path) => async (expanded) => {
         if (!expanded || entries) {

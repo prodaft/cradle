@@ -1,4 +1,6 @@
 import { authAxios } from '../axiosInstance/axiosInstance';
+import qs from 'qs';
+
 /**
  * Function to get notes from the API
  * Passes the token and id to the API
@@ -26,6 +28,9 @@ const searchNote = (query) => {
         method: 'get',
         url: `/notes/`,
         params: query,
+        paramsSerializer: (params) => {
+            return qs.stringify(params, { arrayFormat: 'repeat' });
+        },
     });
 };
 
