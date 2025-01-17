@@ -103,18 +103,13 @@ export const createDashboardLink = (entry) => {
         return '/not-found';
     }
 
-    const { name, type, subtype } = entry;
+    const { name, subtype } = entry;
 
-    if (!name || !type) {
+    if (!name || !subtype) {
         return '/not-found';
     }
 
-    if (subtype) {
-        const queryString = QueryString.stringify({ subtype: subtype }); // qs also encodes the values
-        return `/dashboards/${encodeURIComponent(pluralize(type))}/${encodeURIComponent(name)}/?${queryString}`;
-    }
-
-    return `/dashboards/${encodeURIComponent(pluralize(type))}/${encodeURIComponent(name)}/`;
+    return `/dashboards/${encodeURIComponent(subtype)}/${encodeURIComponent(name)}/`;
 };
 
 export const groupSubtypes = (entries, entry_transformer) => {

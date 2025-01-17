@@ -49,7 +49,10 @@ function App() {
                             />
                             <Route path='/notes' element={<Notes />}></Route>
                             <Route path='/editor/:id' element={<TextEditor />} />
-                            <Route path='/dashboards/*' element={<Dashboard />} />
+                            <Route
+                                path='/dashboards/:subtype/:name'
+                                element={<Dashboard />}
+                            />
                             <Route path='/notes/:id' element={<NoteViewer />} />
                             <Route path='/notes/:id/edit' element={<NoteEditor />} />
                             <Route path='/notes' element={<NoteSelector />} />

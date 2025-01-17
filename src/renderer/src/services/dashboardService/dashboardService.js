@@ -36,9 +36,10 @@ export function getSecondHopData(path, search) {
  * @param {string} id - The entity ID to request access to
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function requestEntityAccess(id) {
+export function requestEntityAccess(id, subtype = null) {
     return authAxios({
         method: 'POST',
         url: `/access/request/${id}/`,
+        params: subtype && { subtype },
     });
 }

@@ -11,3 +11,16 @@ export function getGraphData() {
         url: '/knowledge-graph/',
     });
 }
+
+/**
+ * Function to get the knowledge graph data from the API
+ *
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export function queryGraph(query) {
+    return authAxios({
+        method: 'POST',
+        url: '/knowledge-graph/query/',
+        data: query,
+    });
+}

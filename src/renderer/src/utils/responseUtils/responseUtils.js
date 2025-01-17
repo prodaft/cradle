@@ -14,7 +14,6 @@
  */
 const displayError = (setAlert, navigate) => {
     return (err) => {
-        console.log(err);
         if (err.response && err.response.status === 401 && navigate) {
             setAlert({
                 show: true,
@@ -45,7 +44,7 @@ const displayError = (setAlert, navigate) => {
                 }
             }
             if (!message) {
-                message = err.response.data;
+                message = JSON.stringify(err.response.data);
             }
         }
 

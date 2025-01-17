@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     getDashboardData,
@@ -16,11 +16,138 @@ import { deleteEntry } from '../../services/adminService/adminService';
 import NotFound from '../NotFound/NotFound';
 import pluralize from 'pluralize';
 import {
+    createDashboardLink,
     renderDashboardSection,
     renderDashboardSectionWithInaccessibleEntries,
+    SubtypeHierarchy,
 } from '../../utils/dashboardUtils/dashboardUtils';
 import { Search } from 'iconoir-react';
 import NotesList from '../NotesList/NotesList';
+import { queryEntries } from '../../services/queryService/queryService';
+import DashboardHorizontalSection from '../DashboardHorizontalSection/DashboardHorizontalSection';
+import DashboardCard from '../DashboardCard/DashboardCard';
+import { queryGraph } from '../../services/graphService/graphService';
+
+function DashboardDropDownLeaf({ entry, path, value, depth, inaccessible }) {
+    const [entries, setEntries] = useState(null);
+
+    if (!path && !value) {
+        return null;
+    }
+
+    const flattenGraphEntries = (entries) => {
+        let elist = [];
+        for (let et of Object.keys(entries)) {
+            for (let e of entries[et]) {
+                elist.push({ subtype: et, ...e });
+            }
+        }
+
+        return elist;
+    };
+
+    const fetchEntries = (path) => async (expanded) => {
+        if (!expanded || entries) {
+            return;
+        }
+
+        const response = await queryGraph({
+            operation: 'bfs',
+            result_type: 'vertices',
+            params: {
+                max_depth: depth,
+                min_depth: depth,
+                subtype: path,
+                src: { subtype: entry.subtype, name: entry.name },
+            },
+        });
+
+        setEntries(flattenGraphEntries(response.data.entries));
+    };
+
+    const requestAccess = async () => {
+        const response = await queryGraph({
+            operation: 'inaccessible',
+            result_type: 'vertices',
+            params: {
+                max_depth: depth,
+                min_depth: depth,
+                src: { subtype: entry.subtype, name: entry.name },
+            },
+        });
+        console.log(response.data);
+
+        const entities = flattenGraphEntries(response.data.entries);
+        for (let e of entities) {
+            requestEntityAccess(e.id, path + value);
+        }
+    };
+
+    return (
+        <>
+            <DashboardHorizontalSection
+                title={value}
+                key={value}
+                onExpand={fetchEntries(path + value)}
+            >
+                {inaccessible && (
+                    <div
+                        key='inaccessible-entries'
+                        className='w-full h-fit mt-1 flex flex-row justify-between items-center text-zinc-400'
+                    >
+                        <p>
+                            There are inaccessible entities of this type you cannot
+                            view.{' '}
+                            <span
+                                className='underline cursor-pointer hover:text-cradle-2'
+                                onClick={requestAccess}
+                            >
+                                Request access to view them.
+                            </span>
+                        </p>
+                    </div>
+                )}
+                {entries &&
+                    entries.map(
+                        (e) =>
+                            e.name && (
+                                <DashboardCard
+                                    key={`${e.subtype}:${e.name}`}
+                                    subtype={e.subtype}
+                                    name={e.name}
+                                    link={createDashboardLink(e)}
+                                />
+                            ),
+                    )}
+            </DashboardHorizontalSection>
+        </>
+    );
+}
+
+function DashboardDropDown(entry, subtypes, depth) {
+    if (!subtypes) {
+        return null;
+    }
+
+    let hierarchy = new SubtypeHierarchy(Object.keys(subtypes));
+
+    return hierarchy.convert(
+        (value, children) => (
+            <DashboardHorizontalSection title={value} key={value}>
+                {children}
+            </DashboardHorizontalSection>
+        ),
+        (value, path) => (
+            <DashboardDropDownLeaf
+                entry={entry}
+                path={path}
+                value={value}
+                depth={depth}
+                inaccessible={!subtypes[value]}
+            ></DashboardDropDownLeaf>
+        ),
+    );
+}
 
 /**
  * Dashboard component
@@ -39,9 +166,11 @@ import NotesList from '../NotesList/NotesList';
  */
 export default function Dashboard() {
     const location = useLocation();
-    const path = location.pathname;
+    const { subtype } = useParams();
+    const { name } = useParams();
     const [entryMissing, setEntryMissing] = useState(false);
     const [contentObject, setContentObject] = useState({});
+    const [entryTypesLevel, setEntryTypesLevel] = useState({});
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [deleteDialog, setDeleteDialog] = useState(false);
     const [virusTotalDialog, setVirusTotalDialog] = useState(false);
@@ -61,45 +190,47 @@ export default function Dashboard() {
     useEffect(() => {
         setEntryMissing(false);
         setAlert('');
+        setContentObject({});
+        setEntryTypesLevel({});
+        queryEntries({ subtype, name_exact: name }).then((response) => {
+            if (response.data.count != 1) {
+                setEntryMissing(true);
+                return;
+            }
+            let obj = response.data.results[0];
+            setContentObject(obj);
+            setSearchFilters((prev) => ({
+                ...prev,
+                ['references']: obj.id,
+            }));
+            setSubmittedFilters((prev) => ({
+                ...prev,
+                ['references']: obj.id,
+            }));
 
-        // Populate dashboard
-        getDashboardData(location.pathname, location.search)
-            .then((response) => {
-                setContentObject(response.data);
+            dashboard.current.scrollTo(0, 0);
+        });
+    }, [subtype, name, setAlert, setEntryMissing, setContentObject]);
 
-                setSearchFilters((prev) => ({
-                    ...prev,
-                    ['references']: response.data.id,
-                }));
-                setSubmittedFilters((prev) => ({
-                    ...prev,
-                    ['references']: response.data.id,
-                }));
-                dashboard.current.scrollTo(0, 0);
-            })
-            .catch((err) => {
-                setContentObject({});
-                if (err.response && err.response.status === 404) {
-                    setEntryMissing(true);
-                } else {
-                    const errHandler = displayError(setAlert, navigate);
-                    errHandler(err);
-                }
-            });
-    }, [location, path, setAlert, setEntryMissing, setContentObject]);
-
-    useEffect(() => {
-        if (contentObject.second_hop_lazyload) {
-            getSecondHopData(location.pathname, location.search)
-                .then((response) => {
-                    setContentObject((prev) => ({
-                        ...prev,
-                        ...response.data,
-                    }));
-                })
-                .catch(displayError(setAlert, navigate));
+    const getEntryTypesForLevel = (depth) => async (expanded) => {
+        if (!expanded || entryTypesLevel[depth]) {
+            return;
         }
-    }, [location, path, contentObject.second_hop_lazyload]);
+        const response = await queryGraph({
+            operation: 'entry_types',
+            result_type: 'vertices',
+            params: {
+                max_depth: depth,
+                min_depth: depth,
+                src: { subtype: contentObject.subtype, name: contentObject.name },
+            },
+        });
+
+        setEntryTypesLevel((prev) => ({
+            ...prev,
+            [depth]: response.data,
+        }));
+    };
 
     const handleEnterPublishMode = useCallback(() => {
         const publishableNotes = contentObject.notes.filter((note) => note.publishable);
@@ -238,31 +369,47 @@ export default function Dashboard() {
                         </div>
                     )}
 
-                    {contentObject.entities &&
-                        renderDashboardSectionWithInaccessibleEntries(
-                            contentObject.entities,
-                            contentObject.inaccessible_entities,
-                            'Related Entities',
-                            'There are inaccessible entities linked to this entry. ',
-                            'Request access to view them.',
-                            handleRequestEntityAccess,
-                        )}
+                    <DashboardHorizontalSection
+                        title='Related Entities'
+                        onExpand={getEntryTypesForLevel(1)}
+                    >
+                        {entryTypesLevel[1] &&
+                            DashboardDropDown(
+                                contentObject,
+                                entryTypesLevel[1].entity,
+                                1,
+                            )}
+                    </DashboardHorizontalSection>
 
-                    {contentObject.artifacts &&
-                        renderDashboardSection(
-                            contentObject.artifacts,
-                            'Related Artifacts',
-                        )}
+                    <DashboardHorizontalSection
+                        title='Related Artifacts'
+                        onExpand={getEntryTypesForLevel(1)}
+                    >
+                        {entryTypesLevel[1] &&
+                            DashboardDropDown(
+                                contentObject,
+                                entryTypesLevel[1].artifact,
+                                1,
+                            )}
+                    </DashboardHorizontalSection>
 
-                    {contentObject.second_hop_entities &&
-                        renderDashboardSectionWithInaccessibleEntries(
-                            contentObject.second_hop_entities,
-                            contentObject.second_hop_inaccessible_entities,
-                            'Second Degree Relationships',
-                            'There are inaccessible entries linked to this entry. ',
-                            'Request access to view them.',
-                            handleRequestEntityAccess,
-                        )}
+                    <DashboardHorizontalSection
+                        title='Second Level Entries'
+                        onExpand={getEntryTypesForLevel(2)}
+                    >
+                        {entryTypesLevel[2] &&
+                            DashboardDropDown(
+                                contentObject,
+                                entryTypesLevel[2].entity,
+                                2,
+                            )}
+                        {entryTypesLevel[2] &&
+                            DashboardDropDown(
+                                contentObject,
+                                entryTypesLevel[2].artifact,
+                                2,
+                            )}
+                    </DashboardHorizontalSection>
 
                     {contentObject.id && (
                         <div className='bg-cradle3 p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col flex-1'>

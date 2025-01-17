@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavArrowDown, NavArrowUp } from 'iconoir-react';
+import { useLocation } from 'react-router-dom';
 
 /**
  * DashboardHorizontalSection component - This component is used to display a horizontal section on the dashboard.
@@ -12,12 +13,24 @@ import { NavArrowDown, NavArrowUp } from 'iconoir-react';
  * @returns {DashboardHorizontalSection}
  * @constructor
  */
-export default function DashboardHorizontalSection({ title, children }) {
+export default function DashboardHorizontalSection({
+    title,
+    children,
+    onExpand = null,
+}) {
+    const location = useLocation();
     const [expanded, setExpanded] = useState(false);
 
     const toggleExpanded = () => {
         setExpanded(!expanded);
+        if (onExpand) {
+            onExpand(!expanded);
+        }
     };
+
+    useEffect(() => {
+        setExpanded(false);
+    }, [location]);
 
     return (
         <div className='bg-cradle3 p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full'>
@@ -42,7 +55,7 @@ export default function DashboardHorizontalSection({ title, children }) {
                 }`}
             >
                 <div className='flex flex-wrap gap-2'>
-                    {children?.length ? (
+                    {children?.length && children?.some((item) => item !== null) ? (
                         children
                     ) : (
                         <div className='text-zinc-500'>No items to display</div>
