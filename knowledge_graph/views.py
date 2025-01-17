@@ -7,49 +7,21 @@ from rest_framework.permissions import IsAuthenticated
 from entries.models import EntryClass
 from notes.models import Note, Relation
 from user.models import CradleUser
-from .serializers import KnowledgeGraphSerializer
+from .serializers import GraphQueryRequestSerializer, KnowledgeGraphSerializer
 from typing import cast
 
+from rest_framework.parsers import JSONParser
 
-class KnowledgeGraphList(APIView):
+
+class GraphTraverseView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get(self, request: Request) -> Response:
-        """Allow a user to view the Knowledge Graph containing all Entries
-        they can access. The Knowledge Graph is represented as two arrays:
-        "entries" and "links". The "entries" array contains a list of
-        entries which are connected using notes the User has access to,
-        while the "links" array contains pairs of id's, each link
-        representing a connection between two entries through a note
-        visible to the user.
-
-            Args:
-                request(Request): The request that was sent.
-
-            Returns:
-                Response(status=200): A JSON response containing the
-                    graph structure if the request was successful
-                Response("User is not authenticated.", status=401):
-                    if the user is not authenticated.
-        """
-        notes = Note.objects.get_accessible_notes(
-            cast(CradleUser, request.user)
-        ).values("id")
-        links = {
-            (k["src"], k["dst"]) if k["src"] > k["dst"] else (k["dst"], k["src"])
-            for k in Relation.objects.filter(note__in=notes)
-            .values(src=F("src_entry_id"), dst=F("dst_entry_id"))
-            .filter(~Q(src_entry_id=F("dst_entry_id")))
-        }
-
-        entries = Note.objects.get_entries_from_notes(notes)
-        return Response(
-            KnowledgeGraphSerializer(
-                {
-                    "entries": entries,
-                    "links": links,
-                    "colors": EntryClass.objects.filter(entry__in=entries),
-                }
-            ).data
+    def post(self, request: Request) -> Response:
+        query = GraphQueryRequestSerializer(
+            data=request.data, context={"request": request}
         )
+        query.is_valid(raise_exception=True)
+
+        result = query.get_result()
+        return Response(result)

@@ -35,7 +35,6 @@ urlpatterns = [
                 path("logs/", include("logs.urls")),
                 path("entries/", include("entries.urls")),
                 path("notes/", include("notes.urls")),
-                path("dashboards/", include("dashboards.urls")),
                 path("access/", include("access.urls")),
                 path("query/", include("query.urls")),
                 path("file-transfer/", include("file_transfer.urls")),

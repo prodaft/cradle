@@ -46,6 +46,6 @@ class SmartLinkerTask(BaseTask):
 
         rels = []
         for src, dst in pairs_resolved:
-            rels.append(Relation(src_entry=src, dst_entry=dst, note=note))
+            rels.append(Relation(src_entry=src, dst_entry=dst, content_object=note))
 
         Relation.objects.bulk_create(rels)

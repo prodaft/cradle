@@ -1,6 +1,9 @@
-from django.db import models
+from django.db import connection, models
+from django_lifecycle import AFTER_DELETE, LifecycleModel, LifecycleModelMixin, hook
+from django_lifecycle.mixins import AFTER_CREATE
 
 from logs.models import LoggableModelMixin
+import json
 
 from .managers import (
     EntityManager,
@@ -9,6 +12,7 @@ from .managers import (
 )
 
 from .exceptions import (
+    ClassBreaksHierarchyException,
     InvalidClassFormatException,
     InvalidEntryException,
     InvalidRegexException,
@@ -21,7 +25,7 @@ import re
 class EntryClass(models.Model, LoggableModelMixin):
     type: models.CharField = models.CharField(max_length=20, choices=EntryType.choices)
     subtype: models.CharField = models.CharField(
-        max_length=20, blank=False, primary_key=True
+        max_length=64, blank=False, primary_key=True
     )
     timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
     regex: models.CharField = models.CharField(max_length=65536, blank=True, default="")
@@ -71,7 +75,22 @@ class EntryClass(models.Model, LoggableModelMixin):
     def _propagate_log(self, log):
         return
 
+    def does_entryclass_violate_hierarchy(self):
+        parts = self.subtype.split("/")
+
+        possible_parents = ["/".join(parts[:i]) for i in range(1, len(parts))]
+
+        if EntryClass.objects.filter(subtype__in=possible_parents).exists():
+            return EntryClass.objects.filter(subtype__in=possible_parents).first()
+
+        return False
+
     def save(self, *args, **kwargs):
+        self.subtype = self.subtype.strip().strip("/")
+
+        if conflict := self.does_entryclass_violate_hierarchy():
+            raise ClassBreaksHierarchyException(conflict.subtype)
+
         if self.type == EntryType.ARTIFACT:
             if self.regex and self.options:
                 raise InvalidClassFormatException()
@@ -96,7 +115,7 @@ class EntryClass(models.Model, LoggableModelMixin):
         return self.subtype
 
 
-class Entry(models.Model, LoggableModelMixin):
+class Entry(LifecycleModel, LoggableModelMixin):
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
     is_public: models.BooleanField = models.BooleanField(default=False)
     entry_class: models.ForeignKey[uuid.UUID, EntryClass] = models.ForeignKey(

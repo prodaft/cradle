@@ -1,9 +1,50 @@
-from django.db import models
+from django.db import connection, models
 from entries.models import Entry
 from logs.models import LoggableModelMixin
 from .managers import NoteManager
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
+from django_lifecycle import (
+    AFTER_CREATE,
+    AFTER_DELETE,
+    LifecycleModel,
+    hook,
+    BEFORE_UPDATE,
+    AFTER_UPDATE,
+)
+import json
+
 import uuid
 from user.models import CradleUser
+
+
+class Relation(LifecycleModel):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    src_entry = models.ForeignKey(
+        Entry, related_name="src_relations", on_delete=models.CASCADE
+    )
+    dst_entry = models.ForeignKey(
+        Entry, related_name="dst_relations", on_delete=models.CASCADE
+    )
+
+    # Generic foreign key to support different types of objects
+    object_id = models.UUIDField()
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    content_object = GenericForeignKey("content_type", "object_id")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["src_entry", "dst_entry", "content_type", "object_id"],
+                name="unique_src_dst_object",
+            )
+        ]
+
+    indexes = [
+        models.Index(fields=["src_entry"], name="idx_src_entry"),
+        models.Index(fields=["dst_entry"], name="idx_dst_entry"),
+        models.Index(fields=["content_type", "object_id"], name="idx_content_object"),
+    ]
 
 
 class Note(models.Model, LoggableModelMixin):
@@ -26,6 +67,8 @@ class Note(models.Model, LoggableModelMixin):
     edit_timestamp: models.DateTimeField = models.DateTimeField(null=True)
 
     objects: NoteManager = NoteManager()
+
+    relations = GenericRelation(Relation, related_query_name="note")
 
     def propagate_from(self, log):
         return
@@ -60,26 +103,3 @@ class ArchivedNote(models.Model):
     content: models.CharField = models.CharField()
     timestamp: models.DateTimeField = models.DateTimeField()
     publishable: models.BooleanField = models.BooleanField(default=False)
-
-
-class Relation(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    src_entry = models.ForeignKey(
-        Entry, related_name="src_relations", on_delete=models.CASCADE
-    )
-    dst_entry = models.ForeignKey(
-        Entry, related_name="dst_relations", on_delete=models.CASCADE
-    )
-    note = models.ForeignKey(Note, related_name="relations", on_delete=models.CASCADE)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["src_entry", "dst_entry", "note"], name="unique_src_dst_note"
-            )
-        ]
-
-    indexes = [
-        models.Index(fields=["src_entry"], name="idx_src_entry"),
-        models.Index(fields=["note"], name="idx_note"),
-    ]

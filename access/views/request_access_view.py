@@ -41,11 +41,15 @@ class RequestAccess(APIView):
         """
 
         user: CradleUser = cast(CradleUser, request.user)
+        subtype = request.query_params.get("subtype", None)
 
         try:
-            entity = Entry.objects.get(id=entity_id)
+            if subtype:
+                entity = Entry.objects.get(id=entity_id, entry_class_id=subtype)
+            else:
+                entity = Entry.objects.get(id=entity_id)
         except Entry.DoesNotExist:
-            return Response("Entity does not exist", status=status.HTTP_404_NOT_FOUND)
+            return Response(status=status.HTTP_200_OK)
 
         if (
             user.is_superuser

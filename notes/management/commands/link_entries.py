@@ -20,4 +20,4 @@ class Command(BaseCommand):
         Relation.objects.all().delete()
 
         for i in Note.objects.all():
-            SmartLinkerTask().run(i)
+            SmartLinkerTask(None).run(i)

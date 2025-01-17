@@ -1,4 +1,6 @@
 from django.urls import path
-from .views import KnowledgeGraphList
+from .views import GraphTraverseView
 
-urlpatterns = [path("", KnowledgeGraphList.as_view(), name="knowledge_graph_list")]
+urlpatterns = [
+    path("query/", GraphTraverseView.as_view(), name="graph_traverse_query"),
+]

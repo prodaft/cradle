@@ -24,7 +24,6 @@ INSTALLED_APPS = [
     "logs.apps.LogsConfig",
     "file_transfer.apps.FileTransferConfig",
     "query.apps.QueryConfig",
-    "dashboards.apps.DashboardsConfig",
     "access.apps.AccessConfig",
     "entries.apps.EntriesConfig",
     "fleeting_notes.apps.FleetingNotesConfig",
