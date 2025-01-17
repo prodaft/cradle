@@ -7,6 +7,6 @@ from notes.serializers import NoteRetrieveWithLinksSerializer
 
 
 class HomePageStatisticsSerializer(serializers.Serializer):
-    notes = NoteRetrieveWithLinksSerializer(many=True)
+    notes = NoteRetrieveWithLinksSerializer(truncate=150, many=True)
     entities = EntryResponseSerializer(many=True)
     artifacts = EntryResponseSerializer(many=True)

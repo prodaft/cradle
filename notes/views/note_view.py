@@ -62,7 +62,6 @@ class NoteList(APIView):
 
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")
-            print(entrylist)
             queryset = Note.objects.annotate(
                 matching_entries=Count("entries", filter=Q(entries__in=entrylist))
             ).filter(matching_entries=len(entrylist))
@@ -76,7 +75,9 @@ class NoteList(APIView):
 
             if paginated_notes is not None:
                 serializer = NoteRetrieveSerializer(
-                    paginated_notes, truncate=200, many=True
+                    paginated_notes,
+                    truncate=int(request.query_params.get("truncate", 200)),
+                    many=True,
                 )
                 return paginator.get_paginated_response(serializer.data)
 

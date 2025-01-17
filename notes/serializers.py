@@ -190,13 +190,13 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
         """
         data = super().to_representation(obj)
 
+        data["entry_classes"] = data.pop("entries")
+
         if self.truncate == -1:
             return data
 
         if len(data["content"]) > self.truncate:
             data["content"] = data["content"][: self.truncate] + "..."
-
-        data["entry_classes"] = data.pop("entries")
 
         return data
 
@@ -214,7 +214,6 @@ class NoteRetrieveWithLinksSerializer(NoteRetrieveSerializer):
                 )} "{i.file_name}"\n"""
 
         data.pop("files")
-        data["entry_classes"] = data.pop("entries")
 
         return data
 
