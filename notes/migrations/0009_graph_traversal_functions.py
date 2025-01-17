@@ -9,6 +9,14 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunSQL(
+            """
+            DROP FUNCTION IF EXISTS get_readable_notes;
+            DROP FUNCTION IF EXISTS get_related_entry_paths_for_user;
+            DROP FUNCTION IF EXISTS get_minimum_distances_for_user;
+            DROP FUNCTION IF EXISTS get_paths_of_length_n_between_two_entries;
+            """
+        ),
         migrations.RunSQL(  # Clear the existing relations
             """
             CREATE OR REPLACE FUNCTION get_readable_notes(user_uuid UUID)

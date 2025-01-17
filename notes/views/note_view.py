@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db.models import Q, Count
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework import status
@@ -60,9 +61,11 @@ class NoteList(APIView):
         queryset = Note.objects.get_accessible_notes(user)
 
         if "references" in request.query_params:
-            queryset = queryset.filter(
-                entries__id__in=request.query_params.getlist("references")
-            )
+            entrylist = request.query_params.getlist("references")
+            print(entrylist)
+            queryset = Note.objects.annotate(
+                matching_entries=Count("entries", filter=Q(entries__in=entrylist))
+            ).filter(matching_entries=len(entrylist))
 
         filterset = NoteFilter(request.query_params, queryset=queryset)
 

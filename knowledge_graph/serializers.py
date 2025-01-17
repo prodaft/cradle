@@ -155,6 +155,11 @@ class InaccesibleQuery(BaseGraphQuery):
             return KnowledgeGraphSerializer(
                 entries_key=(None, "id", "subtype", "name", None),
                 entries=self.filter_vertices_by_access(result),
+                source={
+                    "id": self.validated_data["src"].id,
+                    "name": self.validated_data["src"].name,
+                    "subtype": self.validated_data["src"].entry_class_id,
+                },
             ).data
 
 
@@ -186,7 +191,14 @@ class BFSQuery(BaseGraphQuery):
             )
 
             result = list(map(lambda x: x[0], cursor.fetchall()))
-            return KnowledgeGraphSerializer(paths=result).data
+            return KnowledgeGraphSerializer(
+                paths=result,
+                source={
+                    "id": self.validated_data["src"].id,
+                    "name": self.validated_data["src"].name,
+                    "subtype": self.validated_data["src"].entry_class_id,
+                },
+            ).data
 
     def get_vertices(self):
         with connection.cursor() as cursor:
@@ -211,6 +223,11 @@ class BFSQuery(BaseGraphQuery):
             return KnowledgeGraphSerializer(
                 entries_key=(None, "id", "subtype", "name", None),
                 entries=self.filter_vertices_by_access(result),
+                source={
+                    "id": self.validated_data["src"].id,
+                    "name": self.validated_data["src"].name,
+                    "subtype": self.validated_data["src"].entry_class_id,
+                },
             ).data
 
 
@@ -227,7 +244,7 @@ class PathfindQuery(BaseGraphQuery):
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT can_access, path
+                SELECT path
                     FROM get_paths_of_length_n_between_two_entries(
                         %s, %s, %s, %s
                     ) rp
@@ -243,7 +260,14 @@ class PathfindQuery(BaseGraphQuery):
             )
 
             result = list(map(lambda x: x[0], cursor.fetchall()))
-            return KnowledgeGraphSerializer(paths=result).data
+            return KnowledgeGraphSerializer(
+                paths=result,
+                source={
+                    "id": self.validated_data["src"].id,
+                    "name": self.validated_data["src"].name,
+                    "subtype": self.validated_data["src"].entry_class_id,
+                },
+            ).data
 
     def get_vertices(self):
         with connection.cursor() as cursor:
@@ -271,6 +295,11 @@ class PathfindQuery(BaseGraphQuery):
             return KnowledgeGraphSerializer(
                 entries_key=(None, "id", "subtype", "name"),
                 entries=self.filter_vertices_by_access(result),
+                source={
+                    "id": self.validated_data["src"].id,
+                    "name": self.validated_data["src"].name,
+                    "subtype": self.validated_data["src"].entry_class_id,
+                },
             ).data
 
 
@@ -352,10 +381,11 @@ class GraphQueryResponseSerializer(serializers.Serializer):
 
 
 class KnowledgeGraphSerializer:
-    def __init__(self, entries_key=[], entries=[], paths=[]):
+    def __init__(self, source={}, entries_key=[], entries=[], paths=[]):
         self.entries = entries
         self.paths = paths
         self.entries_key = entries_key
+        self.source = source
 
     def group_entries(self, entries):
         if len(self.entries_key) == 0:
@@ -389,4 +419,9 @@ class KnowledgeGraphSerializer:
             else {}
         )
 
-        return {"entries": entries, "paths": self.paths, "colors": colors}
+        return {
+            "entries": entries,
+            "paths": self.paths,
+            "colors": colors,
+            "source": self.source,
+        }
