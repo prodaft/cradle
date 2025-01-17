@@ -136,7 +136,9 @@ export default function DashboardNote({
                             })
                         }
                     >
-                        <Preview htmlContent={parsedContent} />
+                        <div className="max-h-[36rem] overflow-y-auto">
+                            <Preview htmlContent={parsedContent} />
+                        </div>
                     </div>
 
                     {/* References Section (Now a separate component) */}

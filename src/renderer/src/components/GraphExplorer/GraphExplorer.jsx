@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import 'tailwindcss/tailwind.css';
 import { Menu, RefreshDouble, Search } from 'iconoir-react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
@@ -14,6 +14,7 @@ export default function GraphExplorer() {
     const [spacingCoefficient, setSpacingCoefficient] = useState(48);
     const [componentDistanceCoefficient, setComponentDistanceCoefficient] = useState(8);
     const [nodeRadiusCoefficient, setNodeRadiusCoefficient] = useState(4);
+    const [linkWidth, setLinkWidth] = useState(2);
     const [centerGravity, setCenterGravity] = useState(0.05);
     const [showControls, setShowControls] = useState(false);
     const [is3DMode, setIs3DMode] = useState(false);
@@ -23,24 +24,71 @@ export default function GraphExplorer() {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [showLegend, setShowLegend] = useState(true);
     const navigate = useNavigate();
-    const [highlightNodes, setHighlightNodes] = useState(new Set());
-    const [highlightLinks, setHighlightLinks] = useState(new Set());
+    const [selectedLinks, setSelectedLinks] = useState(new Set());
+    const [interestedNodes, setInterestedNodes] = useState(new Set());
     const [notesQuery, setNotesQuery] = useState(null);
 
-    const filterGraph = useCallback((searchValue) => {}, [data]);
+    const fgRef = useRef();
 
-    const refreshDisplay = useEffect(() => {
+    const filterGraph = useCallback(
+        (searchValue) => {
+            let matchedNodes = new Set();
+            let matchedNodesId = new Set();
+            for (let node of data.nodes) {
+                console.log(node);
+                if (
+                    node.label.toLowerCase() == searchValue.toLowerCase() ||
+                    node.label.toLowerCase().includes(searchValue.toLowerCase())
+                ) {
+                    matchedNodes.add(node);
+                    matchedNodesId.add(node.id);
+                }
+            }
+            if (matchedNodes.size === 0) {
+                return;
+            }
+            setInterestedNodes(matchedNodesId);
+            if (matchedNodes.size > 1) {
+                return;
+            }
+
+            let node = matchedNodes.values().next().value;
+
+            if (is3DMode) {
+                // Aim at node from outside it
+                const distance = 40;
+                const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
+
+                fgRef.current.cameraPosition(
+                    {
+                        x: node.x * distRatio,
+                        y: node.y * distRatio,
+                        z: node.z * distRatio,
+                    }, // new position
+                    node, // lookAt ({ x, y, z })
+                    3000, // ms transition duration
+                );
+            } else {
+                console.log('ASD');
+                fgRef.current.centerAt(node.x + 100, node.y, 1000);
+                fgRef.current.zoom(2.5, 1000);
+            }
+        },
+        [fgRef, data],
+    );
+
+    const refreshDisplay = useCallback(() => {
         setData({ nodes: [], links: [] });
         setCache({ nodes: new Set(), links: new Set() });
-        setHighlightNodes(new Set());
-        setHighlightLinks(new Set());
+        setInterestedNodes(new Set());
+        setSelectedLinks(new Set());
     }, []);
 
     return (
         <>
             <div className='w-full h-full rounded-md flex p-1.5 gap-1.5 flex-row overflow-y-hidden relative'>
                 <AlertDismissible alert={alert} setAlert={setAlert} />
-                <div className='h-full w-1/3 bg-gray-2 rounded-md'>
+                <div className='h-full w-2/5 bg-gray-2 rounded-md'>
                     <GraphQuery
                         setAlert={setAlert}
                         graphData={data}
@@ -49,26 +97,30 @@ export default function GraphExplorer() {
                         setEntryColors={setEntryGraphColors}
                         cache={cache}
                         setCache={setCache}
-                        setHighlightedLinks={setHighlightLinks}
+                        setHighlightedLinks={setSelectedLinks}
+                        setHighlightedNodes={setInterestedNodes}
                         notesQuery={notesQuery}
                     />
                 </div>
-                <div className='h-full w-2/3 bg-gray-2 rounded-md overflow-hidden'>
+                <div className='h-full w-3/5 bg-gray-2 rounded-md overflow-hidden'>
                     <div>
                         <Graph
                             data={data}
                             node_r={nodeRadiusCoefficient}
+                            linkWidth={linkWidth}
                             is3D={is3DMode}
                             spacingCoefficient={spacingCoefficient}
                             componentDistanceCoefficient={componentDistanceCoefficient}
                             centerGravity={centerGravity}
-                            highlightLinks={highlightLinks}
-                            setHighlightLinks={setHighlightLinks}
-                            highlightNodes={highlightNodes}
-                            setHighlightNodes={setHighlightNodes}
+                            selectedLinks={selectedLinks}
+                            setSelectedLinks={setSelectedLinks}
+                            interestedNodes={interestedNodes}
+                            setInterestedNodes={setInterestedNodes}
+                            fgRef={fgRef}
                             onLinkClick={(link) => {
                                 setNotesQuery({
                                     references: [link.source.id, link.target.id],
+                                    truncate: -1,
                                 });
                             }}
                         />
@@ -160,6 +212,25 @@ export default function GraphExplorer() {
                                                 value={nodeRadiusCoefficient}
                                                 onChange={(e) => {
                                                     setNodeRadiusCoefficient(
+                                                        Number(e.target.value),
+                                                    );
+                                                }}
+                                            />
+                                        </label>
+                                    </div>
+
+                                    <div className='flex flex-row space-x-2 w-full'>
+                                        <label className='flex items-center justify-between space-x-2 w-full'>
+                                            <span className='text-sm'>Link Width:</span>
+                                            <input
+                                                type='range'
+                                                min='1'
+                                                max='4'
+                                                step='0.5'
+                                                className='range range-primary'
+                                                value={linkWidth}
+                                                onChange={(e) => {
+                                                    setLinkWidth(
                                                         Number(e.target.value),
                                                     );
                                                 }}

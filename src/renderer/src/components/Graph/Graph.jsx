@@ -18,24 +18,22 @@ export default function Graph({
     data,
     node_r,
     is3D,
-    highlightLinks,
-    highlightNodes,
-    setHighlightLinks,
-    setHighlightNodes,
+    selectedLinks,
+    setSelectedLinks,
+    interestedNodes,
+    setInterestedNodes,
     onLinkClick,
+    fgRef,
+    linkWidth = 2,
     spacingCoefficient = 0,
     componentDistanceCoefficient = 0,
     centerGravity = 0,
 }) {
     const { useState, useCallback, useEffect } = React;
+
+    const [highlightNodes, setHighlightNodes] = useState(new Set());
+    const [highlightLinks, setHighlightLinks] = useState(new Set());
     const navigate = useNavigate();
-
-    const [hoverNode, setHoverNode] = useState(null);
-
-    const updateHighlight = () => {
-        setHighlightNodes(new Set(highlightNodes));
-        setHighlightLinks(new Set(highlightLinks));
-    };
 
     const handleNodeHover = (node) => {
         highlightNodes.clear();
@@ -44,8 +42,7 @@ export default function Graph({
             highlightNodes.add(node);
         }
 
-        setHoverNode(node || null);
-        updateHighlight();
+        setHighlightNodes(new Set(highlightNodes));
     };
 
     const handleLinkHover = (link) => {
@@ -58,17 +55,36 @@ export default function Graph({
             highlightNodes.add(link.target);
         }
 
-        updateHighlight();
+        setHighlightNodes(new Set(highlightNodes));
+        setHighlightLinks(new Set(highlightLinks));
+    };
+
+    const handleLinkClick = (link) => {
+        selectedLinks.clear();
+        interestedNodes.clear();
+
+        selectedLinks.add(link);
+        setSelectedLinks(new Set(selectedLinks));
+        setInterestedNodes(new Set([link.source.id, link.target.id]));
+        onLinkClick(link);
     };
 
     const paintRing = useCallback(
         (node, ctx) => {
             ctx.beginPath();
             ctx.arc(node.x, node.y, node_r * 1.25, 0, 2 * Math.PI, false);
-            ctx.fillStyle = node === hoverNode ? 'red' : 'orange';
+            ctx.fillStyle =
+                interestedNodes.has(node.id) && !highlightNodes.has(node)
+                    ? 'red'
+                    : 'orange';
             ctx.fill();
+            ctx.font = `6px Sans-Serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = 'white';
+            ctx.fillText(node.label, node.x, node.y + node_r * 1.25 + 5);
         },
-        [hoverNode, node_r],
+        [interestedNodes, node_r],
     );
 
     const GraphComponent = is3D ? ForceGraph3D : ForceGraph2D;
@@ -76,13 +92,28 @@ export default function Graph({
     return (
         <GraphComponent
             graphData={data}
+            ref={fgRef}
             nodeRelSize={node_r}
             autoPauseRedraw={false}
-            linkWidth={(link) => (highlightLinks.has(link) ? 2 : 1)}
-            linkColor={(link) => (highlightLinks.has(link) ? 'orange' : '#3A3A3A')}
-            linkDirectionalParticles={0} // Disable particles
+            linkWidth={(link) =>
+                highlightLinks.has(link) || selectedLinks.has(link)
+                    ? linkWidth + 1
+                    : linkWidth
+            }
+            linkColor={(link) =>
+                highlightLinks.has(link)
+                    ? 'orange'
+                    : selectedLinks.has(link)
+                      ? 'red'
+                      : '#3A3A3A'
+            }
+            linkDirectionalParticles={(link) =>
+                highlightLinks.has(link) || selectedLinks.has(link)
+            } // Disable particles
             nodeCanvasObjectMode={(node) =>
-                highlightNodes.has(node) ? 'before' : undefined
+                highlightNodes.has(node) || interestedNodes.has(node.id)
+                    ? 'before'
+                    : undefined
             }
             nodeLabel={(n) => n.label}
             backgroundColor='#151515'
@@ -92,7 +123,7 @@ export default function Graph({
             onNodeClick={(node) => {
                 navigate(createDashboardLink(node));
             }}
-            onLinkClick={onLinkClick}
+            onLinkClick={handleLinkClick}
         />
     );
 }

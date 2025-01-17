@@ -16,13 +16,14 @@ import { ForceGraph2D } from 'react-force-graph';
 import NotesList from '../NotesList/NotesList';
 
 export default function GraphQuery({
-  graphData,
+    graphData,
     setGraphData,
     entryColors,
     setEntryColors,
     cache,
     setCache,
     setHighlightedLinks,
+    setHighlightedNodes,
     setAlert,
     notesQuery,
 }) {
@@ -65,6 +66,9 @@ export default function GraphQuery({
             }
             let changes = { links: [], nodes: [] };
 
+            let links = [];
+            let nodes = [];
+
             let entries = flattenGraphEntries(response.data.entries);
             let source = response.data.source;
 
@@ -89,6 +93,7 @@ export default function GraphQuery({
                     );
                     changes.nodes.push(e);
                 }
+                nodes.push(e.id);
             }
 
             parsedQuery.result_type = 'paths';
@@ -98,8 +103,9 @@ export default function GraphQuery({
             for (let p of paths) {
                 let e = p[0];
                 for (let i = 1; i < p.length; i++) {
+                    let link = { source: e, target: p[i] };
                     if (!cache.links.has(e + p[i])) {
-                        changes.links.push({ source: e, target: p[i] });
+                        changes.links.push(link);
                         cache.links.add(e + p[i]);
                     }
                     if (!cache.nodes.has(e)) {
@@ -110,6 +116,7 @@ export default function GraphQuery({
                             label: truncateText(`unknown: ${e}`, 40),
                         });
                     }
+                    links.push(link);
                     e = p[i];
                 }
                 if (!cache.nodes.has(e)) {
@@ -128,7 +135,8 @@ export default function GraphQuery({
             }));
             setCache(cache);
             if (query.params.dst) {
-              setHighlightedLinks(new Set(changes.links));
+                setHighlightedLinks(new Set(links));
+                // setHighlightedNodes(new Set(nodes));
             }
         } catch (error) {
             displayError(setAlert, navigate)(error);
