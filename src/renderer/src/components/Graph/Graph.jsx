@@ -23,6 +23,7 @@ export default function Graph({
     interestedNodes,
     setInterestedNodes,
     onLinkClick,
+    labelSize,
     fgRef,
     linkWidth = 2,
     spacingCoefficient = 0,
@@ -78,11 +79,16 @@ export default function Graph({
                     ? 'red'
                     : 'orange';
             ctx.fill();
-            ctx.font = `6px Sans-Serif`;
+            if (!interestedNodes.has(node.id) || highlightNodes.has(node)) return;
+            ctx.font = `${labelSize}px Sans-Serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillStyle = 'white';
-            ctx.fillText(node.label, node.x, node.y + node_r * 1.25 + 5);
+            ctx.fillText(
+                node.label,
+                node.x,
+                node.y - node_r * 1.25 - labelSize / 2 - 1,
+            );
         },
         [interestedNodes, node_r],
     );

@@ -18,7 +18,6 @@ import NotesList from '../NotesList/NotesList';
 export default function GraphQuery({
     graphData,
     setGraphData,
-    entryColors,
     setEntryColors,
     cache,
     setCache,
@@ -60,38 +59,39 @@ export default function GraphQuery({
             parsedQuery.result_type = 'vertices';
 
             let response = await queryGraph(parsedQuery);
-            let colors = response.data.colors;
-            if (!entryColors) {
-                setEntryColors(colors);
-            }
+            let allColors = response.data.colors;
+            console.log(allColors);
             let changes = { links: [], nodes: [] };
 
             let links = [];
             let nodes = [];
+            let colors = {}
 
             let entries = flattenGraphEntries(response.data.entries);
             let source = response.data.source;
 
-            if (!cache.nodes.has(source.id)) {
-                cache.nodes.add(source.id);
+            if (!cache.nodesSet.has(source.id)) {
+                cache.nodesSet.add(source.id);
                 source.color =
-                    source.subtype in colors ? colors[source.subtype] : '#888888';
+                    source.subtype in allColors ? allColors[source.subtype] : '#888888';
                 source.label = truncateText(
                     `${source.subtype}: ${source.name ? source.name : source.id}`,
                     40,
                 );
                 changes.nodes.push(source);
+                colors[source.subtype] = source.color;
             }
 
             for (let e of entries) {
-                if (!cache.nodes.has(e.id)) {
-                    cache.nodes.add(e.id);
-                    e.color = e.subtype in colors ? colors[e.subtype] : '#888888';
+                if (!cache.nodesSet.has(e.id)) {
+                    cache.nodesSet.add(e.id);
+                    e.color = e.subtype in allColors ? allColors[e.subtype] : '#888888';
                     e.label = truncateText(
                         `${e.subtype}: ${e.name ? e.name : e.id}`,
                         40,
                     );
                     changes.nodes.push(e);
+                    colors[e.subtype] = e.color;
                 }
                 nodes.push(e.id);
             }
@@ -104,23 +104,27 @@ export default function GraphQuery({
                 let e = p[0];
                 for (let i = 1; i < p.length; i++) {
                     let link = { source: e, target: p[i] };
-                    if (!cache.links.has(e + p[i])) {
+                    if (!cache.linksSet.has(e + p[i])) {
                         changes.links.push(link);
-                        cache.links.add(e + p[i]);
+                        cache.linksSet.add(e + p[i]);
+                        cache.links[e + p[i]] = link;
+                    } else {
+                      link = cache.links[e + p[i]]
                     }
-                    if (!cache.nodes.has(e)) {
-                        cache.nodes.add(e);
+                    if (!cache.nodesSet.has(e)) {
+                        cache.nodesSet.add(e);
                         changes.nodes.push({
                             id: e,
                             color: '#888888',
                             label: truncateText(`unknown: ${e}`, 40),
                         });
+                        nodes.push(e);
                     }
                     links.push(link);
                     e = p[i];
                 }
-                if (!cache.nodes.has(e)) {
-                    cache.nodes.add(e);
+                if (!cache.nodesSet.has(e)) {
+                    cache.nodesSet.add(e);
                     changes.nodes.push({
                         id: e,
                         color: '#888888',
@@ -134,9 +138,10 @@ export default function GraphQuery({
                 links: [...prev.links, ...changes.links],
             }));
             setCache(cache);
-            if (query.params.dst) {
-                setHighlightedLinks(new Set(links));
-                // setHighlightedNodes(new Set(nodes));
+            setEntryColors((prev) => ({ ...prev, ...colors}));
+            if (query.operation === 'pathfind') {
+                setHighlightedLinks(new Set([...links, ...changes.links]));
+                setHighlightedNodes(new Set(nodes));
             }
         } catch (error) {
             displayError(setAlert, navigate)(error);

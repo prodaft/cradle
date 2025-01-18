@@ -16,10 +16,11 @@ export default function GraphExplorer() {
     const [nodeRadiusCoefficient, setNodeRadiusCoefficient] = useState(4);
     const [linkWidth, setLinkWidth] = useState(2);
     const [centerGravity, setCenterGravity] = useState(0.05);
+    const [labelSize, setLabelSize] = useState(5);
     const [showControls, setShowControls] = useState(false);
     const [is3DMode, setIs3DMode] = useState(false);
     const [entryGraphColors, setEntryGraphColors] = useState(null);
-    const [cache, setCache] = useState({ nodes: new Set(), links: new Set() });
+    const [cache, setCache] = useState({ links: {}, nodes: {}, nodesSet: new Set(), linksSet: new Set() });
     const [searchValue, setSearchValue] = useState('');
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [showLegend, setShowLegend] = useState(true);
@@ -69,7 +70,6 @@ export default function GraphExplorer() {
                     3000, // ms transition duration
                 );
             } else {
-                console.log('ASD');
                 fgRef.current.centerAt(node.x + 100, node.y, 1000);
                 fgRef.current.zoom(2.5, 1000);
             }
@@ -79,7 +79,7 @@ export default function GraphExplorer() {
 
     const refreshDisplay = useCallback(() => {
         setData({ nodes: [], links: [] });
-        setCache({ nodes: new Set(), links: new Set() });
+        setCache({ links: {}, nodes: {}, nodesSet: new Set(), linksSet: new Set() });
         setInterestedNodes(new Set());
         setSelectedLinks(new Set());
     }, []);
@@ -93,7 +93,6 @@ export default function GraphExplorer() {
                         setAlert={setAlert}
                         graphData={data}
                         setGraphData={setData}
-                        entryColors={entryGraphColors}
                         setEntryColors={setEntryGraphColors}
                         cache={cache}
                         setCache={setCache}
@@ -116,6 +115,7 @@ export default function GraphExplorer() {
                             setSelectedLinks={setSelectedLinks}
                             interestedNodes={interestedNodes}
                             setInterestedNodes={setInterestedNodes}
+                            labelSize={labelSize}
                             fgRef={fgRef}
                             onLinkClick={(link) => {
                                 setNotesQuery({
@@ -231,6 +231,25 @@ export default function GraphExplorer() {
                                                 value={linkWidth}
                                                 onChange={(e) => {
                                                     setLinkWidth(
+                                                        Number(e.target.value),
+                                                    );
+                                                }}
+                                            />
+                                        </label>
+                                    </div>
+
+                                    <div className='flex flex-row space-x-2 w-full'>
+                                        <label className='flex items-center justify-between space-x-2 w-full'>
+                                            <span className='text-sm'>Label Size:</span>
+                                            <input
+                                                type='range'
+                                                min='3'
+                                                max='16'
+                                                step='1'
+                                                className='range range-primary'
+                                                value={labelSize}
+                                                onChange={(e) => {
+                                                    setLabelSize(
                                                         Number(e.target.value),
                                                     );
                                                 }}
