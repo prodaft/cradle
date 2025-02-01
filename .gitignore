@@ -5,8 +5,7 @@ env
 Pipfile.lock
 .coverage
 reports
-error.log
-success.log
+exceptions.log
 .idea
 static
 **/__pycache__
