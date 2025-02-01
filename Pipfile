@@ -27,12 +27,12 @@ ipython = "*"
 drf-spectacular = "*"
 django-filter = "*"
 pytest-django = "*"
-sentry-sdk = {extras = ["django"], version = "*"}
 gunicorn = "*"
 psycopg2 = "*"
 environs = "*"
 coverage = "*"
 django-lifecycle = "*"
+sentry-sdk = {extras = ["django"], version = "*"}
 
 [dev-packages]
 

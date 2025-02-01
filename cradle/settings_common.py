@@ -72,6 +72,7 @@ def get_log_directory():
     """
     log_dir = "/var/log/"
     cradle_log_dir = "/var/log/cradle/"
+
     if os.path.exists(log_dir) and os.access(log_dir, os.W_OK):
         if not os.path.exists(cradle_log_dir):
             try:
@@ -79,6 +80,7 @@ def get_log_directory():
             except OSError:
                 return str(BASE_DIR)
         return cradle_log_dir
+
     return str(BASE_DIR)
 
 
@@ -87,36 +89,33 @@ log_directory = get_log_directory()
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "handlers": {
-        "success_file": {
-            "level": "WARNING",
-            "class": "logging.FileHandler",
-            "filename": os.path.join(log_directory, "success.log"),
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
         },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
         "error_file": {
-            "level": "WARNING",
+            "level": "ERROR",
             "class": "logging.FileHandler",
             "filename": os.path.join(log_directory, "error.log"),
+            "formatter": "verbose",
         },
         "console": {
             "class": "logging.StreamHandler",
         },
     },
     "loggers": {
-        "django.success": {
-            "handlers": ["success_file"],
-            "level": "WARNING",
+        "django.request": {
+            "handlers": ["error_file", "console"],
+            "level": "ERROR",
             "propagate": False,
         },
-        "django.error": {
-            "handlers": ["error_file"],
-            "level": "WARNING",
-            "propagate": False,
-        },
-        #        "django.db.backends": {
-        #            "handlers": ["console"],
-        #            "level": "DEBUG",
-        #        },
     },
 }
 
