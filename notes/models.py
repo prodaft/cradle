@@ -1,7 +1,6 @@
 from django.db import connection, models
 
-from .markdown.parser import LinkTreeNode
-from . import parser
+from .markdown.parser import LinkTreeNode, cradle_connections, heading_hierarchy
 from entries.models import Entry
 from logs.models import LoggableModelMixin
 from .managers import NoteManager
@@ -80,8 +79,8 @@ class Note(models.Model, LoggableModelMixin):
     @property
     def reference_tree(self) -> LinkTreeNode:
         if self._reference_tree is None:
-            flattree = parser.cradle_connections(self.content)
-            self._reference_tree = parser.heading_hierarchy(flattree)
+            flattree = cradle_connections(self.content)
+            self._reference_tree = heading_hierarchy(flattree)
 
         return self._reference_tree
 
