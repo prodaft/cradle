@@ -26,8 +26,8 @@ class EntryClassCreationTask(BaseTask):
 
         nonexistent_entries = set()
 
-        for r in extract_links(note.content):
-            if not EntryClass.objects.filter(subtype=r.class_subtype).exists():
+        for r in note.reference_tree.links():
+            if not EntryClass.objects.filter(subtype=r.key).exists():
                 if not settings.AUTOREGISTER_ARTIFACT_TYPES:
                     nonexistent_entries.add(r.class_subtype)
                 else:

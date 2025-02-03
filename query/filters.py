@@ -20,5 +20,5 @@ class EntryFilter(django_filters.FilterSet):
 
     def filter_name_exact(self, queryset, name, value):
         if value:
-            return queryset.filter(name=value)
+            return queryset.filter(name=value.strip())
         return queryset

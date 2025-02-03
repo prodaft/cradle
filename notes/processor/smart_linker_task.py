@@ -1,10 +1,9 @@
 import itertools
 from entries.enums import EntryType
+from .. import parser
 
 from .base_task import BaseTask
 from ..models import Note, Relation
-
-from .. import parser
 
 
 class SmartLinkerTask(BaseTask):
@@ -19,10 +18,7 @@ class SmartLinkerTask(BaseTask):
             The processed note object.
         """
 
-        flattree = parser.cradle_connections(note.content)
-        tree = parser.heading_hierarchy(flattree)
-
-        pairs = tree.relation_pairs()
+        pairs = note.reference_tree.relation_pairs()
 
         pairs_resolved = set()
 

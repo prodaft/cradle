@@ -24,10 +24,8 @@ class EntryPopulationTask(BaseTask):
         # references will be a list of tuples which describe matches in
         # the note content
 
-        for r in extract_links(note.content):
-            entry = Entry.objects.filter(
-                name=r.name, entry_class__subtype=r.class_subtype
-            )
+        for r in note.reference_tree.links():
+            entry = Entry.objects.filter(name=r.value, entry_class__subtype=r.key)
             if len(entry) == 0:
                 entry_class: EntryClass = EntryClass.objects.get(
                     subtype=r.class_subtype

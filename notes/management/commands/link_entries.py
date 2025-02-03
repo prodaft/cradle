@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 
+from entries.models import Entry
 from notes.models import Note, Relation
 from notes.processor.smart_linker_task import SmartLinkerTask
 
@@ -18,6 +19,7 @@ class Command(BaseCommand):
             **options: Arbitrary keyword arguments.
         """
         Relation.objects.all().delete()
+        Entry.objects.all().delete()
 
         for i in Note.objects.all():
             SmartLinkerTask(None).run(i)

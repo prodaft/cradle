@@ -1,4 +1,5 @@
 from typing import cast
+from django_lifecycle.mixins import transaction
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -129,16 +130,31 @@ class EntryClassDetail(APIView):
             return Response("User is not an admin.", status=status.HTTP_403_FORBIDDEN)
 
         try:
-            entity = EntryClass.objects.get(subtype=class_subtype)
+            entryclass = EntryClass.objects.get(subtype=class_subtype)
         except EntryClass.DoesNotExist:
             return Response(
                 "There is no entry class with specified subtype.",
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        serializer = EntryClassSerializer(entity, data=request.data)
+        new_subtype = request.data.pop("subtype", None)
+        request.data["subtype"] = class_subtype
+
+        serializer = EntryClassSerializer(entryclass, data=request.data)
+
         if serializer.is_valid():
             serializer.save()
-            serializer.instance.log_edit(user)
-            return Response(serializer.data)
+
+            with transaction.atomic():
+                serializer.save()
+                response = dict(serializer.data)
+
+                if new_subtype != class_subtype and new_subtype:
+                    entryclass = entryclass.rename(new_subtype)
+                    response["subtype"] = new_subtype
+
+                entryclass.log_edit(user)
+
+            return Response(response)
+
         return Response(serializer.error_messages, status=status.HTTP_400_BAD_REQUEST)

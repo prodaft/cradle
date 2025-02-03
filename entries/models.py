@@ -1,6 +1,6 @@
 from django.db import connection, models
 from django_lifecycle import AFTER_DELETE, LifecycleModel, LifecycleModelMixin, hook
-from django_lifecycle.mixins import AFTER_CREATE
+from django_lifecycle.mixins import AFTER_CREATE, transaction
 
 from logs.models import LoggableModelMixin
 import json
@@ -18,6 +18,8 @@ from .exceptions import (
     InvalidRegexException,
 )
 from .enums import EntryType
+from notes.markdown.renderer import remap_links
+
 import uuid
 import re
 
@@ -47,6 +49,56 @@ class EntryClass(models.Model, LoggableModelMixin):
             defaults=dict(type="artifact"),
         )
         return eclass.pk
+
+    def delete(self, *args, **kwargs):
+        from notes.models import Note
+
+        notes = []
+
+        for e in self.entries.all():
+            notes.extend(e.notes.all())
+
+        unique_notes = list(set(notes))
+
+        for i in unique_notes:
+            i.content = remap_links(i.content, {self.subtype: None})
+
+        Note.objects.bulk_update(notes, ["content"])
+        super().delete(*args, **kwargs)
+
+    def rename(self, new_subtype: str):
+        if new_subtype == self.subtype or not new_subtype:
+            return None
+
+        from notes.models import Note
+
+        with transaction.atomic():
+            entries = self.entries.all()
+
+            for entry in entries:
+                entry.entry_class_id = new_subtype
+
+            Entry.objects.bulk_update(entries, ["entry_class_id"])
+
+            old_subtype = self.subtype
+
+            self.subtype = new_subtype
+            self.save()
+
+            notes = []
+
+            for e in self.entries.all():
+                notes.extend(e.notes.all())
+
+            unique_notes = list(set(notes))
+
+            for i in unique_notes:
+                i.content = remap_links(i.content, {old_subtype: new_subtype})
+
+            Note.objects.bulk_update(notes, ["content"])
+
+            EntryClass.objects.get(subtype=old_subtype).delete()
+            return self
 
     def validate_text(self, t: str):
         """
@@ -120,8 +172,9 @@ class Entry(LifecycleModel, LoggableModelMixin):
     is_public: models.BooleanField = models.BooleanField(default=False)
     entry_class: models.ForeignKey[uuid.UUID, EntryClass] = models.ForeignKey(
         EntryClass,
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         null=False,
+        related_name="entries",
     )
 
     name: models.CharField = models.CharField()
@@ -138,6 +191,12 @@ class Entry(LifecycleModel, LoggableModelMixin):
     objects = EntryManager()
     entities = EntityManager()
     artifacts = ArtifactManager()
+
+    def __init__(self, *args, **kwargs):
+        if "name" in kwargs:
+            kwargs["name"] = kwargs["name"].strip()
+
+        super().__init__(*args, **kwargs)
 
     def __repr__(self):
         return f"[[{self.entry_class.subtype}:{self.name}]]"

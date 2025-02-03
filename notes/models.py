@@ -1,4 +1,7 @@
 from django.db import connection, models
+
+from .markdown.parser import LinkTreeNode
+from . import parser
 from entries.models import Entry
 from logs.models import LoggableModelMixin
 from .managers import NoteManager
@@ -55,7 +58,9 @@ class Note(models.Model, LoggableModelMixin):
     publishable: models.BooleanField = models.BooleanField(default=False)
     timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
 
-    entries: models.ManyToManyField = models.ManyToManyField(Entry)
+    entries: models.ManyToManyField = models.ManyToManyField(
+        Entry, related_name="notes"
+    )
     author = models.ForeignKey[CradleUser](
         CradleUser, related_name="author", on_delete=models.SET_NULL, null=True
     )
@@ -69,6 +74,16 @@ class Note(models.Model, LoggableModelMixin):
     objects: NoteManager = NoteManager()
 
     relations = GenericRelation(Relation, related_query_name="note")
+
+    _reference_tree = None
+
+    @property
+    def reference_tree(self) -> LinkTreeNode:
+        if self._reference_tree is None:
+            flattree = parser.cradle_connections(self.content)
+            self._reference_tree = parser.heading_hierarchy(flattree)
+
+        return self._reference_tree
 
     def propagate_from(self, log):
         return
