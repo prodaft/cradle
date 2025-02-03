@@ -36,7 +36,7 @@ class NoteQuerySet(models.QuerySet):
 
         rels = (
             self.model.entries.through.objects.filter(
-                entry__entry_class__type=EntryType.ENTITY, note__in=self
+                entry__entry_class__type=EntryType.ENTITY, notes__in=self
             )
             .values("note_id")
             .annotate(
@@ -68,7 +68,7 @@ class NoteQuerySet(models.QuerySet):
 
         rels = (
             self.model.entries.through.objects.filter(
-                entry__entry_class__type=EntryType.ENTITY, note__in=self
+                entry__entry_class__type=EntryType.ENTITY, notes__in=self
             )
             .values("note_id")
             .annotate(
@@ -132,7 +132,7 @@ class NoteManager(models.Manager):
         Returns:
             models.QuerySet: The entries referenced by the notes
         """
-        entries = Entry.objects.filter(note__in=notes).distinct()
+        entries = Entry.objects.filter(notes__in=notes).distinct()
 
         return entries
 
@@ -223,7 +223,7 @@ class NoteManager(models.Manager):
 
         """
         connected_entries = Entry.objects.annotate(
-            note_count=Count("note", filter=Q(note__id__in=note_list))
+            note_count=Count("notes", filter=Q(notes__id__in=note_list))
         )
 
         connected_entries = connected_entries.filter(note_count__gt=0)
@@ -231,7 +231,7 @@ class NoteManager(models.Manager):
         entry_pairs = (
             connected_entries.values(
                 first_node=F("id"),
-                second_node=F("note__entries__id"),
+                second_node=F("notes__entries__id"),
             )
             .distinct()
             .filter(first_node__lt=F("second_node"))

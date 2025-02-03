@@ -11,7 +11,7 @@ class EntryFilter(django_filters.FilterSet):
     name = django_filters.CharFilter(lookup_expr="icontains")
     name_exact = django_filters.CharFilter(method="filter_name_exact")
     referenced_in = django_filters.UUIDFilter(
-        field_name="note__id", lookup_expr="exact"
+        field_name="notes__id", lookup_expr="exact"
     )
 
     class Meta:

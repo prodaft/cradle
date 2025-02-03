@@ -29,10 +29,10 @@ class EntryClassCreationTask(BaseTask):
         for r in note.reference_tree.links():
             if not EntryClass.objects.filter(subtype=r.key).exists():
                 if not settings.AUTOREGISTER_ARTIFACT_TYPES:
-                    nonexistent_entries.add(r.class_subtype)
+                    nonexistent_entries.add(r.key)
                 else:
                     entry = EntryClass.objects.create(
-                        type=EntryType.ARTIFACT, subtype=r.class_subtype
+                        type=EntryType.ARTIFACT, subtype=r.key
                     )
                     entry.log_create(self.user)
 

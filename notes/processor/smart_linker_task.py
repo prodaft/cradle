@@ -1,6 +1,6 @@
 import itertools
 from entries.enums import EntryType
-from .. import parser
+from ..markdown.parser import Link
 
 from .base_task import BaseTask
 from ..models import Note, Relation
@@ -24,7 +24,7 @@ class SmartLinkerTask(BaseTask):
 
         entries = {}
         for e in note.entries.all():
-            entries[parser.Link(e.entry_class.subtype, e.name)] = e
+            entries[Link(e.entry_class.subtype, e.name)] = e
 
         entities = {
             x for x in entries.values() if x.entry_class.type == EntryType.ENTITY

@@ -86,7 +86,7 @@ class NotePublishList(APIView):
 
         required_notes = Note.objects.get_in_order(query_serializer.data["note_ids"])
         referenced_entities = Entry.objects.filter(
-            entry_class__type=EntryType.ENTITY, note__in=required_notes
+            entry_class__type=EntryType.ENTITY, notes__in=required_notes
         ).distinct()
 
         if not Access.objects.has_access_to_entities(

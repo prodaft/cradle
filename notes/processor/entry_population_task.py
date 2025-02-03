@@ -27,12 +27,10 @@ class EntryPopulationTask(BaseTask):
         for r in note.reference_tree.links():
             entry = Entry.objects.filter(name=r.value, entry_class__subtype=r.key)
             if len(entry) == 0:
-                entry_class: EntryClass = EntryClass.objects.get(
-                    subtype=r.class_subtype
-                )
+                entry_class: EntryClass = EntryClass.objects.get(subtype=r.key)
 
                 if entry_class.type == EntryType.ARTIFACT:
-                    entry = Entry.objects.create(name=r.name, entry_class=entry_class)
+                    entry = Entry.objects.create(name=r.value, entry_class=entry_class)
                     entry.log_create(self.user)
                 else:
                     raise EntriesDoNotExistException([r])
