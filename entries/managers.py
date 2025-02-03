@@ -26,7 +26,7 @@ class EntryQuerySet(models.QuerySet):
         """
         Get entries that are not referenced by any note
         """
-        return self.filter(note=None)
+        return self.filter(notes=None)
 
     def _neighbour_query(self, user: CradleUser | None) -> tuple[str, list[str]]:
         query_parts = []
