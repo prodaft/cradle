@@ -3,6 +3,7 @@ import DashboardNote from '../DashboardNote/DashboardNote';
 import { searchNote } from '../../services/notesService/notesService';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Pagination from '../Pagination/Pagination';
+import { useSearchParams } from 'react-router-dom';
 
 export default function NotesList({ query }) {
     const [notes, setNotes] = useState([]);
@@ -10,9 +11,11 @@ export default function NotesList({ query }) {
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const fetchNotes = useCallback(() => {
         setLoading(true);
+
         searchNote({ page, ...query })
             .then((response) => {
                 setNotes(response.data.results);
@@ -30,10 +33,15 @@ export default function NotesList({ query }) {
     }, [page, query]);
 
     useEffect(() => {
+        setPage(searchParams.get('page') || 1);
         fetchNotes();
     }, [fetchNotes]);
 
     const handlePageChange = (newPage) => {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('page', newPage);
+        setSearchParams(newParams);
+
         setPage(newPage);
     };
 

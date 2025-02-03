@@ -1,5 +1,6 @@
 import CodeMirror from '@uiw/react-codemirror';
 import { vim } from '@replit/codemirror-vim';
+import vimIcon from '../../assets/vim32x32.gif';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
 import { drawSelection } from '@uiw/react-codemirror';
@@ -320,7 +321,7 @@ export default function Editor({
                             className='flex flex-row items-center cursor-pointer'
                         >
                             <img
-                                src='https://www.vim.org/images/vim32x32.gif'
+                                src={vimIcon}
                                 alt=''
                                 style={{ width: '25px' }}
                             />

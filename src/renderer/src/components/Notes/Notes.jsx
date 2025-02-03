@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search } from 'iconoir-react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import NotesList from '../NotesList/NotesList';
+import { useSearchParams } from 'react-router-dom';
 
 /**
  * Notes component
@@ -14,20 +15,32 @@ import NotesList from '../NotesList/NotesList';
  * @constructor
  */
 export default function Notes() {
+    const [searchParams, setSearchParams] = useSearchParams();
+
     const [searchFilters, setSearchFilters] = useState({
-        content: '',
-        author__username: '',
+        content: searchParams.get('content') || '',
+        author__username: searchParams.get('author__username') || '',
     });
+
     const [submittedFilters, setSubmittedFilters] = useState({
-        content: '',
-        author__username: '',
+        content: searchParams.get('content') || '',
+        author__username: searchParams.get('author__username') || '',
     });
+
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
 
     useEffect(() => {}, [submittedFilters]);
 
     const handleSearchSubmit = (e) => {
         e.preventDefault();
+
+        const { content, author__username } = searchFilters;
+
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('content', searchFilters.content);
+        newParams.set('author__username', searchFilters.author__username);
+        setSearchParams(newParams);
+
         setSubmittedFilters(searchFilters);
     };
 
@@ -35,6 +48,13 @@ export default function Notes() {
         const { name, value } = e.target;
         setSearchFilters((prev) => ({ ...prev, [name]: value }));
     };
+
+    useEffect(() => {
+      setSearchFilters({
+        content: searchParams.get('content') || '',
+        author__username: searchParams.get('author__username') || '',
+      });
+    }, [searchParams]);
 
     return (
         <div className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'>
