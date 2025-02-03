@@ -1,4 +1,4 @@
-from django.db import connection, models
+from django.db import models
 
 from .markdown.parser import LinkTreeNode, cradle_connections, heading_hierarchy
 from entries.models import Entry
@@ -7,14 +7,8 @@ from .managers import NoteManager
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django_lifecycle import (
-    AFTER_CREATE,
-    AFTER_DELETE,
     LifecycleModel,
-    hook,
-    BEFORE_UPDATE,
-    AFTER_UPDATE,
 )
-import json
 
 import uuid
 from user.models import CradleUser
