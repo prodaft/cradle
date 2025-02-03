@@ -10,6 +10,7 @@ import {
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { SketchPicker } from 'react-color';
 import { PopoverPicker } from '../PopoverPicker/PopoverPicker';
+import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 
 /**
  * AdminPanelAdd component - This component is used to display the form for adding a new Entity.
@@ -103,6 +104,7 @@ export default function AdminPanelEdit({ type }) {
                 data.description = description;
                 await editEntity(data, id);
             } else if (type === 'EntryType') {
+                data.subtype = name;
                 data.color = color;
                 data.prefix = prefix;
                 await editArtifactClass(data, id);
@@ -155,8 +157,8 @@ export default function AdminPanelEdit({ type }) {
                                     type='text'
                                     className='form-input input input-ghost-primary input-block focus:ring-0'
                                     labelText='Name'
-                                    disabled
                                     value={name}
+                                    disabled
                                 />
 
                                 <div className='w-full'>
@@ -170,8 +172,8 @@ export default function AdminPanelEdit({ type }) {
                                         <select
                                             className='form-select select select-ghost-primary select-block focus:ring-0'
                                             name='subtype'
-                                            disabled
                                             value={subtype}
+                                            disabled
                                         >
                                             <option value={subtype}>{subtype}</option>
                                         </select>
@@ -222,6 +224,7 @@ export default function AdminPanelEdit({ type }) {
         }, []);
 
         return (
+          <>
             <div className='flex flex-row items-center justify-center h-screen'>
                 <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 md:h-fit xl:w-1/3'>
                     <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8'>
@@ -250,8 +253,7 @@ export default function AdminPanelEdit({ type }) {
                                     labelText='Name'
                                     className='form-input input input-ghost-primary input-block focus:ring-0'
                                     value={name}
-                                    disabled
-                                    handleInput={() => {}}
+                                    handleInput={setName}
                                 />
                                 <FormField
                                     name='catalyst_type'
@@ -340,6 +342,7 @@ export default function AdminPanelEdit({ type }) {
                     </div>
                 </div>
             </div>
+          </>
         );
     }
 }
