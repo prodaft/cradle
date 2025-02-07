@@ -271,7 +271,7 @@ export default function Editor({
     const debouncedSetMarkdownContent = useRef(
         debounce((text) => {
             setMarkdownContent(text);
-        }, 0),
+        }, 100),
     ).current;
 
     const onEditorChange = useCallback(
