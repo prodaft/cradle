@@ -1,5 +1,3 @@
-import QueryString from 'qs';
-import pluralize from 'pluralize';
 import DashboardCard from '../../components/DashboardCard/DashboardCard';
 import DashboardHorizontalSection from '../../components/DashboardHorizontalSection/DashboardHorizontalSection';
 

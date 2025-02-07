@@ -188,4 +188,16 @@ const parseMarkdown = async (mdContent, fileData) => {
     }
 };
 
+export function parseWorker(){
+  // In some React component or service file
+  const worker = new Worker(new URL('./parserWorker.js', import.meta.url), { type: 'module' });
+
+  worker.postMessage({
+    token: localStorage.getItem('access'),
+    apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
+  });
+
+  return worker
+}
+
 export default parseMarkdown;

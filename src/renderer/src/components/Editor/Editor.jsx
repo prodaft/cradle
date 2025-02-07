@@ -54,6 +54,7 @@ export default function Editor({
     const [showFileList, setShowFileList] = useState(false);
     const [lspPack, setLspPack] = useState({ classes: {}, instances: {} });
     const [pendingFiles, setPendingFiles] = useState(EMPTY_FILE_LIST);
+    const [codeMirrorContent, setCodeMirrorContent] = useState("")
     const autoLinkId = useId();
     const vimModeId = useId();
     const editorRef = useRef(null);
@@ -227,8 +228,6 @@ export default function Editor({
             content = doc.sliceDoc(from, to);
         }
 
-        console.log(from, to, content);
-
         const words = content.split(/(\s+)/);
 
         const trim_word = (x) => {
@@ -260,18 +259,19 @@ export default function Editor({
             position += word.length;
         });
 
-        setMarkdownContent(
-            markdownContent.substring(0, from) +
+        let text = markdownContent.substring(0, from) +
                 linkedMarkdown +
-                markdownContent.substring(to),
-        );
+                markdownContent.substring(to);
+
+        setMarkdownContent(text);
+        setCodeMirrorContent(text);
     };
 
     // Create a debounced function (adjust wait time as needed).
     const debouncedSetMarkdownContent = useRef(
         debounce((text) => {
             setMarkdownContent(text);
-        }, 300),
+        }, 0),
     ).current;
 
     const onEditorChange = useCallback(
@@ -291,6 +291,12 @@ export default function Editor({
                 console.log(error);
             });
     }, []);
+
+    useEffect(() => {
+      if(codeMirrorContent == "") {
+        setCodeMirrorContent(markdownContent)
+      }
+    }, [markdownContent])
 
     return (
         <div className='h-full w-full flex flex-col flex-1'>
@@ -357,13 +363,14 @@ export default function Editor({
                     <CodeMirror
                         name='markdown-input'
                         id='markdown-input'
+                        key='markdown-input'
+                        value={codeMirrorContent}
                         data-testid='markdown-input'
                         theme={isLightMode ? eclipse : vscodeDark}
                         height='100%'
                         extensions={extensions}
                         className='w-full h-full resize-none'
                         onChange={onEditorChange}
-                        value={markdownContent}
                         ref={editorRef}
                     />
                 </div>
