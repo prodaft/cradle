@@ -1,6 +1,9 @@
 from .settings_common import *
+from environs import Env
 
-SECRET_KEY = "qfz@bjg4e-+#cx%z4ffro0^j_x_i^vdu^++_2ro)d)%$rj*6qz"
+env = Env()
+env.read_env()  # Read environment variables from a .env file if present
+
 
 DEBUG = False
 
@@ -8,21 +11,22 @@ ALLOWED_HOSTS = ["cradle.prodaft.com"]
 
 CSRF_TRUSTED_ORIGINS = ["https://cradle.prodaft.com"]
 
+SECRET_KEY = env.str("SECRET_KEY", "django-insecure-default-secret-key")
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "cradle",
-        "USER": "cradle",
-        "PASSWORD": "yEApjBMQovSQUiv",
-        "HOST": "localhost",
-        "PORT": "5432",
+        "ENGINE": env.str("DB_ENGINE", "django.db.backends.postgresql"),
+        "NAME": env.str("DB_NAME", "cradle"),
+        "USER": env.str("DB_USER", "postgres"),
+        "PASSWORD": env.str("DB_PASSWORD", "postgres"),
+        "HOST": env.str("DB_HOST", "localhost"),
+        "PORT": env.str("DB_PORT", "5432"),
     }
 }
 
 MINIO_CONFIG = {
-    "endpoint": "cradle.prodaft.com:9000",
-    "access_key": "admin",
-    "secret_key": "RJ4Zy78GJuJ26Uz",
+    "endpoint": env.str("MINIO_ENDPOINT", "cradle.prodaft.com:9000"),
+    "access_key": env.str("MINIO_ROOT_USER", "admin"),
+    "secret_key": env.str("MINIO_ROOT_PASSWORD", ""),
     "secure": True,
 }
 
@@ -40,7 +44,7 @@ REQUIRE_EMAIL_CONFIRMATION = True
 ADMIN_ACTIVATION = True
 
 BASE_URL = "api"
-STATIC_URL = "static/"
+STATIC_URL = "statics/"
 FRONTEND_URL = "https://cradle.prodaft.com"
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
@@ -50,3 +54,4 @@ EMAIL_HOST_USER = "cradle@prodaft.com"
 DEFAULT_FROM_EMAIL = "cradle@prodaft.com"
 EMAIL_HOST_PASSWORD = None
 EMAIL_USE_TLS = True
+REQUIRE_ADMIN_ACTIVATION = False

@@ -14,3 +14,5 @@ static
 /docs/_build
 /docs/api_reference/*
 !/docs/api_reference/index.rst
+nginx_local.conf
+deploy/inventory.yml
