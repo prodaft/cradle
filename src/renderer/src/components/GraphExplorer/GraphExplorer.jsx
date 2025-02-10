@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import 'tailwindcss/tailwind.css';
 import { Menu, RefreshDouble, Search } from 'iconoir-react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
@@ -22,6 +22,7 @@ export default function GraphExplorer() {
     const [entryGraphColors, setEntryGraphColors] = useState(null);
     const [cache, setCache] = useState({ links: {}, nodes: {}, nodesSet: new Set(), linksSet: new Set() });
     const [searchValue, setSearchValue] = useState('');
+    const [disabledTypes, setDisabledTypes] = useState(new Set());
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [showLegend, setShowLegend] = useState(true);
     const navigate = useNavigate();
@@ -31,6 +32,20 @@ export default function GraphExplorer() {
 
     const fgRef = useRef();
 
+    // When filtering the graph data, we remove nodes whose "type" is in disabledTypes.types.
+    // Also, we remove links if either the source or target node has a disabled type.
+    const filteredData = useMemo(() => {
+        return {
+            nodes: data.nodes.filter(node => !disabledTypes.has(node.subtype)),
+            links: data.links.filter(
+                link => {
+                    return !disabledTypes.has(link.source.subtype) &&
+                    !disabledTypes.has(link.target.subtype)
+                }
+            ),
+        };
+    }, [data, disabledTypes]);
+
     const filterGraph = useCallback(
         (searchValue) => {
             let matchedNodes = new Set();
@@ -38,7 +53,7 @@ export default function GraphExplorer() {
             for (let node of data.nodes) {
                 console.log(node);
                 if (
-                    node.label.toLowerCase() == searchValue.toLowerCase() ||
+                    node.label.toLowerCase() === searchValue.toLowerCase() ||
                     node.label.toLowerCase().includes(searchValue.toLowerCase())
                 ) {
                     matchedNodes.add(node);
@@ -74,14 +89,28 @@ export default function GraphExplorer() {
                 fgRef.current.zoom(2.5, 1000);
             }
         },
-        [fgRef, data],
+        [fgRef, data, is3DMode],
     );
 
     const refreshDisplay = useCallback(() => {
+        setDisabledTypes(new Set());
         setData({ nodes: [], links: [] });
         setCache({ links: {}, nodes: {}, nodesSet: new Set(), linksSet: new Set() });
         setInterestedNodes(new Set());
         setSelectedLinks(new Set());
+    }, []);
+
+    // Toggle the disabled status for a given type.
+    const toggleDisabledType = useCallback((type) => {
+        setDisabledTypes((prev) => {
+            const newTypes = new Set(prev);
+            if (newTypes.has(type)) {
+                newTypes.delete(type);
+            } else {
+                newTypes.add(type);
+            }
+            return newTypes;
+        });
     }, []);
 
     return (
@@ -104,7 +133,8 @@ export default function GraphExplorer() {
                 <div className='h-full w-3/5 bg-gray-2 rounded-md overflow-hidden'>
                     <div>
                         <Graph
-                            data={data}
+                            // Pass in the filtered data so that nodes/links whose type is disabled are not shown.
+                            data={filteredData}
                             node_r={nodeRadiusCoefficient}
                             linkWidth={linkWidth}
                             is3D={is3DMode}
@@ -128,22 +158,23 @@ export default function GraphExplorer() {
                         {entryGraphColors && showLegend && (
                             <div className='absolute bottom-4 right-4 p-4 w-fit bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-md'>
                                 <div className='grid grid-cols-2 gap-2 max-h-40 overflow-y-auto'>
-                                    {Object.entries(entryGraphColors).map(
-                                        ([type, color]) => (
+                                    {Object.entries(entryGraphColors).map(([type, color]) => (
+                                        <div
+                                            key={type}
+                                            className={`flex flex-row items-center space-x-2 cursor-pointer ${
+                                                disabledTypes.has(type) ? 'opacity-50' : ''
+                                            }`}
+                                            onClick={() => toggleDisabledType(type)}
+                                        >
                                             <div
-                                                key={type}
-                                                className='flex flex-row items-center space-x-2'
-                                            >
-                                                <div
-                                                    className='w-4 h-4 rounded-full'
-                                                    style={{
-                                                        backgroundColor: color,
-                                                    }}
-                                                ></div>
-                                                <span>{type}</span>
-                                            </div>
-                                        ),
-                                    )}
+                                                className='w-4 h-4 rounded-full'
+                                                style={{ backgroundColor: color }}
+                                            ></div>
+                                            <span className={disabledTypes.has(type) ? 'line-through' : ''}>
+                                                {type}
+                                            </span>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         )}
@@ -154,11 +185,7 @@ export default function GraphExplorer() {
                                 className='bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg text-white p-2 rounded'
                                 data-testid='toggle-controls'
                             >
-                                <Menu
-                                    height='1.2em'
-                                    width='1.2em'
-                                    className='text-zinc-300'
-                                />
+                                <Menu height='1.2em' width='1.2em' className='text-zinc-300' />
                             </button>
                         </div>
 
@@ -170,23 +197,16 @@ export default function GraphExplorer() {
                                             type='text'
                                             className='input input-ghost-primary input-md text-white'
                                             placeholder='Search Graph'
-                                            onChange={(e) =>
-                                                setSearchValue(e.target.value)
-                                            }
+                                            onChange={(e) => setSearchValue(e.target.value)}
                                             onKeyDown={(e) => {
-                                                if (e.key === 'Enter')
-                                                    filterGraph(searchValue);
+                                                if (e.key === 'Enter') filterGraph(searchValue);
                                             }}
                                         />
                                         <button
                                             className='btn btn-primary hover:opacity-80 py-0 px-3'
                                             onClick={() => filterGraph(searchValue)}
                                         >
-                                            <Search
-                                                height='1.2em'
-                                                width='1.2em'
-                                                className='text-white'
-                                            />
+                                            <Search height='1.2em' width='1.2em' className='text-white' />
                                         </button>
                                         <button
                                             className='btn btn-ghost py-0 px-3'
@@ -211,9 +231,7 @@ export default function GraphExplorer() {
                                                 className='range range-primary'
                                                 value={nodeRadiusCoefficient}
                                                 onChange={(e) => {
-                                                    setNodeRadiusCoefficient(
-                                                        Number(e.target.value),
-                                                    );
+                                                    setNodeRadiusCoefficient(Number(e.target.value));
                                                 }}
                                             />
                                         </label>
@@ -230,9 +248,7 @@ export default function GraphExplorer() {
                                                 className='range range-primary'
                                                 value={linkWidth}
                                                 onChange={(e) => {
-                                                    setLinkWidth(
-                                                        Number(e.target.value),
-                                                    );
+                                                    setLinkWidth(Number(e.target.value));
                                                 }}
                                             />
                                         </label>
@@ -249,9 +265,7 @@ export default function GraphExplorer() {
                                                 className='range range-primary'
                                                 value={labelSize}
                                                 onChange={(e) => {
-                                                    setLabelSize(
-                                                        Number(e.target.value),
-                                                    );
+                                                    setLabelSize(Number(e.target.value));
                                                 }}
                                             />
                                         </label>
@@ -259,15 +273,11 @@ export default function GraphExplorer() {
 
                                     <div className='flex flex-row space-x-2 items-center'>
                                         <label className='flex items-center justify-between space-x-2 w-full'>
-                                            <span className='text-sm w-full'>
-                                                3D View:
-                                            </span>
+                                            <span className='text-sm w-full'>3D View:</span>
                                             <input
                                                 type='checkbox'
                                                 checked={is3DMode}
-                                                onChange={(e) =>
-                                                    setIs3DMode(e.target.checked)
-                                                }
+                                                onChange={(e) => setIs3DMode(e.target.checked)}
                                                 className='toggle toggle-primary w-1/2'
                                             />
                                         </label>
@@ -275,15 +285,11 @@ export default function GraphExplorer() {
 
                                     <div className='flex flex-row space-x-2 items-center'>
                                         <label className='flex items-center justify-between space-x-2 w-full'>
-                                            <span className='text-sm w-full'>
-                                                Show Legend:
-                                            </span>
+                                            <span className='text-sm w-full'>Show Legend:</span>
                                             <input
                                                 type='checkbox'
                                                 checked={showLegend}
-                                                onChange={(e) =>
-                                                    setShowLegend(e.target.checked)
-                                                }
+                                                onChange={(e) => setShowLegend(e.target.checked)}
                                                 className='toggle toggle-primary w-1/2'
                                             />
                                         </label>

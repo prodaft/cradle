@@ -39,6 +39,7 @@ import { debounce } from 'lodash'; // or any debounce package
  * @constructor
  */
 export default function Editor({
+    noteid,
     markdownContent,
     setMarkdownContent,
     fileData,
@@ -53,6 +54,7 @@ export default function Editor({
     );
     const [showFileList, setShowFileList] = useState(false);
     const [lspPack, setLspPack] = useState({ classes: {}, instances: {} });
+    const [prevNoteId, setPrevNoteId] = useState(null);
     const [pendingFiles, setPendingFiles] = useState(EMPTY_FILE_LIST);
     const [codeMirrorContent, setCodeMirrorContent] = useState("")
     const autoLinkId = useId();
@@ -291,6 +293,15 @@ export default function Editor({
                 console.log(error);
             });
     }, []);
+
+    useEffect(() => {
+      if(prevNoteId != null && codeMirrorContent != "") {
+        setMarkdownContent('')
+        setCodeMirrorContent('')
+      }
+      setPrevNoteId(noteid)
+    }, [noteid])
+
 
     useEffect(() => {
       if(codeMirrorContent == "") {

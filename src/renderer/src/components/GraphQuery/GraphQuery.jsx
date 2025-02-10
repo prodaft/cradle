@@ -60,7 +60,6 @@ export default function GraphQuery({
 
             let response = await queryGraph(parsedQuery);
             let allColors = response.data.colors;
-            console.log(allColors);
             let changes = { links: [], nodes: [] };
 
             let links = [];
@@ -79,6 +78,7 @@ export default function GraphQuery({
                     40,
                 );
                 changes.nodes.push(source);
+                cache.nodes[source.id] = source;
                 colors[source.subtype] = source.color;
             }
 
@@ -91,6 +91,7 @@ export default function GraphQuery({
                         40,
                     );
                     changes.nodes.push(e);
+                    cache.nodes[e.id] = e;
                     colors[e.subtype] = e.color;
                 }
                 nodes.push(e.id);
@@ -118,6 +119,7 @@ export default function GraphQuery({
                             color: '#888888',
                             label: truncateText(`unknown: ${e}`, 40),
                         });
+                        cache.nodes[e] = changes.nodes[changes.nodes.length - 1];
                         nodes.push(e);
                     }
                     links.push(link);
@@ -130,8 +132,15 @@ export default function GraphQuery({
                         color: '#888888',
                         label: truncateText(`unknown: ${e}`, 40),
                     });
+                    cache.nodes[e] = changes.nodes[changes.nodes.length - 1];
                 }
             }
+            // Replace source and destination from ids to objects in links
+            for(let link of changes.links){
+              link.source = cache.nodes[link.source];
+              link.target = cache.nodes[link.target];
+            }
+
 
             setGraphData((prev) => ({
                 nodes: [...prev.nodes, ...changes.nodes],
@@ -140,7 +149,7 @@ export default function GraphQuery({
             setCache(cache);
             setEntryColors((prev) => ({ ...prev, ...colors}));
             if (query.operation === 'pathfind') {
-                setHighlightedLinks(new Set([...links, ...changes.links]));
+                setHighlightedLinks(new Set(links));
                 setHighlightedNodes(new Set(nodes));
             }
         } catch (error) {

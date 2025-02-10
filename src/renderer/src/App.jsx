@@ -24,6 +24,7 @@ import ConfirmEmail from './components/ConfirmEmail/ConfirmEmail.jsx';
 import ChangePassword from './components/ChangePassword/ChangePassword.jsx';
 import ForgotPassword from './components/ForgotPassword/ForgotPassword.jsx';
 import GraphExplorer from './components/GraphExplorer/GraphExplorer.jsx';
+import FleetingNoteEditor from './components/FleetingNoteEditor/FleetingNoteEditor.jsx';
 
 /**
  * The App component is the artifact point of the application. It wraps the entire application in the AuthProvider
@@ -48,7 +49,7 @@ function App() {
                                 element={<FeatureNotImplemented />}
                             />
                             <Route path='/notes' element={<Notes />}></Route>
-                            <Route path='/editor/:id' element={<TextEditor />} />
+                            <Route path='/editor/:id' element={<FleetingNoteEditor />} />
                             <Route
                                 path='/dashboards/:subtype/:name'
                                 element={<Dashboard />}
