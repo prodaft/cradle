@@ -1,11 +1,22 @@
 from .settings_common import *
 from environs import Env
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 env = Env()
 env.read_env()  # Read environment variables from a .env file if present
 
 
 DEBUG = False
+
+
+sentry_sdk.init(
+    dsn=env.str("SENTRY_DSN", ""),
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for tracing.
+    traces_sample_rate=1.0,
+)
+
 
 ALLOWED_HOSTS = ["cradle.prodaft.com"]
 
