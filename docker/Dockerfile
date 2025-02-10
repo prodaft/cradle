@@ -15,7 +15,7 @@ RUN pipenv install gunicorn
 # Install Nginx/NPM
 RUN apt-get update
 RUN apt-get install -y nodejs npm
-RUN apt-get install -y nginx
+# RUN apt-get install -y nginx
 RUN apt install -y vim
 
 RUN rm -rf /var/lib/apt/lists/*
@@ -35,16 +35,16 @@ COPY . .
 COPY ./docker/nginx.conf /etc/nginx/nginx.conf
 
 # Copy Docker-specific settings
-COPY ./cradle/settings_docker.py ./cradle/settings.py
+COPY ./cradle/settings_prod.py ./cradle/settings.py
 
 RUN mkdir -p /var/www
 
 # Make the entrypoint script executable
-RUN chmod +x ./docker/entrypoint.sh
+RUN chmod +x ./docker/entrypoint_prod.sh
 
 # Expose ports
-EXPOSE 80
+# EXPOSE 80
 
 
 # Start Nginx and the Gunicorn application server
-CMD ./docker/entrypoint.sh
+CMD ./docker/entrypoint_prod.sh
