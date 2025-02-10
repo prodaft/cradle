@@ -36,7 +36,7 @@ class NoteQuerySet(models.QuerySet):
 
         rels = (
             self.model.entries.through.objects.filter(
-                entry__entry_class__type=EntryType.ENTITY, notes__in=self
+                entry__entry_class__type=EntryType.ENTITY, note__in=self
             )
             .values("note_id")
             .annotate(
@@ -68,7 +68,7 @@ class NoteQuerySet(models.QuerySet):
 
         rels = (
             self.model.entries.through.objects.filter(
-                entry__entry_class__type=EntryType.ENTITY, notes__in=self
+                entry__entry_class__type=EntryType.ENTITY, note__in=self
             )
             .values("note_id")
             .annotate(
