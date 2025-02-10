@@ -4,6 +4,8 @@ from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
+
+from entries.enums import EntryType
 from ..models import Access
 from ..enums import AccessType
 from entries.models import Entry
@@ -16,7 +18,6 @@ from uuid import UUID
 
 
 class RequestAccess(APIView):
-
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -40,14 +41,22 @@ class RequestAccess(APIView):
         """
 
         user: CradleUser = cast(CradleUser, request.user)
+        subtype = request.query_params.get("subtype", None)
 
         try:
-            entity = Entry.objects.get(id=entity_id)
+            if subtype:
+                entity = Entry.objects.get(id=entity_id, entry_class_id=subtype)
+            else:
+                entity = Entry.objects.get(id=entity_id)
         except Entry.DoesNotExist:
-            return Response("Entity does not exist", status=status.HTTP_404_NOT_FOUND)
+            return Response(status=status.HTTP_200_OK)
 
-        if user.is_superuser or Access.objects.filter(
-            user=user, entity=entity, access_type=AccessType.READ_WRITE
+        if (
+            user.is_superuser
+            or entity.entry_class.type == EntryType.ARTIFACT
+            or Access.objects.filter(
+                user=user, entity=entity, access_type=AccessType.READ_WRITE
+            )
         ):
             return Response(status=status.HTTP_200_OK)
 

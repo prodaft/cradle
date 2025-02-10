@@ -3,7 +3,9 @@ from rest_framework.exceptions import APIException
 
 class EntryTypeMismatchException(APIException):
     status_code = 409
-    default_detail = "There already exists an entry subtype type with a different type"
+    default_detail = (
+        "There already exists an entry" "subtype type with a different type"
+    )
     default_code = "unique"
 
 
@@ -41,7 +43,10 @@ class InvalidEntryException(APIException):
     status_code = 409
 
     def __init__(self, entry_class: str, data: str, *args, **kwargs) -> None:
-        self.default_detail = f"Entry ({entry_class}: {data}) does not obey the specified format for the entry type!"
+        self.default_detail = (
+            f"Entry ({entry_class}: {data}) does not"
+            + "obey the specified format for the entry type!"
+        )
         super().__init__(*args, **kwargs)
 
     default_code = "unique"
@@ -56,4 +61,16 @@ class InvalidClassFormatException(APIException):
 class EntryMustHaveASubtype(APIException):
     status_code = 400
     default_detail = "An entry must always specify a subtype"
+    default_code = "unique"
+
+
+class ClassBreaksHierarchyException(APIException):
+    status_code = 400
+    default_detail = "Entr"
+    default_code = "unique"
+
+    def __init__(self, entry_class: str, *args, **kwargs) -> None:
+        self.default_detail = f"The class conflicts with existing class '{entry_class}'"
+        super().__init__(*args, **kwargs)
+
     default_code = "unique"

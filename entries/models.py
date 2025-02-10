@@ -1,6 +1,9 @@
-from django.db import models
+from django.db import connection, models
+from django_lifecycle import AFTER_DELETE, LifecycleModel, LifecycleModelMixin, hook
+from django_lifecycle.mixins import AFTER_CREATE, transaction
 
 from logs.models import LoggableModelMixin
+import json
 
 from .managers import (
     EntityManager,
@@ -9,11 +12,14 @@ from .managers import (
 )
 
 from .exceptions import (
+    ClassBreaksHierarchyException,
     InvalidClassFormatException,
     InvalidEntryException,
     InvalidRegexException,
 )
 from .enums import EntryType
+from notes.markdown.renderer import remap_links
+
 import uuid
 import re
 
@@ -21,7 +27,7 @@ import re
 class EntryClass(models.Model, LoggableModelMixin):
     type: models.CharField = models.CharField(max_length=20, choices=EntryType.choices)
     subtype: models.CharField = models.CharField(
-        max_length=20, blank=False, primary_key=True
+        max_length=64, blank=False, primary_key=True
     )
     timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
     regex: models.CharField = models.CharField(max_length=65536, blank=True, default="")
@@ -43,6 +49,56 @@ class EntryClass(models.Model, LoggableModelMixin):
             defaults=dict(type="artifact"),
         )
         return eclass.pk
+
+    def delete(self, *args, **kwargs):
+        from notes.models import Note
+
+        notes = []
+
+        for e in self.entries.all():
+            notes.extend(e.notes.all())
+
+        unique_notes = list(set(notes))
+
+        for i in unique_notes:
+            i.content = remap_links(i.content, {self.subtype: None})
+
+        Note.objects.bulk_update(notes, ["content"])
+        super().delete(*args, **kwargs)
+
+    def rename(self, new_subtype: str):
+        if new_subtype == self.subtype or not new_subtype:
+            return None
+
+        from notes.models import Note
+
+        with transaction.atomic():
+            entries = self.entries.all()
+
+            for entry in entries:
+                entry.entry_class_id = new_subtype
+
+            Entry.objects.bulk_update(entries, ["entry_class_id"])
+
+            old_subtype = self.subtype
+
+            self.subtype = new_subtype
+            self.save()
+
+            notes = []
+
+            for e in self.entries.all():
+                notes.extend(e.notes.all())
+
+            unique_notes = list(set(notes))
+
+            for i in unique_notes:
+                i.content = remap_links(i.content, {old_subtype: new_subtype})
+
+            Note.objects.bulk_update(notes, ["content"])
+
+            EntryClass.objects.get(subtype=old_subtype).delete()
+            return self
 
     def validate_text(self, t: str):
         """
@@ -71,7 +127,22 @@ class EntryClass(models.Model, LoggableModelMixin):
     def _propagate_log(self, log):
         return
 
+    def does_entryclass_violate_hierarchy(self):
+        parts = self.subtype.split("/")
+
+        possible_parents = ["/".join(parts[:i]) for i in range(1, len(parts))]
+
+        if EntryClass.objects.filter(subtype__in=possible_parents).exists():
+            return EntryClass.objects.filter(subtype__in=possible_parents).first()
+
+        return False
+
     def save(self, *args, **kwargs):
+        self.subtype = self.subtype.strip().strip("/")
+
+        if conflict := self.does_entryclass_violate_hierarchy():
+            raise ClassBreaksHierarchyException(conflict.subtype)
+
         if self.type == EntryType.ARTIFACT:
             if self.regex and self.options:
                 raise InvalidClassFormatException()
@@ -96,13 +167,14 @@ class EntryClass(models.Model, LoggableModelMixin):
         return self.subtype
 
 
-class Entry(models.Model, LoggableModelMixin):
+class Entry(LifecycleModel, LoggableModelMixin):
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
     is_public: models.BooleanField = models.BooleanField(default=False)
     entry_class: models.ForeignKey[uuid.UUID, EntryClass] = models.ForeignKey(
         EntryClass,
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         null=False,
+        related_name="entries",
     )
 
     name: models.CharField = models.CharField()
@@ -119,6 +191,12 @@ class Entry(models.Model, LoggableModelMixin):
     objects = EntryManager()
     entities = EntityManager()
     artifacts = ArtifactManager()
+
+    def __init__(self, *args, **kwargs):
+        if "name" in kwargs:
+            kwargs["name"] = kwargs["name"].strip()
+
+        super().__init__(*args, **kwargs)
 
     def __repr__(self):
         return f"[[{self.entry_class.subtype}:{self.name}]]"

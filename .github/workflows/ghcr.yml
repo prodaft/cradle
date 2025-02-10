@@ -1,0 +1,19 @@
+name: Build and publish a Docker image to ghcr.io
+on:
+  release:
+    types: [ published ]
+  push:
+    branches:
+      - main
+
+jobs:
+  docker_publish:
+    runs-on: "ubuntu-20.04"
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build and publish a Docker image for ${{ github.repository }}
+        uses: macbre/push-to-ghcr@master
+        with:
+          image_name: prodaft/cradle
+          github_token: ${{ secrets.GITHUB_TOKEN }}

@@ -8,8 +8,6 @@ from entries.models import Entry, EntryClass
 from .base_task import BaseTask
 from ..models import Note
 
-from django.conf import settings
-
 
 class EntryPopulationTask(BaseTask):
     def run(self, note: Note) -> Note:
@@ -26,17 +24,13 @@ class EntryPopulationTask(BaseTask):
         # references will be a list of tuples which describe matches in
         # the note content
 
-        for r in extract_links(note.content):
-            entry = Entry.objects.filter(
-                name=r.name, entry_class__subtype=r.class_subtype
-            )
+        for r in note.reference_tree.links():
+            entry = Entry.objects.filter(name=r.value, entry_class__subtype=r.key)
             if len(entry) == 0:
-                entry_class: EntryClass = EntryClass.objects.get(
-                    subtype=r.class_subtype
-                )
+                entry_class: EntryClass = EntryClass.objects.get(subtype=r.key)
 
                 if entry_class.type == EntryType.ARTIFACT:
-                    entry = Entry.objects.create(name=r.name, entry_class=entry_class)
+                    entry = Entry.objects.create(name=r.value, entry_class=entry_class)
                     entry.log_create(self.user)
                 else:
                     raise EntriesDoNotExistException([r])

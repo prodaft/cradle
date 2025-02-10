@@ -7,10 +7,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .utils import MinioClient
 from .serializers import FileUploadSerializer, FileDownloadSerializer
+import time
 
 
 class FileUpload(APIView):
-
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -43,6 +43,8 @@ class FileUpload(APIView):
 
         response_data = {}
         response_data["bucket_name"] = str(request.user.id)
+        response_data["expires_at"] = 5 * 60 + int(time.time())
+
         (
             response_data["minio_file_name"],
             response_data["presigned"],
@@ -54,7 +56,6 @@ class FileUpload(APIView):
 
 
 class FileDownload(APIView):
-
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -88,6 +89,8 @@ class FileDownload(APIView):
             )
 
         response_data = {}
+
+        response_data["expires_at"] = 7 * 24 * 60 * 60 + int(time.time())
         response_data["presigned"] = MinioClient().create_presigned_get(
             bucket_name, minio_file_name, timedelta(days=7)
         )

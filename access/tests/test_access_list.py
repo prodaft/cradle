@@ -9,8 +9,6 @@ from .utils import AccessTestCase
 
 import io
 
-from entries.enums import EntryType
-
 
 def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))

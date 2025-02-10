@@ -1,7 +1,6 @@
 from ..models import Access
 from ..enums import AccessType
 from entries.models import Entry
-from entries.enums import EntryType
 from user.models import CradleUser
 from .utils import AccessTestCase
 

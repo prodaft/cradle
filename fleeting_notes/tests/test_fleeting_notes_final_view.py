@@ -2,7 +2,6 @@ from .utils import FleetingNotesTestCase
 import json
 from django.urls import reverse
 from entries.models import Entry
-from entries.enums import EntryType
 from access.models import Access
 from access.enums import AccessType
 from notes.models import Note
@@ -77,7 +76,8 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
             response.json()["detail"],
-            "Some of the referenced entries do not exist or you don't have the right permissions to access them:\n(case: wrongentity)",
+            "Some of the referenced entries do not exist or you don't have the "
+            + "right permissions to access them:\n(case: wrongentity)",
         )
 
         self.assertIsNotNone(FleetingNote.objects.get(id=self.note_user.pk))
@@ -94,7 +94,8 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
             response.json()["detail"],
-            "Some of the referenced entries do not exist or you don't have the right permissions to access them:\n(case: entity)",
+            "Some of the referenced entries do not exist or you don't have the "
+            + "right permissions to access them:\n(case: entity)",
         )
 
         self.assertIsNotNone(FleetingNote.objects.get(id=self.note_user.pk))

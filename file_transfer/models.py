@@ -1,5 +1,9 @@
 from django.db import models
+from typing import TYPE_CHECKING
 import uuid
+
+if TYPE_CHECKING:
+    pass
 
 
 class FileReference(models.Model):

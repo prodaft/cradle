@@ -4,25 +4,28 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db.models.fields.related import ReverseManyToOneDescriptor
 from .managers import EventLogManager
 from .enums import EventType
+from typing import Optional, Union
 import uuid
 
 
 class EventLog(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    timestamp = models.DateTimeField(
+    id: models.UUIDField = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    timestamp: models.DateTimeField = models.DateTimeField(
         auto_now_add=True
     )  # Logs creation time automatically
-    type = models.CharField(
+    type: models.CharField = models.CharField(
         choices=EventType.choices, null=False
     )  # Queue type of event
 
-    user = models.ForeignKey(
+    user: models.ForeignKey = models.ForeignKey(
         "user.CradleUser", on_delete=models.CASCADE, related_name="event_logs"
     )
-    details = models.JSONField(blank=True, null=True)
+    details: Optional[dict] = models.JSONField(blank=True, null=True)
 
     # Reference to the log that triggered this event, if applicable
-    src_log = models.ForeignKey(
+    src_log: Optional[models.ForeignKey] = models.ForeignKey(
         "self",
         null=True,
         blank=True,
@@ -31,9 +34,13 @@ class EventLog(models.Model):
     )
 
     # Generic relation fields
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.CharField()
-    content_object = GenericForeignKey("content_type", "object_id")
+    content_type: models.ForeignKey = models.ForeignKey(
+        ContentType, on_delete=models.CASCADE
+    )
+    object_id: models.CharField = models.CharField()
+    content_object: Union[models.Model, None] = GenericForeignKey(
+        "content_type", "object_id"
+    )
 
     class Meta:
         ordering = ["-timestamp"]  # Orders by most recent events first

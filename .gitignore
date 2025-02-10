@@ -5,8 +5,7 @@ env
 Pipfile.lock
 .coverage
 reports
-error.log
-success.log
+exceptions.log
 .idea
 static
 **/__pycache__
@@ -14,6 +13,3 @@ static
 /docs/_build
 /docs/api_reference/*
 !/docs/api_reference/index.rst
-nginx_local.conf
-deploy/inventory.yml
-*.env

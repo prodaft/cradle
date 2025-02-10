@@ -1,6 +1,5 @@
 from entries.models import Entry
 from .utils import EntriesTestCase
-from entries.enums import EntryType
 
 
 class EntryManagerTest(EntriesTestCase):

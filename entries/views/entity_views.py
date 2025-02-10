@@ -10,7 +10,6 @@ from entries.exceptions import DuplicateEntryException
 
 from ..serializers import EntitySerializer, EntryResponseSerializer
 from ..models import Entry
-from logs.utils import LoggingUtils
 from uuid import UUID
 
 

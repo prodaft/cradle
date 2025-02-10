@@ -1,11 +1,7 @@
-import re
-from typing import Set, Dict
-
 from notes.exceptions import EntryClassesDoNotExistException
 from ..utils import extract_links
 from entries.enums import EntryType
-from entries.models import Entry, EntryClass
-from uuid import UUID
+from entries.models import EntryClass
 
 from .base_task import BaseTask
 from ..models import Note
@@ -30,13 +26,13 @@ class EntryClassCreationTask(BaseTask):
 
         nonexistent_entries = set()
 
-        for r in extract_links(note.content):
-            if not EntryClass.objects.filter(subtype=r.class_subtype).exists():
+        for r in note.reference_tree.links():
+            if not EntryClass.objects.filter(subtype=r.key).exists():
                 if not settings.AUTOREGISTER_ARTIFACT_TYPES:
-                    nonexistent_entries.add(r.class_subtype)
+                    nonexistent_entries.add(r.key)
                 else:
                     entry = EntryClass.objects.create(
-                        type=EntryType.ARTIFACT, subtype=r.class_subtype
+                        type=EntryType.ARTIFACT, subtype=r.key
                     )
                     entry.log_create(self.user)
 

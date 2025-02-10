@@ -25,7 +25,9 @@ class MinimumUpperentityLettersValidatorTest(UserTestCase):
         for i in range(0, len(tests)):
             with self.subTest(f"{i}"):
                 self.assertEqual(
-                    MinimumUpperentityLettersValidator(tests[i][1]).validate(tests[i][0]),
+                    MinimumUpperentityLettersValidator(tests[i][1]).validate(
+                        tests[i][0]
+                    ),
                     None,
                 )
 
@@ -59,7 +61,9 @@ class MinimumLowerentityLettersValidatorTest(UserTestCase):
         for i in range(0, len(tests)):
             with self.subTest(f"{i}"):
                 self.assertEqual(
-                    MinimumLowerentityLettersValidator(tests[i][1]).validate(tests[i][0]),
+                    MinimumLowerentityLettersValidator(tests[i][1]).validate(
+                        tests[i][0]
+                    ),
                     None,
                 )
 

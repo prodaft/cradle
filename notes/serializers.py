@@ -1,5 +1,6 @@
 from datetime import timedelta
 from rest_framework import serializers
+from rest_framework.fields import SerializerMethodField
 
 from file_transfer.utils import MinioClient
 from .models import Note
@@ -10,12 +11,17 @@ from .exceptions import (
     NoteDoesNotExistException,
     NoteNotPublishableException,
 )
-from entries.serializers import EntryResponseSerializer, EntrySerializer
+from entries.serializers import (
+    EntryListCompressedTreeSerializer,
+    EntryResponseSerializer,
+    EntryTypesCompressedTreeSerializer,
+)
 from typing import Any, Dict
 from file_transfer.serializers import FileReferenceSerializer
 from file_transfer.models import FileReference
 from user.serializers import UserRetrieveSerializer
 from entries.models import Entry, EntryClass
+from entries.enums import EntryType
 
 
 class NoteCreateSerializer(serializers.ModelSerializer):
@@ -120,12 +126,11 @@ class LinkedEntryClassSerializer(serializers.ModelSerializer):
 
 
 class LinkedEntrySerializer(serializers.ModelSerializer):
-    description = serializers.CharField(required=False, allow_blank=True)
     entry_class = LinkedEntryClassSerializer(read_only=True)
 
     class Meta:
         model = Entry
-        fields = ["id", "name", "description", "entry_class"]
+        fields = ["name", "entry_class"]
 
     def to_representation(self, instance):
         """Move fields from profile to user representation."""
@@ -153,7 +158,7 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
     files = FileReferenceSerializer(many=True)
     author = UserRetrieveSerializer()
     editor = UserRetrieveSerializer()
-    entries = LinkedEntrySerializer(many=True)
+    entries = EntryTypesCompressedTreeSerializer()
 
     class Meta:
         model = Note
@@ -184,6 +189,8 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
             Dict[str, Any]: The serialized note object.
         """
         data = super().to_representation(obj)
+
+        data["entry_classes"] = data.pop("entries")
 
         if self.truncate == -1:
             return data

@@ -1,15 +1,9 @@
 import itertools
-from notes.exceptions import (
-    EntriesDoNotExistException,
-)
-from ..utils import extract_links
 from entries.enums import EntryType
-from entries.models import Entry, EntryClass
+from ..markdown.parser import Link
 
 from .base_task import BaseTask
 from ..models import Note, Relation
-
-from .. import parser
 
 
 class SmartLinkerTask(BaseTask):
@@ -24,16 +18,13 @@ class SmartLinkerTask(BaseTask):
             The processed note object.
         """
 
-        flattree = parser.cradle_connections(note.content)
-        tree = parser.heading_hierarchy(flattree)
-
-        pairs = tree.relation_pairs()
+        pairs = note.reference_tree.relation_pairs()
 
         pairs_resolved = set()
 
         entries = {}
         for e in note.entries.all():
-            entries[parser.Link(e.entry_class.subtype, e.name)] = e
+            entries[Link(e.entry_class.subtype, e.name)] = e
 
         entities = {
             x for x in entries.values() if x.entry_class.type == EntryType.ENTITY
@@ -51,6 +42,6 @@ class SmartLinkerTask(BaseTask):
 
         rels = []
         for src, dst in pairs_resolved:
-            rels.append(Relation(src_entry=src, dst_entry=dst, note=note))
+            rels.append(Relation(src_entry=src, dst_entry=dst, content_object=note))
 
         Relation.objects.bulk_create(rels)

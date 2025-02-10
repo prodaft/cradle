@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db.models import Q, Count
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework import status
@@ -19,7 +20,6 @@ from ..models import Note
 from user.models import CradleUser
 from access.enums import AccessType
 from typing import cast
-from rest_framework.pagination import PageNumberPagination
 
 from entries.enums import EntryType
 from access.models import Access
@@ -61,9 +61,10 @@ class NoteList(APIView):
         queryset = Note.objects.get_accessible_notes(user)
 
         if "references" in request.query_params:
-            queryset = queryset.filter(
-                entries__id__in=request.query_params.getlist("references")
-            )
+            entrylist = request.query_params.getlist("references")
+            queryset = Note.objects.annotate(
+                matching_entries=Count("entries", filter=Q(entries__in=entrylist))
+            ).filter(matching_entries=len(entrylist))
 
         filterset = NoteFilter(request.query_params, queryset=queryset)
 
@@ -74,7 +75,9 @@ class NoteList(APIView):
 
             if paginated_notes is not None:
                 serializer = NoteRetrieveSerializer(
-                    paginated_notes, truncate=200, many=True
+                    paginated_notes,
+                    truncate=int(request.query_params.get("truncate", 200)),
+                    many=True,
                 )
                 return paginator.get_paginated_response(serializer.data)
 

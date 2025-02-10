@@ -1,5 +1,5 @@
-from .settings_common import *
 from environs import Env
+from .settings_common import *
 
 # Initialize environs
 env = Env()

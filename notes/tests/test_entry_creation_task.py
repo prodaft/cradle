@@ -1,5 +1,4 @@
 from entries.models import Entry
-from entries.enums import EntryType
 from notes import utils
 from notes.models import Note
 from notes.utils import Link
