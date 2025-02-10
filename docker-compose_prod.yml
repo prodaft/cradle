@@ -11,11 +11,8 @@ services:
       retries: 5
     volumes:
       - /data/minio:/data
-    environment:
-      MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: minioAdminPassword
-      MINIO_SERVER_URL: http://localhost:9000
-      MINIO_BROWSER_REDIRECT_URL: http://localhost:9000/minio/ui
+    env_file:
+      - minio.env
     ports:
       - "127.0.0.1:10000:9000"
       - "127.0.0.1:10001:9001"
@@ -26,10 +23,8 @@ services:
     image: postgres:15
     container_name: postgres
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: cradle
-      POSTGRES_PASSWORD: cradlePostgresPassword
-      POSTGRES_DB: cradle
+    env_file:
+      - db.env
     volumes:
       - /data/postgresql:/var/lib/postgresql/data
     healthcheck:
@@ -47,45 +42,8 @@ services:
       dockerfile: docker/Dockerfile
     container_name: cradle
     restart: always
-    environment:
-      DB_NAME: cradle
-      DB_USER: cradle
-      DB_PASSWORD: cradlePostgresPassword
-      DB_HOST: postgres
-      DB_PORT: 5432
-
-      MINIO_ENDPOINT: cradle.prodaft.com:9000
-      MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: minioAdminPassword
-      MINIO_SECURE: true
-
-      CRADLE_ADMIN_USER: admin
-      CRADLE_ADMIN_EMAIL: admin@cradle.sh
-      CRADLE_ADMIN_PASSWORD: admin
-
-      CRADLE_SECRET_KEY: "super-secret-key"
-
-      ALLOWED_HOSTS: cradle.prodaft.com
-      CRADLE_TRUSTED_ORIGINS: https://cradle.prodaft.com
-      BASE_URL: api
-
-      ALLOW_REGISTRATION: true
-      AUTOREGISTER_ARTIFACT_TYPES: true
-      MIN_ENTRY_COUNT_PER_NODE: 2
-      MIN_ENTITY_COUNT_PER_NODE: 1
-
-      EMAIL_HOST: ""
-      EMAIL_PORT: 587
-      EMAIL_HOST_USER: ""
-      DEFAULT_FROM_EMAIL: ""
-      EMAIL_HOST_PASSWORD: ""
-      EMAIL_USE_TLS: false
-
-      REQUIRE_EMAIL_CONFIRMATION: true
-      REQUIRE_ADMIN_ACTIVATION: true
-
-      NODE_ENV: production
-      VITE_ENV: production
+    env_file:
+      - cradle.env
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
@@ -93,6 +51,8 @@ services:
     depends_on:
       - postgres
       - minio
+    extra_hosts:
+      - "cradle.prodaft.com:172.18.0.1"
     networks:
       - cradle_network
 

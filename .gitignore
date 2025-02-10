@@ -16,3 +16,4 @@ static
 !/docs/api_reference/index.rst
 nginx_local.conf
 deploy/inventory.yml
+*.env
