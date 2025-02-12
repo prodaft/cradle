@@ -6,9 +6,15 @@
 // and both the auth token and API base URL are passed from the main thread.
 
 
+import './prism-config.js'
 import axios from 'axios';
 import { Marked } from 'marked';
 import { markedHighlight } from 'marked-highlight';
+import Prism from 'prismjs';
+import 'prismjs/components/prism-c.js';
+import 'prismjs/components/prism-python.js';
+
+
 
 // ─── UTILITY CONSTANTS AND FUNCTIONS ─────────────────────────────
 
@@ -106,12 +112,12 @@ let MinioCache = {};
 
 // Initialize Marked with Prism syntax highlighting.
 const marked = new Marked(
-  // markedHighlight({
-  //   highlight(code, lang) {
-  //     const language = Prism.languages[lang] ? lang : 'plaintext';
-  //     return Prism.highlight(code, Prism.languages[language], language);
-  //   },
-  // })
+  markedHighlight({
+    highlight(code, lang) {
+      const language = Prism.languages[lang] ? lang : 'plaintext';
+      return Prism.highlight(code, Prism.languages[language], language);
+    },
+  })
 );
 
 // Custom extension to tokenize cradle links.
