@@ -55,7 +55,7 @@ REQUIRE_EMAIL_CONFIRMATION = True
 ADMIN_ACTIVATION = True
 
 BASE_URL = "api"
-STATIC_URL = "statics/"
+STATIC_URL = "static/"
 FRONTEND_URL = "https://cradle.prodaft.com"
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
