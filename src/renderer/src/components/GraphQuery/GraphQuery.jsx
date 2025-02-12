@@ -36,7 +36,7 @@ export default function GraphQuery({
     };
 
     const [query, setQuery] = useState({
-        operation: 'bfs',
+        operation: 'pathfind',
         params: {
             src: '',
             dst: '',
@@ -184,8 +184,8 @@ export default function GraphQuery({
                                 <option value='' disabled>
                                     Select operation
                                 </option>
-                                <option value='bfs'>Breadth-First Search (BFS)</option>
                                 <option value='pathfind'>Pathfind</option>
+                                <option value='bfs'>Breadth-First Search (BFS)</option>
                             </select>
 
                             <input

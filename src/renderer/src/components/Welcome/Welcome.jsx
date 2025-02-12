@@ -41,6 +41,7 @@ export default function Welcome() {
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='h-full w-full flex flex-col justify-between items-center overflow-auto dark:bg-gradient-to-tl dark:from-cradle1 dark:to-gray-2'>
+                {/*
                 <div className='flex flex-row items-center justify-around py-10 w-[80%]'>
                     <div className='px-8 hidden md:block'>
                         <Logo width='200px' />
@@ -54,8 +55,9 @@ export default function Welcome() {
                         </h3>
                     </span>
                 </div>
+        */}
 
-                <div className='flex flex-col w-[80%] mx-auto'>
+                <div className='flex flex-col w-[80%] mx-auto pt-16'>
                     <div
                         className={`flex ${flexDirection} justify-between dark:text-zinc-300`}
                         ref={entryListsDiv}

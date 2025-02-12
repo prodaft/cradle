@@ -70,7 +70,7 @@ const ResizableSplitPane = ({
     } else {
       setSplitPosition(100);
     }
-  })
+  }, [showRightPane])
 
   return (
     <div
