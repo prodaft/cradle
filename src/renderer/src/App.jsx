@@ -25,6 +25,7 @@ import ChangePassword from './components/ChangePassword/ChangePassword.jsx';
 import ForgotPassword from './components/ForgotPassword/ForgotPassword.jsx';
 import GraphExplorer from './components/GraphExplorer/GraphExplorer.jsx';
 import FleetingNoteEditor from './components/FleetingNoteEditor/FleetingNoteEditor.jsx';
+import { useTheme } from './hooks/useTheme/useTheme';
 
 /**
  * The App component is the artifact point of the application. It wraps the entire application in the AuthProvider
@@ -35,6 +36,14 @@ import FleetingNoteEditor from './components/FleetingNoteEditor/FleetingNoteEdit
  * @constructor
  */
 function App() {
+    const { isDarkMode, toggleTheme } = useTheme();
+
+    if(isDarkMode) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+
     return (
         <HashRouter>
             <AuthProvider>

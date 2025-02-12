@@ -12,12 +12,6 @@ export function useTheme() {
 
   const [isDarkMode, setIsDarkMode] = useState(getInitialTheme)
 
-  if(isDarkMode) {
-    document.documentElement.setAttribute('data-theme', 'dark');
-  } else {
-    document.documentElement.setAttribute('data-theme', 'light');
-  }
-
   useEffect(() => {
     // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
