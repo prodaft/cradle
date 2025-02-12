@@ -7,12 +7,10 @@
         "build-run": "npm run build && electron .",
         "electron": "electron .",
         "dev": "electron-vite dev -w",
-        "build": "npm run tailwind && electron-vite build",
+        "build": "electron-vite build",
         "lint": "eslint . --max-warnings 0",
         "preview": "electron-vite preview",
         "test": "jest",
-        "tailwind": "npx tailwindcss -i ./src/renderer/src/styles/input.css -o ./src/renderer/src/styles/output.css",
-        "tailwind-w": "npx tailwindcss -i ./src/renderer/src/styles/input.css -o ./src/renderer/src/styles/output.css --watch",
         "render": "cd ./src/renderer/ && vite -c ../../vite.config.js build",
         "jsdoc": "npx jsdoc -r src/renderer -d docs --readme ./README.md --tutorials ./tutorials",
         "prettier": "npx prettier . --write"
