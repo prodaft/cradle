@@ -1,6 +1,7 @@
 // eslint-disable-next-line no-undef
 module.exports = {
     darkMode: ['selector', '[data-theme="dark"]'],
+    content: ['./src/**/*.{html,js,jsx,ts,tsx}', './src/index.html'],
     theme: {
         extend: {
             colors: {
@@ -44,11 +45,6 @@ module.exports = {
             });
         },
     ],
-    purge: {
-      enabled: process.env.NODE_ENV === 'production',
-      content: ['./src/**/*.{html,js,jsx,ts,tsx}', './src/index.html'],
-      safelist: ['h5', 'h6'],
-    },
     rippleui: {
         themes: [
             {
