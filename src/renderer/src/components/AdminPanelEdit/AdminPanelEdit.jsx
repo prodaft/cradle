@@ -68,19 +68,19 @@ export default function AdminPanelEdit({ type }) {
                 .then((response) => {
                     if (response.status === 200) {
                         let types = response.data;
-                        let type = types.find((obj) => obj.subtype === id);
-                        if (type) {
-                            setCatalystType(type.catalyst_type);
-                            setSubtype(type.subtype);
-                            setName(type.subtype);
-                            setClassType(type.type);
-                            setColor(type.color);
-                            if (type.regex && type.regex.length > 0) {
+                        let entrytype = types.find((obj) => obj.subtype === id);
+                        if (entrytype) {
+                            setCatalystType(entrytype.catalyst_type);
+                            setSubtype(entrytype.subtype);
+                            setName(entrytype.subtype);
+                            setClassType(entrytype.type);
+                            setColor(entrytype.color);
+                            if (entrytype.regex && entrytype.regex.length > 0) {
                                 setTypeFormat('regex');
-                                setTypeFormatDetails(type.regex);
-                            } else if (type.options && type.options.length > 0) {
+                                setTypeFormatDetails(entrytype.regex);
+                            } else if (entrytype.options && entrytype.options.length > 0) {
                                 setTypeFormat('options');
-                                setTypeFormatDetails(type.options);
+                                setTypeFormatDetails(entrytype.options);
                             } else {
                                 setTypeFormat(null);
                             }
@@ -287,6 +287,7 @@ export default function AdminPanelEdit({ type }) {
                                             <select
                                                 className='form-select select select-ghost-primary select-block focus:ring-0'
                                                 onChange={handleFormatChange}
+                                                value={typeFormat}
                                                 name='format'
                                             >
                                                 <option>Any Format</option>
@@ -304,6 +305,7 @@ export default function AdminPanelEdit({ type }) {
                                     onChange={(e) =>
                                         setTypeFormatDetails(e.target.value)
                                     }
+                                    value={typeFormatDetails}
                                     hidden={
                                         classType != 'artifact' || typeFormat == null
                                     }

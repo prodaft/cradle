@@ -22,7 +22,7 @@ export default function Pagination({
             {/* Left Arrow */}
             <button
                 onClick={() => onPageChange(currentPage - 1)}
-                disabled={currentPage === 1}
+                disabled={currentPage == 1}
                 className='btn'
             >
                 &lt;
@@ -33,8 +33,8 @@ export default function Pagination({
                 <button
                     key={page}
                     onClick={() => onPageChange(page)}
-                    disabled={currentPage === page}
-                    className={`btn ${currentPage === page ? 'btn-disabled' : ''}`}
+                    disabled={currentPage == page}
+                    className={`btn ${currentPage == page ? 'btn-disabled' : ''}`}
                 >
                     {page}
                 </button>

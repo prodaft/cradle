@@ -85,7 +85,6 @@ export default function AdminPanelAdd({ type }) {
             }
             navigate('/admin', { state: Date.now() });
         } catch (err) {
-            console.log(err);
             displayError(setAlert, navigate)(err);
         }
     };

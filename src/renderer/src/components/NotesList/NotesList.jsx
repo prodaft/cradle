@@ -33,7 +33,7 @@ export default function NotesList({ query }) {
     }, [page, query]);
 
     useEffect(() => {
-        setPage(searchParams.get('page') || 1);
+        setPage(Number(searchParams.get('page')) || 1);
         fetchNotes();
     }, [fetchNotes]);
 

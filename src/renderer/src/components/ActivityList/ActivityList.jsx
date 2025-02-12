@@ -39,7 +39,6 @@ export default function ActivityList() {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
 
     const fetchEvents = useCallback(() => {
-        console.log('Getting event logs');
         setLoading(true);
         getEventLogs({ page, ...submittedFilters })
             .then((response) => {
@@ -58,9 +57,7 @@ export default function ActivityList() {
     }, [page, submittedFilters]);
 
     const handlePageChange = (newPage) => {
-        console.log('Page Changed');
         setPage(newPage);
-        console.log(page);
     };
 
     useEffect(() => {

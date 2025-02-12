@@ -13,14 +13,9 @@ export default function TextEditor({noteid, markdownContent, setMarkdownContent,
     const markdownContentRef = useRef(markdownContent);
     const fileDataRef = useRef(fileData);
 
-    const textEditorDivRef = useRef(null);
-    const resizeRef = useRef(null);
-    const [isResizing, setIsResizing] = useState(false);
     const [splitPosition, setSplitPosition] = useState(
         Number(localStorage.getItem('editor.splitPosition')) || 50
     );
-    const [lastPosition, setLastPosition] = useState(splitPosition);
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const { isDarkMode, toggleTheme } = useTheme();
     const [parsedContent, setParsedContent] = useState('');
@@ -30,49 +25,6 @@ export default function TextEditor({noteid, markdownContent, setMarkdownContent,
     const [worker, setWorker] = useState(null);
     const [isParsing, setIsParsing] = useState(false);
     const pendingParseRef = useRef(false);
-
-    useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 768);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    useEffect(() => {
-        const handleMouseMove = (e) => {
-            if (!isResizing) return;
-            e.preventDefault();
-
-            const container = textEditorDivRef.current;
-            if (!container) return;
-
-            const containerRect = container.getBoundingClientRect();
-            let newPosition = isMobile
-                ? ((e.clientY - containerRect.top) / containerRect.height) * 100
-                : ((e.clientX - containerRect.left) / containerRect.width) * 100;
-
-            newPosition = Math.min(Math.max(newPosition, 20), 80);
-            requestAnimationFrame(() => {
-                setSplitPosition(newPosition);
-                localStorage.setItem('editor.splitPosition', newPosition);
-            });
-        };
-
-        const handleMouseUp = () => {
-            setIsResizing(false);
-            document.body.classList.remove('select-none');
-        };
-
-        if (isResizing) {
-            document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
-            document.body.classList.add('select-none');
-        }
-
-        return () => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, [isResizing, isMobile]);
 
     useEffect(() => {
         const workerInstance = parseWorker();
@@ -143,18 +95,12 @@ export default function TextEditor({noteid, markdownContent, setMarkdownContent,
     const previewCollapseUpdated = (collapsed) => {
         setPreviewCollapsed(collapsed);
         localStorage.setItem('preview.collapse', collapsed);
-        if (!collapsed) {
-          setSplitPosition(lastPosition);
-        } else {
-          setSplitPosition(100);
-        }
     };
 
     return (
       <div className="w-full h-full p-1.5">
         <AlertDismissible alert={alert} setAlert={setAlert} />
         <ResizableSplitPane
-          orientation={isMobile ? 'vertical' : 'horizontal'}
           initialSplitPosition={splitPosition}
           showRightPane={!previewCollapsed}
           onSplitChange={(newPosition) => {

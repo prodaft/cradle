@@ -39,7 +39,6 @@ const displayError = (setAlert, navigate) => {
                     break;
                 }
                 if (key.includes('error')) {
-                    console.log(`Guessing the error message is in key: ${key}`);
                     message = err.response.data[key];
                 }
             }

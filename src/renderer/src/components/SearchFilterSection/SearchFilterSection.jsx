@@ -56,10 +56,10 @@ export default function SearchFilterSection({
             >
                 <div className='flex flex-col md:flex-row justify-start items-start space-y-4 md:space-y-0 md:space-x-4 p-4'>
                     <div className='w-auto flex flex-col'>
-                        <div className='flex flex-wrap'>
+                        <div className='flex flex-wrap text-zinc-300'>
                             {hierarchy.convert(
                                 (value, children) => (
-                                    <Collapsible label={value} key={value}>
+                                    <Collapsible className='text-zinc-300 ' label={value} key={value}>
                                         <div className='w-auto flex flex-col'>
                                             <div className='flex flex-wrap'>
                                                 {children}

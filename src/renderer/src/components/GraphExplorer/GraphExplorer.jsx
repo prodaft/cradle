@@ -57,7 +57,6 @@ export default function GraphExplorer() {
             let matchedNodes = new Set();
             let matchedNodesId = new Set();
             for (let node of data.nodes) {
-                console.log(node);
                 if (
                     node.label.toLowerCase() === searchValue.toLowerCase() ||
                     node.label.toLowerCase().includes(searchValue.toLowerCase())

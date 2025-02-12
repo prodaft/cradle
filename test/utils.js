@@ -188,7 +188,6 @@ export class SeleniumUtils {
         for (let child of children) {
             var nameTag = await child.findElement(By.css('a'));
             var blabla = await nameTag.getText();
-            console.log(blabla);
             if ((await nameTag.getText()) == name) {
                 // delete actor
                 var button = await child.findElement(By.css('button'));

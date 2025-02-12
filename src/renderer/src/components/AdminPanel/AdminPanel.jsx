@@ -113,8 +113,6 @@ export default function AdminPanel() {
     };
 
     useEffect(() => {
-        console.log('AdminPanel mounted');
-        console.log(location);
         displayUsers();
         displayEntities();
         displayEntryTypes();

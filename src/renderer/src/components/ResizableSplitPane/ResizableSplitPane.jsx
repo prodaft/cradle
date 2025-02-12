@@ -40,7 +40,7 @@ const ResizableSplitPane = ({
         : ((e.clientX - containerRect.left) / containerRect.width) * 100;
 
       newPosition = Math.min(Math.max(newPosition, minSplitPercentage), maxSplitPercentage);
-      
+
       requestAnimationFrame(() => {
         setSplitPosition(newPosition);
         onSplitChange?.(newPosition);
@@ -64,8 +64,16 @@ const ResizableSplitPane = ({
     };
   }, [isResizing, isVertical, maxSplitPercentage, minSplitPercentage, onSplitChange]);
 
+  useEffect(() => {
+    if (showRightPane) {
+      setSplitPosition(initialSplitPosition);
+    } else {
+      setSplitPosition(100);
+    }
+  })
+
   return (
-    <div 
+    <div
       ref={containerRef}
       className={`w-full h-full relative flex ${isVertical ? 'flex-col' : 'flex-row'} ${className}`}
     >
@@ -78,7 +86,7 @@ const ResizableSplitPane = ({
       >
         {leftContent}
       </div>
-      
+
       {showRightPane && (
         <>
           <div
@@ -110,7 +118,7 @@ const ResizableSplitPane = ({
               `}/>
             </div>
           </div>
-          
+
           <div
             className="bg-gray-2 rounded-md overflow-hidden transition-[width,height] duration-200 ease-out"
             style={{

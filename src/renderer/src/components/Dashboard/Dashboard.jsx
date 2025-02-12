@@ -65,7 +65,6 @@ function DashboardDropDownLeaf({ entry, path, value, depth, inaccessible }) {
                 src: { subtype: entry.subtype, name: entry.name },
             },
         });
-        console.log(response.data);
 
         const entities = flattenGraphEntries(response.data.entries);
         for (let e of entities) {
