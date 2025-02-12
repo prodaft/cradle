@@ -89,7 +89,7 @@ export default function DashboardNote({
                 >
                     {/* Header row with timestamp and publish/check UI */}
                     <div className='flex flex-row justify-between'>
-                        <div className='text-zinc-300 text-xs w-full'>
+                        <div className='dark:text-zinc-300 text-xs w-full'>
                             {new Date(note.timestamp).toLocaleString()}
                         </div>
 
@@ -105,7 +105,7 @@ export default function DashboardNote({
                             <span className='pb-1 space-x-1 flex flex-row'>
                                 <label
                                     htmlFor={`publishable-switch-${note.id}`}
-                                    className='text-xs text-zinc-300 hover:cursor-pointer'
+                                    className='text-xs dark:text-zinc-300 hover:cursor-pointer'
                                 >
                                     Publishable
                                 </label>

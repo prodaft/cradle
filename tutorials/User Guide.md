@@ -36,18 +36,6 @@ Security and confidentiality are ensured by
 providing a strong access control system that allows administrators and trusted users to
 manage permissions and access levels on an entity-by-entity basis.
 
-## Rules and Guidelines
-
-When using CRADLE, it's important to adhere to the following rules and guidelines to ensure a safe, productive, and inclusive environment for all users:  
-
-- No Sharing of Personally Identifiable Information (PII): CRADLE is designed to facilitate collaboration and information sharing among threat analysts. However, sharing of personally identifiable information is strictly prohibited. This includes, but is not limited to, full names, home addresses, phone numbers, social security numbers, and any other information that could be used to identify or locate an individual. Any notes or artifacts containing such information will be removed.  
-- Civility and Respect: All users are expected to interact with each other in a civil and respectful manner. Disparaging remarks, personal attacks, and any form of harassment are not tolerated. Users who engage in such behavior may have their access to CRADLE revoked.  
-- Inclusivity: CRADLE is committed to fostering an inclusive environment. Discrimination based on race, religion, gender, age, nationality, or any other protected characteristic is not acceptable. We encourage users to be mindful of their language and behavior, and to promote inclusivity in their interactions with others.  
-- Responsible Use: Users should use CRADLE responsibly and ethically. This includes not using the platform for illegal activities, not attempting to gain unauthorized access to other users' data, and not disrupting the operation of the platform.  
-- Compliance with Policies and Laws: Users are expected to comply with all applicable laws and regulations, as well as any policies set forth by their organization or team. This includes laws and regulations related to data privacy and cybersecurity.  
-
-By using CRADLE users agree to abide by these rules and guidelines.
-
 ## Getting Started
 
 ### Installation

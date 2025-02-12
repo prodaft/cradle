@@ -3,6 +3,7 @@ import 'tailwindcss/tailwind.css';
 import { ForceGraph2D, ForceGraph3D } from 'react-force-graph';
 import { useNavigate } from 'react-router-dom';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
+import { useTheme } from '../../hooks/useTheme/useTheme';
 
 /**
  * The component displays a graph visualization using D3.js.
@@ -34,6 +35,7 @@ export default function Graph({
 
     const [highlightNodes, setHighlightNodes] = useState(new Set());
     const [highlightLinks, setHighlightLinks] = useState(new Set());
+    const { isDarkMode, toggleTheme } = useTheme();
     const navigate = useNavigate();
 
     const handleNodeHover = (node) => {
@@ -83,7 +85,7 @@ export default function Graph({
             ctx.font = `${labelSize}px Sans-Serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = 'white';
+            ctx.fillStyle = isDarkMode ? 'white' : 'black';
             ctx.fillText(
                 node.label,
                 node.x,
@@ -111,7 +113,7 @@ export default function Graph({
                     ? 'orange'
                     : selectedLinks.has(link)
                       ? 'red'
-                      : '#3A3A3A'
+                      : isDarkMode ? '#3A3A3A' : "#8A8A8A"
             }
             linkDirectionalParticles={(link) =>
                 highlightLinks.has(link) || selectedLinks.has(link)
@@ -122,7 +124,7 @@ export default function Graph({
                     : undefined
             }
             nodeLabel={(n) => n.label}
-            backgroundColor='#151515'
+            backgroundColor={isDarkMode ? '#151515' : '#f9f9f9'}
             nodeCanvasObject={paintRing}
             onLinkHover={handleLinkHover}
             onNodeHover={handleNodeHover}

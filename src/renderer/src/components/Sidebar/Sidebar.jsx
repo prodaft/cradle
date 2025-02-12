@@ -8,6 +8,8 @@ import {
     BellNotification,
     Settings,
     Notes,
+    SunLight,
+    HalfMoon,
 } from 'iconoir-react';
 import SidebarItem from '../SidebarItem/SidebarItem';
 import SidebarSection from '../SidebarSection/SidebarSection';
@@ -24,6 +26,8 @@ import { useNavigate } from 'react-router-dom';
  * @param {number} props.unreadNotificationsNumber - the number of new notifications
  * @param {Function} props.handleNotifications - handler for the notifications action
  * @param {Function} props.handleWelcomePage - handler for navigating to the welcome page
+ * @param {boolean} props.isDarkMode - determines if the current mode is dark mode
+ * @param {Function} props.onThemeToggle - handler for toggling between light and dark mode
  * @returns {Sidebar}
  * @constructor
  */
@@ -31,6 +35,8 @@ export default function Sidebar({
     showNotifications,
     unreadNotificationsCount,
     handleNotifications,
+    isDarkMode,
+    onThemeToggle,
 }) {
     const auth = useAuth();
     const navigate = useNavigate();
@@ -125,6 +131,11 @@ export default function Sidebar({
                         )}
                     </div>
                     <SidebarSection type='footer' height='fit' justify='end'>
+                        <SidebarItem
+                            handleClick={onThemeToggle}
+                            icon={!isDarkMode ? <SunLight /> : <HalfMoon />}
+                            text={!isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                        />
                         <SidebarItem
                             handleClick={handleNotifications}
                             icon={

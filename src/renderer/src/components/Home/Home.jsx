@@ -7,6 +7,7 @@ import FleetingNotesPanel from '../FleetingNotesPanel/FleetingNotesPanel';
 import NotificationsPanel from '../NotificationsPanel/NotificationsPanel';
 import useInterval from '../../hooks/useInterval/useInterval';
 import { getNotificationCount } from '../../services/notificationsService/notificationsService';
+import { useTheme } from '../../hooks/useTheme/useTheme';
 
 /**
  * The Home component serves as the main layout of the application. It is composed of several child components:
@@ -41,6 +42,7 @@ export default function Home() {
     const [navbarContents, setNavbarContents] = useState([]);
     const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
+    const {isDarkMode, toggleTheme} = useTheme();
 
     const SHORT_POLLING_DELAY = 10000;
 
@@ -88,6 +90,8 @@ export default function Home() {
                         showNotifications={showNotifications}
                         unreadNotificationsCount={unreadNotificationsCount}
                         handleNotifications={toggleNotifications}
+                        isDarkMode={isDarkMode}
+                        onThemeToggle={toggleTheme}
                     />
                     <div
                         className={`transition-all duration-150 ${showNotifications ? 'w-[40rem]' : 'w-0'} overflow-hidden`}

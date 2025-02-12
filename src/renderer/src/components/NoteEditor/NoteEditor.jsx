@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import useAuth from '../../hooks/useAuth/useAuth';
 import { useNavigate, useParams } from 'react-router-dom';
-import useLightMode from '../../hooks/useLightMode/useLightMode';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import NavbarButton from '../NavbarButton/NavbarButton';
 import { FloppyDisk } from 'iconoir-react/regular';

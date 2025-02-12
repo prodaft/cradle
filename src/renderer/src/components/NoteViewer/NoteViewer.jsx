@@ -189,15 +189,15 @@ export default function NoteViewer() {
                             <strong>Created on:</strong>{' '}
                             {new Date(note.timestamp).toLocaleString()}
                         </span>
-                        <span className='text-sm text-zinc-700'>|</span>
-                        <span className='text-sm text-zinc-500 p-2'>
+                        <span className='text-sm dark:text-zinc-700'>|</span>
+                        <span className='text-sm dark:text-zinc-500 p-2'>
                             <strong>Created by:</strong>{' '}
                             {note?.author ? note.author.username : 'Unknown'}
                         </span>
                         {note.editor && (
                             <span>
-                                <span className='text-sm text-zinc-700'>|</span>
-                                <span className='text-sm text-zinc-500 p-2'>
+                                <span className='text-sm dark:text-zinc-700'>|</span>
+                                <span className='text-sm dark:text-zinc-500 p-2'>
                                     <strong>Edited on:</strong>{' '}
                                     {new Date(note.edit_timestamp).toLocaleString()}
                                 </span>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import useLightMode from '../../hooks/useLightMode/useLightMode';
+import { useTheme } from '../../hooks/useTheme/useTheme';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Editor from '../Editor/Editor';
 import Preview from '../Preview/Preview';
@@ -7,6 +7,7 @@ import Preview from '../Preview/Preview';
 // === New imports for worker-based parsing ===
 import DOMPurify from 'dompurify';
 import { parseWorker } from '../../utils/customParser/customParser'; // The same approach as in NoteEditor
+import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
 
 export default function TextEditor({noteid, markdownContent, setMarkdownContent, fileData = [], setFileData}) {
     const markdownContentRef = useRef(markdownContent);
@@ -21,7 +22,7 @@ export default function TextEditor({noteid, markdownContent, setMarkdownContent,
     const [lastPosition, setLastPosition] = useState(splitPosition);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const isLightMode = useLightMode();
+    const { isDarkMode, toggleTheme } = useTheme();
     const [parsedContent, setParsedContent] = useState('');
     const [previewCollapsed, setPreviewCollapsed] = useState(
         localStorage.getItem('preview.collapse') === 'true'
@@ -150,78 +151,38 @@ export default function TextEditor({noteid, markdownContent, setMarkdownContent,
     };
 
     return (
-        <>
-            <div className="w-full h-full p-1.5 relative" ref={textEditorDivRef}>
-                <AlertDismissible alert={alert} setAlert={setAlert} />
-                <div className="w-full h-full flex md:flex-row flex-col relative">
-                    <div
-                        className="bg-gray-2 rounded-md overflow-hidden transition-[width,height] duration-200 ease-out"
-                        style={{
-                            width: !isMobile ? `${splitPosition}%` : '100%',
-                            height: isMobile ? `${splitPosition}%` : '100%'
-                        }}
-                    >
-                        <Editor
-                            noteid={noteid}
-                            markdownContent={markdownContent}
-                            setMarkdownContent={setMarkdownContent}
-                            isLightMode={isLightMode}
-                            fileData={fileData}
-                            setFileData={setFileData}
-                            viewCollapsed={previewCollapsed}
-                            setViewCollapsed={previewCollapseUpdated}
-                        />
-                    </div>
-                    {!previewCollapsed && (
-                        <>
-                            <div
-                                ref={resizeRef}
-                                className={`
-                                    ${isMobile ? 'h-1.5 w-full' : 'w-1.5 h-full'}
-                                    bg-gray-3 hover:bg-gray-4 active:bg-gray-5
-                                    transition-colors duration-200
-                                    ${isResizing ? 'bg-gray-5' : ''}
-                                    ${isMobile ? 'cursor-row-resize' : 'cursor-col-resize'}
-                                    relative group
-                                `}
-                                onMouseDown={() => setIsResizing(true)}
-                                onDoubleClick={() => {
-                                    if (splitPosition !== 50) {
-                                        setLastPosition(splitPosition);
-                                        setSplitPosition(50);
-                                    } else if (lastPosition !== 50) {
-                                        setSplitPosition(lastPosition);
-                                    }
-                                    localStorage.setItem('editor.splitPosition', splitPosition);
-                                }}
-                            >
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className={`
-                                        w-1 h-6 bg-gray-6 rounded-full opacity-0
-                                        group-hover:opacity-100 transition-opacity duration-200
-                                        ${isMobile ? 'rotate-90' : ''}
-                                    `}/>
-                                </div>
-                            </div>
-                            <div
-                                className="bg-gray-2 rounded-md overflow-hidden transition-[width,height] duration-200 ease-out relative"
-                                style={{
-                                    width: !isMobile ? `${100 - splitPosition}%` : '100%',
-                                    height: isMobile ? `${100 - splitPosition}%` : '100%'
-                                }}
-                            >
-                                <Preview htmlContent={parsedContent} />
-
-                                {isParsing && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-gray-200 bg-opacity-50">
-                                        <div className="animate-spin rounded-full border-8 border-t-8 border-gray-400 h-16 w-16" />
-                                    </div>
-                                )}
-                            </div>
-                        </>
-                    )}
+      <div className="w-full h-full p-1.5">
+        <AlertDismissible alert={alert} setAlert={setAlert} />
+        <ResizableSplitPane
+          orientation={isMobile ? 'vertical' : 'horizontal'}
+          initialSplitPosition={splitPosition}
+          showRightPane={!previewCollapsed}
+          onSplitChange={(newPosition) => {
+            setSplitPosition(newPosition);
+            localStorage.setItem('editor.splitPosition', newPosition);
+          }}
+          leftContent={
+            <Editor
+              noteid={noteid}
+              markdownContent={markdownContent}
+              setMarkdownContent={setMarkdownContent}
+              isDarkMode={isDarkMode}
+              fileData={fileData}
+              setFileData={setFileData}
+              viewCollapsed={previewCollapsed}
+              setViewCollapsed={previewCollapseUpdated}
+            />
+          }
+          rightContent={
+            <Preview htmlContent={parsedContent}>
+              {isParsing && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-200 bg-opacity-50">
+                  <div className="animate-spin rounded-full border-8 border-t-8 border-gray-400 h-16 w-16" />
                 </div>
-            </div>
-        </>
+              )}
+            </Preview>
+          }
+        />
+      </div>
     );
 }

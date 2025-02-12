@@ -14,7 +14,7 @@ function Collapsible({ label, children, onChangeCollapse = null, open = false })
         <div className='w-full'>
             {/* Summary / Header */}
             <button
-                className='flex items-center w-full text-left text-zinc-300 transition-colors'
+                className='flex items-center w-full text-left dark:text-zinc-300 transition-colors'
                 onClick={toggle}
             >
                 {/* Arrow rotation */}

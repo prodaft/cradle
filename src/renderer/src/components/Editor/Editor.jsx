@@ -18,6 +18,7 @@ import { Prec } from '@uiw/react-codemirror';
 import * as events from '@uiw/codemirror-extensions-events';
 import { NavArrowLeft, NavArrowRight } from 'iconoir-react';
 import { debounce } from 'lodash'; // or any debounce package
+import { useTheme } from '../../hooks/useTheme/useTheme';
 
 /**
  * This component makes use of a pre-existing code editor component (CodeMirror, see https://github.com/uiwjs/react-codemirror)
@@ -34,7 +35,7 @@ import { debounce } from 'lodash'; // or any debounce package
  * @param {StateSetter<string>} props.setMarkdownContent - callback used when the value of the content changes
  * @param {FileData} props.fileData - the files uploaded by the user. These belong to the note that is being written.
  * @param {StateSetter<FileData>} props.setFileData - callback used when the files change
- * @param {boolean} props.isLightMode - the current theme of the editor
+ * @param {boolean} props.isDarkMode - the current theme of the editor
  * @returns {Editor}
  * @constructor
  */
@@ -46,7 +47,6 @@ export default function Editor({
     setFileData,
     viewCollapsed,
     setViewCollapsed,
-    isLightMode,
 }) {
     const EMPTY_FILE_LIST = new DataTransfer().files;
     const [enableVim, setEnableVim] = useState(
@@ -57,6 +57,7 @@ export default function Editor({
     const [prevNoteId, setPrevNoteId] = useState(null);
     const [pendingFiles, setPendingFiles] = useState(EMPTY_FILE_LIST);
     const [codeMirrorContent, setCodeMirrorContent] = useState("")
+    const { isDarkMode, toggleTheme } = useTheme();
     const autoLinkId = useId();
     const vimModeId = useId();
     const editorRef = useRef(null);
@@ -377,7 +378,7 @@ export default function Editor({
                         key='markdown-input'
                         value={codeMirrorContent}
                         data-testid='markdown-input'
-                        theme={isLightMode ? eclipse : vscodeDark}
+                        theme={isDarkMode ? vscodeDark : eclipse}
                         height='100%'
                         extensions={extensions}
                         className='w-full h-full resize-none'

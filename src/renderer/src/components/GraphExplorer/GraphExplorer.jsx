@@ -5,6 +5,7 @@ import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { useNavigate } from 'react-router-dom';
 import Graph from '../Graph/Graph';
 import GraphQuery from '../GraphQuery/GraphQuery';
+import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
 
 export default function GraphExplorer() {
     const [data, setData] = useState({
@@ -20,7 +21,12 @@ export default function GraphExplorer() {
     const [showControls, setShowControls] = useState(false);
     const [is3DMode, setIs3DMode] = useState(false);
     const [entryGraphColors, setEntryGraphColors] = useState(null);
-    const [cache, setCache] = useState({ links: {}, nodes: {}, nodesSet: new Set(), linksSet: new Set() });
+    const [cache, setCache] = useState({
+        links: {},
+        nodes: {},
+        nodesSet: new Set(),
+        linksSet: new Set(),
+    });
     const [searchValue, setSearchValue] = useState('');
     const [disabledTypes, setDisabledTypes] = useState(new Set());
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
@@ -36,13 +42,13 @@ export default function GraphExplorer() {
     // Also, we remove links if either the source or target node has a disabled type.
     const filteredData = useMemo(() => {
         return {
-            nodes: data.nodes.filter(node => !disabledTypes.has(node.subtype)),
-            links: data.links.filter(
-                link => {
-                    return !disabledTypes.has(link.source.subtype) &&
+            nodes: data.nodes.filter((node) => !disabledTypes.has(node.subtype)),
+            links: data.links.filter((link) => {
+                return (
+                    !disabledTypes.has(link.source.subtype) &&
                     !disabledTypes.has(link.target.subtype)
-                }
-            ),
+                );
+            }),
         };
     }, [data, disabledTypes]);
 
@@ -113,11 +119,43 @@ export default function GraphExplorer() {
         });
     }, []);
 
+    const ControlSlider = ({ label, value, onChange, min, max, step }) => (
+        <div className='flex flex-row space-x-2 w-full'>
+            <label className='flex items-center justify-between space-x-2 w-full'>
+                <span className='text-sm'>{label}:</span>
+                <input
+                    type='range'
+                    min={min}
+                    max={max}
+                    step={step}
+                    className='range range-primary'
+                    value={value}
+                    onChange={(e) => onChange(Number(e.target.value))}
+                />
+            </label>
+        </div>
+    );
+
+    const ControlToggle = ({ label, checked, onChange }) => (
+        <div className='flex flex-row space-x-2 items-center'>
+            <label className='flex items-center justify-between space-x-2 w-full'>
+                <span className='text-sm w-full'>{label}:</span>
+                <input
+                    type='checkbox'
+                    checked={checked}
+                    onChange={(e) => onChange(e.target.checked)}
+                    className='toggle toggle-primary w-1/2'
+                />
+            </label>
+        </div>
+    );
+
     return (
-        <>
-            <div className='w-full h-full rounded-md flex p-1.5 gap-1.5 flex-row overflow-y-hidden relative'>
-                <AlertDismissible alert={alert} setAlert={setAlert} />
-                <div className='h-full w-2/5 bg-gray-2 rounded-md'>
+        <div className='w-full h-full overflow-y-hidden relative'>
+            <AlertDismissible alert={alert} setAlert={setAlert} />
+            <ResizableSplitPane
+                initialSplitPosition={40} // matches the original 2/5 width
+                leftContent={
                     <GraphQuery
                         setAlert={setAlert}
                         graphData={data}
@@ -129,11 +167,10 @@ export default function GraphExplorer() {
                         setHighlightedNodes={setInterestedNodes}
                         notesQuery={notesQuery}
                     />
-                </div>
-                <div className='h-full w-3/5 bg-gray-2 rounded-md overflow-hidden'>
-                    <div>
+                }
+                rightContent={
+                    <div className='relative'>
                         <Graph
-                            // Pass in the filtered data so that nodes/links whose type is disabled are not shown.
                             data={filteredData}
                             node_r={nodeRadiusCoefficient}
                             linkWidth={linkWidth}
@@ -155,37 +192,17 @@ export default function GraphExplorer() {
                             }}
                         />
 
-                        {entryGraphColors && showLegend && (
-                            <div className='absolute bottom-4 right-4 p-4 w-fit bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-md'>
-                                <div className='grid grid-cols-2 gap-2 max-h-40 overflow-y-auto'>
-                                    {Object.entries(entryGraphColors).map(([type, color]) => (
-                                        <div
-                                            key={type}
-                                            className={`flex flex-row items-center space-x-2 cursor-pointer ${
-                                                disabledTypes.has(type) ? 'opacity-50' : ''
-                                            }`}
-                                            onClick={() => toggleDisabledType(type)}
-                                        >
-                                            <div
-                                                className='w-4 h-4 rounded-full'
-                                                style={{ backgroundColor: color }}
-                                            ></div>
-                                            <span className={disabledTypes.has(type) ? 'line-through' : ''}>
-                                                {type}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
                         <div className='absolute top-4 right-4'>
                             <button
                                 onClick={() => setShowControls(!showControls)}
-                                className='bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg text-white p-2 rounded'
+                                className='bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg dark:text-white p-2 rounded'
                                 data-testid='toggle-controls'
                             >
-                                <Menu height='1.2em' width='1.2em' className='text-zinc-300' />
+                                <Menu
+                                    height='1.2em'
+                                    width='1.2em'
+                                    className='dark:text-zinc-300'
+                                />
                             </button>
                         </div>
 
@@ -195,18 +212,25 @@ export default function GraphExplorer() {
                                     <div className='flex flex-row space-x-2 items-center'>
                                         <input
                                             type='text'
-                                            className='input input-ghost-primary input-md text-white'
+                                            className='input input-ghost-primary input-md dark:text-white'
                                             placeholder='Search Graph'
-                                            onChange={(e) => setSearchValue(e.target.value)}
+                                            onChange={(e) =>
+                                                setSearchValue(e.target.value)
+                                            }
                                             onKeyDown={(e) => {
-                                                if (e.key === 'Enter') filterGraph(searchValue);
+                                                if (e.key === 'Enter')
+                                                    filterGraph(searchValue);
                                             }}
                                         />
                                         <button
                                             className='btn btn-primary hover:opacity-80 py-0 px-3'
                                             onClick={() => filterGraph(searchValue)}
                                         >
-                                            <Search height='1.2em' width='1.2em' className='text-white' />
+                                            <Search
+                                                height='1.2em'
+                                                width='1.2em'
+                                                className='text-white'
+                                            />
                                         </button>
                                         <button
                                             className='btn btn-ghost py-0 px-3'
@@ -220,86 +244,85 @@ export default function GraphExplorer() {
                                         </button>
                                     </div>
 
-                                    <div className='flex flex-row space-x-2 w-full'>
-                                        <label className='flex items-center justify-between space-x-2 w-full'>
-                                            <span className='text-sm'>Node Size:</span>
-                                            <input
-                                                type='range'
-                                                min='1'
-                                                max='10'
-                                                step='0.5'
-                                                className='range range-primary'
-                                                value={nodeRadiusCoefficient}
-                                                onChange={(e) => {
-                                                    setNodeRadiusCoefficient(Number(e.target.value));
-                                                }}
-                                            />
-                                        </label>
-                                    </div>
+                                    {/* Controls */}
+                                    <div className='flex flex-col space-y-4'>
+                                        <ControlSlider
+                                            label='Node Size'
+                                            min={1}
+                                            max={10}
+                                            step={0.5}
+                                            value={nodeRadiusCoefficient}
+                                            onChange={setNodeRadiusCoefficient}
+                                        />
+                                        <ControlSlider
+                                            label='Link Width'
+                                            min={1}
+                                            max={4}
+                                            step={0.5}
+                                            value={linkWidth}
+                                            onChange={setLinkWidth}
+                                        />
+                                        <ControlSlider
+                                            label='Label Size'
+                                            min={3}
+                                            max={16}
+                                            step={1}
+                                            value={labelSize}
+                                            onChange={setLabelSize}
+                                        />
 
-                                    <div className='flex flex-row space-x-2 w-full'>
-                                        <label className='flex items-center justify-between space-x-2 w-full'>
-                                            <span className='text-sm'>Link Width:</span>
-                                            <input
-                                                type='range'
-                                                min='1'
-                                                max='4'
-                                                step='0.5'
-                                                className='range range-primary'
-                                                value={linkWidth}
-                                                onChange={(e) => {
-                                                    setLinkWidth(Number(e.target.value));
-                                                }}
-                                            />
-                                        </label>
-                                    </div>
-
-                                    <div className='flex flex-row space-x-2 w-full'>
-                                        <label className='flex items-center justify-between space-x-2 w-full'>
-                                            <span className='text-sm'>Label Size:</span>
-                                            <input
-                                                type='range'
-                                                min='3'
-                                                max='16'
-                                                step='1'
-                                                className='range range-primary'
-                                                value={labelSize}
-                                                onChange={(e) => {
-                                                    setLabelSize(Number(e.target.value));
-                                                }}
-                                            />
-                                        </label>
-                                    </div>
-
-                                    <div className='flex flex-row space-x-2 items-center'>
-                                        <label className='flex items-center justify-between space-x-2 w-full'>
-                                            <span className='text-sm w-full'>3D View:</span>
-                                            <input
-                                                type='checkbox'
-                                                checked={is3DMode}
-                                                onChange={(e) => setIs3DMode(e.target.checked)}
-                                                className='toggle toggle-primary w-1/2'
-                                            />
-                                        </label>
-                                    </div>
-
-                                    <div className='flex flex-row space-x-2 items-center'>
-                                        <label className='flex items-center justify-between space-x-2 w-full'>
-                                            <span className='text-sm w-full'>Show Legend:</span>
-                                            <input
-                                                type='checkbox'
-                                                checked={showLegend}
-                                                onChange={(e) => setShowLegend(e.target.checked)}
-                                                className='toggle toggle-primary w-1/2'
-                                            />
-                                        </label>
+                                        <ControlToggle
+                                            label='3D View'
+                                            checked={is3DMode}
+                                            onChange={setIs3DMode}
+                                        />
+                                        <ControlToggle
+                                            label='Show Legend'
+                                            checked={showLegend}
+                                            onChange={setShowLegend}
+                                        />
                                     </div>
                                 </div>
                             </div>
                         )}
                     </div>
-                </div>
-            </div>
-        </>
+                }
+            />
+
+                        {entryGraphColors && showLegend && (
+                            <div className='absolute bottom-4 right-4 p-4 w-fit bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-md'>
+                                <div className='grid grid-cols-2 gap-2 max-h-32 overflow-y-auto'>
+                                    {Object.entries(entryGraphColors).map(
+                                        ([type, color]) => (
+                                            <div
+                                                key={type}
+                                                className={`flex flex-row items-center space-x-2 cursor-pointer ${
+                                                    disabledTypes.has(type)
+                                                        ? 'opacity-50'
+                                                        : ''
+                                                }`}
+                                                onClick={() => toggleDisabledType(type)}
+                                            >
+                                                <div
+                                                    className='w-4 h-4 rounded-full'
+                                                    style={{ backgroundColor: color }}
+                                                ></div>
+                                                <span
+                                                    className={
+                                                        disabledTypes.has(type)
+                                                            ? 'line-through'
+                                                            : ''
+                                                    }
+                                                >
+                                                    {type}
+                                                </span>
+                                            </div>
+                                        ),
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+        </div>
     );
 }
