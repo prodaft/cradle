@@ -2,7 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import {
     getPermissions,
-    getSimulatedTokens,
+    manageUser
 } from '../../services/adminService/adminService';
 import AdminPanelPermissionCard from '../AdminPanelPermissionCard/AdminPanelPermissionCard';
 import useFrontendSearch from '../../hooks/useFrontendSearch/useFrontendSearch';
@@ -31,10 +31,34 @@ export default function AdminPanelUserPermissions() {
     const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(entities);
 
     const simulateSession = () => {
-        getSimulatedTokens(id)
+        manageUser(id, 'simulate')
             .then((res) => {
                 auth.logIn(res.data['access'], res.data['refresh']);
                 navigate('/', { replace: true });
+            })
+            .catch(displayError(setAlert, navigate));
+    };
+
+    const sendEmailConfirmation = () => {
+        manageUser(id, 'send_email_confirmation')
+            .then((res) => {
+                setAlert({
+                    show: true,
+                    message: 'Email confirmation sent successfully',
+                    color: 'green',
+                });
+            })
+            .catch(displayError(setAlert, navigate));
+    };
+
+    const sendPasswordResetEmail = () => {
+        manageUser(id, 'password_reset_email')
+            .then((res) => {
+                setAlert({
+                    show: true,
+                    message: 'Password reset email sent successfully',
+                    color: 'green',
+                });
             })
             .catch(displayError(setAlert, navigate));
     };
@@ -88,6 +112,28 @@ export default function AdminPanelUserPermissions() {
                             onClick={simulateSession}
                         >
                             Simulate
+                        </button>
+                        <button
+                            id='email-confirmation'
+                            data-testid='email-confirmation'
+                            name='email-confirmation'
+                            type='button'
+                            className='btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 tooltip tooltip-bottom tooltip-primary ml-2'
+                            data-tooltip={'Send email confirmation'}
+                            onClick={sendEmailConfirmation}
+                        >
+                            Email Confirmation
+                        </button>
+                        <button
+                            id='password-reset'
+                            data-testid='password-reset'
+                            name='password-reset'
+                            type='button'
+                            className='btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 tooltip tooltip-bottom tooltip-primary ml-2'
+                            data-tooltip={'Send password reset email'}
+                            onClick={sendPasswordResetEmail}
+                        >
+                            Password Reset
                         </button>
                     </div>
 

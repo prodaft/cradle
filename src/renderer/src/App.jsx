@@ -74,7 +74,7 @@ function App() {
                             />
                             <Route path='/publish' element={<PublishPreview />}></Route>
                             <Route
-                                path='/account'
+                                path='/account/:target'
                                 element={<AccountSettings />}
                             ></Route>
                             <Route path='/activity' element={<ActivityList />}></Route>

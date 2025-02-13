@@ -20,26 +20,37 @@ import { getUser, updateUser } from '../../services/userService/userService';
  * @constructor
  */
 export default function AccountSettings() {
-    const [id, setId] = useState('');
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('password');
-    const [vtKey, setVtKey] = useState('');
-    const [catalystKey, setCatalystKey] = useState('');
+    const [formData, setFormData] = useState({
+        id: '',
+        name: '',
+        email: '',
+        password: 'password',
+        vtKey: 'apikey',
+        catalystKey: 'apikey',
+        email_confirmed: false,
+        is_active: false
+    });
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const {target} = useParams();
     const navigate = useNavigate();
     const handleError = displayError(setAlert, navigate);
-
     const auth = useAuth();
+    const isAdmin = auth?.isAdmin;
+    const isOwnAccount = target === 'me';
 
     const populateAccountDetails = async () => {
-        getUser('me')
+        getUser(target)
             .then((res) => {
-                setId(res.data.id);
-                setName(res.data.username);
-                setEmail(res.data.email);
-                if (res.data.vt_api_key) setVtKey('apikey');
-                if (res.data.catalyst_api_key) setCatalystKey('apikey');
+                setFormData({
+                    id: res.data.id,
+                    name: res.data.username,
+                    email: res.data.email,
+                    password: 'password',
+                    vtKey: res.data.vt_api_key ? 'apikey' : '',
+                    catalystKey: res.data.catalyst_api_key ? 'apikey' : '',
+                    email_confirmed: res.data.email_confirmed || false,
+                    is_active: res.data.is_active || false
+                });
             })
             .catch(handleError);
     };
@@ -49,19 +60,24 @@ export default function AccountSettings() {
 
         const data = {};
 
-        if (password !== 'password') {
-            data['password'] = password;
+        if (formData.password !== 'password') {
+            data['password'] = formData.password;
         }
 
-        if (vtKey !== 'apikey') {
-            data['vt_api_key'] = vtKey;
+        if (formData.vtKey !== 'apikey') {
+            data['vt_api_key'] = formData.vtKey;
         }
 
-        if (catalystKey !== 'apikey') {
-            data['catalyst_api_key'] = catalystKey;
+        if (formData.catalystKey !== 'apikey') {
+            data['catalyst_api_key'] = formData.catalystKey;
         }
 
-        updateUser(id, data)
+        if (isAdmin && !isOwnAccount) {
+            data['email_confirmed'] = formData.email_confirmed;
+            data['is_active'] = formData.is_active;
+        }
+
+        updateUser(formData.id, data)
             .then((res) => {
                 setAlert({
                     show: true,
@@ -70,6 +86,20 @@ export default function AccountSettings() {
                 });
             })
             .catch(displayError(setAlert));
+    };
+
+    const handleInputChange = (field) => (value) => {
+        setFormData(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    };
+
+    const handleCheckboxChange = (field) => (e) => {
+        setFormData(prev => ({
+            ...prev,
+            [field]: e.target.checked
+        }));
     };
 
     useEffect(() => {
@@ -89,14 +119,14 @@ export default function AccountSettings() {
                         name='register-form'
                         className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'
                     >
-                        <div className='space-y-6'>
+                        <div className='space-y-6'> 
                             <FormField
                                 name='name'
                                 type='text'
                                 labelText='Username'
                                 placeholder='Username'
-                                value={name}
-                                handleInput={setName}
+                                value={formData.name}
+                                handleInput={handleInputChange('name')}
                                 disabled={true}
                             />
                             <FormField
@@ -104,8 +134,8 @@ export default function AccountSettings() {
                                 type='text'
                                 labelText='Email'
                                 placeholder='Email'
-                                value={email}
-                                handleInput={setEmail}
+                                value={formData.email}
+                                handleInput={handleInputChange('email')}
                                 disabled={true}
                             />
                             <FormField
@@ -113,25 +143,51 @@ export default function AccountSettings() {
                                 type='password'
                                 labelText='Password'
                                 placeholder='Password'
-                                value={password}
-                                handleInput={setPassword}
+                                value={formData.password}
+                                handleInput={handleInputChange('password')}
                             />
                             <FormField
                                 name='vtKey'
                                 type='password'
                                 labelText='VirusTotal API Key'
                                 placeholder='VirusTotal API Key'
-                                value={vtKey}
-                                handleInput={setVtKey}
+                                value={formData.vtKey}
+                                handleInput={handleInputChange('vtKey')}
                             />
                             <FormField
                                 name='catalystKey'
                                 type='password'
                                 labelText='Catalyst API Key'
                                 placeholder='Catalyst API Key'
-                                value={catalystKey}
-                                handleInput={setCatalystKey}
+                                value={formData.catalystKey}
+                                handleInput={handleInputChange('catalystKey')}
                             />
+                            {isAdmin && !isOwnAccount && (
+                                <>
+                                    <div className="form-control flex flex-row justify-between items-center">
+                                        <label className="label flex justify-between w-full">
+                                            <span className="label-text">Email Confirmed</span>
+                                            <input 
+                                                type="checkbox" 
+                                                className="checkbox ml-4" 
+                                                checked={formData.email_confirmed}
+                                                onChange={handleCheckboxChange('email_confirmed')}
+                                            />
+                                        </label>
+                                    </div>
+                                    <div className="form-control flex flex-row justify-between items-center">
+                                        <label className="label flex justify-between w-full">
+                                            <span className="label-text">Account Active</span>
+                                            <input 
+                                                type="checkbox" 
+                                                className="checkbox ml-4" 
+                                                checked={formData.is_active}
+                                                onChange={handleCheckboxChange('is_active')}
+                                            />
+                                        </label>
+                                    </div>
+                                </>
+                            )}
                             <AlertBox alert={alert} />
                             <button
                                 className='btn btn-primary btn-block'

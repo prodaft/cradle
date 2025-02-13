@@ -196,14 +196,15 @@ export async function getPermissions(userId) {
 }
 
 /**
- * Gets a pair of access/refresh tokens to simulate a user
- *
+ * Manages user actions like simulation, email confirmation, and password reset
+ * 
  * @param {string} userId - user id
+ * @param {string} action - action to perform: 'simulate', 'email_confirmation', 'password_reset'
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export async function getSimulatedTokens(userId) {
+export async function manageUser(userId, action) {
     return authAxios({
         method: 'get',
-        url: `/users/${userId}/simulate`,
+        url: `/users/${userId}/manage/${action}`,
     });
 }

@@ -102,13 +102,13 @@ export default function AdminPanelCard({
                         className='btn btn-ghost w-fit h-full p-1'
                         onClick={() =>
                             navigate(
-                                typename
+                                type == 'user' ? '/account/'+id : typename
                                     ? '/admin/edit-entity/' + id
                                     : '/admin/edit-entry-type/' + id.replace('/', '--'),
                             )
                         }
                     >
-                        {type != 'user' && <EditPencil />}
+                        <EditPencil />
                     </button>
                     <button
                         className='btn btn-ghost w-fit h-full p-1'

@@ -61,7 +61,7 @@ export default function Sidebar({
         navigate(graphViewLocation);
     }, [navigate]);
 
-    const accountSettingsLocation = '/account';
+    const accountSettingsLocation = '/account/me';
     const handleAccountSettings = useCallback(() => {
         navigate(accountSettingsLocation);
     }, [navigate]);
@@ -133,8 +133,8 @@ export default function Sidebar({
                     <SidebarSection type='footer' height='fit' justify='end'>
                         <SidebarItem
                             handleClick={onThemeToggle}
-                            icon={!isDarkMode ? <SunLight /> : <HalfMoon />}
-                            text={!isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                            icon={isDarkMode ? <SunLight /> : <HalfMoon />}
+                            text={isDarkMode ? 'Light Mode' : 'Dark Mode'}
                         />
                         <SidebarItem
                             handleClick={handleNotifications}
