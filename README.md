@@ -51,7 +51,7 @@ This section provides a comprehensive installation guide and instructions on how
 git clone git@github.com:prodaft/cradle-backend.git cradle
 cd cradle
 git submodule update --init --recursive
-sudo docker compose up -d
+sudo docker compose -f docker-compose-demo.yml up -d
 ```
 
 #### Native
