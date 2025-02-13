@@ -13,18 +13,14 @@ import { markedHighlight } from 'marked-highlight';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-c.js';
 import 'prismjs/components/prism-python.js';
+import QueryString from 'qs';
 
 
-
-// ─── UTILITY CONSTANTS AND FUNCTIONS ─────────────────────────────
-
-// The markdown CSS classes to style links for different entry types.
 const entryMarkdownColors = {
   entities: 'text-[#744abf]',
   artifacts: 'text-[#e66100]',
 };
 
-// Create a dashboard link for an entry. If invalid, returns '/not-found'.
 function createDashboardLink(entry) {
   if (!entry) return '/not-found';
   const { name, subtype } = entry;
@@ -32,18 +28,16 @@ function createDashboardLink(entry) {
   return `/dashboards/${encodeURIComponent(subtype)}/${encodeURIComponent(name)}/`;
 }
 
-// A helper to build a download URL for a given file object.
-// Adjust this implementation to match your file object structure.
-function createDownloadPath(file) {
-  // If the file already includes a downloadUrl, use it.
-  if (file.downloadUrl) return file.downloadUrl;
-  // Otherwise, default to a simple URL using an id or minio_file_name.
-  return `/file-transfer/download/?id=${encodeURIComponent(
-    file.id || file.minio_file_name
-  )}`;
-}
+const createDownloadPath = (file) => {
+    const apiBaseUrl = axios.defaults.baseURL;
+    const { minio_file_name, bucket_name } = file;
+    const queryParams = QueryString.stringify({
+        bucketName: bucket_name,
+        minioFileName: minio_file_name,
+    });
+    return `${apiBaseUrl}/file-transfer/download/?${queryParams}`;
+};
 
-// Prepend file-data links to the markdown. These links won’t be visible in the preview.
 function prependLinks(mdContent, fileData) {
   const mdLinks = fileData
     .map((file) => {
@@ -54,12 +48,6 @@ function prependLinks(mdContent, fileData) {
   return mdLinks + mdContent;
 }
 
-// Make a GET request to the download endpoint.
-function getDownloadLink(path) {
-  return axios({ url: path, method: 'GET' });
-}
-
-// Cache for entry classes (fetched from the backend).
 let EntryClassesCached = null;
 
 /**
@@ -75,7 +63,6 @@ async function getEntryClasses(nonCached = false) {
       url: '/entries/entry_classes/',
     })
       .then((response) => {
-        // Cache a deep clone so that later mutations won’t affect the cached value.
         EntryClassesCached = new Promise((resolve) =>
           resolve(JSON.parse(JSON.stringify(response)))
         );
@@ -89,7 +76,6 @@ async function getEntryClasses(nonCached = false) {
   }
 }
 
-// A simple helper to check whether a string can be parsed as a URL.
 function canParseURL(str) {
   try {
     new URL(str);
@@ -99,18 +85,12 @@ function canParseURL(str) {
   }
 }
 
-// ─── MARKED AND CUSTOM EXTENSIONS ────────────────────────────────
-
-// Regular expression to match our custom "cradle link" syntax.
-// Example: [[entity:SomeName|Alias]]
 const LINK_REGEX =
   /^\[\[([^:|]+?):((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\]/;
 
-// Initialize caches for download links and Minio links.
 let DownloadLinkPromiseCache = {};
 let MinioCache = {};
 
-// Initialize Marked with Prism syntax highlighting.
 const marked = new Marked(
   markedHighlight({
     highlight(code, lang) {
@@ -120,7 +100,6 @@ const marked = new Marked(
   })
 );
 
-// Custom extension to tokenize cradle links.
 const cradleLinkExtension = {
   name: 'cradlelink',
   level: 'inline',
@@ -147,7 +126,6 @@ const cradleLinkExtension = {
   },
 };
 
-// For a token representing a cradle link, convert it into an HTML link.
 async function renderCradleLink(entityClasses, token) {
   if (token.type !== 'cradlelink') return false;
 
@@ -156,7 +134,6 @@ async function renderCradleLink(entityClasses, token) {
   const alias = token.cradle_alias;
 
   if (entityClasses.has(type)) {
-    // If the type is among known entity types, build an "entity" link.
     const url = createDashboardLink({
       name: name,
       type: 'entity',
@@ -165,7 +142,6 @@ async function renderCradleLink(entityClasses, token) {
     const displayedName = alias ? alias : name;
     token.html = `<a class="${entryMarkdownColors.entities}" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
   } else {
-    // Otherwise, assume it is an artifact.
     const url = createDashboardLink({
       name: name,
       type: 'artifact',
@@ -177,17 +153,15 @@ async function renderCradleLink(entityClasses, token) {
   return true;
 }
 
-// For links (or images) that point to our file-transfer endpoint,
-// fetch a presigned (Minio) URL and replace the href.
 async function resolveMinioLinks(token) {
   if (
     (token.type === 'link' || token.type === 'image') &&
     canParseURL(token.href)
   ) {
     const url = new URL(token.href);
-    // Use the worker’s Axios base URL (which should be set from the main thread)
+
     const baseUrlStr = axios.defaults.baseURL || '';
-    if (!baseUrlStr) return; // Nothing to do if no base URL was provided.
+    if (!baseUrlStr) return;
     const apiBaseUrl = new URL(baseUrlStr);
     let apiBasePath = apiBaseUrl.pathname;
     if (apiBasePath.endsWith('/')) {
@@ -206,8 +180,8 @@ async function resolveMinioLinks(token) {
           presigned = result.presigned;
           expiry = result.expiry;
           MinioCache[apiDownloadPath] = { presigned, expiry };
-        } catch {
-          throw new Error('There was an error when parsing token ' + token.text);
+        } catch (error) {
+          throw new Error(error + '. There was an error when parsing token ' + token.text);
         }
       }
       token.href = presigned;
@@ -215,7 +189,6 @@ async function resolveMinioLinks(token) {
   }
 }
 
-// Helper: for each token, try to render a cradle link; if not, resolve Minio links.
 function walkTokens(entityClasses) {
   return async (token) => {
     if (!(await renderCradleLink(entityClasses, token))) {
@@ -261,31 +234,28 @@ async function parseMarkdown(mdContent, fileData) {
   }
 }
 
-// A mock function that fetches presigned links. Replace with your actual logic if needed.
-async function fetchMinioDownloadLink(url) {
-  // You may already have something like `getDownloadLink` that does this.
-  // This is just a placeholder.
-  // E.g., you might do:
-  //   const { data } = await axios.get(url);
-  //   return data;
-  return {
-    presigned: url + '&presigned=true',
-    expiry: Date.now() + 60_000, // 1 minute from now
-  };
+const getDownloadLink = (path) => {
+    return axios({
+        url: path,
+        method: 'GET',
+    });
+};
+
+function fetchMinioDownloadLink(href) {
+    if (!DownloadLinkPromiseCache[href]) {
+        DownloadLinkPromiseCache[href] = getDownloadLink(href).then((response) => {
+            const presigned = response.data.presigned;
+            const expiry = response.data.expiry;
+            return { presigned, expiry };
+        });
+    }
+
+    return DownloadLinkPromiseCache[href];
 }
 
-// ─── NEW: KEEP TRACK OF LATEST JOB ID ─────────────────────────────
-
-let currentJobId = 0; // Tracks the most recent job. Incremented with each message.
-
-// ─── WORKER MESSAGE HANDLING ──────────────────────────────────────
 self.addEventListener('message', async (event) => {
-  // Each message is a new "job"; increment and capture that job ID locally.
-  const jobId = ++currentJobId;
-
   const { markdown, fileData, token, apiBaseUrl } = event.data;
 
-  // Set up Axios manually.
   if (token) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   }
@@ -294,22 +264,15 @@ self.addEventListener('message', async (event) => {
   }
 
   if (!markdown) {
-    // If the job is still the most recent, respond; otherwise do nothing.
-    if (jobId === currentJobId) {
-      self.postMessage({ success: false, error: 'No markdown content provided' });
-    }
+    self.postMessage({ success: false, error: 'No markdown content provided' });
     return;
   }
 
   try {
     const html = await parseMarkdown(markdown, fileData);
 
-    // Only post back if this job is still the newest one.
     self.postMessage({ success: true, html });
   } catch (error) {
-    // Only report the error if this job is still the most recent
-    if (jobId === currentJobId) {
-      self.postMessage({ success: false, error: error.message || String(error) });
-    }
+    self.postMessage({ success: false, error: error.message || String(error) });
   }
 });
