@@ -4,7 +4,7 @@ import { getGraphData, queryGraph } from '../../services/graphService/graphServi
 import { Menu, RefreshDouble, Search } from 'iconoir-react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { flattenGraphEntries, preprocessData } from '../../utils/graphUtils/graphUtils';
 import Graph from '../Graph/Graph';
 import {
@@ -27,6 +27,7 @@ export default function GraphQuery({
     notesQuery,
 }) {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const parseEntry = (entry) => {
         let parts = entry.split(':');
@@ -35,15 +36,26 @@ export default function GraphQuery({
         return { subtype, name };
     };
 
-    const [query, setQuery] = useState({
-        operation: 'pathfind',
+    
+    const [query, setQuery] = useState(() => ({
+        operation: searchParams.get('operation') || 'pathfind',
         params: {
-            src: '',
-            dst: '',
-            min_depth: 1,
-            max_depth: 2,
+            src: searchParams.get('src') || '',
+            dst: searchParams.get('dst') || '',
+            min_depth: parseInt(searchParams.get('min_depth')) || 1,
+            max_depth: parseInt(searchParams.get('max_depth')) || 2,
         },
-    });
+    }));
+
+    useEffect(() => {
+        const params = new URLSearchParams();
+        params.set('operation', query.operation);
+        params.set('src', query.params.src);
+        params.set('dst', query.params.dst);
+        params.set('min_depth', query.params.min_depth);
+        params.set('max_depth', query.params.max_depth);
+        setSearchParams(params);
+    }, [query, setSearchParams]);
 
     const [loading, setLoading] = useState(false);
 

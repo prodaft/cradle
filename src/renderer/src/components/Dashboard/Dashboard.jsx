@@ -11,6 +11,7 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import NavbarButton from '../NavbarButton/NavbarButton';
 import { TaskList, Trash } from 'iconoir-react/regular';
+import { Graph } from '@phosphor-icons/react';
 import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 import { deleteEntry } from '../../services/adminService/adminService';
 import NotFound from '../NotFound/NotFound';
@@ -245,6 +246,15 @@ export default function Dashboard() {
     };
 
     const navbarContents = [
+        // Add graph visualization button
+        <NavbarButton
+            key='view-graph-btn'
+            icon={<Graph height={24} width={24} />}
+            text='Explore in Graph'
+            onClick={() => navigate(`/knowledge-graph?operation=bfs&src=${contentObject.subtype}:${contentObject.name}&min_depth=1&max_depth=2`)}
+            data-testid='view-graph-btn'
+        />,
+
         // If the user is an admin and the dashboard is not for an artifact, add a delete button to the navbar
         auth.isAdmin && contentObject.type !== 'artifact' && (
             <NavbarButton
