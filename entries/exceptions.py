@@ -45,7 +45,7 @@ class InvalidEntryException(APIException):
     def __init__(self, entry_class: str, data: str, *args, **kwargs) -> None:
         self.default_detail = (
             f"Entry ({entry_class}: {data}) does not"
-            + "obey the specified format for the entry type!"
+            + " obey the specified format for the entry type!"
         )
         super().__init__(*args, **kwargs)
 

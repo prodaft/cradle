@@ -199,19 +199,7 @@ class UserDetail(APIView):
         )
 
 
-@extend_schema_view(
-    get=extend_schema(
-        description="Allows an admin to simulate a login for a non-admin user by obtaining a token pair.",
-        responses={
-            200: "Token pair for user",
-            401: "User is not authenticated.",
-            403: "Admin privilege required, cannot simulate admin login.",
-            404: "User not found.",
-        },
-        summary="Simulate User Login",
-    )
-)
-class UserSimulate(APIView):
+class ManageUser(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsAdminUser]
 
@@ -222,8 +210,16 @@ class UserSimulate(APIView):
             "access": str(refresh.access_token),
         }
 
-    def get(self, request, user_id, *args, **kwargs):
-        user = None
+    def get(self, request, user_id, action_name, *args, **kwargs):
+        if action_name not in [
+            "simulate",
+            "send_email_confirmation",
+            "password_reset_email",
+        ]:
+            return Response("Unknown action", status=status.HTTP_400_BAD_REQUEST)
+        return self.__getattribute__(action_name)(request, user_id, *args, **kwargs)
+
+    def password_reset_email(self, request, user_id, *args, **kwargs):
         try:
             user = CradleUser.objects.get(id=user_id)
         except CradleUser.DoesNotExist:
@@ -232,12 +228,48 @@ class UserSimulate(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        user.send_password_reset()
+
+        return Response(
+            "Password reset email has been sent.",
+            status=status.HTTP_200_OK,
+        )
+
+    def send_email_confirmation(self, request, user_id, *args, **kwargs):
+        try:
+            user = CradleUser.objects.get(id=user_id)
+        except CradleUser.DoesNotExist:
+            return Response(
+                "There is no user with the specified ID.",
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if user.email_confirmed:
+            return Response(
+                "User's email is already confirmed.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user.send_email_confirmation()
+        return Response(
+            "Email confirmation has been sent.",
+            status=status.HTTP_200_OK,
+        )
+
+    def simulate(self, request, user_id, *args, **kwargs):
+        user = None
+        try:
+            user = CradleUser.objects.get(id=user_id)
+        except CradleUser.DoesNotExist:
+            return Response(
+                "There is no user with the specified ID.",
+                status=status.HTTP_404_NOT_FOUND,
+            )
         if user.is_superuser:
             return Response(
                 "You are not allowed to simulate an admin.",
                 status=status.HTTP_403_FORBIDDEN,
             )
-
         return Response(self.get_tokens_for_user(user), status=status.HTTP_200_OK)
 
 

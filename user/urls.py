@@ -23,8 +23,8 @@ urlpatterns = [
         name="user_detail",
     ),
     path(
-        "<uuid:user_id>/simulate",
-        user_view.UserSimulate.as_view(),
-        name="user_simulate",
+        "<uuid:user_id>/manage/<str:action_name>",
+        user_view.ManageUser.as_view(),
+        name="user_manage",
     ),
 ]
