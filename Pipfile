@@ -33,6 +33,7 @@ environs = "*"
 coverage = "*"
 django-lifecycle = "*"
 sentry-sdk = {extras = ["django"], version = "*"}
+celery = {extras = ["redis"], version = "*"}
 
 [dev-packages]
 

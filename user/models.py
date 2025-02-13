@@ -8,6 +8,7 @@ from django.core.mail import send_mail
 from django.db import models
 
 from logs.models import LoggableModelMixin
+from mail.models import ConfirmationMail, ResetPasswordMail
 
 from .managers import CradleUserManager
 
@@ -68,17 +69,8 @@ class CradleUser(AbstractUser, LoggableModelMixin):
             ]
         )
 
-        # Construct email content
-        confirmation_url = f"{settings.FRONTEND_URL}/#confirm-email?token={self.email_confirmation_token}"
-        subject = "CRADLE Email Confirmation"
-        message = (
-            f"Hey {self.username}!\nPlease confirm your email"
-            + f"by visiting the following link: {confirmation_url}"
-        )
-        from_email = settings.DEFAULT_FROM_EMAIL
-
-        # Send email
-        send_mail(subject, message, from_email, [self.email])
+        mail = ConfirmationMail(self)
+        mail.dispatch()
 
     def send_password_reset(self):
         """Send a password reset email to the user."""
@@ -87,17 +79,8 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         self.password_reset_token_expiry = datetime.now() + timedelta(hours=1)
         self.save(update_fields=["password_reset_token", "password_reset_token_expiry"])
 
-        # Construct email content
-        reset_url = f"{settings.FRONTEND_URL}/#change-password?token={self.password_reset_token}"
-        subject = "CRADLE Password Reset"
-        message = (
-            f"Hey {self.username}!\nYou can reset your password using the "
-            + f"following link: {reset_url}\nThis link will expire in 1 hour."
-        )
-        from_email = settings.DEFAULT_FROM_EMAIL
-
-        # Send email
-        send_mail(subject, message, from_email, [self.email])
+        mail = ResetPasswordMail(self)
+        mail.dispatch()
 
     def __hash__(self) -> int:
         return hash(self.pk)

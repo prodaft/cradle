@@ -1,0 +1,40 @@
+from __future__ import absolute_import, unicode_literals
+import os
+from celery import Celery
+from django.conf import settings
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cradle.settings")
+
+app = Celery("cradle")
+
+app.config_from_object("django.conf:settings", namespace="CELERY")
+
+app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
+
+app.conf.timezone = "UTC"
+app.conf.broker_connection_retry_on_startup = True
+app.conf.result_expires = 259200  # 3 days in seconds
+
+app.conf.task_routes = {
+    "mail.tasks.send_email_task": {"queue": "email"},
+}
+
+app.conf.task_default_priority = 5
+app.conf.task_send_sent_event = True
+
+app.conf.task_routes.update(
+    {
+        "send_email_task": {
+            "queue": "email",
+            "rate_limit": "100/m",
+        }
+    }
+)
+
+app.conf.task_time_limit = 30 * 60
+app.conf.task_soft_time_limit = 15 * 60
+
+app.conf.task_default_retry_delay = 180
+app.conf.task_max_retries = 3
+
+app.conf.beat_schedule = {}
