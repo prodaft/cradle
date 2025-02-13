@@ -35,6 +35,18 @@ This section provides a comprehensive installation guide and instructions on how
 If you want to run CRADLE in docker, you can use our docker-compose file which
 starts up all the necessary services for you. 
 
+CRADLE employs a client-server architecture with a modular design, facilitating future feature additions and improvements.
+The front end is primarily built using [Electron](https://www.electronjs.org/) and [React](https://react.dev/), supported by technologies such as [Tailwind CSS](https://tailwindcss.com/) and [Vite](https://vitejs.dev/). The back end is built mainly using [Django](https://www.djangoproject.com/). For more information about the front end visit its [page](https://gitlab.ewi.tudelft.nl/cse2000-software-project/2023-2024/cluster-j/08b/frontend).
+
+---
+
+## Getting Started
+
+This section provides a comprehensive installation guide and instructions on how to use the application.
+
+### Installation
+
+1. Clone the project:
 ```
 git clone git@github.com:prodaft/cradle-backend.git cradle
 cd cradle
