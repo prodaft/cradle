@@ -18,7 +18,7 @@ import { Prec } from '@uiw/react-codemirror';
 import * as events from '@uiw/codemirror-extensions-events';
 import { NavArrowLeft, NavArrowRight } from 'iconoir-react';
 import { debounce } from 'lodash'; // or any debounce package
-import { useTheme } from '../../hooks/useTheme/useTheme';
+import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
 
 /**
  * This component makes use of a pre-existing code editor component (CodeMirror, see https://github.com/uiwjs/react-codemirror)
@@ -56,7 +56,7 @@ export default function Editor({
     const [lspPack, setLspPack] = useState({ classes: {}, instances: {} });
     const [prevNoteId, setPrevNoteId] = useState(null);
     const [pendingFiles, setPendingFiles] = useState(EMPTY_FILE_LIST);
-    const [codeMirrorContent, setCodeMirrorContent] = useState("")
+    const [codeMirrorContent, setCodeMirrorContent] = useState('');
     const { isDarkMode, toggleTheme } = useTheme();
     const autoLinkId = useId();
     const vimModeId = useId();
@@ -214,6 +214,10 @@ export default function Editor({
         }
     };
 
+    useEffect(() => {
+      setCodeMirrorContent(markdownContent);
+    }, [isDarkMode]);
+
     const autoFormatLinks = () => {
         if (!editorRef.current) {
             return;
@@ -262,9 +266,10 @@ export default function Editor({
             position += word.length;
         });
 
-        let text = markdownContent.substring(0, from) +
-                linkedMarkdown +
-                markdownContent.substring(to);
+        let text =
+            markdownContent.substring(0, from) +
+            linkedMarkdown +
+            markdownContent.substring(to);
 
         setMarkdownContent(text);
         setCodeMirrorContent(text);
@@ -296,19 +301,18 @@ export default function Editor({
     }, []);
 
     useEffect(() => {
-      if(prevNoteId != null && codeMirrorContent != "") {
-        setMarkdownContent('')
-        setCodeMirrorContent('')
-      }
-      setPrevNoteId(noteid)
-    }, [noteid])
-
+        if (prevNoteId != null && codeMirrorContent != '') {
+            setMarkdownContent('');
+            setCodeMirrorContent('');
+        }
+        setPrevNoteId(noteid);
+    }, [noteid]);
 
     useEffect(() => {
-      if(codeMirrorContent == "") {
-        setCodeMirrorContent(markdownContent)
-      }
-    }, [markdownContent])
+        if (codeMirrorContent == '') {
+            setCodeMirrorContent(markdownContent);
+        }
+    }, [markdownContent]);
 
     return (
         <div className='h-full w-full flex flex-col flex-1'>
@@ -338,11 +342,7 @@ export default function Editor({
                             htmlFor={vimModeId}
                             className='flex flex-row items-center cursor-pointer'
                         >
-                            <img
-                                src={vimIcon}
-                                alt=''
-                                style={{ width: '25px' }}
-                            />
+                            <img src={vimIcon} alt='' style={{ width: '25px' }} />
                         </label>
                         <input
                             id={vimModeId}

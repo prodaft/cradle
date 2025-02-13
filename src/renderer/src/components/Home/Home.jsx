@@ -7,7 +7,7 @@ import FleetingNotesPanel from '../FleetingNotesPanel/FleetingNotesPanel';
 import NotificationsPanel from '../NotificationsPanel/NotificationsPanel';
 import useInterval from '../../hooks/useInterval/useInterval';
 import { getNotificationCount } from '../../services/notificationsService/notificationsService';
-import { useTheme } from '../../hooks/useTheme/useTheme';
+import { useTheme } from '../../contexts/ThemeContext/ThemeContext.jsx';
 
 /**
  * The Home component serves as the main layout of the application. It is composed of several child components:

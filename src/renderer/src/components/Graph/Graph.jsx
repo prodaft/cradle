@@ -3,7 +3,7 @@ import 'tailwindcss/tailwind.css';
 import { ForceGraph2D, ForceGraph3D } from 'react-force-graph';
 import { useNavigate } from 'react-router-dom';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
-import { useTheme } from '../../hooks/useTheme/useTheme';
+import { useTheme } from '../../contexts/ThemeContext/ThemeContext.jsx';
 
 /**
  * The component displays a graph visualization using D3.js.

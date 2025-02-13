@@ -8,7 +8,6 @@ import AlertBox from '../AlertBox/AlertBox';
 import useAuth from '../../hooks/useAuth/useAuth';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { useWindowSize } from '@uidotdev/usehooks';
-import { useTheme } from '../../hooks/useTheme/useTheme';
 
 /**
  * Login component - renders the login form.
@@ -25,7 +24,6 @@ export default function Login() {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const windowSize = useWindowSize();
     const location = useLocation();
-    const { isDarkMode, toggleTheme } = useTheme();
     const { from, state } = location.state || { from: { pathname: '/' } };
 
     const auth = useAuth();

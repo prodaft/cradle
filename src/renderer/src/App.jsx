@@ -26,6 +26,7 @@ import ForgotPassword from './components/ForgotPassword/ForgotPassword.jsx';
 import GraphExplorer from './components/GraphExplorer/GraphExplorer.jsx';
 import FleetingNoteEditor from './components/FleetingNoteEditor/FleetingNoteEditor.jsx';
 import { useTheme } from './hooks/useTheme/useTheme';
+import { ThemeProvider } from './contexts/ThemeContext/ThemeContext.jsx';
 
 /**
  * The App component is the artifact point of the application. It wraps the entire application in the AuthProvider
@@ -45,6 +46,7 @@ function App() {
     }
 
     return (
+      <ThemeProvider>
         <HashRouter>
             <AuthProvider>
                 <Routes>
@@ -126,6 +128,7 @@ function App() {
                 </Routes>
             </AuthProvider>
         </HashRouter>
+      </ThemeProvider>
     );
 }
 

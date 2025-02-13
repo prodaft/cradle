@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useTheme } from '../../hooks/useTheme/useTheme';
+import { useTheme } from '../../contexts/ThemeContext/ThemeContext.jsx';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Editor from '../Editor/Editor';
 import Preview from '../Preview/Preview';

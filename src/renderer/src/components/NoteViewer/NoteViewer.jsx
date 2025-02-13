@@ -184,20 +184,20 @@ export default function NoteViewer() {
             />
             <div className='w-full h-full overflow-hidden flex flex-col items-center px-4 pb-4 pt-1'>
                 <div className='h-full w-[90%] rounded-md bg-cradle3 bg-opacity-20 backdrop-blur-lg backdrop-filter px-4 pb-4 pt-1 overflow-y-auto'>
-                    <div className='text-sm text-zinc-500 p-2 border-b-2 border-b-zinc-800'>
+                    <div className='text-sm text-zinc-500 p-2 border-b-2 dark:border-b-zinc-800'>
                         <span className='text-sm text-zinc-500 p-2'>
                             <strong>Created on:</strong>{' '}
                             {new Date(note.timestamp).toLocaleString()}
                         </span>
-                        <span className='text-sm dark:text-zinc-700'>|</span>
-                        <span className='text-sm dark:text-zinc-500 p-2'>
+                        <span className='text-sm text-zinc-700'>|</span>
+                        <span className='text-sm text-zinc-500 p-2'>
                             <strong>Created by:</strong>{' '}
                             {note?.author ? note.author.username : 'Unknown'}
                         </span>
                         {note.editor && (
                             <span>
-                                <span className='text-sm dark:text-zinc-700'>|</span>
-                                <span className='text-sm dark:text-zinc-500 p-2'>
+                                <span className='text-sm text-zinc-700'>|</span>
+                                <span className='text-sm text-zinc-500 p-2'>
                                     <strong>Edited on:</strong>{' '}
                                     {new Date(note.edit_timestamp).toLocaleString()}
                                 </span>
