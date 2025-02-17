@@ -1,4 +1,5 @@
 from django.db import models
+from django_lifecycle import AFTER_CREATE, LifecycleModelMixin, hook
 from mail.models import NewUserNotificationMail
 from user.models import CradleUser
 from entries.models import Entry
@@ -6,7 +7,7 @@ from model_utils.managers import InheritanceManager
 import uuid
 
 
-class MessageNotification(models.Model):
+class MessageNotification(models.Model, LifecycleModelMixin):
     id: models.UUIDField = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -22,9 +23,8 @@ class MessageNotification(models.Model):
     def get_mail(self):
         raise NotImplementedError()
 
-    ## Trigger send mail action when a new notification is created
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
+    @hook(AFTER_CREATE)
+    def send_mail(self, *args, **kwargs):
         self.get_mail.dispatch()
 
 

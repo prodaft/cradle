@@ -97,3 +97,11 @@ class EntryListQuery(APIView):
             return Response(entry_serializer.data, status=status.HTTP_200_OK)
         else:
             return Response(filterset.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdvancedQueryView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        pass

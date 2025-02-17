@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from notes.pagination import NotesPagination
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
-from ..utils import get_howtouse_note
+from ..utils import get_guide_note
 
 from ..filters import NoteFilter
 from ..serializers import (
@@ -138,8 +138,14 @@ class NoteDetail(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, note_id_s: str) -> Response:
-        if note_id_s == "how_to_use":
-            return get_howtouse_note()
+        if note_id_s.startswith("guide"):
+            note = get_guide_note(note_id_s, request.user)
+            if note is None:
+                return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
+
+            return Response(
+                NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK
+            )
 
         note_id = UUID(note_id_s)
         try:
@@ -161,7 +167,13 @@ class NoteDetail(APIView):
 
         return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
 
-    def post(self, request: Request, note_id: UUID) -> Response:
+    def post(self, request: Request, note_id_s: str) -> Response:
+        if note_id_s.startswith("guide"):
+            return Response(
+                "You cannot edit the guide note!", status=status.HTTP_403_FORBIDDEN
+            )
+
+        note_id = UUID(note_id_s)
         try:
             note: Note = Note.objects.get(id=note_id)
         except Note.DoesNotExist:
@@ -193,7 +205,14 @@ class NoteDetail(APIView):
 
         return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
 
-    def delete(self, request: Request, note_id: UUID) -> Response:
+    def delete(self, request: Request, note_id_s: str) -> Response:
+        if note_id_s.startswith("guide"):
+            return Response(
+                "You cannot delete the guide note!", status=status.HTTP_403_FORBIDDEN
+            )
+
+        note_id = UUID(note_id_s)
+
         try:
             note_to_delete = Note.objects.get(id=note_id)
         except Note.DoesNotExist:

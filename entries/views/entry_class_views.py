@@ -53,8 +53,6 @@ class EntryClassList(APIView):
 
     def post(self, request: Request) -> Response:
         user = cast(CradleUser, request.user)
-        if not user.is_cradle_admin:
-            return Response("User is not an admin.", status=status.HTTP_403_FORBIDDEN)
 
         serializer = EntryClassSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
@@ -115,6 +113,9 @@ class EntryClassDetail(APIView):
         return Response(serializer.data)
 
     def delete(self, request: Request, class_subtype: str) -> Response:
+        if not request.user.is_cradle_admin:
+            return Response("User must be an admin to delete entry classes.")
+
         try:
             entity = EntryClass.objects.get(subtype=class_subtype)
         except EntryClass.DoesNotExist:
@@ -127,8 +128,6 @@ class EntryClassDetail(APIView):
 
     def post(self, request: Request, class_subtype: str) -> Response:
         user = cast(CradleUser, request.user)
-        if not user.is_cradle_admin:
-            return Response("User is not an admin.", status=status.HTTP_403_FORBIDDEN)
 
         try:
             entryclass = EntryClass.objects.get(subtype=class_subtype)
@@ -136,6 +135,12 @@ class EntryClassDetail(APIView):
             return Response(
                 "There is no entry class with specified subtype.",
                 status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if not user.is_cradle_admin and request.data["type"] != entryclass.type:
+            return Response(
+                "User must be an admin to change entry class type!",
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         new_subtype = request.data.pop("subtype", None)

@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.request import Request
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
+from access.models import Access
 from entries.exceptions import DuplicateEntryException
 from user.permissions import HasAdminRole, HasEntryManagerRole
 
@@ -42,11 +43,22 @@ class EntityList(APIView):
     permission_classes = [IsAuthenticated, HasEntryManagerRole]
 
     def get(self, request: Request) -> Response:
-        entities = Entry.entities.all()
+        if request.user.is_cradle_admin:
+            entities = Entry.entities.all()
+        else:
+            entities = Entry.objects.filter(
+                id__in=Access.objects.get_accessible_entity_ids(request.user)
+            )
+
         serializer = EntryResponseSerializer(entities, many=True)
         return Response(serializer.data)
 
     def post(self, request: Request) -> Response:
+        if not request.user.is_cradle_admin:
+            return Response(
+                "Only admins can create entities!", status=status.HTTP_403_FORBIDDEN
+            )
+
         serializer = EntitySerializer(autoname=True, data=dict(request.data))
 
         if serializer.is_valid():
@@ -96,9 +108,20 @@ class EntityList(APIView):
 )
 class EntityDetail(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, HasAdminRole]
+    permission_classes = [IsAuthenticated, HasEntryManagerRole]
 
     def get(self, request: Request, entity_id: UUID) -> Response:
+        if not (
+            request.user.is_cradle_admin
+            or Access.objects.get_accessible_entity_ids(request.user)
+            .filter(entity_id=entity_id)
+            .exists()
+        ):
+            return Response(
+                "There is no entity with specified ID.",
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
         try:
             entity = Entry.entities.get(pk=entity_id)
         except Entry.DoesNotExist:
@@ -106,10 +129,15 @@ class EntityDetail(APIView):
                 "There is no entity with specified ID.",
                 status=status.HTTP_404_NOT_FOUND,
             )
+
         serializer = EntitySerializer(entity)
         return Response(serializer.data)
 
     def delete(self, request: Request, entity_id: UUID) -> Response:
+        if not request.user.is_cradle_admin:
+            return Response(
+                "Only admins can delete entities!", status=status.HTTP_403_FORBIDDEN
+            )
         try:
             entity = Entry.entities.get(pk=entity_id)
         except Entry.DoesNotExist:
@@ -121,6 +149,17 @@ class EntityDetail(APIView):
         return Response("Requested entity was deleted", status=status.HTTP_200_OK)
 
     def post(self, request: Request, entity_id: UUID) -> Response:
+        if not (
+            request.user.is_cradle_admin
+            or Access.objects.get_accessible_entity_ids(request.user)
+            .filter(entity_id=entity_id)
+            .exists()
+        ):
+            return Response(
+                "There is no entity with specified ID.",
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
         try:
             entity = Entry.entities.get(pk=entity_id)
         except Entry.DoesNotExist:
