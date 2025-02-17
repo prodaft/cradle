@@ -13,11 +13,20 @@ from mail.models import ConfirmationMail, ResetPasswordMail
 from .managers import CradleUserManager
 
 
+class UserRoles(models.TextChoices):
+    ADMIN = "admin"  # Superuser
+    MANAGER = "entrymanager"  # Manage Entities and EntryTypes
+    USER = "author"  # Writer of notes
+
+
 class CradleUser(AbstractUser, LoggableModelMixin):
     id: models.UUIDField = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
     email: models.EmailField = models.EmailField(unique=True)
+    role: models.CharField = models.CharField(
+        max_length=32, choices=UserRoles.choices, default=UserRoles.USER
+    )
 
     vt_api_key: Optional[str] = models.TextField(null=True, blank=True)
     catalyst_api_key: Optional[str] = models.TextField(null=True, blank=True)
