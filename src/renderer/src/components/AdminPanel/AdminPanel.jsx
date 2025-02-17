@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
+import useAuth from '../../hooks/useAuth/useAuth';
 
 /**
  * AdminPanel component - This component is used to display the AdminPanel.
@@ -32,6 +33,7 @@ export default function AdminPanel() {
     const [users, setUsers] = useState([]);
     const [entryTypes, setEntryTypes] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const auth = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
     const handleError = displayError(setAlert, navigate);
@@ -113,7 +115,9 @@ export default function AdminPanel() {
     };
 
     useEffect(() => {
-        displayUsers();
+        if (auth?.isAdmin()) {
+          displayUsers();
+        }
         displayEntities();
         displayEntryTypes();
     }, [location.state]);
@@ -124,7 +128,7 @@ export default function AdminPanel() {
             <div className='w-full h-full rounded-md flex flex-row p-1.5 gap-1.5 overflow-x-hidden overflow-y-scroll'>
                 <AdminPanelSection
                     title={'Entities'}
-                    addEnabled={true}
+                    addEnabled={auth?.isAdmin()}
                     addTooltipText={'Add Entity'}
                     handleAdd={() => navigate('/admin/add-entity')}
                 >
@@ -132,15 +136,16 @@ export default function AdminPanel() {
                 </AdminPanelSection>
                 <AdminPanelSection
                     title={'Entry Types'}
-                    addEnabled={true}
+                    addEnabled={auth?.isAdmin()}
                     addTooltipText={'Add Entry Class'}
                     handleAdd={() => navigate('/admin/add-entry-type')}
                 >
                     {entryTypes}
                 </AdminPanelSection>
+                {auth?.isAdmin() && (
                 <AdminPanelSection title={'Users'} addEnabled={false}>
                     {users}
-                </AdminPanelSection>
+                </AdminPanelSection>)}
             </div>
         </>
     );

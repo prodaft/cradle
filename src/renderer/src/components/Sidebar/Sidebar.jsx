@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react';
 import {
     Edit,
-    Network,
     LogOut,
     UserCrown,
     Bell,
@@ -10,7 +9,9 @@ import {
     Notes,
     SunLight,
     HalfMoon,
+    HelpCircle,
 } from 'iconoir-react';
+import { Graph, QuestionMark } from '@phosphor-icons/react';
 import SidebarItem from '../SidebarItem/SidebarItem';
 import SidebarSection from '../SidebarSection/SidebarSection';
 import useAuth from '../../hooks/useAuth/useAuth';
@@ -107,7 +108,7 @@ export default function Sidebar({
                             />
                             <SidebarItem
                                 handleClick={handleGraphView}
-                                icon={<Network />}
+                                icon={<Graph height={24} width={24} />}
                                 text='Graph View'
                                 highlightedLocation={graphViewLocation}
                             />
@@ -119,12 +120,12 @@ export default function Sidebar({
                                 highlightedLocation={accountSettingsLocation}
                             />
                         </SidebarSection>
-                        {auth.isAdmin && (
+                        {auth.isEntryManager() && (
                             <SidebarSection type='content' height='fit' justify='start'>
                                 <SidebarItem
                                     handleClick={handleAdminPanel}
                                     icon={<UserCrown />}
-                                    text='Admin'
+                                    text='Manage'
                                     highlightedLocation={adminLocation}
                                 />
                             </SidebarSection>
@@ -135,6 +136,12 @@ export default function Sidebar({
                             handleClick={onThemeToggle}
                             icon={isDarkMode ? <SunLight /> : <HalfMoon />}
                             text={isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                        />
+                        <SidebarItem
+                            handleClick={() => navigate('/notes/guide')}
+                            icon={<QuestionMark height={24} width={24} />}
+                            text='User Guide'
+                            highlightedLocation='/notes/how_to_use'
                         />
                         <SidebarItem
                             handleClick={handleNotifications}

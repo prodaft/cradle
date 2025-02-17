@@ -10,7 +10,7 @@ function Collapsible({ label, children, onChangeCollapse = null, open = false })
         setIsOpen((prev) => !prev);
     };
 
-    return (
+    return children?.length > 0 && (
         <div className='w-full'>
             {/* Summary / Header */}
             <button

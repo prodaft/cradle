@@ -36,8 +36,7 @@ export default function Preview({ htmlContent }) {
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div
-                className='h-full w-full p-4 bg-transparent prose max-w-none dark:prose-invert break-all
-                       overflow-y-auto rounded-lg flex-1 overflow-x-hidden'
+                className='h-full w-full p-4 bg-transparent prose max-w-none break-normal whitespace-normal dark:prose-invert overflow-y-auto rounded-lg flex-1 overflow-x-hidden'
                 dangerouslySetInnerHTML={{ __html: sanitizedContent }}
                 data-testid='preview'
                 ref={previewRef}

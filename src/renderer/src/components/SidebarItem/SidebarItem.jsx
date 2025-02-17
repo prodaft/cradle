@@ -24,11 +24,11 @@ export default function SidebarItem({
 
     return (
         <li
-            className={`menu-item p-4 cursor-pointer group-hover/sidebar:flex items-center 
+            className={`menu-item p-4 cursor-pointer group-hover/sidebar:flex items-center
                 ${isHighlighted ? 'menu-active' : ''}`}
             onClick={handleClick}
         >
-            <div className='icon flex-shrink-0'>{icon}</div>
+            <div className='icon flex-shrink-0 text-cradle2 hover:bg-gray-4'>{icon}</div>
             <div className='hidden whitespace-nowrap ml-2 group-hover/sidebar:block'>
                 {text}
             </div>

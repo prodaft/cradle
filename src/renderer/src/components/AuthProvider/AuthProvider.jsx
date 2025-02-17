@@ -26,9 +26,16 @@ export default function AuthProvider({ children }) {
     const [expiration, setExpiration] = useState(
         localStorage.getItem('expiration') || '0',
     );
-    const [isAdmin, setIsAdmin] = useState(
-        localStorage.getItem('isAdmin') === 'true' || false,
+    const [role, setRole] = useState(
+        localStorage.getItem('role') || 'user',
     );
+
+    const [userId, setUserId] = useState(
+        localStorage.getItem('user_id') || null,
+    );
+
+    const isAdmin = () => role === 'admin';
+    const isEntryManager = () => role === 'entrymanager' || isAdmin();
 
     const isAuthenticated = () => access !== '';
     const logIn = (acc, ref) => {
@@ -38,14 +45,16 @@ export default function AuthProvider({ children }) {
         localStorage.setItem('refresh', ref);
 
         try {
-            const { exp, is_admin } = jwtDecode(acc);
+            const { user_id, exp, role } = jwtDecode(acc);
             setExpiration(exp);
-            setIsAdmin(is_admin);
+            setRole(role);
+            setUserId(user_id);
             localStorage.setItem('expiration', exp.toString());
-            localStorage.setItem('isAdmin', is_admin.toString());
+            localStorage.setItem('role', role);
+            localStorage.setItem('user_id', user_id);
         } catch (e) {
-            setIsAdmin(false);
-            localStorage.setItem('isAdmin', 'false');
+            setRole('user');
+            localStorage.setItem('role', 'user');
         }
     };
     const logOut = () => {
@@ -53,8 +62,10 @@ export default function AuthProvider({ children }) {
         localStorage.removeItem('access');
         setRefresh('');
         localStorage.removeItem('refresh');
-        setIsAdmin(false);
-        localStorage.removeItem('isAdmin');
+        setRole('user');
+        localStorage.removeItem('role');
+        setRole(null);
+        localStorage.removeItem('user_id');
         setExpiration('0');
         localStorage.removeItem('expiration');
     };
@@ -66,6 +77,9 @@ export default function AuthProvider({ children }) {
                 refresh,
                 expiration,
                 isAdmin,
+                userId,
+                isEntryManager,
+                role,
                 logIn,
                 logOut,
                 isAuthenticated,

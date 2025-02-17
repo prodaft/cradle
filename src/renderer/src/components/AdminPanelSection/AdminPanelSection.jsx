@@ -1,5 +1,6 @@
 import { PlusCircle } from 'iconoir-react';
 import useFrontendSearch from '../../hooks/useFrontendSearch/useFrontendSearch';
+import useAuth from '../../hooks/useAuth/useAuth';
 
 /**
  * AdminPanelSection component - This component is used to display a section in the AdminPanel.

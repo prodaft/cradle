@@ -256,7 +256,7 @@ export default function Dashboard() {
         />,
 
         // If the user is an admin and the dashboard is not for an artifact, add a delete button to the navbar
-        auth.isAdmin && contentObject.type !== 'artifact' && (
+        auth.isAdmin() && contentObject.type !== 'artifact' && (
             <NavbarButton
                 key='delete-entry-btn'
                 icon={<Trash />}
@@ -279,7 +279,7 @@ export default function Dashboard() {
     useNavbarContents(!entryMissing && navbarContents, [
         contentObject,
         location,
-        auth.isAdmin,
+        auth.isAdmin(),
         entryMissing,
         handleEnterPublishMode,
         setDeleteDialog,

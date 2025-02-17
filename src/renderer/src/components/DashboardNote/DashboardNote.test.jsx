@@ -15,7 +15,7 @@ jest.mock('react-router-dom', () => ({
 
 jest.mock('../../hooks/useAuth/useAuth', () => ({
     useAuth: jest.fn().mockImplementation(() => {
-        return { isAdmin: true };
+        return { isAdmin(): true };
     }),
 }));
 

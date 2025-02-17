@@ -98,7 +98,7 @@ export default function NoteViewer() {
             .catch(displayError(setAlert, navigate));
     }, [id, navigate]);
 
-    const navbarContents = [
+    const navbarContents = id?.startsWith("guide_") ? [] : [
         isPublishable && (
             <NavbarButton
                 icon={<StatsReport />}
@@ -122,7 +122,7 @@ export default function NoteViewer() {
             onClick={() => navigate(`/notes/${id}/edit`)}
             tesid='delete-btn'
         />,
-        auth.isAdmin && (
+        auth.isAdmin() && (
             <NavbarButton
                 key='history-btn'
                 text='View History'
@@ -138,14 +138,16 @@ export default function NoteViewer() {
             onClick={() => setDialog(true)}
             tesid='delete-btn'
         />,
+    ];
+
+    navbarContents.push(
         <NavbarButton
             key='toggle-view-btn'
             text='Toggle View'
             icon={<Code />}
             onClick={toggleView}
             tesid='toggle-view-btn'
-        />,
-    ];
+        />);
 
     useNavbarContents(navbarContents, [
         toggleView,

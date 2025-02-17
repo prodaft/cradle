@@ -27,16 +27,17 @@ export default function AccountSettings() {
         password: 'password',
         vtKey: 'apikey',
         catalystKey: 'apikey',
+        role: 'user',
         email_confirmed: false,
-        is_active: false
+        is_active: false,
     });
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const {target} = useParams();
+    const { target } = useParams();
     const navigate = useNavigate();
     const handleError = displayError(setAlert, navigate);
     const auth = useAuth();
-    const isAdmin = auth?.isAdmin;
-    const isOwnAccount = target === 'me';
+    const isAdmin = auth?.isAdmin();
+    const isOwnAccount = target === 'me' || auth?.userId === target;
 
     const populateAccountDetails = async () => {
         getUser(target)
@@ -48,8 +49,9 @@ export default function AccountSettings() {
                     password: 'password',
                     vtKey: res.data.vt_api_key ? 'apikey' : '',
                     catalystKey: res.data.catalyst_api_key ? 'apikey' : '',
+                    role: res.data.role || 'user',
                     email_confirmed: res.data.email_confirmed || false,
-                    is_active: res.data.is_active || false
+                    is_active: res.data.is_active || false,
                 });
             })
             .catch(handleError);
@@ -75,6 +77,7 @@ export default function AccountSettings() {
         if (isAdmin && !isOwnAccount) {
             data['email_confirmed'] = formData.email_confirmed;
             data['is_active'] = formData.is_active;
+            data['role'] = formData.role;
         }
 
         updateUser(formData.id, data)
@@ -89,16 +92,16 @@ export default function AccountSettings() {
     };
 
     const handleInputChange = (field) => (value) => {
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
-            [field]: value
+            [field]: value,
         }));
     };
 
     const handleCheckboxChange = (field) => (e) => {
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
-            [field]: e.target.checked
+            [field]: e.target.checked,
         }));
     };
 
@@ -119,7 +122,7 @@ export default function AccountSettings() {
                         name='register-form'
                         className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'
                     >
-                        <div className='space-y-6'> 
+                        <div className='space-y-6'>
                             <FormField
                                 name='name'
                                 type='text'
@@ -164,25 +167,51 @@ export default function AccountSettings() {
                             />
                             {isAdmin && !isOwnAccount && (
                                 <>
-                                    <div className="form-control flex flex-row justify-between items-center">
-                                        <label className="label flex justify-between w-full">
-                                            <span className="label-text">Email Confirmed</span>
-                                            <input 
-                                                type="checkbox" 
-                                                className="checkbox ml-4" 
+                                    <div className='w-full'>
+                                        <label className='block text-sm font-medium leading-6'>
+                                            Role
+                                        </label>
+                                        <div className='mt-2'>
+                                            <select
+                                                className='form-select select select-ghost-primary select-block focus:ring-0'
+                                                onChange={(e) => handleInputChange('role')(e.target.value)}
+                                                value={formData.role}
+                                            >
+                                                <option value='user'>User</option>
+                                                <option value='entrymanager'>
+                                                    Entry Manager
+                                                </option>
+                                                <option value='admin'>Admin</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className='form-control flex flex-row justify-between items-center'>
+                                        <label className='label flex justify-between w-full'>
+                                            <span className='label-text'>
+                                                Email Confirmed
+                                            </span>
+                                            <input
+                                                type='checkbox'
+                                                className='checkbox ml-4'
                                                 checked={formData.email_confirmed}
-                                                onChange={handleCheckboxChange('email_confirmed')}
+                                                onChange={handleCheckboxChange(
+                                                    'email_confirmed',
+                                                )}
                                             />
                                         </label>
                                     </div>
-                                    <div className="form-control flex flex-row justify-between items-center">
-                                        <label className="label flex justify-between w-full">
-                                            <span className="label-text">Account Active</span>
-                                            <input 
-                                                type="checkbox" 
-                                                className="checkbox ml-4" 
+                                    <div className='form-control flex flex-row justify-between items-center'>
+                                        <label className='label flex justify-between w-full'>
+                                            <span className='label-text'>
+                                                Account Active
+                                            </span>
+                                            <input
+                                                type='checkbox'
+                                                className='checkbox ml-4'
                                                 checked={formData.is_active}
-                                                onChange={handleCheckboxChange('is_active')}
+                                                onChange={handleCheckboxChange(
+                                                    'is_active',
+                                                )}
                                             />
                                         </label>
                                     </div>

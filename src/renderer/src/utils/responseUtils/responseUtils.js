@@ -1,3 +1,7 @@
+const trimMore = (str) => {
+  return str.trim().replace(/^"/g, '').replace(/"$/g, '');
+}
+
 /**
  * This function can be used to display error message in an alert box,
  * by controlling the alert message and color states.
@@ -48,13 +52,13 @@ const displayError = (setAlert, navigate) => {
         }
 
         if (!message && err.message) {
-            message = err.message;
+            message = err.message.trim('"');
         }
         if (!message) {
             message = 'An unknown error occurred.';
         }
 
-        setAlert({ show: true, message, color: 'red' });
+        setAlert({ show: true, message: trimMore(message), color: 'red' });
     };
 };
 

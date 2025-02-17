@@ -8,7 +8,7 @@ import '@testing-library/jest-dom';
 
 jest.mock('../../hooks/useAuth/useAuth', () => ({
     useAuth: jest.fn().mockImplementation(() => {
-        return { isAdmin: false };
+        return { isAdmin(): false };
     }),
 }));
 

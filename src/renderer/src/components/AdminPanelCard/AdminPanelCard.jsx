@@ -10,6 +10,7 @@ import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { Archive } from 'iconoir-react';
 import { deleteUser } from '../../services/userService/userService';
+import useAuth from '../../hooks/useAuth/useAuth';
 
 /**
  * AdminPanelCard component - This component is used to display a card for the AdminPanel.
@@ -44,6 +45,7 @@ export default function AdminPanelCard({
     const [dialog, setDialog] = useState(false);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
+    const auth = useAuth();
 
     const handleDelete = async () => {
         (type == 'entity'
@@ -80,42 +82,49 @@ export default function AdminPanelCard({
                     </Link>
                 </h2>
                 <div className='w-full flex flex-row justify-end'>
-                    <button
-                        className='btn btn-ghost w-fit h-full p-1'
-                        onClick={() => {
-                            if (type == 'user') {
-                                navigate(`/activity/${name}`);
-                            } else if (type == 'entity') {
-                                navigate(
-                                    `/activity?content_type=entry&object_id=${id}`,
-                                );
-                            } else {
-                                navigate(
-                                    `/activity?content_type=entryclass&object_id=${id}`,
-                                );
-                            }
-                        }}
-                    >
-                        <ClockRotateRight />
-                    </button>
+                    {auth?.isAdmin() && (
+                        <button
+                            className='btn btn-ghost w-fit h-full p-1'
+                            onClick={() => {
+                                if (type == 'user') {
+                                    navigate(`/activity/${name}`);
+                                } else if (type == 'entity') {
+                                    navigate(
+                                        `/activity?content_type=entry&object_id=${id}`,
+                                    );
+                                } else {
+                                    navigate(
+                                        `/activity?content_type=entryclass&object_id=${id}`,
+                                    );
+                                }
+                            }}
+                        >
+                            <ClockRotateRight />
+                        </button>
+                    )}
                     <button
                         className='btn btn-ghost w-fit h-full p-1'
                         onClick={() =>
                             navigate(
-                                type == 'user' ? '/account/'+id : typename
-                                    ? '/admin/edit-entity/' + id
-                                    : '/admin/edit-entry-type/' + id.replace('/', '--'),
+                                type == 'user'
+                                    ? '/account/' + id
+                                    : typename
+                                      ? '/admin/edit-entity/' + id
+                                      : '/admin/edit-entry-type/' +
+                                        id.replace('/', '--'),
                             )
                         }
                     >
                         <EditPencil />
                     </button>
-                    <button
-                        className='btn btn-ghost w-fit h-full p-1'
-                        onClick={() => setDialog(!dialog)}
-                    >
-                        {type == 'entity' ? <Archive /> : <Trash />}
-                    </button>
+                    {auth?.isAdmin() && (
+                        <button
+                            className='btn btn-ghost w-fit h-full p-1'
+                            onClick={() => setDialog(!dialog)}
+                        >
+                            {type == 'entity' ? <Archive /> : <Trash />}
+                        </button>
+                    )}
                 </div>
             </div>
         </>
