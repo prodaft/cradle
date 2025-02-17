@@ -7,7 +7,7 @@ Pipfile.lock
 reports
 exceptions.log
 .idea
-static
+/static
 **/__pycache__
 
 /docs/_build
