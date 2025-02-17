@@ -66,6 +66,7 @@ class CradleUserManager(BaseUserManager):
         """
 
         extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_cradle_admin", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)
 

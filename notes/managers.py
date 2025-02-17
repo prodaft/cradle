@@ -25,7 +25,7 @@ class NoteQuerySet(models.QuerySet):
         """
         Get the notes that are not accessible by the current user
         """
-        if user.is_superuser:
+        if user.is_cradle_admin:
             return self.none()
 
         # Subquery to get access types
@@ -57,7 +57,7 @@ class NoteQuerySet(models.QuerySet):
         """
         Get the notes that are accessible by the current user
         """
-        if user.is_superuser:
+        if user.is_cradle_admin:
             return self
 
         # Subquery to get access types

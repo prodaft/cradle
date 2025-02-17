@@ -26,8 +26,6 @@ class TokenObtainPairLogView(TokenObtainPairView):
 
         try:
             serializer.is_valid(raise_exception=True)
-            if serializer.user:
-                print("USER ", serializer.user)
 
         except TokenError as e:
             raise InvalidToken(e.args[0])

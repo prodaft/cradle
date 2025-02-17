@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.request import Request
 
 from user.models import CradleUser
+from user.permissions import HasAdminRole
 from ..models import Access
 from ..serializers import AccessEntitySerializer
 from uuid import UUID
@@ -13,7 +14,7 @@ from uuid import UUID
 
 class AccessList(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated, HasAdminRole]
     serializer_class = AccessEntitySerializer
 
     def get(self, request: Request, user_id: UUID) -> Response:
@@ -45,7 +46,7 @@ class AccessList(APIView):
         entities_with_access = Access.objects.get_accesses(user)
 
         serializer = AccessEntitySerializer(
-            entities_with_access, context={"is_admin": user.is_superuser}, many=True
+            entities_with_access, context={"is_admin": user.is_cradle_admin}, many=True
         )
 
         return Response(serializer.data, status=status.HTTP_200_OK)

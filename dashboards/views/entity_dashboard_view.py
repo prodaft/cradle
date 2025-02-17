@@ -62,7 +62,7 @@ class EntityDashboard(APIView):
 
         dashboard = DashboardUtils.add_entry_fields(entity, entries_dict)
 
-        if user.is_superuser:
+        if user.is_cradle_admin:
             dashboard["access"] = "read-write"
         else:
             dashboard["access"] = Access.objects.get_or_create(

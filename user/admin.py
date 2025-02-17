@@ -20,7 +20,7 @@ def send_email_confirmation(modeladmin, request, queryset):
 class CradleUserAdmin(UserAdmin):
     model = CradleUser
     list_display = ("username", "email", "is_active", "email_confirmed", "last_login")
-    list_filter = ("is_active", "email_confirmed", "is_staff", "is_superuser", "groups")
+    list_filter = ("is_active", "email_confirmed", "is_staff", "groups")
     search_fields = ("username", "email")
     ordering = ("username",)
     readonly_fields = (
@@ -48,7 +48,6 @@ class CradleUserAdmin(UserAdmin):
             {
                 "fields": (
                     "is_staff",
-                    "is_superuser",
                     "groups",
                     "user_permissions",
                 )
@@ -81,7 +80,6 @@ class CradleUserAdmin(UserAdmin):
                     "password2",
                     "is_active",
                     "is_staff",
-                    "is_superuser",
                     "groups",
                 ),
             },

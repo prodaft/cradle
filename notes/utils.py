@@ -40,3 +40,7 @@ def extract_links(s: str) -> list[Link]:
 
     for r in references:
         yield Link(r[0], r[1])
+
+
+def get_howtouse_note():
+    pass

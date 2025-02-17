@@ -52,7 +52,7 @@ class RequestAccess(APIView):
             return Response(status=status.HTTP_200_OK)
 
         if (
-            user.is_superuser
+            user.is_cradle_admin
             or entity.entry_class.type == EntryType.ARTIFACT
             or Access.objects.filter(
                 user=user, entity=entity, access_type=AccessType.READ_WRITE

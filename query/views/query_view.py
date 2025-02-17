@@ -60,7 +60,7 @@ class EntryListQuery(APIView):
     )
     def get(self, request: Request) -> Response:
         accessible_entries = Entry.objects.all()
-        if not request.user.is_superuser:
+        if not request.user.is_cradle_admin:
             accessible_entries = accessible_entries.filter(
                 Q(
                     entry_class__type=EntryType.ENTITY,

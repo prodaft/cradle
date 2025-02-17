@@ -42,6 +42,7 @@ class Command(BaseCommand):
                 password=password,
                 email=email,
                 email_confirmed=True,
+                role="admin",
                 is_active=True,
             )
             admin.is_active = True

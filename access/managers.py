@@ -30,7 +30,7 @@ class AccessManager(models.Manager):
             than those specified
         """
 
-        if user.is_superuser:
+        if user.is_cradle_admin:
             return Entry.objects.none()
 
         entities = entries.filter(entry_class__type=EntryType.ENTITY)
@@ -67,7 +67,7 @@ class AccessManager(models.Manager):
             than those specified
         """
 
-        if user.is_superuser:
+        if user.is_cradle_admin:
             return True
 
         accesses = self.get_queryset().filter(
@@ -144,11 +144,7 @@ class AccessManager(models.Manager):
             self.get_queryset()
             .filter(entity_id=entity_id, access_type=AccessType.READ_WRITE)
             .values_list("user_id", flat=True)
-            .union(
-                CradleUser.objects.filter(is_superuser=True).values_list(
-                    "id", flat=True
-                )
-            )
+            .union(CradleUser.objects.filter(role="admin").values_list("id", flat=True))
         )
 
     def check_user_access(
@@ -168,7 +164,7 @@ class AccessManager(models.Manager):
             False: If the user does not have access access_type for the entity.
         """
 
-        assert not user.is_superuser, "The user parameter should not be a superuser"
+        assert not user.is_cradle_admin, "The user parameter should not be a superuser"
         assert (
             access_type != AccessType.NONE
         ), "The provided access type should not be NONE"

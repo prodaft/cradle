@@ -95,7 +95,7 @@ class AccessManagerHasAccessTest(AccessTestCase):
     def test_has_access_to_empty_list(self):
         self.assertTrue(Access.objects.has_access_to_entities(self.user, {}, {}))
 
-    def test_has_access_to_all_entities_is_superuser(self):
+    def test_has_access_to_all_entities_is_cradle_admin(self):
         self.assertTrue(
             Access.objects.has_access_to_entities(
                 self.admin,

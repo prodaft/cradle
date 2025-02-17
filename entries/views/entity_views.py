@@ -7,6 +7,7 @@ from rest_framework.request import Request
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from entries.exceptions import DuplicateEntryException
+from user.permissions import HasAdminRole, HasEntryManagerRole
 
 from ..serializers import EntitySerializer, EntryResponseSerializer
 from ..models import Entry
@@ -38,7 +39,7 @@ from uuid import UUID
 )
 class EntityList(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated, HasEntryManagerRole]
 
     def get(self, request: Request) -> Response:
         entities = Entry.entities.all()
@@ -95,7 +96,7 @@ class EntityList(APIView):
 )
 class EntityDetail(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated, HasAdminRole]
 
     def get(self, request: Request, entity_id: UUID) -> Response:
         try:

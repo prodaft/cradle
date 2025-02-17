@@ -10,6 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from notifications.models import NewUserNotification
+from user.permissions import HasAdminRole
 from ..serializers import (
     EmailConfirmSerializer,
     UserCreateSerializer,
@@ -45,7 +46,7 @@ class UserList(APIView):
 
     def get_permissions(self):
         if self.request.method == "GET":
-            self.permission_classes = [IsAuthenticated, IsAdminUser]
+            self.permission_classes = [IsAuthenticated, HasAdminRole]
         else:
             self.permission_classes = []
         return super().get_permissions()
@@ -123,7 +124,7 @@ class UserDetail(APIView):
 
         if not (
             initiator.pk == user.pk
-            or (initiator.is_superuser and not user.is_superuser)
+            or (initiator.is_cradle_admin and not user.is_cradle_admin)
         ):
             return Response(
                 "You are not allowed to view this user.",
@@ -149,14 +150,15 @@ class UserDetail(APIView):
                 )
 
         if not (
-            editor.pk == edited.pk or (editor.is_superuser and not edited.is_superuser)
+            editor.pk == edited.pk
+            or (editor.is_cradle_admin and not edited.is_cradle_admin)
         ):
             return Response(
                 "You are not allowed to edit this user.",
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        if editor.is_superuser:
+        if editor.is_cradle_admin and editor.pk != edited.pk:
             serializer = UserCreateSerializerAdmin(
                 edited, data=request.data, partial=True
             )
@@ -186,7 +188,7 @@ class UserDetail(APIView):
 
         if not (
             deleter.pk == removed_user.pk
-            or (deleter.is_superuser and not removed_user.is_superuser)
+            or (deleter.is_cradle_admin and not removed_user.is_cradle_admin)
         ):
             return Response(
                 "You are not allowed to delete this user.",
@@ -201,7 +203,7 @@ class UserDetail(APIView):
 
 class ManageUser(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated, HasAdminRole]
 
     def get_tokens_for_user(self, user: CradleUser):
         refresh = RefreshToken.for_user(user)
@@ -265,7 +267,7 @@ class ManageUser(APIView):
                 "There is no user with the specified ID.",
                 status=status.HTTP_404_NOT_FOUND,
             )
-        if user.is_superuser:
+        if user.is_cradle_admin:
             return Response(
                 "You are not allowed to simulate an admin.",
                 status=status.HTTP_403_FORBIDDEN,
@@ -296,7 +298,7 @@ class EmailConfirm(APIView):
             user.email_confirmation_token = ""
             user.save()
 
-            admins = CradleUser.objects.filter(is_superuser=True)
+            admins = CradleUser.objects.filter(role="admin")
 
             with transaction.atomic():
                 for i in admins:

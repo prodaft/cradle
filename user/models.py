@@ -15,8 +15,8 @@ from .managers import CradleUserManager
 
 class UserRoles(models.TextChoices):
     ADMIN = "admin"  # Superuser
-    MANAGER = "entrymanager"  # Manage Entities and EntryTypes
-    USER = "author"  # Writer of notes
+    ENTRY_MANAGER = "entrymanager"  # Manage Entities and EntryTypes
+    USER = "user"  # Writer of notes
 
 
 class CradleUser(AbstractUser, LoggableModelMixin):
@@ -51,6 +51,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["password", "email"]
     EMAIL_FIELD = "email"
+
     # incompatible types. We do not have a fix for this yet.
     objects: CradleUserManager = CradleUserManager()  # type: ignore
 
@@ -99,3 +100,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
 
     def _propagate_log(self, log):
         return
+
+    @property
+    def is_cradle_admin(self):
+        return self.role == UserRoles.ADMIN

@@ -60,7 +60,7 @@ class DeleteUnfilteredEntriesTest(NotesTestCase):
 class AccessibleNotesTest(NotesTestCase):
     def create_users(self):
         self.user.is_staff = True
-        self.user.is_superuser = True
+        self.user.is_cradle_admin = True
         self.user.save()
 
         self.admin_user = self.user
@@ -273,7 +273,7 @@ class GetAllNotesTest(NotesTestCase):
 class GetEntriesOfTypeTest(NotesTestCase):
     def create_users(self):
         self.user.is_staff = True
-        self.user.is_superuser = True
+        self.user.is_cradle_admin = True
         self.user.save()
 
         self.admin_user = self.user
@@ -382,7 +382,7 @@ class GetEntriesOfTypeTest(NotesTestCase):
 class GetRelatedAccessibleEntriesTest(NotesTestCase):
     def create_users(self):
         self.user.is_staff = True
-        self.user.is_superuser = True
+        self.user.is_cradle_admin = True
         self.user.save()
 
         self.admin_user = self.user

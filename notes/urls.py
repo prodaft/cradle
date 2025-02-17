@@ -9,6 +9,6 @@ urlpatterns = [
         NotePublishDetail.as_view(),
         name="note_publish_detail",
     ),
-    path("<uuid:note_id>/", NoteDetail.as_view(), name="note_detail"),
+    path("<str:note_id>/", NoteDetail.as_view(), name="note_detail"),
     path("publish/", NotePublishList.as_view(), name="note_publish_list"),
 ]

@@ -15,7 +15,7 @@ class LspUtils:
 
     @staticmethod
     def get_entities(user: CradleUser) -> List[Entry]:
-        if user.is_superuser:
+        if user.is_cradle_admin:
             return Entry.entities.all().distinct()
 
         entity_ids = Access.objects.get_accessible_entity_ids(user.id)

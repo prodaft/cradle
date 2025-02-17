@@ -213,7 +213,7 @@ class Migration(migrations.Migration):
                     user_id,
                     target_depth
                 ) cte
-                WHERE 
+                WHERE
                     -- The last element in the path must be the end_entry_id
                     cte.path[array_length(cte.path, 1)] = end_entry_id
                     AND cte.depth <= target_depth;

@@ -46,16 +46,16 @@ class UpdateAccess(APIView):
             False: otherwise
         """
 
-        if request_user.is_superuser:
+        if request_user.is_cradle_admin:
             # Entity 1: user is a superuser
-            if updated_user.is_superuser:
+            if updated_user.is_cradle_admin:
                 return False
 
         elif Access.objects.check_user_access(
             request_user, updated_entity, AccessType.READ_WRITE
         ):
             # Entity 2: user has read-write access
-            if updated_user.is_superuser or Access.objects.check_user_access(
+            if updated_user.is_cradle_admin or Access.objects.check_user_access(
                 updated_user, updated_entity, AccessType.READ_WRITE
             ):
                 return False

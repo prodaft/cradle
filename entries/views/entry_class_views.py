@@ -9,6 +9,7 @@ from rest_framework.request import Request
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from user.models import CradleUser
+from user.permissions import HasAdminRole, HasEntryManagerRole
 
 from ..serializers import (
     EntryClassSerializer,
@@ -52,7 +53,7 @@ class EntryClassList(APIView):
 
     def post(self, request: Request) -> Response:
         user = cast(CradleUser, request.user)
-        if not user.is_superuser:
+        if not user.is_cradle_admin:
             return Response("User is not an admin.", status=status.HTTP_403_FORBIDDEN)
 
         serializer = EntryClassSerializer(data=request.data)
@@ -100,7 +101,7 @@ class EntryClassList(APIView):
 )
 class EntryClassDetail(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated, HasEntryManagerRole]
 
     def get(self, request: Request, class_subtype: str) -> Response:
         try:
@@ -126,7 +127,7 @@ class EntryClassDetail(APIView):
 
     def post(self, request: Request, class_subtype: str) -> Response:
         user = cast(CradleUser, request.user)
-        if not user.is_superuser:
+        if not user.is_cradle_admin:
             return Response("User is not an admin.", status=status.HTTP_403_FORBIDDEN)
 
         try:

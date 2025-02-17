@@ -32,7 +32,7 @@ class EntryQuerySet(models.QuerySet):
         query_parts = []
         query_args = []
         for i in self.all():
-            if user is None or user.is_superuser:
+            if user is None or user.is_cradle_admin:
                 query_parts.append(
                     "SELECT entry_id AS id FROM get_related_entry_ids(%s)"
                 )

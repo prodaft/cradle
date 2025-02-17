@@ -80,7 +80,7 @@ class RequestAccessTest(AccessTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(AccessRequestNotification.objects.count(), 0)
 
-    def test_request_access_user_is_superuser(self):
+    def test_request_access_user_is_cradle_admin(self):
         response = self.client.post(
             reverse(
                 "request_access",

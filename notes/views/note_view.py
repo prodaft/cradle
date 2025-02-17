@@ -10,6 +10,8 @@ from rest_framework.permissions import IsAuthenticated
 from notes.pagination import NotesPagination
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
+from ..utils import get_howtouse_note
+
 from ..filters import NoteFilter
 from ..serializers import (
     NoteCreateSerializer,
@@ -135,7 +137,11 @@ class NoteDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get(self, request: Request, note_id: UUID) -> Response:
+    def get(self, request: Request, note_id_s: str) -> Response:
+        if note_id_s == "how_to_use":
+            return get_howtouse_note()
+
+        note_id = UUID(note_id_s)
         try:
             note: Note = Note.objects.get(id=note_id)
         except Note.DoesNotExist:
@@ -170,7 +176,7 @@ class NoteDetail(APIView):
         ):
             return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
 
-        if not user.is_superuser and note.author != user:
+        if not user.is_cradle_admin and note.author != user:
             return Response(
                 "You cannot edit this note", status=status.HTTP_403_FORBIDDEN
             )

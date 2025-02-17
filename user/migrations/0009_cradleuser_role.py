@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("user", "0008_alter_cradleuser_email_confirmed_and_more"),
     ]
@@ -17,7 +16,7 @@ class Migration(migrations.Migration):
                 choices=[
                     ("admin", "Admin"),
                     ("entrymanager", "Manager"),
-                    ("author", "User"),
+                    ("user", "User"),
                 ],
                 default="author",
                 max_length=32,

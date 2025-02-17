@@ -115,17 +115,18 @@ class UserCreateSerializerAdmin(UserCreateSerializer):
             "password",
             "catalyst_api_key",
             "vt_api_key",
+            "role",
             "email_confirmed",
             "is_active",
         ]
         extra_kwargs: Dict[str, Dict[str, List]] = {"username": {"validators": []}}
 
     def update(self, instance: CradleUser, validated_data: dict[str, Any]):
-        if "password" in validated_data:
-            instance.set_password(validated_data["password"])
-
         for i in validated_data:
             instance.__setattr__(i, validated_data[i])
+
+        if "password" in validated_data:
+            instance.set_password(validated_data["password"])
 
         instance.save()
 
@@ -142,6 +143,7 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
             "id",
             "username",
             "email",
+            "role",
             "is_active",
             "email_confirmed",
             "catalyst_api_key",
@@ -175,7 +177,7 @@ class TokenObtainSerializer(TokenObtainPairSerializer):
 
         token = super().get_token(user)
 
-        token["is_admin"] = cast(CradleUser, user).is_superuser
+        token["role"] = cast(CradleUser, user).role
 
         return token
 
