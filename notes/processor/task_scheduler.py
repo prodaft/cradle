@@ -1,5 +1,8 @@
 from typing import List, Optional
 
+from celery import chain
+from diff_match_patch import diff_match_patch
+
 from notes.models import Note, Relation
 from notes.processor.smart_linker_task import SmartLinkerTask
 
@@ -47,22 +50,36 @@ class TaskScheduler:
             NoAccessToEntriesException: if the user does not have access to the
             referenced entities.
         """
+        dmp = diff_match_patch()
+        patches = None
         with transaction.atomic():
             if not note:
                 note = Note.objects.create(author=self.user, **self.kwargs)
             else:
+                patches = dmp.patch_make(
+                    note.content, self.kwargs.get("content", note.content)
+                )
+
                 for i in self.kwargs:
                     setattr(note, i, self.kwargs[i])
 
                 note.editor = self.user
                 note.edit_timestamp = timezone.now()
 
-            note.entries.clear()
-            Relation.objects.filter(note=note).delete()
+            tasks = []
 
             for task in self.processing:
-                task.run(note)
+                async_task = task.run(note)
+                if async_task:
+                    tasks.append(async_task)
 
+            task_chain = chain(*tasks)
+            transaction.on_commit(lambda: task_chain.apply_async())
             note.save()
 
-            return note
+        if patches is None:
+            note.log_create(self.user)
+        else:
+            note.log_edit(self.user, dmp.patch_toText(patches))
+
+        return note

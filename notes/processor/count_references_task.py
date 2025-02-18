@@ -1,3 +1,4 @@
+from entries.models import Entry, EntryClass
 from notes.exceptions import (
     NotEnoughReferencesException,
 )
@@ -6,7 +7,7 @@ from entries.enums import EntryType
 from .base_task import BaseTask
 from ..models import Note
 
-from django.conf import settings
+from django.conf import Settings, settings
 
 
 class CountReferencesTask(BaseTask):
@@ -20,13 +21,25 @@ class CountReferencesTask(BaseTask):
         Returns:
             The processed note object.
         """
+        entity_count = 0
+        total_count = 0
+        for r in note.reference_tree.links():
+            eclass = EntryClass.objects.filter(subtype=r.key)
 
-        # references will be a list of tuples which describe matches in
-        # the note content
-        entity_count = note.entries.filter(entry_class__type=EntryType.ENTITY).count()
+            if eclass.exists() and eclass.first().type == EntryType.ENTITY:
+                entity_count += 1
+
+            if eclass.exists() or settings.AUTOREGISTER_ARTIFACT_TYPES:
+                total_count += 1
+
+            if (
+                entity_count >= settings.MIN_ENTITY_COUNT_PER_NOTE
+                and total_count >= settings.MIN_ENTRY_COUNT_PER_NOTE
+            ):
+                return None
 
         if entity_count < settings.MIN_ENTITY_COUNT_PER_NOTE:
             raise NotEnoughReferencesException()
 
-        if note.entries.count() < settings.MIN_ENTRY_COUNT_PER_NOTE:
+        if total_count < settings.MIN_ENTRY_COUNT_PER_NOTE:
             raise NotEnoughReferencesException()

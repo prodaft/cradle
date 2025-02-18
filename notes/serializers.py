@@ -22,6 +22,7 @@ from file_transfer.models import FileReference
 from user.serializers import UserRetrieveSerializer
 from entries.models import Entry, EntryClass
 from entries.enums import EntryType
+from diff_match_patch import diff_match_patch
 
 
 class NoteCreateSerializer(serializers.ModelSerializer):
@@ -30,7 +31,7 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Note
-        fields = ["author", "publishable", "content", "files"]
+        fields = ["publishable", "content", "files"]
 
     def validate(self, data):
         """First checks whether the client sent the content of the field
@@ -90,13 +91,37 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 
         return note
 
+
+class NoteEditSerializer(serializers.ModelSerializer):
+    content = serializers.CharField(required=False, allow_blank=True)
+    patch = serializers.CharField(required=False, allow_blank=True)
+    files = FileReferenceSerializer(required=False, many=True)
+
+    class Meta:
+        model = Note
+        fields = ["publishable", "patch", "content", "files"]
+
     def update(self, instance: Note, validated_data: dict[str, Any]):
+        if ("content" not in validated_data or not validated_data["content"]) and (
+            "patch" not in validated_data or not validated_data["patch"]
+        ):
+            return instance
+
+        if "content" in validated_data:
+            new_content = validated_data.get("content")
+        else:
+            dmp = diff_match_patch()
+            patch = dmp.patch_fromText(validated_data.get("patch"))
+            new_content, _ = dmp.patch_apply(patch, instance.content)
+
         user = self.context["request"].user
         artifact_ids = set(instance.entries.is_artifact().values_list("id", flat=True))
 
         files = validated_data.pop("files", None)
 
-        note = TaskScheduler(user, **validated_data).run_pipeline(instance)
+        note = TaskScheduler(user, content=new_content, **validated_data).run_pipeline(
+            instance
+        )
 
         existing_files = set([i.id for i in note.files.all()])
         files_kept = set([i["id"] for i in files if "id" in i])

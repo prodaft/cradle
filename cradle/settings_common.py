@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "user.apps.UserConfig",
     "notes.apps.NotesConfig",
     "mail.apps.MailConfig",
+    "core.apps.CoreConfig",
     "publish.apps.PublishConfig",
     "django.contrib.admin",
     "django.contrib.auth",

@@ -34,6 +34,9 @@ coverage = "*"
 django-lifecycle = "*"
 sentry-sdk = {extras = ["django"], version = "*"}
 celery = {extras = ["redis"], version = "*"}
+redis = "*"
+python-redis-lock = "*"
+diff-match-patch = "*"
 
 [dev-packages]
 

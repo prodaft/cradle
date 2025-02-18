@@ -17,6 +17,9 @@ app.conf.result_expires = 259200  # 3 days in seconds
 
 app.conf.task_routes = {
     "mail.tasks.send_email_task": {"queue": "email"},
+    "notes.tasks.smart_linker_task": {"queue": "notes"},
+    "notes.tasks.entry_class_creation_task": {"queue": "notes"},
+    "notes.tasks.entry_population_task": {"queue": "notes"},
 }
 
 app.conf.task_default_priority = 5
@@ -27,8 +30,12 @@ app.conf.task_routes.update(
         "send_email_task": {
             "queue": "email",
             "rate_limit": "100/m",
-        }
-    }
+        },
+        "smart_linker_task": {
+            "queue": "email",
+            "rate_limit": "100/m",
+        },
+    },
 )
 
 app.conf.task_time_limit = 30 * 60

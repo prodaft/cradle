@@ -22,7 +22,7 @@ class EventLog(models.Model):
     user: models.ForeignKey = models.ForeignKey(
         "user.CradleUser", on_delete=models.CASCADE, related_name="event_logs"
     )
-    details: Optional[dict] = models.JSONField(blank=True, null=True)
+    details: Optional[dict] = models.CharField(blank=True, null=True)
 
     # Reference to the log that triggered this event, if applicable
     src_log: Optional[models.ForeignKey] = models.ForeignKey(
@@ -103,12 +103,16 @@ class LoggableModelMixin:
 
     def log_delete(self, user, details=None):
         return self._save_log(
-            EventLog(user=user, content_object=self, type=EventType.DELETE)
+            EventLog(
+                user=user, content_object=self, type=EventType.DELETE, details=details
+            )
         )
 
     def log_edit(self, user, details=None):
         return self._save_log(
-            EventLog(user=user, content_object=self, type=EventType.EDIT)
+            EventLog(
+                user=user, content_object=self, type=EventType.EDIT, details=details
+            )
         )
 
     def log_fetch(self, user, details=None):

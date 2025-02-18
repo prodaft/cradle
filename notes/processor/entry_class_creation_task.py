@@ -5,6 +5,7 @@ from entries.models import EntryClass
 
 from .base_task import BaseTask
 from ..models import Note
+from ..tasks import entry_class_creation_task
 
 from django.conf import settings
 
@@ -20,23 +21,4 @@ class EntryClassCreationTask(BaseTask):
         Returns:
             The processed note object.
         """
-
-        # references will be a list of tuples which describe matches in
-        # the note content
-
-        nonexistent_entries = set()
-
-        for r in note.reference_tree.links():
-            if not EntryClass.objects.filter(subtype=r.key).exists():
-                if not settings.AUTOREGISTER_ARTIFACT_TYPES:
-                    nonexistent_entries.add(r.key)
-                else:
-                    entry = EntryClass.objects.create(
-                        type=EntryType.ARTIFACT, subtype=r.key
-                    )
-                    entry.log_create(self.user)
-
-        if nonexistent_entries:
-            raise EntryClassesDoNotExistException(nonexistent_entries)
-
-        return note
+        return entry_class_creation_task.si(note.id, self.user.id)

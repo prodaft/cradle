@@ -15,6 +15,7 @@ from ..utils import get_guide_note
 from ..filters import NoteFilter
 from ..serializers import (
     NoteCreateSerializer,
+    NoteEditSerializer,
     NoteRetrieveSerializer,
     NoteRetrieveWithLinksSerializer,
 )
@@ -94,7 +95,6 @@ class NoteList(APIView):
         )
         if serializer.is_valid():
             note = serializer.save()
-            note.log_create(cast(CradleUser, request.user))
             json_note = NoteRetrieveSerializer(note, many=False).data
             return Response(json_note, status=status.HTTP_200_OK)
 
@@ -201,13 +201,12 @@ class NoteDetail(APIView):
                 "You cannot edit this note", status=status.HTTP_403_FORBIDDEN
             )
 
-        serializer = NoteCreateSerializer(
+        serializer = NoteEditSerializer(
             note, data=request.data, context={"request": request}
         )
 
         if serializer.is_valid():
             note = serializer.save()
-            note.log_edit(user)
             json_note = NoteRetrieveSerializer(note, many=False).data
             return Response(json_note, status=status.HTTP_200_OK)
 
