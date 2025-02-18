@@ -29,9 +29,9 @@ import useAuth from '../../hooks/useAuth/useAuth';
  * @constructor
  */
 export default function AdminPanel() {
-    const [entities, setEntities] = useState([]);
-    const [users, setUsers] = useState([]);
-    const [entryTypes, setEntryTypes] = useState([]);
+    const [entities, setEntities] = useState(null);
+    const [users, setUsers] = useState(null);
+    const [entryTypes, setEntryTypes] = useState(null);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const auth = useAuth();
     const location = useLocation();
@@ -131,6 +131,7 @@ export default function AdminPanel() {
                     addEnabled={auth?.isAdmin()}
                     addTooltipText={'Add Entity'}
                     handleAdd={() => navigate('/admin/add-entity')}
+                    isLoading={entities === null}
                 >
                     {entities}
                 </AdminPanelSection>
@@ -139,11 +140,12 @@ export default function AdminPanel() {
                     addEnabled={auth?.isAdmin()}
                     addTooltipText={'Add Entry Class'}
                     handleAdd={() => navigate('/admin/add-entry-type')}
+                    isLoading={entryTypes === null}
                 >
                     {entryTypes}
                 </AdminPanelSection>
                 {auth?.isAdmin() && (
-                <AdminPanelSection title={'Users'} addEnabled={false}>
+                <AdminPanelSection title={'Users'} addEnabled={false} isLoading={users === null}>
                     {users}
                 </AdminPanelSection>)}
             </div>

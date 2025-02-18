@@ -4,13 +4,6 @@ import { useCallback, useEffect, useState } from 'react';
 import Preview from '../Preview/Preview';
 import { setPublishable } from '../../services/notesService/notesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import {
-    createDashboardLink,
-    groupSubtypes,
-    LinkTreeFlattener,
-    SubtypeHierarchy,
-    truncateText,
-} from '../../utils/dashboardUtils/dashboardUtils';
 import { useLocation } from 'react-router-dom';
 import Collapsible from '../Collapsible/Collapsible';
 import { queryEntries } from '../../services/queryService/queryService';
@@ -141,7 +134,6 @@ export default function DashboardNote({
                         </div>
                     </div>
 
-                    {/* References Section (Now a separate component) */}
                     {note.entry_classes && parsedContent && (
                         <ReferenceTree note={note} setAlert={setAlert} />
                     )}

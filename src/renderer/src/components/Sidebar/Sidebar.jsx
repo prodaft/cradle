@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import {
     Edit,
     LogOut,
@@ -39,8 +39,37 @@ export default function Sidebar({
     isDarkMode,
     onThemeToggle,
 }) {
+    const [isRightMouseDown, setIsRightMouseDown] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
+    const isHoveredRef = useRef(isHovered);
     const auth = useAuth();
     const navigate = useNavigate();
+
+    useEffect(() => {
+      isHoveredRef.current = isHovered;
+    }, [isHovered]);
+
+    useEffect(() => {
+        const handleMouseDown = (e) => {
+            if (e.button === 0) {
+                setIsRightMouseDown(!isHoveredRef.current);
+            }
+        };
+
+        const handleMouseUp = (e) => {
+            if (e.button === 0) {
+                setIsRightMouseDown(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleMouseDown);
+        document.addEventListener('mouseup', handleMouseUp);
+
+        return () => {
+            document.removeEventListener('mousedown', handleMouseDown);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, []);
 
     const welcomeLocation = '/';
     const handleWelcomePage = useCallback(() => {
@@ -80,7 +109,13 @@ export default function Sidebar({
 
     return (
         <div className='h-full sticky top-0' data-testid='sidebar-test'>
-            <aside className='sidebar !h-full text-gray-400 w-14 hover:w-48 transition-all duration-300 overflow-hidden group/sidebar'>
+            <aside
+                className={`sidebar !h-full w-14 text-gray-400 transition-all duration-300 overflow-hidden group/sidebar ${
+                    !isRightMouseDown ? 'hover:w-48' : ''
+                }`}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+            >
                 <div className='flex flex-col h-full justify-between'>
                     <div className='flex flex-col gap-2'>
                         <SidebarSection

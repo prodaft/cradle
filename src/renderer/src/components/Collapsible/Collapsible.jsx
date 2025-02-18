@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 function Collapsible({ label, children, onChangeCollapse = null, open = false }) {
     const [isOpen, setIsOpen] = useState(open);
@@ -10,7 +10,7 @@ function Collapsible({ label, children, onChangeCollapse = null, open = false })
         setIsOpen((prev) => !prev);
     };
 
-    return children?.length > 0 && (
+    return (
         <div className='w-full'>
             {/* Summary / Header */}
             <button

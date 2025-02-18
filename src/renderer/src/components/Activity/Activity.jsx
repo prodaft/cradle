@@ -54,7 +54,9 @@ export default function Activity({ log }) {
                                 <td className='font-semibold pr-2 text-right text-cradle2'>
                                     Details:
                                 </td>
-                                <td className='text-zinc-300'>{log.details}</td>
+                                <td className='bg-cradle3 bg-opacity-30 p-2 break-words whitespace-pre-wrap backdrop-blur-lg rounded-xl m-3 shadow-md cursor-pointer text-zinc-300'>
+                                    {log.details}
+                                </td>
                             </tr>
                         )}
 
@@ -63,7 +65,6 @@ export default function Activity({ log }) {
                                 <td className='font-semibold pr-2 text-right text-cradle2'>
                                     Caused by:
                                 </td>
-                                <td className='text-zinc-300'>{log.details}</td>
                             </tr>
                         )}
                     </tbody>

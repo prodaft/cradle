@@ -18,6 +18,7 @@ import useAuth from '../../hooks/useAuth/useAuth';
  * @param {string} props.addTooltipText - The tooltip text for the add button
  * @param {Function} props.handleAdd - The handler for the add button
  * @param {Array<React.ReactElement>} props.children - The children (cards) to display in the section
+ * @param {boolean} props.isLoading - Whether the children are still loading (optional)
  * @returns {AdminPanelSection}
  * @constructor
  */
@@ -27,6 +28,7 @@ export default function AdminPanelSection({
     addTooltipText,
     handleAdd,
     children,
+    isLoading = false, // New prop to track loading state
 }) {
     const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(children);
 
@@ -54,7 +56,22 @@ export default function AdminPanelSection({
                 />
             </div>
             <div className='w-full flex flex-col space-y-2 gap-1'>
-                {filteredChildren}
+                {isLoading ? (
+                    // Loading spinner
+                    <div className='flex items-center justify-center min-h-[200px]'>
+                        <div className='spinner-dot-pulse spinner-xl'>
+                            <div className='spinner-pulse-dot'></div>
+                        </div>
+                    </div>
+                ) : filteredChildren && filteredChildren.length > 0 ? (
+                    filteredChildren
+                ) : (
+                    <div className='container mx-auto flex flex-col items-center'>
+                        <p className='mt-6 !text-sm !font-normal text-zinc-500'>
+                            No items found!
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -1,5 +1,5 @@
 import DOMPurify from 'dompurify';
-import parseMarkdown from '../customParser/customParser';
+import parseMarkdown from '../customParser/customParser.ts';
 import QueryString from 'qs';
 import { syntaxTree } from '@codemirror/language';
 
@@ -82,7 +82,9 @@ const handleLinkClick = (navigateHandler) => (event) => {
             // External links
             window.open(target.href, '_blank');
         }
+        return true;
     }
+    return false;
 };
 
 const LINK_REGEX_SINGLE =

@@ -36,7 +36,7 @@ export default function NoteViewer() {
     const [isPublishable, setIsPublishable] = useState(false);
     const [isRaw, setIsRaw] = useState(false);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const [parsedContent, setParsedContent] = useState('');
+    const [parsedContent, setParsedContent] = useState(null);
     const [dialog, setDialog] = useState(false);
     const [isLoading, setIsLoading] = useState(true); // <-- Add loading state
 

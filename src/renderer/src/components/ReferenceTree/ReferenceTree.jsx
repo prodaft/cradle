@@ -86,7 +86,7 @@ export default function ReferenceTree({ note, setAlert }) {
 
     return (
         <div className='dark:text-zinc-300 text-xs w-full pt-1 pl-3'>
-            <Collapsible label='References' open={false}>
+            {note?.entry_classes && Object.keys(note.entry_classes).length > 0 && <Collapsible label='References' open={false}>
                 {new SubtypeHierarchy(note.entry_classes).convert(
                     // --- Render for internal nodes (categories that have child categories) ---
                     (value, children) => (
@@ -147,7 +147,7 @@ export default function ReferenceTree({ note, setAlert }) {
                         </div>
                     ),
                 )}
-            </Collapsible>
+            </Collapsible>}
         </div>
     );
 }

@@ -47,6 +47,8 @@ export default function Editor({
     setFileData,
     viewCollapsed,
     setViewCollapsed,
+    currentLine,
+    setCurrentLine,
 }) {
     const EMPTY_FILE_LIST = new DataTransfer().files;
     const [enableVim, setEnableVim] = useState(
@@ -56,6 +58,8 @@ export default function Editor({
     const [lspPack, setLspPack] = useState({ classes: {}, instances: {} });
     const [prevNoteId, setPrevNoteId] = useState(null);
     const [pendingFiles, setPendingFiles] = useState(EMPTY_FILE_LIST);
+    const [scrollMap, setScrollMap] = useState(null);
+    const [top, setTop] = useState(0);
     const [codeMirrorContent, setCodeMirrorContent] = useState('');
     const { isDarkMode, toggleTheme } = useTheme();
     const autoLinkId = useId();
@@ -173,6 +177,30 @@ export default function Editor({
         autocomplete: linkAutoComplete,
     });
 
+    const topToLine = (top) => {
+        if (!editorRef.current || !editorRef.current.view) {
+            return;
+        }
+
+        const view = editorRef.current.view;
+        const height = view.defaultLineHeight;
+
+        const line = Math.floor(top / height);
+        return line;
+    };
+
+    const debouncedSetCurrentLine = useRef(
+        debounce((f) => {
+            setCurrentLine(f());
+        }, 50),
+    ).current;
+
+    const debouncedSetTop = useRef(
+        debounce((val) => {
+            setTop(val);
+        }, 50),
+    ).current;
+
     var extensions = [
         markdown({ base: markdownLanguage, codeLanguages: languages }),
         drawSelection(),
@@ -194,8 +222,45 @@ export default function Editor({
                     setPendingFiles(e.clipboardData.files);
                 }
             },
+            click(e) {
+                const state = editorRef.current.view.state;
+                const cursor = state.selection.main.to;
+                const line = state.doc.lineAt(cursor);
+                debouncedSetCurrentLine(() => line.number);
+            },
+        }),
+        events.scroll({
+          scroll(e) {
+            debouncedSetTop(e.target.scrollTop);
+          }
         }),
     ];
+
+    useEffect(() => {
+        if (!editorRef.current || !editorRef.current.view) {
+            return;
+        }
+        const view = editorRef.current.view;
+        const state = view.state;
+        const cursor = state.selection.main.to;
+        const currentCursorLine = state.doc.lineAt(cursor);
+
+        if (currentLine === currentCursorLine.number) {
+            return;
+        }
+
+        const totalLines = state.doc.lines;
+        const targetLine = Math.min(Math.max(1, currentLine), totalLines);
+
+        const targetLinePos = state.doc.line(targetLine).from;
+
+        const selection = { anchor: targetLinePos, head: targetLinePos };
+
+        editorRef.current.view.dispatch({
+          selection,
+          scrollIntoView: true,
+        });
+    }, [currentLine]);
 
     if (enableVim) {
         // This editor also has the option to be used in vim mode, which can be toggled.
@@ -203,9 +268,9 @@ export default function Editor({
         extensions = extensions.concat(vim());
     }
 
-    const toggleFileList = useCallback(() => {
+    useEffect(() => {
         setShowFileList(!showFileList);
-    }, [showFileList]);
+    }, []);
 
     const insertTextToCodeMirror = (text) => {
         if (editorRef.current) {
@@ -215,7 +280,7 @@ export default function Editor({
     };
 
     useEffect(() => {
-      setCodeMirrorContent(markdownContent);
+        setCodeMirrorContent(markdownContent);
     }, [isDarkMode]);
 
     const autoFormatLinks = () => {
@@ -284,7 +349,6 @@ export default function Editor({
 
     const onEditorChange = useCallback(
         (text) => {
-            // Instead of calling setMarkdownContent directly, use the debounced function
             debouncedSetMarkdownContent(text);
         },
         [debouncedSetMarkdownContent],
@@ -313,6 +377,10 @@ export default function Editor({
             setCodeMirrorContent(markdownContent);
         }
     }, [markdownContent]);
+
+    const toggleFileList = () => {
+        setShowFileList(!showFileList);
+    }
 
     return (
         <div className='h-full w-full flex flex-col flex-1'>

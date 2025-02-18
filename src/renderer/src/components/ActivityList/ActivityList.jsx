@@ -32,7 +32,7 @@ export default function ActivityList() {
     const [submittedFilters, setSubmittedFilters] = useState(searchFilters);
 
     const [events, setEvents] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false); // Existing loading state
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
@@ -139,7 +139,12 @@ export default function ActivityList() {
 
                 <div className='flex flex-col space-y-4'>
                     {loading ? (
-                        <p></p>
+                        // Loading spinner
+                        <div className='flex items-center justify-center min-h-[200px]'>
+                            <div className='spinner-dot-pulse spinner-xl'>
+                                <div className='spinner-pulse-dot'></div>
+                            </div>
+                        </div>
                     ) : events.length > 0 ? (
                         <div>
                             <div className='events-list'>

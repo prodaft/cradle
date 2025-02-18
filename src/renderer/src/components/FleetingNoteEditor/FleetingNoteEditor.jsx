@@ -17,6 +17,7 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 
 import TextEditor from '../TextEditor/TextEditor';
+import { diff_match_patch } from 'diff-match-patch'
 
 export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
     const [markdownContent, setMarkdownContent] = useState('');
