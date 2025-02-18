@@ -49,3 +49,8 @@ Users can have three types of access to any entity:
    - Users can request access to entities they don't have access to
    - All users with READ-WRITE access to the entity receive a notification
    - The request system facilitates permission management
+
+<div style="display: flex; justify-content: space-between; margin-top: 20px;">
+    <a href="/notes/guide_dashboard" data-custom-href="/notes/guide_dashboard">← Previous</a>
+    <a href="/notes/guide_publishing" data-custom-href="/notes/guide_publishing">Next →</a>
+</div>

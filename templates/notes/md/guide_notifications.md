@@ -52,3 +52,8 @@ The system automatically sends email notifications for critical events:
 
 
 The notification system ensures users stay informed about important events while providing flexibility in how they manage and interact with notifications.
+
+<div style="display: flex; justify-content: space-between; margin-top: 20px;">
+    <a href="/notes/guide_publishing" data-custom-href="/notes/guide_publishing">← Previous</a>
+    <a href="/notes/guide_admin" data-custom-href="/notes/guide_admin">Next →</a>
+</div>

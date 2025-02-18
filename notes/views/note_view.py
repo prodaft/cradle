@@ -147,7 +147,11 @@ class NoteDetail(APIView):
                 NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK
             )
 
-        note_id = UUID(note_id_s)
+        try:
+            note_id = UUID(note_id_s)
+        except ValueError:
+            return Response("Invalid note ID.", status=status.HTTP_400_BAD_REQUEST)
+
         try:
             note: Note = Note.objects.get(id=note_id)
         except Note.DoesNotExist:
@@ -173,7 +177,11 @@ class NoteDetail(APIView):
                 "You cannot edit the guide note!", status=status.HTTP_403_FORBIDDEN
             )
 
-        note_id = UUID(note_id_s)
+        try:
+            note_id = UUID(note_id_s)
+        except ValueError:
+            return Response("Invalid note ID.", status=status.HTTP_400_BAD_REQUEST)
+
         try:
             note: Note = Note.objects.get(id=note_id)
         except Note.DoesNotExist:
@@ -211,7 +219,10 @@ class NoteDetail(APIView):
                 "You cannot delete the guide note!", status=status.HTTP_403_FORBIDDEN
             )
 
-        note_id = UUID(note_id_s)
+        try:
+            note_id = UUID(note_id_s)
+        except ValueError:
+            return Response("Invalid note ID.", status=status.HTTP_400_BAD_REQUEST)
 
         try:
             note_to_delete = Note.objects.get(id=note_id)

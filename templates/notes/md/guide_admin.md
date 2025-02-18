@@ -59,3 +59,7 @@ A log is propagated across to all entities that were affected by that initial lo
 The example belows shows an example of such a log, where the user admin has created an edit event by creating a note referencing entity `PTI-...`.
 
 ![log_propagation]({{ static_location }}/images/notes/log_propagation.png)
+
+<div style="display: flex; justify-content: space-between; margin-top: 20px;">
+    <a href="/notes/guide_notifications" data-custom-href="/notes/guide_notifications">← Previous</a>
+</div>

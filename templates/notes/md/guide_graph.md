@@ -52,3 +52,8 @@ The right-hand side of the interface provides an interactive **graph view** for 
   The legend explains the color coding of different entity types in the graph. By clicking on the legend, users can toggle the visibility of categories of nodes.
 
 By interacting with the graph, users can explore relationships, expand nodes, and analyze connections dynamically.
+
+<div style="display: flex; justify-content: space-between; margin-top: 20px;">
+    <a href="/notes/guide_notes" data-custom-href="/notes/guide_notes">← Previous</a>
+    <a href="/notes/guide_fleeting" data-custom-href="/notes/guide_fleeting">Next →</a>
+</div>

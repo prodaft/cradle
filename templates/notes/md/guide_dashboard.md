@@ -22,3 +22,8 @@ All of this information is organized hierarchically to simplify navigation. For 
 ## Requesting Access to an Entry
 
 The dashboard also simplifies the process of requesting access to an entry. If you are analyzing an entry's relationships and see a message stating, "There are inaccessible entities of this type you cannot view. Request access to view them," clicking on the request access text will send a notification to the owner of the inaccessible entry. If the owner approves the request, you will receive a notification, and the entry will then become accessible.
+
+<div style="display: flex; justify-content: space-between; margin-top: 20px;">
+    <a href="/notes/guide_navigation" data-custom-href="/notes/guide_navigation">← Previous</a>
+    <a href="/notes/guide_access" data-custom-href="/notes/guide_access">Next →</a>
+</div>

@@ -43,14 +43,22 @@ In essence, CRADLE is built to help threat analysts work together efficiently by
 
 ## How to Use
 
-- [Note Taking](/#/notes/guide_notes)
-- [Graph Explorer](/#/notes/guide_graph)
-- [Fleeting Notes](/#/notes/guide_fleeting)
-- [Navigation](/#/notes/guide_navigation)
-- [Dashboards](/#/notes/guide_dashboard)
-- [Access Control](/#/notes/guide_access)
-- [Publishing](/#/notes/guide_publishing)
-- [Notifications](/#/notes/guide_notifications)
-- [Administration](/#/notes/guide_admin)
+<ul>
+    <li><a href="/notes/guide_notes" data-custom-href="/notes/guide_notes">Note Taking</a></li>
+    <li><a href="/notes/guide_graph" data-custom-href="/notes/guide_graph">Graph Explorer</a></li>
+    <li><a href="/notes/guide_fleeting" data-custom-href="/notes/guide_fleeting">Fleeting Notes</a></li>
+    <li><a href="/notes/guide_navigation" data-custom-href="/notes/guide_navigation">Navigation</a></li>
+    <li><a href="/notes/guide_dashboard" data-custom-href="/notes/guide_dashboard">Dashboards</a></li>
+    <li><a href="/notes/guide_access" data-custom-href="/notes/guide_access">Access Control</a></li>
+    <li><a href="/notes/guide_publishing" data-custom-href="/notes/guide_publishing">Publishing</a></li>
+    <li><a href="/notes/guide_notifications" data-custom-href="/notes/guide_notifications">Notifications</a></li>
+    <li><a href="/notes/guide_admin" data-custom-href="/notes/guide_admin">Administration</a></li>
+</ul>
 
 ## Contact Information
+
+
+<div style="display: flex; justify-content: space-between; margin-top: 20px;">
+    <a href="" data-custom-href=""></a>
+    <a href="/notes/guide_notes" data-custom-href="/notes/guide_notes">Next →</a>
+</div>

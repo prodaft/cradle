@@ -18,3 +18,8 @@ Searching for notes is done via the notes page. Visiting the notes page, you wil
 - **Search by author:** Search for notes by the author of the note.
 
 This mechanic is re-used in dashboards, so you can search for notes linked to a specific entity.
+
+<div style="display: flex; justify-content: space-between; margin-top: 20px;">
+    <a href="/notes/guide_fleeting" data-custom-href="/notes/guide_fleeting">← Previous</a>
+    <a href="/notes/guide_dashboard" data-custom-href="/notes/guide_dashboard">Next →</a>
+</div>

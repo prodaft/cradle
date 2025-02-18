@@ -73,3 +73,9 @@ deleted, its links are also removed unless they are supported by other notes.
 It is best to use clear, consistent naming for references, organize notes with
 meaningful headers, and double-check references before finalizing, as the links
 become permanent.
+
+
+<div style="display: flex; justify-content: space-between; margin-top: 20px;">
+    <a href="/notes/guide" data-custom-href="/notes/guide">← Previous</a>
+    <a href="/notes/guide_graph" data-custom-href="/notes/guide_graph">Next →</a>
+</div>

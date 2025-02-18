@@ -15,3 +15,8 @@ across your devices. Once you review your note and decide it is ready, clicking
 **Save as Final** will finalize the note, adding it to the knowledge graph.
 Keep in mind that fleeting notes are not linked to any entities until they are
 finalized, and they will not appear in searches or dashboards.
+
+<div style="display: flex; justify-content: space-between; margin-top: 20px;">
+    <a href="/notes/guide_graph" data-custom-href="/notes/guide_graph">← Previous</a>
+    <a href="/notes/guide_navigation" data-custom-href="/notes/guide_navigation">Next →</a>
+</div>
