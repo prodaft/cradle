@@ -49,13 +49,13 @@ def extract_links(s: str) -> list[Link]:
         yield Link(r[0], r[1])
 
 
-def get_guide_note(guide_name: str, user: CradleUser):
+def get_guide_note(guide_name: str, request):
     ## Check if the guide name only contains alphanumeric characters and underscores
     if not re.match(r"^[a-zA-Z0-9_]+$", guide_name):
         return None
 
     try:
-        content = render_to_string(f"notes/md/{guide_name}.md", {"static_location": settings.BACKEND_URL.strip("/") + "/" + settings.STATIC_URL.strip("/")})
+        content = render_to_string(f"notes/md/{guide_name}.md", {"static_location": request.build_absolute_uri(settings.STATIC_URL)})
     except TemplateDoesNotExist:
         return None
 

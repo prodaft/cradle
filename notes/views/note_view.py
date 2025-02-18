@@ -139,7 +139,7 @@ class NoteDetail(APIView):
 
     def get(self, request: Request, note_id_s: str) -> Response:
         if note_id_s.startswith("guide"):
-            note = get_guide_note(note_id_s, request.user)
+            note = get_guide_note(note_id_s, request)
             if note is None:
                 return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
 
