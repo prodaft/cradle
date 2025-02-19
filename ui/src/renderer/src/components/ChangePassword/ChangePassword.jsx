@@ -1,114 +1,122 @@
 import React, { useState } from 'react';
-import { UserCircle } from 'iconoir-react';
-import FormField from '../FormField/FormField';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
-import {
-    changePasswordReq,
-    logInReq,
-} from '../../services/authReqService/authReqService';
+import FormField from '../FormField/FormField';
 import AlertBox from '../AlertBox/AlertBox';
 import useAuth from '../../hooks/useAuth/useAuth';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { useWindowSize } from '@uidotdev/usehooks';
+import { changePassword } from '../../services/userService/userService';
 
 /**
- * ChangePassword component - renders the change password form
+ * ChangePassword component - allows an authenticated user to change their password
+ * by providing their old password and a new password.
  *
  * @function ChangePassword
- * @returns {ChangePassword}
- * @constructor
+ * @returns {JSX.Element}
  */
 export default function ChangePassword() {
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [password, setPassword] = useState('');
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const windowSize = useWindowSize();
-    const location = useLocation();
-    const [searchParams, setSearchParams] = useSearchParams();
-    const token = searchParams.get('token');
+    const [formData, setFormData] = useState({
+        oldPassword: '',
+        newPassword: '',
+        confirmNewPassword: '',
+    });
 
-    const auth = useAuth();
+    const [alert, setAlert] = useState({
+        show: false,
+        message: '',
+        color: 'red',
+    });
 
     const navigate = useNavigate();
+    const handleError = displayError(setAlert, navigate);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!password || !confirmPassword) {
+        // Optional: check if new passwords match
+        if (formData.newPassword !== formData.confirmNewPassword) {
             setAlert({
                 show: true,
-                message: 'You must fill all fields!',
+                message: 'New passwords do not match.',
                 color: 'red',
             });
             return;
         }
 
-        if (password !== confirmPassword) {
+        try {
+            await changePassword(formData.oldPassword, formData.newPassword);
             setAlert({
                 show: true,
-                message: 'Passwords do not match!',
-                color: 'red',
+                message: 'Password changed successfully',
+                color: 'green',
             });
-            return;
+        } catch (err) {
+            console.log(err);
+            handleError(err);
         }
+    };
 
-        const data = { password: password, token: token };
-
-        changePasswordReq(data)
-            .then((res) => {
-                navigate('/login', { replace: true });
-            })
-            .catch(displayError(setAlert));
+    const handleInputChange = (field) => (value) => {
+        setFormData((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
     };
 
     return (
-        <div className='flex flex-row items-center justify-center h-screen overflow-y-auto'>
-            <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 xl:w-1/3'>
-                <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8 text-gray-500'>
+        <div className='flex flex-row items-center justify-center h-screen'>
+            <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 md:h-fit xl:w-1/3'>
+                <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8'>
                     <div className='sm:mx-auto sm:w-full sm:max-w-sm'>
-                        <h3 className='mt-10 text-center text-2xl font-bold leading-9 tracking-tight '>
+                        <h1 className='mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-cradle2'>
                             Change Password
-                        </h3>
+                        </h1>
                     </div>
-                    <div
-                        name='login-form'
-                        className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'
-                    >
+
+                    <div className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'>
                         <form className='space-y-6' onSubmit={handleSubmit}>
                             <FormField
-                                name='password'
-                                labelText='Password'
+                                name='oldPassword'
                                 type='password'
-                                autofocus={true}
-                                value={password}
-                                handleInput={setPassword}
+                                labelText='Old Password'
+                                placeholder='Enter your current password'
+                                value={formData.oldPassword}
+                                handleInput={handleInputChange('oldPassword')}
                             />
+
                             <FormField
-                                name='confirm-password'
-                                labelText='Confirm Password'
+                                name='newPassword'
                                 type='password'
-                                value={confirmPassword}
-                                handleInput={setConfirmPassword}
+                                labelText='New Password'
+                                placeholder='Enter your new password'
+                                value={formData.newPassword}
+                                handleInput={handleInputChange('newPassword')}
                             />
+
+                            <FormField
+                                name='confirmNewPassword'
+                                type='password'
+                                labelText='Confirm New Password'
+                                placeholder='Re-enter your new password'
+                                value={formData.confirmNewPassword}
+                                handleInput={handleInputChange('confirmNewPassword')}
+                            />
+
                             <AlertBox alert={alert} />
+
                             <button
                                 type='submit'
-                                data-testid='login-register-button'
                                 className='btn btn-primary btn-block'
                             >
                                 Change Password
                             </button>
-                        </form>
-                        <p className='mt-10 text-center text-sm text-gray-500'>
-                            <Link
-                                to='/login'
-                                className='font-semibold leading-6 text-cradle2 hover:opacity-90 hover:shadow-gray-400'
-                                replace={true}
+                            <button
+                                type='button'
+                                className='btn btn-ghost btn-block'
+                                onClick={() => navigate(-1)}
                             >
-                                Go back to login
-                            </Link>
-                        </p>
+                                Cancel
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>

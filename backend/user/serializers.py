@@ -4,9 +4,6 @@ from rest_framework_simplejwt.tokens import Token
 from rest_framework_simplejwt.authentication import AuthUser
 from django.core.exceptions import ValidationError
 from django.contrib.auth import password_validation
-from django.contrib.auth.password_validation import (
-    MinimumLengthValidator,
-)
 from .models import CradleUser
 from .exceptions import (
     DisallowedActionException,
@@ -14,12 +11,7 @@ from .exceptions import (
     InvalidPasswordException,
 )
 from typing import Dict, List, cast, Any, Sequence
-from .utils.validators import (
-    MinimumDigitsValidator,
-    MinimumLowerentityLettersValidator,
-    MinimumSpecialCharacterValidator,
-    MinimumUpperentityLettersValidator,
-)
+from .utils.validators import password_validator
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -55,16 +47,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
                 raise DuplicateUserException()
 
         if "password" in data:
-            password_validators: Sequence = (
-                MinimumLowerentityLettersValidator(1),
-                MinimumDigitsValidator(1),
-                MinimumSpecialCharacterValidator(1),
-                MinimumUpperentityLettersValidator(1),
-                MinimumLengthValidator(12),
-            )
             try:
                 password_validation.validate_password(
-                    data["password"], password_validators=password_validators
+                    data["password"], password_validators=password_validator()
                 )
             except ValidationError as e:
                 raise InvalidPasswordException(e.messages)
@@ -90,9 +75,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
         if validated_data.get("email", instance.email) != instance.email:
             raise DisallowedActionException("You cannot change your email")
-
-        if "password" in validated_data:
-            instance.set_password(validated_data["password"])
 
         instance.vt_api_key = validated_data.get("vt_api_key", instance.vt_api_key)
         instance.catalyst_api_key = validated_data.get(
@@ -121,6 +103,17 @@ class UserCreateSerializerAdmin(UserCreateSerializer):
         ]
         extra_kwargs: Dict[str, Dict[str, List]] = {"username": {"validators": []}}
 
+    def validate(self, data: Any) -> Any:
+        if "password" in data:
+            try:
+                password_validation.validate_password(
+                    data["password"], password_validators=password_validator()
+                )
+            except ValidationError as e:
+                raise InvalidPasswordException(e.messages)
+
+        return super().validate(data)
+
     def update(self, instance: CradleUser, validated_data: dict[str, Any]):
         for i in validated_data:
             instance.__setattr__(i, validated_data[i])
@@ -131,6 +124,19 @@ class UserCreateSerializerAdmin(UserCreateSerializer):
         instance.save()
 
         return instance
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+    # confirm_new_password = serializers.CharField(required=True) # optionally use this if you want to confirm new passwords
+
+    def validate(self, data):
+        password_validation.validate_password(
+            data["new_password"], password_validators=password_validator()
+        )
+
+        return data
 
 
 class UserRetrieveSerializer(serializers.ModelSerializer):

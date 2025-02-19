@@ -39,11 +39,11 @@ export default function ConfirmationDialog({
                         <div className='mb-4 text-xl font-bold'>{title}</div>
                         <div className='mb-6'>{description}</div>
                         <div className='flex justify-end space-x-2'>
-                            <button className='btn btn-ghost' onClick={handleOpen}>
+                            <button className='btn btn-success' onClick={handleOpen}>
                                 Cancel
                             </button>
                             <button
-                                className='btn btn-success'
+                                className='btn btn-ghost'
                                 onClick={() => {
                                     handleConfirm();
                                     handleOpen();

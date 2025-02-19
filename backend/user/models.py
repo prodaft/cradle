@@ -16,7 +16,7 @@ from .managers import CradleUserManager
 class UserRoles(models.TextChoices):
     ADMIN = "admin"  # Superuser
     ENTRY_MANAGER = "entrymanager"  # Manage Entities and EntryTypes
-    USER = "user"  # Writer of notes
+    USER = "author"  # Writer of notes
 
 
 class CradleUser(AbstractUser, LoggableModelMixin):

@@ -22,6 +22,7 @@ import Welcome from './components/Welcome/Welcome.jsx';
 import ActivityList from './components/ActivityList/ActivityList.jsx';
 import ConfirmEmail from './components/ConfirmEmail/ConfirmEmail.jsx';
 import ChangePassword from './components/ChangePassword/ChangePassword.jsx';
+import ResetPassword from './components/ResetPassword/ResetPassword.jsx';
 import ForgotPassword from './components/ForgotPassword/ForgotPassword.jsx';
 import GraphExplorer from './components/GraphExplorer/GraphExplorer.jsx';
 import FleetingNoteEditor from './components/FleetingNoteEditor/FleetingNoteEditor.jsx';
@@ -83,6 +84,10 @@ function App() {
                                     element={<PublishPreview />}
                                 ></Route>
                                 <Route
+                                    path='/change-password'
+                                    element={<ChangePassword />}
+                                ></Route>
+                                <Route
                                     path='/account/:target'
                                     element={<AccountSettings />}
                                 ></Route>
@@ -124,8 +129,8 @@ function App() {
                         <Route path='/login' element={<Login />}></Route>
                         <Route path='/confirm-email' element={<ConfirmEmail />}></Route>
                         <Route
-                            path='/change-password'
-                            element={<ChangePassword />}
+                            path='/reset-password'
+                            element={<ResetPassword />}
                         ></Route>
                         <Route
                             path='/forgot-password'

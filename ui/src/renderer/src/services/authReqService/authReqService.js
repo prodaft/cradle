@@ -29,7 +29,7 @@ export async function confirmReq(data) {
  * @param {UserData} data - account details
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export async function changePasswordReq(data) {
+export async function resetPasswordReq(data) {
     return noAuthAxios({
         baseURL: import.meta.env.VITE_API_BASE_URL,
         method: 'put',

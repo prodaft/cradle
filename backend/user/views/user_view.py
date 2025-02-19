@@ -12,6 +12,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from notifications.models import NewUserNotification
 from user.permissions import HasAdminRole
 from ..serializers import (
+    ChangePasswordSerializer,
     EmailConfirmSerializer,
     UserCreateSerializer,
     UserCreateSerializerAdmin,
@@ -199,6 +200,39 @@ class UserDetail(APIView):
         return Response(
             "Requested user account was deleted.", status=status.HTTP_200_OK
         )
+
+
+class ChangePasswordView(APIView):
+    """
+    An endpoint for users to change their password if they know their old password.
+    """
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user: CradleUser = request.user
+        serializer = ChangePasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            old_password = serializer.validated_data["old_password"]
+            new_password = serializer.validated_data["new_password"]
+
+            # Check if old_password is correct
+            if not user.check_password(old_password):
+                return Response(
+                    "The old password is incorrect.",
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Everything is valid, update the password
+            user.set_password(new_password)
+            user.save()
+
+            return Response(
+                {"detail": "Password changed successfully."}, status=status.HTTP_200_OK
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ManageUser(APIView):

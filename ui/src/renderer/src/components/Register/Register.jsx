@@ -4,7 +4,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { registerReq } from '../../services/authReqService/authReqService';
 import AlertBox from '../AlertBox/AlertBox';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { validatePassword } from '../../utils/validatePassword/validatePassword';
 
 /**
  * Register component - renders the registration form.
@@ -30,16 +29,6 @@ export default function Register() {
 
         if (password !== passwordCheck) {
             setAlert({ show: true, message: 'Passwords do not match.', color: 'red' });
-            return;
-        }
-
-        if (!validatePassword(password)) {
-            setAlert({
-                show: true,
-                message:
-                    'Password must be at least 12 characters long, contain at least one upperentity letter, one lowerentity letter, one number, and one special character.',
-                color: 'red',
-            });
             return;
         }
 

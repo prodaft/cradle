@@ -60,7 +60,9 @@ class TemplatedMail(Mail):
 class ResetPasswordMail(TemplatedMail):
     def __init__(self, user) -> None:
         self.user = user
-        reset_url = f"{settings.FRONTEND_URL}/#change-password?token={user.password_reset_token}"
+        reset_url = (
+            f"{settings.FRONTEND_URL}/#reset-password?token={user.password_reset_token}"
+        )
         params = {
             "user": user,
             "reset_url": reset_url,

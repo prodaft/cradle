@@ -2,6 +2,7 @@ from django.core.exceptions import ValidationError
 from ..models import CradleUser
 from django.utils.translation import gettext as _
 from typing import Callable
+from django.contrib.auth.password_validation import MinimumLengthValidator
 
 
 class MinimumWithConditionValidator:
@@ -109,3 +110,13 @@ class MinimumSpecialCharacterValidator(MinimumWithConditionValidator):
             lambda chr: chr in MinimumSpecialCharacterValidator.SPECIAL_CHARACTERS,
             _(f"Your password must contain at least {min_special} special characters."),
         )
+
+
+def password_validator():
+    return (
+        MinimumLowerentityLettersValidator(1),
+        MinimumDigitsValidator(1),
+        MinimumSpecialCharacterValidator(1),
+        MinimumUpperentityLettersValidator(1),
+        MinimumLengthValidator(12),
+    )

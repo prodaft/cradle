@@ -40,3 +40,11 @@ export async function updateUser(id, data) {
         data: data,
     });
 }
+
+export async function changePassword(oldPassword, newPassword) {
+    return authAxios({
+        method: 'post',
+        url: '/users/change_password/',
+        data: { old_password: oldPassword, new_password: newPassword },
+    });
+}

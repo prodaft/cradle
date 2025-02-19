@@ -43,7 +43,7 @@ const displayError = (setAlert, navigate) => {
                     break;
                 }
                 if (key.includes('error')) {
-                    message = err.response.data[key];
+                    message = JSON.stringify(err.response.data[key]);
                 }
             }
             if (!message) {
