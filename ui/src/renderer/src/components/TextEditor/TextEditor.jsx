@@ -32,51 +32,6 @@ export default function TextEditor({
     const [currentLine, setCurrentLine] = useState(0);
     const pendingParseRef = useRef(false);
 
-    /* https://stackoverflow.com/questions/29255744/make-side-by-side-markdown-preview-scroll-with-its-editor/54076421#54076421 */
-    function buildScrollMap(editor, editorOffset) {
-        scrollMap = [];
-        scrollMap[0] = 0;
-
-        // lineOffsets[i] holds top-offset of line i in the source editor
-        var lineOffsets = [undefined, 0],
-            knownLineOffsets = [],
-            offsetSum = 0;
-        editor.eachLine(function (line) {
-            offsetSum += line.height;
-            lineOffsets.push(offsetSum);
-        });
-
-        var lastEl;
-        frameWindow.document
-            .querySelectorAll('body > [data-source-line]')
-            .forEach(function (el) {
-                var line = parseInt(el.getAttribute('data-source-line'), 10),
-                    lineOffset = lineOffsets[line];
-                scrollMap[lineOffset] = el.offsetTop - editorOffset;
-                knownLineOffsets.push(lineOffset);
-
-                lastEl = el;
-            });
-        if (lastEl) {
-            scrollMap[offsetSum] = lastEl.offsetTop + lastEl.offsetHeight;
-            knownLineOffsets.push(offsetSum);
-        }
-
-        // fill in the blanks by interpolating between the two closest known line offsets
-        var j = 0;
-        for (var i = 1; i < offsetSum; i++) {
-            if (scrollMap[i] === undefined) {
-                var a = knownLineOffsets[j],
-                    b = knownLineOffsets[j + 1];
-                scrollMap[i] = Math.round(
-                    (scrollMap[b] * (i - a) + scrollMap[a] * (b - i)) / (b - a),
-                );
-            } else {
-                j++;
-            }
-        }
-    }
-
     useEffect(() => {
         const workerInstance = parseWorker();
 

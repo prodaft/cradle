@@ -365,7 +365,7 @@ export default function Editor({
     }, []);
 
     useEffect(() => {
-        if (prevNoteId != null && codeMirrorContent != '') {
+        if (prevNoteId != null && prevNoteId != 'new' && codeMirrorContent != '') {
             setMarkdownContent('');
             setCodeMirrorContent('');
         }

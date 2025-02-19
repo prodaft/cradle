@@ -1,131 +1,75 @@
 # CRADLE Monorepo
-<p align="center">
-    <img width="200" height="200" src="backend/notes/static/notes/images/notes/logo.png" alt="Cradle Logo">
-</p>
+
+<p align="center"> <img src="backend/notes/static/notes/images/notes/logo.png" alt="Cradle Logo" width="200" height="200"> </p>
+
+## Overview
+
+CRADLE is an open-source web application that supports Cyber Threat Intelligence (CTI) analysts in collecting, processing, and analyzing data about threat actors. It aims to streamline the workflow of threat analysts by providing a collaborative note-taking environment, quick data access, and visual tools to draw connections between threat entities and artifacts.
+
+**Key Features**
+- **Collaborative Note-Taking**: Share and store investigation notes in one place.
+- **Visualization and Analysis**: Easily connect related entities (agents, artifacts, and more).
+- **Publishable Reports**: Export and share comprehensive intelligence findings.
+- **Modular Architecture**: Built for flexibility and future feature expansion.
 
 ---
 
-## Introduction
+## Repository Structure
 
-Cyber Threat Intelligence (CTI) involves the collection, processing, and
-analysis of data to understand the motives, targets, and attack behaviors of
-threat agents. The role of a threat analyst is complex and multifaceted.
+This monorepo is organized into three main directories:
 
-Analysts need to investigate cyber activities, make and share notes, visualize
-data to establish connections between agents and artifacts, and compile
-comprehensive reports on their findings. They require quick access to relevant
-notes to enhance efficiency and minimize unnecessary labor.
+- **backend/**
+  Contains the Django-based backend for CRADLE.
+  See its dedicated [README](backend/README.md) for information about local installation, commands, and usage.
 
-CRADLE is an open-source web application designed to assist CTI analysts by
-providing a collaborative, domain-specific note-taking tool. It streamlines the
-workflow of cyber threat analysts, enabling them to conduct investigations
-efficiently and export their findings in a publishable format.
+- **ui/**
+  Contains the Electron/React-based front-end application.
+  See its dedicated [README](ui/README.md) for details on local installation and development.
 
----
-
-## Getting Started
-
-This section provides a comprehensive installation guide and instructions on how to use the application.
-
-### Installation
-#### Docker (Recommended)
-
-If you want to run CRADLE in docker, you can use our docker-compose file which
-starts up all the necessary services for you. 
-
-CRADLE employs a client-server architecture with a modular design, facilitating future feature additions and improvements.
-The front end is primarily built using [Electron](https://www.electronjs.org/) and [React](https://react.dev/), supported by technologies such as [Tailwind CSS](https://tailwindcss.com/) and [Vite](https://vitejs.dev/). The back end is built mainly using [Django](https://www.djangoproject.com/). For more information about the front end visit its [page](https://gitlab.ewi.tudelft.nl/cse2000-software-project/2023-2024/cluster-j/08b/frontend).
+- **deploy/**
+  Holds Ansible playbooks and other deployment-related scripts/configurations.
 
 ---
 
 ## Getting Started
 
-This section provides a comprehensive installation guide and instructions on how to use the application.
+For most users, **Docker** is the recommended way to spin up the CRADLE environment. Advanced users and developers who need more control can refer to the specific READMEs for [backend](backend/README.md) and frontend to set up those components locally.
 
-### Installation
+### Run with Docker (Recommended)
 
-1. Clone the project:
-```
-git clone git@github.com:prodaft/cradle-backend.git cradle
-cd cradle
-git submodule update --init --recursive
-sudo docker compose -f docker-compose-demo.yml up -d
-```
+Running CRADLE with Docker Compose will automatically set up all required services (backend, frontend, database, etc.).
 
-#### Native
+1. **Clone the monorepo:**
+   ```bash
+   git clone https://github.com/prodaft/cradle.git
+   cd cradle
+   ```
 
-1. Clone the project:
-
-```
-git clone git@github.com:prodaft/cradle-backend.git
-```
-
-2. Install [PostgreSQL](https://www.postgresql.org/). You will need to ensure you have created a user with its associated password (the default is ```postgres```).
-3. Run the server (usually this might happen automatically after install). Use a client such as ```psql``` to communicate with it:
-
-```
-psql -U [your-username]
-```
-
-4. Once in the interactive section, create a new database:
-
-```
-postgres=# CREATE DATABASE cradledb;
-```
-
-5. Adjust the cradle/settings.py file to reflect your database configuration.
-6. Install [Minio](https://min.io/) and run an instance of it. This will be used for file storage. Adjust the settings file once again.
-7. Install [Pipenv](https://pipenv.pypa.io/en/latest/) (Note: Your [Python](https://www.python.org/downloads/release/python-3110/) version should be 3.11):
-
-```
-pip install pipenv
-```
-
-
-### Scripts and Usage
-
-* Migrating the Database Schema:
-```
-pipenv run python manage.py migrate
-```
-
-* Running the Server:
-```
-pipenv run python manage.py runserver
-```
-
-* Running the Tests:
-```
-pipenv run python manage.py test
-```
-
-* Generating and Building the Static HTML Sphinx Documentation:
-```
-sphinx-apidoc -f -T -o docs/api_reference . '*/tests/*' '*/migrations/*'
-sphinx-build -b html -b coverage docs docs/_build
-cd docs
-make html
-```
+2. **Start services using Docker Compose**:
+   ```bash
+   docker compose -f docker-compose.demo.yml up -d
+   ```
+   This launches all necessary components, enabling you to access CRADLE on your local machine without manual dependency management.
 
 ---
 
-## Contributing & Reporting
+## Contributing
 
-We welcome contributions from everyone! To ensure a smooth process, please follow these guidelines:
+We welcome contributions of all kinds—bug reports, feature requests, and documentation improvements. Please follow these guidelines:
 
-- **If you are experiencing an issue regarding setup or usage:** Please do not
-  hesitate to [create an issue](https://github.com/prodaft/cradle-backend/issues/new).
-  Please be descriptive when reporting issues, and include the steps necessary to reproduce.
-- **Pull Requests are Welcome!** If you would like to contribute a feature or fix a bug: Great!. Go ahead and create a merge request.
+- **Issues & Bug Reports**
+  If you encounter a bug or have questions, please [open an issue](https://github.com/prodaft/cradle/issues).
+
+- **Pull Requests**
+  Pull requests are welcome! If you intend to introduce significant changes, create an issue or discuss them first to ensure a smooth process.
 
 ---
 
-## Authors and Acknowledgments
+## Authors & Acknowledgments
 
-CRADLE is developed in PRODAFT, in collaboration with TU Delft students. We thank everyone who contributes to the development process of CRADLE.
+CRADLE is developed by PRODAFT in collaboration with students from TU Delft. Special thanks to everyone who contributes to making this project possible.
 
-### Contributors
-
+**Contributors**
 - [Tudor Măgirescu](https://github.com/TudorMagirescu)
 - [Călin-Marian Diacicov](https://github.com/klinashka)
 - [Daniel Popovici](https://github.com/Babu-on-Github)
@@ -136,4 +80,5 @@ CRADLE is developed in PRODAFT, in collaboration with TU Delft students. We than
 ---
 
 ## License
-**CRADLE is under the free open source MIT licence.** The license can be found in the [LICENSE](LICENSE) file.
+
+This project is licensed under the **[MIT License](LICENSE)**. You are free to use, modify, and distribute this software for both commercial and non-commercial purposes. See the `LICENSE` file for full license details.
