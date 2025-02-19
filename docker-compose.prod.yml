@@ -35,11 +35,33 @@ services:
     networks:
       - cradle_network
 
+  redis:
+    image: "redis:alpine"
+    networks:
+      cradle_demo_network:
+        ipv4_address: 192.168.42.7
+
+  celery:
+    image: cradle:latest
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.backend
+    container_name: celery
+    restart: unless-stopped
+    command: pipenv run celery -A cradle worker -Q email,notes
+    env_file:
+      - cradle.env
+    depends_on:
+      - postgres
+      - minio
+    networks:
+      - cradle_network
+
   cradle:
     image: cradle:latest
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: ./docker/Dockerfile.backend
     container_name: cradle
     restart: always
     env_file:
@@ -47,7 +69,7 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
-      -  /var/www/:/var/www/
+      -  /var/www/static/:/app/static/
     depends_on:
       - postgres
       - minio
@@ -55,6 +77,7 @@ services:
       - "cradle.prodaft.com:172.18.0.1"
     networks:
       - cradle_network
+
 
 networks:
   cradle_network:

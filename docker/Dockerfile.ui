@@ -1,0 +1,24 @@
+# vi: ft=dockerfile
+
+FROM node:23-alpine3.20
+
+RUN apk update
+RUN apk add nginx
+
+RUN adduser -D -g 'www' www
+
+RUN mkdir /www
+RUN chown -R www:www /var/lib/nginx
+RUN chown -R www:www /www
+
+# Copy application source code
+COPY ./ui ui
+WORKDIR /ui
+
+RUN npm install
+
+COPY ./docker/entrypoint_ui.sh entrypoint_ui.sh
+
+RUN chmod +x ./entrypoint_ui.sh
+
+CMD ./entrypoint_ui.sh

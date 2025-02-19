@@ -212,6 +212,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "notes", "static")]
 
+# Can be set in specific config files if needed
+MINIO_BACKEND_URL = None
 
 ## Application Specific Config
 ADMIN_PATH = "29acee84-15db-481b-b602-2c1a579178d0/"

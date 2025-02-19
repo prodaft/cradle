@@ -1,0 +1,33 @@
+# vi: ft=dockerfile
+
+FROM python:3.11
+
+# Set the working directory
+WORKDIR /app
+
+# Install pipenv
+RUN pip install pipenv
+
+# Copy and install Python dependencies
+COPY ./backend/Pipfile .
+RUN pipenv lock
+RUN pipenv sync
+RUN pipenv install gunicorn
+
+RUN apt-get update
+RUN rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY ./backend/ .
+
+# Copy Docker-specific settings
+COPY ./backend/cradle/settings_docker.py ./cradle/settings.py
+
+COPY ./docker/entrypoint_backend.sh .
+
+# Make the entrypoint script executable
+RUN chmod +x ./entrypoint_backend.sh
+
+# Start Nginx and the Gunicorn application server
+CMD ./entrypoint_backend.sh

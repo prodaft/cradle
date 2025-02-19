@@ -4,7 +4,8 @@ from minio import Minio
 import uuid
 from datetime import timedelta
 from .exceptions import MinioObjectNotFound
-from cradle.settings import MINIO_CONFIG
+from cradle.settings import MINIO_CONFIG, MINIO_BACKEND_URL
+import urllib3
 
 
 class MinioClient:
@@ -13,7 +14,12 @@ class MinioClient:
     def __new__(cls):
         if not hasattr(cls, "_instance"):
             cls._instance = super().__new__(cls)
-            cls._instance.client = Minio(**MINIO_CONFIG)
+            if MINIO_BACKEND_URL is not None:
+                cls._instance.client = Minio(
+                    http_client=urllib3.ProxyManager(MINIO_BACKEND_URL), **MINIO_CONFIG
+                )
+            else:
+                cls._instance.client = Minio(**MINIO_CONFIG)
 
         return cls._instance
 

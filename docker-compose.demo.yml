@@ -17,7 +17,8 @@ services:
       MINIO_SERVER_URL: http://localhost:8000
       MINIO_BROWSER_REDIRECT_URL: http://localhost:8000/minio/ui
     networks:
-      - cradle_network
+      cradle_demo_network:
+        ipv4_address: 192.168.42.5
 
   postgres:
     image: postgres:15
@@ -35,26 +36,36 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - cradle_network
+      cradle_demo_network:
+        ipv4_address: 192.168.42.6
 
-  cradle:
+  redis:
+    image: "redis:alpine"
+    networks:
+      cradle_demo_network:
+        ipv4_address: 192.168.42.7
+
+  celery:
     image: cradle:latest
     build:
       context: .
-      dockerfile: docker/Dockerfile
-    container_name: cradle
+      dockerfile: ./docker/Dockerfile.backend
+    container_name: celery
     restart: unless-stopped
-    environment:
+    command: pipenv run celery -A cradle worker -Q email,notes -l INFO
+    environment: &cradle_env
       DB_NAME: cradle
       DB_USER: cradle
       DB_PASSWORD: cradlePostgresPassword
-      DB_HOST: postgres
+      DB_HOST: 192.168.42.6
       DB_PORT: 5432
 
       MINIO_ENDPOINT: localhost:8000
       MINIO_ROOT_USER: admin
       MINIO_ROOT_PASSWORD: minioAdminPassword
       MINIO_SECURE: false
+
+      MINIO_BACKEND_URL: http://192.168.42.5:9000
 
       CRADLE_ADMIN_USER: admin
       CRADLE_ADMIN_EMAIL: admin@cradle.sh
@@ -80,22 +91,67 @@ services:
       EMAIL_HOST_PASSWORD: ""
       EMAIL_USE_TLS: false
 
-      REQUIRE_EMAIL_CONFIRMATION: true
-      REQUIRE_ADMIN_ACTIVATION: true
+      REQUIRE_EMAIL_CONFIRMATION: false
+      REQUIRE_ADMIN_ACTIVATION: false
 
+      CELERY_BROKER_URL: "redis://192.168.42.7:6379/0"
+      CELERY_RESULT_BACKEND: "redis://192.168.42.7:6379/0"
+      REDIS_URL: "redis://192.168.42.7:6379/0"
+
+    depends_on:
+      - postgres
+      - minio
+    networks:
+      cradle_demo_network:
+        ipv4_address: 192.168.42.8
+
+  cradle:
+    image: cradle:latest
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.backend
+    container_name: cradle
+    restart: unless-stopped
+    volumes:
+      - ./build/www/static:/app/static
+    environment: *cradle_env
+    depends_on:
+      - postgres
+      - minio
+    networks:
+      cradle_demo_network:
+        ipv4_address: 192.168.42.9
+
+  cradle_ui:
+    image: cradle_ui:latest
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.ui
+    container_name: cradle_ui
+    volumes:
+      - ./build/www:/www
+      - ./docker/nginx_demo.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
+    environment:
       NODE_ENV: production
       VITE_ENV: production
+      FRONTEND_URL: http://localhost:8000
     ports:
       - 8000:8000
     depends_on:
       - postgres
       - minio
     networks:
-      - cradle_network
+      cradle_demo_network:
+        ipv4_address: 192.168.42.10
 
 volumes:
   postgres_data:
   minio_data:
 
 networks:
-  cradle_network:
+  cradle_demo_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.42.0/24
