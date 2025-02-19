@@ -11,7 +11,7 @@ import Preview from '../Preview/Preview';
 import { updateNote, getNote } from '../../services/notesService/notesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import TextEditor from '../TextEditor/TextEditor';
-import { diff_match_patch } from 'diff-match-patch'
+import { diff_match_patch } from 'diff-match-patch';
 
 export default function NoteEditor() {
     const [initialMarkdown, setInitialMarkdown] = useState('');
@@ -39,7 +39,7 @@ export default function NoteEditor() {
 
     // Ensure the ref to the initial markdown is correct
     useEffect(() => {
-      initialMarkdownRef.current = initialMarkdown;
+        initialMarkdownRef.current = initialMarkdown;
     }, [initialMarkdown]);
 
     useEffect(() => {
@@ -72,7 +72,7 @@ export default function NoteEditor() {
         var dmp = new diff_match_patch();
         const storedContent = markdownContentRef.current;
         const storedFileData = fileDataRef.current;
-        let patch = dmp.patch_make(initialMarkdownRef.current, storedContent)
+        let patch = dmp.patch_make(initialMarkdownRef.current, storedContent);
 
         try {
             let response = await updateNote(id, {

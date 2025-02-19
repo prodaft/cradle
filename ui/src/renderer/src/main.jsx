@@ -1,4 +1,4 @@
-import './styles/main.css'
+import './styles/main.css';
 import 'prismjs/themes/prism-tomorrow.css';
 import React from 'react';
 import ReactDOM from 'react-dom/client';

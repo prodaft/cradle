@@ -1,9 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import {
-    getPermissions,
-    manageUser
-} from '../../services/adminService/adminService';
+import { getPermissions, manageUser } from '../../services/adminService/adminService';
 import AdminPanelPermissionCard from '../AdminPanelPermissionCard/AdminPanelPermissionCard';
 import useFrontendSearch from '../../hooks/useFrontendSearch/useFrontendSearch';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
@@ -111,7 +108,7 @@ export default function AdminPanelUserPermissions() {
                             data-tooltip={'Edit this user'}
                             onClick={() => navigate(`/account/${id}`)}
                         >
-                        Edit
+                            Edit
                         </button>
                         <button
                             id='simulate-user'

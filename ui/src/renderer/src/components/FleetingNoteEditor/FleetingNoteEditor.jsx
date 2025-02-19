@@ -17,7 +17,7 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 
 import TextEditor from '../TextEditor/TextEditor';
-import { diff_match_patch } from 'diff-match-patch'
+import { diff_match_patch } from 'diff-match-patch';
 
 export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
     const [markdownContent, setMarkdownContent] = useState('');
@@ -83,7 +83,6 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
         }
     }, [id, setMarkdownContent, setFileData, setHasUnsavedChanges, setAlert, navigate]);
 
-
     const handleSaveNote = (displayAlert) => {
         if (!validateContent()) return;
         if (id) {
@@ -123,7 +122,6 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
             }
         }
     };
-
 
     // Function to delete a fleeting note you are working on
     const handleDeleteNote = () => {

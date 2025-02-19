@@ -230,9 +230,9 @@ export default function Editor({
             },
         }),
         events.scroll({
-          scroll(e) {
-            debouncedSetTop(e.target.scrollTop);
-          }
+            scroll(e) {
+                debouncedSetTop(e.target.scrollTop);
+            },
         }),
     ];
 
@@ -257,8 +257,8 @@ export default function Editor({
         const selection = { anchor: targetLinePos, head: targetLinePos };
 
         editorRef.current.view.dispatch({
-          selection,
-          scrollIntoView: true,
+            selection,
+            scrollIntoView: true,
         });
     }, [currentLine]);
 
@@ -380,7 +380,7 @@ export default function Editor({
 
     const toggleFileList = () => {
         setShowFileList(!showFileList);
-    }
+    };
 
     return (
         <div className='h-full w-full flex flex-col flex-1'>

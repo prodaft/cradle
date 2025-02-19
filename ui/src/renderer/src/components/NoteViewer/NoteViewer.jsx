@@ -98,47 +98,51 @@ export default function NoteViewer() {
             .catch(displayError(setAlert, navigate));
     }, [id, navigate]);
 
-    const navbarContents = id?.startsWith("guide_") ? [] : [
-        isPublishable && (
-            <NavbarButton
-                icon={<StatsReport />}
-                text='Publish Report'
-                data-testid='publish-btn'
-                key='publish-btn'
-                onClick={() => navigate(`/publish`, { state: { noteIds: [id] } })}
-            />
-        ),
-        <NavbarSwitch
-            key='publishable-btn'
-            text='Publishable'
-            checked={isPublishable}
-            onChange={togglePublishable}
-            testid='publishable-btn'
-        />,
-        <NavbarButton
-            key='edit-btn'
-            text='Edit Note'
-            icon={<EditPencil />}
-            onClick={() => navigate(`/notes/${id}/edit`)}
-            tesid='delete-btn'
-        />,
-        auth.isAdmin() && (
-            <NavbarButton
-                key='history-btn'
-                text='View History'
-                icon={<ClockRotateRight />}
-                onClick={() => navigate(`/activity?content_type=note&object_id=${id}`)}
-                tesid='delete-btn'
-            />
-        ),
-        <NavbarButton
-            key='delete-btn'
-            text='Delete Note'
-            icon={<Trash />}
-            onClick={() => setDialog(true)}
-            tesid='delete-btn'
-        />,
-    ];
+    const navbarContents = id?.startsWith('guide_')
+        ? []
+        : [
+              isPublishable && (
+                  <NavbarButton
+                      icon={<StatsReport />}
+                      text='Publish Report'
+                      data-testid='publish-btn'
+                      key='publish-btn'
+                      onClick={() => navigate(`/publish`, { state: { noteIds: [id] } })}
+                  />
+              ),
+              <NavbarSwitch
+                  key='publishable-btn'
+                  text='Publishable'
+                  checked={isPublishable}
+                  onChange={togglePublishable}
+                  testid='publishable-btn'
+              />,
+              <NavbarButton
+                  key='edit-btn'
+                  text='Edit Note'
+                  icon={<EditPencil />}
+                  onClick={() => navigate(`/notes/${id}/edit`)}
+                  tesid='delete-btn'
+              />,
+              auth.isAdmin() && (
+                  <NavbarButton
+                      key='history-btn'
+                      text='View History'
+                      icon={<ClockRotateRight />}
+                      onClick={() =>
+                          navigate(`/activity?content_type=note&object_id=${id}`)
+                      }
+                      tesid='delete-btn'
+                  />
+              ),
+              <NavbarButton
+                  key='delete-btn'
+                  text='Delete Note'
+                  icon={<Trash />}
+                  onClick={() => setDialog(true)}
+                  tesid='delete-btn'
+              />,
+          ];
 
     navbarContents.push(
         <NavbarButton
@@ -147,7 +151,8 @@ export default function NoteViewer() {
             icon={<Code />}
             onClick={toggleView}
             tesid='toggle-view-btn'
-        />);
+        />,
+    );
 
     useNavbarContents(navbarContents, [
         toggleView,

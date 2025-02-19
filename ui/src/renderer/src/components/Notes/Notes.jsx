@@ -50,10 +50,10 @@ export default function Notes() {
     };
 
     useEffect(() => {
-      setSearchFilters({
-        content: searchParams.get('content') || '',
-        author__username: searchParams.get('author__username') || '',
-      });
+        setSearchFilters({
+            content: searchParams.get('content') || '',
+            author__username: searchParams.get('author__username') || '',
+        });
     }, [searchParams]);
 
     return (

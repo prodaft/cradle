@@ -78,7 +78,10 @@ export default function AdminPanelEdit({ type }) {
                             if (entrytype.regex && entrytype.regex.length > 0) {
                                 setTypeFormat('regex');
                                 setTypeFormatDetails(entrytype.regex);
-                            } else if (entrytype.options && entrytype.options.length > 0) {
+                            } else if (
+                                entrytype.options &&
+                                entrytype.options.length > 0
+                            ) {
                                 setTypeFormat('options');
                                 setTypeFormatDetails(entrytype.options);
                             } else {
@@ -224,127 +227,128 @@ export default function AdminPanelEdit({ type }) {
         }, []);
 
         return (
-          <>
-            <div className='flex flex-row items-center justify-center h-screen'>
-                <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 md:h-fit xl:w-1/3'>
-                    <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8'>
-                        <div className='sm:mx-auto sm:w-full sm:max-w-sm'>
-                            <h1 className='mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-cradle2'>
-                                Edit Entry Type
-                            </h1>
-                        </div>
-                        <div
-                            name='register-form'
-                            className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'
-                        >
-                            <div className='space-y-6'>
-                                <select
-                                    className='form-select select select-ghost-primary select-block focus:ring-0'
-                                    onChange={(e) => setClassType(e.target.value)}
-                                    value={classType}
-                                >
-                                    <option value='entity'>Entity</option>
-                                    <option value='artifact'>Artifact</option>
-                                </select>
+            <>
+                <div className='flex flex-row items-center justify-center h-screen'>
+                    <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 md:h-fit xl:w-1/3'>
+                        <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8'>
+                            <div className='sm:mx-auto sm:w-full sm:max-w-sm'>
+                                <h1 className='mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-cradle2'>
+                                    Edit Entry Type
+                                </h1>
+                            </div>
+                            <div
+                                name='register-form'
+                                className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'
+                            >
+                                <div className='space-y-6'>
+                                    <select
+                                        className='form-select select select-ghost-primary select-block focus:ring-0'
+                                        onChange={(e) => setClassType(e.target.value)}
+                                        value={classType}
+                                    >
+                                        <option value='entity'>Entity</option>
+                                        <option value='artifact'>Artifact</option>
+                                    </select>
 
-                                <FormField
-                                    name='name'
-                                    type='text'
-                                    labelText='Name'
-                                    className='form-input input input-ghost-primary input-block focus:ring-0'
-                                    value={name}
-                                    handleInput={setName}
-                                />
-                                <FormField
-                                    name='catalyst_type'
-                                    labelText='Catalyst Type'
-                                    type='text'
-                                    className='form-input input input-ghost-primary input-block focus:ring-0'
-                                    placeholder='type/subtype|model_class|level'
-                                    value={catalystType}
-                                    handleInput={setCatalystType}
-                                />
-                                {classType == 'entity' && (
                                     <FormField
+                                        name='name'
                                         type='text'
-                                        name='prefix'
+                                        labelText='Name'
                                         className='form-input input input-ghost-primary input-block focus:ring-0'
-                                        labelText='Prefix'
-                                        handleInput={setPrefix}
-                                        value={prefix}
+                                        value={name}
+                                        handleInput={setName}
                                     />
-                                )}
+                                    <FormField
+                                        name='catalyst_type'
+                                        labelText='Catalyst Type'
+                                        type='text'
+                                        className='form-input input input-ghost-primary input-block focus:ring-0'
+                                        placeholder='type/subtype|model_class|level'
+                                        value={catalystType}
+                                        handleInput={setCatalystType}
+                                    />
+                                    {classType == 'entity' && (
+                                        <FormField
+                                            type='text'
+                                            name='prefix'
+                                            className='form-input input input-ghost-primary input-block focus:ring-0'
+                                            labelText='Prefix'
+                                            handleInput={setPrefix}
+                                            value={prefix}
+                                        />
+                                    )}
 
-                                {classType == 'artifact' && (
+                                    {classType == 'artifact' && (
+                                        <div className='w-full'>
+                                            <label
+                                                htmlFor='format'
+                                                className='block text-sm font-medium leading-6'
+                                            >
+                                                Format
+                                            </label>
+                                            <div className='mt-2'>
+                                                <select
+                                                    className='form-select select select-ghost-primary select-block focus:ring-0'
+                                                    onChange={handleFormatChange}
+                                                    value={typeFormat}
+                                                    name='format'
+                                                >
+                                                    <option>Any Format</option>
+                                                    <option value='options'>
+                                                        Enumerator
+                                                    </option>
+                                                    <option value='regex'>Regex</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    )}
+                                    <textarea
+                                        className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
+                                        placeholder={typeFormatHint}
+                                        onChange={(e) =>
+                                            setTypeFormatDetails(e.target.value)
+                                        }
+                                        value={typeFormatDetails}
+                                        hidden={
+                                            classType != 'artifact' ||
+                                            typeFormat == null
+                                        }
+                                    />
+
                                     <div className='w-full'>
                                         <label
-                                            htmlFor='format'
+                                            htmlFor='color'
                                             className='block text-sm font-medium leading-6'
                                         >
-                                            Format
+                                            Color
                                         </label>
                                         <div className='mt-2'>
-                                            <select
-                                                className='form-select select select-ghost-primary select-block focus:ring-0'
-                                                onChange={handleFormatChange}
-                                                value={typeFormat}
-                                                name='format'
-                                            >
-                                                <option>Any Format</option>
-                                                <option value='options'>
-                                                    Enumerator
-                                                </option>
-                                                <option value='regex'>Regex</option>
-                                            </select>
+                                            <PopoverPicker
+                                                color={color}
+                                                onChange={setColor}
+                                            />
                                         </div>
                                     </div>
-                                )}
-                                <textarea
-                                    className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
-                                    placeholder={typeFormatHint}
-                                    onChange={(e) =>
-                                        setTypeFormatDetails(e.target.value)
-                                    }
-                                    value={typeFormatDetails}
-                                    hidden={
-                                        classType != 'artifact' || typeFormat == null
-                                    }
-                                />
 
-                                <div className='w-full'>
-                                    <label
-                                        htmlFor='color'
-                                        className='block text-sm font-medium leading-6'
+                                    <AlertBox alert={alert} />
+                                    <button
+                                        className='btn btn-primary btn-block'
+                                        onClick={handleSubmit}
                                     >
-                                        Color
-                                    </label>
-                                    <div className='mt-2'>
-                                        <PopoverPicker
-                                            color={color}
-                                            onChange={setColor}
-                                        />
-                                    </div>
+                                        Edit
+                                    </button>
+                                    <button
+                                        className='btn btn-ghost btn-block'
+                                        onClick={() => navigate('/admin')}
+                                    >
+                                        Cancel
+                                    </button>
                                 </div>
-
-                                <AlertBox alert={alert} />
-                                <button
-                                    className='btn btn-primary btn-block'
-                                    onClick={handleSubmit}
-                                >
-                                    Edit
-                                </button>
-                                <button
-                                    className='btn btn-ghost btn-block'
-                                    onClick={() => navigate('/admin')}
-                                >
-                                    Cancel
-                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-          </>
+            </>
         );
     }
 }

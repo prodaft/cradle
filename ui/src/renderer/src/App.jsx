@@ -39,96 +39,114 @@ import { ThemeProvider } from './contexts/ThemeContext/ThemeContext.jsx';
 function App() {
     const { isDarkMode, toggleTheme } = useTheme();
 
-    if(isDarkMode) {
-      document.documentElement.setAttribute('data-theme', 'dark');
+    if (isDarkMode) {
+        document.documentElement.setAttribute('data-theme', 'dark');
     } else {
-      document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.setAttribute('data-theme', 'light');
     }
 
     return (
-      <ThemeProvider>
-        <HashRouter>
-            <AuthProvider>
-                <Routes>
-                    <Route element={<PrivateRoute fallback={'/login'} />}>
-                        {/* Add any routes for components that NEED authentication here */}
-                        <Route path='/' element={<Home />}>
-                            {/* Add any routes for components that keep the sidebar and navbar here */}
-                            <Route index element={<Welcome />} />
-                            <Route
-                                path='/not-implemented'
-                                element={<FeatureNotImplemented />}
-                            />
-                            <Route path='/notes' element={<Notes />}></Route>
-                            <Route path='/editor/:id' element={<FleetingNoteEditor />} />
-                            <Route
-                                path='/dashboards/:subtype/:name'
-                                element={<Dashboard />}
-                            />
-                            <Route path='/notes/:id' element={<NoteViewer />} />
-                            <Route path='/notes/:id/edit' element={<NoteEditor />} />
-                            <Route path='/notes' element={<NoteSelector />} />
-                            <Route
-                                path='/knowledge-graph'
-                                element={<GraphExplorer />}
-                            />
-                            <Route path='/publish' element={<PublishPreview />}></Route>
-                            <Route
-                                path='/account/:target'
-                                element={<AccountSettings />}
-                            ></Route>
-                            <Route path='/activity' element={<ActivityList />}></Route>
-                            <Route
-                                path='/activity/:username'
-                                element={<ActivityList />}
-                            ></Route>
-                            <Route path='/admin' element={<Outlet />}>
-                                <Route index element={<AdminPanel />}></Route>
+        <ThemeProvider>
+            <HashRouter>
+                <AuthProvider>
+                    <Routes>
+                        <Route element={<PrivateRoute fallback={'/login'} />}>
+                            {/* Add any routes for components that NEED authentication here */}
+                            <Route path='/' element={<Home />}>
+                                {/* Add any routes for components that keep the sidebar and navbar here */}
+                                <Route index element={<Welcome />} />
                                 <Route
-                                    path='/admin/add-entity'
-                                    element={<AdminPanelAdd type='Entity' />}
+                                    path='/not-implemented'
+                                    element={<FeatureNotImplemented />}
+                                />
+                                <Route path='/notes' element={<Notes />}></Route>
+                                <Route
+                                    path='/editor/:id'
+                                    element={<FleetingNoteEditor />}
+                                />
+                                <Route
+                                    path='/dashboards/:subtype/:name'
+                                    element={<Dashboard />}
+                                />
+                                <Route path='/notes/:id' element={<NoteViewer />} />
+                                <Route
+                                    path='/notes/:id/edit'
+                                    element={<NoteEditor />}
+                                />
+                                <Route path='/notes' element={<NoteSelector />} />
+                                <Route
+                                    path='/knowledge-graph'
+                                    element={<GraphExplorer />}
+                                />
+                                <Route
+                                    path='/publish'
+                                    element={<PublishPreview />}
                                 ></Route>
                                 <Route
-                                    path='/admin/add-entry-type'
-                                    element={<AdminPanelAdd type='EntryType' />}
+                                    path='/account/:target'
+                                    element={<AccountSettings />}
                                 ></Route>
                                 <Route
-                                    path='/admin/edit-entity/:id'
-                                    element={<AdminPanelEdit type='Entity' />}
+                                    path='/activity'
+                                    element={<ActivityList />}
                                 ></Route>
                                 <Route
-                                    path='/admin/edit-entry-type/:id'
-                                    element={<AdminPanelEdit type='EntryType' />}
+                                    path='/activity/:username'
+                                    element={<ActivityList />}
                                 ></Route>
-                                <Route
-                                    path={'/admin/user-permissions/:username/:id'}
-                                    element={<AdminPanelUserPermissions />}
-                                ></Route>
+                                <Route path='/admin' element={<Outlet />}>
+                                    <Route index element={<AdminPanel />}></Route>
+                                    <Route
+                                        path='/admin/add-entity'
+                                        element={<AdminPanelAdd type='Entity' />}
+                                    ></Route>
+                                    <Route
+                                        path='/admin/add-entry-type'
+                                        element={<AdminPanelAdd type='EntryType' />}
+                                    ></Route>
+                                    <Route
+                                        path='/admin/edit-entity/:id'
+                                        element={<AdminPanelEdit type='Entity' />}
+                                    ></Route>
+                                    <Route
+                                        path='/admin/edit-entry-type/:id'
+                                        element={<AdminPanelEdit type='EntryType' />}
+                                    ></Route>
+                                    <Route
+                                        path={'/admin/user-permissions/:username/:id'}
+                                        element={<AdminPanelUserPermissions />}
+                                    ></Route>
+                                </Route>
                             </Route>
+                            {/* Add any routes for components that DO NOT KEEP the sidebar and navbar here */}
                         </Route>
-                        {/* Add any routes for components that DO NOT KEEP the sidebar and navbar here */}
-                    </Route>
-                    {/* Add any routes for components that DO NOT NEED authentication here */}
-                    <Route path='/login' element={<Login />}></Route>
-                    <Route path='/confirm-email' element={<ConfirmEmail />}></Route>
-                    <Route path='/change-password' element={<ChangePassword />}></Route>
-                    <Route path='/forgot-password' element={<ForgotPassword />}></Route>
-                    <Route path='/register' element={<Register />}></Route>
-                    <Route
-                        path='/not-found'
-                        element={
-                            <NotFound
-                                message={
-                                    "We can't seem to find the page you are looking for."
-                                }
-                            />
-                        }
-                    />
-                    <Route path='*' element={<NotFound />} />
-                </Routes>
-            </AuthProvider>
-        </HashRouter>
-      </ThemeProvider>
+                        {/* Add any routes for components that DO NOT NEED authentication here */}
+                        <Route path='/login' element={<Login />}></Route>
+                        <Route path='/confirm-email' element={<ConfirmEmail />}></Route>
+                        <Route
+                            path='/change-password'
+                            element={<ChangePassword />}
+                        ></Route>
+                        <Route
+                            path='/forgot-password'
+                            element={<ForgotPassword />}
+                        ></Route>
+                        <Route path='/register' element={<Register />}></Route>
+                        <Route
+                            path='/not-found'
+                            element={
+                                <NotFound
+                                    message={
+                                        "We can't seem to find the page you are looking for."
+                                    }
+                                />
+                            }
+                        />
+                        <Route path='*' element={<NotFound />} />
+                    </Routes>
+                </AuthProvider>
+            </HashRouter>
+        </ThemeProvider>
     );
 }
 

@@ -8,6 +8,7 @@
         "electron": "electron .",
         "dev": "electron-vite dev -w",
         "build": "electron-vite build",
+        "build-web": "vite build",
         "lint": "eslint . --max-warnings 0",
         "preview": "electron-vite preview",
         "test": "jest",

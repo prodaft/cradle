@@ -26,13 +26,9 @@ export default function AuthProvider({ children }) {
     const [expiration, setExpiration] = useState(
         localStorage.getItem('expiration') || '0',
     );
-    const [role, setRole] = useState(
-        localStorage.getItem('role') || 'user',
-    );
+    const [role, setRole] = useState(localStorage.getItem('role') || 'user');
 
-    const [userId, setUserId] = useState(
-        localStorage.getItem('user_id') || null,
-    );
+    const [userId, setUserId] = useState(localStorage.getItem('user_id') || null);
 
     const isAdmin = () => role === 'admin';
     const isEntryManager = () => role === 'entrymanager' || isAdmin();

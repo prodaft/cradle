@@ -116,7 +116,7 @@ export default function AdminPanel() {
 
     useEffect(() => {
         if (auth?.isAdmin()) {
-          displayUsers();
+            displayUsers();
         }
         displayEntities();
         displayEntryTypes();
@@ -145,9 +145,14 @@ export default function AdminPanel() {
                     {entryTypes}
                 </AdminPanelSection>
                 {auth?.isAdmin() && (
-                <AdminPanelSection title={'Users'} addEnabled={false} isLoading={users === null}>
-                    {users}
-                </AdminPanelSection>)}
+                    <AdminPanelSection
+                        title={'Users'}
+                        addEnabled={false}
+                        isLoading={users === null}
+                    >
+                        {users}
+                    </AdminPanelSection>
+                )}
             </div>
         </>
     );

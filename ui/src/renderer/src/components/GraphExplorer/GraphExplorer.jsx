@@ -288,40 +288,33 @@ export default function GraphExplorer() {
                 }
             />
 
-                        {entryGraphColors && showLegend && (
-                            <div className='absolute bottom-4 right-4 p-4 w-fit bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-md'>
-                                <div className='grid grid-cols-2 gap-2 max-h-32 overflow-y-auto'>
-                                    {Object.entries(entryGraphColors).map(
-                                        ([type, color]) => (
-                                            <div
-                                                key={type}
-                                                className={`flex flex-row items-center space-x-2 cursor-pointer ${
-                                                    disabledTypes.has(type)
-                                                        ? 'opacity-50'
-                                                        : ''
-                                                }`}
-                                                onClick={() => toggleDisabledType(type)}
-                                            >
-                                                <div
-                                                    className='w-4 h-4 rounded-full'
-                                                    style={{ backgroundColor: color }}
-                                                ></div>
-                                                <span
-                                                    className={
-                                                        disabledTypes.has(type)
-                                                            ? 'line-through'
-                                                            : ''
-                                                    }
-                                                >
-                                                    {type}
-                                                </span>
-                                            </div>
-                                        ),
-                                    )}
-                                </div>
+            {entryGraphColors && showLegend && (
+                <div className='absolute bottom-4 right-4 p-4 w-fit bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-md'>
+                    <div className='grid grid-cols-2 gap-2 max-h-32 overflow-y-auto'>
+                        {Object.entries(entryGraphColors).map(([type, color]) => (
+                            <div
+                                key={type}
+                                className={`flex flex-row items-center space-x-2 cursor-pointer ${
+                                    disabledTypes.has(type) ? 'opacity-50' : ''
+                                }`}
+                                onClick={() => toggleDisabledType(type)}
+                            >
+                                <div
+                                    className='w-4 h-4 rounded-full'
+                                    style={{ backgroundColor: color }}
+                                ></div>
+                                <span
+                                    className={
+                                        disabledTypes.has(type) ? 'line-through' : ''
+                                    }
+                                >
+                                    {type}
+                                </span>
                             </div>
-                        )}
-
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -129,7 +129,7 @@ export default function DashboardNote({
                             })
                         }
                     >
-                        <div className="max-h-[36rem] overflow-y-auto">
+                        <div className='max-h-[36rem] overflow-y-auto'>
                             <Preview htmlContent={parsedContent} />
                         </div>
                     </div>

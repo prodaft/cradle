@@ -4,11 +4,11 @@
 
 1. [Introduction](#introduction)
 2. [Rules and Guidelines](#rules-and-guidelines)
-2. [Getting Started](#getting-started)
-3. [Features and Functionality](#features-and-functionality)
-4. [Troubleshooting](#troubleshooting)
-5. [FAQ](#faq)
-6. [Contact Information](#contact-information)
+3. [Getting Started](#getting-started)
+4. [Features and Functionality](#features-and-functionality)
+5. [Troubleshooting](#troubleshooting)
+6. [FAQ](#faq)
+7. [Contact Information](#contact-information)
 
 ## Introduction
 

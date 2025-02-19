@@ -62,7 +62,10 @@ export function cradleLinkRule(state: any, silent: boolean): boolean {
     return true;
 }
 
-export function renderCradleLink(entryColors: Map<string, string>, token: Token): string {
+export function renderCradleLink(
+    entryColors: Map<string, string>,
+    token: Token,
+): string {
     const type = (token as any).cradle_type;
     const name = (token as any).cradle_name;
     const alias = (token as any).cradle_alias;

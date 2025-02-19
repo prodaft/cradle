@@ -174,7 +174,11 @@ export default function AccountSettings() {
                                         <div className='mt-2'>
                                             <select
                                                 className='form-select select select-ghost-primary select-block focus:ring-0'
-                                                onChange={(e) => handleInputChange('role')(e.target.value)}
+                                                onChange={(e) =>
+                                                    handleInputChange('role')(
+                                                        e.target.value,
+                                                    )
+                                                }
                                                 value={formData.role}
                                             >
                                                 <option value='user'>User</option>

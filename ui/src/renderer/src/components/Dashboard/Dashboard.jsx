@@ -251,7 +251,11 @@ export default function Dashboard() {
             key='view-graph-btn'
             icon={<Graph height={24} width={24} />}
             text='Explore in Graph'
-            onClick={() => navigate(`/knowledge-graph?operation=bfs&src=${contentObject.subtype}:${contentObject.name}&min_depth=1&max_depth=2`)}
+            onClick={() =>
+                navigate(
+                    `/knowledge-graph?operation=bfs&src=${contentObject.subtype}:${contentObject.name}&min_depth=1&max_depth=2`,
+                )
+            }
             data-testid='view-graph-btn'
         />,
 

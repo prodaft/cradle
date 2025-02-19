@@ -197,7 +197,7 @@ export async function getPermissions(userId) {
 
 /**
  * Manages user actions like simulation, email confirmation, and password reset
- * 
+ *
  * @param {string} userId - user id
  * @param {string} action - action to perform: 'simulate', 'email_confirmation', 'password_reset'
  * @returns {Promise<AxiosResponse<any, any>>}

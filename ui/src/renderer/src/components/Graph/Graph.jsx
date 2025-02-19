@@ -113,7 +113,9 @@ export default function Graph({
                     ? 'orange'
                     : selectedLinks.has(link)
                       ? 'red'
-                      : isDarkMode ? '#3A3A3A' : "#8A8A8A"
+                      : isDarkMode
+                        ? '#3A3A3A'
+                        : '#8A8A8A'
             }
             linkDirectionalParticles={(link) =>
                 highlightLinks.has(link) || selectedLinks.has(link)

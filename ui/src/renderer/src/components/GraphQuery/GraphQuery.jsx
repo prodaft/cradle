@@ -36,7 +36,6 @@ export default function GraphQuery({
         return { subtype, name };
     };
 
-    
     const [query, setQuery] = useState(() => ({
         operation: searchParams.get('operation') || 'pathfind',
         params: {
@@ -76,7 +75,7 @@ export default function GraphQuery({
 
             let links = [];
             let nodes = [];
-            let colors = {}
+            let colors = {};
 
             let entries = flattenGraphEntries(response.data.entries);
             let source = response.data.source;
@@ -122,7 +121,7 @@ export default function GraphQuery({
                         cache.linksSet.add(e + p[i]);
                         cache.links[e + p[i]] = link;
                     } else {
-                      link = cache.links[e + p[i]]
+                        link = cache.links[e + p[i]];
                     }
                     if (!cache.nodesSet.has(e)) {
                         cache.nodesSet.add(e);
@@ -148,18 +147,17 @@ export default function GraphQuery({
                 }
             }
             // Replace source and destination from ids to objects in links
-            for(let link of changes.links){
-              link.source = cache.nodes[link.source];
-              link.target = cache.nodes[link.target];
+            for (let link of changes.links) {
+                link.source = cache.nodes[link.source];
+                link.target = cache.nodes[link.target];
             }
-
 
             setGraphData((prev) => ({
                 nodes: [...prev.nodes, ...changes.nodes],
                 links: [...prev.links, ...changes.links],
             }));
             setCache(cache);
-            setEntryColors((prev) => ({ ...prev, ...colors}));
+            setEntryColors((prev) => ({ ...prev, ...colors }));
             if (query.operation === 'pathfind') {
                 setHighlightedLinks(new Set(links));
                 setHighlightedNodes(new Set(nodes));

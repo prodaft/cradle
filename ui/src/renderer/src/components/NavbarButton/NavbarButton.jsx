@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 
 /**
  * NavbarButton - a button in the navbar.
@@ -21,20 +21,20 @@ export default function NavbarButton({
     const [isLoading, setIsLoading] = useState(false);
 
     const handleClick = async (e) => {
-      if (awaitOnClick) {
-        setIsLoading(true);
-        await onClick(e);
-        setIsLoading(false);
-      } else {
-        onClick(e);
-      }
+        if (awaitOnClick) {
+            setIsLoading(true);
+            await onClick(e);
+            setIsLoading(false);
+        } else {
+            onClick(e);
+        }
     };
     return (
         <>
             {isLoading ? (
-                  <div className='spinner-dot-pulse spinner-sm'>
-                      <div className='spinner-pulse-dot'></div>
-                  </div>
+                <div className='spinner-dot-pulse spinner-sm'>
+                    <div className='spinner-pulse-dot'></div>
+                </div>
             ) : (
                 <button
                     className={`navbar-item text-cradle2 hover:bg-gray-4 ${text ? 'tooltip tooltip-bottom tooltip-primary' : ''}`}

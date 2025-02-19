@@ -42,7 +42,7 @@ export default function Home() {
     const [navbarContents, setNavbarContents] = useState([]);
     const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
-    const {isDarkMode, toggleTheme} = useTheme();
+    const { isDarkMode, toggleTheme } = useTheme();
 
     const SHORT_POLLING_DELAY = 10000;
 

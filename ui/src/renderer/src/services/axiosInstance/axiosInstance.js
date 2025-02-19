@@ -61,7 +61,8 @@ authAxios.interceptors.request.use(
             return config;
         }
 
-        if ( expirationInMilliseconds &&
+        if (
+            expirationInMilliseconds &&
             expirationInMilliseconds < Date.now() + 1000 * 60
         ) {
             // Token has expired or will expire in less than 1 minute

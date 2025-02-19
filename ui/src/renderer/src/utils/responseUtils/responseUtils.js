@@ -1,6 +1,6 @@
 const trimMore = (str) => {
-  return str.trim().replace(/^"/g, '').replace(/"$/g, '');
-}
+    return str.trim().replace(/^"/g, '').replace(/"$/g, '');
+};
 
 /**
  * This function can be used to display error message in an alert box,

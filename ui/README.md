@@ -1,4 +1,5 @@
 # CRADLE (Front-end)
+
 Welcome to CRADLE's frontend codebase. We are happy to see you here!
 
 **This is the front-end client for CRADLE. The back-end server can be found [here](https://github.com/prodaft/cradle-backend).**
@@ -109,19 +110,18 @@ The following environment variables are expected by the codebase:
 
 ---
 
-
 ## Authors and Acknowledgments
 
 CRADLE is developed in PRODAFT, in collaboration with TU Delft students. We thank everyone who contributes to the development process of CRADLE.
 
 ### Contributors
 
-- [Tudor Măgirescu](https://github.com/TudorMagirescu)
-- [Călin-Marian Diacicov](https://github.com/klinashka)
-- [Daniel Popovici](https://github.com/Babu-on-Github)
-- [Matei Grigore](https://github.com/mateigrigore)
-- [Razvan Dinu](https://github.com/razvand13)
-- [Yigit Colakoglu](https://github.com/arg3t)
+-   [Tudor Măgirescu](https://github.com/TudorMagirescu)
+-   [Călin-Marian Diacicov](https://github.com/klinashka)
+-   [Daniel Popovici](https://github.com/Babu-on-Github)
+-   [Matei Grigore](https://github.com/mateigrigore)
+-   [Razvan Dinu](https://github.com/razvand13)
+-   [Yigit Colakoglu](https://github.com/arg3t)
 
 We would like to extend our heartfelt thanks to the developers and maintainers of the following core libraries, utilities, and tools that have played a crucial role in the development of this project:
 

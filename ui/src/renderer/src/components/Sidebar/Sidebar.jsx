@@ -46,7 +46,7 @@ export default function Sidebar({
     const navigate = useNavigate();
 
     useEffect(() => {
-      isHoveredRef.current = isHovered;
+        isHoveredRef.current = isHovered;
     }, [isHovered]);
 
     useEffect(() => {
