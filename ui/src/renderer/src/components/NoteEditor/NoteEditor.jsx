@@ -73,7 +73,6 @@ export default function NoteEditor() {
         const storedContent = markdownContentRef.current;
         const storedFileData = fileDataRef.current;
         let patch = dmp.patch_make(initialMarkdownRef.current, storedContent)
-        setInitialMarkdown(storedContent);
 
         try {
             let response = await updateNote(id, {
@@ -81,6 +80,7 @@ export default function NoteEditor() {
                 files: storedFileData,
             });
             if (response.status === 200) {
+                setInitialMarkdown(storedContent);
                 if (displayAlert) {
                     setAlert({
                         show: true,

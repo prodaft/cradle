@@ -1,3 +1,6 @@
+from typing import Iterable, Tuple
+
+from celery import Celery
 from notes.exceptions import (
     EntriesDoNotExistException,
 )
@@ -11,7 +14,9 @@ from ..tasks import entry_population_task
 
 
 class EntryPopulationTask(BaseTask):
-    def run(self, note: Note) -> Note:
+    def run(
+        self, note: Note, entries: Iterable[Entry]
+    ) -> Tuple[Celery, Iterable[Entry]]:
         """
         Create the entries that are missing for a note.
 
@@ -22,4 +27,4 @@ class EntryPopulationTask(BaseTask):
             The processed note object.
         """
 
-        return entry_population_task.si(note.id, user_id=self.user.id)
+        return entry_population_task.si(note.id, user_id=self.user.id), entries

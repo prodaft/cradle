@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Iterable, Optional, Tuple
 
+from celery import Celery
+
+from entries.models import Entry
 from user.models import CradleUser
 from ..models import Note
 
@@ -11,7 +14,9 @@ class BaseTask(ABC):
         self.user = user
 
     @abstractmethod
-    def run(self, note: Note) -> Optional[Note]:
+    def run(
+        self, note: Note, entries: Iterable[Entry]
+    ) -> Tuple[Optional[Celery], Iterable[Entry]]:
         """
         The method that is executed within the chain of responsibility.
         An error being thrown, or None being returned means the whole

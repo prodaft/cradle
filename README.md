@@ -1,9 +1,7 @@
-# CRADLE
-
-Welcome to CRADLE's codebase. We are happy to see you here!
-
-**This is the back end server of CRADLE. The front end client can be found
-[here](https://github.com/prodaft/cradle-frontend).**
+# CRADLE Monorepo
+<p align="center">
+    <img width="200" height="200" src="backend/notes/static/notes/images/notes/logo.png" alt="Cradle Logo">
+</p>
 
 ---
 

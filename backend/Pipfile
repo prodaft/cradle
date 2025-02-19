@@ -39,6 +39,3 @@ python-redis-lock = "*"
 diff-match-patch = "*"
 
 [dev-packages]
-
-[requires]
-python_version = "3.11"

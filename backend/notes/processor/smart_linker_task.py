@@ -1,4 +1,8 @@
 import itertools
+from typing import Iterable, Optional, Tuple
+
+from celery import Celery
+from entries.models import Entry
 from entries.enums import EntryType
 from ..markdown.parser import Link
 
@@ -9,7 +13,9 @@ from ..tasks import smart_linker_task
 
 
 class SmartLinkerTask(BaseTask):
-    def run(self, note: Note) -> Note:
+    def run(
+        self, note: Note, entries: Iterable[Entry]
+    ) -> Tuple[Celery, Iterable[Entry]]:
         """
         Create the links between the entries, using the note
 
@@ -19,4 +25,4 @@ class SmartLinkerTask(BaseTask):
         Returns:
             The processed note object.
         """
-        return smart_linker_task.si(note.id)
+        return smart_linker_task.si(note.id), entries

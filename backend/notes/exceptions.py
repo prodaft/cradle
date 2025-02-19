@@ -1,7 +1,7 @@
 from typing import Iterable
 
 from entries.models import Entry
-from .utils import Link
+from .parser import Link
 from rest_framework.exceptions import APIException
 from django.conf import settings
 
@@ -54,7 +54,7 @@ class EntriesDoNotExistException(APIException):
         )
 
         for i in links:
-            self.default_detail += f"({i.class_subtype}: {i.name})\n"
+            self.default_detail += f"({i.key}: {i.value})\n"
 
         self.default_detail = self.default_detail[:-1]
         super().__init__(*args, **kwargs)

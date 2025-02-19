@@ -11,7 +11,7 @@ from .entry_class_creation_task import EntryClassCreationTask
 
 from .base_task import BaseTask
 from .access_control_task import AccessControlTask
-from .count_references_task import CountReferencesTask
+from .validate_note_task import ValidateNoteTask
 from user.models import CradleUser
 
 from django.db import transaction
@@ -24,10 +24,10 @@ class TaskScheduler:
         self.kwargs = kwargs
 
         self.processing: List[BaseTask] = [
+            ValidateNoteTask(user),
+            AccessControlTask(user),
             EntryClassCreationTask(user),
             EntryPopulationTask(user),
-            AccessControlTask(user),
-            CountReferencesTask(user),
             SmartLinkerTask(user),
         ]
 
@@ -66,10 +66,11 @@ class TaskScheduler:
                 note.editor = self.user
                 note.edit_timestamp = timezone.now()
 
+            entries = []
             tasks = []
 
             for task in self.processing:
-                async_task = task.run(note)
+                async_task, entries = task.run(note, entries)
                 if async_task:
                     tasks.append(async_task)
 
