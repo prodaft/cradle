@@ -51,7 +51,7 @@ class NoteQuerySet(models.QuerySet):
             .filter(Q(access_type__contains=["<none>"]))
         )
 
-        return self.filter(id__in=rels.values_list("notes", flat=True))
+        return self.filter(id__in=rels.values_list("note", flat=True))
 
     def accessible(self, user: CradleUser) -> models.QuerySet:
         """
