@@ -16,12 +16,11 @@ export default function Preview({
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [isLoading, setIsLoading] = useState(true); // New state for loading spinner
 
-    // Effect to hide the loading spinner when content is available
     useEffect(() => {
         if (htmlContent !== null) {
-            setIsLoading(false); // Content is loaded, hide the spinner
+            setIsLoading(false);
         } else {
-            setIsLoading(true); // Content is not loaded, show the spinner
+            setIsLoading(true);
         }
     }, [htmlContent]);
 

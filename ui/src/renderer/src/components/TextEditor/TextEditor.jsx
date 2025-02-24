@@ -36,9 +36,11 @@ export default function TextEditor({
         const workerInstance = parseWorker();
 
         workerInstance.onmessage = (event) => {
-            if (event.data.html) {
-                setParsedContent(DOMPurify.sanitize(event.data.html));
+            if (!event.data.success) {
+              return
             }
+
+            setParsedContent(DOMPurify.sanitize(event.data.html));
 
             if (pendingParseRef.current) {
                 pendingParseRef.current = false;

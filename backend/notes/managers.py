@@ -51,7 +51,7 @@ class NoteQuerySet(models.QuerySet):
             .filter(Q(access_type__contains=["<none>"]))
         )
 
-        return self.filter(id__in=rels.values_list("note", flat=True))
+        return self.filter(id__in=rels.values_list("notes", flat=True))
 
     def accessible(self, user: CradleUser) -> models.QuerySet:
         """
@@ -194,7 +194,7 @@ class NoteManager(models.Manager):
             None: This function does not return any value.
         """
         Entry.objects.filter(entry_class__type=EntryType.ARTIFACT).annotate(
-            note_count=Count("note")
+            note_count=Count("notes")
         ).filter(note_count=0).delete()
 
     def get_in_order(self, note_ids: List) -> models.QuerySet:

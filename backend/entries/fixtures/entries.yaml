@@ -1,0 +1,2364 @@
+- model: entries.entryclass
+  pk: actor
+  fields:
+    type: artifact
+    timestamp: null
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#dc00e6'
+    prefix: ''
+- model: entries.entryclass
+  pk: case
+  fields:
+    type: entity
+    timestamp: null
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: catalyst/larva
+  fields:
+    type: artifact
+    timestamp: 2025-02-03 16:50:21.990127+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#35a200'
+    prefix: ''
+- model: entries.entryclass
+  pk: city
+  fields:
+    type: artifact
+    timestamp: 2024-10-16 11:45:20.354324+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: country
+  fields:
+    type: artifact
+    timestamp: null
+    regex: ''
+    options: 'Afghanistan
+
+      Albania
+
+      Algeria
+
+      Andorra
+
+      Angola
+
+      Argentina
+
+      Armenia
+
+      Australia
+
+      Austria
+
+      Azerbaijan
+
+      Bahamas
+
+      Bahrain
+
+      Bangladesh
+
+      Barbados
+
+      Belarus
+
+      Belgium
+
+      Belize
+
+      Benin
+
+      Bhutan
+
+      Bolivia
+
+      Botswana
+
+      Brazil
+
+      Brunei
+
+      Bulgaria
+
+      Burkina
+
+      Burundi
+
+      Cambodia
+
+      Cameroon
+
+      Canada
+
+      Chad
+
+      Chile
+
+      China
+
+      Colombia
+
+      Comoros
+
+      Congo
+
+      Croatia
+
+      Cuba
+
+      Cyprus
+
+      Denmark
+
+      Djibouti
+
+      Dominica
+
+      Ecuador
+
+      Egypt
+
+      Eritrea
+
+      Estonia
+
+      Ethiopia
+
+      Fiji
+
+      Finland
+
+      France
+
+      Gabon
+
+      Gambia
+
+      Georgia
+
+      Germany
+
+      Ghana
+
+      Greece
+
+      Grenada
+
+      Guatemala
+
+      Guinea
+
+      Guinea-Bissau
+
+      Guyana
+
+      Haiti
+
+      Honduras
+
+      Hungary
+
+      Iceland
+
+      India
+
+      Indonesia
+
+      Iran
+
+      Iraq
+
+      Israel
+
+      Italy
+
+      Jamaica
+
+      Japan
+
+      Jordan
+
+      Kazakhstan
+
+      Kenya
+
+      Kiribati
+
+      Kosovo
+
+      Kuwait
+
+      Kyrgyzstan
+
+      Laos
+
+      Latvia
+
+      Lebanon
+
+      Lesotho
+
+      Liberia
+
+      Libya
+
+      Liechtenstein
+
+      Lithuania
+
+      Luxembourg
+
+      Macedonia
+
+      Madagascar
+
+      Malawi
+
+      Malaysia
+
+      Maldives
+
+      Mali
+
+      Malta
+
+      Mauritania
+
+      Mauritius
+
+      Mexico
+
+      Micronesia
+
+      Moldova
+
+      Monaco
+
+      Mongolia
+
+      Montenegro
+
+      Morocco
+
+      Mozambique
+
+      Namibia
+
+      Nauru
+
+      Nepal
+
+      Netherlands
+
+      Nicaragua
+
+      Niger
+
+      Nigeria
+
+      Norway
+
+      Oman
+
+      Pakistan
+
+      Palau
+
+      Panama
+
+      Paraguay
+
+      Peru
+
+      Philippines
+
+      Poland
+
+      Portugal
+
+      Qatar
+
+      Romania
+
+      Rwanda
+
+      Samoa
+
+      Senegal
+
+      Serbia
+
+      Seychelles
+
+      Singapore
+
+      Slovakia
+
+      Slovenia
+
+      Somalia
+
+      Spain
+
+      Sudan
+
+      Suriname
+
+      Swaziland
+
+      Sweden
+
+      Switzerland
+
+      Syria
+
+      Taiwan
+
+      Tajikistan
+
+      Tanzania
+
+      Thailand
+
+      Togo
+
+      Tonga
+
+      Tunisia
+
+      Turkey
+
+      Turkmenistan
+
+      Tuvalu
+
+      Uganda
+
+      Ukraine
+
+      Uruguay
+
+      Uzbekistan
+
+      Vanuatu
+
+      Venezuela
+
+      Vietnam
+
+      Yemen
+
+      Zambia
+
+      Zimbabwe'
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: crypto/btc
+  fields:
+    type: artifact
+    timestamp: 2024-10-15 14:43:28.730491+00:00
+    regex: (bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}
+    options: ''
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: crypto/eth
+  fields:
+    type: artifact
+    timestamp: 2024-10-24 21:14:58.785834+00:00
+    regex: (0x)?[0-9a-fA-F]{40}
+    options: ''
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: crypto/ltc
+  fields:
+    type: artifact
+    timestamp: 2024-10-28 19:59:10.609980+00:00
+    regex: (?:L[a-km-zA-HJ-NP-Z1-9]{26,33}|3[a-km-zA-HJ-NP-Z1-9]{26,33}|ltc1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{39,59})
+    options: ''
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: crypto/tron
+  fields:
+    type: artifact
+    timestamp: 2024-10-24 21:15:09.931152+00:00
+    regex: T[A-Za-z1-9]{33}
+    options: ''
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: crypto/xmr
+  fields:
+    type: artifact
+    timestamp: 2025-02-03 09:56:27.365103+00:00
+    regex: 4[0-9AB][1-9A-HJ-NP-Za-km-z]{93}
+    options: ''
+    catalyst_type: ''
+    color: '#bc3541'
+    prefix: ''
+- model: entries.entryclass
+  pk: crypto/xrp
+  fields:
+    type: artifact
+    timestamp: 2024-10-24 21:15:25.498814+00:00
+    regex: r[1-9A-HJ-NP-Za-km-z]{25,34}
+    options: ''
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: domain
+  fields:
+    type: artifact
+    timestamp: null
+    regex: '[a-zA-Z0-9]{4,}(?:[a-zA-Z0-9\-\.]+)?\.(?:abogado|ac|academy|accountant|ad|ae|af|afl|africa|ag|agency|ai|al|am|ao|app|ar|army|art|asia|at|au|audio|autos|aws|ax|az|ba|baby|bar|bargains|bazar|bd|be|beauty|beer|berlin|best|bet|bf|bg|bh|bi|bid|bike|bingo|bio|bit|biz|bj|black|blackfriday|blog|blue|bo|boats|bond|boo|br|broker|business|buzz|bw|by|bz|ca|cab|cafe|cam|camp|capetown|capital|cards|care|careers|casa|cash|casino|cat|cc|cd|center|ceo|cf|cfd|cg|ch|charity|chat|cheap|christmas|church|ci|city|cl|click|clinic|clothing|cloud|club|cm|cn|co|codes|coffee|college|com|com|comm|community|company|computer|construction|contact|contractors|cool|corsica|cr|credit|creditcard|cv|cw|cx|cyou|cz|date|day|de|deals|delivery|desi|design|dev|digital|directory|dk|do|doctor|dog|domains|download|durban|dz|ec|eco|edu|education|ee|eg|email|engineer|enterprises|equip|es|et|eu|eus|events|expert|exposed|express|fail|faith|fan|fans|farm|fi|finance|fish|fit|fitness|fj|flights|flowers|fly|fm|fo|foundation|fr|frl|fun|fund|futbol|fyi|ga|gallery|games|gay|gd|gdn|ge|geek|gg|gh|gift|gives|gl|global|gm|gmbh|gold|golf|google|gq|gr|gratis|green|group|gs|gt|guru|gy|hair|haus|healthcare|help|hk|hn|homes|host|hosting|house|hr|ht|hu|ic|icu|id|ie|il|im|immo|in|inc|industries|indy|inf|info|ink|institute|insure|international|investments|io|iq|ir|is|ist|it|je|jm|jo|jobs|joburg|jp|ke|kg|kh|kim|kitchen|kiwi|kr|krd|kred|kz|la|land|lat|law|lb|lc|lease|legal|lgbt|li|lib|life|limited|link|live|lk|loan|loans|loc|local|lol|london|love|lr|lt|ltd|lu|lv|ly|ma|makeup|market|marketing|markets|md|me|media|melbourne|men|mg|miami|mk|ml|mls|mm|mn|mobi|moe|mom|money|monster|moscow|mr|ms|mu|mv|mw|mx|my|mz|name|ne|net|network|news|nf|ng|ngo|ni|ninja|nl|no|np|nra|nu|nyc|nz|observer|ocm|old|om|one|ong|onion|onl|online|ooo|or|org|organic|ovh|pa|page|parody|partners|parts|party|pe|pet|pg|ph|photo|photography|photos|pics|pictures|pink|pirate|pizza|pk|pl|place|plus|pm|poker|porn|press|pro|productions|ps|pt|pw|py|qa|quebec|quest|racing|re|realtor|realty|red|ren|rent|rentals|repair|report|rest|restaurant|review|reviews|rg|rip|ro|rocks|rs|rsvp|ru|run|rw|sa|sale|salon|sbs|sc|school|science|sd|se|services|sexy|sg|sh|shell|shop|si|singles|site|sk|skin|sl|sn|so|soccer|social|software|solutions|space|spae|srl|st|store|stream|studio|su|supplies|support|surf|sv|sx|systems|tattoo|tax|taxi|tc|team|tech|technology|tel|tf|tg|th|tips|tj|tk|tn|to|today|tokyo|tools|top|tours|town|toys|tr|trade|travel|turkey|tv|tw|tz|ua|ug|uk|uno|us|uy|uz|vacations|ve|vegas|ventures|vessel|vet|video|vin|vip|vision|vn|vote|voto|voyage|vru|vu|wang|watch|webcam|website|wf|wiki|win|work|works|world|wow|ws|wtf|xin|xn--6frz82g|xn--j6w193g|xn--p1ai|xxx|xy|xyz|yachts|ye|yoga|yt|za|zero|zip|zm|zone|zw)'
+    options: ''
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: email
+  fields:
+    type: artifact
+    timestamp: null
+    regex: ^(?:[a-zA-Z0-9_\-\.]+)@(?:(?:\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(?:(?:[a-zA-Z0-9\-]+\.)+))(?:[a-zA-Z]{2,4}|[0-9]{1,3})(?:\]?)$
+    options: ''
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: hash/md5
+  fields:
+    type: artifact
+    timestamp: null
+    regex: '[a-fA-F0-9]{32}'
+    options: ''
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: hash/sha1
+  fields:
+    type: artifact
+    timestamp: null
+    regex: '[a-fA-F0-9]{40}'
+    options: ''
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: hash/sha256
+  fields:
+    type: artifact
+    timestamp: null
+    regex: '[a-fA-F0-9]{64}'
+    options: ''
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: id/antichat
+  fields:
+    type: artifact
+    timestamp: 2024-12-17 11:05:25.771989+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#67f757'
+    prefix: ''
+- model: entries.entryclass
+  pk: id/bhf
+  fields:
+    type: artifact
+    timestamp: 2024-12-17 11:05:30.789340+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#17bbb5'
+    prefix: ''
+- model: entries.entryclass
+  pk: id/dark2web
+  fields:
+    type: artifact
+    timestamp: 2024-12-17 11:06:22.896131+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#171bfa'
+    prefix: ''
+- model: entries.entryclass
+  pk: id/darkmarket
+  fields:
+    type: artifact
+    timestamp: 2024-12-17 11:05:41.390544+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#067841'
+    prefix: ''
+- model: entries.entryclass
+  pk: id/dublikat
+  fields:
+    type: artifact
+    timestamp: 2024-12-17 11:05:36.020425+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#ffd330'
+    prefix: ''
+- model: entries.entryclass
+  pk: id/exploit.in
+  fields:
+    type: artifact
+    timestamp: 2024-11-14 12:12:08.804612+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#f17a62'
+    prefix: ''
+- model: entries.entryclass
+  pk: id/leakbase.io
+  fields:
+    type: artifact
+    timestamp: 2024-12-17 11:05:55.582046+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#bcd297'
+    prefix: ''
+- model: entries.entryclass
+  pk: id/raidforums
+  fields:
+    type: artifact
+    timestamp: 2024-11-14 12:13:15.092449+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#7aa594'
+    prefix: ''
+- model: entries.entryclass
+  pk: id/ramp4u
+  fields:
+    type: artifact
+    timestamp: 2024-11-14 12:13:14.538362+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#7aa594'
+    prefix: ''
+- model: entries.entryclass
+  pk: id/tg
+  fields:
+    type: artifact
+    timestamp: 2024-11-05 12:16:09.856559+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#536ea1'
+    prefix: ''
+- model: entries.entryclass
+  pk: id/tox
+  fields:
+    type: artifact
+    timestamp: 2024-11-05 12:15:48.526846+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#b229a7'
+    prefix: ''
+- model: entries.entryclass
+  pk: id/wwh-club
+  fields:
+    type: artifact
+    timestamp: 2024-11-14 12:13:14.779496+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#7aa594'
+    prefix: ''
+- model: entries.entryclass
+  pk: id/xss.is
+  fields:
+    type: artifact
+    timestamp: 2024-11-14 12:12:32.698446+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#7aa594'
+    prefix: ''
+- model: entries.entryclass
+  pk: ip
+  fields:
+    type: artifact
+    timestamp: null
+    regex: (?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])
+    options: ''
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: ipv6
+  fields:
+    type: artifact
+    timestamp: null
+    regex: (?:(?:[0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,7}:|(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,5}(?::[0-9a-fA-F]{1,4}){1,2}|(?:[0-9a-fA-F]{1,4}:){1,4}(?::[0-9a-fA-F]{1,4}){1,3}|(?:[0-9a-fA-F]{1,4}:){1,3}(?::[0-9a-fA-F]{1,4}){1,4}|(?:[0-9a-fA-F]{1,4}:){1,2}(?::[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(?:(?::[0-9a-fA-F]{1,4}){1,6})|:(?:(?::[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(?::[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(?:ffff(?::0{1,4}){0,1}:){0,1}(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])|(?:[0-9a-fA-F]{1,4}:){1,4}:(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9]))
+    options: ''
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: jabber/address
+  fields:
+    type: artifact
+    timestamp: 2025-01-17 13:38:40.537881+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#f38972'
+    prefix: ''
+- model: entries.entryclass
+  pk: jabber/name
+  fields:
+    type: artifact
+    timestamp: 2025-01-17 13:38:44.628560+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#a21293'
+    prefix: ''
+- model: entries.entryclass
+  pk: location/code
+  fields:
+    type: artifact
+    timestamp: 2025-02-03 13:46:27.761711+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: location/country
+  fields:
+    type: artifact
+    timestamp: 2025-02-03 13:46:18.904152+00:00
+    regex: ''
+    options: 'Afghanistan
+
+      Albania
+
+      Algeria
+
+      Andorra
+
+      Angola
+
+      Argentina
+
+      Armenia
+
+      Australia
+
+      Austria
+
+      Azerbaijan
+
+      Bahamas
+
+      Bahrain
+
+      Bangladesh
+
+      Barbados
+
+      Belarus
+
+      Belgium
+
+      Belize
+
+      Benin
+
+      Bhutan
+
+      Bolivia
+
+      Botswana
+
+      Brazil
+
+      Brunei
+
+      Bulgaria
+
+      Burkina
+
+      Burundi
+
+      Cambodia
+
+      Cameroon
+
+      Canada
+
+      Chad
+
+      Chile
+
+      China
+
+      Colombia
+
+      Comoros
+
+      Congo
+
+      Croatia
+
+      Cuba
+
+      Cyprus
+
+      Denmark
+
+      Djibouti
+
+      Dominica
+
+      Ecuador
+
+      Egypt
+
+      Eritrea
+
+      Estonia
+
+      Ethiopia
+
+      Fiji
+
+      Finland
+
+      France
+
+      Gabon
+
+      Gambia
+
+      Georgia
+
+      Germany
+
+      Ghana
+
+      Greece
+
+      Grenada
+
+      Guatemala
+
+      Guinea
+
+      Guinea-Bissau
+
+      Guyana
+
+      Haiti
+
+      Honduras
+
+      Hungary
+
+      Iceland
+
+      India
+
+      Indonesia
+
+      Iran
+
+      Iraq
+
+      Israel
+
+      Italy
+
+      Jamaica
+
+      Japan
+
+      Jordan
+
+      Kazakhstan
+
+      Kenya
+
+      Kiribati
+
+      Kosovo
+
+      Kuwait
+
+      Kyrgyzstan
+
+      Laos
+
+      Latvia
+
+      Lebanon
+
+      Lesotho
+
+      Liberia
+
+      Libya
+
+      Liechtenstein
+
+      Lithuania
+
+      Luxembourg
+
+      Macedonia
+
+      Madagascar
+
+      Malawi
+
+      Malaysia
+
+      Maldives
+
+      Mali
+
+      Malta
+
+      Mauritania
+
+      Mauritius
+
+      Mexico
+
+      Micronesia
+
+      Moldova
+
+      Monaco
+
+      Mongolia
+
+      Montenegro
+
+      Morocco
+
+      Mozambique
+
+      Namibia
+
+      Nauru
+
+      Nepal
+
+      Netherlands
+
+      Nicaragua
+
+      Niger
+
+      Nigeria
+
+      Norway
+
+      Oman
+
+      Pakistan
+
+      Palau
+
+      Panama
+
+      Paraguay
+
+      Peru
+
+      Philippines
+
+      Poland
+
+      Portugal
+
+      Qatar
+
+      Romania
+
+      Russia
+
+      Rwanda
+
+      Samoa
+
+      Senegal
+
+      Serbia
+
+      Seychelles
+
+      Singapore
+
+      Slovakia
+
+      Slovenia
+
+      Somalia
+
+      Spain
+
+      Sudan
+
+      Suriname
+
+      Swaziland
+
+      Sweden
+
+      Switzerland
+
+      Syria
+
+      Taiwan
+
+      Tajikistan
+
+      Tanzania
+
+      Thailand
+
+      Togo
+
+      Tonga
+
+      Tunisia
+
+      Turkey
+
+      Turkmenistan
+
+      Tuvalu
+
+      Uganda
+
+      Ukraine
+
+      Uruguay
+
+      Uzbekistan
+
+      Vanuatu
+
+      Venezuela
+
+      Vietnam
+
+      Yemen
+
+      Zambia
+
+      Zimbabwe'
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: name
+  fields:
+    type: artifact
+    timestamp: 2024-10-16 11:45:07.251442+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: name/skype
+  fields:
+    type: artifact
+    timestamp: 2025-01-17 13:19:30.416186+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#6ec3a0'
+    prefix: ''
+- model: entries.entryclass
+  pk: name/tg
+  fields:
+    type: artifact
+    timestamp: 2024-11-05 12:15:35.880107+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#664f7b'
+    prefix: ''
+- model: entries.entryclass
+  pk: name/tox
+  fields:
+    type: artifact
+    timestamp: 2024-11-05 12:15:44.506325+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#d72ce5'
+    prefix: ''
+- model: entries.entryclass
+  pk: password
+  fields:
+    type: artifact
+    timestamp: 2024-10-03 08:57:56.088545+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: phone
+  fields:
+    type: artifact
+    timestamp: 2024-10-16 11:45:31.065195+00:00
+    regex: (\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}
+    options: ''
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: service-key
+  fields:
+    type: artifact
+    timestamp: 2025-01-02 08:08:58.126154+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#a26831'
+    prefix: ''
+- model: entries.entryclass
+  pk: source
+  fields:
+    type: entity
+    timestamp: null
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#744abf'
+    prefix: PTI-
+- model: entries.entryclass
+  pk: tool
+  fields:
+    type: artifact
+    timestamp: 2024-11-22 13:26:10.171988+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#f4870f'
+    prefix: ''
+- model: entries.entryclass
+  pk: ttp
+  fields:
+    type: artifact
+    timestamp: null
+    regex: ''
+    options: 'T1001
+
+      T1001.001
+
+      T1001.002
+
+      T1001.003
+
+      T1003
+
+      T1003.001
+
+      T1003.002
+
+      T1003.003
+
+      T1003.004
+
+      T1003.005
+
+      T1003.006
+
+      T1003.007
+
+      T1003.008
+
+      T1011
+
+      T1011.001
+
+      T1016
+
+      T1016.001
+
+      T1016.002
+
+      T1020
+
+      T1020.001
+
+      T1021
+
+      T1021.001
+
+      T1021.002
+
+      T1021.003
+
+      T1021.004
+
+      T1021.005
+
+      T1021.006
+
+      T1021.007
+
+      T1021.008
+
+      T1027
+
+      T1027.001
+
+      T1027.002
+
+      T1027.003
+
+      T1027.004
+
+      T1027.005
+
+      T1027.006
+
+      T1027.007
+
+      T1027.008
+
+      T1027.009
+
+      T1027.010
+
+      T1027.011
+
+      T1027.012
+
+      T1027.013
+
+      T1036
+
+      T1036.001
+
+      T1036.002
+
+      T1036.003
+
+      T1036.004
+
+      T1036.005
+
+      T1036.006
+
+      T1036.007
+
+      T1036.008
+
+      T1036.009
+
+      T1037
+
+      T1037.001
+
+      T1037.002
+
+      T1037.003
+
+      T1037.004
+
+      T1037.005
+
+      T1048
+
+      T1048.001
+
+      T1048.002
+
+      T1048.003
+
+      T1052
+
+      T1052.001
+
+      T1053
+
+      T1053.002
+
+      T1053.003
+
+      T1053.005
+
+      T1053.006
+
+      T1053.007
+
+      T1055
+
+      T1055.001
+
+      T1055.002
+
+      T1055.003
+
+      T1055.004
+
+      T1055.005
+
+      T1055.008
+
+      T1055.009
+
+      T1055.011
+
+      T1055.012
+
+      T1055.013
+
+      T1055.014
+
+      T1055.015
+
+      T1056
+
+      T1056.001
+
+      T1056.002
+
+      T1056.003
+
+      T1056.004
+
+      T1059
+
+      T1059.001
+
+      T1059.002
+
+      T1059.003
+
+      T1059.004
+
+      T1059.005
+
+      T1059.006
+
+      T1059.007
+
+      T1059.008
+
+      T1059.009
+
+      T1059.010
+
+      T1069
+
+      T1069.001
+
+      T1069.002
+
+      T1069.003
+
+      T1070
+
+      T1070.001
+
+      T1070.002
+
+      T1070.003
+
+      T1070.004
+
+      T1070.005
+
+      T1070.006
+
+      T1070.007
+
+      T1070.008
+
+      T1070.009
+
+      T1071
+
+      T1071.001
+
+      T1071.002
+
+      T1071.003
+
+      T1071.004
+
+      T1074
+
+      T1074.001
+
+      T1074.002
+
+      T1078
+
+      T1078.001
+
+      T1078.002
+
+      T1078.003
+
+      T1078.004
+
+      T1087
+
+      T1087.001
+
+      T1087.002
+
+      T1087.003
+
+      T1087.004
+
+      T1090
+
+      T1090.001
+
+      T1090.002
+
+      T1090.003
+
+      T1090.004
+
+      T1098
+
+      T1098.001
+
+      T1098.002
+
+      T1098.003
+
+      T1098.004
+
+      T1098.005
+
+      T1098.006
+
+      T1102
+
+      T1102.001
+
+      T1102.002
+
+      T1102.003
+
+      T1110
+
+      T1110.001
+
+      T1110.002
+
+      T1110.003
+
+      T1110.004
+
+      T1114
+
+      T1114.001
+
+      T1114.002
+
+      T1114.003
+
+      T1127
+
+      T1127.001
+
+      T1132
+
+      T1132.001
+
+      T1132.002
+
+      T1134
+
+      T1134.001
+
+      T1134.002
+
+      T1134.003
+
+      T1134.004
+
+      T1134.005
+
+      T1136
+
+      T1136.001
+
+      T1136.002
+
+      T1136.003
+
+      T1137
+
+      T1137.001
+
+      T1137.002
+
+      T1137.003
+
+      T1137.004
+
+      T1137.005
+
+      T1137.006
+
+      T1195
+
+      T1195.001
+
+      T1195.002
+
+      T1195.003
+
+      T1204
+
+      T1204.001
+
+      T1204.002
+
+      T1204.003
+
+      T1205
+
+      T1205.001
+
+      T1205.002
+
+      T1213
+
+      T1213.001
+
+      T1213.002
+
+      T1213.003
+
+      T1216
+
+      T1216.001
+
+      T1216.002
+
+      T1218
+
+      T1218.001
+
+      T1218.002
+
+      T1218.003
+
+      T1218.004
+
+      T1218.005
+
+      T1218.007
+
+      T1218.008
+
+      T1218.009
+
+      T1218.010
+
+      T1218.011
+
+      T1218.012
+
+      T1218.013
+
+      T1218.014
+
+      T1218.015
+
+      T1222
+
+      T1222.001
+
+      T1222.002
+
+      T1480
+
+      T1480.001
+
+      T1484
+
+      T1484.001
+
+      T1484.002
+
+      T1491
+
+      T1491.001
+
+      T1491.002
+
+      T1497
+
+      T1497.001
+
+      T1497.002
+
+      T1497.003
+
+      T1498
+
+      T1498.001
+
+      T1498.002
+
+      T1499
+
+      T1499.001
+
+      T1499.002
+
+      T1499.003
+
+      T1499.004
+
+      T1505
+
+      T1505.001
+
+      T1505.002
+
+      T1505.003
+
+      T1505.004
+
+      T1505.005
+
+      T1518
+
+      T1518.001
+
+      T1542
+
+      T1542.001
+
+      T1542.002
+
+      T1542.003
+
+      T1542.004
+
+      T1542.005
+
+      T1543
+
+      T1543.001
+
+      T1543.002
+
+      T1543.003
+
+      T1543.004
+
+      T1543.005
+
+      T1546
+
+      T1546.001
+
+      T1546.002
+
+      T1546.003
+
+      T1546.004
+
+      T1546.005
+
+      T1546.006
+
+      T1546.007
+
+      T1546.008
+
+      T1546.009
+
+      T1546.010
+
+      T1546.011
+
+      T1546.012
+
+      T1546.013
+
+      T1546.014
+
+      T1546.015
+
+      T1546.016
+
+      T1547
+
+      T1547.001
+
+      T1547.002
+
+      T1547.003
+
+      T1547.004
+
+      T1547.005
+
+      T1547.006
+
+      T1547.007
+
+      T1547.008
+
+      T1547.009
+
+      T1547.010
+
+      T1547.012
+
+      T1547.013
+
+      T1547.014
+
+      T1547.015
+
+      T1548
+
+      T1548.001
+
+      T1548.002
+
+      T1548.003
+
+      T1548.004
+
+      T1548.005
+
+      T1548.006
+
+      T1550
+
+      T1550.001
+
+      T1550.002
+
+      T1550.003
+
+      T1550.004
+
+      T1552
+
+      T1552.001
+
+      T1552.002
+
+      T1552.003
+
+      T1552.004
+
+      T1552.005
+
+      T1552.006
+
+      T1552.007
+
+      T1552.008
+
+      T1553
+
+      T1553.001
+
+      T1553.002
+
+      T1553.003
+
+      T1553.004
+
+      T1553.005
+
+      T1553.006
+
+      T1555
+
+      T1555.001
+
+      T1555.002
+
+      T1555.003
+
+      T1555.004
+
+      T1555.005
+
+      T1555.006
+
+      T1556
+
+      T1556.001
+
+      T1556.002
+
+      T1556.003
+
+      T1556.004
+
+      T1556.005
+
+      T1556.006
+
+      T1556.007
+
+      T1556.008
+
+      T1556.009
+
+      T1557
+
+      T1557.001
+
+      T1557.002
+
+      T1557.003
+
+      T1558
+
+      T1558.001
+
+      T1558.002
+
+      T1558.003
+
+      T1558.004
+
+      T1559
+
+      T1559.001
+
+      T1559.002
+
+      T1559.003
+
+      T1560
+
+      T1560.001
+
+      T1560.002
+
+      T1560.003
+
+      T1561
+
+      T1561.001
+
+      T1561.002
+
+      T1562
+
+      T1562.001
+
+      T1562.002
+
+      T1562.003
+
+      T1562.004
+
+      T1562.006
+
+      T1562.007
+
+      T1562.008
+
+      T1562.009
+
+      T1562.010
+
+      T1562.011
+
+      T1562.012
+
+      T1563
+
+      T1563.001
+
+      T1563.002
+
+      T1564
+
+      T1564.001
+
+      T1564.002
+
+      T1564.003
+
+      T1564.004
+
+      T1564.005
+
+      T1564.006
+
+      T1564.007
+
+      T1564.008
+
+      T1564.009
+
+      T1564.010
+
+      T1564.011
+
+      T1564.012
+
+      T1565
+
+      T1565.001
+
+      T1565.002
+
+      T1565.003
+
+      T1566
+
+      T1566.001
+
+      T1566.002
+
+      T1566.003
+
+      T1566.004
+
+      T1567
+
+      T1567.001
+
+      T1567.002
+
+      T1567.003
+
+      T1567.004
+
+      T1568
+
+      T1568.001
+
+      T1568.002
+
+      T1568.003
+
+      T1569
+
+      T1569.001
+
+      T1569.002
+
+      T1573
+
+      T1573.001
+
+      T1573.002
+
+      T1574
+
+      T1574.001
+
+      T1574.002
+
+      T1574.004
+
+      T1574.005
+
+      T1574.006
+
+      T1574.007
+
+      T1574.008
+
+      T1574.009
+
+      T1574.010
+
+      T1574.011
+
+      T1574.012
+
+      T1574.013
+
+      T1574.014
+
+      T1578
+
+      T1578.001
+
+      T1578.002
+
+      T1578.003
+
+      T1578.004
+
+      T1578.005
+
+      T1583
+
+      T1583.001
+
+      T1583.002
+
+      T1583.003
+
+      T1583.004
+
+      T1583.005
+
+      T1583.006
+
+      T1583.007
+
+      T1583.008
+
+      T1584
+
+      T1584.001
+
+      T1584.002
+
+      T1584.003
+
+      T1584.004
+
+      T1584.005
+
+      T1584.006
+
+      T1584.007
+
+      T1584.008
+
+      T1585
+
+      T1585.001
+
+      T1585.002
+
+      T1585.003
+
+      T1586
+
+      T1586.001
+
+      T1586.002
+
+      T1586.003
+
+      T1587
+
+      T1587.001
+
+      T1587.002
+
+      T1587.003
+
+      T1587.004
+
+      T1588
+
+      T1588.001
+
+      T1588.002
+
+      T1588.003
+
+      T1588.004
+
+      T1588.005
+
+      T1588.006
+
+      T1588.007
+
+      T1589
+
+      T1589.001
+
+      T1589.002
+
+      T1589.003
+
+      T1590
+
+      T1590.001
+
+      T1590.002
+
+      T1590.003
+
+      T1590.004
+
+      T1590.005
+
+      T1590.006
+
+      T1591
+
+      T1591.001
+
+      T1591.002
+
+      T1591.003
+
+      T1591.004
+
+      T1592
+
+      T1592.001
+
+      T1592.002
+
+      T1592.003
+
+      T1592.004
+
+      T1593
+
+      T1593.001
+
+      T1593.002
+
+      T1593.003
+
+      T1595
+
+      T1595.001
+
+      T1595.002
+
+      T1595.003
+
+      T1596
+
+      T1596.001
+
+      T1596.002
+
+      T1596.003
+
+      T1596.004
+
+      T1596.005
+
+      T1597
+
+      T1597.001
+
+      T1597.002
+
+      T1598
+
+      T1598.001
+
+      T1598.002
+
+      T1598.003
+
+      T1598.004
+
+      T1599
+
+      T1599.001
+
+      T1600
+
+      T1600.001
+
+      T1600.002
+
+      T1601
+
+      T1601.001
+
+      T1601.002
+
+      T1602
+
+      T1602.001
+
+      T1602.002
+
+      T1606
+
+      T1606.001
+
+      T1606.002
+
+      T1608
+
+      T1608.001
+
+      T1608.002
+
+      T1608.003
+
+      T1608.004
+
+      T1608.005
+
+      T1608.006
+
+      T1614
+
+      T1614.001'
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: url
+  fields:
+    type: artifact
+    timestamp: null
+    regex: https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9(?:)]{1,6}\b(?:[-a-zA-Z0-9(?:)!@:%_\+.~#?&\/\/=]*)
+    options: ''
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: user-agent
+  fields:
+    type: artifact
+    timestamp: 2025-01-02 08:08:41.251184+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#a08168'
+    prefix: ''
+- model: entries.entryclass
+  pk: username/antichat
+  fields:
+    type: artifact
+    timestamp: 2024-12-17 11:06:40.741908+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#c1cb3c'
+    prefix: ''
+- model: entries.entryclass
+  pk: username/bhf
+  fields:
+    type: artifact
+    timestamp: 2024-12-17 11:06:46.311917+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#52508c'
+    prefix: ''
+- model: entries.entryclass
+  pk: username/breached
+  fields:
+    type: artifact
+    timestamp: 2025-02-03 13:18:01.611361+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#aa68eb'
+    prefix: ''
+- model: entries.entryclass
+  pk: username/breachedforums
+  fields:
+    type: artifact
+    timestamp: 2025-02-03 13:18:07.984827+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#43f02e'
+    prefix: ''
+- model: entries.entryclass
+  pk: username/dark2web
+  fields:
+    type: artifact
+    timestamp: 2024-12-17 11:07:08.732384+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#fddaad'
+    prefix: ''
+- model: entries.entryclass
+  pk: username/darkmarket
+  fields:
+    type: artifact
+    timestamp: 2024-12-17 11:06:57.631608+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#205836'
+    prefix: ''
+- model: entries.entryclass
+  pk: username/dublikat
+  fields:
+    type: artifact
+    timestamp: 2024-12-17 11:06:51.593810+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#06f82d'
+    prefix: ''
+- model: entries.entryclass
+  pk: username/exploit.in
+  fields:
+    type: artifact
+    timestamp: 2024-11-14 12:15:23.995145+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#c88686'
+    prefix: ''
+- model: entries.entryclass
+  pk: username/leakbase.io
+  fields:
+    type: artifact
+    timestamp: 2024-12-17 11:07:03.051996+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#557813'
+    prefix: ''
+- model: entries.entryclass
+  pk: username/magbo.cc
+  fields:
+    type: artifact
+    timestamp: 2025-02-17 08:19:58.597566+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#a3f455'
+    prefix: ''
+- model: entries.entryclass
+  pk: username/matrix
+  fields:
+    type: artifact
+    timestamp: 2025-02-07 16:09:30.292001+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#796485'
+    prefix: ''
+- model: entries.entryclass
+  pk: username/raidforums
+  fields:
+    type: artifact
+    timestamp: 2024-11-14 12:15:23.802293+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#c88686'
+    prefix: ''
+- model: entries.entryclass
+  pk: username/ramp4u
+  fields:
+    type: artifact
+    timestamp: 2024-11-14 12:15:23.419850+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#c88686'
+    prefix: ''
+- model: entries.entryclass
+  pk: username/rocketchat
+  fields:
+    type: artifact
+    timestamp: 2024-12-17 11:07:18.146244+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#ca3bb8'
+    prefix: ''
+- model: entries.entryclass
+  pk: username/skype
+  fields:
+    type: artifact
+    timestamp: 2025-01-17 13:19:36.787191+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#ed284a'
+    prefix: ''
+- model: entries.entryclass
+  pk: username/tg
+  fields:
+    type: artifact
+    timestamp: 2024-11-05 12:15:30.503754+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#fbbb9e'
+    prefix: ''
+- model: entries.entryclass
+  pk: username/unk
+  fields:
+    type: artifact
+    timestamp: 2025-02-03 16:49:38.637718+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#e66100'
+    prefix: ''
+- model: entries.entryclass
+  pk: username/wwh-club
+  fields:
+    type: artifact
+    timestamp: 2024-11-14 12:15:23.612016+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#c88686'
+    prefix: ''
+- model: entries.entryclass
+  pk: username/xss.is
+  fields:
+    type: artifact
+    timestamp: 2024-11-14 12:15:24.205798+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#c88686'
+    prefix: ''
+- model: entries.entryclass
+  pk: victim/domain
+  fields:
+    type: artifact
+    timestamp: 2025-02-03 16:44:50.335334+00:00
+    regex: ''
+    options: ''
+    catalyst_type: ''
+    color: '#2444d6'
+    prefix: ''

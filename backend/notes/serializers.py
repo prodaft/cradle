@@ -2,6 +2,7 @@ from datetime import timedelta
 from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
 
+from file_transfer.exceptions import MinioObjectNotFound
 from file_transfer.utils import MinioClient
 from .models import Note
 from .processor.task_scheduler import TaskScheduler
@@ -232,11 +233,14 @@ class NoteRetrieveWithLinksSerializer(NoteRetrieveSerializer):
 
         data["content"] += "\n\n"
         for i in obj.files.all():
-            data[
-                "content"
-            ] += f"""[{i.minio_file_name}]: {MinioClient().create_presigned_get(
-                    i.bucket_name, i.minio_file_name, timedelta(minutes=5)
-                )} "{i.file_name}"\n"""
+            try:
+                data[
+                    "content"
+                ] += f"""[{i.minio_file_name}]: {MinioClient().create_presigned_get(
+                        i.bucket_name, i.minio_file_name, timedelta(minutes=5)
+                    )} "{i.file_name}"\n"""
+            except MinioObjectNotFound:
+                pass
 
         data.pop("files")
 

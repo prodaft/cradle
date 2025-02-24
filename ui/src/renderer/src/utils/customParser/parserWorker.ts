@@ -25,7 +25,7 @@ self.addEventListener('message', async (event) => {
     const { markdown, fileData, token, apiBaseUrl } = event.data;
     if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     if (apiBaseUrl) axios.defaults.baseURL = apiBaseUrl;
-    if (!markdown) {
+    if (markdown != '' && !markdown) {
         self.postMessage({ success: false, error: 'No markdown content provided' });
         return;
     }
