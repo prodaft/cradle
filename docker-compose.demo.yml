@@ -55,6 +55,7 @@ services:
     restart: unless-stopped
     command: pipenv run celery -A cradle worker -Q email,notes -l INFO
     environment: &cradle_env
+      INITIALIZE_ENTRYCLASSES: false
       DB_NAME: cradle
       DB_USER: cradle
       DB_PASSWORD: cradlePostgresPassword
