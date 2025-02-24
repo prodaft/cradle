@@ -1,9 +1,16 @@
 from environs import Env
 from .settings_common import *
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 # Initialize environs
 env = Env()
 env.read_env()  # Read environment variables from a .env file if present
+
+sentry_sdk.init(
+    dsn=env.str("SENTRY_DSN", ""),
+    traces_sample_rate=1.0,
+)
 
 SECRET_KEY = env.str("SECRET_KEY", "django-insecure-default-secret-key")
 
