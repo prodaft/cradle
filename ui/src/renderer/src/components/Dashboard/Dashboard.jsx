@@ -29,6 +29,7 @@ import DashboardHorizontalSection from '../DashboardHorizontalSection/DashboardH
 import DashboardCard from '../DashboardCard/DashboardCard';
 import { queryGraph } from '../../services/graphService/graphService';
 import { flattenGraphEntries } from '../../utils/graphUtils/graphUtils';
+import Publishable from '../NoteActions/Publishable';
 
 function DashboardDropDownLeaf({ entry, path, value, depth, inaccessible }) {
     const [entries, setEntries] = useState(null);
@@ -445,7 +446,7 @@ export default function Dashboard() {
                                 </form>
                             </div>
 
-                            <NotesList query={submittedFilters} />
+                            <NotesList query={submittedFilters} noteActions={[{Component: Publishable, props:{}}]}/>
                         </div>
                     )}
                 </div>

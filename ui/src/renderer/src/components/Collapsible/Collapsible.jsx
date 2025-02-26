@@ -25,7 +25,7 @@ function Collapsible({ label, children, onChangeCollapse = null, open = false })
                 >
                     ▶
                 </span>
-                <span>{label}</span>
+                {label}
             </button>
 
             {/* Thin, slightly indented underline */}

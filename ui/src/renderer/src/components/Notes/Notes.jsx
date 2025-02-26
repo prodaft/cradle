@@ -3,6 +3,7 @@ import { Search } from 'iconoir-react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import NotesList from '../NotesList/NotesList';
 import { useSearchParams } from 'react-router-dom';
+import Publishable from '../NoteActions/Publishable';
 
 /**
  * Notes component
@@ -88,7 +89,7 @@ export default function Notes() {
                     </button>
                 </form>
 
-                <NotesList query={submittedFilters} />
+                <NotesList query={submittedFilters} noteActions={[{Component: Publishable, props:{}}]}/>
             </div>
         </div>
     );

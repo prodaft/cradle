@@ -23,7 +23,7 @@
  */
 
 /**
- * An object representing a note. Used in DashboardNote component.
+ * An object representing a note. Used in Note component.
  * @typedef {Object} Note
  * @property {string} id - The id of the note.
  * @property {string} content - The content of the note.

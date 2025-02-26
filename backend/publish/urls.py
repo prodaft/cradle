@@ -1,10 +1,9 @@
-from .views.publish_notes import PublishView
 from django.urls import path
+from .views.publish import PublishReportAPIView
+from .views.reports import ReportListDeleteAPIView, ReportDetailAPIView
 
 urlpatterns = [
-    path(
-        "<str:strategy_name>/",
-        PublishView.as_view(),
-        name="note_publish_detail",
-    ),
+    path("publish/", PublishReportAPIView.as_view(), name="publish-report"),
+    path("", ReportListDeleteAPIView.as_view(), name="report-list-delete"),
+    path("<uuid:pk>/", ReportDetailAPIView.as_view(), name="report-detail"),
 ]

@@ -1,13 +1,12 @@
 from typing import Dict, Iterable, List, Optional
-
+import requests
 from entries.models import Entry
 from file_transfer.utils import MinioClient
 from notes.models import Note
 from user.models import CradleUser
 from .base import BasePublishStrategy
 from django.conf import settings
-from ..platejs import markdown_to_pjs
-import requests
+from notes.markdown.platejs_render import markdown_to_pjs
 
 
 class CatalystPublish(BasePublishStrategy):
@@ -24,35 +23,16 @@ class CatalystPublish(BasePublishStrategy):
             return None
 
         foo = catalyst_type.split("|")
-
         catalyst_type = foo[0]
-
-        model_class = None
-        if len(foo) > 1:
-            model_class = foo[1]
-
-        level = "STRATEGIC"
-        if len(foo) > 2:
-            level = foo[2]
+        model_class = foo[1] if len(foo) > 1 else None
+        level = foo[2] if len(foo) > 2 else "STRATEGIC"
 
         catalyst_types = catalyst_type.split("/")
-
         ctype = catalyst_types[0]
-        csubtype = None
-        if len(catalyst_types) > 1:
-            csubtype = "/".join(catalyst_types[1:])
+        csubtype = "/".join(catalyst_types[1:]) if len(catalyst_types) > 1 else None
 
         url = f"{settings.CATALYST_HOST}/api/{ctype}/"
-
-        if csubtype:
-            params = {
-                "type": csubtype,
-                "value": name,
-            }
-        else:
-            params = {
-                "name": name,
-            }
+        params = {"type": csubtype, "value": name} if csubtype else {"name": name}
 
         response = requests.get(
             url,
@@ -63,18 +43,12 @@ class CatalystPublish(BasePublishStrategy):
         if response.status_code == 200:
             if response.json()["count"] > 0:
                 data = response.json()["results"][0]
-
                 res = {
                     "id": data["id"],
                     "type": model_class or ctype,
                     "level": level,
+                    "value": data.get("value") if csubtype else data.get("name"),
                 }
-
-                if csubtype:
-                    res["value"] = data["value"]
-                else:
-                    res["value"] = data["name"]
-
                 return res
 
         if response.status_code == 200 and csubtype:
@@ -83,7 +57,6 @@ class CatalystPublish(BasePublishStrategy):
                 json=params,
                 headers={"Authorization": "Token " + user.catalyst_api_key},
             )
-
             if response.status_code == 201:
                 data = response.json()
                 res = {
@@ -92,9 +65,7 @@ class CatalystPublish(BasePublishStrategy):
                     "value": data["value"],
                     "level": level,
                 }
-
                 return res
-
         return None
 
     def create_references(self, post_id: str, refs, user: CradleUser):
@@ -108,18 +79,14 @@ class CatalystPublish(BasePublishStrategy):
                     "context": "",
                 }
             )
-
         if not references:
             return
-
         response = requests.post(
             settings.CATALYST_HOST + "/api/posts/references/bulk/",
             headers={"Authorization": "Token " + user.catalyst_api_key},
             json={"post": post_id, "references": references},
         )
-
-        # Handle response
-        if response.status_code == 201:  # Check for successful creation
+        if response.status_code == 201:
             return None
         else:
             return (
@@ -130,11 +97,9 @@ class CatalystPublish(BasePublishStrategy):
         if not user.catalyst_api_key:
             return "User does not have a Catalyst API key"
 
-        joint_md = "\n-----\n".join(map(lambda x: x.content, notes))
-
+        joint_md = "\n-----\n".join(note.content for note in notes)
         entries: Iterable[Entry] = Note.objects.get_entries_from_notes(notes)
         entry_map = {}
-
         for i in entries:
             key = (i.entry_class.subtype, i.name)
             entry = self.get_entity(i.entry_class.catalyst_type, i.name, user)
@@ -142,16 +107,14 @@ class CatalystPublish(BasePublishStrategy):
                 entry_map[key] = entry
 
         footnotes = {}
-
-        for i in notes:
-            for f in i.files.all():
+        for note in notes:
+            for f in note.files.all():
                 footnotes[f.minio_file_name] = (f.bucket_name, f.minio_file_name)
 
         platejs = markdown_to_pjs(
             joint_md, entry_map, footnotes, MinioClient().fetch_file
         )
 
-        # Prepare the request body
         payload = {
             "title": title,
             "summary": "Published by cradle",
@@ -164,15 +127,16 @@ class CatalystPublish(BasePublishStrategy):
             "content_structure": platejs,
         }
 
-        # Send the POST request
         response = requests.post(
             settings.CATALYST_HOST + "/api/posts/editor-contents/",
             headers={"Authorization": "Token " + user.catalyst_api_key},
             json=payload,
         )
-
-        # Handle response
-        if response.status_code == 201:  # Check for successful creation
-            return self.create_references(response.json()["id"], entry_map, user)
+        if response.status_code == 201:
+            published_post_id = response.json()["id"]
+            err = self.create_references(published_post_id, entry_map, user)
+            if err:
+                return err
+            return published_post_id  # return the published post ID to use as report_location
         else:
             return f"Failed to create publication: {response.status_code} {response.json()}"

@@ -1,17 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
-import DashboardNote from '../DashboardNote/DashboardNote';
+import Note from '../Note/Note';
 import { searchNote } from '../../services/notesService/notesService';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Pagination from '../Pagination/Pagination';
 import { useSearchParams } from 'react-router-dom';
+import { useDroppable } from '@dnd-kit/core';
 
-export default function NotesList({ query }) {
+export default function NotesList({ query, filteredNotes = [], noteActions = []}) {
     const [notes, setNotes] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [searchParams, setSearchParams] = useSearchParams();
+
 
     const fetchNotes = useCallback(() => {
         setLoading(true);
@@ -57,14 +59,25 @@ export default function NotesList({ query }) {
                     </div>
                 ) : notes.length > 0 ? (
                     <div>
+                        <Pagination
+                            currentPage={page}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                        />
+
                         <div className='notes-list'>
-                            {notes.map((note, index) => (
-                                <DashboardNote
-                                    key={index}
-                                    note={note}
-                                    setAlert={setAlert}
-                                />
-                            ))}
+                            {notes.map((note, index) => {
+                                for (const n of filteredNotes) {
+                                    if (n.id === note.id) return null;
+                                }
+                                return <Note
+                                        id={note.id}
+                                        key={index}
+                                        note={note}
+                                        setAlert={setAlert}
+                                        actions={noteActions}
+                                    />;
+                            })}
                         </div>
 
                         <Pagination

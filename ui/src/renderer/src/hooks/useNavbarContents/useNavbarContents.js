@@ -15,7 +15,11 @@ const useNavbarContents = (contents, dependencies) => {
     const { setNavbarContents } = useOutletContext();
 
     return useEffect(() => {
-        setNavbarContents([contents]);
+        if (contents instanceof Function) {
+            setNavbarContents(contents());
+        } else {
+          setNavbarContents([contents]);
+        }
 
         return () => {
             setNavbarContents([]);

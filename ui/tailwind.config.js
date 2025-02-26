@@ -12,6 +12,37 @@ module.exports = {
             typography: (theme) => ({
                 DEFAULT: {
                     css: {
+                        lineHeight: '24px',
+                        li: {
+                          marginTop: '4px',
+                        },
+                        h1: {
+                          marginTop: '16px',
+                          marginBottom: '16px',
+                          borderBottomWidth: '1px',
+                          borderBottomColor: 'rgba(61, 68, 77, 0.7)',
+                          borderBottomStyle: 'solid',
+                          paddingBottom: '8px',
+                        },
+                        h2: {
+                          marginTop: '16px',
+                          marginBottom: '16px',
+                          borderBottomWidth: '1px',
+                          borderBottomColor: 'rgba(61, 68, 77, 0.7)',
+                          borderBottomStyle: 'solid',
+                          paddingBottom: '8px',
+                        },
+                        h3: {
+                          marginTop: '16px',
+                          marginBottom: '16px',
+                          borderBottomWidth: '1px',
+                          borderBottomColor: 'rgba(61, 68, 77, 0.7)',
+                          borderBottomStyle: 'solid',
+                          paddingBottom: '8px',
+                        },
+                        hr: {
+                          borderTopWidth: '3px',
+                        },
                         pre: {
                             padding: theme('padding.4'),
                             overflow: 'auto !important',

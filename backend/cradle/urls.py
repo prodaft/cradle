@@ -30,7 +30,7 @@ urlpatterns = [
         include(
             [
                 path(settings.ADMIN_PATH, admin.site.urls),
-                path("publish/", include("publish.urls")),
+                path("reports/", include("publish.urls")),
                 path("users/", include("user.urls")),
                 path("logs/", include("logs.urls")),
                 path("entries/", include("entries.urls")),

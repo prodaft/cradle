@@ -1,4 +1,6 @@
 from typing import Dict, List, Any
+
+from django.db.models import Q
 from entries.models import Entry, EntryClass
 from notes.models import Note
 from user.models import CradleUser
@@ -9,7 +11,9 @@ class LspUtils:
     @staticmethod
     def get_lsp_entries(user: CradleUser) -> List[Entry]:
         accessible_notes = Note.objects.get_accessible_notes(user, None)
-        accessible_entries = Note.objects.get_entries_from_notes(accessible_notes)
+        accessible_entries = Note.objects.get_entries_from_notes(
+            accessible_notes
+        ).filter(~Q(entry_class__regex=None, entry_class__options=None))
 
         return accessible_entries
 

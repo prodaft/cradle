@@ -13,7 +13,7 @@ import AdminPanelEdit from './components/AdminPanelEdit/AdminPanelEdit';
 import AdminPanelUserPermissions from './components/AdminPanelUserPermissions/AdminPanelUserPermissions';
 import Dashboard from './components/Dashboard/Dashboard';
 import NotFound from './components/NotFound/NotFound.jsx';
-import PublishPreview from './components/PublishPreview/PublishPreview.jsx';
+import Publish from './components/Publish/Publish.jsx';
 import NoteViewer from './components/NoteViewer/NoteViewer';
 import TextEditor from './components/TextEditor/TextEditor';
 import NoteEditor from './components/NoteEditor/NoteEditor.jsx';
@@ -81,7 +81,7 @@ function App() {
                                 />
                                 <Route
                                     path='/publish'
-                                    element={<PublishPreview />}
+                                    element={<Publish/>}
                                 ></Route>
                                 <Route
                                     path='/change-password'

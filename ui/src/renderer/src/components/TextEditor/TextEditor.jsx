@@ -115,6 +115,8 @@ export default function TextEditor({
                     setSplitPosition(newPosition);
                     localStorage.setItem('editor.splitPosition', newPosition);
                 }}
+                leftClassName='bg-gray-2'
+                rightClassName='bg-gray-2'
                 leftContent={
                     <Editor
                         noteid={noteid}

@@ -10,6 +10,7 @@ import {
     SunLight,
     HalfMoon,
     HelpCircle,
+    StatsReport,
 } from 'iconoir-react';
 import { Graph, QuestionMark } from '@phosphor-icons/react';
 import SidebarItem from '../SidebarItem/SidebarItem';
@@ -91,6 +92,11 @@ export default function Sidebar({
         navigate(graphViewLocation);
     }, [navigate]);
 
+    const publisherLocation = '/publish';
+    const handlePublisher = useCallback(() => {
+        navigate(publisherLocation);
+    }, [navigate]);
+
     const accountSettingsLocation = '/account/me';
     const handleAccountSettings = useCallback(() => {
         navigate(accountSettingsLocation);
@@ -144,8 +150,14 @@ export default function Sidebar({
                             <SidebarItem
                                 handleClick={handleGraphView}
                                 icon={<Graph height={24} width={24} />}
-                                text='Graph View'
+                                text='Graph Explorer'
                                 highlightedLocation={graphViewLocation}
+                            />
+                            <SidebarItem
+                                handleClick={handlePublisher}
+                                icon={<StatsReport />}
+                                text='Publisher'
+                                highlightedLocation={publisherLocation}
                             />
 
                             <SidebarItem

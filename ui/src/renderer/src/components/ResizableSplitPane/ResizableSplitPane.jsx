@@ -3,6 +3,8 @@ import React, { useEffect, useRef, useState } from 'react';
 const ResizableSplitPane = ({
     leftContent,
     rightContent,
+    leftClassName = '',
+    rightClassName = '',
     orientation = 'horizontal',
     initialSplitPosition = 50,
     minSplitPercentage = 20,
@@ -15,7 +17,8 @@ const ResizableSplitPane = ({
     const resizeRef = useRef(null);
     const [isResizing, setIsResizing] = useState(false);
     const [splitPosition, setSplitPosition] = useState(initialSplitPosition);
-    const [lastPosition, setLastPosition] = useState(splitPosition);
+    // Keep track of the last non-collapsed size
+    const [lastPosition, setLastPosition] = useState(initialSplitPosition);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
     const isVertical = orientation === 'vertical';
@@ -39,6 +42,7 @@ const ResizableSplitPane = ({
                 ? ((e.clientY - containerRect.top) / containerRect.height) * 100
                 : ((e.clientX - containerRect.left) / containerRect.width) * 100;
 
+            // Clamp the value when dragging (collapse via drag is not allowed)
             newPosition = Math.min(
                 Math.max(newPosition, minSplitPercentage),
                 maxSplitPercentage,
@@ -73,15 +77,15 @@ const ResizableSplitPane = ({
         } else {
             setSplitPosition(100);
         }
-    }, [showRightPane]);
+    }, [showRightPane, initialSplitPosition]);
 
     return (
         <div
             ref={containerRef}
-            className={`w-full h-full relative flex ${isVertical ? 'flex-col' : 'flex-row'} ${className}`}
+            className={`overflow-hidden w-full h-full relative flex ${isVertical ? 'flex-col' : 'flex-row'} ${className}`}
         >
             <div
-                className='bg-gray-2 rounded-md overflow-hidden transition-[width,height] duration-200 ease-out'
+                className={`rounded-md transition-[width,height] duration-200 ease-out ${leftClassName}`}
                 style={{
                     width: !isVertical ? `${splitPosition}%` : '100%',
                     height: isVertical ? `${splitPosition}%` : '100%',
@@ -104,20 +108,24 @@ const ResizableSplitPane = ({
             `}
                         onMouseDown={() => setIsResizing(true)}
                         onDoubleClick={() => {
-                            if (splitPosition !== 50) {
+                            if (splitPosition !== 0) {
+                                // Collapse left side
                                 setLastPosition(splitPosition);
-                                setSplitPosition(50);
-                            } else if (lastPosition !== 50) {
-                                setSplitPosition(lastPosition);
+                                setSplitPosition(0);
+                                onSplitChange?.(0);
+                            } else {
+                                // Expand left side
+                                const newPos = lastPosition > 0 ? lastPosition : initialSplitPosition;
+                                setSplitPosition(newPos);
+                                onSplitChange?.(newPos);
                             }
-                            onSplitChange?.(splitPosition);
                         }}
                     >
                         <div className='absolute inset-0 flex items-center justify-center'>
                             <div
                                 className={`
                 w-1 h-6 bg-gray-6 rounded-full opacity-0
-                group-hover:opacity-100 transition-opacity duration-200
+                group-hover:opacity-100 transition-opacity duration-200 z-0
                 ${isVertical ? 'rotate-90' : ''}
               `}
                             />
@@ -125,7 +133,7 @@ const ResizableSplitPane = ({
                     </div>
 
                     <div
-                        className='bg-gray-2 rounded-md overflow-hidden transition-[width,height] duration-200 ease-out'
+                        className={`rounded-md transition-[width,height] duration-200 ease-out ${rightClassName}`}
                         style={{
                             width: !isVertical ? `${100 - splitPosition}%` : '100%',
                             height: isVertical ? `${100 - splitPosition}%` : '100%',

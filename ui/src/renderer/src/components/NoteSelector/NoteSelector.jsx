@@ -1,155 +1,179 @@
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Search } from 'iconoir-react';
+import { useDroppable } from '@dnd-kit/core';
+
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import DashboardNote from '../DashboardNote/DashboardNote';
-import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
-import NavbarButton from '../NavbarButton/NavbarButton';
-import { StatsReport, Xmark } from 'iconoir-react/regular';
-import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
+import Pagination from '../Pagination/Pagination';
+import DraggableNote from '../DraggableNote/DraggableNote';
+import Note from '../Note/Note';
+import AddNote from '../NoteActions/AddNote';
 
-/**
- * Displays the notes for an entry.
- * Allows the user to select notes for publishing and to publish the selected notes, which sends them to the publish preview page.
- *
- * @function NoteSelector
- * @returns {NoteSelector}
- * @constructor
- */
-export default function NoteSelector() {
-    const location = useLocation();
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const navigate = useNavigate();
-    const dashboard = useRef(null);
-    const [selectAll, setSelectAll] = useState(true);
+import { searchNote } from '../../services/notesService/notesService';
 
-    const { name, type, subtype, description, notes } = location.state || {
-        name: '',
-        type: '',
-        subtype: '',
-        description: '',
-        notes: [],
-    };
-    const publishableNoteIds = notes
-        ? notes.filter((note) => note.publishable).map((note) => note.id)
-        : [];
+export default function NoteSelector({
+    selectedNotes,
+    setSelectedNotes,
+    notes,
+    setNotes,
+    activeNote,
+    setAlert,
+}) {
+    const [loading, setLoading] = useState(false);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
 
-    const [selectedNoteIds, setSelectedNoteIds] = useState([]);
+    const { setNodeRef } = useDroppable({ id: 'note-selector' });
 
-    // On entering the page, all notes are selected by default
-    useEffect(() => {
-        setSelectedNoteIds(publishableNoteIds);
-        setSelectAll(true);
+    const [searchFilters, setSearchFilters] = useState({
+        content: '',
+        author__username: '',
+        truncate: -1,
+    });
 
-        return () => {
-            setSelectedNoteIds([]);
-        };
-    }, [notes]);
+    const [submittedFilters, setSubmittedFilters] = useState({
+        publishable: true,
+        content: '',
+        author__username: '',
+        truncate: -1,
+    });
 
-    // When all notes are selected, the "select all" checkbox is automatically checked
-    useEffect(() => {
-        setSelectAll(
-            selectedNoteIds.length > 0 &&
-                selectedNoteIds.length === publishableNoteIds.length,
-        );
-    }, [notes, selectedNoteIds]);
-
-    const handleSelectAll = useCallback(() => {
-        setSelectAll((prevSelectAll) => !prevSelectAll);
-        if (!selectAll) {
-            setSelectedNoteIds(publishableNoteIds);
-        } else {
-            setSelectedNoteIds([]);
-        }
-    }, [notes, setSelectedNoteIds, selectAll]);
-
-    const handleCancelPublishMode = useCallback(() => {
-        setSelectedNoteIds([]);
-        navigate(createDashboardLink({ name, type, subtype })); // return to the dashboard
-    }, [selectedNoteIds]);
-
-    // When the publish button is clicked, the user is sent to the publish preview page,
-    // where they can choose how to export the published report
-    const handlePublish = useCallback(() => {
-        if (selectedNoteIds.length === 0) {
-            setAlert({
-                show: true,
-                message: 'Please select at least one note to publish.',
-                color: 'red',
+    const fetchNotes = useCallback(() => {
+        setLoading(true);
+        searchNote({ page, ...submittedFilters })
+            .then((response) => {
+                setNotes(response.data.results);
+                setTotalPages(response.data.total_pages);
+                setLoading(false);
+            })
+            .catch(() => {
+                setAlert({
+                    show: true,
+                    message: 'Failed to fetch notes. Please try again.',
+                    color: 'red',
+                });
+                setLoading(false);
             });
-            return;
-        }
+    }, [page, submittedFilters, setNotes, setAlert]);
 
-        // TODO remove sort when any order will be possible (e.g. with drag and drop). See Array.splice()
-        const noteIds = notes
-            .filter((note) => selectedNoteIds.includes(note.id))
-            .sort((note1, note2) => note2.timestamp - note1.timestamp)
-            .map((note) => note.id);
-        navigate(`/publish`, { state: { noteIds: noteIds, entryName: name } });
-    }, [selectedNoteIds, name, navigate]);
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        setSubmittedFilters(searchFilters);
+    };
 
-    const navbarContents = [
-        // If the dashboard is in publish preview mode, add a button to exit it and another to move to the publish preview
-        <NavbarButton
-            icon={<Xmark />}
-            text='Cancel'
-            data-testid='cancel-publish-btn'
-            onClick={handleCancelPublishMode}
-        />,
-        <NavbarButton
-            icon={<StatsReport />}
-            text='Publish'
-            data-testid='publish-btn'
-            onClick={handlePublish}
-        />,
-    ];
-    useNavbarContents(navbarContents, [location, selectedNoteIds]);
+    const handleSearchChange = (e) => {
+        const { name, value } = e.target;
+        setSearchFilters((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handlePageChange = (newPage) => {
+        setPage(newPage);
+    };
+
+    useEffect(() => {
+        setSearchFilters({
+            content: '',
+            author__username: '',
+            truncate: -1,
+        });
+    }, []);
+
+    useEffect(() => {
+        fetchNotes();
+    }, [fetchNotes]);
+
+    const isNoteSelected = (noteId) => {
+        return selectedNotes.some((note) => note.id === noteId);
+    };
 
     return (
-        <>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
-            <div
-                className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'
-                ref={dashboard}
-            >
-                <div className='w-[95%] h-full flex flex-col p-6 space-y-3'>
-                    {name && <h1 className='text-5xl font-bold'>{name}</h1>}
-                    {type && (
-                        <p className='text-sm text-zinc-500'>{`Type: ${subtype ? subtype : type}`}</p>
-                    )}
-                    {description && (
-                        <p className='text-sm text-zinc-500'>{`Description: ${description}`}</p>
-                    )}
+        <div
+            ref={setNodeRef}
+            className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'
+        >
+            <div className='w-[95%] h-full flex flex-col p-6 space-y-3'>
+                <AlertDismissible
+                    alert={{ show: false, message: '', color: 'red' }}
+                    setAlert={setAlert}
+                />
 
-                    {notes && (
-                        <div className='bg-cradle3 p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col flex-1'>
-                            <h2 className='text-xl font-semibold mb-2'>Notes</h2>
-                            <span className='flex flex-row justify-end m-3 p-4'>
-                                <label htmlFor='select-all-btn' className='mx-2'>
-                                    Select All
-                                </label>
-                                <input
-                                    type='checkbox'
-                                    id='select-all-btn'
-                                    className='form-checkbox checkbox checkbox-primary'
-                                    onClick={handleSelectAll}
-                                    checked={selectAll}
-                                />
-                            </span>
-                            {notes.map((note, index) => (
-                                <DashboardNote
-                                    key={index}
-                                    index={index}
-                                    note={note}
-                                    setAlert={setAlert}
-                                    publishMode={true}
-                                    selectedNoteIds={selectedNoteIds}
-                                    setSelectedNoteIds={setSelectedNoteIds}
-                                />
-                            ))}
-                        </div>
-                    )}
+
+
+                <form
+                    onSubmit={handleSearchSubmit}
+                    className='flex space-x-4 px-3 pb-2'
+                >
+                    <input
+                        type='text'
+                        name='content'
+                        value={searchFilters.content}
+                        onChange={handleSearchChange}
+                        placeholder='Search by content'
+                        className='input !max-w-full w-full'
+                    />
+                    <input
+                        type='text'
+                        name='author__username'
+                        value={searchFilters.author__username}
+                        onChange={handleSearchChange}
+                        placeholder='Search by author'
+                        className='input !max-w-full w-full'
+                    />
+                    <button type='submit' className='btn w-1/2'>
+                        <Search /> Search
+                    </button>
+                </form>
+
+
+                <Pagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                />
+
+                <div>
+                    <div className='flex flex-col space-y-4'>
+                        {loading ? (
+                            <div className='flex items-center justify-center min-h-screen'>
+                                <div className='spinner-dot-pulse'>
+                                    <div className='spinner-pulse-dot'></div>
+                                </div>
+                            </div>
+                        ) : notes.length > 0 ? (
+                            <div className='notes-list'>
+                                {notes.map(
+                                    (note) =>
+                                        !isNoteSelected(note.id) && (
+                                            <DraggableNote
+                                                id={note.id}
+                                                key={note.id}
+                                                note={note}
+                                                setAlert={setAlert}
+                                                ghost={
+                                                    activeNote &&
+                                                    activeNote.id === note.id
+                                                }
+                                                actions={[
+                                                    {
+                                                        Component: AddNote,
+                                                        props: { setSelectedNotes },
+                                                    },
+                                                ]}
+                                            />
+                                        ),
+                                )}
+                            </div>
+                        ) : (
+                            <div className='container mx-auto flex flex-col items-center'>
+                                <p className='mt-6 !text-sm !font-normal text-zinc-500'>
+                                    No notes found!
+                                </p>
+                            </div>
+                        )}
+                    </div>
                 </div>
+                <div className='h-16'></div>
             </div>
-        </>
+        </div>
     );
 }
