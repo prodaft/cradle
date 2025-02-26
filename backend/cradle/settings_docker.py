@@ -60,6 +60,10 @@ REQUIRE_ADMIN_ACTIVATION = env.bool("REQUIRE_ADMIN_ACTIVATION", False)
 
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+if env.bool("CUSTOM_EMAIL_SSL", False):
+    EMAIL_BACKEND = "mail.backend.EmailBackend"
+
 EMAIL_HOST = env.str("EMAIL_HOST", None)
 EMAIL_PORT = env.int("EMAIL_PORT", -1)
 EMAIL_HOST_USER = env.str("EMAIL_HOST_USER", None)
