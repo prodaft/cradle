@@ -1,17 +1,36 @@
+from datetime import timedelta
 from rest_framework import serializers
-from .models import PublishedReport
-from notes.models import Note
+from .models import PublishedReport, ReportMode, ReportStatus
+from file_transfer.utils import MinioClient
 
 
 class ReportSerializer(serializers.ModelSerializer):
     note_ids = serializers.SerializerMethodField()
+    report_location = serializers.SerializerMethodField()
 
     class Meta:
         model = PublishedReport
-        fields = ["id", "created_at", "strategy", "report_location", "note_ids"]
+        fields = [
+            "id",
+            "title",
+            "status",
+            "created_at",
+            "strategy",
+            "report_location",
+            "error_message",
+            "note_ids",
+        ]
 
     def get_note_ids(self, obj):
         return list(obj.notes.values_list("id", flat=True))
+
+    def get_report_location(self, obj):
+        if obj.mode == ReportMode.DOWNLOAD and obj.status == ReportStatus.DONE:
+            bucket_name = str(obj.user.id) if obj.user else "default_bucket"
+            return MinioClient().create_presigned_get(
+                bucket_name, obj.report_location, timedelta(hours=1)
+            )
+        return obj.report_location
 
 
 class PublishReportSerializer(serializers.Serializer):

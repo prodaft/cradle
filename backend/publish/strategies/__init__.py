@@ -1,4 +1,6 @@
 from django.conf import settings
+
+from .html import HTMLPublish
 from .catalyst import CatalystPublish
 
 PUBLISH_STRATEGIES = {
@@ -7,4 +9,5 @@ PUBLISH_STRATEGIES = {
         settings.CATALYST_PUBLISH_CATEGORY,
         settings.CATALYST_PUBLISH_SUBCATEGORY,
     ),
+    "html": lambda: HTMLPublish(),
 }

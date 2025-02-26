@@ -1,12 +1,12 @@
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Optional, Iterable, List
 import requests
-from entries.models import Entry
-from file_transfer.utils import MinioClient
 from notes.models import Note
 from user.models import CradleUser
-from .base import BasePublishStrategy
+from .base import BasePublishStrategy, PublishResult
 from django.conf import settings
 from notes.markdown.platejs_render import markdown_to_pjs
+from file_transfer.utils import MinioClient
+from entries.models import Entry
 
 
 class CatalystPublish(BasePublishStrategy):
@@ -18,7 +18,7 @@ class CatalystPublish(BasePublishStrategy):
 
     def get_entity(
         self, catalyst_type: str, name: str, user: CradleUser
-    ) -> Dict[str, Optional[str]]:
+    ) -> Optional[Dict[str, Optional[str]]]:
         if not catalyst_type:
             return None
 
@@ -68,7 +68,7 @@ class CatalystPublish(BasePublishStrategy):
                 return res
         return None
 
-    def create_references(self, post_id: str, refs, user: CradleUser):
+    def create_references(self, post_id: str, refs, user: CradleUser) -> Optional[str]:
         references = []
         for entity in refs.values():
             references.append(
@@ -80,7 +80,7 @@ class CatalystPublish(BasePublishStrategy):
                 }
             )
         if not references:
-            return
+            return None
         response = requests.post(
             settings.CATALYST_HOST + "/api/posts/references/bulk/",
             headers={"Authorization": "Token " + user.catalyst_api_key},
@@ -93,9 +93,11 @@ class CatalystPublish(BasePublishStrategy):
                 f"Failed to create references: {response.status_code} {response.text}"
             )
 
-    def publish(self, title: str, notes: List[Note], user: CradleUser):
+    def publish(self, title: str, notes: List[Note], user: CradleUser) -> PublishResult:
         if not user.catalyst_api_key:
-            return "User does not have a Catalyst API key"
+            return PublishResult(
+                success=False, error="User does not have a Catalyst API key"
+            )
 
         joint_md = "\n-----\n".join(note.content for note in notes)
         entries: Iterable[Entry] = Note.objects.get_entries_from_notes(notes)
@@ -117,7 +119,7 @@ class CatalystPublish(BasePublishStrategy):
 
         payload = {
             "title": title,
-            "summary": "Published by cradle",
+            "summary": title,
             "tlp": self.tlp,
             "category": "RESEARCH",
             "sub_category": "732c67b9-2a1b-44de-b99f-f7f580a5fbb7",
@@ -136,7 +138,13 @@ class CatalystPublish(BasePublishStrategy):
             published_post_id = response.json()["id"]
             err = self.create_references(published_post_id, entry_map, user)
             if err:
-                return err
-            return published_post_id  # return the published post ID to use as report_location
+                return PublishResult(success=False, error=err)
+            return PublishResult(
+                success=True,
+                data=f"https://catalyst.prodaft.com/publications/review/{published_post_id}",
+            )
         else:
-            return f"Failed to create publication: {response.status_code} {response.json()}"
+            return PublishResult(
+                success=False,
+                error=f"Failed to create publication: {response.status_code} {response.json()}",
+            )

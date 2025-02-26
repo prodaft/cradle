@@ -16,6 +16,7 @@ const FloatingTextInput = ({
       onSubmit(value);
       setValue('');
     }
+    handleOpen();
   };
 
   return (

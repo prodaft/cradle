@@ -48,13 +48,34 @@ const Note = forwardRef(function({id, note, setAlert, actions = [], ghost = fals
             >
                 {/* Header row with timestamp and configurable controls */}
                 <div className='flex flex-row justify-between'>
-                    <div className='dark:text-zinc-300 text-xs w-full'>
-                        {new Date(note.timestamp).toLocaleString()}
-                    </div>
-                    <div className='flex items-center'>
-                        {actions.map(({ Component, props }, index) => (
-                            <Component key={index} {...props} note={note} />
-                        ))}
+
+                    <div className='text-xs text-zinc-500 border-b-1 dark:border-b-zinc-800'>
+                        {!note.editor && (
+                            <span>
+                        <span className='text-xs text-zinc-500 px-2'>
+                            <strong>Created on:</strong>{' '}
+                            {new Date(note.timestamp).toLocaleString()}
+                        </span>
+                        <span className='text-xs text-zinc-700'>|</span>
+                        <span className='text-xs text-zinc-500 pl-2'>
+                            <strong>Created by:</strong>{' '}
+                            {note?.author ? note.author.username : 'Unknown'}
+                        </span>
+                            </span>
+                        )}
+                        {note.editor && (
+                            <span>
+                                <span className='text-xs text-zinc-500 px-2'>
+                                    <strong>Edited on:</strong>{' '}
+                                    {new Date(note.edit_timestamp).toLocaleString()}
+                                </span>
+                                <span className='text-xs text-zinc-700'>|</span>
+                                <span className='text-xs text-zinc-500 pl-2'>
+                                    <strong>Edited by:</strong>{' '}
+                                    {note?.editor ? note.editor.username : 'Unknown'}
+                                </span>
+                            </span>
+                        )}
                     </div>
                 </div>
 
@@ -67,7 +88,7 @@ const Note = forwardRef(function({id, note, setAlert, actions = [], ghost = fals
                 )}
                 {/* Main content preview */}
                 <div
-                    className='bg-transparent h-fit p-2 backdrop-filter overflow-hidden flex-grow flex space-y-2 flex-col cursor-pointer'
+                    className='bg-transparent h-fit p-2 backdrop-filter overflow-hidden flex-grow flex flex-col cursor-pointer'
                     onClick={() =>
                         navigate(`/notes/${note.id}`, {
                             state: { from: location, state: location.state },

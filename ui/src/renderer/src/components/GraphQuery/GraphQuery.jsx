@@ -171,7 +171,7 @@ export default function GraphQuery({
 
     return (
         <>
-            <div className='h-full bg-cradle3 p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col'>
+            <div className='h-full p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col'>
                 <h2 className='text-xl font-semibold mb-2'>Graph Explorer</h2>
 
                 <div className='flex flex-col flex-1 overflow-hidden'>

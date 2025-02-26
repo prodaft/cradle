@@ -47,3 +47,34 @@ class NewUserNotification(MessageNotification):
     @property
     def get_mail(self):
         return NewUserNotificationMail(self.user, self.new_user)
+
+
+class ReportRenderNotification(MessageNotification):
+    published_report = models.ForeignKey(
+        "publish.PublishedReport",
+        on_delete=models.CASCADE,
+        related_name="render_notifications",
+    )
+
+    @property
+    def get_mail(self):
+        # Return an instance of ReportReadyMail for sending the "report ready" email.
+        from mail.models import ReportReadyMail
+
+        return ReportReadyMail(self.user, self.published_report)
+
+
+class ReportProcessingErrorNotification(MessageNotification):
+    published_report = models.ForeignKey(
+        "publish.PublishedReport",
+        on_delete=models.CASCADE,
+        related_name="processing_error_notifications",
+    )
+    error_message = models.TextField(blank=True, null=True)
+
+    @property
+    def get_mail(self):
+        # Return an instance of ReportErrorMail for sending the error email.
+        from mail.models import ReportErrorMail
+
+        return ReportErrorMail(self.user, self.published_report, self.error_message)

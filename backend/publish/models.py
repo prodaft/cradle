@@ -17,10 +17,15 @@ class DownloadStrategies(models.TextChoices):
     JSON = "json", "JSON"
 
 
-# New choices for report mode.
 class ReportMode(models.TextChoices):
     UPLOAD = "upload", "Upload"
     DOWNLOAD = "download", "Download"
+
+
+class ReportStatus(models.TextChoices):
+    WORKING = "working", "Working"
+    DONE = "done", "Done"
+    ERROR = "error", "Error"
 
 
 class PublishedReport(models.Model, LoggableModelMixin):
@@ -31,8 +36,7 @@ class PublishedReport(models.Model, LoggableModelMixin):
         related_name="published_reports",
         null=True,
     )
-    title = models.CharField(max_length=512, default="", unique=False)
-
+    title = models.CharField(max_length=512, default="Title", null=False, blank=False)
     notes = models.ManyToManyField(Note, related_name="published_reports")
     created_at = models.DateTimeField(auto_now_add=True)
     strategy = models.CharField(
@@ -40,7 +44,14 @@ class PublishedReport(models.Model, LoggableModelMixin):
     )
     report_location = models.CharField(max_length=1024)
 
-    completed = models.BooleanField(default=False)
+    status = models.CharField(
+        max_length=10,
+        choices=ReportStatus.choices,
+        default=ReportStatus.WORKING,
+    )
+
+    error_message = models.TextField(blank=True, null=True)
+
     mode = models.CharField(
         max_length=10,
         choices=ReportMode.choices,
@@ -58,4 +69,4 @@ class PublishedReport(models.Model, LoggableModelMixin):
             self.mode = ReportMode.DOWNLOAD
 
     def propagate_from(self, log):
-        log.propagate(self).save()
+        return

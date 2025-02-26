@@ -33,3 +33,13 @@ export function publishReport(strategy, noteIds, title) {
         data: body,
     });
 }
+
+
+export function getReport(reportId) {
+    const path = `/reports/${reportId}/`;
+
+    return authAxios({
+        method: 'GET',
+        url: path,
+    });
+}

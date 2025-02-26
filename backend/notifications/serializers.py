@@ -1,7 +1,13 @@
 from rest_framework import serializers
 
 from user.serializers import EssentialUserRetrieveSerializer
-from .models import MessageNotification, AccessRequestNotification, NewUserNotification
+from .models import (
+    MessageNotification,
+    AccessRequestNotification,
+    NewUserNotification,
+    ReportProcessingErrorNotification,
+    ReportRenderNotification,
+)
 from typing import Any, Optional
 
 
@@ -17,12 +23,19 @@ class NotificationSerializer(serializers.ModelSerializer):
         """
 
         serializer: Optional[serializers.ModelSerializer] = None
-        if isinstance(instance, AccessRequestNotification):
+        if isinstance(instance, ReportRenderNotification):
+            print(instance)
+            serializer = ReportRenderNotificationSerializer(instance)
+        elif isinstance(instance, ReportProcessingErrorNotification):
+            serializer = ReportProcessingErrorNotificationSerializer(instance)
+        elif isinstance(instance, AccessRequestNotification):
             serializer = AccessRequestNotificationSerializer(instance)
         elif isinstance(instance, NewUserNotification):
             serializer = NewUserNotificationSerializer(instance)
         else:
             serializer = MessageNotificationSerializer(instance)
+
+        return serializer.data
 
         return serializer.data
 
@@ -70,6 +83,43 @@ class AccessRequestNotificationSerializer(serializers.ModelSerializer):
             "requesting_user_id",
             "timestamp",
             "notification_type",
+        ]
+
+
+class ReportRenderNotificationSerializer(serializers.ModelSerializer):
+    notification_type = serializers.CharField(
+        default="report_render_notification", read_only=True
+    )
+    published_report_id = serializers.UUIDField(source="published_report.id")
+
+    class Meta:
+        model = ReportRenderNotification
+        fields = [
+            "id",
+            "message",
+            "is_marked_unread",
+            "timestamp",
+            "notification_type",
+            "published_report_id",
+        ]
+
+
+class ReportProcessingErrorNotificationSerializer(serializers.ModelSerializer):
+    notification_type = serializers.CharField(
+        default="report_processing_error_notification", read_only=True
+    )
+    published_report_id = serializers.UUIDField(source="published_report.id")
+
+    class Meta:
+        model = ReportProcessingErrorNotification
+        fields = [
+            "id",
+            "message",
+            "is_marked_unread",
+            "timestamp",
+            "notification_type",
+            "published_report_id",
+            "error_message",
         ]
 
 

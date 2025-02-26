@@ -20,6 +20,7 @@ app.conf.task_routes = {
     "notes.tasks.smart_linker_task": {"queue": "notes"},
     "notes.tasks.entry_class_creation_task": {"queue": "notes"},
     "notes.tasks.entry_population_task": {"queue": "notes"},
+    "publish.tasks.generate_report": {"queue": "publish"},
 }
 
 app.conf.task_default_priority = 5

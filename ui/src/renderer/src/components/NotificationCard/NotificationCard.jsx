@@ -49,6 +49,7 @@ export default function NotificationCard({
         message,
         timestamp,
         is_marked_unread,
+        published_report_id,
         notification_type,
         new_user,
         entity_id,
@@ -56,6 +57,7 @@ export default function NotificationCard({
     } = notification;
     const [isMarkedUnread, setIsMarkedUnread] = useState(is_marked_unread);
     const navigate = useNavigate();
+
 
     const handleMarkUnread = (id) => {
         markUnread(id, !isMarkedUnread)
@@ -98,6 +100,10 @@ export default function NotificationCard({
                 }
             })
             .catch(displayError(setAlert, navigate));
+    };
+
+    const handleGoToReport = () => {
+      navigate(`/reports/${published_report_id}`);
     };
 
     return (
@@ -156,6 +162,26 @@ export default function NotificationCard({
                         onClick={handleActivateUser}
                     >
                         Activate
+                    </button>
+                </div>
+            )}
+            {notification_type === 'report_render_notification' && (
+                <div className='flex flex-row justify-end items-center flex-wrap'>
+                    <button
+                        className='btn btn-solid-secondary btn-sm'
+                        onClick={handleGoToReport}
+                    >
+                      View Report
+                    </button>
+                </div>
+            )}
+            {notification_type === 'report_processing_error_notification' && (
+                <div className='flex flex-row justify-end items-center flex-wrap'>
+                    <button
+                        className='btn btn-solid-secondary btn-sm'
+                        onClick={handleGoToReport}
+                    >
+                      View Report
                     </button>
                 </div>
             )}
