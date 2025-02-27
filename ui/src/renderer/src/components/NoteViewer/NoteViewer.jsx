@@ -107,7 +107,7 @@ export default function NoteViewer() {
                       text='Publish Report'
                       data-testid='publish-btn'
                       key='publish-btn'
-                      onClick={() => navigate(`/publish`, { state: { noteIds: [id] } })}
+                      onClick={() => navigate(`/publish?notes=${id}`)}
                   />
               ),
               <NavbarSwitch

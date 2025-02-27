@@ -4,6 +4,7 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 import { Mail, MailOpen } from 'iconoir-react';
 import { changeAccess, activateUser } from '../../services/adminService/adminService';
 import { useNavigate } from 'react-router-dom';
+import { getReport } from '../../services/publishService/publishService';
 
 /**
  * @typedef {Object} Notification
@@ -102,6 +103,14 @@ export default function NotificationCard({
             .catch(displayError(setAlert, navigate));
     };
 
+    const handleViewReport = () => {
+      getReport(published_report_id).then((response) => {
+        if (response.status === 200) {
+          window.open(response.data.report_url, '_blank');
+        }
+      }).catch(displayError(setAlert, navigate));
+    };
+
     const handleGoToReport = () => {
       navigate(`/reports/${published_report_id}`);
     };
@@ -169,7 +178,7 @@ export default function NotificationCard({
                 <div className='flex flex-row justify-end items-center flex-wrap'>
                     <button
                         className='btn btn-solid-secondary btn-sm'
-                        onClick={handleGoToReport}
+                        onClick={handleViewReport}
                     >
                       View Report
                     </button>
@@ -181,7 +190,7 @@ export default function NotificationCard({
                         className='btn btn-solid-secondary btn-sm'
                         onClick={handleGoToReport}
                     >
-                      View Report
+                      View Details
                     </button>
                 </div>
             )}

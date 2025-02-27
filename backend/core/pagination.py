@@ -2,7 +2,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 
-class QueryPagination(PageNumberPagination):
+class TotalPagesPagination(PageNumberPagination):
     def __init__(self, *args, page_size=10, **kwargs):
         self.page_size = page_size
         super().__init__(*args, **kwargs)

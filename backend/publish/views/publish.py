@@ -39,7 +39,7 @@ class PublishReportAPIView(APIView):
 
         user = request.user
 
-        notes = Note.objects.filter(id__in=note_ids)
+        notes = Note.objects.filter(publishable=True, id__in=note_ids)
         if notes.count() != len(note_ids):
             return Response(
                 {"detail": "One or more notes not found."},

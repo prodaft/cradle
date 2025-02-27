@@ -3,6 +3,8 @@ import { updateNote, getNote } from '../../services/notesService/notesService';
 import {
     getPublishOptions,
     publishReport,
+    editReport,
+    getReport,
 } from '../../services/publishService/publishService';
 import 'tailwindcss/tailwind.css';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
@@ -16,11 +18,12 @@ import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import { DndContext, closestCenter, DragOverlay, useSensor } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { NoButtonsSensor } from '../../utils/dndUtils/dndUtils';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { Download, Upload } from 'iconoir-react';
+import { Download, FloppyDisk, Upload } from 'iconoir-react';
 
 import NavbarDropdown from '../NavbarDropdown/NavbarDropdown';
+import NavbarButton from '../NavbarButton/NavbarButton';
 
 export default function Publish() {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -33,6 +36,12 @@ export default function Publish() {
     const [showTitlePrompt, setShowTitlePrompt] = useState(false);
     const [publishStrategy, setPublishStrategy] = useState(null);
 
+    const [isEditing, setIsEditing] = useState(false);
+    const [reportId, setReportId] = useState(null);
+    const [title, setTitle] = useState('');
+
+    const navigate = useNavigate();
+
     const sensors = [useSensor(NoButtonsSensor)];
 
     useEffect(() => {
@@ -41,24 +50,53 @@ export default function Publish() {
 
     useEffect(() => {
         const queryParams = new URLSearchParams(searchParams);
+        const reportParam = queryParams.get('report');
+        if (reportParam) {
+            setIsEditing(true);
+            setReportId(reportParam);
+            getReport(reportParam)
+                .then((response) => {
+                    if (response.status === 200) {
+                        const reportData = response.data;
+                        setTitle(reportData.title);
+
+                        if (reportData.note_ids && reportData.note_ids.length > 0) {
+                            Promise.all(reportData.note_ids.map((id) => getNote(id)))
+                                .then((notes) => {
+                                    const validNotes = notes
+                                        .filter((note) => note.status === 200)
+                                        .map((note) => note.data);
+                                    setSelectedNotes(validNotes);
+                                })
+                                .catch(displayError(setAlert));
+                        }
+                    }
+                })
+                .catch(displayError(setAlert));
+        }
+    }, [searchParams]);
+
+    useEffect(() => {
+        const queryParams = new URLSearchParams(searchParams);
+        if (queryParams.get('report')) {
+            return;
+        }
         const notesParam = queryParams.get('notes');
         if (notesParam) {
             const noteIds = notesParam.split(',');
             Promise.all(noteIds.map((id) => getNote(id)))
                 .then((notes) => {
                     const validNotes = notes
-                        .filter((note) => note.status == 200)
+                        .filter((note) => note.status === 200)
                         .map((note) => note.data);
                     if (notes.length !== validNotes.length) {
                         throw new Error('Some notes could not be loaded.');
                     }
-                    console.log(validNotes);
-                    setSelectedNotes(validNotes);
+                    setSelectedNotes(validNotes.filter((note) => note.publishable));
                 })
                 .catch(displayError(setAlert));
         }
-    }, []);
-
+    }, [searchParams]);
 
     useEffect(() => {
         getPublishOptions()
@@ -79,7 +117,7 @@ export default function Publish() {
             queryParams.delete('notes');
         }
         setSearchParams(queryParams);
-    }, [selectedNotes]);
+    }, [selectedNotes, setSearchParams, searchParams]);
 
     const handleDragStart = (event) => {
         const { active } = event;
@@ -103,20 +141,16 @@ export default function Publish() {
             return;
         }
 
-        // If dropped onto the NoteSelector droppable area, remove from publish.
         if (over.id === 'note-selector') {
             setSelectedNotes((prev) => prev.filter((note) => note.id !== active.id));
             setActiveNote(null);
             return;
         }
 
-        // Otherwise, we assume the drop happened in the PublishPreview area.
         const isAlreadySelected = selectedNotes.some((note) => note.id === active.id);
         if (!isAlreadySelected) {
-            // The note is coming from availableNotes.
             const noteToAdd = availableNotes.find((note) => note.id === active.id);
             if (noteToAdd) {
-                // Insert over the note that was dropped on.
                 const dropIndex = selectedNotes.findIndex(
                     (note) => note.id === over.id,
                 );
@@ -142,38 +176,62 @@ export default function Publish() {
         setActiveNote(null);
     }
 
-    function publishReportWithStrategy(strategy) {
-        return () => {
-            setPublishStrategy(strategy);
-            setShowTitlePrompt(true);
-        };
-    }
-
-    const handleTitleSubmit = (title) => {
-      const noteIds = selectedNotesRef.current.map((note) => note.id);
-      publishReport(publishStrategy, noteIds,title).catch(displayError(setAlert));
+    const publishReportWithStrategy = (strategy) => () => {
+        setPublishStrategy(strategy);
+        setShowTitlePrompt(true);
     };
 
-    const navbarContents = () => [
-        <NavbarDropdown
-            key='upload-publish'
-            icon={<Upload />}
-            text={'Upload Report'}
-            contents={publishOptions.upload.map((option) => ({
-                label: option.label,
-                handler: publishReportWithStrategy(option.strategy),
-            }))}
-        />,
-        <NavbarDropdown
-            key='download-publish'
-            icon={<Download />}
-            text={'Download Report'}
-            contents={publishOptions.download.map((option) => ({
-                label: option.label,
-                handler: publishReportWithStrategy(option.strategy),
-            }))}
-        />,
-    ];
+    // When the title prompt is submitted, if editing then call editReport.
+    const handleTitleSubmit = (enteredTitle) => {
+        const noteIds = selectedNotesRef.current.map((note) => note.id);
+        if (isEditing && reportId) {
+            editReport(reportId, { note_ids: noteIds, title: enteredTitle })
+                .then(() => {
+                    navigate(`/reports/`);
+                })
+                .catch(displayError(setAlert));
+        } else {
+            publishReport(publishStrategy, noteIds, enteredTitle)
+                .then(() => {
+                    navigate(`/reports/`);
+                })
+                .catch(displayError(setAlert));
+        }
+    };
+
+    const navbarContents = () => {
+        if (isEditing) {
+            return [
+                <NavbarButton
+                    key='edit-report'
+                    icon={<FloppyDisk />}
+                    text={'Edit Report'}
+                    onClick={() => setShowTitlePrompt(true)}
+                />,
+            ];
+        } else {
+            return [
+                <NavbarDropdown
+                    key='upload-publish'
+                    icon={<Upload />}
+                    text={'Upload Report'}
+                    contents={publishOptions.upload.map((option) => ({
+                        label: option.label,
+                        handler: publishReportWithStrategy(option.strategy),
+                    }))}
+                />,
+                <NavbarDropdown
+                    key='download-publish'
+                    icon={<Download />}
+                    text={'Download Report'}
+                    contents={publishOptions.download.map((option) => ({
+                        label: option.label,
+                        handler: publishReportWithStrategy(option.strategy),
+                    }))}
+                />,
+            ];
+        }
+    };
 
     useNavbarContents(navbarContents, [publishOptions]);
 
@@ -182,11 +240,12 @@ export default function Publish() {
             <AlertDismissible alert={alert} setAlert={setAlert} />
 
             <FloatingTextInput
-              title="Enter a title for your report"
-              placeholder="Awesome Title"
-              open={showTitlePrompt}
-              setOpen={setShowTitlePrompt}
-              onSubmit={handleTitleSubmit}
+                title='Enter a title for your report'
+                placeholder='Awesome Title'
+                open={showTitlePrompt}
+                setOpen={setShowTitlePrompt}
+                onSubmit={handleTitleSubmit}
+                initialValue={title}
             />
 
             <DndContext
@@ -196,7 +255,7 @@ export default function Publish() {
                 onDragEnd={handleDragEnd}
             >
                 <ResizableSplitPane
-                    initialSplitPosition={40} // matches the original 2/5 width
+                    initialSplitPosition={40}
                     leftContent={
                         <NoteSelector
                             selectedNotes={selectedNotes}

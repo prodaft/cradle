@@ -2,11 +2,11 @@ from typing import Dict, Optional, Iterable, List
 import requests
 from notes.models import Note
 from user.models import CradleUser
-from .base import BasePublishStrategy, PublishResult
 from django.conf import settings
 from notes.markdown.platejs_render import markdown_to_pjs
 from file_transfer.utils import MinioClient
 from entries.models import Entry
+from .base import BasePublishStrategy, PublishResult
 
 
 class CatalystPublish(BasePublishStrategy):
@@ -93,7 +93,25 @@ class CatalystPublish(BasePublishStrategy):
                 f"Failed to create references: {response.status_code} {response.text}"
             )
 
-    def publish(self, title: str, notes: List[Note], user: CradleUser) -> PublishResult:
+    def generate_access_link(self, report_location: str, user: CradleUser) -> str:
+        return f"https://catalyst.prodaft.com/publications/review/{report_location}"
+
+    def edit_report(
+        self, title: str, report_location: str, notes: List[Note], user: CradleUser
+    ) -> PublishResult:
+        result = self.delete_report(report_location, user)
+        if not result.success:
+            return result
+
+        return self.create_report(title, notes, user)
+
+    def create_report(
+        self, title: str, notes: List[Note], user: CradleUser
+    ) -> PublishResult:
+        """
+        Create a brand new Catalyst post from scratch.
+        (Old `publish` logic goes here.)
+        """
         if not user.catalyst_api_key:
             return PublishResult(
                 success=False, error="User does not have a Catalyst API key"
@@ -141,10 +159,27 @@ class CatalystPublish(BasePublishStrategy):
                 return PublishResult(success=False, error=err)
             return PublishResult(
                 success=True,
-                data=f"https://catalyst.prodaft.com/publications/review/{published_post_id}",
+                data=published_post_id,
             )
         else:
             return PublishResult(
                 success=False,
                 error=f"Failed to create publication: {response.status_code} {response.json()}",
             )
+
+    def delete_report(self, report_location: str, user: CradleUser) -> PublishResult:
+        response = requests.delete(
+            f"{settings.CATALYST_HOST}/api/posts/editor-contents/{report_location}/",
+            headers={"Authorization": "Token " + user.catalyst_api_key},
+        )
+
+        if response.status_code == 404:
+            return PublishResult(success=True, data="Report not found")
+
+        if response.status_code != 204:
+            return PublishResult(
+                success=False,
+                error=f"Failed to delete publication: {response.status_code} {response.text}",
+            )
+
+        return PublishResult(success=True, data=f"Deleted: {report_location}")

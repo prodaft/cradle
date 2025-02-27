@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 
-from notes.pagination import NotesPagination
+from core.pagination import TotalPagesPagination
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from ..utils import get_guide_note
@@ -73,7 +73,7 @@ class NoteList(APIView):
 
         if filterset.is_valid():
             notes = filterset.qs
-            paginator = NotesPagination(page_size=10)
+            paginator = TotalPagesPagination(page_size=10)
             paginated_notes = paginator.paginate_queryset(notes, request)
 
             if paginated_notes is not None:

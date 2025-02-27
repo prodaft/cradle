@@ -10,7 +10,7 @@ from typing import cast
 from entries.models import Entry
 from access.models import Access
 from query.filters import EntryFilter
-from query.pagination import QueryPagination
+from core.pagination import TotalPagesPagination
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from entries.serializers import EntryResponseSerializer
 from uuid import UUID
@@ -85,7 +85,7 @@ class EntryListQuery(APIView):
         if filterset.is_valid():
             entries = filterset.qs
             entries = entries.order_by("timestamp")
-            paginator = QueryPagination(page_size=10)
+            paginator = TotalPagesPagination(page_size=10)
             paginated_entries = paginator.paginate_queryset(entries, request)
 
             if paginated_entries is not None:

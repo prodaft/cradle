@@ -42,7 +42,7 @@ const displayError = (setAlert, navigate) => {
                 if (message) {
                     break;
                 }
-                if (key.includes('error')) {
+                if (key.includes('error') || key.includes('detail')) {
                     message = JSON.stringify(err.response.data[key]);
                 }
             }

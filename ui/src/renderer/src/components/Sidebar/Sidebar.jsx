@@ -92,9 +92,9 @@ export default function Sidebar({
         navigate(graphViewLocation);
     }, [navigate]);
 
-    const publisherLocation = '/publish';
-    const handlePublisher = useCallback(() => {
-        navigate(publisherLocation);
+    const reportsLocation = '/reports';
+    const handleReports = useCallback(() => {
+        navigate(reportsLocation);
     }, [navigate]);
 
     const accountSettingsLocation = '/account/me';
@@ -154,10 +154,10 @@ export default function Sidebar({
                                 highlightedLocation={graphViewLocation}
                             />
                             <SidebarItem
-                                handleClick={handlePublisher}
+                                handleClick={handleReports}
                                 icon={<StatsReport />}
-                                text='Publisher'
-                                highlightedLocation={publisherLocation}
+                                text='Reports'
+                                highlightedLocation={reportsLocation}
                             />
 
                             <SidebarItem

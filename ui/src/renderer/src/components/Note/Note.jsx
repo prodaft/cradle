@@ -77,6 +77,11 @@ const Note = forwardRef(function({id, note, setAlert, actions = [], ghost = fals
                             </span>
                         )}
                     </div>
+                    <div className='flex items-center'>
+                        {actions.map(({ Component, props }, index) => (
+                            <Component key={index} {...props} note={note} />
+                        ))}
+                    </div>
                 </div>
 
                 {!parsedContent && (

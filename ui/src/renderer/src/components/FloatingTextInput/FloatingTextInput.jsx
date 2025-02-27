@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 const FloatingTextInput = ({
   title,
@@ -6,15 +6,20 @@ const FloatingTextInput = ({
   placeholder = 'Enter text...',
   open,
   setOpen,
+  initialValue = '',
 }) => {
   const handleOpen = () => setOpen(!open);
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState(initialValue);
+
+  useEffect(() => {
+    setValue(initialValue);
+  }, [initialValue]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (value.trim()) {
       onSubmit(value);
-      setValue('');
+      setValue(initialValue);
     }
     handleOpen();
   };

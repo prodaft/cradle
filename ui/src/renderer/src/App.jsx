@@ -28,6 +28,7 @@ import GraphExplorer from './components/GraphExplorer/GraphExplorer.jsx';
 import FleetingNoteEditor from './components/FleetingNoteEditor/FleetingNoteEditor.jsx';
 import { useTheme } from './hooks/useTheme/useTheme';
 import { ThemeProvider } from './contexts/ThemeContext/ThemeContext.jsx';
+import ReportList from './components/ReportList/ReportList.jsx';
 
 /**
  * The App component is the artifact point of the application. It wraps the entire application in the AuthProvider
@@ -79,6 +80,14 @@ function App() {
                                     path='/knowledge-graph'
                                     element={<GraphExplorer />}
                                 />
+                                <Route
+                                    path='/reports'
+                                    element={<ReportList/>}
+                                ></Route>
+                                <Route
+                                    path='/reports/:report_id'
+                                    element={<ReportList/>}
+                                ></Route>
                                 <Route
                                     path='/publish'
                                     element={<Publish/>}

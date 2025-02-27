@@ -8,7 +8,7 @@ export default function AddNote({ note, setSelectedNotes }) {
     };
 
     return (
-        <button className='pl-10'>
+        <button className=''>
             <PlusCircle onClick={handleSelectNote} />
         </button>
     );
