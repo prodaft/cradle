@@ -3,7 +3,7 @@ import SearchDialog from '../SearchDialog/SearchDialog';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NavbarButton from '../NavbarButton/NavbarButton';
-import Logo from '../Logo/Logo';
+import { useHotkeys } from 'react-hotkeys-hook';
 
 /**
  * Navbar component - the main navigation bar for the application.
@@ -23,6 +23,25 @@ export default function Navbar({
 }) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const navigate = useNavigate();
+
+
+    useHotkeys('ctrl+k, cmd+k', (event) => {
+        event.preventDefault();
+        setIsDialogOpen((b) => !b);
+    }, {
+        enableOnFormTags: true,
+        preventDefault: true
+    }, []);
+
+    useHotkeys('ctrl+l, cmd+l', (event) => {
+        event.preventDefault();
+        navigate('/editor/new');
+    }, {
+        enableOnFormTags: true,
+        preventDefault: true
+    }, []);
+
+
 
     return (
         <div

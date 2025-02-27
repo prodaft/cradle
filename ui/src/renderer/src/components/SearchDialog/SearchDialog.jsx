@@ -40,6 +40,7 @@ export default function SearchDialog({ isOpen, onClose }) {
     const dialogRoot = document.getElementById('portal-root');
     const navigate = useNavigate();
     const handleError = displayError(setAlert, navigate);
+    const [isLoading, setIsLoading] = useState(false);
 
     const populateEntrySubtypes = () => {
         getEntryClasses()
@@ -68,6 +69,7 @@ export default function SearchDialog({ isOpen, onClose }) {
 
     const performSearch = () => {
         setAlert({ ...alert, show: false });
+        setIsLoading(true);
         queryEntries(
             {
                 name: searchQuery,
@@ -80,22 +82,12 @@ export default function SearchDialog({ isOpen, onClose }) {
         )
             .then((response) => {
                 setTotalPages(response.data.total_pages);
-                setResults(
-                    response.data.results.map((result) => {
-                        const dashboardLink = createDashboardLink(result);
-                        return (
-                            <SearchResult
-                                key={result.id}
-                                name={result.name}
-                                type={result.type}
-                                subtype={result.subtype}
-                                onClick={handleResultClick(dashboardLink)}
-                            />
-                        );
-                    }),
-                );
+                setResults(response.data.results);
             })
-            .catch(displayError(setAlert, navigate));
+            .catch(displayError(setAlert, navigate))
+            .finally(() => {
+                setIsLoading(false);
+            });
     };
 
     useEffect(() => {
@@ -147,20 +139,47 @@ export default function SearchDialog({ isOpen, onClose }) {
                     setEntrySubtypeFilters={setEntrySubtypeFilters}
                 />
                 <AlertBox alert={alert} />
-                <div className='flex-grow overflow-y-auto no-scrollbar space-y-2'>
-                    {results && results.length > 0 ? (
-                        results
-                    ) : (
-                        <div className='w-full text-center text-zinc-500'>
-                            No results found
+                {isLoading ? (
+                    <div className='flex items-center justify-center h-full'>
+                        <div className='spinner-dot-pulse spinner-xl'>
+                            <div className='spinner-pulse-dot'></div>
                         </div>
-                    )}
-                </div>
-                <Pagination
-                    currentPage={page}
-                    totalPages={totalPages}
-                    onPageChange={setPage}
-                />
+                    </div>
+                ) : (
+                    <div>
+                        <div className='flex-grow overflow-y-auto no-scrollbar space-y-2'>
+                            {results && results.length > 0 ? (
+                                <div>
+                                    {results.map((result) => {
+                                        const dashboardLink =
+                                            createDashboardLink(result);
+                                        return (
+                                            <SearchResult
+                                                key={result.id}
+                                                name={result.name}
+                                                type={result.type}
+                                                subtype={result.subtype}
+                                                onClick={handleResultClick(
+                                                    dashboardLink,
+                                                )}
+                                            />
+                                        );
+                                    })}
+
+                                    <Pagination
+                                        currentPage={page}
+                                        totalPages={totalPages}
+                                        onPageChange={setPage}
+                                    />
+                                </div>
+                            ) : (
+                                <div className='w-full text-center text-zinc-500'>
+                                    No results found
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>,
         dialogRoot,
