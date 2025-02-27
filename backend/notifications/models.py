@@ -1,5 +1,5 @@
 from django.db import models
-from django_lifecycle import AFTER_CREATE, LifecycleModelMixin, hook
+from django_lifecycle import AFTER_CREATE, LifecycleModel, LifecycleModelMixin, hook
 from mail.models import NewUserNotificationMail
 from mail.models import ReportReadyMail
 from mail.models import ReportErrorMail
@@ -9,7 +9,7 @@ from model_utils.managers import InheritanceManager
 import uuid
 
 
-class MessageNotification(models.Model, LifecycleModelMixin):
+class MessageNotification(LifecycleModel):
     id: models.UUIDField = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -27,7 +27,6 @@ class MessageNotification(models.Model, LifecycleModelMixin):
 
     @hook(AFTER_CREATE)
     def send_mail(self, *args, **kwargs):
-        print("SENDING MAIL")
         self.get_mail.dispatch()
 
 
