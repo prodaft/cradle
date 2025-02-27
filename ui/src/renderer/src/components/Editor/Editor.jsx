@@ -439,7 +439,7 @@ export default function Editor({
                         theme={isDarkMode ? vscodeDark : eclipse}
                         height='100%'
                         extensions={extensions}
-                        className='w-full h-full resize-none'
+                        className='w-full h-full resize-none CodeMirror'
                         onChange={onEditorChange}
                         ref={editorRef}
                     />

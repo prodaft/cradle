@@ -3,6 +3,16 @@
 @import 'tailwindcss/utilities';
 @plugin "@tailwindcss/typography";
 
+body {
+  font-family: 'Roboto', sans-serif;
+}
+
+.CodeMirror {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 14px;
+}
+
+
 /* This class belongs to the reponse message from a vim command in the CodeMirror editor */
 .cm-vim-message {
     overflow: hidden !important;
