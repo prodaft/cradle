@@ -17,7 +17,8 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 
 import TextEditor from '../TextEditor/TextEditor';
-import { diff_match_patch } from 'diff-match-patch';
+import { useHotkeys } from 'react-hotkeys-hook';
+import { keymap } from '@codemirror/view';
 
 export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
     const [markdownContent, setMarkdownContent] = useState('');
@@ -34,6 +35,7 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
     const [dialog, setDialog] = useState(false);
     const { id } = useParams();
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(true);
+    const [editorExtensions, setEditorExtensions] = useState([]);
     const prevIdRef = useRef(null);
 
     // Ensure the ref to the markdown content is correct
@@ -165,6 +167,30 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
     };
 
     useEffect(() => {
+        const saveKeymap = keymap.of([
+            {
+                key: 'Mod-s',
+                preventDefault: true,
+                run: () => {
+                    handleSaveNote('Changes saved successfully.');
+                    return true;
+                }
+            }
+        ]);
+
+        setEditorExtensions([saveKeymap]);
+    }, [id]);
+
+    // For non-editor parts of the app
+    useHotkeys('ctrl+s, cmd+s', (event) => {
+        event.preventDefault();
+        handleSaveNote('Changes saved successfully.');
+    }, {
+        enableOnFormTags: true,
+        preventDefault: true
+    }, [id]);
+
+    useEffect(() => {
         if (!isValidContent()) return;
 
         // If we changed the ID, skip the immediate autosave
@@ -239,6 +265,7 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
                     setMarkdownContent={setMarkdownContent}
                     fileData={fileData}
                     setFileData={setFileData}
+                    editorExtensions={editorExtensions}
                 />
                 <div className='absolute bottom-4 right-8 px-2 py-1 rounded-md backdrop-blur-lg backdrop-filter bg-cradle3 bg-opacity-50 shadow-lg text-zinc-300'>
                     {isValidContent()

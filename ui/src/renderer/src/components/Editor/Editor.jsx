@@ -49,6 +49,7 @@ export default function Editor({
     setViewCollapsed,
     currentLine,
     setCurrentLine,
+    additionalExtensions = [],
 }) {
     const EMPTY_FILE_LIST = new DataTransfer().files;
     const [enableVim, setEnableVim] = useState(
@@ -177,18 +178,6 @@ export default function Editor({
         autocomplete: linkAutoComplete,
     });
 
-    const topToLine = (top) => {
-        if (!editorRef.current || !editorRef.current.view) {
-            return;
-        }
-
-        const view = editorRef.current.view;
-        const height = view.defaultLineHeight;
-
-        const line = Math.floor(top / height);
-        return line;
-    };
-
     const debouncedSetCurrentLine = useRef(
         debounce((f) => {
             setCurrentLine(f());
@@ -234,6 +223,7 @@ export default function Editor({
                 debouncedSetTop(e.target.scrollTop);
             },
         }),
+        ...additionalExtensions
     ];
 
     useEffect(() => {

@@ -14,6 +14,7 @@ export default function TextEditor({
     setMarkdownContent,
     fileData = [],
     setFileData,
+    editorExtensions = [],
 }) {
     const markdownContentRef = useRef(markdownContent);
     const fileDataRef = useRef(fileData);
@@ -37,7 +38,7 @@ export default function TextEditor({
 
         workerInstance.onmessage = (event) => {
             if (!event.data.success) {
-              return
+                return;
             }
 
             setParsedContent(DOMPurify.sanitize(event.data.html));
@@ -129,6 +130,7 @@ export default function TextEditor({
                         setViewCollapsed={previewCollapseUpdated}
                         currentLine={currentLine}
                         setCurrentLine={setCurrentLine}
+                        additionalExtensions={editorExtensions}
                     />
                 }
                 rightContent={

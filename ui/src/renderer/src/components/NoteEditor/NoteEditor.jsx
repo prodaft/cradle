@@ -12,6 +12,8 @@ import { updateNote, getNote } from '../../services/notesService/notesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import TextEditor from '../TextEditor/TextEditor';
 import { diff_match_patch } from 'diff-match-patch';
+import { useHotkeys } from 'react-hotkeys-hook';
+import { keymap } from '@codemirror/view';
 
 export default function NoteEditor() {
     const [initialMarkdown, setInitialMarkdown] = useState('');
@@ -22,6 +24,7 @@ export default function NoteEditor() {
     const markdownContentRef = useRef(markdownContent);
     const fileDataRef = useRef(fileData);
     const textEditorRef = useRef(null);
+    const [editorExtensions, setEditorExtensions] = useState([]);
     const auth = useAuth();
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
@@ -95,6 +98,30 @@ export default function NoteEditor() {
         }
     };
 
+    useEffect(() => {
+        const saveKeymap = keymap.of([
+            {
+                key: 'Mod-s',
+                preventDefault: true,
+                run: () => {
+                    handleSaveNote('Changes saved successfully.');
+                    return true;
+                }
+            }
+        ]);
+
+        setEditorExtensions([saveKeymap]);
+    }, [id]);
+
+    // For non-editor parts of the app
+    useHotkeys('ctrl+s, cmd+s', (event) => {
+        event.preventDefault();
+        handleSaveNote('Changes saved successfully.');
+    }, {
+        enableOnFormTags: true,
+        preventDefault: true
+    }, [id]);
+
     useNavbarContents(
         [
             <NavbarButton
@@ -123,6 +150,7 @@ export default function NoteEditor() {
                     setMarkdownContent={setMarkdownContent}
                     fileData={fileData}
                     setFileData={setFileData}
+                    editorExtensions={editorExtensions}  // Pass the extensions to the TextEditor
                 />
             )}
         </div>
