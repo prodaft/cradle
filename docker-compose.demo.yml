@@ -53,7 +53,7 @@ services:
       dockerfile: ./docker/Dockerfile.backend
     container_name: celery
     restart: unless-stopped
-    command: pipenv run celery -A cradle worker -Q email,notes -l INFO
+    command: pipenv run celery -A cradle worker -Q email,notes,publish -l INFO
     environment: &cradle_env
       INITIALIZE_ENTRYCLASSES: false
       DB_NAME: cradle
