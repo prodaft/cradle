@@ -2,12 +2,15 @@ from django.conf import settings
 
 from .html import HTMLPublish
 from .catalyst import CatalystPublish
+from .json import JSONPublish
 
 PUBLISH_STRATEGIES = {
-    "catalyst": lambda: CatalystPublish(
+    "catalyst": lambda anon: CatalystPublish(
         "TLP:RED",
         settings.CATALYST_PUBLISH_CATEGORY,
         settings.CATALYST_PUBLISH_SUBCATEGORY,
+        anon,
     ),
-    "html": lambda: HTMLPublish(),
+    "html": lambda anon: HTMLPublish(anon),
+    "json": lambda anon: JSONPublish(anon),
 }

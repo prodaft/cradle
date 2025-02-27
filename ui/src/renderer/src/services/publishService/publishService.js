@@ -15,9 +15,9 @@ export function getPublishOptions() {
 /**
  * Publish a set of notes with the given strategy and title.
  */
-export function publishReport(strategy, noteIds, title) {
+export function publishReport(strategy, noteIds, title, anonymized) {
     const path = `/reports/publish/`;
-    const body = { strategy, note_ids: noteIds, title };
+    const body = { strategy, note_ids: noteIds, title , anonymized: anonymized};
 
     return authAxios({
         method: 'POST',
@@ -85,5 +85,20 @@ export function retryReport(reportId) {
     return authAxios({
         method: 'POST',
         url: path,
+    });
+}
+
+// Updated importReport function that sends the file under "report"
+export function importReport(file) {
+    const formData = new FormData();
+    formData.append('report', file);
+
+    return authAxios({
+        method: 'POST',
+        url: '/reports/import/',
+        data: formData,
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
     });
 }

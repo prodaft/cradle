@@ -325,25 +325,3 @@ def cradle_connections(
 
     # Print or return the result
     return result
-
-
-if __name__ == "__main__":
-    entries = {
-        ("user", "1"): {"id": "1", "type": "user", "value": "John Doe"},
-        ("note", "1"): {"id": "1", "type": "note", "value": "Note 1"},
-    }
-    with open("test.md") as f:
-        md = f.read()
-
-    foo = cradle_connections(md)
-    tree = heading_hierarchy(foo)
-
-    print(json.dumps(tree.dict(), indent=4))
-    pairs = tree.relation_pairs()
-    a = set()
-    for i in pairs:
-        if (i[1], i[0]) in a:
-            continue
-
-        a.add(i)
-        print(f"{i[0]}, {i[1]}")

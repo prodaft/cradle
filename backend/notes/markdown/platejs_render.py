@@ -46,6 +46,10 @@ def parse_cradle_link(
     return pos
 
 
+def cradle_link(md: "Markdown") -> None:
+    md.inline.register("url_link", LINK_REGEX, parse_cradle_link, before="link")
+
+
 def parse_footnote(inline: "InlineParser", m: Match[str], state: "InlineState") -> int:
     key = m.group("footnote_key")
     value = m.group("footnote_key")
@@ -84,10 +88,6 @@ def parse_img_footnote(
         state.append_token({"type": "text", "raw": m.group(0)})
 
     return m.end()
-
-
-def cradle_link(md: "Markdown") -> None:
-    md.inline.register("url_link", LINK_REGEX, parse_cradle_link, before="link")
 
 
 def img_footnote(md: "Markdown") -> None:

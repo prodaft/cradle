@@ -31,7 +31,7 @@ class TaskScheduler:
             SmartLinkerTask(user),
         ]
 
-    def run_pipeline(self, note: Optional[Note] = None):
+    def run_pipeline(self, note: Optional[Note] = None, validate: bool = True):
         """Performs all of the checks that are necessary for creating a note.
         First, it creates a dictionary mapping entry types to all of the referenced
         entries in the note. Then, it performs the mentioned checks. Lastly, it
@@ -70,6 +70,9 @@ class TaskScheduler:
             tasks = []
 
             for task in self.processing:
+                if task.is_validator and not validate:
+                    continue
+
                 async_task, entries = task.run(note, entries)
                 if async_task:
                     tasks.append(async_task)

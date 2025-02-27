@@ -1,6 +1,8 @@
 from django.db import models
 from django_lifecycle import AFTER_CREATE, LifecycleModelMixin, hook
 from mail.models import NewUserNotificationMail
+from mail.models import ReportReadyMail
+from mail.models import ReportErrorMail
 from user.models import CradleUser
 from entries.models import Entry
 from model_utils.managers import InheritanceManager
@@ -25,6 +27,7 @@ class MessageNotification(models.Model, LifecycleModelMixin):
 
     @hook(AFTER_CREATE)
     def send_mail(self, *args, **kwargs):
+        print("SENDING MAIL")
         self.get_mail.dispatch()
 
 
@@ -58,9 +61,6 @@ class ReportRenderNotification(MessageNotification):
 
     @property
     def get_mail(self):
-        # Return an instance of ReportReadyMail for sending the "report ready" email.
-        from mail.models import ReportReadyMail
-
         return ReportReadyMail(self.user, self.published_report)
 
 
@@ -74,7 +74,4 @@ class ReportProcessingErrorNotification(MessageNotification):
 
     @property
     def get_mail(self):
-        # Return an instance of ReportErrorMail for sending the error email.
-        from mail.models import ReportErrorMail
-
         return ReportErrorMail(self.user, self.published_report, self.error_message)

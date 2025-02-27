@@ -10,8 +10,10 @@ from .base import BasePublishStrategy, PublishResult
 
 
 class CatalystPublish(BasePublishStrategy):
-    def __init__(self, tlp: str, category: str, subcategory: str) -> None:
-        super().__init__()
+    def __init__(
+        self, tlp: str, category: str, subcategory: str, anonymized: bool
+    ) -> None:
+        super().__init__(anonymized)
         self.category = category
         self.subcategory = subcategory
         self.tlp = tlp
@@ -108,23 +110,26 @@ class CatalystPublish(BasePublishStrategy):
     def create_report(
         self, title: str, notes: List[Note], user: CradleUser
     ) -> PublishResult:
-        """
-        Create a brand new Catalyst post from scratch.
-        (Old `publish` logic goes here.)
-        """
         if not user.catalyst_api_key:
             return PublishResult(
                 success=False, error="User does not have a Catalyst API key"
             )
 
-        joint_md = "\n-----\n".join(note.content for note in notes)
+        # Use anonymized note content if enabled.
+        joint_md = "\n-----\n".join(
+            self._anonymize_note(note).content for note in notes
+        )
         entries: Iterable[Entry] = Note.objects.get_entries_from_notes(notes)
         entry_map = {}
         for i in entries:
-            key = (i.entry_class.subtype, i.name)
-            entry = self.get_entity(i.entry_class.catalyst_type, i.name, user)
-            if entry:
-                entry_map[key] = entry
+            # Anonymize the entry before processing.
+            anonymized_entry = self._anonymize_entry(i)
+            key = (i.entry_class.subtype, anonymized_entry.name)
+            entity = self.get_entity(
+                i.entry_class.catalyst_type, anonymized_entry.name, user
+            )
+            if entity:
+                entry_map[key] = entity
 
         footnotes = {}
         for note in notes:

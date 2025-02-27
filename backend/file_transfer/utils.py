@@ -1,5 +1,5 @@
 import io
-from typing import Optional
+from typing import Dict, Optional
 from minio import Minio
 import uuid
 from datetime import timedelta
@@ -34,7 +34,10 @@ class MinioClient:
         self.client.make_bucket(bucket_name)
 
     def create_presigned_put(
-        self, bucket_name: str, file_name: str, expiry_time: timedelta
+        self,
+        bucket_name: str,
+        file_name: str,
+        expiry_time: timedelta,
     ) -> tuple[str, str]:
         """Generates a Minio object path of the form bucket_name/<minio_file_name>,
         where <minio_file_name> is the concatenation of the provided file name
@@ -56,7 +59,9 @@ class MinioClient:
 
         minio_file_name = str(uuid.uuid4()) + "-" + file_name
         presigned_url = self.client.presigned_put_object(
-            bucket_name, minio_file_name, expires=expiry_time
+            bucket_name,
+            minio_file_name,
+            expires=expiry_time,
         )
 
         return (minio_file_name, presigned_url)

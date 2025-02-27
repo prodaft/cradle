@@ -113,9 +113,7 @@ class AccessRequestMail(TemplatedMail):
         )
 
     def dispatch(self):
-        self._dispatch_celery(
-            self.recipient.email
-        )  # Fixed: using recipient instead of user
+        self._dispatch_celery(self.recipient.email)
 
 
 class NewUserNotificationMail(TemplatedMail):
@@ -130,6 +128,45 @@ class NewUserNotificationMail(TemplatedMail):
         super().__init__(
             subject="CRADLE - New User Awaiting Activation",
             template_name="mail/new_user_notification.html",
+            params=params,
+        )
+
+    def dispatch(self):
+        self._dispatch_celery(self.user.email)
+
+
+class ReportReadyMail(TemplatedMail):
+    def __init__(self, user, published_report) -> None:
+        self.user = user
+        self.published_report = published_report
+        params = {
+            "user": user,
+            "report": published_report,
+        }
+        super().__init__(
+            subject="CRADLE - Your Report is Ready",
+            template_name="mail/report_ready.html",
+            params=params,
+        )
+
+    def dispatch(self):
+        self._dispatch_celery(self.user.email)
+
+
+class ReportErrorMail(TemplatedMail):
+    def __init__(self, user, published_report, error_message=None) -> None:
+        self.user = user
+        self.published_report = published_report
+        self.error_message = error_message
+        params = {
+            "user": user,
+            "report": published_report,
+            "error_message": error_message
+            or "Unknown error occurred during report processing.",
+        }
+        super().__init__(
+            subject="CRADLE - Error Processing Your Report",
+            template_name="mail/report_error.html",
             params=params,
         )
 

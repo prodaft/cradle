@@ -1,4 +1,6 @@
-from typing import List, Optional
+from typing import Dict, List, Optional
+from entries.models import Entry, EntryClass
+from notes.markdown.anon_md_renderer import Anonymizer, anonymize_markdown
 from notes.models import Note
 from user.models import CradleUser
 
@@ -19,6 +21,51 @@ class BasePublishStrategy:
     """
     Base interface for a publishing strategy.
     """
+
+    def __init__(self, anonymize: bool):
+        self.anonymize = anonymize
+        self.anonymizer = Anonymizer()
+        self._eclasses = None
+
+    @property
+    def eclasses(self) -> Dict[str, EntryClass]:
+        if self._eclasses is None:
+            eclasses = list(EntryClass.objects.all())
+            self._eclasses = {eclass.subtype: eclass for eclass in eclasses}
+
+        return self._eclasses
+
+    def _anonymize_note(self, note: Note) -> Note:
+        """
+        Anonymize a note.
+        """
+        if not self.anonymize:
+            return note
+
+        content = anonymize_markdown(note.content, self.eclasses, self.anonymizer)
+
+        return Note(
+            content=content,
+            author=note.author,
+            editor=note.editor,
+            timestamp=note.timestamp,
+            edit_timestamp=note.edit_timestamp,
+            publishable=note.publishable,
+        )
+
+    def _anonymize_entry(self, entry: Entry) -> Entry:
+        """
+        Anonymize an entry.
+        """
+        if not self.anonymize:
+            return entry
+
+        eclass = entry.entry_class
+        return Entry(
+            id=entry.id,
+            name=self.anonymizer.anonymize(eclass, entry.name),
+            entry_class=entry.entry_class,
+        )
 
     def generate_access_link(self, report_location: str, user: CradleUser) -> str:
         """

@@ -12,6 +12,10 @@ from ..models import Note
 
 
 class AccessControlTask(BaseTask):
+    @property
+    def is_validator(self) -> bool:
+        return True
+
     def run(self, note: Note, entries: Iterable[Entry]) -> Tuple[None, Iterable[Entry]]:
         """
         Check if the user has access to all the entries being refenced

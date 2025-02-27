@@ -20,7 +20,7 @@ import { arrayMove } from '@dnd-kit/sortable';
 import { NoButtonsSensor } from '../../utils/dndUtils/dndUtils';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { Download, FloppyDisk, Upload } from 'iconoir-react';
+import { Download, Eye, EyeClosed, FloppyDisk, Upload } from 'iconoir-react';
 
 import NavbarDropdown from '../NavbarDropdown/NavbarDropdown';
 import NavbarButton from '../NavbarButton/NavbarButton';
@@ -35,6 +35,7 @@ export default function Publish() {
     const [publishOptions, setPublishOptions] = useState({ upload: [], download: [] });
     const [showTitlePrompt, setShowTitlePrompt] = useState(false);
     const [publishStrategy, setPublishStrategy] = useState(null);
+    const [anonymize, setAnonymize] = useState(false);
 
     const [isEditing, setIsEditing] = useState(false);
     const [reportId, setReportId] = useState(null);
@@ -191,7 +192,7 @@ export default function Publish() {
                 })
                 .catch(displayError(setAlert));
         } else {
-            publishReport(publishStrategy, noteIds, enteredTitle)
+            publishReport(publishStrategy, noteIds, enteredTitle, anonymize)
                 .then(() => {
                     navigate(`/reports/`);
                 })
@@ -212,7 +213,7 @@ export default function Publish() {
         } else {
             return [
                 <NavbarDropdown
-                    key='upload-publish'
+                    key='-publish'
                     icon={<Upload />}
                     text={'Upload Report'}
                     contents={publishOptions.upload.map((option) => ({
@@ -229,11 +230,17 @@ export default function Publish() {
                         handler: publishReportWithStrategy(option.strategy),
                     }))}
                 />,
+                <NavbarButton
+                    key='anonymous-publish'
+                    icon={anonymize ? <EyeClosed /> : <Eye />}
+                    text={anonymize ? 'Anonymized' : 'Transparent'}
+                    onClick={() => setAnonymize(!anonymize)}
+                />,
             ];
         }
     };
 
-    useNavbarContents(navbarContents, [publishOptions]);
+    useNavbarContents(navbarContents, [publishOptions, anonymize, isEditing]);
 
     return (
         <div className='w-full h-full overflow-y-hidden relative'>

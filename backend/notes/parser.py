@@ -129,8 +129,6 @@ class LinkTreeNode:
 
 
 class ProcessCradleLinks(BaseRenderer):
-    """A renderer for converting Markdown to HTML."""
-
     NAME: ClassVar[Literal["cradle"]] = "cradle"
 
     def __init__(

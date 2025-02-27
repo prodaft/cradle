@@ -95,14 +95,10 @@ def remap_links(
     md: str,
     entryclass_remap: Dict[str, str],
 ) -> str:
-    # Create a renderer instance
     renderer = MarkdownRendererWithCradle(entryclass_remap=entryclass_remap)
 
-    # Create a Markdown instance using the renderer
     markdown = mistune.create_markdown(renderer=renderer, plugins=[table, cradle_link])
 
-    # Render the sample Markdown string
     result, state = markdown.parse(md)
 
-    # Print or return the result
     return result

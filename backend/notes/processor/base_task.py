@@ -13,6 +13,10 @@ class BaseTask(ABC):
         super().__init__()
         self.user = user
 
+    @property
+    def is_validator(self) -> bool:
+        raise NotImplementedError()
+
     @abstractmethod
     def run(
         self, note: Note, entries: Iterable[Entry]

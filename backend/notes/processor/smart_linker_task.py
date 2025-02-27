@@ -13,6 +13,10 @@ from ..tasks import smart_linker_task
 
 
 class SmartLinkerTask(BaseTask):
+    @property
+    def is_validator(self) -> bool:
+        return False
+
     def run(
         self, note: Note, entries: Iterable[Entry]
     ) -> Tuple[Celery, Iterable[Entry]]:

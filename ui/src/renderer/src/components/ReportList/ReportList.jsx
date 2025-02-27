@@ -2,11 +2,16 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ReportCard from '../ReportCard/ReportCard';
 import Pagination from '../Pagination/Pagination';
-import { getReports, getReport } from '../../services/publishService/publishService';
+import {
+    getReports,
+    getReport,
+    importReport,
+} from '../../services/publishService/publishService';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import NavbarButton from '../NavbarButton/NavbarButton';
-import { PlusCircle } from 'iconoir-react';
+import { PlusCircle, CloudUpload } from 'iconoir-react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import useAuth from '../../hooks/useAuth/useAuth';
 
 export default function ReportList() {
     const { report_id } = useParams();
@@ -16,6 +21,7 @@ export default function ReportList() {
     const [totalPages, setTotalPages] = useState(1);
     const navigate = useNavigate();
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const auth = useAuth();
 
     useEffect(() => {
         fetchReports();
@@ -44,6 +50,31 @@ export default function ReportList() {
         setPage(newPage);
     };
 
+    const handleImportClick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.onchange = (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                importReport(file)
+                    .then((response) => {
+                        console.log('Report imported successfully', response);
+                        // Optionally refresh the list or display a success message
+                        fetchReports();
+                    })
+                    .catch((error) => {
+                        console.error('Failed to import report', error);
+                        setAlert({
+                            show: true,
+                            message: 'Failed to import report',
+                            color: 'red',
+                        });
+                    });
+            }
+        };
+        input.click();
+    };
+
     const navbarContents = [
         <NavbarButton
             key='new-publish-button'
@@ -52,6 +83,17 @@ export default function ReportList() {
             onClick={() => navigate('/publish')}
         />,
     ];
+
+    if (auth.isAdmin()) {
+      navbarContents.push(
+        <NavbarButton
+            key='import-report-button'
+            text='Import Report'
+            icon={<CloudUpload />}
+            onClick={handleImportClick}
+        />,
+      );
+    }
 
     useNavbarContents(navbarContents, []);
 

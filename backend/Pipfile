@@ -37,5 +37,8 @@ celery = {extras = ["redis"], version = "*"}
 redis = "*"
 python-redis-lock = "*"
 diff-match-patch = "*"
+rstr = "*"
+xeger = "*"
+bleach = "*"
 
 [dev-packages]

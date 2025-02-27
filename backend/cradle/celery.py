@@ -22,6 +22,8 @@ app.conf.task_routes = {
     "notes.tasks.entry_population_task": {"queue": "notes"},
     "publish.tasks.generate_report": {"queue": "publish"},
     "publish.tasks.edit_report": {"queue": "publish"},
+    "publish.tasks.import_json_report": {"queue": "import"},
+    "publish.tasks.download_file_for_note": {"queue": "import"},
 }
 
 app.conf.task_default_priority = 5

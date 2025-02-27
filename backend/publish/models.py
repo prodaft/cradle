@@ -28,6 +28,10 @@ class ReportStatus(models.TextChoices):
     ERROR = "error", "Error"
 
 
+class ImportStrategy(models.TextChoices):
+    IMPORT = "import", "Import"
+
+
 class PublishedReport(models.Model, LoggableModelMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
@@ -40,9 +44,14 @@ class PublishedReport(models.Model, LoggableModelMixin):
     notes = models.ManyToManyField(Note, related_name="published_reports")
     created_at = models.DateTimeField(auto_now_add=True)
     strategy = models.CharField(
-        max_length=255, choices=UploadStrategies.choices + DownloadStrategies.choices
+        max_length=255,
+        choices=UploadStrategies.choices
+        + DownloadStrategies.choices
+        + ImportStrategy.choices,
     )
-    report_location = models.CharField(max_length=1024)
+    anonymized = models.BooleanField(default=False)
+    report_location = models.CharField(max_length=1024, null=True)
+    extra_data = models.JSONField(null=True, blank=True)
 
     status = models.CharField(
         max_length=10,

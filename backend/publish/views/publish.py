@@ -36,6 +36,7 @@ class PublishReportAPIView(APIView):
         note_ids = data["note_ids"]
         title = data["title"]
         strategy_key = data["strategy"]
+        anonymized = data["anonymized"]
 
         user = request.user
 
@@ -54,6 +55,7 @@ class PublishReportAPIView(APIView):
                 )
 
         publisher_factory = PUBLISH_STRATEGIES.get(strategy_key)
+
         if publisher_factory is None:
             return Response(
                 {"detail": "Strategy not found."}, status=status.HTTP_404_NOT_FOUND
@@ -64,7 +66,8 @@ class PublishReportAPIView(APIView):
             user=user,
             strategy=strategy_key,
         )
-        report.notes.set(notes)
+
+        report.anonymized = anonymized
         report.save()
         report.notes.set(notes)
         report.log_create(user)

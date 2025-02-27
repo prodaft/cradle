@@ -16,6 +16,10 @@ from django.conf import Settings, settings
 
 
 class ValidateNoteTask(BaseTask):
+    @property
+    def is_validator(self) -> bool:
+        return True
+
     def run(self, note: Note, entries: Iterable[Entry]) -> Tuple[None, Iterable[Entry]]:
         """
         Create the entry classes that are missing for a note.

@@ -19,7 +19,11 @@ class ReportListDeleteAPIView(generics.ListAPIView):
     DELETE /publish/ deletes a report (expects {"id": "<report_id>"} in the body).
     """
 
-    queryset = PublishedReport.objects.all()
+    def get_queryset(self):
+        return PublishedReport.objects.filter(user=self.request.user).order_by(
+            "-created_at"
+        )
+
     serializer_class = ReportSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -71,10 +75,14 @@ class ReportDetailAPIView(generics.RetrieveAPIView):
     GET /reports/<id>/ returns the details of a specific report.
     """
 
-    queryset = PublishedReport.objects.all().order_by("-created_at")
     serializer_class = ReportSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return PublishedReport.objects.filter(user=self.request.user).order_by(
+            "-created_at"
+        )
 
     def put(self, request, pk):
         try:

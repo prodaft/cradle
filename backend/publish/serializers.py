@@ -17,30 +17,31 @@ class ReportSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "status",
+            "anonymized",
             "created_at",
             "strategy",
             "strategy_label",
             "report_url",
             "error_message",
             "note_ids",
+            "extra_data",
         ]
 
     def get_note_ids(self, obj):
         return list(obj.notes.values_list("id", flat=True))
 
     def get_report_url(self, obj):
-        if obj.status != ReportStatus.DONE:
+        if obj.status != ReportStatus.DONE or obj.report_location is None:
             return None
 
         publisher_factory = PUBLISH_STRATEGIES.get(obj.strategy)
         if publisher_factory is None:
             raise ValueError("Strategy not found.")
 
-        publisher = publisher_factory()
+        publisher = publisher_factory(False)
         return publisher.generate_access_link(obj.report_location, obj.user)
 
     def get_strategy_label(self, obj):
-        # Because `strategy` is a CharField with choices, this will return the label.
         return obj.get_strategy_display()
 
 
@@ -61,6 +62,9 @@ class PublishReportSerializer(serializers.Serializer):
     )
     title = serializers.CharField(help_text="Title for the published report.")
     strategy = serializers.CharField(help_text="Name of the strategy to use.")
+    anonymized = serializers.BooleanField(
+        help_text="Whether the report should be anonymized.", default=False
+    )
 
     def validate_strategy(self, value):
         from .models import UploadStrategies, DownloadStrategies

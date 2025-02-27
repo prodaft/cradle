@@ -14,6 +14,10 @@ from ..tasks import entry_population_task
 
 
 class EntryPopulationTask(BaseTask):
+    @property
+    def is_validator(self) -> bool:
+        return False
+
     def run(
         self, note: Note, entries: Iterable[Entry]
     ) -> Tuple[Celery, Iterable[Entry]]:

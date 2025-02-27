@@ -1,4 +1,4 @@
-from .views.note_publish_view import NotePublishDetail, NotePublishList
+from .views.note_publish_view import NotePublishDetail
 from .views.note_view import NoteList, NoteDetail
 from django.urls import path
 
@@ -10,5 +10,4 @@ urlpatterns = [
         name="note_publish_detail",
     ),
     path("<str:note_id_s>/", NoteDetail.as_view(), name="note_detail"),
-    path("publish/", NotePublishList.as_view(), name="note_publish_list"),
 ]
