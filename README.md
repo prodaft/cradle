@@ -11,7 +11,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/prodaft/cradle">
-    <img src="logos/light.svg" alt="Logo" width="200" height="200">
+    <img src="logos/light.svg" alt="Logo" width="200">
   </a>
 
   <h3 align="center">CRADLE Monorepo</h3>
@@ -47,6 +47,7 @@
       </ul>
     </li>
     <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#acknowledgments">Acknowledgments</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
   </ol>
@@ -124,11 +125,17 @@ We welcome contributions from the security community! Here's how to help:
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-### Top Contributors
+## Acknowledgments
 
-<a href="https://github.com/prodaft/cradle/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=prodaft/cradle" alt="Project contributors list" />
-</a>
+CRADLE is developed by PRODAFT in collaboration with students from TU Delft. Special thanks to everyone who contributes to making this project possible.
+
+**Contributors**
+- [Tudor Măgirescu](https://github.com/TudorMagirescu)
+- [Călin-Marian Diacicov](https://github.com/klinashka)
+- [Daniel Popovici](https://github.com/Babu-on-Github)
+- [Matei Grigore](https://github.com/mateigrigore)
+- [Razvan Dinu](https://github.com/razvand13)
+- [Yigit Colakoglu](https://github.com/arg3t)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
