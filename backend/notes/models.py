@@ -1,6 +1,6 @@
 from django.db import models
 
-from .markdown.parser import LinkTreeNode, cradle_connections, heading_hierarchy
+from .markdown.to_links import LinkTreeNode, cradle_connections, heading_hierarchy
 from entries.models import Entry
 from logs.models import LoggableModelMixin
 from .managers import NoteManager

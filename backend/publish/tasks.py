@@ -80,7 +80,7 @@ def edit_report(report_id):
         report.save()
         return
 
-    publisher = publisher_factory()
+    publisher = publisher_factory(report.anonymized)
     result = publisher.edit_report(title, report.report_location, notes, user)
     if not result.success:
         report.status = ReportStatus.ERROR

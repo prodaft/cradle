@@ -3,7 +3,7 @@ import requests
 from notes.models import Note
 from user.models import CradleUser
 from django.conf import settings
-from notes.markdown.platejs_render import markdown_to_pjs
+from notes.markdown.to_platejs import markdown_to_pjs
 from file_transfer.utils import MinioClient
 from entries.models import Entry
 from .base import BasePublishStrategy, PublishResult

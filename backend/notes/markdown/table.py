@@ -17,8 +17,6 @@ if TYPE_CHECKING:
     from mistune.core import BaseRenderer, BlockState
     from mistune.markdown import Markdown
 
-# https://michelf.ca/projects/php-markdown/extra/#table
-
 __all__ = ["table", "table_in_quote", "table_in_list"]
 
 

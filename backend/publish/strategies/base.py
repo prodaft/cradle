@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 from entries.models import Entry, EntryClass
-from notes.markdown.anon_md_renderer import Anonymizer, anonymize_markdown
+from notes.markdown.to_markdown import Anonymizer, anonymize_markdown
 from notes.models import Note
 from user.models import CradleUser
 

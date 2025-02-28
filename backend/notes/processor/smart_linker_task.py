@@ -4,7 +4,7 @@ from typing import Iterable, Optional, Tuple
 from celery import Celery
 from entries.models import Entry
 from entries.enums import EntryType
-from ..markdown.parser import Link
+from ..markdown.to_links import Link
 
 from .base_task import BaseTask
 from ..models import Note, Relation

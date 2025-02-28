@@ -1,43 +1,19 @@
 import json
 from collections.abc import Iterable
-from typing import Any, ClassVar, Dict, List, Literal, Match, Optional, Set, Tuple
+from typing import Any, Dict, List, Match, Optional, Set, Tuple
 import mistune
 from mistune.core import BaseRenderer, BlockState
 
-from mistune.markdown import Markdown
 import itertools
-from mistune import InlineParser, InlineState
 
-LINK_REGEX = r"\[\[(?P<cl_type>[^:\|\]]+?):(?P<cl_value>(?:\\[\[\]\|]|[^\[\]\|])+?)(?:\|(?P<cl_alias>(?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]"  # noqa: E501 to avoid splitting the regex on two lines
-
-
-def parse_cradle_link(
-    inline: "InlineParser", m: Match[str], state: "InlineState"
-) -> int:
-    pos = m.end()
-
-    state.append_token(
-        {
-            "type": "cradle_link",
-            "attrs": {
-                "key": m.group("cl_type"),
-                "value": m.group("cl_value"),
-                "alias": m.group("cl_alias"),
-            },
-        }
-    )
-
-    return pos
+from .common import cradle_link_plugin, footnote_plugin
+from .table import table
 
 
-def cradle_link(md: "Markdown") -> None:
-    md.inline.register("url_link", LINK_REGEX, parse_cradle_link, before="link")
-
-
-def flatten(l: List) -> List:
+def flatten(arr: List) -> List:
     nl = []
 
-    for i in l:
+    for i in arr:
         if isinstance(i, list):
             nl.extend(flatten(i))
         else:
@@ -97,11 +73,13 @@ class LinkTreeNode:
             "children": [i.dict() for i in self.children],
         }
 
-    def _relation_pairs(self) -> Tuple[int, List[Link], Set[Tuple[Link, Link]]]:
-        children = set()
-        pairs = set()
+    def _relation_pairs(
+        self,
+    ) -> Tuple[int, Iterable[Link], Iterable[Tuple[Link, Link]]]:
+        children: set[Link] = set()
+        pairs: Set[Tuple[Link, Link]] = set()
         parents = set(self.parents)
-        d0_children = set()
+        d0_children: Set[Link] = set()
 
         if self.children:
             for i in self.children:
@@ -114,27 +92,35 @@ class LinkTreeNode:
                 pairs.update(bar)
 
         pairs.update({(x, y) for (x, y) in itertools.permutations(parents, 2)})
-        pairs.update({(x, y) for (x, y) in itertools.product(d0_children, d0_children)})
-        pairs.update({(x, y) for (x, y) in itertools.product(parents, children)})
-        pairs.update({(x, y) for (x, y) in itertools.product(children, parents)})
+        pairs.update(
+            {(x, y) for (x, y) in itertools.product(d0_children, d0_children) if x != y}
+        )
+        pairs.update(
+            {(x, y) for (x, y) in itertools.product(parents, children) if x != y}
+        )
+        pairs.update(
+            {(x, y) for (x, y) in itertools.product(children, parents) if x != y}
+        )
 
         if not parents:
             return 1, d0_children, pairs
 
         return 0, parents, pairs
 
-    def relation_pairs(self) -> Set[Tuple[Link, Link]]:
+    def relation_pairs(self) -> Iterable[Tuple[Link, Link]]:
         _, parents, pairs = self._relation_pairs()
         return pairs
 
 
-class ProcessCradleLinks(BaseRenderer):
-    NAME: ClassVar[Literal["cradle"]] = "cradle"
+class LinksRenderer(BaseRenderer):
+    """A renderer for converting Markdown to HTML."""
+
+    NAME = "cradle"
 
     def __init__(
         self,
     ) -> None:
-        super(ProcessCradleLinks, self).__init__()
+        super(LinksRenderer, self).__init__()
 
     def render_token(self, token: Dict[str, Any], state: BlockState) -> Link:
         func = self._get_method(token["type"])
@@ -157,8 +143,8 @@ class ProcessCradleLinks(BaseRenderer):
 
     def render_tokens(
         self, tokens: Iterable[Dict[str, Any]], state: BlockState
-    ) -> List[Link]:
-        results = []
+    ) -> List[LinkTreeNode]:
+        results: List[LinkTreeNode] = []
 
         for i in self.iter_tokens(tokens, state):
             if isinstance(i, list):
@@ -196,7 +182,7 @@ class ProcessCradleLinks(BaseRenderer):
     def softbreak(self) -> None:
         return None
 
-    def paragraph(self, children: List) -> LinkTreeNode:
+    def paragraph(self, children: List) -> LinkTreeNode | None:
         if len(children) == 0:
             return None
 
@@ -210,13 +196,19 @@ class ProcessCradleLinks(BaseRenderer):
     def cradle_link(self, key: str, value: str, alias: Optional[str]) -> LinkTreeNode:
         return LinkTreeNode(parents=[Link(key, value, alias)], type="cradle")
 
-    def blank_line(self) -> Dict[str, Any]:
+    def footnote_ref(self, value: str) -> LinkTreeNode:
+        return LinkTreeNode(type="footnote")
+
+    def img_footnote_ref(self, value: str, key: str) -> LinkTreeNode:
+        return LinkTreeNode(type="img_footnote")
+
+    def blank_line(self) -> None:
         return None
 
-    def thematic_break(self) -> Dict[str, Any]:
+    def thematic_break(self) -> None:
         return None
 
-    def block_text(self, children: List) -> LinkTreeNode:
+    def block_text(self, children: List) -> LinkTreeNode | None:
         if len(children) == 1:
             return children[0]
 
@@ -231,13 +223,13 @@ class ProcessCradleLinks(BaseRenderer):
     def block_quote(self, children: List) -> LinkTreeNode:
         return LinkTreeNode(children=children, type="quote")
 
-    def block_html(self, html: str) -> Dict[str, Any]:
+    def block_html(self, html: str) -> None:
         return None
 
-    def block_error(self, children: List) -> Dict[str, Any]:
+    def block_error(self, children: List) -> LinkTreeNode:
         return LinkTreeNode(children=children, type="error")
 
-    def list(self, children: List, ordered: bool, **attrs: Any) -> Dict[str, Any]:
+    def list(self, children: List, ordered: bool, **attrs: Any) -> LinkTreeNode:
         last_c = None
 
         for c in children:
@@ -275,11 +267,11 @@ class ProcessCradleLinks(BaseRenderer):
     ) -> List:
         return children
 
-    def inline_html(self, html: str) -> str:
+    def inline_html(self, html: str) -> None:
         return None
 
 
-def heading_hierarchy(children: List[LinkTreeNode]) -> List[LinkTreeNode]:
+def heading_hierarchy(children: List[LinkTreeNode]) -> LinkTreeNode:
     root = LinkTreeNode(children=[])
     levels = [root]
 
@@ -299,13 +291,14 @@ def heading_hierarchy(children: List[LinkTreeNode]) -> List[LinkTreeNode]:
 
 def cradle_connections(
     md: str,
-) -> str:
+) -> List[LinkTreeNode]:
     # Create a renderer instance
-    renderer = ProcessCradleLinks()
+    renderer = LinksRenderer()
 
     # Create a Markdown instance using the renderer
     markdown = mistune.create_markdown(
-        renderer=renderer, plugins=["table", cradle_link]
+        renderer=renderer, 
+        plugins=[table, cradle_link_plugin, footnote_plugin]
     )
 
     # Render the sample Markdown string
@@ -313,25 +306,3 @@ def cradle_connections(
 
     # Print or return the result
     return result
-
-
-if __name__ == "__main__":
-    entries = {
-        ("user", "1"): {"id": "1", "type": "user", "value": "John Doe"},
-        ("note", "1"): {"id": "1", "type": "note", "value": "Note 1"},
-    }
-    with open("test.md") as f:
-        md = f.read()
-
-    foo = cradle_connections(md)
-    tree = heading_hierarchy(foo)
-
-    print(json.dumps(tree.dict(), indent=4))
-    pairs = tree.relation_pairs()
-    a = set()
-    for i in pairs:
-        if (i[1], i[0]) in a:
-            continue
-
-        a.add(i)
-        print(f"{i[0]}, {i[1]}")

@@ -18,7 +18,7 @@ from .exceptions import (
     InvalidRegexException,
 )
 from .enums import EntryType
-from notes.markdown.md_renderer import remap_links
+from notes.markdown.to_markdown import remap_links
 
 import uuid
 import re

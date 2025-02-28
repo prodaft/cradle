@@ -2,12 +2,14 @@ import uuid
 import bleach
 from io import BytesIO
 from datetime import timedelta
-from typing import List
+from typing import List, Dict, Optional, Tuple
 
 import mistune
 from django.template.loader import get_template
 
 from notes.models import Note
+from notes.markdown.to_html import markdown_to_html
+from entries.models import EntryClass
 from user.models import CradleUser
 from file_transfer.utils import MinioClient
 from .base import BasePublishStrategy, PublishResult
@@ -40,29 +42,49 @@ class HTMLPublish(BasePublishStrategy):
             "div",
             "span",
             "br",
+            "img",
+            "pre",
         ]
-        allowed_attrs = {"a": ["href", "title"]}
+        allowed_attrs = {
+            "a": ["href", "title"],
+            "img": ["src", "alt", "title"],
+            "span": ["class", "data-id", "data-type", "data-key", "data-value"],
+        }
+        allowed_protocols = {"data", "http", "https"}
         return bleach.clean(
-            html, tags=allowed_tags, attributes=allowed_attrs, strip=True
+            html, tags=allowed_tags, attributes=allowed_attrs, protocols=allowed_protocols, strip=True
         )
 
-    def _build_html(self, title: str, notes: List[Note], header: str) -> str:
-        markdown_renderer = mistune.create_markdown(renderer=mistune.HTMLRenderer())
+    def _build_html(self, title: str, notes: List[Note], user) -> str:
         body = ""
+
+        footnotes = {}
+        for note in notes:
+            for f in note.files.all():
+                footnotes[f.minio_file_name] = (f.bucket_name, f.minio_file_name)
+
         for note in notes:
             anonymized_note = self._anonymize_note(note)
-            rendered_note = markdown_renderer(anonymized_note.content)
+            rendered_note = markdown_to_html(
+                anonymized_note.content,
+                fetch_image=MinioClient().fetch_file,
+                footnotes=footnotes
+            )
             sanitized_note = self._sanitize_html(rendered_note)
             body += f"<div class='note'>{sanitized_note}</div>\n"
 
         sanitized_title = self._sanitize_html(title)
-        sanitized_header = self._sanitize_html(header)
+
+        colors = {}
+        
+        for i in EntryClass.objects.all():
+            colors[i.subtype] = i.color 
 
         template = get_template("report/simple.html")
         context = {
             "title": sanitized_title,
-            "header": sanitized_header,
             "body": body,
+            "styles": "\n".join([f'.entry[data-type="{k}"] {{ background-color: "{v}"; }}' for k,v in colors.items()]),
         }
         return template.render(context)
 
@@ -79,7 +101,7 @@ class HTMLPublish(BasePublishStrategy):
     def create_report(
         self, title: str, notes: List[Note], user: CradleUser
     ) -> PublishResult:
-        full_html = self._build_html(title, notes, header=title)
+        full_html = self._build_html(title, notes, user=user)
         file_name = f"{uuid.uuid4()}.html"
         bucket_name = self._get_bucket_name(user)
 
@@ -110,7 +132,7 @@ class HTMLPublish(BasePublishStrategy):
         if client is None:
             return PublishResult(success=False, error="Minio client is not configured")
 
-        full_html = self._build_html(title, notes, header="Updated")
+        full_html = self._build_html(title, notes, user=user)
         data = BytesIO(full_html.encode("utf-8"))
         size = len(full_html)
         content_type = "text/html"

@@ -1,7 +1,7 @@
 from typing import Iterable
 
 from entries.models import Entry
-from .parser import Link
+from .markdown.to_links import Link
 from rest_framework.exceptions import APIException
 from django.conf import settings
 
