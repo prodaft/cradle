@@ -1,158 +1,115 @@
-# CRADLE Frontend
+<a id="readme-top"></a>
 
-Welcome to the CRADLE frontend codebase! This is the Electron/React client application for CRADLE.
-If you would like to run the entire CRADLE system (including the backend and all services) via Docker, refer to the [main README](../README.md) for quick start instructions.
+<div align="center">
+  <h3 align="center">CRADLE Frontend</h3>
+  <p align="center">
+    Electron/Web client for CRADLE
+    <br />
+    <a href="https://github.com/prodaft/cradle"><strong>Explore main project »</strong></a>
+  </p>
+</div>
 
----
+<!-- ABOUT THE PROJECT -->
+## About
 
-## Overview
+The CRADLE frontend is a modern desktop application built with:
+- **React** for UI components
+- **Electron** for desktop runtime
+- **Vite** for development and bundling
+- **Tailwind CSS** for styling
 
-The CRADLE frontend is built with [React](https://react.dev/) and [Electron](https://www.electronjs.org/), using [Vite](https://vitejs.dev/) for development and bundling. Styling is managed through [Tailwind CSS](https://tailwindcss.com/). The resulting application provides a rich user interface for interacting with CRADLE’s backend services, enabling cybersecurity analysts to collaborate, visualize intelligence data, and publish reports.
+It provides an intuitive interface for cybersecurity analysts to:
+- Collaborate on threat intelligence
+- Visualize entity relationships
+- Generate and export reports
 
----
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## Prerequisites
+<!-- GETTING STARTED -->
+## Getting Started
 
-- [Node.js](https://nodejs.org/en/) (which includes `npm`)
-- [Git](https://git-scm.com/) (to clone the repository)
+### Prerequisites
 
----
+- Node.js 18+
+- Git
 
-## Installation
+### Installation
 
-1. **Clone the Monorepo**
-
+1. **Clone the repository**
    ```bash
    git clone https://github.com/prodaft/cradle.git
    cd cradle/frontend
+   git submodule update --init --recursive
    ```
 
-   > Make sure to initialize and update any submodules if needed:
-   > ```bash
-   > git submodule update --init --recursive
-   > ```
-
-2. **Install Dependencies**
-
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
----
+3. **Configure environment**
+   Create `.env` file with backend API URL:
+   ```env
+   VITE_API_BASE_URL=http://localhost:8000
+   ```
 
-## Scripts & Usage
+4. **Start development server**
+   ```bash
+   npm run dev
+   ```
 
-The following scripts are defined in the `package.json` to help with development, building, and testing.
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-- **Start Development Mode**
-  Launches the application in development mode (Electron + Vite dev server):
-  ```bash
-  npm run dev
-  ```
+<!-- USAGE -->
+## Usage
 
-- **Start Preview Mode**
-  Builds the application in production mode and launches it for preview within Electron:
-  ```bash
-  npm run preview
-  ```
+### Development Scripts
 
-- **Build for Production**
-  Compiles the frontend code and packages it using Vite for production:
-  ```bash
-  npm run build-web
-  ```
+| Command               | Description                          |
+|-----------------------|--------------------------------------|
+| `npm run dev`         | Start development server             |
+| `npm run build-web`   | Build production bundle              |
+| `npm run preview`     | Preview production build             |
+| `npm run lint`        | Run ESLint for code quality checks   |
+| `npm run test`        | Execute test suite                   |
+| `npm run jsdoc`       | Generate documentation               |
+| `npm run prettier`    | Format code with Prettier            |
 
-- **Compile CSS with Tailwind**
-  Processes the CSS files to produce the final styling output:
-  ```bash
-  npm run tailwind
-  ```
+### Key Features
+- Hot module replacement during development
+- Optimized production builds
+- Automated code formatting and linting
+- Comprehensive test suite
 
-- **Watch Mode for Tailwind**
-  Watches for changes in CSS files and recompiles automatically:
-  ```bash
-  npm run tailwind-w
-  ```
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-- **Perform Linting**
-  Runs [ESLint](https://eslint.org/) on the codebase for code quality checks:
-  ```bash
-  npm run lint
-  ```
+<!-- TROUBLESHOOTING -->
+## Troubleshooting
 
-- **Run Tests**
-  Executes the test suite using [Jest](https://jestjs.io/):
-  ```bash
-  npm run test
-  ```
+**Build Issues**
+- Ensure Node.js version matches `.nvmrc`
+- Delete `node_modules` and reinstall dependencies
 
-- **Generate Documentation**
-  Builds documentation using [JSDoc](https://jsdoc.app/):
-  ```bash
-  npm run jsdoc
-  ```
+**Runtime Errors**
+- Verify backend service is running
+- Check `.env` configuration
 
-- **Format Code with Prettier**
-  Formats code automatically for a consistent style:
-  ```bash
-  npm run prettier
-  ```
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
----
-
-## Environment Variables
-
-The frontend expects certain environment variables, typically provided via `.env` or `.env.local` files:
-
-- **`VITE_API_BASE_URL`**
-  Base URL for the backend server.
-  Example: `VITE_API_BASE_URL=http://localhost:8000`
-
----
-
+<!-- CONTRIBUTING -->
 ## Contributing
 
-We welcome all contributions, including bug reports, feature requests, and documentation improvements. Please follow these steps:
+See main project [contribution guidelines](../README.md#contributing). For frontend-specific contributions:
 
-1. **Open an Issue**
-   If you find a bug or want to propose a feature, [open an issue](https://github.com/prodaft/cradle/issues) describing the problem or idea.
+1. Fork & create feature branch
+2. Commit changes with descriptive messages
+3. Open pull request with test coverage
 
-2. **Submit a Pull Request**
-   - Fork the repository and create a new branch for your changes.
-   - Commit your modifications and push your branch.
-   - Open a Pull Request against the main repository.
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-For overall project-level coordination, please refer to the [main README](../README.md).
-
----
-
-## Authors & Acknowledgments
-
-CRADLE is developed by PRODAFT in collaboration with TU Delft students. We sincerely thank everyone who contributes to the development of CRADLE.
-
-**Contributors**
-- [Tudor Măgirescu](https://github.com/TudorMagirescu)
-- [Călin-Marian Diacicov](https://github.com/klinashka)
-- [Daniel Popovici](https://github.com/Babu-on-Github)
-- [Matei Grigore](https://github.com/mateigrigore)
-- [Razvan Dinu](https://github.com/razvand13)
-- [Yigit Colakoglu](https://github.com/arg3t)
-
-### Core Libraries & Tools
-
-- **React**
-- **Electron**
-- **Vite**
-- **Tailwind CSS**
-- **ESLint**, **Prettier**
-- **Jest**
-- **Codemirror**
-- **Marked**, **PrismJS**
-
-(See `package.json` for full details.)
-
----
-
+<!-- LICENSE -->
 ## License
 
-CRADLE is provided under the **[MIT License](../LICENSE)**. You are free to use, modify, and distribute this software for both commercial and non-commercial purposes.
+Distributed under the MIT License. See [LICENSE](../LICENSE) for details.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>

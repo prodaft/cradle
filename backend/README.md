@@ -1,129 +1,156 @@
-# CRADLE Backend
+<a id="readme-top"></a>
 
-The CRADLE backend is a [Django](https://www.djangoproject.com/) application that provides the core server-side functionality, including data models, API endpoints, and integrations with external services such as PostgreSQL and MinIO.
+<div align="center">
+  <h3 align="center">CRADLE Backend</h3>
+  <p align="center">
+    Django-powered API for CRADLE
+    <br />
+    <a href="https://github.com/prodaft/cradle"><strong>Explore main project »</strong></a>
+  </p>
+</div>
 
-> **Note**  
-> If you prefer to run the entire CRADLE application (backend + frontend + services) without manual setup, see the [main README](../README.md) for the Docker-based quick start instructions.
+<!-- ABOUT THE PROJECT -->
+## About
 
----
+Django-based backend providing core functionality for CRADLE including:
+- REST API endpoints
+- Data models and PostgreSQL integration
+- File storage with MinIO
+- Authentication system
+- Background task processing with Celery and Redis
 
-## Requirements
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-- **Python 3.11** (or later)
-- **PostgreSQL** (tested with version 13+)
-- **Pipenv** (for managing Python dependencies)
-- **MinIO** (optional; used for file/object storage)
+<!-- GETTING STARTED -->
+## Getting Started
 
----
+### Prerequisites
 
-## Installation (Local)
+- Python 3.11+
+- PostgreSQL 13+
+- Redis 6.0+
+- Pipenv
+- MinIO (optional)
 
-### 1. Clone the Repository
+### Installation
 
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/prodaft/cradle.git
+   cd cradle/backend
+   git submodule update --init --recursive
+   ```
+
+2. **Database Setup**
+   ```bash
+   psql -U [your-postgres-username]
+   CREATE DATABASE cradledb;
+   ```
+
+3. **Redis Setup**
+   - Install and start Redis server
+   ```bash
+   # On Ubuntu
+   sudo apt install redis-server
+   sudo systemctl start redis
+   ```
+
+4. **Configure Environment**
+   - Update database credentials in `cradle/settings.py`
+   ```python
+   DATABASES = {
+       'default': {
+           'ENGINE': 'django.db.backends.postgresql',
+           'NAME': 'cradledb',
+           'USER': '[your_user]',
+           'PASSWORD': '[your_password]',
+           'HOST': 'localhost',
+           'PORT': '5432',
+       }
+   }
+
+   CELERY_BROKER_URL = 'redis://localhost:6379/0'
+   ```
+
+5. **Install Dependencies**
+   ```bash
+   pip install pipenv
+   pipenv install
+   ```
+
+6. **Run Migrations**
+   ```bash
+   pipenv run python manage.py migrate
+   ```
+
+7. **Start Services**
+   ```bash
+   # Start Django development server
+   pipenv run python manage.py runserver
+
+   # Start Celery worker (in separate terminal)
+   pipenv run celery -A cradle worker -Q email,notes,publish,import -l INFO
+   ```
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- USAGE -->
+## Usage
+
+### Common Commands
 ```bash
-git clone https://github.com/prodaft/cradle.git
-cd cradle/backend
+# Run tests
+pipenv run python manage.py test
+
+# Create new migration
+pipenv run python manage.py makemigrations
+
+# Generate API documentation
+cd docs && make html
+
+# Monitor Celery tasks
+pipenv run celery -A cradle flower
 ```
 
-Make sure you have initialized and updated submodules if needed:
+### Development Tips
 ```bash
-git submodule update --init --recursive
+# Access Django shell
+pipenv run python manage.py shell_plus --ipython
+
+# Check code quality
+pipenv run flake8 .
 ```
 
-### 2. Set Up Your Database
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-Install and run [PostgreSQL](https://www.postgresql.org/). Create a database and user:
-
-```bash
-psql -U [your-postgres-username]
-CREATE DATABASE cradledb;
-```
-
-### 3. Configure Django Settings
-
-- Open `backend/cradle/settings.py` (or your environment-specific settings file).
-- Update `DATABASES` with your database name, user, and password.
-- If using MinIO, update the corresponding storage settings (endpoint, credentials, etc.).
-
-### 4. Install Dependencies
-
-Ensure [Pipenv](https://pipenv.pypa.io/en/latest/) is installed, then run:
-
-```bash
-pip install pipenv
-pipenv install
-```
-
-### 5. Apply Database Migrations
-
-```bash
-pipenv run python manage.py migrate
-```
-
-### 6. Run the Backend Server
-
-```bash
-pipenv run python manage.py runserver
-```
-
-This command starts the Django development server. By default, it listens on `http://127.0.0.1:8000/`.
-
----
-
-## Usage & Commands
-
-Below are common commands you may need during development:
-
-- **Migrate the Database Schema**  
-  ```bash
-  pipenv run python manage.py migrate
-  ```
-
-- **Run the Development Server**  
-  ```bash
-  pipenv run python manage.py runserver
-  ```
-
-- **Run Tests**  
-  ```bash
-  pipenv run python manage.py test
-  ```
-
-- **Generate & Build Sphinx Documentation**  
-  ```bash
-  # Generate .rst files from source
-  sphinx-apidoc -f -T -o docs/api_reference . '*/tests/*' '*/migrations/*'
-
-  # Build HTML docs
-  sphinx-build -b html -b coverage docs docs/_build
-
-  # Alternatively, in docs folder:
-  cd docs
-  make html
-  ```
-
----
-
+<!-- TROUBLESHOOTING -->
 ## Troubleshooting
 
-- **Database Connection Errors**  
-  Make sure your PostgreSQL instance is running and that the credentials in `settings.py` match your system.
-- **MinIO Configuration**  
-  If using MinIO, confirm the endpoint and access keys in your settings match those of your running MinIO instance.
+**Database Connection Issues**
+- Verify PostgreSQL service is running
+- Check credentials in settings.py match your DB configuration
 
----
+**Celery Task Issues**
+- Ensure Redis server is running
+- Verify Celery worker is started
+- Check task queue status with Flower
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- CONTRIBUTING -->
 ## Contributing
 
-If you find issues specific to the backend or would like to propose improvements, please:
+See main project [contribution guidelines](../README.md#contributing). For backend-specific issues:
 
-1. **Open an Issue**: Provide details about the bug/feature request.  
-2. **Submit a Pull Request**: Fork the repository, implement your changes, and open a PR.
+1. Fork & create feature branch
+2. Commit changes with descriptive messages
+3. Open pull request with test coverage details
 
-For broader project-level discussions, refer to the [main README](../README.md).
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
----
-
+<!-- LICENSE -->
 ## License
 
-This project is licensed under the **[MIT License](../LICENSE)**. You are free to use, modify, and distribute this software for both commercial and non-commercial purposes. See the `LICENSE` file for full license details.
+Distributed under the MIT License. See [LICENSE](../LICENSE) for details.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
