@@ -1,84 +1,170 @@
-# CRADLE Monorepo
+<a id="readme-top"></a>
 
-<p align="center"> <img src="backend/notes/static/notes/images/notes/logo.png" alt="Cradle Logo" width="200" height="200"> </p>
+<!-- PROJECT SHIELDS -->
+[![Contributors][contributors-shield]][contributors-url]
+[![Forks][forks-shield]][forks-url]
+[![Stargazers][stars-shield]][stars-url]
+[![Issues][issues-shield]][issues-url]
+[![MIT License][license-shield]][license-url]
 
-## Overview
+<!-- PROJECT LOGO -->
+<br />
+<div align="center">
+  <a href="https://github.com/prodaft/cradle">
+    <img src="logos/light.svg" alt="Logo" width="200" height="200">
+  </a>
 
-CRADLE is an open-source web application that supports Cyber Threat Intelligence (CTI) analysts in collecting, processing, and analyzing data about threat actors. It aims to streamline the workflow of threat analysts by providing a collaborative note-taking environment, quick data access, and visual tools to draw connections between threat entities and artifacts.
+  <h3 align="center">CRADLE Monorepo</h3>
 
-**Key Features**
-- **Collaborative Note-Taking**: Share and store investigation notes in one place.
-- **Visualization and Analysis**: Easily connect related entities (agents, artifacts, and more).
-- **Publishable Reports**: Export and share comprehensive intelligence findings.
-- **Modular Architecture**: Built for flexibility and future feature expansion.
+  <p align="center">
+    Batteries Included Threat Intelligence
+    <br />
+    <a href="https://github.com/prodaft/cradle"><strong>Explore the docs »</strong></a>
+    <br />
+    <br />
+    <a href="https://github.com/prodaft/cradle/issues/new">Report Bug</a>
+    &middot;
+    <a href="https://github.com/prodaft/cradle/issues/new">Request Feature</a>
+  </p>
+</div>
 
----
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#about-the-project">About The Project</a>
+      <ul>
+        <li><a href="#repository-structure">Repository Structure</a></li>
+        <li><a href="#built-with">Built With</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#installation">Installation</a></li>
+      </ul>
+    </li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#license">License</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ol>
+</details>
 
-## Repository Structure
+<!-- ABOUT THE PROJECT -->
+## About The Project
 
-This monorepo is organized into three main directories:
+CRADLE is an open-source web application designed to empower Cyber Threat
+Intelligence (CTI) analysts. The platform streamlines threat analysis workflows
+through collaborative note-taking, visual relationship mapping, and
+comprehensive report generation.
 
-- **backend/**
-  Contains the Django-based backend for CRADLE.
-  See its dedicated [README](backend/README.md) for information about local installation, commands, and usage.
+Key Features:
+- **Collaborative Investigation**: Shared workspace for team-based threat analysis
+- **Entity Relationship Visualization**: Graphical representation of connections between threat actors and artifacts
+- **Report Generation**: Exportable intelligence reports in multiple formats
+- **Modular Architecture**: Easily extensible design for future enhancements
 
-- **ui/**
-  Contains the Electron/React-based front-end application.
-  See its dedicated [README](ui/README.md) for details on local installation and development.
+### Repository Structure
 
-- **deploy/**
-  Holds Ansible playbooks and other deployment-related scripts/configurations.
+The monorepo is organized into three main components:
 
----
+| Directory    | Description                                  | Documentation                  |
+|--------------|----------------------------------------------|---------------------------------|
+| `backend/`   | Django-based API and data processing layer   | [README](backend/README.md)    |
+| `ui/`        | Electron/React frontend application          | [README](ui/README.md)         |
+| `deploy/`    | Ansible playbooks and deployment scripts     |                                 |
 
+### Built With
+
+[![Django][Django.com]][Django-url]
+[![React][React.js]][React-url]
+[![Electron][Electron.js]][Electron-url]
+[![Postgres][Postgres.com]][Postgres-url]
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- GETTING STARTED -->
 ## Getting Started
 
-For most users, **Docker** is the recommended way to spin up the CRADLE environment. Advanced users and developers who need more control can refer to the specific READMEs for [backend](backend/README.md) and frontend to set up those components locally.
+### Prerequisites
 
-### Run with Docker (Recommended)
+- Docker 20.10+
+- Docker Compose 2.0+
+- Git
 
-Running CRADLE with Docker Compose will automatically set up all required services (backend, frontend, database, etc.).
+### Installation
 
-1. **Clone the monorepo:**
-   ```bash
+1. Clone the repository
+   ```sh
    git clone https://github.com/prodaft/cradle.git
    cd cradle
    ```
-
-2. **Start services using Docker Compose**:
-   ```bash
+2. Start the Docker containers
+   ```sh
    docker compose -f docker-compose.demo.yml up -d
    ```
-   This launches all necessary components, enabling you to access CRADLE on your local machine without manual dependency management.
+3. Access the application at `http://localhost:3000`
 
----
+For advanced setup instructions, see the component-specific READMEs:
+- [Backend Setup](backend/README.md)
+- [Frontend Setup](ui/README.md)
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- CONTRIBUTING -->
 ## Contributing
 
-We welcome contributions of all kinds—bug reports, feature requests, and documentation improvements. Please follow these guidelines:
+We welcome contributions from the security community! Here's how to help:
 
-- **Issues & Bug Reports**
-  If you encounter a bug or have questions, please [open an issue](https://github.com/prodaft/cradle/issues).
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-- **Pull Requests**
-  Pull requests are welcome! If you intend to introduce significant changes, create an issue or discuss them first to ensure a smooth process.
+### Top Contributors
 
----
+<a href="https://github.com/prodaft/cradle/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=prodaft/cradle" alt="Project contributors list" />
+</a>
 
-## Authors & Acknowledgments
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-CRADLE is developed by PRODAFT in collaboration with students from TU Delft. Special thanks to everyone who contributes to making this project possible.
-
-**Contributors**
-- [Tudor Măgirescu](https://github.com/TudorMagirescu)
-- [Călin-Marian Diacicov](https://github.com/klinashka)
-- [Daniel Popovici](https://github.com/Babu-on-Github)
-- [Matei Grigore](https://github.com/mateigrigore)
-- [Razvan Dinu](https://github.com/razvand13)
-- [Yigit Colakoglu](https://github.com/arg3t)
-
----
-
+<!-- LICENSE -->
 ## License
 
-This project is licensed under the **[MIT License](LICENSE)**. You are free to use, modify, and distribute this software for both commercial and non-commercial purposes. See the `LICENSE` file for full license details.
+Distributed under the MIT License. See `LICENSE` for more information.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- CONTACT -->
+## Contact
+
+PRODAFT Threat Intelligence Team - [@prodafthq](https://twitter.com/prodafthq) - info@prodraft.com
+
+Project Link: [https://github.com/prodaft/cradle](https://github.com/prodaft/cradle)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- MARKDOWN LINKS & IMAGES -->
+[contributors-shield]: https://img.shields.io/github/contributors/prodaft/cradle.svg?style=for-the-badge
+[contributors-url]: https://github.com/prodaft/cradle/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/prodaft/cradle.svg?style=for-the-badge
+[forks-url]: https://github.com/prodaft/cradle/network/members
+[stars-shield]: https://img.shields.io/github/stars/prodaft/cradle.svg?style=for-the-badge
+[stars-url]: https://github.com/prodaft/cradle/stargazers
+[issues-shield]: https://img.shields.io/github/issues/prodaft/cradle.svg?style=for-the-badge
+[issues-url]: https://github.com/prodaft/cradle/issues
+[license-shield]: https://img.shields.io/github/license/prodaft/cradle.svg?style=for-the-badge
+[license-url]: https://github.com/prodaft/cradle/blob/master/LICENSE
+
+[Django.com]: https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white
+[Django-url]: https://www.djangoproject.com/
+[React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
+[React-url]: https://reactjs.org/
+[Electron.js]: https://img.shields.io/badge/Electron-191970?style=for-the-badge&logo=electron&logoColor=white
+[Electron-url]: https://www.electronjs.org/
+[Postgres.com]: https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white
+[Postgres-url]: https://www.postgresql.org/
