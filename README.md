@@ -149,7 +149,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 <!-- CONTACT -->
 ## Contact
 
-PRODAFT Threat Intelligence Team - [@prodafthq](https://twitter.com/prodafthq) - info@prodraft.com
+PRODAFT Threat Intelligence Team - [@prodaft](https://twitter.com/prodaft) - contact@prodaft.com
 
 Project Link: [https://github.com/prodaft/cradle](https://github.com/prodaft/cradle)
 
