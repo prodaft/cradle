@@ -7,7 +7,7 @@ let mainWindow;
 
 // __dirname points to /out
 var image = nativeImage.createFromPath(
-    path.join(__dirname, '../../src/renderer/src/assets/logo-nobg.png'),
+    path.join(__dirname, '../../src/renderer/src/assets/logos/dark_notext.svg'),
 );
 
 function createWindow() {

@@ -1,4 +1,5 @@
 import MarkdownIt from 'markdown-it';
+import { getBaseUrl } from '../../services/configService/configService';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-c.js';
 import 'prismjs/components/prism-python.js';
@@ -51,7 +52,7 @@ export function parseWorker() {
 
     worker.postMessage({
         token: localStorage.getItem('access'),
-        apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
+        apiBaseUrl: getBaseUrl()
     });
 
     return worker;

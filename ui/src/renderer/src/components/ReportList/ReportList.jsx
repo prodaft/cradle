@@ -100,7 +100,7 @@ export default function ReportList() {
     return (
         <div className='w-full h-full flex flex-col p-6 space-y-3'>
             <AlertDismissible alert={alert} setAlert={setAlert} />
-            <h1 className='text-3xl font-bold text-white mb-4'>
+            <h1 className='text-3xl font-semibold mb-4'>
                 {report_id ? 'Report Details' : 'Reports'}
             </h1>
 

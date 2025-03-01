@@ -96,6 +96,8 @@ services:
       REQUIRE_EMAIL_CONFIRMATION: false
       REQUIRE_ADMIN_ACTIVATION: false
 
+      INSTALL_FIXTURES: true
+
       CELERY_BROKER_URL: "redis://192.168.42.7:6379/0"
       CELERY_RESULT_BACKEND: "redis://192.168.42.7:6379/0"
       REDIS_URL: "redis://192.168.42.7:6379/0"

@@ -5,7 +5,7 @@ chown -R www-data:www-data static
 
 pipenv run python manage.py migrate
 
-if $INITIALIZE_ENTRYCLASSES; then
+if $INSTALL_FIXTURES; then
   pipenv run python manage.py loaddata entries
 fi
 

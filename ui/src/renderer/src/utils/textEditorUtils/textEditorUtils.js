@@ -1,4 +1,5 @@
 import DOMPurify from 'dompurify';
+import { getBaseUrl } from '../../services/configService/configService';
 import parseMarkdown from '../customParser/customParser.ts';
 import QueryString from 'qs';
 import { syntaxTree } from '@codemirror/language';
@@ -26,7 +27,7 @@ const parseContent = async (content, fileData) =>
  * @returns {string} download link
  */
 const createDownloadPath = (file) => {
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+    const apiBaseUrl = getBaseUrl();
     const { minio_file_name, bucket_name } = file;
     const queryParams = QueryString.stringify({
         bucketName: bucket_name,

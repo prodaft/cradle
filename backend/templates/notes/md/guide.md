@@ -2,7 +2,7 @@
    User Guide for CRADLE
 </h1>
 <p align="center">
-    <img width="200" height="200" src="{{ static_location }}/images/notes/logo.png" alt="Cradle Logo">
+    <img width="200" height="200" src="{{ static_location }}/images/notes/logos/dark_notext.svg" alt="Cradle Logo">
 </p>
 
 CRADLE is a collaborative note-taking tool designed specifically for cyber threat analysts. It streamlines workflows by helping you manage and organize notes while making it easy to collaborate with other analysts.

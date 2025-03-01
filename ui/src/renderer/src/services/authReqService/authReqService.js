@@ -1,4 +1,5 @@
 import { noAuthAxios } from '../axiosInstance/axiosInstance';
+import { getBaseUrl } from '../configService/configService';
 
 /**
  * The credentials of a user.
@@ -16,7 +17,7 @@ import { noAuthAxios } from '../axiosInstance/axiosInstance';
  */
 export async function confirmReq(data) {
     return noAuthAxios({
-        baseURL: import.meta.env.VITE_API_BASE_URL,
+        baseURL: getBaseUrl(),
         method: 'post',
         url: '/users/email_confirm/',
         data: data,
@@ -31,7 +32,7 @@ export async function confirmReq(data) {
  */
 export async function resetPasswordReq(data) {
     return noAuthAxios({
-        baseURL: import.meta.env.VITE_API_BASE_URL,
+        baseURL: getBaseUrl(),
         method: 'put',
         url: '/users/reset_password/',
         data: data,
@@ -46,7 +47,7 @@ export async function resetPasswordReq(data) {
  */
 export async function forgotPasswordReq(data) {
     return noAuthAxios({
-        baseURL: import.meta.env.VITE_API_BASE_URL,
+        baseURL: getBaseUrl(),
         method: 'post',
         url: '/users/reset_password/',
         data: data,
@@ -61,7 +62,7 @@ export async function forgotPasswordReq(data) {
  */
 export async function logInReq(data) {
     return noAuthAxios({
-        baseURL: import.meta.env.VITE_API_BASE_URL,
+        baseURL: getBaseUrl(),
         method: 'post',
         url: '/users/login/',
         data: data,
@@ -76,7 +77,7 @@ export async function logInReq(data) {
  */
 export async function registerReq(data) {
     return noAuthAxios({
-        baseURL: import.meta.env.VITE_API_BASE_URL,
+        baseURL: getBaseUrl(),
         method: 'post',
         url: '/users/',
         data: data,
