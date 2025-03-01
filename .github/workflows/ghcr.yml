@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGISTRY: ghcr.io
-      IMAGE_NAME: cradle
+      IMAGE_NAME: prodaft/cradle
     permissions:
       contents: read
       packages: write
