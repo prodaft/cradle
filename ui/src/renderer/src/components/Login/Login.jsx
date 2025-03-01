@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Undo } from 'iconoir-react';
+import { Settings, Undo, SunLight, HalfMoon } from 'iconoir-react';
 import FormField from '../FormField/FormField';
 import { Link, useLocation } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
@@ -9,6 +9,7 @@ import useAuth from '../../hooks/useAuth/useAuth';
 import Logo from '../Logo/Logo';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { useWindowSize } from '@uidotdev/usehooks';
+import { useTheme } from '../../hooks/useTheme/useTheme';
 import { getBaseUrl } from '../../services/configService/configService';
 
 /**
@@ -29,6 +30,8 @@ export default function Login() {
 
     const [showSettings, setShowSettings] = useState(false);
     const [backendUrl, setBackendUrl] = useState(getBaseUrl());
+
+    const { isDarkMode, toggleTheme } = useTheme();
 
     const { from, state } = location.state || { from: { pathname: '/' } };
 
@@ -61,6 +64,7 @@ export default function Login() {
         <div className='flex flex-row items-center justify-center h-screen overflow-y-auto'>
             <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 xl:w-1/3 relative'>
                 {showSettings ? (
+                  <>
                     <button
                         onClick={() => {
                             setBackendUrl(localStorage.getItem('backendUrl') || '');
@@ -71,6 +75,14 @@ export default function Login() {
                     >
                         <Undo />
                     </button>
+                    <button
+                        onClick={toggleTheme}
+                        className='absolute top-2 right-2 p-2 hover:opacity-80 text-gray-500'
+                        data-testid='theme-button'
+                    >
+                      {isDarkMode ? <SunLight /> : <HalfMoon />}
+                    </button>
+                  </>
                 ) : (
                     <button
                         onClick={() => setShowSettings(!showSettings)}
