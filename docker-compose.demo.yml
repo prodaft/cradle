@@ -47,7 +47,7 @@ services:
         ipv4_address: 192.168.42.7
 
   celery:
-    image: cradle:latest
+    image: ghcr.io/prodaft/cradle:latest
     build:
       context: .
       dockerfile: ./docker/Dockerfile.backend
@@ -110,7 +110,7 @@ services:
         ipv4_address: 192.168.42.8
 
   cradle:
-    image: cradle:latest
+    image: ghcr.io/prodaft/cradle:latest
     build:
       context: .
       dockerfile: ./docker/Dockerfile.backend
@@ -127,7 +127,7 @@ services:
         ipv4_address: 192.168.42.9
 
   cradle_ui:
-    image: cradleweb:latest
+    image: ghcr.io/prodaft/cradle-web:latest
     build:
       context: .
       dockerfile: ./docker/Dockerfile.ui
