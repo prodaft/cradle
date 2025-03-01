@@ -7,9 +7,6 @@ on:
 jobs:
   build-and-push-backend:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./backend
     env:
       REGISTRY: ghcr.io
       IMAGE_NAME: cradle
@@ -37,6 +34,7 @@ jobs:
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
           context: .
+          file: ./docker/Dockerfile.backend
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -80,6 +78,7 @@ jobs:
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
           context: .
+          file: ./docker/Dockerfile.ui
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
