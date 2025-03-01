@@ -1,5 +1,5 @@
-import React from 'react';
-import { useTheme } from '../../hooks/useTheme/useTheme';
+import {useState, useEffect, React} from 'react';
+import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
 
 import logo_dark from '../../assets/logos/dark_notext.svg';
 import logo_light from '../../assets/logos/light_notext.svg';
@@ -19,21 +19,23 @@ import text_logo_light from '../../assets/logos/light.svg';
  */
 export default function Logo({ width = 'auto', height = 'auto', text = false }) {
     const { isDarkMode, toggleTheme } = useTheme();
-    let logo = null;
+    const [ logo, setLogo ] = useState(logo_dark);
 
-    if (!isDarkMode) {
-        if (text) {
-            logo = text_logo_dark;
-        } else {
-            logo = logo_dark;
-        }
-    } else {
-        if (text) {
-            logo = text_logo_light;
-        } else {
-            logo = logo_light;
-        }
-    }
+    useEffect(() => {
+      if (!isDarkMode) {
+          if (text) {
+              setLogo(text_logo_dark);
+          } else {
+              setLogo(logo_dark);
+          }
+      } else {
+          if (text) {
+              setLogo(text_logo_light);
+          } else {
+              setLogo(logo_light);
+          }
+      }
+    }, [isDarkMode, text]);
 
     return <img src={logo} alt='CRADLE' style={{ width: width, height: height }} />;
 }

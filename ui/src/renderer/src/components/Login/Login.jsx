@@ -9,7 +9,7 @@ import useAuth from '../../hooks/useAuth/useAuth';
 import Logo from '../Logo/Logo';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { useWindowSize } from '@uidotdev/usehooks';
-import { useTheme } from '../../hooks/useTheme/useTheme';
+import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
 import { getBaseUrl } from '../../services/configService/configService';
 
 /**
