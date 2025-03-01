@@ -127,11 +127,11 @@ services:
         ipv4_address: 192.168.42.9
 
   cradle_ui:
-    image: cradle_ui:latest
+    image: cradleweb:latest
     build:
       context: .
       dockerfile: ./docker/Dockerfile.ui
-    container_name: cradle_ui
+    container_name: cradleweb
     volumes:
       - ./build/www:/www
       - ./docker/nginx_demo.conf:/etc/nginx/nginx.conf:ro
