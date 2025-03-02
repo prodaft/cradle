@@ -2,3 +2,4 @@
 *.env
 .envrc
 inventory.yml
+docker-compose.yml
