@@ -129,6 +129,7 @@ export default function TextEditor({
                         viewCollapsed={previewCollapsed}
                         setViewCollapsed={previewCollapseUpdated}
                         currentLine={currentLine}
+                        setAlert={setAlert}
                         setCurrentLine={setCurrentLine}
                         additionalExtensions={editorExtensions}
                     />

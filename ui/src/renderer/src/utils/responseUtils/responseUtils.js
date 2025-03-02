@@ -56,6 +56,7 @@ const displayError = (setAlert, navigate) => {
         }
         if (!message) {
             message = 'An unknown error occurred.';
+            console.log(err);
         }
 
         setAlert({ show: true, message: trimMore(message), color: 'red' });

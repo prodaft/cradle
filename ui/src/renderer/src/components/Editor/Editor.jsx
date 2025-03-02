@@ -4,7 +4,7 @@ import vimIcon from '../../assets/vim32x32.gif';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
 import { drawSelection } from '@uiw/react-codemirror';
-import { useId, useState, useRef, useCallback, useEffect } from 'react';
+import { useId, useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { EditorView, keymap } from '@codemirror/view';
 import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import { eclipse } from '@uiw/codemirror-theme-eclipse';
@@ -13,12 +13,13 @@ import FileTable from '../FileTable/FileTable';
 import { NavArrowDown, NavArrowUp, LightBulb } from 'iconoir-react/regular';
 import { fetchLspPack } from '../../services/queryService/queryService';
 import { completionKeymap, acceptCompletion } from '@codemirror/autocomplete';
-import { getLinkNode, parseLink } from '../../utils/textEditorUtils/textEditorUtils';
 import { Prec } from '@uiw/react-codemirror';
 import * as events from '@uiw/codemirror-extensions-events';
 import { NavArrowLeft, NavArrowRight } from 'iconoir-react';
-import { debounce } from 'lodash'; // or any debounce package
+import { debounce } from 'lodash';
 import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
+import { CradleEditor } from '../../utils/editorUtils/editorUtils';
+import { displayError } from '../../utils/responseUtils/responseUtils';
 
 /**
  * This component makes use of a pre-existing code editor component (CodeMirror, see https://github.com/uiwjs/react-codemirror)
@@ -49,6 +50,7 @@ export default function Editor({
     setViewCollapsed,
     currentLine,
     setCurrentLine,
+    setAlert,
     additionalExtensions = [],
 }) {
     const EMPTY_FILE_LIST = new DataTransfer().files;
@@ -56,7 +58,6 @@ export default function Editor({
         localStorage.getItem('editor.vim') === 'true',
     );
     const [showFileList, setShowFileList] = useState(false);
-    const [lspPack, setLspPack] = useState({ classes: {}, instances: {} });
     const [prevNoteId, setPrevNoteId] = useState(null);
     const [pendingFiles, setPendingFiles] = useState(EMPTY_FILE_LIST);
     const [scrollMap, setScrollMap] = useState(null);
@@ -66,117 +67,6 @@ export default function Editor({
     const autoLinkId = useId();
     const vimModeId = useId();
     const editorRef = useRef(null);
-
-    const suggestionsForWord = (word) => {
-        let suggestions = [];
-
-        // Check each class type in LspPack
-        for (const [type, criteria] of Object.entries(lspPack.classes)) {
-            // Check if criteria has a regex
-            if (criteria.regex) {
-                const regex = new RegExp(`^${criteria.regex}$`);
-                if (regex.test(word) || regex.test(word.toLowerCase())) {
-                    suggestions.push({
-                        type: type,
-                        match: word,
-                    });
-                }
-            }
-
-            // Check if criteria has an enum
-            if (criteria.enum) {
-                const matchingEnums = criteria.enum.filter((value) =>
-                    value.toLowerCase().startsWith(word.toLowerCase()),
-                );
-                matchingEnums.forEach((match) => {
-                    suggestions.push({
-                        type: type,
-                        match: match,
-                    });
-                });
-            }
-        }
-
-        // Check in instances for possible completions
-        for (const [type, instances] of Object.entries(lspPack.instances)) {
-            const matchingInstances = instances.filter((value) =>
-                value.startsWith(word),
-            );
-            matchingInstances.forEach((match) => {
-                suggestions.push({
-                    type: type,
-                    match: match,
-                });
-            });
-        }
-
-        return suggestions;
-    };
-
-    const autocompleteOutsideLink = (context) => {
-        let word = context.matchBefore(/\S*/);
-        if (word.from == word.to && !context.explicit)
-            return { from: context.pos, options: [] };
-
-        return new Promise((resolve) => {
-            let suggestions = suggestionsForWord(word.text).map((o) => {
-                return { type: 'keyword', label: `[[${o.type}:${o.match}]]` };
-            });
-            resolve({
-                from: word.from,
-                to: word.to,
-                options: suggestions,
-            });
-        });
-    };
-
-    // Autocomplete links (e.g. syntax `[[...]]`) using information from the database. Uses the `/query` endpoint to get the data.
-    const linkAutoComplete = (context) => {
-        let node = getLinkNode(context);
-
-        if (node == null) return autocompleteOutsideLink(context);
-
-        const linkFull = context.state.sliceDoc(node.from, node.to);
-        const parsedLink = parseLink(node.from, context.pos, linkFull);
-
-        if (parsedLink == null) return { from: context.pos, options: [] };
-
-        let options = new Promise((f) => f([]));
-
-        if (parsedLink.type == null) {
-            options = new Promise((f) =>
-                f(
-                    Object.values(lspPack)
-                        .flatMap((obj) => Object.keys(obj))
-                        .map((item) => ({
-                            label: parsedLink.post(item),
-                            type: 'keyword',
-                        })),
-                ),
-            );
-        } else if (parsedLink.type in lspPack['instances']) {
-            options = new Promise((f) =>
-                f(
-                    lspPack['instances'][parsedLink.type].map((item) => ({
-                        label: parsedLink.post(item),
-                        type: 'keyword',
-                    })),
-                ),
-            );
-        }
-
-        return options.then((o) => {
-            return {
-                from: parsedLink.from,
-                to: parsedLink.to,
-                options: o,
-            };
-        });
-    };
-
-    const autoCompleteConfig = markdownLanguage.data.of({
-        autocomplete: linkAutoComplete,
-    });
 
     const debouncedSetCurrentLine = useRef(
         debounce((f) => {
@@ -190,11 +80,16 @@ export default function Editor({
         }, 50),
     ).current;
 
+    const editorUtils = useMemo(
+        () => new CradleEditor((onerror = displayError(setAlert))),
+        [],
+    );
+
     var extensions = [
-        markdown({ base: markdownLanguage, codeLanguages: languages }),
+        editorUtils.markdown({ codeLanguages: languages }),
         drawSelection(),
         EditorView.lineWrapping,
-        autoCompleteConfig,
+        editorUtils.autocomplete(),
         Prec.highest(
             keymap.of([
                 ...completionKeymap,
@@ -211,7 +106,7 @@ export default function Editor({
                     setPendingFiles(e.clipboardData.files);
                 }
             },
-            click(e) {
+            click() {
                 const state = editorRef.current.view.state;
                 const cursor = state.selection.main.to;
                 const line = state.doc.lineAt(cursor);
@@ -223,7 +118,7 @@ export default function Editor({
                 debouncedSetTop(e.target.scrollTop);
             },
         }),
-        ...additionalExtensions
+        ...additionalExtensions,
     ];
 
     useEffect(() => {
@@ -253,8 +148,6 @@ export default function Editor({
     }, [currentLine]);
 
     if (enableVim) {
-        // This editor also has the option to be used in vim mode, which can be toggled.
-        // https://codemirror.net/5/demo/vim.html
         extensions = extensions.concat(vim());
     }
 
@@ -273,63 +166,6 @@ export default function Editor({
         setCodeMirrorContent(markdownContent);
     }, [isDarkMode]);
 
-    const autoFormatLinks = () => {
-        if (!editorRef.current) {
-            return;
-        }
-        const doc = editorRef.current.view.state;
-        let to = doc.selection.main.to;
-        let from = doc.selection.main.from;
-        let content;
-
-        if (to == from) {
-            content = markdownContent;
-            from = 0;
-            to = content.length;
-        } else {
-            content = doc.sliceDoc(from, to);
-        }
-
-        const words = content.split(/(\s+)/);
-
-        const trim_word = (x) => {
-            return x.replace(/^[,.:\s]+|[,.:\s]+$/g, '');
-        };
-        let linkedMarkdown = content;
-
-        let position = 0;
-
-        words.forEach((word) => {
-            if (trim_word(word)) {
-                const start = position;
-                const end = start + word.length;
-                let suggestions = suggestionsForWord(trim_word(word));
-
-                suggestions = suggestions.filter(
-                    (x) => trim_word(x.match) == trim_word(word),
-                );
-                if (suggestions && suggestions.length >= 1) {
-                    let link = `[[${suggestions[0].type}:${suggestions[0].match}]]`;
-                    linkedMarkdown =
-                        linkedMarkdown.substring(0, start) +
-                        link +
-                        linkedMarkdown.substring(end);
-                    position += link.length - word.length;
-                }
-            }
-
-            position += word.length;
-        });
-
-        let text =
-            markdownContent.substring(0, from) +
-            linkedMarkdown +
-            markdownContent.substring(to);
-
-        setMarkdownContent(text);
-        setCodeMirrorContent(text);
-    };
-
     // Create a debounced function (adjust wait time as needed).
     const debouncedSetMarkdownContent = useRef(
         debounce((text) => {
@@ -343,16 +179,6 @@ export default function Editor({
         },
         [debouncedSetMarkdownContent],
     );
-
-    useEffect(() => {
-        fetchLspPack()
-            .then((response) => {
-                setLspPack(response.data);
-            })
-            .catch((error) => {
-                console.log(error);
-            });
-    }, []);
 
     useEffect(() => {
         if (prevNoteId != null && prevNoteId != 'new' && codeMirrorContent != '') {
@@ -370,6 +196,30 @@ export default function Editor({
 
     const toggleFileList = () => {
         setShowFileList(!showFileList);
+    };
+
+    const smartLink = () => {
+        if (!editorRef.current) {
+            return;
+        }
+        const doc = editorRef.current.view.state;
+        let to = doc.selection.main.to;
+        let from = doc.selection.main.from;
+        let content;
+
+        if (to == from) {
+            from = 0;
+            to = content.length;
+        }
+
+        // TODO: Use the class
+        const linked = editorUtils.autoFormatLinks(editorRef.current.view, to, from);
+
+        let text =
+            markdownContent.substring(0, from) + linked + markdownContent.substring(to);
+
+        setMarkdownContent(text);
+        setCodeMirrorContent(text);
     };
 
     return (
@@ -390,7 +240,7 @@ export default function Editor({
                             type='button'
                             className='flex flex-row items-center hover:bg-gray-4 tooltip tooltip-bottom tooltip-primary'
                             data-tooltip={'Auto Link'}
-                            onClick={autoFormatLinks}
+                            onClick={smartLink}
                         >
                             <LightBulb />
                         </button>
