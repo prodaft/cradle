@@ -23,7 +23,8 @@ export default function Welcome() {
     const [notes, setNotes] = useState([]);
     const entryListsDiv = useRef(null);
     const flexDirection = useChangeFlexDirectionBySize(entryListsDiv);
-    const entryCardWrapperWidth = flexDirection === 'flex-row' ? 'w-[45%]' : 'w-full';
+    const entryCardWrapperWidth = flexDirection === 'flex-row' ? 'w-[37%]' : 'w-full';
+    const entryLogoWidth = flexDirection === 'flex-row' ? 'w-[18%]' : 'w-full';
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -41,32 +42,30 @@ export default function Welcome() {
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='h-full w-full flex flex-col justify-between items-center overflow-auto dark:bg-gradient-to-tl dark:from-cradle1 dark:to-gray-2'>
-                {/*
-                <div className='flex flex-row items-center justify-around py-10 w-[80%]'>
-                    <div className='px-8 hidden md:block'>
-                        <Logo width='200px' />
-                    </div>
-                    <span className='flex flex-col'>
-                        <h1 className='dark:text-zinc-300 text-6xl text-center md:text-left'>
-                            CRADLE
-                        </h1>
-                        <h3 className='dark:text-zinc-300 text-2xl text-center md:text-left'>
-                            A Hub For Managing Cyber Threat Intelligence Research Output
-                        </h3>
-                    </span>
-                </div>
-        */}
-
                 <div className='flex flex-col w-[80%] mx-auto pt-16'>
                     <div
                         className={`flex ${flexDirection} justify-between dark:text-zinc-300`}
                         ref={entryListsDiv}
                     >
+                        {flexDirection !== 'flex-row' && (
+                            <div
+                                className={`${entryLogoWidth} flex justify-center mb-8 px-8`}
+                            >
+                                <Logo text={true} />
+                            </div>
+                        )}
                         <div
                             className={`${entryCardWrapperWidth} flex justify-center mb-8`}
                         >
                             <EntryListCard title='Recent Entities' items={entities} />
                         </div>
+                        {flexDirection === 'flex-row' && (
+                            <div
+                                className={`${entryLogoWidth} flex justify-center mb-8 px-8`}
+                            >
+                                <Logo text={false} />
+                            </div>
+                        )}
                         <div
                             className={`${entryCardWrapperWidth} flex justify-center mb-8`}
                         >
