@@ -18,7 +18,6 @@ from uuid import UUID
 
 
 class UpdateAccess(APIView):
-
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = AccessSerializer

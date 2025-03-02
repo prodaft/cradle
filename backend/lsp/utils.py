@@ -1,19 +1,70 @@
+from collections.abc import Iterable
 from typing import Dict, List, Any
 
 from django.db.models import Q
+from entries.enums import EntryType
 from entries.models import Entry, EntryClass
 from notes.models import Note
 from user.models import CradleUser
 from access.models import Access
 
 
+class TrieNode:
+    def __init__(self):
+        self.children = {}
+        self.eow = False
+
+
+class Trie:
+    def __init__(self):
+        self.root = TrieNode()
+
+    def insert(self, word):
+        """Inserts a word into the trie."""
+        current_node = self.root
+        for char in word:
+            if char not in current_node.children:
+                current_node.children[char] = TrieNode()
+            current_node = current_node.children[char]
+        current_node.eow = True
+
+    def search(self, word):
+        """Searches for a word in the trie."""
+        current_node = self.root
+        for char in word:
+            if char not in current_node.children:
+                return False
+            current_node = current_node.children[char]
+        return current_node.eow
+
+    def starts_with(self, prefix):
+        """Checks if any word in the trie starts with the given prefix."""
+        current_node = self.root
+        for char in prefix:
+            if char not in current_node.children:
+                return False
+            current_node = current_node.children[char]
+        return True
+
+    def serialize(self):
+        """Serializes the trie into a dictionary."""
+
+        def _serialize_node(node):
+            serialized = {"eow": node.eow, "c": {}}
+            for char, child_node in node.children.items():
+                serialized["c"][char] = _serialize_node(child_node)
+            return serialized
+
+        return _serialize_node(self.root)
+
+
 class LspUtils:
     @staticmethod
-    def get_lsp_entries(user: CradleUser) -> List[Entry]:
+    def get_lsp_entries(user: CradleUser, eclass: EntryClass) -> List[Entry]:
         accessible_notes = Note.objects.get_accessible_notes(user, None)
         accessible_entries = Note.objects.get_entries_from_notes(
             accessible_notes
-        ).filter(~Q(entry_class__regex=None, entry_class__options=None))
+        ).filter(entry_class=eclass)
 
         return accessible_entries
 
@@ -26,26 +77,22 @@ class LspUtils:
         return Entry.entities.filter(pk__in=entity_ids).distinct()
 
     @staticmethod
-    def entries_to_lsp_pack(
-        entries: List[Entry], entry_classes: List[EntryClass]
+    def get_lsp_pack(
+        user: CradleUser,
+        classes: Iterable[EntryClass],
     ) -> Dict[str, Dict[str, Any]]:
-        pack: Dict[str, Dict[str, Any]] = {"classes": {}, "instances": {}}
+        tries = {}
 
-        for i in entry_classes:
-            if i.subtype.strip() == "":
-                continue
-            if i.subtype not in pack["classes"]:
-                if i.regex:
-                    pack["classes"][i.subtype] = {"regex": i.regex}
-                elif i.options:
-                    pack["classes"][i.subtype] = {"enum": i.options.split("\n")}
-                else:
-                    pack["classes"][i.subtype] = {}
+        for eclass in classes:
+            if eclass.type == EntryType.ENTITY:
+                entries = LspUtils.get_entities(user)
+            else:
+                entries = LspUtils.get_lsp_entries(user, eclass)
 
-        for i in entries:
-            if i.entry_class.subtype not in pack["instances"]:
-                pack["instances"][i.entry_class.subtype] = []
+            trie = Trie()
+            if entries.count() > 0:
+                for entry in entries:
+                    trie.insert(entry.name)
+                tries[eclass.subtype] = trie.serialize()
 
-            pack["instances"][i.entry_class.subtype].append(i.name)
-
-        return pack
+        return tries

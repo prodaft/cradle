@@ -1,18 +1,18 @@
-import json
-from collections.abc import Iterable
-from typing import Any, Dict, List, Match, Optional, Set, Tuple
-import mistune
-from mistune.core import BaseRenderer, BlockState
-
-from mistune.markdown import Markdown
 import itertools
+import json
+import random
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any, Dict, List, Match, Optional, Set, Tuple
+
+import mistune
 from mistune import InlineParser, InlineState
+from mistune.core import BaseRenderer, BlockState
+from mistune.markdown import Markdown
 from mistune.renderers.markdown import MarkdownRenderer as BaseMarkdownRenderer
-from .table import table
+from xeger import Xeger
 
 from .common import cradle_link_plugin, footnote_plugin
-from xeger import Xeger
-from typing import TYPE_CHECKING
+from .table import table
 
 if TYPE_CHECKING:
     from entries.models import EntryClass
@@ -38,18 +38,20 @@ class Anonymizer:
 
                 value = options[index]
 
-        elif entry_class.regex:
-            value = self.x.xeger(entry_class.regex)
-
         elif entry_class.prefix:
             value = f"{entry_class.prefix}{random.randint(1, 1000)}"
 
+        elif entry_class.generative_regex:
+            value = self.x.xeger(entry_class.generative_regex)
+
+        elif entry_class.regex:
+            value = self.x.xeger(entry_class.regex)
+
         else:
-            value = self.x.xeger(r"\w{16}")
+            value = self.x.xeger(r"\w{16}")  ## TODO: Pick random word instead
 
         self.value_map[key] = value
         return value
-
 
 
 class MarkdownRenderer(BaseMarkdownRenderer):
@@ -104,6 +106,7 @@ class MarkdownRenderer(BaseMarkdownRenderer):
     def table_cell(self, token: Dict[str, any], state: BlockState) -> str:
         return "| " + self.render_children(token, state).replace("|", "\\|") + " "
 
+
 class AnonymizedMarkdownRenderer(MarkdownRenderer):
     """A renderer for creating anonymized Markdown with randomized cradle links."""
 
@@ -139,8 +142,7 @@ def anonymize_markdown(
     """
     renderer = AnonymizedMarkdownRenderer(entry_classes, anonymizer)
     markdown = mistune.create_markdown(
-        renderer=renderer, 
-        plugins=[cradle_link_plugin, table]
+        renderer=renderer, plugins=[cradle_link_plugin, table]
     )
     return markdown(md)
 
@@ -152,8 +154,7 @@ def remap_links(
     renderer = MarkdownRenderer(entryclass_remap=entryclass_remap)
 
     markdown = mistune.create_markdown(
-        renderer=renderer, 
-        plugins=[table, cradle_link_plugin]
+        renderer=renderer, plugins=[table, cradle_link_plugin]
     )
 
     result, state = markdown.parse(md)

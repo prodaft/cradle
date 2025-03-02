@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("user", "0004_cradleuser_catalyst_api_key_cradleuser_vt_api_key"),
     ]

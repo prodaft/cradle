@@ -43,6 +43,7 @@ export default function AdminPanelAdd({ type }) {
     const handleError = displayError(setAlert, navigate);
     const [typeFormat, setTypeFormat] = useState(null);
     const [typeFormatDetails, setTypeFormatDetails] = useState(null);
+    const [generativeRegex, setGenerativeRegex] = useState(null);
     const [typeFormatHint, setTypeFormatHint] = useState('');
 
     const populateSubclasses = async () => {
@@ -65,7 +66,6 @@ export default function AdminPanelAdd({ type }) {
         var data = {
             type: classType,
             subtype: subtype,
-            catalyst_type: catalystType,
         };
 
         if (typeFormat) {
@@ -81,6 +81,9 @@ export default function AdminPanelAdd({ type }) {
             } else if (type === 'EntryType') {
                 data.color = color;
                 data.prefix = prefix;
+                data.description = description;
+                data.catalystType = catalystType;
+                data.generative_regex = generativeRegex;
                 await createArtifactClass(data);
             }
             navigate('/admin', { state: Date.now() });
@@ -159,15 +162,6 @@ export default function AdminPanelAdd({ type }) {
                                         </select>
                                     </div>
                                 </div>
-                                <FormField
-                                    type='text'
-                                    className='form-input input input-ghost-primary input-block focus:ring-0'
-                                    labelText='Catalyst Type'
-                                    placeholder='type/subtype|model_class|level'
-                                    value={catalystType}
-                                    disabled={catalystTypeDisabled}
-                                    handleInput={setCatalystType}
-                                />
                                 <div className='w-full'>
                                     <label
                                         htmlFor='description'
@@ -245,6 +239,24 @@ export default function AdminPanelAdd({ type }) {
                                     value={catalystType}
                                     handleInput={setCatalystType}
                                 />
+                                <div className='w-full'>
+                                    <label
+                                        htmlFor='description'
+                                        className='block text-sm font-medium leading-6'
+                                    >
+                                        Description
+                                    </label>
+                                    <div className='mt-2'>
+                                        <textarea
+                                            name='description'
+                                            className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
+                                            placeholder='Description'
+                                            onChange={(e) =>
+                                                setDescription(e.target.value)
+                                            }
+                                        />
+                                    </div>
+                                </div>
                                 {classType == 'entity' && (
                                     <FormField
                                         type='text'
@@ -279,16 +291,51 @@ export default function AdminPanelAdd({ type }) {
                                         </div>
                                     </div>
                                 )}
-                                <textarea
-                                    className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
-                                    placeholder={typeFormatHint}
-                                    onChange={(e) =>
-                                        setTypeFormatDetails(e.target.value)
-                                    }
-                                    hidden={
-                                        classType != 'artifact' || typeFormat == null
-                                    }
-                                />
+                                {!(classType != 'artifact' || typeFormat == null) && (
+                                    <>
+                                        <div className='w-full'>
+                                            <label
+                                                htmlFor='typeformat'
+                                                className='block text-sm font-medium leading-6'
+                                            >
+                                                {typeFormat == 'options'
+                                                    ? 'Options'
+                                                    : 'Regex'}
+                                            </label>
+                                            <div className='mt-2'>
+                                                <textarea
+                                                    className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
+                                                    placeholder={typeFormatHint}
+                                                    onChange={(e) =>
+                                                        setTypeFormatDetails(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                />
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {typeFormat != 'options' && classType != 'entity' && (
+                                    <div className='w-full'>
+                                        <label
+                                            htmlFor='typeformat'
+                                            className='block text-sm font-medium leading-6'
+                                        >
+                                            Generative Regex
+                                        </label>
+                                        <div className='mt-2'>
+                                            <textarea
+                                                className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
+                                                placeholder='Regex used to generate random values for this type.'
+                                                onChange={(e) =>
+                                                    setGenerativeRegex(e.target.value)
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className='w-full'>
                                     <label

@@ -29,8 +29,12 @@ class EntryClass(models.Model, LoggableModelMixin):
     subtype: models.CharField = models.CharField(
         max_length=64, blank=False, primary_key=True
     )
+    description: models.TextField = models.TextField(null=True, blank=True)
     timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
     regex: models.CharField = models.CharField(max_length=65536, blank=True, default="")
+    generative_regex: models.CharField = models.CharField(
+        max_length=65536, blank=True, default=""
+    )
     options: models.CharField = models.CharField(
         max_length=65536, blank=True, default=""
     )
@@ -147,16 +151,24 @@ class EntryClass(models.Model, LoggableModelMixin):
             if self.regex and self.options:
                 raise InvalidClassFormatException()
 
+            self.options = self.options.strip()
+
+            if self.options:
+                self.options = "\n".join(
+                    map(lambda x: x.strip(), self.options.split("\n"))
+                ).strip()
+
+                self.generative_regex = ""
+
             try:
                 if self.regex:
                     re.compile(self.regex)
+                if self.generative_regex:
+                    re.compile(self.generative_regex)
             except re.error:
                 raise InvalidRegexException()
-
-            if self.options is not None:
-                self.options = "\n".join(
-                    map(lambda x: x.strip(), self.options.split("\n"))
-                )
+        else:
+            self.generative_regex = ""
 
         if self.color and self.color[0] != "#":
             self.color = "#" + self.color

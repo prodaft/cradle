@@ -271,8 +271,7 @@ def markdown_to_pjs(
     renderer = PlateJSRenderer(entries)
 
     markdown = mistune.create_markdown(
-        renderer=renderer, 
-        plugins=[table, cradle_link_plugin, footnote_plugin]
+        renderer=renderer, plugins=[table, cradle_link_plugin, footnote_plugin]
     )
 
     state = markdown.block.state_cls()

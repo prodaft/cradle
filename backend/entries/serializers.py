@@ -87,6 +87,8 @@ class EntryClassSerializer(serializers.ModelSerializer):
         fields = [
             "type",
             "subtype",
+            "description",
+            "generative_regex",
             "regex",
             "options",
             "prefix",
@@ -162,18 +164,17 @@ class EntitySerializer(serializers.ModelSerializer):
         if "subtype" not in data or not data["subtype"]:
             raise EntryMustHaveASubtype()
 
-        entry_class_internal = {}
-
         for i in data:  # For lists in querydict
             if isinstance(data[i], list):
                 data[i] = data[i][0]
 
-        for key in EntryClassSerializer.Meta.fields:
-            if key in data:
-                entry_class_internal[key] = data.pop(key)
-
         internal = super().to_internal_value(data)
-        entryclass = EntryClass.objects.filter(**entry_class_internal)
+        entryclass = EntryClass.objects.filter(
+            type=EntryType.ENTITY, subtype=data["subtype"]
+        )
+
+        if not entryclass.exists():
+            raise EntryTypeDoesNotExist()
 
         internal["entry_class"] = entryclass.first()
         return internal

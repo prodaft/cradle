@@ -55,7 +55,10 @@ def get_guide_note(guide_name: str, request):
         return None
 
     try:
-        content = render_to_string(f"notes/md/{guide_name}.md", {"static_location": request.build_absolute_uri(settings.STATIC_URL)})
+        content = render_to_string(
+            f"notes/md/{guide_name}.md",
+            {"static_location": request.build_absolute_uri(settings.STATIC_URL)},
+        )
     except TemplateDoesNotExist:
         return None
 

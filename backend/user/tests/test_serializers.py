@@ -4,7 +4,6 @@ from .utils import UserTestCase
 
 
 class TokenObtainSerializerTest(UserTestCase):
-
     def setUp(self):
         super().setUp()
 

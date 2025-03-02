@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("entries", "0013_alter_entryclass_catalyst_type"),
     ]

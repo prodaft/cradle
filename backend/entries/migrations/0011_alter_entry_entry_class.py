@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("entries", "0010_entry_timestamp_entryclass_timestamp"),
     ]

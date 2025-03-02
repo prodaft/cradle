@@ -13,9 +13,7 @@ class HTMLRenderer(BaseHTMLRenderer):
     """A renderer for converting Markdown to HTML with special handling for cradle links."""
 
     def __init__(
-        self,
-        fetch_image: Callable[[str, str], Optional[BytesIO]],
-        **kwargs
+        self, fetch_image: Callable[[str, str], Optional[BytesIO]], **kwargs
     ) -> None:
         self.fetch_image = fetch_image
         super().__init__(**kwargs)
@@ -52,17 +50,16 @@ def markdown_to_html(
 ) -> str:
     """
     Convert markdown to HTML with special handling for cradle links and images.
-    
+
     :param md: Markdown content to convert
     :param fetch_image: Function to fetch image data given bucket and path
     :return: HTML string
     """
     renderer = HTMLRenderer(fetch_image)
     markdown = mistune.create_markdown(
-        renderer=renderer,
-        plugins=[table, cradle_link_plugin, footnote_plugin]
+        renderer=renderer, plugins=[table, cradle_link_plugin, footnote_plugin]
     )
-    
+
     state = markdown.block.state_cls()
     state.env["ref_footnotes"] = footnotes
 

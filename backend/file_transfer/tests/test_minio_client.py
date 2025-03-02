@@ -4,7 +4,6 @@ from ..exceptions import MinioObjectNotFound
 
 
 class TestMinioClient(FileTransferTestCase):
-
     def setUp(self):
         super().setUp()
         self.mock_minio_create()

@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("publish", "0003_remove_publishedreport_completed_and_more"),
     ]

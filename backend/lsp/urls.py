@@ -1,6 +1,7 @@
 from django.urls import path
-from .views import lsp_pack_view
+from .views import lsp_view
 
 urlpatterns = [
-    path("pack/", lsp_pack_view.LspPack.as_view(), name="lsp_pack_view"),
+    path("types/", lsp_view.LspTypes.as_view(), name="lsp_types_view"),
+    path("trie/", lsp_view.CompletionTrie.as_view(), name="completion_trie_view"),
 ]

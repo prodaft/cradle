@@ -7,7 +7,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("entries", "0007_alter_entry_entry_class_alter_entry_name_and_more"),
     ]

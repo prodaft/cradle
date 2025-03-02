@@ -10,7 +10,6 @@ from django.core.exceptions import ValidationError
 
 
 class MinimumUpperentityLettersValidatorTest(UserTestCase):
-
     def test_upperentity_validator_successful(self):
         tests = [
             ("aaaaaaa", 0),
@@ -48,7 +47,6 @@ class MinimumUpperentityLettersValidatorTest(UserTestCase):
 
 
 class MinimumLowerentityLettersValidatorTest(UserTestCase):
-
     def test_lowerentity_validator_successful(self):
         tests = [
             ("password", 4),
@@ -82,7 +80,6 @@ class MinimumLowerentityLettersValidatorTest(UserTestCase):
 
 
 class MinimumDigitsValidatorTest(UserTestCase):
-
     def test_digits_validator_successful(self):
         tests = [
             ("password123", 3),
@@ -114,7 +111,6 @@ class MinimumDigitsValidatorTest(UserTestCase):
 
 
 class MinimumSpecialCharactersValidatorTest(UserTestCase):
-
     def test_special_validator_successful(self):
         tests = [
             ("p@ssw!rd#", 3),

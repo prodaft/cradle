@@ -16,4 +16,3 @@ class EmailBackend(SMTPBackend):
             ssl_context.check_hostname = False
             ssl_context.verify_mode = ssl.CERT_NONE
             return ssl_context
-

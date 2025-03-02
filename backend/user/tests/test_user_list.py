@@ -110,7 +110,6 @@ def bytes_to_json(data):
 
 
 class GetAllUsersTest(UserTestCase):
-
     def setUp(self):
         super().setUp()
 

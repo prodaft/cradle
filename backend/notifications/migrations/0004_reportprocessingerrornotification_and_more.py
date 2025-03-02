@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("notifications", "0003_newusernotification"),
         ("publish", "0003_remove_publishedreport_completed_and_more"),

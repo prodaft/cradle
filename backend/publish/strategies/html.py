@@ -52,7 +52,11 @@ class HTMLPublish(BasePublishStrategy):
         }
         allowed_protocols = {"data", "http", "https"}
         return bleach.clean(
-            html, tags=allowed_tags, attributes=allowed_attrs, protocols=allowed_protocols, strip=True
+            html,
+            tags=allowed_tags,
+            attributes=allowed_attrs,
+            protocols=allowed_protocols,
+            strip=True,
         )
 
     def _build_html(self, title: str, notes: List[Note], user) -> str:
@@ -68,7 +72,7 @@ class HTMLPublish(BasePublishStrategy):
             rendered_note = markdown_to_html(
                 anonymized_note.content,
                 fetch_image=MinioClient().fetch_file,
-                footnotes=footnotes
+                footnotes=footnotes,
             )
             sanitized_note = self._sanitize_html(rendered_note)
             body += f"<div class='note'>{sanitized_note}</div>\n"
@@ -76,15 +80,20 @@ class HTMLPublish(BasePublishStrategy):
         sanitized_title = self._sanitize_html(title)
 
         colors = {}
-        
+
         for i in EntryClass.objects.all():
-            colors[i.subtype] = i.color 
+            colors[i.subtype] = i.color
 
         template = get_template("report/simple.html")
         context = {
             "title": sanitized_title,
             "body": body,
-            "styles": "\n".join([f'.entry[data-type="{k}"] {{ background-color: "{v}"; }}' for k,v in colors.items()]),
+            "styles": "\n".join(
+                [
+                    f'.entry[data-type="{k}"] {{ background-color: "{v}"; }}'
+                    for k, v in colors.items()
+                ]
+            ),
         }
         return template.render(context)
 

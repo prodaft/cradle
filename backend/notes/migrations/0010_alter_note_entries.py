@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("entries", "0018_alter_entry_entry_class"),
         ("notes", "0009_graph_traversal_functions"),

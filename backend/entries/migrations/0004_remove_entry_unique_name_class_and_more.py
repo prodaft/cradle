@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("entries", "0003_entryclass_remove_entry_unique_name_type_and_more"),
     ]

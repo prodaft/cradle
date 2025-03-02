@@ -5,7 +5,6 @@ from django.urls import reverse
 
 
 class TestFileDownload(FileTransferTestCase):
-
     def setUp(self):
         super().setUp()
         self.mock_minio_client_create()

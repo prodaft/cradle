@@ -18,7 +18,6 @@ from uuid import UUID
 
 
 class FleetingNotesList(APIView):
-
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 

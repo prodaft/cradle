@@ -29,8 +29,21 @@ export function queryEntries(filters, page = 1) {
  * Function to fetch the LSP pack for the current user
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function fetchLspPack() {
-    const url = `/lsp/pack/`;
+export function fetchLspTypes() {
+    const url = `/lsp/types/`;
+
+    return authAxios({
+        method: 'GET',
+        url: url,
+    });
+}
+
+/**
+ * Function to fetch the LSP pack for the current user
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export function fetchCompletionTries() {
+    const url = `/lsp/trie/`;
 
     return authAxios({
         method: 'GET',

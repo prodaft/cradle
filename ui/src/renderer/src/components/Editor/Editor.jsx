@@ -59,6 +59,7 @@ export default function Editor({
     const [showFileList, setShowFileList] = useState(false);
     const [prevNoteId, setPrevNoteId] = useState(null);
     const [pendingFiles, setPendingFiles] = useState(EMPTY_FILE_LIST);
+    const [lspLoaded, setLspLoaded] = useState(false);
     const [scrollMap, setScrollMap] = useState(null);
     const [top, setTop] = useState(0);
     const [codeMirrorContent, setCodeMirrorContent] = useState('');
@@ -81,7 +82,7 @@ export default function Editor({
 
     // Adjusted instantiation to pass an empty options object and the error handler
     const editorUtils = useMemo(
-        () => new CradleEditor({}, displayError(setAlert)),
+        () => new CradleEditor({}, setLspLoaded, displayError(setAlert)),
         [setAlert],
     );
 
@@ -232,17 +233,19 @@ export default function Editor({
                             pendingFiles={pendingFiles}
                             setPendingFiles={setPendingFiles}
                         />
-                        <button
-                            id={autoLinkId}
-                            data-testid='auto-link'
-                            name='auto-link'
-                            type='button'
-                            className='flex flex-row items-center hover:bg-gray-4 tooltip tooltip-bottom tooltip-primary'
-                            data-tooltip={'Auto Link'}
-                            onClick={smartLink}
-                        >
-                            <LightBulb />
-                        </button>
+                        {lspLoaded && (
+                            <button
+                                id={autoLinkId}
+                                data-testid='auto-link'
+                                name='auto-link'
+                                type='button'
+                                className='flex flex-row items-center hover:bg-gray-4 tooltip tooltip-bottom tooltip-primary'
+                                data-tooltip={'Auto Link'}
+                                onClick={smartLink}
+                            >
+                                <LightBulb />
+                            </button>
+                        )}
                     </span>
                     <span className='flex flex-row space-x-3 items-center'>
                         <label

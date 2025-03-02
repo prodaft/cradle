@@ -297,8 +297,7 @@ def cradle_connections(
 
     # Create a Markdown instance using the renderer
     markdown = mistune.create_markdown(
-        renderer=renderer, 
-        plugins=[table, cradle_link_plugin, footnote_plugin]
+        renderer=renderer, plugins=[table, cradle_link_plugin, footnote_plugin]
     )
 
     # Render the sample Markdown string

@@ -38,18 +38,7 @@ services:
 
 volumes:
   pg_data:
-    driver: local
-    driver_opts:
-      o: bind
-      type: none
-      device: ./postgres
-
   minio_data:
-    driver: local
-    driver_opts:
-      o: bind
-      type: none
-      device: ./minio
 
 networks:
   other:

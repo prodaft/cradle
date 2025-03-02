@@ -290,6 +290,32 @@ export default function GraphExplorer() {
 
             {entryGraphColors && showLegend && (
                 <div className='absolute bottom-4 right-4 p-4 w-fit bg-cradle3 bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-md'>
+                    <div className='flex justify-between items-center mb-2'>
+                        <h3 className='text-sm font-semibold'>Legend</h3>
+                        <button
+                            className='text-xs px-2 py-1 bg-opacity-70 bg-gray-700 hover:bg-gray-600 rounded transition-colors'
+                            onClick={() => {
+                                const allTypes = Object.keys(entryGraphColors);
+                                const allDisabled = allTypes.every((type) =>
+                                    disabledTypes.has(type),
+                                );
+
+                                if (allDisabled) {
+                                    // Show all if all are currently hidden
+                                    setDisabledTypes(new Set());
+                                } else {
+                                    // Hide all
+                                    setDisabledTypes(new Set(allTypes));
+                                }
+                            }}
+                        >
+                            {Object.keys(entryGraphColors).every((type) =>
+                                disabledTypes.has(type),
+                            )
+                                ? 'Show All'
+                                : 'Hide All'}
+                        </button>
+                    </div>
                     <div className='grid grid-cols-2 gap-2 max-h-32 overflow-y-auto'>
                         {Object.entries(entryGraphColors).map(([type, color]) => (
                             <div

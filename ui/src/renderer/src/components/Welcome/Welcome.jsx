@@ -49,9 +49,9 @@ export default function Welcome() {
                     >
                         {flexDirection !== 'flex-row' && (
                             <div
-                                className={`${entryLogoWidth} flex justify-center mb-8 px-8`}
+                                className={`${entryLogoWidth} flex justify-center mb-8 px-40`}
                             >
-                                <Logo text={true} />
+                                <Logo text={false} />
                             </div>
                         )}
                         <div
