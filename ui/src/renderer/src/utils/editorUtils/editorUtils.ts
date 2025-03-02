@@ -1,434 +1,532 @@
-import { linter } from '@codemirror/lint';
-import { getLinkNode, parseLink } from '../../utils/textEditorUtils/textEditorUtils';
+import { Diagnostic, linter } from '@codemirror/lint';
 import { fetchLspPack } from '../../services/queryService/queryService';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { LanguageSupport, LRLanguage, syntaxTree } from '@codemirror/language';
-import { parser as markdownParser } from '@lezer/markdown';
+import { EditorState } from '@uiw/react-codemirror';
+import { tags } from '@codemirror/highlight';
 
+/*==============================================================================
+  INTERFACES
+==============================================================================*/
 interface EnhancerOptions {
-    lintDelay?: number;
-    minSuggestionLength?: number;
-    maxSuggestions?: number;
-    [key: string]: any;
+  lintDelay?: number;
+  minSuggestionLength?: number;
+  maxSuggestions?: number;
+  [key: string]: any;
 }
 
 interface LspPack {
-    classes: {
-        [type: string]: {
-            regex?: string;
-            enum?: string[];
-        };
+  classes: {
+    [type: string]: {
+      regex?: string;
+      enum?: string[];
     };
-    instances: {
-        [type: string]: string[];
-    };
-    [key: string]: any;
+  };
+  instances: {
+    [type: string]: string[];
+  };
+  [key: string]: any;
 }
 
 interface Suggestion {
-    type: string;
-    match: string;
+  type: string;
+  match: string;
 }
 
 interface ParsedLink {
-    from: number;
-    to: number;
-    type: string | null;
-    post: (item: string) => string;
+  from: number;
+  to: number;
+  type: string | null;
+  post: (item: string) => string;
 }
 
 interface AutocompleteContext {
-    pos: number;
-    explicit?: boolean;
-    state: {
-        sliceDoc: (from: number, to: number) => string;
-    };
-    matchBefore: (regex: RegExp) => { from: number; to: number; text: string };
+  pos: number;
+  explicit?: boolean;
+  state: EditorState;
+  matchBefore: (regex: RegExp) => { from: number; to: number; text: string };
 }
 
 interface AutocompleteResult {
-    from: number;
-    to?: number;
-    options: Array<{ type: string; label: string }>;
+  from: number;
+  to?: number;
+  options: Array<{ type: string; label: string }>;
 }
 
 interface MarkdownLanguageConfig {
-    base: LRLanguage;
-    codeLanguages?: readonly any[];
-    extensions?: readonly any[];
+  base: LRLanguage;
+  codeLanguages?: readonly any[];
+  extensions?: readonly any[];
 }
 
-/**
- * CradleEditor class that provides autocomplete and linting functionality
- * for a text editor with LSP integration
- */
+/*==============================================================================
+  CRADLE EDITOR CLASS
+  Provides autocomplete, linting, markdown integration, and link auto-
+  formatting functionalities for a text editor with LSP integration.
+==============================================================================*/
 export class CradleEditor {
-    // Static properties for caching the LSP pack across instances
-    private static packPromise: Promise<any> | null = null;
-    private static cachedLspPack: LspPack | null = null;
+  /*---------------------------------------------------------------------------
+    Static Properties (Cache for LSP Pack)
+  ---------------------------------------------------------------------------*/
+  private static packPromise: Promise<any> | null = null;
+  private static cachedLspPack: LspPack | null = null;
 
-    private lspPack: LspPack | null;
-    private options: EnhancerOptions;
-    private _ready: Promise<boolean>;
-    private _onerror: ((error: Error) => void) | null;
+  /*---------------------------------------------------------------------------
+    Instance Properties
+  ---------------------------------------------------------------------------*/
+  private lspPack: LspPack | null;
+  private options: EnhancerOptions;
+  private _ready: Promise<boolean>;
+  private _onError: ((error: Error) => void) | null;
 
-    /**
-     * Initialize the enhancer
-     * @param {EnhancerOptions} options - Configuration options
-     * @param {function|null} onerror - Error handler function
-     */
-    constructor(
-        options: EnhancerOptions = {},
-        onerror: ((error: Error) => void) | null = null,
-    ) {
-        this.lspPack = null;
-        this.options = {
-            lintDelay: 300,
-            minSuggestionLength: 3,
-            maxSuggestions: 10,
-            ...options,
-        };
-        this._onerror = onerror;
-        this._ready = this._initialize();
+  /*---------------------------------------------------------------------------
+    Constructor & Initialization
+  ---------------------------------------------------------------------------*/
+  constructor(options: EnhancerOptions = {}, onError: ((error: Error) => void) | null = null) {
+    this.lspPack = null;
+    this.options = {
+      lintDelay: 300,
+      minSuggestionLength: 3,
+      maxSuggestions: 10,
+      ...options,
+    };
+    this._onError = onError;
+    this._ready = this.initializePack();
+  }
+
+  /**
+   * Wait until the LSP pack is fetched and cached.
+   * Uses static caching to ensure only one fetch is made.
+   */
+  private async initializePack(): Promise<boolean> {
+    try {
+      if (CradleEditor.cachedLspPack) {
+        this.lspPack = CradleEditor.cachedLspPack;
+        return true;
+      }
+      if (!CradleEditor.packPromise) {
+        CradleEditor.packPromise = fetchLspPack().then(response => response.data);
+      }
+      const pack = await CradleEditor.packPromise;
+      this.lspPack = pack;
+      CradleEditor.cachedLspPack = pack;
+      return true;
+    } catch (error) {
+      if (this._onError) this._onError(error as Error);
+      else throw error;
+      return false;
     }
+  }
 
-    /**
-     * Initialize by fetching the LSP pack.
-     * Uses a static promise/cache so that only one request is made across all instances.
-     * @private
-     * @returns {Promise<boolean>} - Resolves when initialization is complete
-     */
-    private async _initialize(): Promise<boolean> {
-        try {
-            // If we already have a cached pack, use it.
-            if (CradleEditor.cachedLspPack) {
-                this.lspPack = CradleEditor.cachedLspPack;
-                return true;
-            }
+  /**
+   * Returns a promise that resolves when the editor is ready.
+   */
+  ready(): Promise<boolean> {
+    return this._ready;
+  }
 
-            // Otherwise, if a request is already in progress, wait for it.
-            if (!CradleEditor.packPromise) {
-                CradleEditor.packPromise = fetchLspPack().then(
-                    (response) => response.data,
-                );
-            }
-            const pack = await CradleEditor.packPromise;
-            this.lspPack = pack;
-            CradleEditor.cachedLspPack = pack;
-            return true;
-        } catch (error) {
-            if (this._onerror) this._onerror(error as Error);
-            else throw error;
-            return false;
+  /*============================================================================
+    AUTOCOMPLETE METHODS
+  =============================================================================*/
+
+  /**
+   * Public method to retrieve the autocomplete extension.
+   * It registers the autocomplete function with the markdown language.
+   */
+  autocomplete(): any {
+    return markdownLanguage.data.of({
+      autocomplete: this.provideAutocompleteSuggestions.bind(this),
+    });
+  }
+
+  /**
+   * Private helper to collect suggestions for a given word.
+   */
+  private getSuggestionsForWord(word: string): Suggestion[] {
+    if (!this.lspPack) return [];
+    const suggestions: Suggestion[] = [];
+    const madeSuggestions = new Set<string>();
+
+    // Process class-based suggestions
+    for (const [type, criteria] of Object.entries(this.lspPack.classes)) {
+      if (criteria.regex) {
+        const regex = new RegExp(`^${criteria.regex}$`);
+        if (regex.test(word) || regex.test(word.toLowerCase())) {
+          suggestions.push({ type, match: word });
+          madeSuggestions.add(`${type}:${word}`);
         }
-    }
-
-    /**
-     * Check if the enhancer is ready
-     * @returns {Promise<boolean>} - Resolves when the enhancer is ready
-     */
-    ready(): Promise<boolean> {
-        return this._ready;
-    }
-
-    /**
-     * Get suggestions for a given word based on the LSP pack
-     * @private
-     * @param {string} word - The word to find suggestions for
-     * @returns {Array<Suggestion>} - Array of suggestion objects
-     */
-    private _suggestionsForWord(word: string): Suggestion[] {
-        if (!this.lspPack) return [];
-        let suggestions: Suggestion[] = [];
-
-        // Check each class type in LspPack
-        for (const [type, criteria] of Object.entries(this.lspPack.classes)) {
-            // Check if criteria has a regex
-            if (criteria.regex) {
-                const regex = new RegExp(`^${criteria.regex}$`);
-                if (regex.test(word) || regex.test(word.toLowerCase())) {
-                    suggestions.push({
-                        type: type,
-                        match: word,
-                    });
-                }
-            }
-
-            // Check if criteria has an enum
-            if (criteria.enum) {
-                const matchingEnums = criteria.enum.filter((value) =>
-                    value.toLowerCase().startsWith(word.toLowerCase()),
-                );
-                matchingEnums.forEach((match) => {
-                    suggestions.push({
-                        type: type,
-                        match: match,
-                    });
-                });
-            }
-        }
-
-        // Check in instances for possible completions
-        for (const [type, instances] of Object.entries(this.lspPack.instances)) {
-            const matchingInstances = instances.filter((value) =>
-                value.startsWith(word),
-            );
-            matchingInstances.forEach((match) => {
-                suggestions.push({
-                    type: type,
-                    match: match,
-                });
-            });
-        }
-
-        return suggestions;
-    }
-
-    /**
-     * Provides autocomplete suggestions for text outside of links
-     * @private
-     * @param {AutocompleteContext} context - The autocomplete context
-     * @returns {Promise<AutocompleteResult> | AutocompleteResult} - Autocomplete suggestions
-     */
-    private _autocompleteOutsideLink(
-        context: AutocompleteContext,
-    ): Promise<AutocompleteResult> | AutocompleteResult {
-        let word = context.matchBefore(/\S*/);
-        if (word.from == word.to && !context.explicit)
-            return { from: context.pos, options: [] };
-
-        return new Promise((resolve) => {
-            let suggestions = this._suggestionsForWord(word.text).map((o) => {
-                return { type: 'keyword', label: `[[${o.type}:${o.match}]]` };
-            });
-            resolve({
-                from: word.from,
-                to: word.to,
-                options: suggestions,
-            });
+      }
+      else if (criteria.enum) {
+        const matchingEnums = criteria.enum.filter(enumValue =>
+          enumValue.toLowerCase().startsWith(word.toLowerCase())
+        );
+        matchingEnums.forEach(match => {
+          suggestions.push({ type, match });
+          madeSuggestions.add(`${type}:${match}`);
         });
+      }
     }
 
-    /**
-     * Get the autocomplete extension for the editor
-     * @returns {Promise<AutocompleteResult>} - Returns a function that provides autocomplete
-     */
-    private async _autocompleter(
-        context: AutocompleteContext,
-    ): Promise<AutocompleteResult> {
-        await this.ready();
+    // Process instance-based suggestions
+    for (const [type, instances] of Object.entries(this.lspPack.instances)) {
+      const matchingInstances = instances.filter(value => value.startsWith(word));
+      matchingInstances.forEach(match => {
+        if (!madeSuggestions.has(`${type}:${match}`)) {
+          suggestions.push({ type, match });
+          madeSuggestions.add(`${type}:${match}`);
+        }
+      });
+    }
+    return suggestions;
+  }
 
-        let node = getLinkNode(context);
-        if (node == null) return this._autocompleteOutsideLink(context);
+  /**
+   * Provides autocomplete suggestions when the cursor is outside a link.
+   */
+  private autocompleteForPlainText(context: AutocompleteContext): AutocompleteResult {
+    const word = context.matchBefore(/\S*/);
+    if (word.from === word.to && !context.explicit)
+      return { from: context.pos, options: [] };
 
-        const linkFull = context.state.sliceDoc(node.from, node.to);
-        const parsedLink = parseLink(node.from, context.pos, linkFull);
-        if (parsedLink == null) return { from: context.pos, options: [] };
+    const suggestions = this.getSuggestionsForWord(word.text).map(s =>
+      ({ type: 'keyword', label: `[[${s.type}:${s.match}]]` })
+    );
 
-        let options: Array<{ label: string; type: string }> = [];
+    return {
+      from: word.from,
+      to: word.to,
+      options: suggestions,
+    };
+  }
 
-        if (parsedLink.type == null) {
-            options = Object.values(this.lspPack as LspPack)
-                .flatMap((obj) => Object.keys(obj))
-                .map((item) => ({
-                    label: parsedLink.post(item),
-                    type: 'keyword',
-                }));
-        } else if (this.lspPack && parsedLink.type in this.lspPack['instances']) {
-            options = this.lspPack['instances'][parsedLink.type].map((item) => ({
-                label: parsedLink.post(item),
-                type: 'keyword',
+  /**
+   * Provides autocomplete suggestions based on the cursor context.
+   */
+  private async provideAutocompleteSuggestions(context: AutocompleteContext): Promise<AutocompleteResult> {
+    await this.ready();
+    if (!this.lspPack) return { from: context.pos, options: [] };
+
+    const pos = context.pos;
+    const tree = syntaxTree(context.state);
+    let node = tree.resolve(pos, -1);
+
+    let options: Array<{ label: string; type: string }> = [];
+    let from = node.from;
+    let to = node.to;
+    let ratchet = false;
+
+    switch (node.name) {
+      case 'CradleLink':
+        if (!node.lastChild || node.lastChild.name === 'CradleLinkType') {
+          to -= 2;
+        } else if (node.lastChild.name === 'CradleLinkValue') {
+          to = node.lastChild.to + 1;
+          ratchet = true;
+        }
+        from = to;
+        // fall through
+      case 'CradleLinkType':
+        if (!ratchet) {
+          options = Object.values(this.lspPack)
+            .flatMap(obj => Object.keys(obj))
+            .map(item => ({
+              label: item + (node.nextSibling ? '' : ':'),
+              info: 'Test',
+              type: 'keyword',
             }));
+          break;
         }
-
-        return {
-            from: parsedLink.from,
-            to: parsedLink.to,
-            options: options,
-        };
+        ratchet = false;
+        // fall through
+      case 'CradleLinkValue': {
+        const sibling = node.name === 'CradleLink' ? node.firstChild : node.prevSibling;
+        if (!sibling) break;
+        const t = context.state.doc.sliceString(sibling.from, sibling.to);
+        if (!this.lspPack.instances[t]) break;
+        options = this.lspPack.instances[t].map(item => ({
+          label: item,
+          type: 'keyword',
+        }));
+        break;
+      }
+      case 'CradleLinkAlias':
+        break;
+      default:
+        // For headings, paragraphs, or table cells, use plain text autocomplete.
+        if (!node.name.includes('Heading')) break;
+      case 'Paragraph':
+      case 'TableCell':
+        return this.autocompleteForPlainText(context);
     }
 
-    /**
-     * Creates a cradle markdown language with support for [[type:value|alias]] links
-     * @param {MarkdownLanguageConfig} config - Configuration for the markdown language
-     * @returns {LanguageSupport} - The extended markdown language support
-     */
-    markdown(config: MarkdownLanguageConfig): LanguageSupport {
-        const CradleLinkExtension = {
-            defineNodes: [
-                {
-                    name: 'CradleLink',
-                    style: 'Link',
-                    children: [
-                        {
-                            name: 'CradleLinkType',
-                            style: 'cradle-link-type',
-                        },
-                        {
-                            name: 'CradleLinkValue',
-                            style: 'cradle-link-value',
-                        },
-                        {
-                            name: 'CradleLinkAlias',
-                            style: 'cradle-link-alias',
-                        },
-                    ],
-                },
-                {
-                    name: 'CradleLinkType',
-                    style: 'link',
-                },
-                {
-                    name: 'CradleLinkValue',
-                    style: 'link',
-                },
-                {
-                    name: 'CradleLinkAlias',
-                    style: 'link',
-                }
-            ],
-            parseInline: [
-                {
-                    name: 'CradleLink',
-                    before: 'Link',
-                    parse(cx: any, next: any, pos: number) {
-                        // Check for opening brackets "[["
-                        if (next !== 91 || cx.char(pos + 1) !== 91) return -1;
+    return { from, to, options };
+  }
 
-                        let end = pos + 2;
-                        let content = '';
+  /*============================================================================
+    LINTING METHODS
+  =============================================================================*/
 
-                        // Loop until we find the closing "]]"
-                        while (end < cx.end) {
-                            if (cx.char(end) === 93 && cx.char(end + 1) === 93) {
-                                // Found the closing "]]"
-                                const link = content;
-                                const linkRegex = /^([^:]+):([^|]+)(?:\|(.+))?$/;
-                                const match = link.match(linkRegex);
+  /**
+   * Returns a CodeMirror lint extension that checks for valid cradle links and
+   * suggests link formatting.
+   */
+  lint(): any {
+    return linter(async (view) => {
+      await this.ready();
+      if (!this.lspPack) return [];
 
-                                if (match) {
-                                    const linkType = match[1].trim();
-                                    const linkValue = match[2].trim();
-                                    const linkAlias = match[3] ? match[3].trim() : null;
+      const diagnostics: Diagnostic[] = [];
+      const text = view.state.doc.toString();
+      const tree = syntaxTree(view.state);
+      const ignoreTypes = new Set(['CodeBlock', 'FencedCode', 'InlineCode']);
 
-                                    const node = cx.elt('CradleLink', pos, end + 2, []);
+      tree.iterate({
+        from: 0,
+        to: view.state.doc.length,
+        enter: (syntaxNode) => {
+          const node = syntaxNode.node;
+          if (ignoreTypes.has(node.name)) return false;
 
-                                    node.children = [
-                                        cx.elt('CradleLinkType', pos, pos + linkType.length + 1),
-                                        cx.elt('CradleLinkValue', pos + linkType.length + 2, pos + linkType.length + linkValue.length + 3),
-                                    ];
-                                    if (linkAlias) {
-                                        node.children.push(
-                                        cx.elt('CradleLinkAlias', pos + linkType.length + 1 + linkValue.length, end),
-                                        )
-                                    }
+          if (node.name === 'CradleLinkType') {
+            // Validate link type.
+            const nodeText = text.slice(node.from, node.to);
+            const matches = Object.values(this.lspPack as LspPack)
+              .flatMap((obj) => Object.keys(obj))
+              .filter(x => x === nodeText);
+            if (matches.length === 0) {
+              diagnostics.push({
+                from: node.from,
+                to: node.to,
+                severity: 'error',
+                message: `Invalid link type: ${nodeText}`,
+              });
+            }
+            return false;
+          } else if (node.name === 'CradleLinkValue') {
+            // Validate link value.
+            const sibling = node.prevSibling;
+            if (!sibling) return false;
+            const t = text.slice(sibling.from, sibling.to);
+            const value = text.slice(node.from, node.to);
+            diagnostics.push(...this.validateLinkValue(t, value, node.from));
+            return false;
+          } else if (node.name === 'CradleLink') {
+            return true;
+          } else if (node.name === 'CradleLinkAlias') {
+            return false;
+          }
 
-                                    return cx.append(node);
-                                }
-                                return -1;
-                            }
-                            content += String.fromCharCode(cx.char(end));
-                            end++;
-                        }
-                        return -1;
+          // Process plain text nodes for possible suggestions.
+          if (!node.firstChild) {
+            const nodeText = text.slice(node.from, node.to);
+            const regex = /\S+/g;
+            let match: RegExpExecArray | null;
+            while ((match = regex.exec(nodeText)) !== null) {
+              const word = match[0];
+              const trimmed = word.replace(/^[,.:\s]+|[,.:\s]+$/g, '');
+              if (!trimmed) continue;
+              const suggestions = this.getSuggestionsForWord(trimmed);
+              for (const suggestion of suggestions) {
+                diagnostics.push({
+                  from: node.from + match.index,
+                  to: node.from + match.index + word.length,
+                  severity: 'warning',
+                  message: `Possible link: [[${suggestion.type}:${suggestion.match}]]`,
+                  actions: [
+                    {
+                      name: 'Link',
+                      apply(view, from, to) {
+                        view.dispatch({
+                          changes: {
+                            from,
+                            to,
+                            insert: `[[${suggestion.type}:${suggestion.match}]]`,
+                          },
+                        });
+                      },
                     },
-                },
-            ],
-        };
-
-        // Create the language support with all extensions
-        return markdown({
-            base: markdownLanguage,
-            codeLanguages: config.codeLanguages || [],
-            extensions: [CradleLinkExtension, ...(config.extensions || [])],
-        });
-    }
-
-    /**
-     * Get the autocomplete configuration for markdown language
-     * @returns {Promise<any>} - Autocomplete configuration
-     */
-    autocomplete(): any {
-        return markdownLanguage.data.of({
-            autocomplete: this._autocompleter.bind(this),
-        });
-    }
-
-    /**
-     * Auto-format links in the provided text.
-     * If an editor instance is provided, only nodes of type "CradleLink" are reformatted.
-     * Otherwise, it falls back to the original behavior.
-     * @param {string} text - The text to format
-     * @param {any} [editor] - (Optional) A CodeMirror React editor instance to use for node analysis.
-     * @returns {string} - The formatted text with links
-     */
-    autoFormatLinks(editor: any, start: number, end: number): string {
-        const trimWord = (x: string): string => x.replace(/^[,.:\s]+|[,.:\s]+$/g, '');
-
-        // If an editor instance is provided and it supports syntax tree access
-        if (editor && editor.state && typeof syntaxTree === 'function') {
-            const tree = syntaxTree(editor.state);
-            // Collect changes as {from, to, replacement}
-            const changes: Array<{ from: number; to: number; replacement: string }> =
-                [];
-
-            tree.iterate({
-                enter: (node: any) => {
-                    console.log(node.name);
-                    console.log(node);
-                    return;
-                    if (node.name === 'CradleLink') {
-                        const nodeText = text.substring(node.from, node.to);
-                        // Use suggestions to see if the node text should be formatted.
-                        const suggestions = this._suggestionsForWord(nodeText);
-                        // Look for a suggestion that exactly matches after trimming.
-                        const match = suggestions.find(
-                            (x) => trimWord(x.match) === trimWord(nodeText),
-                        );
-                        if (match) {
-                            const replacement = `[[${match.type}:${match.match}]]`;
-                            changes.push({ from: node.from, to: node.to, replacement });
-                        }
-                    }
-                },
-            });
-
-            // Apply changes in reverse order to avoid messing up offsets.
-            changes.sort((a, b) => b.from - a.from);
-            let formattedText = text;
-            for (const change of changes) {
-                formattedText =
-                    formattedText.slice(0, change.from) +
-                    change.replacement +
-                    formattedText.slice(change.to);
+                  ],
+                });
+              }
             }
-            return formattedText;
+          }
+        },
+      });
+      return diagnostics;
+    });
+  }
+
+  /**
+   * Validates a link value against its corresponding criteria.
+   * Returns an array of diagnostics if the value does not match regex or enums.
+   */
+  private validateLinkValue(linkType: string, value: string, from: number): Diagnostic[] {
+    if (!this.lspPack) return [];
+    const diagnostics: Diagnostic[] = [];
+    const criteria = this.lspPack.classes[linkType];
+    if (!criteria) return [];
+
+    if (criteria.regex) {
+      const regex = new RegExp(`^${criteria.regex}$`);
+      if (!(regex.test(value) || regex.test(value.toLowerCase()))) {
+        diagnostics.push({
+          from,
+          to: from + value.length,
+          severity: 'error',
+          message: `${value} does not fit ${linkType}'s regex!`,
+        });
+      }
+    }
+
+    if (criteria.enum) {
+      // Avoid shadowing variable names by renaming the callback variable.
+      const matchingEnums = criteria.enum.filter(enumVal =>
+        enumVal.toLowerCase().startsWith(value.toLowerCase())
+      );
+      if (matchingEnums.length === 0) {
+        diagnostics.push({
+          from,
+          to: from + value.length,
+          severity: 'error',
+          message: `${value} is not a valid enum value!`,
+        });
+      }
+    }
+    // TODO: Check for non-existent entities.
+    return diagnostics;
+  }
+
+  /*============================================================================
+    MARKDOWN LANGUAGE INTEGRATION
+  =============================================================================*/
+
+  /**
+   * Creates a cradle markdown language with support for [[type:value|alias]] links.
+   */
+  markdown(config: MarkdownLanguageConfig): LanguageSupport {
+    const CradleLinkExtension = {
+      defineNodes: [
+        {
+          name: 'CradleLink',
+          style: [tags.squareBracket],
+          children: [
+            { name: 'CradleLinkType', style: 'cradle-link-type' },
+            { name: 'CradleLinkValue', style: 'cradle-link-value' },
+            { name: 'CradleLinkAlias', style: 'cradle-link-alias' },
+          ],
+        },
+        { name: 'CradleLinkType', style: [tags.string] },
+        { name: 'CradleLinkValue', style: [tags.strong] },
+        { name: 'CradleLinkAlias', style: [tags.emphasis] },
+      ],
+      parseInline: [
+        {
+          name: 'CradleLink',
+          before: 'Link',
+          parse(cx, next, pos) {
+            // Check for opening "[["
+            if (next !== 91 || cx.char(pos + 1) !== 91) return -1;
+            const start = pos + 2;
+            let end = start;
+            while (end < cx.end) {
+              if (cx.char(end) === 93 && cx.char(end + 1) === 93) break;
+              end++;
+            }
+            if (end >= cx.end) return -1;
+            let content = '';
+            for (let i = start; i < end; i++) {
+              content += String.fromCharCode(cx.char(i));
+            }
+            let linkType = '';
+            let linkValue: string | null = null;
+            let linkAlias: string | null = null;
+            const colonIndex = content.indexOf(':');
+            if (colonIndex === -1) {
+              linkType = content.trim();
+            } else {
+              linkType = content.slice(0, colonIndex).trim();
+              const remainder = content.slice(colonIndex + 1);
+              const pipeIndex = remainder.indexOf('|');
+              if (pipeIndex === -1) {
+                linkValue = remainder.trim();
+              } else {
+                linkValue = remainder.slice(0, pipeIndex).trim();
+                linkAlias = remainder.slice(pipeIndex + 1).trim();
+              }
+            }
+            const node = cx.elt('CradleLink', pos, end + 2, []);
+            node.children.push(cx.elt('CradleLinkType', start, start + linkType.length));
+            if (linkValue !== null) {
+              const valueStart = start + linkType.length + 1;
+              node.children.push(cx.elt('CradleLinkValue', valueStart, valueStart + linkValue.length));
+              if (linkAlias) {
+                const aliasStart = valueStart + linkValue.length + 1;
+                node.children.push(cx.elt('CradleLinkAlias', aliasStart, aliasStart + linkAlias.length));
+              }
+            }
+            return cx.append(node);
+          },
+        },
+      ],
+    };
+
+    return markdown({
+      base: markdownLanguage,
+      codeLanguages: config.codeLanguages || [],
+      extensions: [CradleLinkExtension, ...(config.extensions || [])],
+    });
+  }
+
+  /*============================================================================
+    AUTO-FORMAT LINK METHODS
+  =============================================================================*/
+
+  /**
+   * Auto-formats plain text into cradle links where applicable.
+   */
+  autoFormatLinks(editor: any, start: number, end: number): string {
+    const text: string = editor.state.doc.toString();
+    const trimWord = (x: string): string => x.replace(/^[,.:\s]+|[,.:\s]+$/g, '');
+    const tree = syntaxTree(editor.state);
+    const changes: Array<{ from: number; to: number; replacement: string }> = [];
+    const ignoreTypes = new Set(['CradleLink', 'CodeBlock', 'FencedCode', 'InlineCode']);
+
+    tree.iterate({
+      from: start,
+      to: end,
+      enter: (syntaxNode: any) => {
+        const node = syntaxNode.node;
+        if (ignoreTypes.has(node.name)) return false;
+        if (!node.firstChild) {
+          const nodeText = text.slice(node.from, node.to);
+          if (!nodeText.trim()) return;
+          const regex = /\S+/g;
+          let match: RegExpExecArray | null;
+          while ((match = regex.exec(nodeText)) !== null) {
+            const word = match[0];
+            const absoluteStart = node.from + match.index;
+            const absoluteEnd = absoluteStart + word.length;
+            const trimmed = trimWord(word);
+            if (trimmed.length === 0) continue;
+            const suggestions = this.getSuggestionsForWord(trimmed);
+            if (suggestions.length == 1) {
+              const suggestion = suggestions.find(s => trimWord(s.match) === trimmed);
+              if (suggestion) {
+                const replacement = `[[${suggestion.type}:${suggestion.match}]]`;
+                changes.push({ from: absoluteStart, to: absoluteEnd, replacement });
+              }
+            }
+          }
         }
+      },
+    });
 
-        // Fallback: process entire text word by word (original behavior)
-        const words = text.split(/(\s+)/);
-        let linkedMarkdown = text;
-        let position = 0;
-
-        words.forEach((word) => {
-            if (trimWord(word)) {
-                const start = position;
-                const end = start + word.length;
-                let suggestions = this._suggestionsForWord(trimWord(word));
-                suggestions = suggestions.filter(
-                    (x) => trimWord(x.match) === trimWord(word),
-                );
-                if (suggestions && suggestions.length >= 1) {
-                    const link = `[[${suggestions[0].type}:${suggestions[0].match}]]`;
-                    linkedMarkdown =
-                        linkedMarkdown.substring(0, start) +
-                        link +
-                        linkedMarkdown.substring(end);
-                    position += link.length - word.length;
-                }
-            }
-            position += word.length;
-        });
-        return linkedMarkdown;
+    // Apply changes in reverse to avoid offset issues.
+    changes.sort((a, b) => b.from - a.from);
+    let formattedText = text;
+    for (const change of changes) {
+      formattedText = formattedText.slice(0, change.from) + change.replacement + formattedText.slice(change.to);
     }
+    return formattedText;
+  }
 }

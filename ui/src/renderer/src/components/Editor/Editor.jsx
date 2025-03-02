@@ -1,7 +1,6 @@
 import CodeMirror from '@uiw/react-codemirror';
 import { vim } from '@replit/codemirror-vim';
 import vimIcon from '../../assets/vim32x32.gif';
-import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
 import { drawSelection } from '@uiw/react-codemirror';
 import { useId, useState, useRef, useCallback, useEffect, useMemo } from 'react';
@@ -11,7 +10,7 @@ import { eclipse } from '@uiw/codemirror-theme-eclipse';
 import FileInput from '../FileInput/FileInput';
 import FileTable from '../FileTable/FileTable';
 import { NavArrowDown, NavArrowUp, LightBulb } from 'iconoir-react/regular';
-import { fetchLspPack } from '../../services/queryService/queryService';
+import { treeView } from '@overleaf/codemirror-tree-view';
 import { completionKeymap, acceptCompletion } from '@codemirror/autocomplete';
 import { Prec } from '@uiw/react-codemirror';
 import * as events from '@uiw/codemirror-extensions-events';
@@ -63,7 +62,7 @@ export default function Editor({
     const [scrollMap, setScrollMap] = useState(null);
     const [top, setTop] = useState(0);
     const [codeMirrorContent, setCodeMirrorContent] = useState('');
-    const { isDarkMode, toggleTheme } = useTheme();
+    const { isDarkMode } = useTheme();
     const autoLinkId = useId();
     const vimModeId = useId();
     const editorRef = useRef(null);
@@ -80,16 +79,18 @@ export default function Editor({
         }, 50),
     ).current;
 
+    // Adjusted instantiation to pass an empty options object and the error handler
     const editorUtils = useMemo(
-        () => new CradleEditor((onerror = displayError(setAlert))),
-        [],
+        () => new CradleEditor({}, displayError(setAlert)),
+        [setAlert],
     );
 
-    var extensions = [
+    let extensions = [
         editorUtils.markdown({ codeLanguages: languages }),
         drawSelection(),
         EditorView.lineWrapping,
         editorUtils.autocomplete(),
+        editorUtils.lint(),
         Prec.highest(
             keymap.of([
                 ...completionKeymap,
@@ -136,7 +137,6 @@ export default function Editor({
 
         const totalLines = state.doc.lines;
         const targetLine = Math.min(Math.max(1, currentLine), totalLines);
-
         const targetLinePos = state.doc.line(targetLine).from;
 
         const selection = { anchor: targetLinePos, head: targetLinePos };
@@ -181,7 +181,7 @@ export default function Editor({
     );
 
     useEffect(() => {
-        if (prevNoteId != null && prevNoteId != 'new' && codeMirrorContent != '') {
+        if (prevNoteId != null && prevNoteId !== 'new' && codeMirrorContent !== '') {
             setMarkdownContent('');
             setCodeMirrorContent('');
         }
@@ -189,7 +189,7 @@ export default function Editor({
     }, [noteid]);
 
     useEffect(() => {
-        if (codeMirrorContent == '') {
+        if (codeMirrorContent === '') {
             setCodeMirrorContent(markdownContent);
         }
     }, [markdownContent]);
@@ -207,15 +207,14 @@ export default function Editor({
         let from = doc.selection.main.from;
         let content;
 
-        if (to == from) {
+        if (to === from) {
+            content = markdownContent;
             from = 0;
             to = content.length;
         }
 
-        // TODO: Use the class
-        const linked = editorUtils.autoFormatLinks(editorRef.current.view, to, from);
-
-        let text =
+        const linked = editorUtils.autoFormatLinks(editorRef.current.view, from, to);
+        const text =
             markdownContent.substring(0, from) + linked + markdownContent.substring(to);
 
         setMarkdownContent(text);
