@@ -19,7 +19,7 @@ class HTMLRenderer(BaseHTMLRenderer):
         super().__init__(**kwargs)
 
     def footnote_ref(self, text, key: str, value: str, ref: str) -> str:
-        return self.emphasis(key, ref)
+        return self.emphasis(key)
 
     def img_footnote_ref(self, text, key: str, value: str, ref: Any) -> str:
         bucket, path = ref

@@ -215,11 +215,8 @@ export default function Editor({
         }
 
         const linked = editorUtils.autoFormatLinks(editorRef.current.view, from, to);
-        const text =
-            markdownContent.substring(0, from) + linked + markdownContent.substring(to);
-
-        setMarkdownContent(text);
-        setCodeMirrorContent(text);
+        setMarkdownContent(linked);
+        setCodeMirrorContent(linked);
     };
 
     return (

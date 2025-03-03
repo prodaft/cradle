@@ -5,6 +5,7 @@ import 'prismjs/components/prism-c.js';
 import 'prismjs/components/prism-python.js';
 import { parseWithExtensions } from './markdownExtensions';
 import { getEntryClasses } from '../../services/adminService/adminService';
+import { authAxios } from '../../services/axiosInstance/axiosInstance';
 
 export async function parseMarkdown(
     mdContent: string,
@@ -30,7 +31,7 @@ export async function parseMarkdown(
                 },
             });
 
-            return await parseWithExtensions(md, mdContent, fileData, entryColors);
+            return await parseWithExtensions(md, mdContent, fileData, entryColors, authAxios);
         }
     } catch (error: any) {
         // Handle network or authorization errors by returning undefined.

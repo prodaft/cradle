@@ -49,6 +49,7 @@ type LspEntryClass = {
 };
 
 interface Suggestion {
+    from: int;
     type: string;
     match: string;
 }
@@ -99,8 +100,8 @@ export class CradleEditor {
     private _onError: ((error: Error) => void) | null;
     private _onLspLoaded: (bool: boolean) => void;
 
-    private combinedRegex: RegExp | null = null;       // for scanning large text
-    private combinedWordRegex: RegExp | null = null;     // for whole-word matching
+    private combinedRegex: RegExp | null = null; // for scanning large text
+    private combinedWordRegex: RegExp | null = null; // for whole-word matching
 
     /*---------------------------------------------------------------------------
     Constructor & Initialization
@@ -132,7 +133,9 @@ export class CradleEditor {
         for (const [type, criteria] of Object.entries(this.entryClasses)) {
             if (criteria.regex) {
                 // Wrap each pattern in a named capturing group using the entry type.
-                patterns.push(`(?<${replaceSlashWithDoubleUnderscore(type)}>${criteria.regex})`);
+                patterns.push(
+                    `(?<${replaceSlashWithDoubleUnderscore(type)}>${criteria.regex})`,
+                );
             }
         }
         if (patterns.length > 0) {
@@ -198,7 +201,6 @@ export class CradleEditor {
                 CradleEditor.cachedBigTrie = bigTrie;
             }
 
-
             this.buildCombinedRegex();
             return true;
         } catch (error) {
@@ -245,15 +247,17 @@ export class CradleEditor {
         while ((match = this.combinedRegex.exec(text)) !== null) {
             if (match.groups) {
                 // Iterate over all named groups to see which one matched.
-                for (const [groupName, groupMatch] of Object.entries(
-                    match.groups,
-                )) {
+                for (const [groupName, groupMatch] of Object.entries(match.groups)) {
                     if (groupMatch) {
                         const type = replaceDoubleUnderscoreWithSlash(groupName);
                         const matchText = groupMatch;
                         const key = `${type}:${matchText}`;
                         if (!madeSuggestions.has(key)) {
-                            suggestions.push({ type, match: matchText.trimEnd() });
+                            suggestions.push({
+                                type,
+                                match: matchText.trimEnd(),
+                                from: match.index, // use regex match index
+                            });
                             madeSuggestions.add(key);
                         }
                         break;
@@ -262,74 +266,75 @@ export class CradleEditor {
             }
         }
 
-
         if (!this.bigTrie) return [];
 
         // 2. Process instance-based suggestions using a simplified Aho–Corasick search on the bigTrie.
-        if (this.bigTrie) {
-            for (let i = 0; i < text.length; i++) {
-                let currentNode = this.bigTrie.root;
-                let j = i;
-                while (j < text.length) {
-                    const char = text[j];
-                    if (!currentNode.children[char]) break;
-                    currentNode = currentNode.children[char];
-                    if (currentNode.eow && currentNode.data) {
-                        const word = text.substring(i, j + 1);
-                        for (const type of currentNode.data) {
-                            const key = `${type}:${word}`;
-                            if (!madeSuggestions.has(key)) {
-                                suggestions.push({ type, match: word });
-                                madeSuggestions.add(key);
-                            }
+        for (let i = 0; i < text.length; i++) {
+            let currentNode = this.bigTrie.root;
+            let j = i;
+            while (j < text.length) {
+                const char = text[j];
+                if (!currentNode.children[char]) break;
+                currentNode = currentNode.children[char];
+                if (currentNode.eow && currentNode.data) {
+                    const word = text.substring(i, j + 1);
+                    for (const type of currentNode.data) {
+                        const key = `${type}:${word}`;
+                        if (!madeSuggestions.has(key)) {
+                            suggestions.push({
+                                type,
+                                match: word,
+                                from: i, // starting index from the loop variable
+                            });
+                            madeSuggestions.add(key);
                         }
                     }
-                    j++;
                 }
+                j++;
             }
         }
 
         return suggestions;
     }
 
-  private getSuggestionsForWord(word: string): Suggestion[] {
-    if (!this.entryClasses) return [];
-    const suggestions: Suggestion[] = [];
-    const madeSuggestions = new Set<string>();
+    private getSuggestionsForWord(word: string): Suggestion[] {
+        if (!this.entryClasses) return [];
+        const suggestions: Suggestion[] = [];
+        const madeSuggestions = new Set<string>();
 
-    // 1. Use the combinedWordRegex to check for a full match against class-based regex patterns.
-    if (this.combinedWordRegex) {
-      const match = this.combinedWordRegex.exec(word);
-      if (match && match.groups) {
-        for (const [groupName, groupMatch] of Object.entries(match.groups)) {
-          if (groupMatch) {
-            const key = `${groupName}:${word}`;
-            if (!madeSuggestions.has(key)) {
-              suggestions.push({ type: groupName, match: word });
-              madeSuggestions.add(key);
+        // 1. Use the combinedWordRegex to check for a full match against class-based regex patterns.
+        if (this.combinedWordRegex) {
+            const match = this.combinedWordRegex.exec(word);
+            if (match && match.groups) {
+                for (const [groupName, groupMatch] of Object.entries(match.groups)) {
+                    if (groupMatch) {
+                        const key = `${groupName}:${word}`;
+                        if (!madeSuggestions.has(key)) {
+                            suggestions.push({ type: groupName, match: word });
+                            madeSuggestions.add(key);
+                        }
+                        break; // Only one group can match a full word.
+                    }
+                }
             }
-            break; // Only one group can match a full word.
-          }
         }
-      }
-    }
 
-    // 2. Process instance-based suggestions using the bigTrie.
-    if (this.bigTrie) {
-      const matchingInstances = this.bigTrie.allWordsWithPrefix(word);
-      matchingInstances.forEach((matchObj) => {
-        for (const type of matchObj.types) {
-          const key = `${type}:${matchObj.word}`;
-          if (!madeSuggestions.has(key)) {
-            suggestions.push({ type, match: matchObj.word });
-            madeSuggestions.add(key);
-          }
+        // 2. Process instance-based suggestions using the bigTrie.
+        if (this.bigTrie) {
+            const matchingInstances = this.bigTrie.allWordsWithPrefix(word);
+            matchingInstances.forEach((matchObj) => {
+                for (const type of matchObj.types) {
+                    const key = `${type}:${matchObj.word}`;
+                    if (!madeSuggestions.has(key)) {
+                        suggestions.push({ type, match: matchObj.word });
+                        madeSuggestions.add(key);
+                    }
+                }
+            });
         }
-      });
-    }
 
-    return suggestions;
-  }
+        return suggestions;
+    }
 
     /**
      * Provides autocomplete suggestions when the cursor is outside a link.
@@ -378,7 +383,6 @@ export class CradleEditor {
                     ratchet = true;
                 }
                 from = to;
-            // fall through
             case 'CradleLinkType':
                 if (!ratchet) {
                     options = Object.keys(this.entryClasses).map((item) => ({
@@ -483,10 +487,7 @@ export class CradleEditor {
                         suggestions.forEach((suggestion) => {
                             let searchIndex = 0;
                             while (true) {
-                                const idx = nodeText.indexOf(
-                                    suggestion.match,
-                                    searchIndex,
-                                );
+                                const idx = suggestion.from;
                                 if (idx === -1) break;
                                 diagnostics.push({
                                     from: node.from + idx,
@@ -511,6 +512,50 @@ export class CradleEditor {
                                 searchIndex = idx + suggestion.match.length;
                             }
                         });
+                    } else if (node.name === 'Paragraph') {
+                        const nodeText = text.slice(node.from, node.to);
+                        if (!nodeText.trim()) return;
+
+                        // Get all suggestions for the entire node text.
+                        const suggestions = this.getSuggestionsForText(nodeText);
+
+                        const childRanges: Array<{ from: number; to: number }> = [];
+                        if (node.firstChild) {
+                            let child = node.firstChild;
+                            while (child) {
+                                childRanges.push({ from: child.from, to: child.to });
+                                child = child.nextSibling;
+                            }
+                        }
+                        for (const suggestion of suggestions) {
+                            const start = node.from + suggestion.from;
+                            const end = start + suggestion.match.length;
+                            const liesWithinChild = childRanges.some(
+                                (range) => start >= range.from && end <= range.to,
+                            );
+                            if (liesWithinChild) continue;
+
+                            diagnostics.push({
+                                from: start,
+                                to: end,
+                                severity: 'warning',
+                                message: `Possible link: [[${suggestion.type}:${suggestion.match}]]`,
+                                actions: [
+                                    {
+                                        name: 'Link',
+                                        apply(view, from, to) {
+                                            view.dispatch({
+                                                changes: {
+                                                    from,
+                                                    to,
+                                                    insert: `[[${suggestion.type}:${suggestion.match}]]`,
+                                                },
+                                            });
+                                        },
+                                    },
+                                ],
+                            });
+                        }
                     }
                 },
             });
@@ -673,6 +718,7 @@ export class CradleEditor {
         const tree = syntaxTree(editor.state);
         const changes: Array<{ from: number; to: number; replacement: string }> = [];
         const ignoreTypes = new Set([
+            'Link',
             'CradleLink',
             'CodeBlock',
             'FencedCode',
@@ -687,9 +733,9 @@ export class CradleEditor {
             to: end,
             enter: (syntaxNode: any) => {
                 const node = syntaxNode.node;
+                const nodeText = text.slice(node.from, node.to);
                 if (ignoreTypes.has(node.name)) return false;
                 if (!node.firstChild) {
-                    const nodeText = text.slice(node.from, node.to);
                     if (!nodeText.trim()) return;
 
                     // Get all suggestions for the entire node text.
@@ -704,28 +750,36 @@ export class CradleEditor {
                         }
                         grouped.get(key)!.push(s);
                     }
+                } else if (node.name === 'Paragraph') {
+                    if (!nodeText.trim()) return;
 
-                    // Iterate over each non-whitespace word in the node.
-                    const regex = /\S+/g;
-                    let match: RegExpExecArray | null;
-                    while ((match = regex.exec(nodeText)) !== null) {
-                        const word = match[0];
-                        const trimmed = trimWord(word);
-                        if (!trimmed) continue;
-                        const key = trimmed.toLowerCase();
-                        // Only auto-format if there is exactly one suggestion for this word.
-                        const group = grouped.get(key);
-                        if (group && group.length === 1) {
-                            const suggestion = group[0];
-                            const replacement = `[[${suggestion.type}:${suggestion.match}]]`;
-                            const absoluteStart = node.from + match.index;
-                            const absoluteEnd = absoluteStart + word.length;
-                            changes.push({
-                                from: absoluteStart,
-                                to: absoluteEnd,
-                                replacement,
-                            });
+                    // Get all suggestions for the entire node text.
+                    const suggestions = this.getSuggestionsForText(nodeText);
+
+                    const childRanges: Array<{ from: number; to: number }> = [];
+                    if (node.firstChild) {
+                        let child = node.firstChild;
+                        while (child) {
+                            childRanges.push({ from: child.from, to: child.to });
+                            child = child.nextSibling;
                         }
+                    }
+                    for (const suggestion of suggestions) {
+                        const replacement = `[[${suggestion.type}:${suggestion.match}]]`;
+                        const absoluteStart = start + suggestion.from;
+                        const absoluteEnd = absoluteStart + suggestion.match.length;
+                        // Deny suggestion if it lies entirely within any child node.
+                        const liesWithinChild = childRanges.some(
+                            (range) =>
+                                absoluteStart >= range.from && absoluteEnd <= range.to,
+                        );
+                        if (liesWithinChild) continue;
+
+                        changes.push({
+                            from: absoluteStart,
+                            to: absoluteEnd,
+                            replacement,
+                        });
                     }
                 }
             },
