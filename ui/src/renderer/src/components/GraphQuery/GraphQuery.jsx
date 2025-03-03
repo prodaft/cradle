@@ -30,10 +30,7 @@ export default function GraphQuery({
     const [searchParams, setSearchParams] = useSearchParams();
 
     const parseEntry = (entry) => {
-        let parts = entry.split(':');
-        let subtype = parts[0];
-        let name = parts.length > 1 ? parts[1] : '';
-        return { subtype, name };
+        return { query: entry };
     };
 
     const [query, setQuery] = useState(() => ({

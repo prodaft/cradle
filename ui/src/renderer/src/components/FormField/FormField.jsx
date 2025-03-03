@@ -4,6 +4,8 @@
  * @returns {any}
  */
 
+import { forwardRef } from 'react';
+
 /**
  * FormField component - a styled form field with a label and input
  *
@@ -17,17 +19,20 @@
  * @returns {FormField}
  * @constructor
  */
-export default function FormField({
-    name,
-    type,
-    value,
-    labelText,
-    handleInput,
-    placeholder = '',
-    autofocus = false,
-    required = true,
-    disabled = false,
-}) {
+const FormField = forwardRef(function (
+    {
+        name,
+        type,
+        value,
+        labelText,
+        handleInput,
+        placeholder = '',
+        autofocus = false,
+        disabled = false,
+        ...props
+    },
+    ref,
+) {
     return (
         <div className='w-full'>
             <label htmlFor={name} className='block text-sm font-medium leading-6'>
@@ -40,14 +45,17 @@ export default function FormField({
                     type={type}
                     autoComplete={name}
                     onChange={(e) => handleInput(e.target.value)}
-                    required={required}
                     disabled={disabled}
                     className='form-input input-ghost-primary input-block input focus:ring-0'
                     autoFocus={autofocus}
                     placeholder={placeholder}
                     value={value}
+                    ref={ref}
+                    {...props}
                 />
             </div>
         </div>
     );
-}
+});
+
+export default FormField;

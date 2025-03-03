@@ -6,20 +6,28 @@ from access.models import Access
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
 from entries.serializers import EntryListCompressedTreeSerializer
+from query.utils import parse_query
 
 
 class EntryRequestSerializer(serializers.Serializer):
-    subtype = serializers.CharField(required=True)
-    name = serializers.CharField(required=True)
+    subtype = serializers.CharField(required=False)
+    name = serializers.CharField(required=False)
+    query = serializers.CharField(required=False)
 
     def resolve(self, attrs: Any) -> Any:
-        if not Entry.objects.filter(
-            entry_class_id=attrs["subtype"], name=attrs["name"]
-        ).exists():
+        qs = None
+        if "query" in attrs:
+            print(parse_query(attrs["query"]))
+            qs = Entry.objects.filter(parse_query(attrs["query"]))
+        else:
+            qs = Entry.objects.filter(
+                entry_class_id=attrs["subtype"], name=attrs["name"]
+            )
+
+        if not qs.exists():
             raise serializers.ValidationError("Entry does not exist")
 
-        entry = Entry.objects.get(entry_class_id=attrs["subtype"], name=attrs["name"])
-
+        entry = qs.first()  ## TODO: Manage cases when more are returned
         if (
             entry.entry_class.type == EntryType.ENTITY
             and not Access.objects.has_access_to_entities(
@@ -29,13 +37,24 @@ class EntryRequestSerializer(serializers.Serializer):
             )
         ):
             raise serializers.ValidationError("Entry does not exist")
-
         return entry
 
-    def to_internal_value(self, data):
-        validated_data = super().to_internal_value(data)
-        entry = self.resolve(validated_data)
+    def to_internal_value(self, attrs):
+        has_query = "query" in attrs and attrs["query"]
+        has_subtype_and_name = (
+            "subtype" in attrs
+            and attrs["subtype"]
+            and "name" in attrs
+            and attrs["name"]
+        )
 
+        if not (has_query or has_subtype_and_name):
+            raise serializers.ValidationError(
+                "Either 'query' or both 'subtype' and 'name' must be provided"
+            )
+
+        validated_data = super().to_internal_value(attrs)
+        entry = self.resolve(validated_data)
         return entry
 
 

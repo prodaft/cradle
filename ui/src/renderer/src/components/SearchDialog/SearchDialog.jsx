@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Search } from 'iconoir-react';
 import SearchFilterSection from '../SearchFilterSection/SearchFilterSection';
-import { queryEntries } from '../../services/queryService/queryService';
+import { queryEntries, advancedQuery } from '../../services/queryService/queryService';
 import AlertBox from '../AlertBox/AlertBox';
 import SearchResult from '../SearchResult/SearchResult';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +18,7 @@ import Pagination from '../Pagination/Pagination';
  * Gives filters for entry type and artifact type
  * Shows search results
  * Search can be done on enter or when pressing the search buttons
+ * Includes an advanced search toggle that bypasses filters and uses the advanced query method
  *
  * @function SearchDialog
  * @param {Object} props - The props of the component.
@@ -36,6 +37,7 @@ export default function SearchDialog({ isOpen, onClose }) {
     const [entrySubtypes, setEntrySubtypes] = useState([]);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [isAdvancedSearch, setIsAdvancedSearch] = useState(false);
 
     const dialogRoot = document.getElementById('portal-root');
     const navigate = useNavigate();
@@ -67,27 +69,50 @@ export default function SearchDialog({ isOpen, onClose }) {
         navigate(link);
     };
 
+    const toggleAdvancedSearch = () => {
+        setIsAdvancedSearch(!isAdvancedSearch);
+        // Hide filters when in advanced mode
+        if (!isAdvancedSearch) {
+            setShowFilters(false);
+        }
+    };
+
     const performSearch = () => {
         setAlert({ ...alert, show: false });
         setIsLoading(true);
-        queryEntries(
-            {
-                name: searchQuery,
-                subtype:
-                    entrySubtypeFilters.length == 0
-                        ? entrySubtypes
-                        : entrySubtypeFilters,
-            },
-            page,
-        )
-            .then((response) => {
-                setTotalPages(response.data.total_pages);
-                setResults(response.data.results);
-            })
-            .catch(displayError(setAlert, navigate))
-            .finally(() => {
-                setIsLoading(false);
-            });
+
+        if (isAdvancedSearch) {
+            // Use advanced query method for direct search
+            advancedQuery(searchQuery, page)
+                .then((response) => {
+                    setTotalPages(response.data.total_pages);
+                    setResults(response.data.results);
+                })
+                .catch(displayError(setAlert, navigate))
+                .finally(() => {
+                    setIsLoading(false);
+                });
+        } else {
+            // Use standard query with filters
+            queryEntries(
+                {
+                    name: searchQuery,
+                    subtype:
+                        entrySubtypeFilters.length == 0
+                            ? entrySubtypes
+                            : entrySubtypeFilters,
+                },
+                page,
+            )
+                .then((response) => {
+                    setTotalPages(response.data.total_pages);
+                    setResults(response.data.results);
+                })
+                .catch(displayError(setAlert, navigate))
+                .finally(() => {
+                    setIsLoading(false);
+                });
+        }
     };
 
     useEffect(() => {
@@ -112,32 +137,52 @@ export default function SearchDialog({ isOpen, onClose }) {
                 className='w-11/12 md:w-3/4 lg:w-1/2 h-4/5 bg-cradle3 p-8 bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col relative'
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className='mb-4 relative'>
-                    <input
-                        ref={inputRef}
-                        type='text'
-                        className='form-input input input-block input-ghost-primary focus:ring-0 pr-10 text-white'
-                        placeholder='Search...'
-                        value={searchQuery}
-                        onChange={(event) => {
-                            setSearchQuery(event.target.value);
-                        }}
-                        onKeyDown={handleKeyDown}
-                    />
-                    <button
-                        onClick={() => performSearch()}
-                        className='absolute right-2 top-1/2 transform -translate-y-1/2 bg-transparent border-none cursor-pointer'
-                    >
-                        <Search />
-                    </button>
+                <div className='mb-4 flex items-center gap-2'>
+                    <div className='flex-grow relative'>
+                        <input
+                            ref={inputRef}
+                            type='text'
+                            className='form-input input input-block input-ghost-primary focus:ring-0 pr-10 text-white'
+                            placeholder={
+                                isAdvancedSearch ? 'Advanced Search...' : 'Search...'
+                            }
+                            value={searchQuery}
+                            onChange={(event) => {
+                                setSearchQuery(event.target.value);
+                            }}
+                            onKeyDown={handleKeyDown}
+                        />
+                        <button
+                            onClick={() => performSearch()}
+                            className='absolute right-2 top-1/2 transform -translate-y-1/2 bg-transparent border-none cursor-pointer'
+                        >
+                            <Search />
+                        </button>
+                    </div>
+
+                    <div className='flex items-center'>
+                        <label className='flex flex-col items-center cursor-pointer'>
+                            <span className='text-xs'>Advanced</span>
+                            <input
+                                type='checkbox'
+                                checked={isAdvancedSearch}
+                                onChange={toggleAdvancedSearch}
+                                className='switch switch-ghost-primary'
+                            />
+                        </label>
+                    </div>
                 </div>
-                <SearchFilterSection
-                    showFilters={showFilters}
-                    setShowFilters={setShowFilters}
-                    entrySubtypes={entrySubtypes}
-                    entrySubtypeFilters={entrySubtypeFilters}
-                    setEntrySubtypeFilters={setEntrySubtypeFilters}
-                />
+
+                {!isAdvancedSearch && (
+                    <SearchFilterSection
+                        showFilters={showFilters}
+                        setShowFilters={setShowFilters}
+                        entrySubtypes={entrySubtypes}
+                        entrySubtypeFilters={entrySubtypeFilters}
+                        setEntrySubtypeFilters={setEntrySubtypeFilters}
+                    />
+                )}
+
                 <AlertBox alert={alert} />
                 {isLoading ? (
                     <div className='flex items-center justify-center h-full'>
@@ -146,38 +191,33 @@ export default function SearchDialog({ isOpen, onClose }) {
                         </div>
                     </div>
                 ) : (
-                    <div>
-                        <div className='flex-grow overflow-y-auto no-scrollbar space-y-2'>
-                            {results && results.length > 0 ? (
-                                <div>
-                                    {results.map((result) => {
-                                        const dashboardLink =
-                                            createDashboardLink(result);
-                                        return (
-                                            <SearchResult
-                                                key={result.id}
-                                                name={result.name}
-                                                type={result.type}
-                                                subtype={result.subtype}
-                                                onClick={handleResultClick(
-                                                    dashboardLink,
-                                                )}
-                                            />
-                                        );
-                                    })}
+                    <div className='flex-grow overflow-y-auto no-scrollbar space-y-2'>
+                        {results && results.length > 0 ? (
+                            <div>
+                                {results.map((result) => {
+                                    const dashboardLink = createDashboardLink(result);
+                                    return (
+                                        <SearchResult
+                                            key={result.id}
+                                            name={result.name}
+                                            type={result.type}
+                                            subtype={result.subtype}
+                                            onClick={handleResultClick(dashboardLink)}
+                                        />
+                                    );
+                                })}
 
-                                    <Pagination
-                                        currentPage={page}
-                                        totalPages={totalPages}
-                                        onPageChange={setPage}
-                                    />
-                                </div>
-                            ) : (
-                                <div className='w-full text-center text-zinc-500'>
-                                    No results found
-                                </div>
-                            )}
-                        </div>
+                                <Pagination
+                                    currentPage={page}
+                                    totalPages={totalPages}
+                                    onPageChange={setPage}
+                                />
+                            </div>
+                        ) : (
+                            <div className='w-full text-center text-zinc-500'>
+                                No results found
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

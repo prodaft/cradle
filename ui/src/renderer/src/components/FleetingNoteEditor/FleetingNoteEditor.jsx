@@ -23,6 +23,8 @@ import { keymap } from '@codemirror/view';
 export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
     const [markdownContent, setMarkdownContent] = useState('');
     const [fileData, setFileData] = useState([]);
+    const [saving, setSaving] = useState(false);
+    const savingRef = useRef(saving);
 
     const markdownContentRef = useRef(markdownContent);
     const fileDataRef = useRef(fileData);
@@ -47,6 +49,11 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
     useEffect(() => {
         fileDataRef.current = fileData;
     }, [fileData]);
+
+    // Ensure the ref to saving is correct
+    useEffect(() => {
+        savingRef.current = saving;
+    }, [saving]);
 
     const NEW_NOTE_PLACEHOLDER_ID = 'new';
 
@@ -86,7 +93,9 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
     }, [id, setMarkdownContent, setFileData, setHasUnsavedChanges, setAlert, navigate]);
 
     const handleSaveNote = (displayAlert) => {
+        setSaving(true);
         if (!validateContent()) return;
+        if (savingRef.current) return;
         if (id) {
             const storedContent = markdownContentRef.current;
             const storedFileData = fileDataRef.current;
@@ -103,7 +112,8 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
                             navigate(`/editor/${res.data.id}`);
                         }
                     })
-                    .catch(displayError(setAlert, navigate));
+                    .catch(displayError(setAlert, navigate))
+                    .finally(() => setSaving(false));
             } else {
                 // Entity for existing fleeting notes
                 updateFleetingNote(id, storedContent, storedFileData)
@@ -120,7 +130,9 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
                         }
                         refreshFleetingNotes();
                     })
-                    .catch(displayError(setAlert, navigate));
+                    .catch(displayError(setAlert, navigate))
+                    .finally(() => setSaving(false));
+                setSaving(false);
             }
         }
     };
@@ -174,21 +186,26 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
                 run: () => {
                     handleSaveNote('Changes saved successfully.');
                     return true;
-                }
-            }
+                },
+            },
         ]);
 
         setEditorExtensions([saveKeymap]);
     }, [id]);
 
     // For non-editor parts of the app
-    useHotkeys('ctrl+s, cmd+s', (event) => {
-        event.preventDefault();
-        handleSaveNote('Changes saved successfully.');
-    }, {
-        enableOnFormTags: true,
-        preventDefault: true
-    }, [id]);
+    useHotkeys(
+        'ctrl+s, cmd+s',
+        (event) => {
+            event.preventDefault();
+            handleSaveNote('Changes saved successfully.');
+        },
+        {
+            enableOnFormTags: true,
+            preventDefault: true,
+        },
+        [id],
+    );
 
     useEffect(() => {
         if (!isValidContent()) return;
@@ -198,6 +215,7 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
             prevIdRef.current = id;
             return;
         }
+        console.log('AAAAAAAAAAAA');
 
         setHasUnsavedChanges(true);
         const autosaveTimer = setTimeout(() => {
@@ -270,7 +288,9 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
                 <div className='absolute bottom-4 right-8 px-2 py-1 rounded-md backdrop-blur-lg backdrop-filter bg-cradle3 bg-opacity-50 shadow-lg text-zinc-300'>
                     {isValidContent()
                         ? hasUnsavedChanges
-                            ? 'Changes Not Saved'
+                            ? saving
+                                ? 'Saving'
+                                : 'Changes Not Saved'
                             : 'Saved'
                         : 'Cannot Save Empty Note'}
                 </div>

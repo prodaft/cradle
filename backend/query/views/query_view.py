@@ -17,6 +17,7 @@ from uuid import UUID
 from entries.enums import EntryType
 from notes.models import Note
 from user.models import CradleUser
+from ..utils import parse_query
 
 
 class EntryListQuery(APIView):
@@ -103,5 +104,84 @@ class AdvancedQueryView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Advanced Query Entries",
+        description="Allow a user to query entries they have access to using advanced syntax: `<subtype>:<name>` with wildcards and logical operators (&&, ||).",
+        parameters=[
+            OpenApiParameter(
+                name="query",
+                description="Advanced query string (e.g., 'type:name', '*:name', 'type:*', 'type:name && type2:name2')",
+                required=True,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="page",
+                description="Pagination page number",
+                required=False,
+                type=int,
+            ),
+            OpenApiParameter(
+                name="page_size",
+                description="Number of results per page",
+                required=False,
+                type=int,
+            ),
+        ],
+        responses={
+            200: EntryResponseSerializer(many=True),
+            400: "Invalid query syntax",
+            401: "Unauthorized",
+        },
+        request=None,
+    )
     def get(self, request: Request) -> Response:
-        pass
+        # Get the query parameter from the request
+        query_str = request.query_params.get("query")
+        if not query_str:
+            query_filter = Q()
+        else:
+            try:
+                query_filter = parse_query(query_str)
+            except Exception as e:
+                return Response(
+                    {"error": f"Invalid query syntax: {str(e)}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # Get accessible entries for the user
+        accessible_entries = Entry.objects.all()
+        if not request.user.is_cradle_admin:
+            accessible_entries = accessible_entries.filter(
+                Q(
+                    entry_class__type=EntryType.ENTITY,
+                    id__in=Subquery(
+                        Access.objects.get_accessible_entity_ids(
+                            cast(UUID, request.user.id)
+                        )
+                    ),
+                )
+                | Q(
+                    entry_class__type=EntryType.ARTIFACT,
+                    id__in=Subquery(
+                        Note.objects.get_accessible_artifact_ids(
+                            cast(CradleUser, request.user)
+                        )
+                    ),
+                )
+            )
+
+        # Apply the parsed query filter
+        filtered_entries = accessible_entries.filter(query_filter)
+
+        # Order and paginate the results
+        filtered_entries = filtered_entries.order_by("timestamp")
+        paginator = TotalPagesPagination()
+        paginated_entries = paginator.paginate_queryset(filtered_entries, request)
+
+        # Serialize and return the response
+        if paginated_entries is not None:
+            serializer = EntryResponseSerializer(paginated_entries, many=True)
+            return paginator.get_paginated_response(serializer.data)
+
+        entry_serializer = EntryResponseSerializer(filtered_entries, many=True)
+        return Response(entry_serializer.data, status=status.HTTP_200_OK)

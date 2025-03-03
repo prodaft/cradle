@@ -8,8 +8,6 @@ import AuthProvider from './components/AuthProvider/AuthProvider.jsx';
 import FeatureNotImplemented from './components/FeatureNotImplemented/FeatureNotImplemented';
 import AdminPanel from './components/AdminPanel/AdminPanel';
 import AccountSettings from './components/AccountSettings/AccountSettings';
-import AdminPanelAdd from './components/AdminPanelAdd/AdminPanelAdd';
-import AdminPanelEdit from './components/AdminPanelEdit/AdminPanelEdit';
 import AdminPanelUserPermissions from './components/AdminPanelUserPermissions/AdminPanelUserPermissions';
 import Dashboard from './components/Dashboard/Dashboard';
 import NotFound from './components/NotFound/NotFound.jsx';
@@ -29,6 +27,8 @@ import FleetingNoteEditor from './components/FleetingNoteEditor/FleetingNoteEdit
 import { useTheme } from './hooks/useTheme/useTheme';
 import { ThemeProvider } from './contexts/ThemeContext/ThemeContext.jsx';
 import ReportList from './components/ReportList/ReportList.jsx';
+import EntityForm from './components/AdminPanelForms/EntityForm.jsx';
+import EntryTypeForm from './components/AdminPanelForms/EntryTypeForm.jsx';
 
 /**
  * The App component is the artifact point of the application. It wraps the entire application in the AuthProvider
@@ -80,18 +80,12 @@ function App() {
                                     path='/knowledge-graph'
                                     element={<GraphExplorer />}
                                 />
-                                <Route
-                                    path='/reports'
-                                    element={<ReportList/>}
-                                ></Route>
+                                <Route path='/reports' element={<ReportList />}></Route>
                                 <Route
                                     path='/reports/:report_id'
-                                    element={<ReportList/>}
+                                    element={<ReportList />}
                                 ></Route>
-                                <Route
-                                    path='/publish'
-                                    element={<Publish/>}
-                                ></Route>
+                                <Route path='/publish' element={<Publish />}></Route>
                                 <Route
                                     path='/change-password'
                                     element={<ChangePassword />}
@@ -111,24 +105,28 @@ function App() {
                                 <Route path='/admin' element={<Outlet />}>
                                     <Route index element={<AdminPanel />}></Route>
                                     <Route
-                                        path='/admin/add-entity'
-                                        element={<AdminPanelAdd type='Entity' />}
+                                        path='/admin/add/user'
+                                        element={<AccountSettings isEdit={false} />}
                                     ></Route>
                                     <Route
-                                        path='/admin/add-entry-type'
-                                        element={<AdminPanelAdd type='EntryType' />}
+                                        path='/admin/add/entity'
+                                        element={<EntityForm />}
                                     ></Route>
                                     <Route
-                                        path='/admin/edit-entity/:id'
-                                        element={<AdminPanelEdit type='Entity' />}
+                                        path='/admin/add/entry-type'
+                                        element={<EntryTypeForm />}
                                     ></Route>
                                     <Route
-                                        path='/admin/edit-entry-type/:id'
-                                        element={<AdminPanelEdit type='EntryType' />}
+                                        path='/admin/edit/entity/:id'
+                                        element={<EntityForm isEdit={true} />}
+                                    ></Route>
+                                    <Route
+                                        path='/admin/edit/entry-type/:id'
+                                        element={<EntryTypeForm isEdit={true} />}
                                     ></Route>
                                     <Route
                                         path={'/admin/user-permissions/:username/:id'}
-                                        element={<AdminPanelUserPermissions />}
+                                        element={<EntityForm />}
                                     ></Route>
                                 </Route>
                             </Route>

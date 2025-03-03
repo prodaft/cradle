@@ -145,7 +145,6 @@ class EntryClassDetail(APIView):
 
         new_subtype = request.data.pop("subtype", None)
         request.data["subtype"] = class_subtype
-        print(request.data)
 
         serializer = EntryClassSerializer(entryclass, data=request.data)
 

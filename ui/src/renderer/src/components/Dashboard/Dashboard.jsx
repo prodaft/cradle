@@ -254,7 +254,7 @@ export default function Dashboard() {
             text='Explore in Graph'
             onClick={() =>
                 navigate(
-                    `/knowledge-graph?operation=bfs&src=${contentObject.subtype}:${contentObject.name}&min_depth=1&max_depth=2`,
+                    `/knowledge-graph?operation=bfs&src="${contentObject.subtype}":"${contentObject.name}"&min_depth=1&max_depth=2`,
                 )
             }
             data-testid='view-graph-btn'
@@ -446,7 +446,10 @@ export default function Dashboard() {
                                 </form>
                             </div>
 
-                            <NotesList query={submittedFilters} noteActions={[{Component: Publishable, props:{}}]}/>
+                            <NotesList
+                                query={submittedFilters}
+                                noteActions={[{ Component: Publishable, props: {} }]}
+                            />
                         </div>
                     )}
                 </div>

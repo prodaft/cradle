@@ -1,128 +1,182 @@
-import React, { useState, useEffect } from 'react';
-import { UserCircle } from 'iconoir-react';
-import FormField from '../FormField/FormField';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
-import { logInReq } from '../../services/authReqService/authReqService';
-import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
+import * as Yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
 import AlertBox from '../AlertBox/AlertBox';
+import FormField from '../FormField/FormField';
+import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 import useAuth from '../../hooks/useAuth/useAuth';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { useWindowSize } from '@uidotdev/usehooks';
 import {
-    deleteUser,
     getUser,
     updateUser,
+    deleteUser,
+    createUser,
 } from '../../services/userService/userService';
 
-/**
- * Login component - renders the login form.
- * Sets the username and password states for the AuthProvider when successfully logged in with the server
- * On error, displays an error message.
- *
- * @function AccountSettings
- * @returns {AccountSettings}
- * @constructor
- */
-export default function AccountSettings() {
-    const [formData, setFormData] = useState({
-        id: '',
-        name: '',
-        email: '',
-        password: 'password',
-        vtKey: 'apikey',
-        catalystKey: 'apikey',
-        role: 'user',
-        email_confirmed: false,
-        is_active: false,
-    });
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const [dialog, setDialog] = useState(false);
+/*
+  The Yup schema is context-sensitive:
+  - When adding a user (isEdit=false) the password is required.
+  - When editing (isEdit=true), the default password value "password" means "unchanged".
+  - Admin-only fields (role, email_confirmed, is_active) are only required when the logged in user is an admin
+    editing another account (or adding a user).
+*/
+const accountSettingsSchema = Yup.object().shape({
+    username: Yup.string().required('Username is required'),
+    email: Yup.string().email('Invalid email').required('Email is required'),
+    password: Yup.string().when('$isEdit', {
+        is: false,
+        then: () => Yup.string().required('Password is required'),
+        otherwise: () => Yup.string(),
+    }),
+    vtKey: Yup.string(),
+    catalystKey: Yup.string(),
+    role: Yup.string().when('$isAdminAndNotOwn', {
+        is: true,
+        then: () => Yup.string().required('Role is required'),
+        otherwise: () => Yup.string(),
+    }),
+    email_confirmed: Yup.boolean(),
+    is_active: Yup.boolean(),
+});
+
+export default function AccountSettings({ isEdit = true }) {
     const { target } = useParams();
     const navigate = useNavigate();
-    const handleError = displayError(setAlert, navigate);
     const auth = useAuth();
     const isAdmin = auth?.isAdmin();
-    const isOwnAccount = target === 'me' || auth?.userId === target;
 
-    const populateAccountDetails = async () => {
-        getUser(target)
-            .then((res) => {
-                setFormData({
-                    id: res.data.id,
-                    name: res.data.username,
-                    email: res.data.email,
-                    password: 'password',
-                    vtKey: res.data.vt_api_key ? 'apikey' : '',
-                    catalystKey: res.data.catalyst_api_key ? 'apikey' : '',
-                    role: res.data.role || 'user',
-                    email_confirmed: res.data.email_confirmed || false,
-                    is_active: res.data.is_active || false,
-                });
-            })
-            .catch(handleError);
-    };
+    const isOwnAccount = isEdit ? target === 'me' || auth?.userId === target : false;
+    const isAdminAndNotOwn = isAdmin && !isOwnAccount;
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    // For deletion and update, the form's id is important.
+    // In add mode, there is no existing id.
+    const defaultValues = isEdit
+        ? {
+              id: '',
+              username: '',
+              email: '',
+              password: 'password',
+              vtKey: 'apikey',
+              catalystKey: 'apikey',
+              role: 'user',
+              email_confirmed: false,
+              is_active: false,
+          }
+        : {
+              id: '',
+              username: '',
+              email: '',
+              password: '',
+              vtKey: '',
+              catalystKey: '',
+              role: 'user',
+              email_confirmed: false,
+              is_active: false,
+          };
 
-        const data = {};
+    const {
+        register,
+        handleSubmit,
+        reset,
+        getValues,
+        formState: { errors },
+    } = useForm({
+        resolver: yupResolver(accountSettingsSchema, {
+            context: { isEdit, isAdminAndNotOwn },
+        }),
+        defaultValues,
+    });
 
-        if (formData.password !== 'password') {
-            data['password'] = formData.password;
+    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const [dialog, setDialog] = useState(false);
+
+    // In edit mode, load the user details to prepopulate the form.
+    useEffect(() => {
+        if (isEdit && target) {
+            getUser(target)
+                .then((res) => {
+                    reset({
+                        id: res.data.id,
+                        username: res.data.username,
+                        email: res.data.email,
+                        password: 'password',
+                        vtKey: res.data.vt_api_key ? 'apikey' : '',
+                        catalystKey: res.data.catalyst_api_key ? 'apikey' : '',
+                        role: res.data.role || 'user',
+                        email_confirmed: res.data.email_confirmed || false,
+                        is_active: res.data.is_active || false,
+                    });
+                })
+                .catch(displayError(setAlert, navigate));
         }
+    }, [isEdit, target, reset, navigate]);
 
-        if (formData.vtKey !== 'apikey') {
-            data['vt_api_key'] = formData.vtKey;
-        }
-
-        if (formData.catalystKey !== 'apikey') {
-            data['catalyst_api_key'] = formData.catalystKey;
-        }
-
-        if (isAdmin && !isOwnAccount) {
-            data['email_confirmed'] = formData.email_confirmed;
-            data['is_active'] = formData.is_active;
-            data['role'] = formData.role;
-        }
-
-        updateUser(formData.id, data)
-            .then((res) => {
+    const onSubmit = async (data) => {
+        if (isEdit) {
+            // For editing, only update password if it has been changed.
+            const payload = {};
+            if (data.password !== 'password') {
+                payload.password = data.password;
+            }
+            if (data.vtKey !== 'apikey') {
+                payload.vt_api_key = data.vtKey;
+            }
+            if (data.catalystKey !== 'apikey') {
+                payload.catalyst_api_key = data.catalystKey;
+            }
+            if (isAdminAndNotOwn) {
+                payload.email_confirmed = data.email_confirmed;
+                payload.is_active = data.is_active;
+                payload.role = data.role;
+            }
+            try {
+                await updateUser(data.id, payload);
                 setAlert({
                     show: true,
                     message: 'User updated successfully',
                     color: 'green',
                 });
-            })
-            .catch(displayError(setAlert));
+            } catch (err) {
+                displayError(setAlert, navigate)(err);
+            }
+        } else {
+            // In add mode, all fields (including password) are taken as entered.
+            const payload = {
+                username: data.username,
+                email: data.email,
+                password: data.password,
+                vt_api_key: data.vtKey,
+                catalyst_api_key: data.catalystKey,
+                role: data.role,
+                email_confirmed: data.email_confirmed,
+                is_active: data.is_active,
+            };
+            try {
+                await createUser(payload);
+                setAlert({
+                    show: true,
+                    message: 'User created successfully',
+                    color: 'green',
+                });
+                reset();
+                navigate('/admin');
+            } catch (err) {
+                displayError(setAlert, navigate)(err);
+            }
+        }
     };
-
-    const handleInputChange = (field) => (value) => {
-        setFormData((prev) => ({
-            ...prev,
-            [field]: value,
-        }));
-    };
-
-    const handleCheckboxChange = (field) => (e) => {
-        setFormData((prev) => ({
-            ...prev,
-            [field]: e.target.checked,
-        }));
-    };
-
-    useEffect(() => {
-        populateAccountDetails();
-    }, []);
 
     const handleDelete = async () => {
-        deleteUser(formData.id)
-            .then((response) => {
-                if (response.status === 200) {
-                    auth.logOut();
-                }
-            })
-            .catch(displayError(setAlert));
+        try {
+            const response = await deleteUser(getValues('id'));
+            if (response.status === 200) {
+                auth.logOut();
+            }
+        } catch (err) {
+            displayError(setAlert)(err);
+        }
     };
 
     return (
@@ -130,8 +184,8 @@ export default function AccountSettings() {
             <ConfirmationDialog
                 open={dialog}
                 setOpen={setDialog}
-                title={'Are you sure you want to delete your account?'}
-                description={'This is permanent'}
+                title='Are you sure you want to delete your account?'
+                description='This is permanent'
                 handleConfirm={handleDelete}
             />
             <div className='flex flex-row items-center justify-center h-screen'>
@@ -139,140 +193,147 @@ export default function AccountSettings() {
                     <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8'>
                         <div className='sm:mx-auto sm:w-full sm:max-w-sm'>
                             <h1 className='mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-cradle2'>
-                                Account Settings
+                                {isEdit ? 'Account Settings' : 'Add New User'}
                             </h1>
                         </div>
-                        <div
-                            name='register-form'
-                            className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'
+                        <form
+                            onSubmit={handleSubmit(onSubmit)}
+                            className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm space-y-6'
                         >
-                            <div className='space-y-6'>
-                                <FormField
-                                    name='name'
-                                    type='text'
-                                    labelText='Username'
-                                    placeholder='Username'
-                                    value={formData.name}
-                                    handleInput={handleInputChange('name')}
-                                    disabled={true}
-                                />
-                                <FormField
-                                    name='email'
-                                    type='text'
-                                    labelText='Email'
-                                    placeholder='Email'
-                                    value={formData.email}
-                                    handleInput={handleInputChange('email')}
-                                    disabled={true}
-                                />
+                            <FormField
+                                name='username'
+                                type='text'
+                                labelText='Username'
+                                placeholder='Username'
+                                {...register('username')}
+                                error={errors.username?.message}
+                                disabled={isEdit}
+                            />
+                            <FormField
+                                name='email'
+                                type='text'
+                                labelText='Email'
+                                placeholder='Email'
+                                {...register('email')}
+                                error={errors.email?.message}
+                                disabled={isEdit}
+                            />
 
-                                {isAdmin && !isOwnAccount && (
+                            {isEdit ? (
+                                isAdminAndNotOwn && (
                                     <FormField
                                         name='password'
                                         type='password'
                                         labelText='Password'
                                         placeholder='Password'
-                                        value={formData.password}
-                                        handleInput={handleInputChange('password')}
+                                        {...register('password')}
+                                        error={errors.password?.message}
                                     />
-                                )}
+                                )
+                            ) : (
+                                // In add mode, always show the password field (and require it).
                                 <FormField
-                                    name='vtKey'
+                                    name='password'
                                     type='password'
-                                    labelText='VirusTotal API Key'
-                                    placeholder='VirusTotal API Key'
-                                    value={formData.vtKey}
-                                    handleInput={handleInputChange('vtKey')}
+                                    labelText='Password'
+                                    placeholder='Password'
+                                    {...register('password')}
+                                    error={errors.password?.message}
                                 />
-                                <FormField
-                                    name='catalystKey'
-                                    type='password'
-                                    labelText='Catalyst API Key'
-                                    placeholder='Catalyst API Key'
-                                    value={formData.catalystKey}
-                                    handleInput={handleInputChange('catalystKey')}
-                                />
-                                {isAdmin && !isOwnAccount && (
-                                    <>
-                                        <div className='w-full'>
-                                            <label className='block text-sm font-medium leading-6'>
-                                                Role
-                                            </label>
-                                            <div className='mt-2'>
-                                                <select
-                                                    className='form-select select select-ghost-primary select-block focus:ring-0'
-                                                    onChange={(e) =>
-                                                        handleInputChange('role')(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    value={formData.role}
-                                                >
-                                                    <option value='user'>User</option>
-                                                    <option value='entrymanager'>
-                                                        Entry Manager
-                                                    </option>
-                                                    <option value='admin'>Admin</option>
-                                                </select>
-                                            </div>
+                            )}
+
+                            <FormField
+                                name='vtKey'
+                                type='password'
+                                labelText='VirusTotal API Key'
+                                placeholder='VirusTotal API Key'
+                                {...register('vtKey')}
+                                error={errors.vtKey?.message}
+                            />
+                            <FormField
+                                name='catalystKey'
+                                type='password'
+                                labelText='Catalyst API Key'
+                                placeholder='Catalyst API Key'
+                                {...register('catalystKey')}
+                                error={errors.catalystKey?.message}
+                            />
+
+                            {isAdmin && (!isEdit || isAdminAndNotOwn) && (
+                                <>
+                                    <div className='w-full'>
+                                        <label className='block text-sm font-medium leading-6'>
+                                            Role
+                                        </label>
+                                        <div className='mt-2'>
+                                            <select
+                                                className='form-select select select-ghost-primary select-block focus:ring-0'
+                                                {...register('role')}
+                                            >
+                                                <option value='author'>User</option>
+                                                <option value='entrymanager'>
+                                                    Entry Manager
+                                                </option>
+                                                <option value='admin'>Admin</option>
+                                            </select>
                                         </div>
-                                        <div className='form-control flex flex-row justify-between items-center'>
-                                            <label className='label flex justify-between w-full'>
-                                                <span className='label-text'>
-                                                    Email Confirmed
-                                                </span>
-                                                <input
-                                                    type='checkbox'
-                                                    className='checkbox ml-4'
-                                                    checked={formData.email_confirmed}
-                                                    onChange={handleCheckboxChange(
-                                                        'email_confirmed',
-                                                    )}
-                                                />
-                                            </label>
-                                        </div>
-                                        <div className='form-control flex flex-row justify-between items-center'>
-                                            <label className='label flex justify-between w-full'>
-                                                <span className='label-text'>
-                                                    Account Active
-                                                </span>
-                                                <input
-                                                    type='checkbox'
-                                                    className='checkbox ml-4'
-                                                    checked={formData.is_active}
-                                                    onChange={handleCheckboxChange(
-                                                        'is_active',
-                                                    )}
-                                                />
-                                            </label>
-                                        </div>
-                                    </>
-                                )}
-                                <AlertBox alert={alert} />
-                                <button
-                                    className='btn btn-primary btn-block'
-                                    onClick={handleSubmit}
-                                >
-                                    Save
-                                </button>
-                                {isOwnAccount && (
-                                    <div className='flex justify-between'>
-                                        <button
-                                            className='btn btn-ghost btn-block hover:bg-red-500'
-                                            onClick={() => setDialog(!dialog)}
-                                        >
-                                            Delete Account
-                                        </button>
-                                        <button
-                                            className='btn btn-ghost btn-block'
-                                            onClick={() => navigate('/change-password')}
-                                        >
-                                            Change Password
-                                        </button>
+                                        {errors.role && (
+                                            <p className='text-red-600 text-sm'>
+                                                {errors.role.message}
+                                            </p>
+                                        )}
                                     </div>
-                                )}
-                            </div>
-                        </div>
+                                    <div className='form-control flex flex-row justify-between items-center'>
+                                        <label className='label flex justify-between w-full'>
+                                            <span className='label-text'>
+                                                Email Confirmed
+                                            </span>
+                                            <input
+                                                type='checkbox'
+                                                className='checkbox ml-4'
+                                                {...register('email_confirmed')}
+                                            />
+                                        </label>
+                                    </div>
+                                    <div className='form-control flex flex-row justify-between items-center'>
+                                        <label className='label flex justify-between w-full'>
+                                            <span className='label-text'>
+                                                Account Active
+                                            </span>
+                                            <input
+                                                type='checkbox'
+                                                className='checkbox ml-4'
+                                                {...register('is_active')}
+                                            />
+                                        </label>
+                                    </div>
+                                </>
+                            )}
+
+                            <AlertBox alert={alert} />
+
+                            <button type='submit' className='btn btn-primary btn-block'>
+                                {isEdit ? 'Save' : 'Add'}
+                            </button>
+                            {isEdit && isOwnAccount && (
+                                <div className='flex justify-between'>
+                                    <button
+                                        type='button'
+                                        className='btn btn-ghost btn-block hover:bg-red-500'
+                                        onClick={() => setDialog(!dialog)}
+                                    >
+                                        Delete Account
+                                    </button>
+                                    <button
+                                        type='button'
+                                        className='btn btn-ghost btn-block'
+                                        onClick={() => navigate('/change-password')}
+                                    >
+                                        Change Password
+                                    </button>
+                                </div>
+                            )}
+                        </form>
                     </div>
                 </div>
             </div>

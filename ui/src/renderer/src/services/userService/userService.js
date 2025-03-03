@@ -6,6 +6,20 @@ import { authAxios } from '../axiosInstance/axiosInstance';
  * @param {string} id - The id of the user to be deleted
  * @returns {Promise<AxiosResponse<any, any>>}
  */
+export async function createUser(data) {
+    return authAxios({
+        method: 'post',
+        url: `/users/`,
+        data: data,
+    });
+}
+
+/**
+ * Gets the details for a user
+ *
+ * @param {string} id - The id of the user to be deleted
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
 export async function getUser(id) {
     return authAxios({
         method: 'get',

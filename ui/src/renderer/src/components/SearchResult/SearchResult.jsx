@@ -13,7 +13,7 @@
 export default function SearchResult({ name, onClick, type, subtype }) {
     return (
         <div
-            className='h-fit w-full bg-cradle3 px-3 py-6 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl cursor-pointer'
+            className='h-fit w-full bg-cradle3 px-3 py-6 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl cursor-pointer my-3 '
             onClick={onClick}
         >
             <h2 className='card-header w-full mx-2 text-white'>{name}</h2>

@@ -26,6 +26,23 @@ export function queryEntries(filters, page = 1) {
 }
 
 /**
+ * Function to query entries from the API
+ * Passes the token and query parameters to the API
+ * @param {Array<string>} query - the query string
+ * @param {number} page - the page number to fetch
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export function advancedQuery(query, page = 1) {
+    const url = `/query/advanced/`;
+
+    return authAxios({
+        method: 'GET',
+        url: url,
+        params: { query, page },
+    });
+}
+
+/**
  * Function to fetch the LSP pack for the current user
  * @returns {Promise<AxiosResponse<any, any>>}
  */

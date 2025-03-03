@@ -21,4 +21,14 @@ COPY ./docker/entrypoint_ui.sh entrypoint_ui.sh
 
 RUN chmod +x ./entrypoint_ui.sh
 
+CMD mkdir -p /www
+CMD cd /ui
+
+ENV VITE_API_BASE_URL="http://localhost:8000/api"
+CMD npm run build-web
+
+CMD rm -rf /www/cradle
+CMD mv dist /www/cradle
+CMD chown -R www:www /www
+
 CMD ./entrypoint_ui.sh

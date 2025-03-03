@@ -100,6 +100,30 @@ export async function getEntities() {
 }
 
 /**
+ * Sends a GET request to get an entity
+ *
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export async function getEntity(id) {
+    return authAxios({
+        method: 'get',
+        url: `/entries/entities/${id}`,
+    });
+}
+
+/**
+ * Sends a GET request to get an entry class
+ *
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export async function getEntryClass(classname) {
+    return authAxios({
+        method: 'get',
+        url: `/entries/entry_classes/${classname}`,
+    });
+}
+
+/**
  * Sends a GET request to get all entry classes
  *
  * @returns {Promise<AxiosResponse<any, any>>}

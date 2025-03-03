@@ -24,7 +24,6 @@ class NotificationSerializer(serializers.ModelSerializer):
 
         serializer: Optional[serializers.ModelSerializer] = None
         if isinstance(instance, ReportRenderNotification):
-            print(instance)
             serializer = ReportRenderNotificationSerializer(instance)
         elif isinstance(instance, ReportProcessingErrorNotification):
             serializer = ReportProcessingErrorNotificationSerializer(instance)

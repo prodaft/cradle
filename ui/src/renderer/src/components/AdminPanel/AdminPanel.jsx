@@ -130,7 +130,7 @@ export default function AdminPanel() {
                     title={'Entities'}
                     addEnabled={auth?.isAdmin()}
                     addTooltipText={'Add Entity'}
-                    handleAdd={() => navigate('/admin/add-entity')}
+                    handleAdd={() => navigate('/admin/add/entity')}
                     isLoading={entities === null}
                 >
                     {entities}
@@ -139,7 +139,7 @@ export default function AdminPanel() {
                     title={'Entry Types'}
                     addEnabled={auth?.isAdmin()}
                     addTooltipText={'Add Entry Class'}
-                    handleAdd={() => navigate('/admin/add-entry-type')}
+                    handleAdd={() => navigate('/admin/add/entry-type')}
                     isLoading={entryTypes === null}
                 >
                     {entryTypes}
@@ -147,7 +147,9 @@ export default function AdminPanel() {
                 {auth?.isAdmin() && (
                     <AdminPanelSection
                         title={'Users'}
-                        addEnabled={false}
+                        addEnabled={true}
+                        addTooltipText={'Add User'}
+                        handleAdd={() => navigate('/admin/add/user')}
                         isLoading={users === null}
                     >
                         {users}

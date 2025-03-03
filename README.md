@@ -14,7 +14,7 @@
     <img src="logos/light.svg" alt="Logo" width="200">
   </a>
 
-  <h3 align="center">CRADLE Monorepo</h3>
+  <h3 align="center">CRADLE</h3>
 
   <p align="center">
     Batteries Included Threat Intelligence
@@ -33,6 +33,7 @@
   <summary>Table of Contents</summary>
   <ol>
     <li>
+      <a href="#try-it-out">Try it out!</a>
       <a href="#about-the-project">About The Project</a>
       <ul>
         <li><a href="#repository-structure">Repository Structure</a></li>
@@ -52,6 +53,16 @@
     <li><a href="#contact">Contact</a></li>
   </ol>
 </details>
+
+
+## Try it out!
+
+```sh
+git clone https://github.com/prodaft/cradle.git
+cd cradle
+docker compose -f docker/docker-compose.demo.yml up -d
+```
+
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
@@ -76,6 +87,7 @@ The monorepo is organized into three main components:
 | `backend/`   | Django-based API and data processing layer   | [README](backend/README.md)    |
 | `ui/`        | Electron/React frontend application          | [README](ui/README.md)         |
 | `deploy/`    | Ansible playbooks and deployment scripts     |                                 |
+| `docker/`    | Relevant dockerfiles and configurations      |                                 |
 
 ### Built With
 
