@@ -60,7 +60,7 @@
 ```sh
 git clone https://github.com/prodaft/cradle.git
 cd cradle
-docker compose -f docker/docker-compose.demo.yml up -d
+docker compose -f docker-compose.demo.yml up -d
 ```
 
 
