@@ -47,13 +47,6 @@ export default function Welcome() {
                         className={`flex ${flexDirection} justify-between dark:text-zinc-300`}
                         ref={entryListsDiv}
                     >
-                        {flexDirection !== 'flex-row' && (
-                            <div
-                                className={`${entryLogoWidth} flex justify-center mb-8 px-40`}
-                            >
-                                <Logo text={false} />
-                            </div>
-                        )}
                         <div
                             className={`${entryCardWrapperWidth} flex justify-center mb-8`}
                         >
