@@ -124,6 +124,20 @@ export async function getEntryClass(classname) {
 }
 
 /**
+ * Sends a GET request to get name for entity class
+ *
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export async function getNextEntityName(classname) {
+    return authAxios({
+        method: 'get',
+        url: `/entries/next_name/${classname}`,
+    }).then((response) => {
+        return response.data.name;
+    });
+}
+
+/**
  * Sends a GET request to get all entry classes
  *
  * @returns {Promise<AxiosResponse<any, any>>}

@@ -1,4 +1,5 @@
 from typing import cast
+from django.db.models.functions import Length
 from django_lifecycle.mixins import transaction
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -15,7 +16,7 @@ from ..serializers import (
     EntryClassSerializer,
     ArtifactClassSerializer,
 )
-from ..models import EntryClass
+from ..models import Entry, EntryClass
 
 
 @extend_schema_view(
@@ -164,3 +165,34 @@ class EntryClassDetail(APIView):
             return Response(response)
 
         return Response(serializer.error_messages, status=status.HTTP_400_BAD_REQUEST)
+
+
+class NextName(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, HasAdminRole]
+
+    def get(self, request: Request, class_subtype: str) -> Response:
+        try:
+            eclass = EntryClass.objects.get(subtype=class_subtype)
+        except EntryClass.DoesNotExist:
+            return Response(
+                "There is no entry class with specified subtype.",
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if not eclass.prefix:
+            return Response({"name": None})
+
+        all_entries = Entry.objects.filter(entry_class__subtype=eclass.subtype)
+
+        if not all_entries.exists():
+            max_number = 0
+        else:
+            max_entry = (
+                all_entries.annotate(name_length=Length("name"))
+                .order_by("-name_length", "-name")
+                .first()
+            )
+
+            max_number = int(max_entry.name[len(eclass.prefix) :])
+        return Response({"name": f"{eclass.prefix}{max_number + 1}"})

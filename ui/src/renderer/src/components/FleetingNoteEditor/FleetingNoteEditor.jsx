@@ -215,7 +215,6 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
             prevIdRef.current = id;
             return;
         }
-        console.log('AAAAAAAAAAAA');
 
         setHasUnsavedChanges(true);
         const autosaveTimer = setTimeout(() => {

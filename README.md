@@ -60,9 +60,10 @@
 ```sh
 git clone https://github.com/prodaft/cradle.git
 cd cradle
-docker compose -f docker/docker-compose.demo.yml up -d
+docker compose -f docker-compose.demo.yml up -d
 ```
 
+CRADLE should be accessible on `http://localhost:8000` with credentials `admin:admin`!
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project

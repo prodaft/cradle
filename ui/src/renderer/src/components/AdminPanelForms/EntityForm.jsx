@@ -8,6 +8,7 @@ import {
     getEntity,
     createEntity,
     editEntity,
+    getNextEntityName
 } from '../../services/adminService/adminService';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
@@ -34,6 +35,7 @@ export default function EntityForm({ isEdit = false }) {
     const {
         register,
         handleSubmit,
+        watch,
         reset,
         formState: { errors },
     } = useForm({
@@ -103,6 +105,19 @@ export default function EntityForm({ isEdit = false }) {
             displayError(setAlert, navigate)(err);
         }
     };
+
+    const watchSubtype = watch('subtype');
+    useEffect(() => {
+      if (watchSubtype) {
+        getNextEntityName(watchSubtype)
+          .then((name) => {
+            if (name)
+              reset((prev) => ({ ...prev, name }));
+          })
+          .catch((err) => displayError(setAlert, navigate)(err));
+      }
+    }, [watchSubtype]);
+
 
     return (
         <div className='flex flex-row items-center justify-center h-screen'>
@@ -177,15 +192,15 @@ export default function EntityForm({ isEdit = false }) {
                         <AlertBox alert={alert} />
 
                         <div className='flex gap-2'>
-                            <button type='submit' className='btn btn-primary btn-block'>
-                                {isEdit ? 'Edit' : 'Add'}
-                            </button>
                             <button
                                 type='button'
                                 className='btn btn-ghost btn-block'
                                 onClick={() => navigate('/admin')}
                             >
                                 Cancel
+                            </button>
+                            <button type='submit' className='btn btn-primary btn-block'>
+                                {isEdit ? 'Edit' : 'Add'}
                             </button>
                         </div>
                     </form>

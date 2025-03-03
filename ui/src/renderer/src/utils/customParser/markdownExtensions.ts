@@ -1,4 +1,3 @@
-import axios from 'axios';
 import QueryString from 'qs';
 import type MarkdownIt from 'markdown-it';
 import type { Token } from 'markdown-it';
@@ -26,21 +25,22 @@ function createDashboardLink({
         : '/not-found';
 }
 
-function createDownloadPath(file: FileData): string {
-    const apiBaseUrl = axios.defaults.baseURL;
+function createDownloadPath(file: FileData, axiosInstance: Axios): string {
+    const baseURL = axiosInstance.defaults.baseURL;
+    console.log('baseURL', baseURL);
     const { minio_file_name, bucket_name } = file;
     const queryParams = QueryString.stringify({
         bucketName: bucket_name,
         minioFileName: minio_file_name,
     });
-    return `${apiBaseUrl}/file-transfer/download/?${queryParams}`;
+    return `${baseURL}/file-transfer/download/?${queryParams}`;
 }
 
-export function prependLinks(mdContent: string, fileData: FileData[]): string {
+export function prependLinks(mdContent: string, fileData: FileData[], axiosInstance: Axios): string {
     const mdLinks = fileData
         .map(
             (file) =>
-                `[${file.minio_file_name}]: ${createDownloadPath(file)} "${file.file_name}"\n\n`,
+                `[${file.minio_file_name}]: ${createDownloadPath(file, axiosInstance)} "${file.file_name}"\n\n`,
         )
         .join('');
     return mdLinks + mdContent;
@@ -81,13 +81,12 @@ let DownloadLinkPromiseCache: Record<
 > = {};
 let MinioCache: Record<string, { presigned: string; expiry: number }> = {};
 
-const getDownloadLink = (path: string) => axios.get(path);
-
 export function fetchMinioDownloadLink(
     href: string,
+    axiosInstance: Axios,
 ): Promise<{ presigned: string; expiry: number }> {
     if (!DownloadLinkPromiseCache[href]) {
-        DownloadLinkPromiseCache[href] = getDownloadLink(href).then((response) => {
+        DownloadLinkPromiseCache[href] = axiosInstance.get(href).then((response) => {
             const { presigned, expiry } = response.data;
             return { presigned, expiry };
         });
@@ -95,7 +94,7 @@ export function fetchMinioDownloadLink(
     return DownloadLinkPromiseCache[href];
 }
 
-export async function resolveMinioLinks(token: Token): Promise<void> {
+export async function resolveMinioLinks(token: Token, axiosInstance: Axios): Promise<void> {
     if (token.type === 'link_open' || token.type === 'image') {
         let hrefIndex = token.attrIndex('href');
         hrefIndex = hrefIndex < 0 ? token.attrIndex('src') : hrefIndex;
@@ -107,7 +106,7 @@ export async function resolveMinioLinks(token: Token): Promise<void> {
             return;
         }
         const url = new URL(href);
-        const baseUrlStr = axios.defaults.baseURL || '';
+        const baseUrlStr = axiosInstance.defaults.baseURL || '';
         if (!baseUrlStr) return;
         const apiBaseUrl = new URL(baseUrlStr);
         const apiBasePath = apiBaseUrl.pathname.replace(/\/$/, '');
@@ -121,7 +120,7 @@ export async function resolveMinioLinks(token: Token): Promise<void> {
             let presigned: string | undefined = cached?.presigned;
             let expiry: number | undefined = cached?.expiry;
             if (!presigned || Date.now() > (expiry || 0)) {
-                const result = await fetchMinioDownloadLink(url.href);
+                const result = await fetchMinioDownloadLink(url.href, axiosInstance);
                 presigned = result.presigned;
                 expiry = result.expiry;
                 MinioCache[apiDownloadPath] = { presigned, expiry };
@@ -131,11 +130,11 @@ export async function resolveMinioLinks(token: Token): Promise<void> {
     }
 }
 
-export async function processTokens(tokens: Token[]): Promise<void> {
+export async function processTokens(tokens: Token[], axiosInstance: Axios): Promise<void> {
     for (const token of tokens) {
-        await resolveMinioLinks(token);
+        await resolveMinioLinks(token, axiosInstance);
         if (token.children) {
-            await processTokens(token.children);
+            await processTokens(token.children, axiosInstance);
         }
     }
 }
@@ -145,13 +144,14 @@ export async function parseWithExtensions(
     mdContent: string,
     fileData: FileData[] | undefined,
     entryColors: Map<string, string>,
+    axiosInstance: Axios,
 ): Promise<string> {
     DownloadLinkPromiseCache = {};
     md.inline.ruler.before('link', 'cradle_link', cradleLinkRule);
     md.renderer.rules.cradle_link = (tokens: Token[], idx: number) =>
         renderCradleLink(entryColors, tokens[idx]);
-    const content = fileData ? prependLinks(mdContent, fileData) : mdContent;
+    const content = fileData ? prependLinks(mdContent, fileData, axiosInstance) : mdContent;
     const tokens = md.parse(content, {});
-    await processTokens(tokens);
+    await processTokens(tokens, axiosInstance);
     return md.renderer.render(tokens, md.options);
 }

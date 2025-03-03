@@ -52,7 +52,7 @@ export default function Publish() {
     useEffect(() => {
         const queryParams = new URLSearchParams(searchParams);
         const reportParam = queryParams.get('report');
-        if (reportParam) {
+        if (reportParam && reportId != reportParam) {
             setIsEditing(true);
             setReportId(reportParam);
             getReport(reportParam)

@@ -59,7 +59,7 @@ class EntityList(APIView):
                 "Only admins can create entities!", status=status.HTTP_403_FORBIDDEN
             )
 
-        serializer = EntitySerializer(autoname=True, data=dict(request.data))
+        serializer = EntitySerializer(data=dict(request.data))
 
         if serializer.is_valid():
             if serializer.exists():
