@@ -57,6 +57,8 @@ In essence, CRADLE is built to help threat analysts work together efficiently by
 
 ## Contact Information
 
+CATALYST Threat Intelligence Team - [@prodaft](https://twitter.com/prodaft) - catalyst.prodaft.com
+
 
 <div style="display: flex; justify-content: space-between; margin-top: 20px;">
     <a href="" data-custom-href=""></a>

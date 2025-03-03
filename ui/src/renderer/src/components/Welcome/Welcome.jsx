@@ -24,7 +24,7 @@ export default function Welcome() {
     const entryListsDiv = useRef(null);
     const flexDirection = useChangeFlexDirectionBySize(entryListsDiv);
     const entryCardWrapperWidth = flexDirection === 'flex-row' ? 'w-[37%]' : 'w-full';
-    const entryLogoWidth = flexDirection === 'flex-row' ? 'w-[15%]' : 'w-full';
+    const entryLogoWidth = flexDirection === 'flex-row' ? 'w-[18%]' : 'w-full';
     const navigate = useNavigate();
 
     useEffect(() => {
