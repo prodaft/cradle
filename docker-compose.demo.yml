@@ -126,7 +126,7 @@ services:
       cradle_demo_network:
         ipv4_address: 192.168.42.9
 
-  cradle_ui:
+  cradleweb:
     image: ghcr.io/prodaft/cradle-web:latest
     build:
       context: .
