@@ -87,8 +87,8 @@ The monorepo is organized into three main components:
 |--------------|----------------------------------------------|---------------------------------|
 | `backend/`   | Django-based API and data processing layer   | [README](backend/README.md)     |
 | `ui/`        | Electron/React frontend application          | [README](ui/README.md)          |
-| `deploy/`    | Ansible playbooks and deployment scripts     | [README](docker/README.md)          |
-| `docker/`    | Relevant dockerfiles and configurations      |                                 |
+| `deploy/`    | Ansible playbooks and deployment scripts     |                                 |
+| `docker/`    | Relevant dockerfiles and configurations      | [README](docker/README.md)      |
 
 ### Built With
 
