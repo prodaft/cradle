@@ -7,7 +7,7 @@ export function useTheme() {
             return savedTheme === 'dark';
         }
 
-        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+        return true; // Dark mode by default
     };
 
     const [isDarkMode, setIsDarkMode] = useState(getInitialTheme);
