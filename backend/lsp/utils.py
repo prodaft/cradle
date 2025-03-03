@@ -85,7 +85,7 @@ class LspUtils:
 
         for eclass in classes:
             if eclass.type == EntryType.ENTITY:
-                entries = LspUtils.get_entities(user)
+                entries = LspUtils.get_entities(user).filter(entry_class=eclass)
             else:
                 entries = LspUtils.get_lsp_entries(user, eclass)
 
