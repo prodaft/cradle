@@ -19,4 +19,9 @@ urlpatterns = [
         entity_views.EntityDetail.as_view(),
         name="entity_detail",
     ),
+    path(
+        "next_name/<path:class_subtype>/",
+        entry_class_views.NextName.as_view(),
+        name="next_name",
+    ),
 ]

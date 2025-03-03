@@ -133,8 +133,7 @@ class EntitySerializer(serializers.ModelSerializer):
         model = Entry
         fields = ["id", "name", "description", "entry_class"]
 
-    def __init__(self, *args, autoname=False, **kwargs):
-        self.autoname = autoname
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def exists(self) -> bool:
@@ -199,9 +198,6 @@ class EntitySerializer(serializers.ModelSerializer):
 
         data["entry_class"] = entry_class.first()
 
-        if self.autoname:
-            self.autoassign_name(data)
-
         if not data.get("name"):
             raise serializers.ValidationError("Name is required.")
 
@@ -219,33 +215,6 @@ class EntitySerializer(serializers.ModelSerializer):
             The created Entry entry
         """
         return super().create(validated_data)
-
-    def autoassign_name(self, data):
-        if data.get("name"):
-            return
-
-        prefix = data["entry_class"].prefix
-
-        if not prefix:
-            return
-
-        all_entries = Entry.objects.filter(
-            entry_class__subtype=data["entry_class"].subtype
-        )
-
-        if not all_entries.exists():
-            data["name"] = f"{prefix}1"
-            return
-
-        max_entry = (
-            all_entries.annotate(name_length=Length("name"))
-            .order_by("-name_length", "-name")
-            .first()
-        )
-
-        max_number = int(max_entry.name[len(prefix) :])
-        data["name"] = f"{prefix}{max_number + 1}"
-        return
 
 
 class ArtifactSerializer(serializers.ModelSerializer):
