@@ -17,6 +17,8 @@ import NavbarSwitch from '../NavbarSwitch/NavbarSwitch';
 import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 import useAuth from '../../hooks/useAuth/useAuth';
 import ReferenceTree from '../ReferenceTree/ReferenceTree';
+import Prism from 'prismjs';
+import 'prismjs/components/prism-markdown';
 
 /**
  * NoteViewer component
@@ -166,6 +168,12 @@ export default function NoteViewer() {
         setAlert,
     ]);
 
+    useEffect(() => {
+      if (isRaw) {
+        Prism.highlightAll();
+      }
+    }, [isRaw, note.content]);
+
     // Conditionally render spinner or component
     if (isLoading) {
         return (
@@ -220,9 +228,9 @@ export default function NoteViewer() {
                         {isRaw ? (
                             <pre
                                 className='h-full w-full p-4 bg-transparent prose-md max-w-none dark:prose-invert break-all
-                       overflow-y-auto rounded-lg flex-1 overflow-x-hidden whitespace-pre-wrap'
+              overflow-y-auto rounded-lg flex-1 overflow-x-hidden whitespace-pre-wrap'
                             >
-                                {note.content}
+                                <code className='language-js'>{note.content}</code>
                             </pre>
                         ) : (
                             <div className='mt-2'>

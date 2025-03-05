@@ -161,7 +161,6 @@ export class CradleEditor {
                     );
                 }
                 const entryClasses = await CradleEditor.entryClassesPromise;
-                console.log(entryClasses)
                 this.entryClasses = entryClasses;
                 CradleEditor.cachedEntryClasses = entryClasses;
             }
@@ -406,8 +405,6 @@ export class CradleEditor {
                 if (!sibling) break;
                 const t = context.state.doc.sliceString(sibling.from, sibling.to);
 
-                console.log(t)
-                console.log(this.tries)
                 if (!this.tries[t]) break;
 
                 const v = context.state.doc.sliceString(from, to);
