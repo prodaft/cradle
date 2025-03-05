@@ -11,7 +11,8 @@
 <br />
 <div align="center">
   <a href="https://github.com/prodaft/cradle">
-    <img src="logos/light.svg" alt="Logo" width="200">
+    <img src="docs/static/images/logos/light.svg#gh-dark-mode-only" alt="Logo" width="200">
+    <img src="docs/static/images/logos/dark.svg#gh-light-mode-only" alt="Logo" width="200">
   </a>
 
   <h3 align="center">CRADLE</h3>

@@ -15,29 +15,6 @@ from ..models import Entry
 from uuid import UUID
 
 
-@extend_schema_view(
-    get=extend_schema(
-        description="Allows an admin to retrieve details of all Entities in the system.",
-        responses={
-            200: EntryResponseSerializer(many=True),
-            401: "User is not authenticated.",
-            403: "User is not an admin.",
-        },
-        summary="Retrieve All Entities",
-    ),
-    post=extend_schema(
-        description="Allows an admin to create a new Entity by providing its name and type.",
-        request=EntitySerializer,
-        responses={
-            200: EntitySerializer,
-            400: "Bad request: Invalid data for creating an entity.",
-            401: "User is not authenticated.",
-            403: "User is not an admin.",
-            409: "Entity with the same name already exists.",
-        },
-        summary="Create New Entity",
-    ),
-)
 class EntityList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasEntryManagerRole]
@@ -73,38 +50,37 @@ class EntityList(APIView):
 
 @extend_schema_view(
     get=extend_schema(
-        description="Retrieve details of a specific Entity by its ID. Admin access required.",
+        summary="Retrieve Entity",
+        description="Get details of a specific entity by ID.",
         responses={
             200: EntitySerializer,
-            401: "User is not authenticated.",
-            403: "User is not an admin.",
-            404: "Entity not found with specified ID.",
-        },
-        summary="Retrieve Entity Details",
+            401: "User is not authenticated",
+            403: "User lacks required permissions",
+            404: "Entity not found",
+        }
     ),
     delete=extend_schema(
-        description="Delete a specific Entity by its ID. Admin access required.",
-        responses={
-            200: "Entity deleted successfully.",
-            401: "User is not authenticated.",
-            403: "User is not an admin.",
-            404: "Entity not found with specified ID.",
-        },
         summary="Delete Entity",
+        description="Delete an entity. Requires admin privileges.",
+        responses={
+            200: "Entity deleted successfully",
+            401: "User is not authenticated",
+            403: "User is not an admin",
+            404: "Entity not found",
+        }
     ),
     post=extend_schema(
-        description="Edit an existing Entity by providing its ID and updated data. Admin access required.",
+        summary="Update Entity",
+        description="Update an existing entity.",
         request=EntitySerializer,
         responses={
             200: EntitySerializer,
-            400: "Bad request: Invalid data for updating entity.",
-            401: "User is not authenticated.",
-            403: "User is not an admin.",
-            404: "Entity not found with specified ID.",
-            409: "Entity with the same name already exists.",
-        },
-        summary="Edit Entity",
-    ),
+            400: "Invalid data provided",
+            401: "User is not authenticated",
+            403: "User lacks required permissions",
+            404: "Entity not found",
+        }
+    )
 )
 class EntityDetail(APIView):
     authentication_classes = [JWTAuthentication]

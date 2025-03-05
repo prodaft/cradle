@@ -32,6 +32,16 @@ export default function AdminPanelSection({
 }) {
     const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(children);
 
+    // Sort the filtered children based on their key property
+    const sortedFilteredChildren = filteredChildren
+        ? [...filteredChildren].sort((a, b) => {
+              // Convert keys to strings to ensure proper lexicographical comparison
+              const aKey = a.key?.toString() || '';
+              const bKey = b.key?.toString() || '';
+              return aKey.localeCompare(bKey);
+          })
+        : [];
+
     return (
         <div className='w-full h-fit bg-gray-2 rounded-md p-3'>
             <div className='w-full h-12 flex flex-row items-center justify-between'>
@@ -63,8 +73,8 @@ export default function AdminPanelSection({
                             <div className='spinner-pulse-dot'></div>
                         </div>
                     </div>
-                ) : filteredChildren && filteredChildren.length > 0 ? (
-                    filteredChildren
+                ) : sortedFilteredChildren && sortedFilteredChildren.length > 0 ? (
+                    sortedFilteredChildren
                 ) : (
                     <div className='container mx-auto flex flex-col items-center'>
                         <p className='mt-6 !text-sm !font-normal text-zinc-500'>

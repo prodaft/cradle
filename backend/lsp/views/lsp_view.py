@@ -7,13 +7,23 @@ from rest_framework.request import Request
 from typing import cast
 from entries.enums import EntryType
 from entries.models import EntryClass
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from lsp.serializers import LspEntryClassSerializer
-from ..utils import LspUtils
+from ..utils import LspUtils, Trie
 from user.models import CradleUser
 
 
+@extend_schema_view(
+    get=extend_schema(
+        summary="Get LSP Types",
+        description="Retrieve all entry class types for LSP functionality.",
+        responses={
+            200: LspEntryClassSerializer(many=True),
+            401: "User is not authenticated",
+        }
+    )
+)
 class LspTypes(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

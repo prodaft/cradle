@@ -1,2 +1,12 @@
-public/
-resources/
+/resources
+/_disabled
+public
+package-lock.json
+package.json
+
+# Downloaded dependencies:
+/node_modules
+
+# Hugo ephemeral files:
+.hugo_build.lock
+.vscode

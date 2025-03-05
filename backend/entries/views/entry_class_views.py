@@ -21,27 +21,23 @@ from ..models import Entry, EntryClass
 
 @extend_schema_view(
     get=extend_schema(
-        description="Allows an authenticated user to retrieve details of all EntryClasses.",
+        summary="List Entry Classes",
+        description="Retrieve a list of all entry classes.",
         responses={
             200: EntryClassSerializer(many=True),
-            401: "User is not authenticated.",
-            403: "User does not have permission.",
-        },
-        summary="Retrieve All Entry Classes",
+            401: "User is not authenticated",
+        }
     ),
     post=extend_schema(
-        description="Allows an admin to create a new EntryClass"
-        + "of type Artifact by specifying its subtype and format.",
-        request=ArtifactClassSerializer,
+        summary="Create Entry Class",
+        description="Create a new entry class. Requires admin privileges.",
+        request=EntryClassSerializer,
         responses={
-            200: ArtifactClassSerializer,
-            400: "Bad request: Invalid data for creating an EntryClass.",
-            401: "User is not authenticated.",
-            403: "User is not an admin.",
-            409: "EntryClass with the same name already exists.",
-        },
-        summary="Create New Entry Class",
-    ),
+            200: EntryClassSerializer,
+            400: "Invalid data provided",
+            401: "User is not authenticated",
+        }
+    )
 )
 class EntryClassList(APIView):
     authentication_classes = [JWTAuthentication]
@@ -65,38 +61,36 @@ class EntryClassList(APIView):
 
 @extend_schema_view(
     get=extend_schema(
-        description="Retrieve details of a specific EntryClass by its subtype. Admin access required.",
+        summary="Retrieve Entry Class",
+        description="Get details of a specific entry class by its subtype.",
         responses={
             200: EntryClassSerializer,
-            401: "User is not authenticated.",
-            403: "User is not an admin.",
-            404: "EntryClass not found with specified subtype.",
-        },
-        summary="Retrieve Entry Class Details",
+            401: "User is not authenticated",
+            404: "Entry class not found",
+        }
     ),
     delete=extend_schema(
-        description="Delete an EntryClass by its subtype. Admin access required.",
-        responses={
-            200: "EntryClass deleted successfully.",
-            401: "User is not authenticated.",
-            403: "User is not an admin.",
-            404: "EntryClass not found with specified subtype.",
-        },
         summary="Delete Entry Class",
+        description="Delete an entry class. Requires admin privileges.",
+        responses={
+            200: "Entry class deleted successfully",
+            401: "User is not authenticated",
+            403: "User is not an admin",
+            404: "Entry class not found",
+        }
     ),
     post=extend_schema(
-        description="Edit details of an EntryClass by its subtype. Admin access required.",
-        request=ArtifactClassSerializer,
+        summary="Update Entry Class",
+        description="Update an existing entry class. Type changes require admin privileges.",
+        request=EntryClassSerializer,
         responses={
-            200: ArtifactClassSerializer,
-            400: "Bad request: Invalid data for updating EntryClass.",
-            401: "User is not authenticated.",
-            403: "User is not an admin.",
-            404: "EntryClass not found with specified subtype.",
-            409: "EntryClass with the same name already exists.",
-        },
-        summary="Edit Entry Class",
-    ),
+            200: EntryClassSerializer,
+            400: "Invalid data provided",
+            401: "User is not authenticated",
+            403: "User is not authorized to change entry class type",
+            404: "Entry class not found",
+        }
+    )
 )
 class EntryClassDetail(APIView):
     authentication_classes = [JWTAuthentication]
@@ -167,6 +161,18 @@ class EntryClassDetail(APIView):
         return Response(serializer.error_messages, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema_view(
+    get=extend_schema(
+        summary="Get Next Available Name",
+        description="Generate the next available name for an entry class based on its prefix pattern.",
+        responses={
+            200: {"type": "object", "properties": {"name": {"type": "string"}}},
+            401: "User is not authenticated",
+            403: "User is not an admin",
+            404: "Entry class not found",
+        }
+    )
+)
 class NextName(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]

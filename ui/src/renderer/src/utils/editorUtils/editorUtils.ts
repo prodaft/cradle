@@ -188,17 +188,13 @@ export class CradleEditor {
             if (CradleEditor.cachedBigTrie) {
                 this.bigTrie = CradleEditor.cachedBigTrie;
             } else {
-                const bigTrie = Trie.merge(Object.values(this.tries));
                 for (const entryClass of Object.values(this.entryClasses)) {
-                    if (entryClass.options) {
-                        this.tries[entryClass.subtype] = new Trie();
-                        for (const option of entryClass.options) {
-                            bigTrie.insert(option, [entryClass.subtype]);
-                            this.tries[entryClass.subtype].insert(option, [entryClass.subtype]);
-                        }
-                    }
+                    if (!entryClass.options) continue;
+                    let trie = Trie.deserialize(entryClass.options, entryClass.subtype);
+                    this.tries[entryClass.subtype] = trie;
                 }
 
+                const bigTrie = Trie.merge(Object.values(this.tries));
                 this.bigTrie = bigTrie;
                 CradleEditor.cachedBigTrie = bigTrie;
             }
@@ -594,12 +590,8 @@ export class CradleEditor {
             }
         }
 
-        if (criteria.options) {
-            // Avoid shadowing variable names by renaming the callback variable.
-            const matchingEnums = criteria.options.filter((enumVal) =>
-                enumVal.toLowerCase().startsWith(value.toLowerCase()),
-            );
-            if (matchingEnums.length === 0) {
+        if (criteria.options || criteria.type == 'entity') {
+            if (!this.tries[linkType].search(value).found) {
                 diagnostics.push({
                     from,
                     to: from + value.length,

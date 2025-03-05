@@ -68,15 +68,17 @@ class JSONPublish(BasePublishStrategy):
         linked_entries_set = set()
         for note in notes:
             entries = note.entries
+            files = note.files
             note = self._anonymize_note(note)
 
             note_data = {
                 "content": note.content,
+                "file_urls": {},
             }
             for entry in entries.all():
                 linked_entries_set.add(self._anonymize_entry(entry))
 
-            for file_ref in note.files.all():
+            for file_ref in files.all():
                 try:
                     url = MinioClient().create_presigned_get(
                         file_ref.bucket_name,

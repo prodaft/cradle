@@ -1,0 +1,131 @@
+# Hugo configuration file
+baseURL: "https://cradle.sh/"
+title: CRADLE Hub
+
+enableRobotsTXT: true
+enableGitInfo: true
+enableEmoji: false
+hasCJKLanguage: true
+
+# import hextra as module
+module:
+  imports:
+    - path: github.com/imfing/hextra
+
+outputs:
+  home: [HTML]
+  page: [HTML]
+  section: [HTML, RSS]
+
+defaultContentLanguage: en
+languages:
+  en:
+    languageName: English
+    weight: 1
+    title: CRADLE Hub
+
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
+
+  highlight:
+    noClasses: false
+
+menu:
+  main:
+    - identifier: menu-docs
+      name: Documentation
+      pageRef: /docs/
+      weight: 1
+    - identifier: menu-help
+      name: "Help & Discussion"
+      url: "https://github.com/orgs/regolith-linux/discussions"
+      weight: 2
+    - name: Search
+      weight: 3
+      params:
+        type: search
+    - name: GitHub
+      weight: 4
+      url: "https://github.com/prodaft/cradle/"
+      params:
+        icon: github
+    - name: Twitter
+      weight: 5
+      url: "https://x.com/prodaft/"
+      params:
+        icon: twitter
+
+  sidebar:
+    - identifier: menu-more
+      name: More
+      params:
+        type: separator
+      weight: 1
+    - identifier: menu-help
+      name: "Help & Discussion"
+      url: "https://github.com/orgs/regolith-linux/discussions"
+      weight: 2
+    - identifier: menu-support
+      name: "Support Regolith"
+      weight: 3
+      url: "https://opencollective.com/regolith/donate"
+
+params:
+  description: Batteries Included Threat Intelligence Collaboration
+
+  navbar:
+    displayTitle: true
+    displayLogo: true
+    logo:
+      path: images/logos/dark_notext.svg
+      dark: images/logos/light_notext.svg
+      width: 32
+      height: 32
+      # link: /
+    width: wide
+
+  page:
+    # full (100%), wide (90rem), normal (1280px)
+    width: wide
+
+  theme:
+    # light | dark | system
+    default: dark
+    displayToggle: true
+
+  footer:
+    enable: true
+    displayCopyright: true
+    displayPoweredBy: true
+    width: wide
+
+  displayUpdatedDate: true
+  dateFormat: "January 2, 2006"
+
+  editURL:
+    enable: false
+    base: "https://github.com/prodaft/cradle/edit/main/content"
+
+  search:
+    enable: true
+    type: flexsearch
+
+    flexsearch:
+      index: content
+      tokenize: forward
+
+  blog:
+    list:
+      displayTags: true
+      sortBy: date
+      sortOrder: desc # or "asc"
+
+  highlight:
+    copy:
+      enable: true
+      display: hover
+
+  comments:
+    enable: false
