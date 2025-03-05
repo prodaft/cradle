@@ -14,14 +14,14 @@
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="docs/static/images/logos/light.svg">
       <source media="(prefers-color-scheme: light)" srcset="docs/static/images/logos/dark.svg">
-      <img alt="CRADLE Logo" src="docs/static/images/logos/dark.svg">
+      <img alt="CRADLE Logo" src="docs/static/images/logos/dark.svg" width="200">
     </picture>
   </a>
 
   <h3 align="center">CRADLE</h3>
 
   <p align="center">
-    Batteries Included Threat Intelligence
+    Batteries Included Collaborative Threat Intelligence
     <br />
     <a href="https://github.com/prodaft/cradle"><strong>Explore the docs »</strong></a>
     <br />
