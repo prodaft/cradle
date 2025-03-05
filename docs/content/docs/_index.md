@@ -16,8 +16,6 @@ CRADLE is a powerful tool built for **Cyber Threat Intelligence (CTI)** analysts
 
 ## 📜 Philosophy
 
-## 📜 Philosophy
-
 In today's rapidly evolving cyber threat landscape, we recognized that existing solutions were often fragmented. We needed a platform that could address several key challenges:
 
 - **Systematic Findings Entry:** Enable analysts to record their discoveries in an organized, methodical manner.
