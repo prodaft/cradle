@@ -23,7 +23,7 @@
   <p align="center">
     Batteries Included Collaborative Threat Intelligence
     <br />
-    <a href="https://github.com/prodaft/cradle"><strong>Explore the docs »</strong></a>
+    <a href="https://cradle.sh/"><strong>Explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://github.com/prodaft/cradle/issues/new">Report Bug</a>
