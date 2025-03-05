@@ -3,6 +3,7 @@ import { Search } from 'iconoir-react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { useLocation, useParams } from 'react-router-dom';
 import { getEventLogs } from '../../services/logService/logService';
+import dayjs from 'dayjs';
 import Activity from '../Activity/Activity';
 import Pagination from '../Pagination/Pagination';
 
@@ -23,12 +24,13 @@ export default function ActivityList() {
 
     const [searchFilters, setSearchFilters] = useState({
         username: username,
-        start_date: new Date(0).toISOString().slice(0, 16), // Unix epoch start date
-        end_date: new Date().toISOString().slice(0, 16), // Current date and time
+        start_date: dayjs(0).format('YYYY-MM-DDTHH:mm'),
+        end_date: dayjs().format('YYYY-MM-DDTHH:mm'),
         type: '',
         content_type: content_type,
         object_id: objectId,
     });
+
     const [submittedFilters, setSubmittedFilters] = useState(searchFilters);
 
     const [events, setEvents] = useState([]);

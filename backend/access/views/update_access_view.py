@@ -11,7 +11,7 @@ from ..models import Access
 from ..serializers import AccessSerializer
 from typing import cast
 from ..enums import AccessType
-from notifications.models import MessageNotification
+from notifications.models import AccessGrantedNotification
 from django.db import transaction
 
 from uuid import UUID
@@ -119,8 +119,9 @@ class UpdateAccess(APIView):
         if serializer.is_valid():
             with transaction.atomic():
                 serializer.save()
-                MessageNotification.objects.create(
+                AccessGrantedNotification.objects.create(
                     user=updated_user,
+                    entity=updated_entity,
                     message=(
                         f"Your access for entity {updated_entity.name} has "
                         f"been changed to {request.data['access_type']}"

@@ -21,7 +21,7 @@ class HTMLRenderer(BaseHTMLRenderer):
     def footnote_ref(self, text, key: str, value: str, ref: str) -> str:
         return self.emphasis(key)
 
-    def img_footnote_ref(self, text, key: str, value: str, ref: Any) -> str:
+    def img_footnote_ref(self, text: str, key: str, value: str, ref: Any) -> str:
         bucket, path = ref
 
         img = self.fetch_image(bucket, path)

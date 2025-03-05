@@ -3,6 +3,7 @@ from django_lifecycle import AFTER_CREATE, LifecycleModel, LifecycleModelMixin, 
 from mail.models import NewUserNotificationMail
 from mail.models import ReportReadyMail
 from mail.models import ReportErrorMail
+from mail.models import AccessGrantedMail
 from user.models import CradleUser
 from entries.models import Entry
 from model_utils.managers import InheritanceManager
@@ -28,6 +29,14 @@ class MessageNotification(LifecycleModel):
     @hook(AFTER_CREATE)
     def send_mail(self, *args, **kwargs):
         self.get_mail.dispatch()
+
+
+class AccessGrantedNotification(LifecycleModel):
+    entity: models.ForeignKey = models.ForeignKey(Entry, on_delete=models.CASCADE)
+
+    @property
+    def get_mail(self):
+        return AccessGrantedMail(self.user, self.entity)
 
 
 class AccessRequestNotification(MessageNotification):

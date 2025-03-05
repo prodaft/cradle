@@ -24,7 +24,7 @@ class LspTypes(APIView):
 
         grouped_data = {}
         for item in serializer.data:
-            subtype = item.pop("subtype")
+            subtype = item.get("subtype")
             grouped_data[subtype] = item
 
         return Response(grouped_data)

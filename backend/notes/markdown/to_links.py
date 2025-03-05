@@ -199,7 +199,7 @@ class LinksRenderer(BaseRenderer):
     def footnote_ref(self, value: str) -> LinkTreeNode:
         return LinkTreeNode(type="footnote")
 
-    def img_footnote_ref(self, value: str, key: str) -> LinkTreeNode:
+    def img_footnote_ref(self, text: str, value: str, key: str) -> LinkTreeNode:
         return LinkTreeNode(type="img_footnote")
 
     def blank_line(self) -> None:

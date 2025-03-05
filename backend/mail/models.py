@@ -116,6 +116,25 @@ class AccessRequestMail(TemplatedMail):
         self._dispatch_celery(self.recipient.email)
 
 
+class AccessGrantedMail(TemplatedMail):
+    def __init__(self, user, entry) -> None:
+        self.recipient = user
+        self.entry = entry
+        params = {
+            "recipient": self.recipient,
+            "entry": self.entry,
+            "frontend_url": settings.FRONTEND_URL,
+        }
+        super().__init__(
+            subject="CRADLE Access Granted",
+            template_name="mail/access_granted.html",
+            params=params,
+        )
+
+    def dispatch(self):
+        self._dispatch_celery(self.recipient.email)
+
+
 class NewUserNotificationMail(TemplatedMail):
     def __init__(self, user, new_user) -> None:
         self.user = user
@@ -142,6 +161,7 @@ class ReportReadyMail(TemplatedMail):
         params = {
             "user": user,
             "report": published_report,
+            "report_location": f"{settings.FRONTEND_URL}/#reports/{published_report.id}",
         }
         super().__init__(
             subject="CRADLE - Your Report is Ready",

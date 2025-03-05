@@ -161,6 +161,7 @@ export class CradleEditor {
                     );
                 }
                 const entryClasses = await CradleEditor.entryClassesPromise;
+                console.log(entryClasses)
                 this.entryClasses = entryClasses;
                 CradleEditor.cachedEntryClasses = entryClasses;
             }
@@ -191,6 +192,7 @@ export class CradleEditor {
                 const bigTrie = Trie.merge(Object.values(this.tries));
                 for (const entryClass of Object.values(this.entryClasses)) {
                     if (entryClass.options) {
+                        console.log(entryClass)
                         for (const option of entryClass.options) {
                             bigTrie.insert(option, [entryClass.subtype]);
                         }

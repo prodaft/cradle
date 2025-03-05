@@ -126,7 +126,7 @@ function App() {
                                     ></Route>
                                     <Route
                                         path={'/admin/user-permissions/:username/:id'}
-                                        element={<EntityForm />}
+                                        element={<AdminPanelUserPermissions />}
                                     ></Route>
                                 </Route>
                             </Route>
