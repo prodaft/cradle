@@ -1,0 +1,10 @@
+{% extends "mail/base_email.html" %}
+
+{% block content %}
+<h2 style="color:#CC0000;">Error Processing Your Report</h2>
+<p>Hello <strong>{{ user.username }}</strong>,</p>
+<p>We encountered an error while processing your report titled <strong>{{ report.title }}</strong>.</p>
+<p>Error details: <strong>{{ error_message }}</strong></p>
+<p>Please try again later or contact our support team for assistance.</p>
+<p class="note">We apologize for the inconvenience.</p>
+{% endblock %}

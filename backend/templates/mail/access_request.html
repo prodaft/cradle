@@ -1,0 +1,17 @@
+{% extends "mail/base_email.html" %}
+
+{% block content %}
+    <h2>Entity Access Request on CRADLE</h2>
+    <p>Hello <strong>{{ recipient.username }}</strong>,</p>
+    <p>You have received an access request for the following entity:</p>
+    <p><strong>Entity: {{case.entry_class.subtype}}:{{ case.name }}</strong></p>
+    <p><strong>Requested By: {{ requester.username }}</strong></p>
+    <p>Please review the request by clicking the button below:</p>
+
+    <p>You can review the request by logging in to the UI</p>
+    <p><a href="{{ frontend_url }}">{{ frontend_url }}</a></p>
+
+    <p class="note">
+      If you did not expect this request or believe this message was sent in error, you can simply ignore it or contact our support team.
+    </p>
+{% endblock %}

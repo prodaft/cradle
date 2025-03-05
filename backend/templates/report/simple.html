@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <!-- We'll dynamically load the appropriate CSS based on theme -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-light.min.css" id="markdown-theme-light">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-dark.min.css" id="markdown-theme-dark" disabled>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #24292e;
+            --border-color: #e1e4e8;
+            --tooltip-bg: #f6f8fa;
+            --tooltip-color: #24292e;
+            --header-border: #eaecef;
+        }
+        
+        body.dark-theme {
+            --bg-color: #0d1117;
+            --text-color: #c9d1d9;
+            --border-color: #30363d;
+            --tooltip-bg: #161b22;
+            --tooltip-color: #c9d1d9;
+            --header-border: #30363d;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        .container {
+            max-width: 980px;
+            margin: 0 auto;
+        }
+        
+        header {
+            border-bottom: 1px solid var(--header-border);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+        
+        .markdown-body {
+            box-sizing: border-box;
+            min-width: 200px;
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .entry {
+            position: relative;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 2px;
+            padding: 0 3px;
+        }
+        
+        .entry:hover::after {
+            content: attr(data-type);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            padding: 5px 10px;
+            background-color: var(--tooltip-bg);
+            color: var(--tooltip-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: normal;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Styling for different entry types - you can customize these colors */
+        
+        {{ styles|safe }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>{{ title }}</h1>
+            <button class="theme-toggle" id="theme-toggle">Switch Theme</button>
+        </header>
+        <main>
+            {{ body|safe }}
+        </main>
+    </div>
+    
+    <script>
+        // Theme switching functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const body = document.body;
+            const lightThemeLink = document.getElementById('markdown-theme-light');
+            const darkThemeLink = document.getElementById('markdown-theme-dark');
+            
+            // Function to set the theme
+            function setTheme(theme) {
+                if (theme === 'dark') {
+                    body.classList.add('dark-theme');
+                    themeToggle.textContent = 'Light Mode';
+                    lightThemeLink.disabled = true;
+                    darkThemeLink.disabled = false;
+                } else {
+                    body.classList.remove('dark-theme');
+                    themeToggle.textContent = 'Dark Mode';
+                    lightThemeLink.disabled = false;
+                    darkThemeLink.disabled = true;
+                }
+                
+                // Update URL hash
+                window.location.hash = theme;
+            }
+            
+            // Check for theme in URL hash
+            const urlTheme = window.location.hash.substring(1); // Remove the # character
+            
+            if (urlTheme === 'dark') {
+                setTheme('dark');
+            } else {
+                setTheme('light');
+            }
+            
+            // Toggle theme on button click
+            themeToggle.addEventListener('click', function() {
+                if (body.classList.contains('dark-theme')) {
+                    setTheme('light');
+                } else {
+                    setTheme('dark');
+                }
+            });
+            
+            // Listen for hash changes
+            window.addEventListener('hashchange', function() {
+                const newTheme = window.location.hash.substring(1);
+                if (newTheme === 'dark' || newTheme === 'light') {
+                    setTheme(newTheme);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

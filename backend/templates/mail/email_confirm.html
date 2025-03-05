@@ -1,0 +1,20 @@
+{% extends "mail/base_email.html" %}
+
+{% block content %}
+    <h2>Email Confirmation for CRADLE</h2>
+    <p>Hello <strong>{{ user.username }}</strong>,</p>
+    <p>Thank you for registering with CRADLE (or updating your account details). Please click the button below to confirm your email address:</p>
+
+    <p style="text-align:center;">
+      <a class="button" href="{{ confirmation_url }}" target="_blank">
+        Confirm Your Email
+      </a>
+    </p>
+
+    <p>If the button above doesn’t work, copy and paste the link below into your web browser:</p>
+    <p><a href="{{ confirmation_url }}">{{ confirmation_url }}</a></p>
+
+    <p>If you did not initiate this request or believe this email was sent in error, you can safely ignore it or reach out to our support team for assistance.</p>
+
+    <p class="note">For your security, please do not share this link with anyone.</p>
+{% endblock %}

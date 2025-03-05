@@ -1,0 +1,22 @@
+{% extends "mail/base_email.html" %}
+
+{% block content %}
+    <h2>New User Awaiting Activation</h2>
+    <p>Hello <strong>{{ admin.username }}</strong>,</p>
+    <p>A new user has created an account in CRADLE and is awaiting your approval:</p>
+    <ul>
+      <li><strong>Username:</strong> {{ new_user.username }}</li>
+      <li><strong>Email:</strong> {{ new_user.email }}</li>
+    </ul>
+    <p>Please activate this user by editing their account:</p>
+    <p style="text-align:center;">
+      <a class="button" href="{{ activate_url }}" target="_blank">Edit Account</a>
+    </p>
+    <p>If the button above doesn’t work, copy and paste the link below into your web browser:</p>
+    <p><a href="{{ activate_url }}">{{ activate_url }}</a></p>
+
+    <p class="note">
+      If you were not expecting this notification or believe this message is in error,
+      you can safely ignore it or contact our support team.
+    </p>
+{% endblock %}

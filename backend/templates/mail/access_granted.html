@@ -1,0 +1,15 @@
+{% extends "mail/base_email.html" %}
+
+{% block content %}
+    <h2>Access Granted on CRADLE</h2>
+    <p>Hello <strong>{{ recipient.username }}</strong>,</p>
+    <p>You have been granted access to the following entity:</p>
+    <p><strong>Entity: {{entry.entry_class.subtype}}:{{ entry.name }}</strong></p>
+
+    <p>You can view the entity by logging in to the UI</p>
+    <p><a href="{{ frontend_url }}">{{ frontend_url }}</a></p>
+
+    <p class="note">
+      If you did not expect this request or believe this message was sent in error, you can simply ignore it or contact our support team.
+    </p>
+{% endblock %}

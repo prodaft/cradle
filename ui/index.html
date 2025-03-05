@@ -1,0 +1,20 @@
+<!doctype html>
+<html data-theme="light" class="bg-primary1" lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+        <meta
+            content="default-src *; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cradle.yigit.run/api; img-src 'self' data: *;"
+            http-equiv="Content-Security-Policy"
+        />
+        <title>CRADLE</title>
+        <link rel="icon" type="image/svg+xml" href="./src/renderer/src/assets/favicon/favicon-light.svg"  media="(prefers-color-scheme: dark)"/>
+        <link rel="icon" type="image/svg+xml" href="./src/renderer/src/assets/favicon/favicon-dark.svg"  media="(prefers-color-scheme: light)"/>
+    </head>
+
+    <body class="h-screen w-screen p-0 m-0 overflow-hidden overflow-y-hidden">
+        <div id="portal-root"></div>
+        <div class="w-screen h-full p-0 m-0" id="root"></div>
+        <script src="./src/renderer/src/main.jsx" type="module"></script>
+    </body>
+</html>

@@ -19,7 +19,7 @@ For optimal performance, connected entry information is grouped by type. The das
 
 This hierarchical organization simplifies navigation. For example, the screenshot below shows that to access the relation information for `username/tg`, the user must click through steps **4-5-6** sequentially.
 
-![screenshot]({{ static_location }}/images/notes/dashboard_hierarchy.png)
+![Dashboard Hierarchy](/images/userguide/dashboard_hierarchy.png)
 
 ## Requesting Access to an Entry
 

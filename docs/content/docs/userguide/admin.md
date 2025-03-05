@@ -3,7 +3,7 @@ date = "2025-03-05T15:00:00+01:00"
 draft = false
 linkTitle = "Administration"
 title = "Administration"
-weight = 7
+weight = 8
 +++
 
 CRADLE provides administrators with robust tools to manage users, entities, and system-wide settings. This guide explains the key administrative functions and how to use them effectively.
@@ -73,7 +73,7 @@ CRADLE maintains extensive logs for all system activity. Each log entry captures
 
 Logs are propagated across all affected entities. For example, when a note referencing an entity is created, an edit log for that entity is automatically generated. The example below illustrates this propagation, where the admin's creation of a note referencing the entity `PTI-...` triggers an edit log on that entity.
 
-![Log Propagation]({{ static_location }}/images/notes/log_propagation.png)
+![Log Propagation](/images/userguide/log_propagation.png)
 
 ---
 

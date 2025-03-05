@@ -11,7 +11,7 @@ The **Graph Explorer** is a powerful visualization tool designed to help analyst
 - **Nodes** represent entities and artifacts.
 - **Edges** represent relationships established through notes.
 
-![Graph Explorer]({{ static_location }}/images/notes/graph_explorer.png)
+![Graph Explorer](/images/userguide/graph_explorer.png)
 
 ## Querying
 

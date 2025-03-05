@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    /* Shared CSS for all emails */
+    body {
+      font-family: Arial, sans-serif;
+      color: #333333;
+      background-color: #f7f7f7;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background-color: #ffffff;
+      border-radius: 5px;
+    }
+    h2 {
+      color: #333333;
+      margin-top: 0;
+    }
+    p {
+      line-height: 1.6;
+      margin: 15px 0;
+    }
+    .button {
+      display: inline-block;
+      padding: 12px 24px;
+      margin: 20px 0;
+      color: #ffffff;
+      background-color: #007BFF;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+    .footer {
+      font-size: 14px;
+      color: #555555;
+      margin-top: 40px;
+      text-align: center;
+    }
+    .footer p {
+      margin: 5px 0;
+    }
+    .note {
+      font-size: 14px;
+      color: #999999;
+      margin: 20px 0 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    {% block content %}
+    {% endblock %}
+    <div class="footer">
+      <p>Best regards,</p>
+      <p>The CRADLE Team</p>
+    </div>
+  </div>
+</body>
+</html>

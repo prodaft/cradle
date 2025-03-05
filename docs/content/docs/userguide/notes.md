@@ -46,7 +46,7 @@ Files can be uploaded either by using the file selection button at the top of th
 
 If the file is an image, it will render in the note when you prepend its reference with a `!`, for example: `![image][image.png]`.
 
-![screenshot]({{ static_location }}/images/notes/notes_files.png)
+![Upload File View](/images/userguide/notes_files.png)
 
 
 ## Role of Notes in Linking Entries

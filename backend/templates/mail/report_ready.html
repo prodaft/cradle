@@ -1,0 +1,16 @@
+{% extends "mail/base_email.html" %}
+
+{% block content %}
+<h2>Your Report is Ready</h2>
+<p>Hello <strong>{{ user.username }}</strong>,</p>
+<p>Your report titled <strong>{{ report.title }}</strong> has been successfully created.</p>
+<p>You can view your report by clicking the button below:</p>
+<p style="text-align:center;">
+  <a class="button" href="{{ report_location }}" target="_blank">
+    View Report
+  </a>
+</p>
+<p>If the button above doesn't work, copy and paste the following link into your browser:</p>
+<p><a href="{{ report_location }}">{{ report_location }}</a></p>
+<p class="note">Thank you for using CRADLE for your reporting needs.</p>
+{% endblock %}

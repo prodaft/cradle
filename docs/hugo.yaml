@@ -40,7 +40,7 @@ menu:
       weight: 1
     - identifier: menu-help
       name: "Help & Discussion"
-      url: "https://github.com/orgs/regolith-linux/discussions"
+      url: "https://github.com/prodaft/cradle/issues"
       weight: 2
     - name: Search
       weight: 3
