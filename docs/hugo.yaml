@@ -67,10 +67,6 @@ menu:
       name: "Help & Discussion"
       url: "https://github.com/orgs/regolith-linux/discussions"
       weight: 2
-    - identifier: menu-support
-      name: "Support Regolith"
-      weight: 3
-      url: "https://opencollective.com/regolith/donate"
 
 params:
   description: Batteries Included Threat Intelligence Collaboration

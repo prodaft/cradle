@@ -40,48 +40,51 @@ Batteries included collaborative knowledge management solution for threat intell
 
 {{< hextra/feature-grid >}}
   {{< hextra/feature-card
-    title="Fast and Full-featured"
-    subtitle="Simple and easy to use, yet powerful and feature-rich."
+    title="Intuitive Dashboards"
+    subtitle="Centralize insights and access linked notes effortlessly."
     class="hx-aspect-auto md:hx-aspect-[1.1/1] max-md:hx-min-h-[340px]"
-    image="images/hextra-doc.webp"
+    image="images/screenshots/dashboard.png"
     imageClass="hx-top-[40%] hx-left-[24px] hx-w-[180%] sm:hx-w-[110%] dark:hx-opacity-80"
     style="background: radial-gradient(ellipse at 50% 80%,rgba(194,97,254,0.15),hsla(0,0%,100%,0));"
   >}}
   {{< hextra/feature-card
-    title="Markdown is All You Need"
-    subtitle="Compose with just Markdown. Enrich with Shortcode components."
+    title="Graph Explorer"
+    subtitle="Visualize and traverse relationships between artifacts using the graph visualizer."
     class="hx-aspect-auto md:hx-aspect-[1.1/1] max-lg:hx-min-h-[340px]"
-    image="images/hextra-markdown.webp"
+    image="images/screenshots/graph_bfs.png"
     imageClass="hx-top-[40%] hx-left-[36px] hx-w-[180%] sm:hx-w-[110%] dark:hx-opacity-80"
     style="background: radial-gradient(ellipse at 50% 80%,rgba(142,53,74,0.15),hsla(0,0%,100%,0));"
   >}}
   {{< hextra/feature-card
-    title="Full Text Search"
-    subtitle="Built-in full text search with FlexSearch, no extra setup required."
+    title="Rich Markdown Editor"
+    subtitle="Craft detailed notes with live preview and extended markdown features, aided by smart linking."
     class="hx-aspect-auto md:hx-aspect-[1.1/1] max-md:hx-min-h-[340px]"
-    image="images/hextra-search.webp"
+    image="images/screenshots/editor.png"
     imageClass="hx-top-[40%] hx-left-[36px] hx-w-[110%] sm:hx-w-[110%] dark:hx-opacity-80"
     style="background: radial-gradient(ellipse at 50% 80%,rgba(221,210,59,0.15),hsla(0,0%,100%,0));"
   >}}
   {{< hextra/feature-card
-    title="Lightweight as a Feather"
-    subtitle="No dependency or Node.js is needed to use Hextra. Powered by Hugo, one of *the fastest* static site generators, building your site in just seconds with a single binary."
+    title="Case Correlation"
+    subtitle="Explore connections between cases with pathfinding."
+    class="hx-aspect-auto md:hx-aspect-[1.1/1] max-lg:hx-min-h-[340px]"
+    image="images/screenshots/3d_pathfind.png"
+    imageClass="hx-top-[40%] hx-left-[36px] hx-w-[180%] sm:hx-w-[110%] dark:hx-opacity-80"
+    style="background: radial-gradient(ellipse at 50% 80%,rgba(142,53,74,0.15),hsla(0,0%,100%,0));"
   >}}
   {{< hextra/feature-card
-    title="Responsive with Dark Mode Included"
-    subtitle="Looks great on different screen sizes. Built-in dark mode support, with auto-switching based on user's system preference."
+    title="Custom Reports"
+    subtitle="Generate and export comprehensive analysis reports effortlessly."
+    class="hx-aspect-auto md:hx-aspect-[1.1/1] max-md:hx-min-h-[340px]"
+    image="images/screenshots/reports.png"
+    imageClass="hx-top-[40%] hx-left-[36px] hx-w-[110%] sm:hx-w-[110%] dark:hx-opacity-80"
+    style="background: radial-gradient(ellipse at 50% 80%,rgba(221,210,59,0.15),hsla(0,0%,100%,0));"
   >}}
   {{< hextra/feature-card
-    title="Build and Host for Free"
-    subtitle="Build with GitHub Actions, and host for free on GitHub Pages. Alternatively it can be hosted on any static hosting service."
-  >}}
-  {{< hextra/feature-card
-    title="Multi-Language Made Easy"
-    subtitle="Create multi-language pages by just adding locales suffix to the Markdown file. Adding i18n support to your site is intuitive."
-  >}}
-  {{< hextra/feature-card
-    title="And Much More..."
-    icon="sparkles"
-    subtitle="Syntax highlighting / Table of contents / SEO / RSS / LaTeX / Mermaid / Customizable / and more..."
+    title="Secure Publishing"
+    subtitle="Share anonymized insights safely while protecting sensitive data."
+    class="hx-aspect-auto md:hx-aspect-[1.1/1] max-md:hx-min-h-[340px]"
+    image="images/screenshots/anonymized_html.png"
+    imageClass="hx-top-[40%] hx-left-[36px] hx-w-[110%] sm:hx-w-[110%] dark:hx-opacity-80"
+    style="background: radial-gradient(ellipse at 50% 80%,rgba(221,210,59,0.15),hsla(0,0%,100%,0));"
   >}}
 {{< /hextra/feature-grid >}}
