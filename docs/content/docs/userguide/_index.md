@@ -50,3 +50,9 @@ For a quick refresher on key terms as you navigate the documentation, please ref
 {{< callout type="info" >}}
 Refer back to this glossary whenever you encounter new terminology in the CRADLE documentation. This will help ensure that you fully understand the concepts and how they interconnect.
 {{< /callout >}}
+
+### Navigation
+
+{{< cards columns="2">}}
+  {{< card link="/docs/userguide/notes/" title="Note Taking" icon="arrow-right" >}}
+{{< /cards >}}

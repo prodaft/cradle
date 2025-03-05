@@ -29,7 +29,7 @@ Batteries included collaborative knowledge management solution for threat intell
 </div>
 
 <div class="hx-mt-6 hx-mb-6">
-{{< hextra/hero-button text="Get Started" link="docs/" >}}
+{{< hextra/hero-button text="Get Started" link="docs/getting-started" >}}
 </div>
 {{< /hextra/hero-container >}}
 

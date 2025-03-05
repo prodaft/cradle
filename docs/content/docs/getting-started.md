@@ -51,6 +51,10 @@ Use the default credentials to log in:
 - **Username:** admin
 - **Password:** admin
 
+### Check-Out The User Guide
+
+Have a look at the [user guide]({{< ref "/docs/userguide" >}}) to get a general understanding of how CRADLE works and learn how to use its features more efficiently.
+
 ### Explore CRADLE
 Now that you're logged in, take a few minutes to:
 - **Browse Dashboards:** View centralized intelligence data and explore related entities.
