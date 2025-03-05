@@ -166,7 +166,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 <!-- CONTACT -->
 ## Contact
 
-CATALYST Threat Intelligence Team - [@prodaft](https://twitter.com/prodaft) - catalyst.prodaft.com
+CATALYST Threat Intelligence Team - [@prodaft](https://twitter.com/prodaft) - [catalyst.prodaft.com](https://catalyst.prodaft.com)
 
 Project Link: [https://github.com/prodaft/cradle](https://github.com/prodaft/cradle)
 

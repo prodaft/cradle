@@ -26,9 +26,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HUGO_VERSION: 0.138.0
-    defaults:
-      run:
-        working-directory: ./docs
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -52,13 +49,13 @@ jobs:
           HUGO_ENVIRONMENT: production
           HUGO_ENV: production
         run: |
-          hugo \
+          cd docs; hugo \
             --gc --minify \
             --baseURL "https://cradle.sh/"
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./public
+          path: ./docs/public
 
   # Deployment job
   deploy:
