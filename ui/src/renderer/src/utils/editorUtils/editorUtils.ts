@@ -192,9 +192,10 @@ export class CradleEditor {
                 const bigTrie = Trie.merge(Object.values(this.tries));
                 for (const entryClass of Object.values(this.entryClasses)) {
                     if (entryClass.options) {
-                        console.log(entryClass)
+                        this.tries[entryClass.subtype] = new Trie();
                         for (const option of entryClass.options) {
                             bigTrie.insert(option, [entryClass.subtype]);
+                            this.tries[entryClass.subtype].insert(option, [entryClass.subtype]);
                         }
                     }
                 }
@@ -404,6 +405,9 @@ export class CradleEditor {
                     node.name === 'CradleLink' ? node.firstChild : node.prevSibling;
                 if (!sibling) break;
                 const t = context.state.doc.sliceString(sibling.from, sibling.to);
+
+                console.log(t)
+                console.log(this.tries)
                 if (!this.tries[t]) break;
 
                 const v = context.state.doc.sliceString(from, to);
