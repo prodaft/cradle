@@ -185,10 +185,12 @@ export default function Sidebar({
                             text={isDarkMode ? 'Light Mode' : 'Dark Mode'}
                         />
                         <SidebarItem
-                            handleClick={() => navigate('/notes/guide')}
+                            handleClick={() =>
+                                window.open('https://cradle.sh/docs/userguide/')
+                            }
                             icon={<QuestionMark height={24} width={24} />}
                             text='User Guide'
-                            highlightedLocation='/notes/how_to_use'
+                            highlightedLocation='_blank'
                         />
                         <SidebarItem
                             handleClick={handleNotifications}

@@ -3,6 +3,7 @@ date = '2025-03-05T12:55:52+01:00'
 draft = false
 linkTitle = 'User Guide'
 title = 'User Guide'
+weight = 2
 +++
 
 Welcome to your comprehensive resource for mastering **CRADLE**—the collaborative threat intelligence platform designed to streamline your analytical workflows. This guide covers every aspect of the application, from crafting insightful notes and visualizing complex relationships to managing access controls and generating detailed reports.

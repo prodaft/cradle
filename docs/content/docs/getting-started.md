@@ -3,6 +3,7 @@ date = '2025-03-05T12:55:52+01:00'
 draft = false
 linkTitle = 'Getting Started'
 title = 'Getting Started'
+weight = 1
 +++
 
 This guide will help you quickly set up and run a demo of CRADLE—the collaborative threat intelligence platform—in just a few minutes. Follow these simple steps to get up and running.
