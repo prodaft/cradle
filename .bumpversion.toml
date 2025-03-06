@@ -16,7 +16,6 @@ commit = true
 commit_args = "--no-verify"
 message = "Bump version: {current_version} → {new_version}"
 moveable_tags = []
-commit_args = ""
 setup_hooks = []
 pre_commit_hooks = []
 post_commit_hooks = []
