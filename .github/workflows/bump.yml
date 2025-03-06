@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       bump-type:
-        description: 'Bump type to use if no commit message directive is found'
+        description: 'Bump type to use if commit message directive is not found'
         required: false
         default: ''
         type: choice
@@ -22,6 +22,11 @@ jobs:
     steps:
       - name: Checkout the code
         uses: actions/checkout@v4
+
+      - name: Set up Git config
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
 
       - name: Determine bump type from commit message
         id: determine_bump
@@ -38,27 +43,32 @@ jobs:
           elif echo "$commit_message" | grep -iq "bump: patch"; then
             bump_type="patch"
           fi
-          
-          # If no directive is found, check for a workflow_dispatch input or default to patch.
+
+          # If no directive is found and this is a workflow_dispatch event with input, use that input.
           if [ -z "$bump_type" ]; then
-            if [ -n "${{ github.event.inputs.bump-type }}" ]; then
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.bump-type }}" ]; then
               bump_type="${{ github.event.inputs.bump-type }}"
             else
-              bump_type="patch"
+              bump_type="none"
             fi
           fi
-          
+
           echo "Determined bump type: $bump_type"
           echo "bump_type=$bump_type" >> $GITHUB_OUTPUT
 
       - name: Bump version
         id: bump
+        if: steps.determine_bump.outputs.bump_type != 'none'
         uses: callowayproject/bump-my-version@master
         env:
           BUMPVERSION_TAG: "true"
         with:
           args: ${{ steps.determine_bump.outputs.bump_type }}
           github-token: ${{ secrets.GH_TOKEN }}
+
+      - name: Skip bumping
+        if: steps.determine_bump.outputs.bump_type == 'none'
+        run: echo "No bump directive found in commit message or manual input. Skipping version bump."
 
       - name: Check
         if: steps.bump.outputs.bumped == 'true'
