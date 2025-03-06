@@ -62,8 +62,7 @@ jobs:
         uses: callowayproject/bump-my-version@master
         env:
           BUMPVERSION_TAG: "true"
-          GIT_AUTHOR_NAME: "Github Actions"
-          GIT_AUTHOR_EMAIL: "actions@github.com"
+          GH_TOKEN: ${{ github.token }}
         with:
           args: ${{ steps.determine_bump.outputs.bump_type }}
           github-token: ${{ secrets.GH_TOKEN }}
