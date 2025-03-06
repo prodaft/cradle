@@ -61,15 +61,10 @@ jobs:
         if: steps.determine_bump.outputs.bump_type != 'none'
         uses: callowayproject/bump-my-version@master
         env:
-          BUMPVERSION_TAG: "true"
+          BUMPVERSION_TAG: "false"
         with:
           args: ${{ steps.determine_bump.outputs.bump_type }}
           github-token: ${{ github.token }}
-
-      - name: Set up Git config
-        run: |
-          git config --global user.email "actions@github.com"
-          git config --global user.name "GitHub Actions"
 
       - name: Skip bumping
         if: steps.determine_bump.outputs.bump_type == 'none'
