@@ -64,7 +64,7 @@ jobs:
           BUMPVERSION_TAG: "true"
         with:
           args: ${{ steps.determine_bump.outputs.bump_type }}
-          github-token: ${{ github.token }}
+          github-token: ${{ secrets.PAT }}
 
       - name: Skip bumping
         if: steps.determine_bump.outputs.bump_type == 'none'
