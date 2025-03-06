@@ -62,10 +62,9 @@ jobs:
         uses: callowayproject/bump-my-version@master
         env:
           BUMPVERSION_TAG: "true"
-          GH_TOKEN: ${{ github.token }}
         with:
           args: ${{ steps.determine_bump.outputs.bump_type }}
-          github-token: ${{ secrets.GH_TOKEN }}
+          github-token: ${{ github.token }}
 
       - name: Set up Git config
         run: |
