@@ -3,7 +3,7 @@ name: Create and publish a Docker image
 on:
   push:
     tags:
-      - '*'  # triggers on every new tag
+      - '*'
 
 jobs:
   build-and-push-backend:
