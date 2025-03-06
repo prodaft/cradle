@@ -38,8 +38,7 @@ It provides an intuitive interface for cybersecurity analysts to:
 1. **Clone the repository**
    ```bash
    git clone https://github.com/prodaft/cradle.git
-   cd cradle/frontend
-   git submodule update --init --recursive
+   cd cradle/ui
    ```
 
 2. **Install dependencies**

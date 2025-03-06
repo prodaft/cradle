@@ -3,6 +3,7 @@ date = '2025-03-05T12:55:52+01:00'
 draft = false
 linkTitle = 'Documentation'
 title = 'Introduction'
+weight = 1
 +++
 
 🚀 **Welcome to CRADLE!**

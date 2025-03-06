@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Catalyst Threat Intelligence
+    url: https://catalyst.prodaft.com
+    about: Please report security issues here.

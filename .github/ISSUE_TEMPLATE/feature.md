@@ -4,7 +4,7 @@ about: Suggest an idea for this project
 title: "[FEATURE] Brief description of the feature"
 labels: enhancement
 assignees: ''
-
+tags: ["enchancement"]
 ---
 
 ### Description
