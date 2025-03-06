@@ -206,17 +206,20 @@ export default function Editor({
         const doc = editorRef.current.view.state;
         let to = doc.selection.main.to;
         let from = doc.selection.main.from;
-        let content;
+        let content = markdownContent;
 
         if (to === from) {
-            content = markdownContent;
             from = 0;
             to = content.length;
         }
 
         const linked = editorUtils.autoFormatLinks(editorRef.current.view, from, to);
         setMarkdownContent(linked);
-        setCodeMirrorContent(linked);
+        editorRef.current.view.dispatch({
+            from: 0,
+            to: content.length,
+            changes: { from: 0, to: content.length, insert: linked },
+        });
     };
 
     return (

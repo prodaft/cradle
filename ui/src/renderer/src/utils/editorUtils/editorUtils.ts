@@ -282,7 +282,7 @@ export class CradleEditor {
                             suggestions.push({
                                 type,
                                 match: word,
-                                from: i, // starting index from the loop variable
+                                from: i,
                             });
                             madeSuggestions.add(key);
                         }
@@ -439,7 +439,13 @@ export class CradleEditor {
             const diagnostics: Diagnostic[] = [];
             const text = view.state.doc.toString();
             const tree = syntaxTree(view.state);
-            const ignoreTypes = new Set(['CodeBlock', 'FencedCode', 'InlineCode']);
+            const ignoreTypes = new Set([
+                'CodeBlock',
+                'FencedCode',
+                'InlineCode',
+                'LinkLabel',
+                'URL',
+            ]);
 
             tree.iterate({
                 from: 0,
@@ -484,32 +490,27 @@ export class CradleEditor {
                         const nodeText = text.slice(node.from, node.to);
                         const suggestions = this.getSuggestionsForText(nodeText);
                         suggestions.forEach((suggestion) => {
-                            let searchIndex = 0;
-                            while (true) {
-                                const idx = suggestion.from;
-                                if (idx === -1) break;
-                                diagnostics.push({
-                                    from: node.from + idx,
-                                    to: node.from + idx + suggestion.match.length,
-                                    severity: 'warning',
-                                    message: `Possible link: [[${suggestion.type}:${suggestion.match}]]`,
-                                    actions: [
-                                        {
-                                            name: 'Link',
-                                            apply(view, from, to) {
-                                                view.dispatch({
-                                                    changes: {
-                                                        from,
-                                                        to,
-                                                        insert: `[[${suggestion.type}:${suggestion.match}]]`,
-                                                    },
-                                                });
-                                            },
+                            const idx = suggestion.from;
+                            diagnostics.push({
+                                from: node.from + idx,
+                                to: node.from + idx + suggestion.match.length,
+                                severity: 'warning',
+                                message: `Possible link: [[${suggestion.type}:${suggestion.match}]]`,
+                                actions: [
+                                    {
+                                        name: 'Link',
+                                        apply(view, from, to) {
+                                            view.dispatch({
+                                                changes: {
+                                                    from,
+                                                    to,
+                                                    insert: `[[${suggestion.type}:${suggestion.match}]]`,
+                                                },
+                                            });
                                         },
-                                    ],
-                                });
-                                searchIndex = idx + suggestion.match.length;
-                            }
+                                    },
+                                ],
+                            });
                         });
                     } else if (node.name === 'Paragraph') {
                         const nodeText = text.slice(node.from, node.to);
@@ -739,11 +740,14 @@ export class CradleEditor {
                     // Group suggestions by the trimmed (and lowercased) match.
                     const grouped: Map<string, Suggestion[]> = new Map();
                     for (const s of suggestions) {
-                        const key = s.match.trim().toLowerCase();
-                        if (!grouped.has(key)) {
-                            grouped.set(key, []);
-                        }
-                        grouped.get(key)!.push(s);
+                        const absoluteStart = node.from + s.from;
+                        const absoluteEnd = absoluteStart + s.match.length;
+                        const replacement = `[[${s.type}:${s.match}]]`;
+                        changes.push({
+                            from: absoluteStart,
+                            to: absoluteEnd,
+                            replacement,
+                        });
                     }
                 } else if (node.name === 'Paragraph') {
                     if (!nodeText.trim()) return;
@@ -761,9 +765,9 @@ export class CradleEditor {
                     }
                     for (const suggestion of suggestions) {
                         const replacement = `[[${suggestion.type}:${suggestion.match}]]`;
-                        const absoluteStart = start + suggestion.from;
+                        const absoluteStart = node.from + suggestion.from;
                         const absoluteEnd = absoluteStart + suggestion.match.length;
-                        // Deny suggestion if it lies entirely within any child node.
+
                         const liesWithinChild = childRanges.some(
                             (range) =>
                                 absoluteStart >= range.from && absoluteEnd <= range.to,
