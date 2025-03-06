@@ -1,0 +1,6 @@
+.hextra-feature-card img {
+  transition: transform 0.3s ease-out;
+}
+.hextra-feature-card:hover img {
+  transform: translate(-20px, -20px);
+}
