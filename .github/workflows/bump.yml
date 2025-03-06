@@ -1,0 +1,66 @@
+name: Bump version
+
+on:
+  push:
+    branches-ignore:
+      - main
+  workflow_dispatch:
+    inputs:
+      bump-type:
+        description: 'Bump type to use if no commit message directive is found'
+        required: false
+        default: ''
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+
+      - name: Determine bump type from commit message
+        id: determine_bump
+        run: |
+          # Get the most recent commit message
+          commit_message=$(git log -1 --pretty=%B)
+          echo "Commit message: $commit_message"
+          
+          bump_type=""
+          if echo "$commit_message" | grep -iq "bump: major"; then
+            bump_type="major"
+          elif echo "$commit_message" | grep -iq "bump: minor"; then
+            bump_type="minor"
+          elif echo "$commit_message" | grep -iq "bump: patch"; then
+            bump_type="patch"
+          fi
+          
+          # If no directive is found, check for a workflow_dispatch input or default to patch.
+          if [ -z "$bump_type" ]; then
+            if [ -n "${{ github.event.inputs.bump-type }}" ]; then
+              bump_type="${{ github.event.inputs.bump-type }}"
+            else
+              bump_type="patch"
+            fi
+          fi
+          
+          echo "Determined bump type: $bump_type"
+          echo "bump_type=$bump_type" >> $GITHUB_OUTPUT
+
+      - name: Bump version
+        id: bump
+        uses: callowayproject/bump-my-version@master
+        env:
+          BUMPVERSION_TAG: "true"
+        with:
+          args: ${{ steps.determine_bump.outputs.bump_type }}
+          github-token: ${{ secrets.GH_TOKEN }}
+
+      - name: Check
+        if: steps.bump.outputs.bumped == 'true'
+        run: |
+          echo "Version was bumped from ${{ steps.bump.outputs.previous-version }} to ${{ steps.bump.outputs.current-version }}!"
