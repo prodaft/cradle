@@ -1,11 +1,10 @@
 ---
-
-**name:** To-Do Item  
-**about:** Track a task that needs to be completed  
-**title:** "[TODO] Brief description of the task"  
-**labels:** task  
-**assignees:** ''  
-
+name: To-Do Item  
+about: Track a task that needs to be completed  
+title: "[TODO] Brief description of the task"  
+labels: task  
+assignees: ''  
+tags: ["todo"]
 ---
 
 ### Description  
