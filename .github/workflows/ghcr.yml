@@ -2,8 +2,6 @@ name: Create and publish a Docker image
 
 on:
   push:
-    branches:
-      - main
     tags:
       - '*'  # triggers on every new tag
 
