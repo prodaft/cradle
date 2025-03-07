@@ -37,7 +37,7 @@ class HTMLRenderer(BaseHTMLRenderer):
     def cradle_link(self, key: str, value: str, alias: Optional[str] = None) -> str:
         display = alias if alias else value
 
-        return f'<span class="entry" data-type="{key}">{display}</span>'
+        return f'<span class="entry" entry-type="{key}">{display}</span>'
 
 
 def markdown_to_html(

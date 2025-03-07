@@ -82,7 +82,7 @@ class JSONPublish(BasePublishStrategy):
                     url = MinioClient().create_presigned_get(
                         file_ref.bucket_name,
                         file_ref.minio_file_name,
-                        timedelta(hours=2),
+                        timedelta(days=7),
                     )
                     note_data["file_urls"][file_ref.minio_file_name] = url
                 except Exception:

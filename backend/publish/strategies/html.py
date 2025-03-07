@@ -47,7 +47,7 @@ class HTMLPublish(BasePublishStrategy):
         allowed_attrs = {
             "a": ["href", "title"],
             "img": ["src", "alt", "title"],
-            "span": ["class", "data-id", "data-type", "data-key", "data-value"],
+            "span": ["class", "data-id", "entry-type", "data-key", "data-value"],
         }
         allowed_protocols = {"data", "http", "https"}
         return bleach.clean(
@@ -89,7 +89,7 @@ class HTMLPublish(BasePublishStrategy):
             "body": body,
             "styles": "\n".join(
                 [
-                    f'.entry[data-type="{k}"] {{ background-color: "{v}"; }}'
+                    f'[entry-type="{k}"] {{ background-color: {v}44; }}'
                     for k, v in colors.items()
                 ]
             ),
@@ -118,7 +118,7 @@ class HTMLPublish(BasePublishStrategy):
             return PublishResult(success=False, error="Minio client is not configured")
 
         data = BytesIO(full_html.encode("utf-8"))
-        size = len(full_html)
+        size = len(full_html.encode("utf-8"))
         content_type = "text/html"
 
         try:
@@ -142,7 +142,7 @@ class HTMLPublish(BasePublishStrategy):
 
         full_html = self._build_html(title, notes, user=user)
         data = BytesIO(full_html.encode("utf-8"))
-        size = len(full_html)
+        size = len(full_html.encode("utf-8"))
         content_type = "text/html"
 
         try:
