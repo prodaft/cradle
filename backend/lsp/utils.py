@@ -1,7 +1,6 @@
 from collections.abc import Iterable
 from typing import Dict, List, Any
 
-from django.db.models import Q
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
 from notes.models import Note

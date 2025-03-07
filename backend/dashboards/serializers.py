@@ -85,7 +85,7 @@ class BaseDashboardSerializer(serializers.Serializer):
         meta: Any = getattr(self, "Meta", None)
         if meta:
             inaccessible_fields = getattr(meta, "inaccessible_fields", [])
-            second_hop_fields = getattr(meta, "second_hop_fields", [])
+            getattr(meta, "second_hop_fields", [])
 
             self.update_inaccessible_fields(data, inaccessible_fields)
 

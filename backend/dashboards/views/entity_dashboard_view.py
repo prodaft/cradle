@@ -14,7 +14,7 @@ from ..serializers import EntityDashboardSerializer
 from access.enums import AccessType
 
 from typing import cast
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema_view
 
 
 @extend_schema_view(
@@ -33,7 +33,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
             200: EntityDashboardSerializer,
             401: "User is not authenticated",
             404: "Entity not found or no access",
-        }
+        },
     )
 )
 class EntityDashboard(APIView):

@@ -1,6 +1,5 @@
-import json
 from collections.abc import Iterable
-from typing import Any, Dict, List, Match, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 import mistune
 from mistune.core import BaseRenderer, BlockState
 

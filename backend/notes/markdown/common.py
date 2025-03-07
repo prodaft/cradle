@@ -1,9 +1,12 @@
-from typing import Any, Dict, Match, Optional
+from typing import Match
 from mistune import InlineParser, InlineState, Markdown
 from mistune.helpers import LINK_LABEL
 
 # Common regex patterns
-LINK_REGEX = r"\[\[(?P<cl_type>[^:\|\]]+?):(?P<cl_value>(?:\\[\[\]\|]|[^\[\]\|])+?)(?:\|(?P<cl_alias>(?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]"
+LINK_REGEX = (
+    r"\[\[(?P<cl_type>[^:\|\]]+?):(?P<cl_value>(?:\\[\[\]\|]|[^\[\]\|])+?)"
+    + r"(?:\|(?P<cl_alias>(?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]"
+)
 INLINE_FOOTNOTE = (
     r"\[(?P<footnote_value>"
     + LINK_LABEL

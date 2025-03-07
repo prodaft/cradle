@@ -1,5 +1,5 @@
 from django.db import models
-from django_lifecycle import AFTER_CREATE, LifecycleModel, LifecycleModelMixin, hook
+from django_lifecycle import AFTER_CREATE, LifecycleModel, hook
 from mail.models import NewUserNotificationMail
 from mail.models import ReportReadyMail
 from mail.models import ReportErrorMail

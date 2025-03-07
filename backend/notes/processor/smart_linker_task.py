@@ -1,14 +1,10 @@
-import itertools
-from typing import Iterable, Optional, Tuple
+from typing import Iterable, Tuple
 
 from celery import Celery
 from entries.models import Entry
-from entries.enums import EntryType
-from ..markdown.to_links import Link
 
 from .base_task import BaseTask
-from ..models import Note, Relation
-from django.db import transaction
+from ..models import Note
 from ..tasks import smart_linker_task
 
 

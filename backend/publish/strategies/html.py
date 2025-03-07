@@ -2,9 +2,8 @@ import uuid
 import bleach
 from io import BytesIO
 from datetime import timedelta
-from typing import List, Dict, Optional, Tuple
+from typing import List
 
-import mistune
 from django.template.loader import get_template
 
 from notes.models import Note

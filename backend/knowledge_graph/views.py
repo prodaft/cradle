@@ -1,16 +1,9 @@
-from django.db.models import F, Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
-from entries.models import EntryClass
-from notes.models import Note, Relation
-from user.models import CradleUser
-from .serializers import GraphQueryRequestSerializer, KnowledgeGraphSerializer
-from typing import cast
-
-from rest_framework.parsers import JSONParser
+from .serializers import GraphQueryRequestSerializer
 
 
 class GraphTraverseView(APIView):

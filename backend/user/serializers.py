@@ -10,7 +10,7 @@ from .exceptions import (
     DuplicateUserException,
     InvalidPasswordException,
 )
-from typing import Dict, List, cast, Any, Sequence
+from typing import Dict, List, cast, Any
 from .utils.validators import password_validator
 
 
@@ -129,7 +129,6 @@ class UserCreateSerializerAdmin(UserCreateSerializer):
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
-    # confirm_new_password = serializers.CharField(required=True) # optionally use this if you want to confirm new passwords
 
     def validate(self, data):
         password_validation.validate_password(

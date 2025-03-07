@@ -27,7 +27,7 @@ class EntryRequestSerializer(serializers.Serializer):
         if not qs.exists():
             raise serializers.ValidationError("Entry does not exist")
 
-        entry = qs.first()  ## TODO: Manage cases when more are returned
+        entry = qs.first()  # TODO: Manage cases when more are returned
         if (
             entry.entry_class.type == EntryType.ENTITY
             and not Access.objects.has_access_to_entities(
@@ -226,7 +226,8 @@ class BFSQuery(BaseGraphQuery):
                 SELECT can_access, id, entry_class_id, name, distance FROM
                     get_minimum_distances_for_user(
                         %s, %s, %s
-                    ) JOIN entries_entry e ON e.id = dst_entry WHERE distance >= %s AND name LIKE %s AND entry_class_id LIKE %s;
+                    ) JOIN entries_entry e ON e.id = dst_entry
+                    WHERE distance >= %s AND name LIKE %s AND entry_class_id LIKE %s;
                 """,
                 [
                     str(self.validated_data["src"].id),

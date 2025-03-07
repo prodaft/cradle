@@ -4,7 +4,6 @@ from io import BytesIO
 from datetime import timedelta
 from typing import List
 
-import requests
 from notes.models import Note
 from user.models import CradleUser
 from publish.strategies.base import BasePublishStrategy, PublishResult

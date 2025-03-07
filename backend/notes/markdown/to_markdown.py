@@ -1,17 +1,12 @@
-import itertools
-import json
 import random
-from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Dict, List, Match, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Any, Dict
 
 import mistune
-from mistune import InlineParser, InlineState
-from mistune.core import BaseRenderer, BlockState
-from mistune.markdown import Markdown
+from mistune.core import BlockState
 from mistune.renderers.markdown import MarkdownRenderer as BaseMarkdownRenderer
 from xeger import Xeger
 
-from .common import cradle_link_plugin, footnote_plugin
+from .common import cradle_link_plugin
 from .table import table
 
 if TYPE_CHECKING:
@@ -48,7 +43,7 @@ class Anonymizer:
             value = self.x.xeger(entry_class.regex)
 
         else:
-            value = self.x.xeger(r"\w{16}")  ## TODO: Pick random word instead
+            value = self.x.xeger(r"\w{16}")  # TODO: Pick random word instead
 
         self.value_map[key] = value
         return value

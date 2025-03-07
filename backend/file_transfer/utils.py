@@ -1,5 +1,5 @@
 import io
-from typing import Dict, Optional
+from typing import Optional
 from minio import Minio
 import uuid
 from datetime import timedelta

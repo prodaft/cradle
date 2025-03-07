@@ -2,7 +2,6 @@ from rest_framework import serializers
 from .models import Entry, EntryClass
 from .enums import EntryType
 
-from django.db.models.functions import Length
 
 from .exceptions import (
     DuplicateEntryException,
