@@ -422,6 +422,7 @@ export class CradleEditor {
             }
             case 'CradleLinkAlias':
                 if (!this.tries) return { from: context.pos, options: [] };
+                if (!this.tries["alias"]) return { from: context.pos, options: [] };
 
                 const v = context.state.doc.sliceString(from, to);
                 options = this.tries["alias"].allWordsWithPrefix(v).map((item) => ({
@@ -811,5 +812,14 @@ export class CradleEditor {
                 formattedText.slice(change.to);
         }
         return formattedText;
+    }
+
+
+    public static clearCache() {
+      CradleEditor.entryClassesPromise = null;
+      CradleEditor.cachedEntryClasses = null;
+      CradleEditor.triesPromise = null;
+      CradleEditor.cachedTries = null;
+      CradleEditor.cachedBigTrie = null;
     }
 }
