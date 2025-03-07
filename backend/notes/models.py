@@ -6,12 +6,11 @@ from logs.models import LoggableModelMixin
 from .managers import NoteManager
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from django_lifecycle import (
-    LifecycleModel,
-)
+from django_lifecycle import AFTER_UPDATE, LifecycleModel, hook
 
 import uuid
 from user.models import CradleUser
+from core.fields import BitStringField
 
 
 class Relation(LifecycleModel):
@@ -43,7 +42,7 @@ class Relation(LifecycleModel):
     ]
 
 
-class Note(models.Model, LoggableModelMixin):
+class Note(LifecycleModel, LoggableModelMixin):
     id: models.UUIDField = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -60,6 +59,10 @@ class Note(models.Model, LoggableModelMixin):
 
     editor = models.ForeignKey[CradleUser](
         CradleUser, related_name="editor", on_delete=models.SET_NULL, null=True
+    )
+
+    access_vector: BitStringField = BitStringField(
+        max_length=2**24, null=False, default=1
     )
 
     edit_timestamp: models.DateTimeField = models.DateTimeField(null=True)
@@ -102,6 +105,11 @@ class Note(models.Model, LoggableModelMixin):
         super().delete()
 
         Entry.objects.filter(id__in=artifact_ids).unreferenced().delete()
+
+    @hook(AFTER_UPDATE, when="access_vector", has_changed=True)
+    def acvec_offset_updated(self):
+        # TODO: Update privilege vectors of all relations
+        pass
 
 
 class ArchivedNote(models.Model):

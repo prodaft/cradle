@@ -9,6 +9,7 @@ from notes.exceptions import (
 
 from .base_task import BaseTask
 from ..models import Note
+from ..utils import calculate_acvec
 
 
 class AccessControlTask(BaseTask):
@@ -41,5 +42,7 @@ class AccessControlTask(BaseTask):
 
         for i in inaccessible.all():
             raise NoAccessToEntriesException([i])
+
+        note.access_vector = calculate_acvec(entities)
 
         return None, entries

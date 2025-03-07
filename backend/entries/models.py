@@ -1,6 +1,7 @@
 from django.db import models
-from django_lifecycle import LifecycleModel
+from django_lifecycle import AFTER_UPDATE, LifecycleModel, hook
 from django_lifecycle.mixins import transaction
+from django.db.models import Q
 
 from logs.models import LoggableModelMixin
 
@@ -188,15 +189,24 @@ class Entry(LifecycleModel, LoggableModelMixin):
         related_name="entries",
     )
 
-    name: models.CharField = models.CharField()
+    name: models.CharField = models.CharField(max_length=255)
     description: models.TextField = models.TextField(null=True, blank=True)
     timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+
+    # New field: acvec_offset is an unsigned integer.
+    acvec_offset: models.PositiveIntegerField = models.PositiveIntegerField(default=0)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
                 fields=["name", "entry_class"], name="unique_name_class"
-            )
+            ),
+            # Enforces uniqueness on non-zero acvec_offset values.
+            models.UniqueConstraint(
+                fields=["acvec_offset"],
+                condition=~Q(acvec_offset=0),
+                name="unique_non_zero_acvec_offset",
+            ),
         ]
 
     objects = EntryManager()
@@ -206,7 +216,6 @@ class Entry(LifecycleModel, LoggableModelMixin):
     def __init__(self, *args, **kwargs):
         if "name" in kwargs:
             kwargs["name"] = kwargs["name"].strip()
-
         super().__init__(*args, **kwargs)
 
     def __repr__(self):
@@ -229,7 +238,26 @@ class Entry(LifecycleModel, LoggableModelMixin):
         if not self.entry_class.validate_text(self.name):
             raise InvalidEntryException(self.entry_class.subtype, self.name)
 
+        self.setup_access()
         return super().save(*args, **kwargs)
+
+    def setup_access(self):
+        # Artifacts and public entities have public access
+        if self.entry_class.type == EntryType.ARTIFACT or self.is_public:
+            self.is_public = True
+            self.acvec_offset = 0
+
+        elif self.acvec_offset == 0:
+            if self.entry_class.type == EntryType.ENTITY:
+                existing_offsets = set(
+                    self.__class__.objects.exclude(acvec_offset=0).values_list(
+                        "acvec_offset", flat=True
+                    )
+                )
+                offset = 1
+                while offset in existing_offsets:
+                    offset += 1
+                self.acvec_offset = offset
 
     def propagate_from(self, log):
         if self.entry_class.type == EntryType.ENTITY:
@@ -246,3 +274,8 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
     def log_fetch(self, user, details=None):
         super().log_fetch(user, details)
+
+    @hook(AFTER_UPDATE, when="acvec_offset", has_changed=True)
+    def acvec_offset_updated(self):
+        # TODO: Update privilege vectors of all notes
+        pass
