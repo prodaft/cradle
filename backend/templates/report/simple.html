@@ -1,165 +1,839 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ title }}</title>
-    <!-- We'll dynamically load the appropriate CSS based on theme -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-light.min.css" id="markdown-theme-light">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-dark.min.css" id="markdown-theme-dark" disabled>
     <style>
-        :root {
-            --bg-color: #ffffff;
-            --text-color: #24292e;
-            --border-color: #e1e4e8;
-            --tooltip-bg: #f6f8fa;
-            --tooltip-color: #24292e;
-            --header-border: #eaecef;
-        }
-        
-        body.dark-theme {
-            --bg-color: #0d1117;
-            --text-color: #c9d1d9;
-            --border-color: #30363d;
-            --tooltip-bg: #161b22;
-            --tooltip-color: #c9d1d9;
-            --header-border: #30363d;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-        
-        .container {
-            max-width: 980px;
-            margin: 0 auto;
-        }
-        
-        header {
-            border-bottom: 1px solid var(--header-border);
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .theme-toggle {
-            background: none;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            padding: 8px 12px;
-            cursor: pointer;
-            color: var(--text-color);
-        }
-        
-        .markdown-body {
-            box-sizing: border-box;
-            min-width: 200px;
-            max-width: 980px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        .entry {
-            position: relative;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 2px;
-            padding: 0 3px;
-        }
-        
-        .entry:hover::after {
-            content: attr(data-type);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            white-space: nowrap;
-            padding: 5px 10px;
-            background-color: var(--tooltip-bg);
-            color: var(--tooltip-color);
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: normal;
-            z-index: 10;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        }
-        
-        /* Styling for different entry types - you can customize these colors */
-        
-        {{ styles|safe }}
+              /* Theme Variables */
+              :root {
+                  --bg-color: #ffffff;
+                  --text-color: #24292e;
+                  --border-color: #e1e4e8;
+                  --tooltip-bg: #f6f8fa;
+                  --tooltip-color: #24292e;
+                  --header-border: #eaecef;
+                  --primary-color: #0366d6;
+                  --secondary-color: #6f42c1;
+                  --card-bg: #f6f8fa;
+                  --hover-color: #f1f8ff;
+                  --nav-bg: #f8f9fa;
+                  --code-bg: #f6f8fa;
+                  --blockquote-border: #dfe2e5;
+                  --table-border: #dfe2e5;
+                  --table-stripe: #f6f8fa;
+                  --link-color: #0366d6;
+                  --heading-color: #24292e;
+              }
+
+              body.dark-theme {
+                  --bg-color: #0d1117;
+                  --text-color: #c9d1d9;
+                  --border-color: #30363d;
+                  --tooltip-bg: #161b22;
+                  --tooltip-color: #c9d1d9;
+                  --header-border: #30363d;
+                  --primary-color: #58a6ff;
+                  --secondary-color: #bc8cff;
+                  --card-bg: #161b22;
+                  --hover-color: #1f2937;
+                  --nav-bg: #161b22;
+                  --code-bg: #1f2937;
+                  --blockquote-border: #3b434b;
+                  --table-border: #30363d;
+                  --table-stripe: #161b22;
+                  --link-color: #58a6ff;
+                  --heading-color: #c9d1d9;
+              }
+
+              /* Core Layout Styles */
+              body {
+                  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+                  margin: 0;
+                  padding: 0;
+                  background-color: var(--bg-color);
+                  color: var(--text-color);
+                  transition: background-color 0.3s ease, color 0.3s ease;
+                  line-height: 1.6;
+                  font-size: 16px;
+              }
+
+              .container {
+                  max-width: 1200px;
+                  margin: 0 auto;
+                  padding: 0 20px;
+              }
+
+              header {
+                  background-color: var(--nav-bg);
+                  border-bottom: 1px solid var(--header-border);
+                  padding: 15px 0;
+                  position: sticky;
+                  top: 0;
+                  z-index: 1000;
+                  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+              }
+
+              .header-content {
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  padding: 0 20px;
+              }
+
+              .logo-container {
+                  display: flex;
+                  align-items: center;
+                  gap: 15px;
+              }
+
+              .logo {
+                  width: 40px;
+                  height: 40px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  border-radius: 8px;
+                  overflow: hidden;
+              }
+
+              .logo img {
+                  width: 100%;
+                  height: 100%;
+                  object-fit: contain;
+              }
+
+              .logo-light {
+                  display: block;
+              }
+
+              .logo-dark {
+                  display: none;
+              }
+
+              body.dark-theme .logo-light {
+                  display: none;
+              }
+
+              body.dark-theme .logo-dark {
+                  display: block;
+              }
+
+              h1 {
+                  margin: 0;
+                  font-size: 1.8rem;
+                  color: var(--primary-color);
+              }
+
+              .theme-toggle {
+                  background-color: var(--bg-color);
+                  border: 1px solid var(--border-color);
+                  border-radius: 6px;
+                  padding: 8px 16px;
+                  cursor: pointer;
+                  color: var(--text-color);
+                  font-weight: 500;
+                  transition: all 0.2s ease;
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+              }
+
+              .theme-toggle:hover {
+                  background-color: var(--hover-color);
+              }
+
+              main {
+                  padding: 30px 0;
+              }
+
+              /* Entry Styles */
+              .entry {
+                  position: relative;
+                  font-weight: bold;
+                  cursor: pointer;
+                  border-radius: 4px;
+                  padding: 0 3px;
+                  transition: background-color 0.2s;
+                  /* background-color: rgba(3, 102, 214, 0.08); */
+                  /* border-bottom: 2px solid var(--primary-color); */
+                  transition: background-color 0.2s;
+              }
+
+              .entry:hover {
+                  background-color: rgba(3, 102, 214, 0.15);
+              }
+
+              .entry:hover::after {
+                  content: attr(entry-type);
+                  position: absolute;
+                  bottom: 100%;
+                  left: 50%;
+                  transform: translateX(-50%);
+                  white-space: nowrap;
+                  padding: 8px 12px;
+                  background-color: var(--tooltip-bg);
+                  color: var(--tooltip-color);
+                  border: 1px solid var(--border-color);
+                  border-radius: 6px;
+                  font-size: 14px;
+                  font-weight: normal;
+                  z-index: 10;
+                  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+              }
+
+              /* Table section styling */
+              .entries-section {
+                  margin-top: 40px;
+                  padding: 20px;
+                  background-color: var(--card-bg);
+                  border-radius: 8px;
+                  border: 1px solid var(--border-color);
+                  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+              }
+
+              .entries-section h2 {
+                  color: var(--primary-color);
+                  border-bottom: 1px solid var(--border-color);
+                  padding-bottom: 10px;
+                  margin-top: 0;
+              }
+
+              .entries-table {
+                  width: 100%;
+                  border-collapse: collapse;
+                  margin-top: 20px;
+                  font-size: 16px;
+              }
+
+              .entries-table th {
+                  background-color: var(--card-bg);
+                  text-align: left;
+                  padding: 12px;
+                  border-bottom: 2px solid var(--border-color);
+                  font-weight: 600;
+                  color: var(--primary-color);
+              }
+
+              .entries-table td {
+                  padding: 12px;
+                  border-bottom: 1px solid var(--border-color);
+              }
+
+              .entries-table tr:hover {
+                  background-color: var(--hover-color);
+              }
+
+              .entries-table .entry-type {
+                  font-size: 14px;
+                  padding: 4px 8px;
+                  border-radius: 4px;
+                  font-weight: 500;
+              }
+
+              .tab-navigation {
+                  display: flex;
+                  gap: 10px;
+                  margin-bottom: 20px;
+                  flex-wrap: wrap;
+              }
+
+              .tab-button {
+                  padding: 8px 16px;
+                  background-color: var(--bg-color);
+                  border: 1px solid var(--border-color);
+                  border-radius: 6px;
+                  cursor: pointer;
+                  color: var(--text-color);
+                  font-weight: 500;
+              }
+
+              .tab-button.active {
+                  background-color: var(--primary-color);
+                  color: white;
+                  border-color: var(--primary-color);
+              }
+
+              .tab-panel {
+                  display: none;
+              }
+
+              .tab-panel.active {
+                  display: block;
+              }
+
+              footer {
+                  text-align: center;
+                  padding: 20px;
+                  margin-top: 40px;
+                  border-top: 1px solid var(--border-color);
+                  font-size: 14px;
+                  color: var(--text-color);
+                  opacity: 0.8;
+              }
+
+              /* ===============================================
+                 Bundled Markdown CSS (GitHub-style)
+                 =============================================== */
+              .markdown-body {
+                  box-sizing: border-box;
+                  min-width: 200px;
+                  max-width: 1160px;
+                  margin: 0 auto;
+                  padding: 20px;
+                  background-color: var(--card-bg);
+                  border-radius: 8px;
+                  border: 1px solid var(--border-color);
+                  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+                  color: var(--text-color);
+                  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+                  font-size: 16px;
+                  line-height: 1.5;
+                  word-wrap: break-word;
+              }
+
+              .markdown-body a {
+                  color: var(--link-color);
+                  text-decoration: none;
+              }
+
+              .markdown-body a:hover {
+                  text-decoration: underline;
+              }
+
+              .markdown-body strong {
+                  font-weight: 600;
+              }
+
+              .markdown-body h1,
+              .markdown-body h2,
+              .markdown-body h3,
+              .markdown-body h4,
+              .markdown-body h5,
+              .markdown-body h6 {
+                  margin-top: 24px;
+                  margin-bottom: 16px;
+                  font-weight: 600;
+                  line-height: 1.25;
+                  color: var(--heading-color);
+              }
+
+              .markdown-body h1 {
+                  font-size: 2em;
+                  border-bottom: 1px solid var(--border-color);
+                  padding-bottom: 0.3em;
+              }
+
+              .markdown-body h2 {
+                  font-size: 1.5em;
+                  border-bottom: 1px solid var(--border-color);
+                  padding-bottom: 0.3em;
+              }
+
+              .markdown-body h3 {
+                  font-size: 1.25em;
+              }
+
+              .markdown-body h4 {
+                  font-size: 1em;
+              }
+
+              .markdown-body h5 {
+                  font-size: 0.875em;
+              }
+
+              .markdown-body h6 {
+                  font-size: 0.85em;
+              }
+
+              .markdown-body img {
+                  max-width: 100%;
+                  box-sizing: content-box;
+                  background-color: var(--bg-color);
+              }
+
+              .markdown-body code, .markdown-body pre {
+                  font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+                  font-size: 12px;
+              }
+
+              .markdown-body code {
+                  padding: 0.2em 0.4em;
+                  margin: 0;
+                  font-size: 85%;
+                  background-color: var(--code-bg);
+                  border-radius: 3px;
+              }
+
+              .markdown-body pre {
+                  word-wrap: normal;
+                  padding: 16px;
+                  overflow: auto;
+                  font-size: 85%;
+                  line-height: 1.45;
+                  background-color: var(--code-bg);
+                  border-radius: 3px;
+              }
+
+              .markdown-body pre code {
+                  display: inline;
+                  max-width: auto;
+                  padding: 0;
+                  margin: 0;
+                  overflow: visible;
+                  line-height: inherit;
+                  word-wrap: normal;
+                  background-color: transparent;
+                  border: 0;
+                  font-size: 100%;
+              }
+
+              .markdown-body blockquote {
+                  padding: 0 1em;
+                  color: var(--text-color);
+                  border-left: 0.25em solid var(--blockquote-border);
+                  margin: 0 0 16px 0;
+              }
+
+              .markdown-body ul, .markdown-body ol {
+                  padding-left: 2em;
+                  margin-top: 0;
+                  margin-bottom: 16px;
+              }
+
+              .markdown-body li {
+                  margin-top: 0.25em;
+              }
+
+              .markdown-body table {
+                  display: block;
+                  width: 100%;
+                  overflow: auto;
+                  border-spacing: 0;
+                  border-collapse: collapse;
+                  margin-top: 0;
+                  margin-bottom: 16px;
+              }
+
+              .markdown-body table tr {
+                  background-color: var(--bg-color);
+                  border-top: 1px solid var(--table-border);
+              }
+
+              .markdown-body table tr:nth-child(2n) {
+                  background-color: var(--table-stripe);
+              }
+
+              .markdown-body table th,
+              .markdown-body table td {
+                  padding: 6px 13px;
+                  border: 1px solid var(--table-border);
+              }
+
+              .markdown-body table th {
+                  font-weight: 600;
+              }
+
+              .markdown-body hr {
+                  height: 0.25em;
+                  padding: 0;
+                  margin: 24px 0;
+                  background-color: var(--border-color);
+                  border: 0;
+              }
+
+              /* Additional styles for better rendering */
+              .markdown-body dl dt {
+                  padding: 0;
+                  margin-top: 16px;
+                  font-size: 1em;
+                  font-style: italic;
+                  font-weight: 600;
+              }
+
+              .markdown-body dl dd {
+                  padding: 0 16px;
+                  margin-bottom: 16px;
+              }
+
+              .markdown-body kbd {
+                  display: inline-block;
+                  padding: 3px 5px;
+                  font-size: 11px;
+                  line-height: 10px;
+                  color: var(--text-color);
+                  vertical-align: middle;
+                  background-color: var(--code-bg);
+                  border: solid 1px var(--border-color);
+                  border-bottom-color: var(--border-color);
+                  border-radius: 3px;
+                  box-shadow: inset 0 -1px 0 var(--border-color);
+              }
+
+      {{ styles|safe }}
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <header>
+      <div class="container header-content">
+        <div class="logo-container">
+          <div class="logo">
+            <svg
+              width="679"
+              height="679"
+              viewBox="0 0 679 679"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              class="logo-dark"
+            >
+              <path
+                d="M0 185.383L311.691 0V125.348L0 310.32V185.383Z"
+                fill="#9DA3A8"
+              />
+              <path
+                d="M0 311.897L311.691 497.28V372L0 186.96V311.897Z"
+                fill="#DBE2E9"
+              />
+              <path
+                d="M623.45 185.383L311.691 0V125.348L623.45 310.32V185.383Z"
+                fill="#DBE2E9"
+              />
+              <path
+                d="M623.45 311.897L311.691 497.28V372L623.45 186.96V311.897Z"
+                fill="#9DA3A8"
+              />
+              <path
+                d="M0 493.305L311.691 678.757V553.409L0 368.437V493.305Z"
+                fill="#DBE2E9"
+              />
+              <path
+                d="M623.45 493.305L311.691 678.757V553.409L623.45 368.437V493.305Z"
+                fill="#9DA3A8"
+              />
+            </svg>
+            <svg
+              width="679"
+              height="679"
+              viewBox="0 0 679 679"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              class="logo-light"
+            >
+              <path
+                d="M0 185.515L311.711 0.119385V125.475L0 310.46V185.515Z"
+                fill="#02111A"
+              />
+              <path
+                d="M0 312.036L311.711 497.432V372.144L0 187.091V312.036Z"
+                fill="#253746"
+              />
+              <path
+                d="M623.494 185.515L311.714 0.119385V125.475L623.494 310.46V185.515Z"
+                fill="#253746"
+              />
+              <path
+                d="M623.494 312.036L311.714 497.432V372.144L623.494 187.091V312.036Z"
+                fill="#02111A"
+              />
+              <path
+                d="M0 493.456L311.711 678.92V553.564L0 368.58V493.456Z"
+                fill="#253746"
+              />
+              <path
+                d="M623.494 493.456L311.714 678.92V553.564L623.494 368.58V493.456Z"
+                fill="#02111A"
+              />
+            </svg>
+          </div>
+          <h1>{{ title }}</h1>
+        </div>
+        <button class="theme-toggle" id="theme-toggle">
+          <span id="theme-icon">🌙</span>
+          <span id="theme-text">Dark Mode</span>
+        </button>
+      </div>
+    </header>
+
     <div class="container">
-        <header>
-            <h1>{{ title }}</h1>
-            <button class="theme-toggle" id="theme-toggle">Switch Theme</button>
-        </header>
-        <main>
-            {{ body|safe }}
-        </main>
+      <main>
+        <div class="markdown-body">{{ body|safe }}</div>
+
+        <div class="entries-section">
+          <h2>All Entries</h2>
+          <div class="tab-navigation" id="tab-navigation">
+            <button class="tab-button active" data-tab="all-entries">
+              All Entries
+            </button>
+            <!-- Additional type tabs will be added by JavaScript -->
+          </div>
+
+          <div class="tab-panel active" id="all-entries">
+            <table class="entries-table">
+              <thead>
+                <tr>
+                  <th>Entry</th>
+                  <th>Type</th>
+                </tr>
+              </thead>
+              <tbody id="all-entries-tbody">
+                <!-- This will be populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Additional type panels will be added by JavaScript -->
+        </div>
+      </main>
+
+      <footer>
+        <p>Powered By CRADLE</p>
+      </footer>
     </div>
-    
+
     <script>
-        // Theme switching functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const themeToggle = document.getElementById('theme-toggle');
-            const body = document.body;
-            const lightThemeLink = document.getElementById('markdown-theme-light');
-            const darkThemeLink = document.getElementById('markdown-theme-dark');
-            
-            // Function to set the theme
-            function setTheme(theme) {
-                if (theme === 'dark') {
-                    body.classList.add('dark-theme');
-                    themeToggle.textContent = 'Light Mode';
-                    lightThemeLink.disabled = true;
-                    darkThemeLink.disabled = false;
-                } else {
-                    body.classList.remove('dark-theme');
-                    themeToggle.textContent = 'Dark Mode';
-                    lightThemeLink.disabled = false;
-                    darkThemeLink.disabled = true;
-                }
-                
-                // Update URL hash
-                window.location.hash = theme;
-            }
-            
-            // Check for theme in URL hash
-            const urlTheme = window.location.hash.substring(1); // Remove the # character
-            
-            if (urlTheme === 'dark') {
-                setTheme('dark');
-            } else {
-                setTheme('light');
-            }
-            
-            // Toggle theme on button click
-            themeToggle.addEventListener('click', function() {
-                if (body.classList.contains('dark-theme')) {
-                    setTheme('light');
-                } else {
-                    setTheme('dark');
-                }
-            });
-            
-            // Listen for hash changes
-            window.addEventListener('hashchange', function() {
-                const newTheme = window.location.hash.substring(1);
-                if (newTheme === 'dark' || newTheme === 'light') {
-                    setTheme(newTheme);
-                }
-            });
+      // Theme switching functionality
+      document.addEventListener("DOMContentLoaded", function () {
+        const themeToggle = document.getElementById("theme-toggle");
+        const themeIcon = document.getElementById("theme-icon");
+        const themeText = document.getElementById("theme-text");
+        const body = document.body;
+
+        // Function to set the theme
+        function setTheme(theme) {
+          if (theme === "dark") {
+            body.classList.add("dark-theme");
+            themeText.textContent = "Light Mode";
+            themeIcon.textContent = "☀️";
+          } else {
+            body.classList.remove("dark-theme");
+            themeText.textContent = "Dark Mode";
+            themeIcon.textContent = "🌙";
+          }
+
+          // Update URL hash
+          window.location.hash = theme;
+        }
+
+        // Check for theme in URL hash
+        const urlTheme = window.location.hash.substring(1); // Remove the # character
+
+        if (urlTheme === "dark") {
+          setTheme("dark");
+        } else {
+          setTheme("light");
+        }
+
+        // Toggle theme on button click
+        themeToggle.addEventListener("click", function () {
+          if (body.classList.contains("dark-theme")) {
+            setTheme("light");
+          } else {
+            setTheme("dark");
+          }
         });
+
+        // Listen for hash changes
+        window.addEventListener("hashchange", function () {
+          const newTheme = window.location.hash.substring(1);
+          if (newTheme === "dark" || newTheme === "light") {
+            setTheme(newTheme);
+          }
+        });
+
+        // Collect all entries
+        const entries = document.querySelectorAll(".entry");
+        const allEntriesTable = document.getElementById("all-entries-tbody");
+        const tabNavigation = document.getElementById("tab-navigation");
+
+        // Create an object to store entries by type
+        const entriesByType = {};
+        const entryTypes = new Set();
+        const uniqueEntries = {};
+
+        // Process entries
+        entries.forEach((entry) => {
+          const entryType = entry.getAttribute("entry-type");
+          const entryText = entry.textContent;
+
+          if (!uniqueEntries[entryType]) uniqueEntries[entryType] = new Set();
+
+          if (uniqueEntries[entryType].has(entryText)) return;
+          uniqueEntries[entryType].add(entryText);
+
+          entryTypes.add(entryType);
+
+          if (!entriesByType[entryType]) {
+            entriesByType[entryType] = [];
+          }
+          entriesByType[entryType].push({
+            text: entryText,
+            type: entryType,
+            originalElement: entry,
+          });
+        });
+
+        // Sort each type's entries alphabetically
+        Object.keys(entriesByType).forEach((type) => {
+          entriesByType[type].sort((a, b) => a.text.localeCompare(b.text));
+        });
+
+        // Sort types alphabetically
+        const sortedTypes = Array.from(entryTypes).sort();
+
+        // Populate All Entries table sorted by type and entry text
+        sortedTypes.forEach((type) => {
+          entriesByType[type].forEach((entry) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+      <td>${entry.text}</td>
+      <td><span class="entry-type" entry-type="${entry.type}">${entry.type}</span></td>
+    `;
+            row.addEventListener("click", () => {
+              entry.originalElement.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+              });
+              entry.originalElement.style.backgroundColor =
+                "var(--primary-color)";
+              entry.originalElement.style.color = "white";
+              setTimeout(() => {
+                entry.originalElement.style.backgroundColor = "";
+                entry.originalElement.style.color = "";
+              }, 1500);
+            });
+            allEntriesTable.appendChild(row);
+          });
+        });
+
+        // Create tabs for each sorted type
+        sortedTypes.forEach((type) => {
+          // Create tab button
+          const tabButton = document.createElement("button");
+          tabButton.classList.add("tab-button");
+          tabButton.setAttribute("data-tab", `type-${type}`);
+          tabButton.textContent = type;
+          tabNavigation.appendChild(tabButton);
+
+          // Create tab panel
+          const tabPanel = document.createElement("div");
+          tabPanel.classList.add("tab-panel");
+          tabPanel.id = `type-${type}`;
+          tabPanel.innerHTML = `
+              <table class="entries-table">
+                  <thead>
+                      <tr>
+                          <th><span class="copy-emoji" data-table="type-${type}-tbody">📋</span>Entry</th>
+                          <th>Type</th>
+                      </tr>
+                  </thead>
+                  <tbody id="type-${type}-tbody">
+                  </tbody>
+              </table>
+          `;
+
+          document.querySelector(".entries-section").appendChild(tabPanel);
+
+          // Populate tab panel
+          const typeBody = document.getElementById(`type-${type}-tbody`);
+          entriesByType[type].forEach((entry) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${entry.text}</td>
+                <td><span class="entry-type" entry-type="${entry.type}">${entry.type}</span></td>
+              `;
+            row.addEventListener("click", () => {
+              entry.originalElement.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+              });
+              // Highlight the entry briefly
+              entry.originalElement.style.backgroundColor =
+                "var(--primary-color)";
+              entry.originalElement.style.color = "white";
+              setTimeout(() => {
+                entry.originalElement.style.backgroundColor = "";
+                entry.originalElement.style.color = "";
+              }, 1500);
+            });
+            typeBody.appendChild(row);
+          });
+        });
+
+        // Add copy emoji functionality
+        document.querySelectorAll(".copy-emoji").forEach((emoji) => {
+          emoji.style.cursor = "pointer";
+
+          // Add hover effect
+          emoji.addEventListener("mouseover", function () {
+            this.style.opacity = "0.7";
+          });
+
+          emoji.addEventListener("mouseout", function () {
+            this.style.opacity = "1";
+          });
+
+          emoji.addEventListener("click", function () {
+            const tableId = this.getAttribute("data-table");
+            // Get all entries from the table (skip the first column which is empty or contains the emoji)
+            const rows = document.querySelectorAll(
+              `#${tableId} tr td:nth-child(1)`
+            );
+            const textToCopy = Array.from(rows)
+              .map((row) => row.textContent.trim())
+              .join("\n");
+
+            navigator.clipboard
+              .writeText(textToCopy)
+              .then(() => {
+                // Visual feedback
+                const originalText = this.textContent;
+                this.textContent = "✅";
+                setTimeout(() => {
+                  this.textContent = originalText;
+                }, 2000);
+              })
+              .catch((err) => {
+                console.error("Failed to copy text: ", err);
+                this.textContent = "❌";
+                setTimeout(() => {
+                  this.textContent = originalText;
+                }, 2000);
+              });
+          });
+        });
+
+        // Tab functionality
+        const tabButtons = document.querySelectorAll(".tab-button");
+        const tabPanels = document.querySelectorAll(".tab-panel");
+
+        tabButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            const tabId = button.getAttribute("data-tab");
+
+            // Update active state for buttons
+            tabButtons.forEach((btn) => btn.classList.remove("active"));
+            button.classList.add("active");
+
+            // Update active state for panels
+            tabPanels.forEach((panel) => panel.classList.remove("active"));
+            document.getElementById(tabId).classList.add("active");
+          });
+        });
+
+        // Set first tab as active by default
+        if (tabButtons.length > 0) {
+          tabButtons[0].click();
+        }
+
+        // If there are no entries, show a message
+        if (entries.length === 0) {
+          allEntriesTable.innerHTML = `
+              <tr>
+                  <td colspan="3" style="text-align: center;">No entries found in the document.</td>
+              </tr>
+          `;
+        }
+      });
     </script>
-</body>
+  </body>
 </html>
