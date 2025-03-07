@@ -67,7 +67,7 @@ export default function Login() {
                   <>
                     <button
                         onClick={() => {
-                            setBackendUrl(localStorage.getItem('backendUrl') || '');
+                            setBackendUrl(getBaseUrl() || '');
                             setShowSettings(false);
                         }}
                         className='absolute top-2 left-2 p-2 hover:opacity-80 text-gray-500'

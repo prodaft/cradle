@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { HexColorPicker } from 'react-colorful';
 import {
     getEntryClass,
     createArtifactClass,
@@ -10,13 +11,8 @@ import {
 } from '../../services/adminService/adminService';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
-import { PopoverPicker } from '../PopoverPicker/PopoverPicker';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-
-const getRandomColor = () =>
-    Math.floor(Math.random() * 0x1000000)
-        .toString(16)
-        .padStart(6, '0');
+import { GoldenRatioColorGenerator } from '../../utils/colorUtils/colorUtils';
 
 const entryTypeSchema = Yup.object().shape({
     type: Yup.string().required('Class Type is required'),
@@ -50,6 +46,9 @@ const entryTypeSchema = Yup.object().shape({
 export default function EntryTypeForm({ isEdit = false }) {
     const navigate = useNavigate();
     let { id } = useParams();
+    const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
+    const [showColorPicker, setShowColorPicker] = useState(false);
+
     // When editing an EntryType, the id may be encoded (using '--' instead of '/')
     if (isEdit && id) {
         id = id.replace('--', '/');
@@ -63,6 +62,7 @@ export default function EntryTypeForm({ isEdit = false }) {
         control,
         watch,
         reset,
+        setValue,
         formState: { errors },
     } = useForm({
         resolver: yupResolver(entryTypeSchema),
@@ -76,12 +76,19 @@ export default function EntryTypeForm({ isEdit = false }) {
             regex: '',
             options: '',
             generativeRegex: '',
-            color: getRandomColor(),
+            color: colorGenerator.nextHexColor(),
         },
     });
 
     const watchType = watch('type');
     const watchTypeFormat = watch('typeFormat');
+    const watchColor = watch('color');
+
+    // Generate a new random color
+    const generateRandomColor = () => {
+        const newColor = colorGenerator.nextHexColor();
+        setValue('color', newColor);
+    };
 
     // In edit mode, fetch the entry type details and prepopulate the form.
     useEffect(() => {
@@ -327,23 +334,74 @@ export default function EntryTypeForm({ isEdit = false }) {
                             >
                                 Color
                             </label>
-                            <div className='mt-2'>
+                            <div className='mt-2 flex items-center space-x-2'>
                                 <Controller
                                     name='color'
                                     control={control}
                                     render={({ field }) => (
-                                        <PopoverPicker
-                                            color={field.value}
-                                            onChange={field.onChange}
+                                        <input
+                                            type='text'
+                                            className='form-input input input-ghost-primary focus:ring-0'
+                                            {...field}
                                         />
                                     )}
                                 />
-                                {errors.color && (
-                                    <p className='text-red-600 text-sm'>
-                                        {errors.color.message}
-                                    </p>
-                                )}
+                                <div
+                                    className='h-8 w-12 rounded cursor-pointer border border-gray-300'
+                                    style={{ backgroundColor: watchColor }}
+                                    onClick={() => setShowColorPicker(!showColorPicker)}
+                                />
+                                <button
+                                    type='button'
+                                    className='btn btn-sm btn-outline'
+                                    onClick={generateRandomColor}
+                                >
+                                    <svg
+                                        xmlns='http://www.w3.org/2000/svg'
+                                        className='h-4 w-4'
+                                        fill='none'
+                                        viewBox='0 0 24 24'
+                                        stroke='currentColor'
+                                    >
+                                        <path
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                            strokeWidth={2}
+                                            d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+                                        />
+                                    </svg>
+                                </button>
                             </div>
+                            {showColorPicker && (
+                                <div
+                                    className='absolute z-10'
+                                    style={{
+                                        left: '74%',
+                                        bottom: '14%',
+                                        marginLeft: '8px',
+                                    }}
+                                >
+                                    <div
+                                        className='fixed inset-0'
+                                        onClick={() => setShowColorPicker(false)}
+                                    />
+                                    <Controller
+                                        name='color'
+                                        control={control}
+                                        render={({ field }) => (
+                                            <HexColorPicker
+                                                color={field.value}
+                                                onChange={field.onChange}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                            )}
+                            {errors.color && (
+                                <p className='text-red-600 text-sm'>
+                                    {errors.color.message}
+                                </p>
+                            )}
                         </div>
 
                         <AlertBox alert={alert} />
