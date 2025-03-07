@@ -27,35 +27,9 @@ jobs:
       - name: Run flake8
         run: pipenv run python3 -m flake8 --verbose .
 
-#  codequality:
-#    name: Code Quality - mypy
-#    runs-on: ubuntu-latest
-#    needs: migrations
-#    steps:
-#      - uses: actions/checkout@v3
-#      - name: Set up Python
-#        uses: actions/setup-python@v4
-#        with:
-#          python-version: "3.11"
-#      - name: Install dependencies
-#        run: |
-#          pip install pipenv
-#          pipenv lock
-#          pipenv sync
-#      - name: Run mypy
-#        run: |
-#          pipenv run mypy --no-error-summary > mypy-out.txt || true
-#          pipenv run mypy-gitlab-code-quality < mypy-out.txt > codequality.json
-#      - name: Upload Code Quality Report
-#        uses: actions/upload-artifact@v3
-#        with:
-#          name: code-quality-report
-#          path: codequality.json
-
   tests:
     name: Run Django Tests
     runs-on: ubuntu-latest
-    #    needs: codequality
     defaults:
       run:
         working-directory: ./backend
@@ -73,6 +47,17 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+
+      redis:
+        image: redis:7.2
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 3
+
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
