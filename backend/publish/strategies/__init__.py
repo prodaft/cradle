@@ -1,5 +1,7 @@
 from django.conf import settings
 
+from .plaintext import PlaintextPublish
+
 from .html import HTMLPublish
 from .catalyst import CatalystPublish
 from .json import JSONPublish
@@ -13,4 +15,5 @@ PUBLISH_STRATEGIES = {
     ),
     "html": lambda anon: HTMLPublish(anon),
     "json": lambda anon: JSONPublish(anon),
+    "plain": lambda anon: PlaintextPublish(anon),
 }
