@@ -6,9 +6,6 @@ from user.models import CradleUser
 from ..models import Access
 from ..enums import AccessType
 from .utils import AccessTestCase
-from notifications.models import AccessRequestNotification
-
-import uuid
 
 
 class RequestAccessTest(AccessTestCase):

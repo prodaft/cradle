@@ -8,8 +8,6 @@ from .utils import EntriesTestCase
 
 from ..models import Entry
 
-import uuid
-
 
 def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))

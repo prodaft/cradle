@@ -7,7 +7,6 @@ from rest_framework_simplejwt.tokens import AccessToken
 from .utils import EntriesTestCase
 
 from ..models import Entry
-from ..serializers import EntryResponseSerializer
 
 
 def bytes_to_json(data):
