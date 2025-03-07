@@ -184,7 +184,8 @@ Project Link: [https://github.com/prodaft/cradle](https://github.com/prodaft/cra
 [issues-url]: https://github.com/prodaft/cradle/issues
 [license-shield]: https://img.shields.io/github/license/prodaft/cradle.svg?style=for-the-badge
 [license-url]: https://github.com/prodaft/cradle/blob/master/LICENSE
-[ci-url]: https://img.shields.io/github/actions/workflow/status/prodaft/cradle/ci.yml?style=for-the-badge
+[ci-chield]: https://img.shields.io/github/actions/workflow/status/prodaft/cradle/ci.yml?style=for-the-badge
+[ci-url]: https://github.com/prodaft/cradle/actions
 
 [Django.com]: https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white
 [Django-url]: https://www.djangoproject.com/
