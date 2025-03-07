@@ -24,7 +24,7 @@ layout = "hextra-home"
 
 <div class="hx-mt-6 hx-mb-6">
 {{< hextra/hero-subtitle >}}
-Batteries included collaborative knowledge management solution for threat intelligence researches.
+Batteries included collaborative knowledge management solution for threat intelligence researchers.
 {{< /hextra/hero-subtitle >}}
 </div>
 

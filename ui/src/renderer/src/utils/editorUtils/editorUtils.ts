@@ -190,6 +190,7 @@ export class CradleEditor {
             } else {
                 for (const entryClass of Object.values(this.entryClasses)) {
                     if (!entryClass.options) continue;
+                    if (entryClass.subtype == 'alias') continue;
                     let trie = Trie.deserialize(entryClass.options, entryClass.subtype);
                     this.tries[entryClass.subtype] = trie;
                 }
@@ -371,6 +372,7 @@ export class CradleEditor {
         let from = node.from;
         let to = node.to;
         let ratchet = false;
+        let ratchetValue = false;
 
         switch (node.name) {
             case 'CradleLink':
@@ -379,6 +381,10 @@ export class CradleEditor {
                 } else if (node.lastChild.name === 'CradleLinkValue') {
                     to = node.lastChild.to;
                     ratchet = true;
+                } else if (node.lastChild.name === 'CradleLinkAlias') {
+                    to = node.lastChild.to;
+                    ratchet = true;
+                    ratchetValue = true;
                 }
                 from = to;
             case 'CradleLinkType':
@@ -395,22 +401,34 @@ export class CradleEditor {
                 ratchet = false;
             // fall through
             case 'CradleLinkValue': {
-                if (!this.tries) return { from: context.pos, options: [] };
-                const sibling =
-                    node.name === 'CradleLink' ? node.firstChild : node.prevSibling;
-                if (!sibling) break;
-                const t = context.state.doc.sliceString(sibling.from, sibling.to);
+                if (!ratchetValue) {
+                    if (!this.tries) return { from: context.pos, options: [] };
+                    const sibling =
+                        node.name === 'CradleLink' ? node.firstChild : node.prevSibling;
+                    if (!sibling) break;
+                    const t = context.state.doc.sliceString(sibling.from, sibling.to);
 
-                if (!this.tries[t]) break;
+                    if (!this.tries[t]) break;
+                    if (t == 'alias') break;
+
+                    const v = context.state.doc.sliceString(from, to);
+                    options = this.tries[t].allWordsWithPrefix(v).map((item) => ({
+                        label: item.word,
+                        type: 'keyword',
+                    }));
+                    break;
+                }
+                ratchetValue = false;
+            }
+            case 'CradleLinkAlias':
+                if (!this.tries) return { from: context.pos, options: [] };
+                if (!this.tries["alias"]) return { from: context.pos, options: [] };
 
                 const v = context.state.doc.sliceString(from, to);
-                options = this.tries[t].allWordsWithPrefix(v).map((item) => ({
+                options = this.tries["alias"].allWordsWithPrefix(v).map((item) => ({
                     label: item.word,
                     type: 'keyword',
                 }));
-                break;
-            }
-            case 'CradleLinkAlias':
                 break;
             default:
                 // For headings, paragraphs, or table cells, use plain text autocomplete.
@@ -677,7 +695,7 @@ export class CradleEditor {
                                     valueStart + linkValue.length,
                                 ),
                             );
-                            if (linkAlias) {
+                            if (linkAlias != null) {
                                 const aliasStart = valueStart + linkValue.length + 1;
                                 node.children.push(
                                     cx.elt(
@@ -794,5 +812,14 @@ export class CradleEditor {
                 formattedText.slice(change.to);
         }
         return formattedText;
+    }
+
+
+    public static clearCache() {
+      CradleEditor.entryClassesPromise = null;
+      CradleEditor.cachedEntryClasses = null;
+      CradleEditor.triesPromise = null;
+      CradleEditor.cachedTries = null;
+      CradleEditor.cachedBigTrie = null;
     }
 }

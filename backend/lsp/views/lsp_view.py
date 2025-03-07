@@ -21,7 +21,7 @@ from user.models import CradleUser
         responses={
             200: LspEntryClassSerializer(many=True),
             401: "User is not authenticated",
-        }
+        },
     )
 )
 class LspTypes(APIView):
@@ -29,7 +29,7 @@ class LspTypes(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        queryset = EntryClass.objects.all()
+        queryset = EntryClass.objects.filter(~Q(subtype="alias"))
         serializer = LspEntryClassSerializer(queryset, many=True)
 
         grouped_data = {}

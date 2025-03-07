@@ -1,12 +1,14 @@
 from typing import Iterable, Tuple
+
+
 from entries.models import Entry
 
-from .base_task import BaseTask
 from ..models import Note
-from ..tasks import entry_class_creation_task
+from ..tasks import connect_aliases
+from .base_task import BaseTask
 
 
-class EntryClassCreationTask(BaseTask):
+class AliasConnectionTask(BaseTask):
     @property
     def is_validator(self) -> bool:
         return False
@@ -21,4 +23,4 @@ class EntryClassCreationTask(BaseTask):
         Returns:
             The processed note object.
         """
-        return entry_class_creation_task.si(note.id, self.user.id), entries
+        return connect_aliases.si(note.id, self.user.id if self.user else None), entries

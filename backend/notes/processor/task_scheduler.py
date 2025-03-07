@@ -3,8 +3,9 @@ from typing import List, Optional
 from celery import chain
 from diff_match_patch import diff_match_patch
 
-from notes.models import Note, Relation
-from notes.processor.smart_linker_task import SmartLinkerTask
+from ..models import Note
+from .connect_aliases_task import AliasConnectionTask
+from .smart_linker_task import SmartLinkerTask
 
 from .entry_population_task import EntryPopulationTask
 from .entry_class_creation_task import EntryClassCreationTask
@@ -29,6 +30,7 @@ class TaskScheduler:
             EntryClassCreationTask(user),
             EntryPopulationTask(user),
             SmartLinkerTask(user),
+            AliasConnectionTask(user),
         ]
 
     def run_pipeline(self, note: Optional[Note] = None, validate: bool = True):

@@ -82,7 +82,10 @@ export default function Editor({
 
     // Adjusted instantiation to pass an empty options object and the error handler
     const editorUtils = useMemo(
-        () => new CradleEditor({}, setLspLoaded, displayError(setAlert)),
+        () => {
+          CradleEditor.clearCache()
+          return new CradleEditor({}, setLspLoaded, displayError(setAlert))
+        },
         [setAlert],
     );
 

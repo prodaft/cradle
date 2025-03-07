@@ -117,3 +117,62 @@ def entry_population_task(note_id, user_id=None):
 
             note.entries.add(entry)
         note.save()
+
+
+@shared_task(
+    autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=300, max_retries=3
+)
+def connect_aliases(note_id, user_id=None):
+    """
+    Celery task to connect aliases in a note
+    """
+    alias_class = EntryClass.objects.filter(subtype="alias")
+
+    if not alias_class.exists():  # If alias type does not exist, create it
+        alias_class = EntryClass.objects.create(
+            type=EntryType.ARTIFACT,
+            subtype="alias",
+            color="#7f8389",
+        )
+
+    note = Note.objects.get(id=note_id)
+
+    if user_id:
+        user = CradleUser.objects.get(id=user_id)
+    else:
+        user = None
+
+    aliases = {}
+
+    for r in note.reference_tree.links():
+        if r.alias is None:
+            continue
+        if r.alias not in aliases:
+            aliases[r.alias] = set()
+
+        aliases[r.alias].add((r.key, r.value))
+
+    for aname, entries in aliases.items():
+        if len(entries) == 0:
+            continue
+
+        alias, created = Entry.objects.get_or_create(name=aname, entry_class_id="alias")
+
+        if created and user:
+            alias.log_create(user)
+
+        note.entries.add(alias)
+
+        subtypes, names = zip(*entries)
+        relations = []
+
+        for subtype, name in entries:
+            e = Entry.objects.get(name=name, entry_class__subtype=subtype)
+            relations.append(
+                Relation(src_entry=alias, dst_entry=e, content_object=note)
+            )
+            relations.append(
+                Relation(src_entry=e, dst_entry=alias, content_object=note)
+            )
+
+        Relation.objects.bulk_create(relations)

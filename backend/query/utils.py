@@ -143,31 +143,3 @@ def parse_query(query_str):
         q = ~Q(pk__in=[])  # Empty
 
     return q
-
-
-# Example test cases:
-if __name__ == "__main__":
-    examples = [
-        # Standard usage with a colon.
-        ("blog:django", ("exact", "blog"), ("exact", "django")),
-        # With wildcards at extremes.
-        ("*blog:django*", ("iendswith", "blog"), ("istartswith", "django")),
-        # Wildcards in the middle (handled as regex).
-        ("blo*g:dan*ger", ("iregex", r"^blo.*g$"), ("iregex", r"^dan.*ger$")),
-        # Quoted fields (wildcards literal).
-        ('"*blog*":django', ("exact", "*blog*"), ("exact", "django")),
-        # Literal input without colon: becomes *:<literal>
-        ("django", ("iregex", r"^.*$"), ("exact", "django")),
-        # Quoted literal without colon.
-        ('"django:framework"', (), ("exact", "django:framework")),
-        # Quoted literal without colon.
-        ('"django framework"', (), ("exact", "django framework")),
-    ]
-
-    for input_str, expected_subtype, expected_name in examples:
-        q = parse_query(input_str)
-        print(f"Input: {input_str}")
-        print(
-            f"Expected subtype lookup: {expected_subtype}, Expected name lookup: {expected_name}"
-        )
-        print(f"Q object: {q}\n")
