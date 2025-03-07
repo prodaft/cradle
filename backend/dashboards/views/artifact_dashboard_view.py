@@ -12,7 +12,7 @@ from user.models import CradleUser
 from ..utils.dashboard_utils import DashboardUtils
 from ..serializers import ArtifactDashboardSerializer
 from notes.models import Note
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema_view
 
 
 @extend_schema_view(
@@ -32,7 +32,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
             400: "Invalid artifact subtype",
             401: "User is not authenticated",
             404: "Artifact not found",
-        }
+        },
     )
 )
 class ArtifactDashboard(APIView):

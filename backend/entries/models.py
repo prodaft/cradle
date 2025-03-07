@@ -1,9 +1,8 @@
-from django.db import connection, models
-from django_lifecycle import AFTER_DELETE, LifecycleModel, LifecycleModelMixin, hook
-from django_lifecycle.mixins import AFTER_CREATE, transaction
+from django.db import models
+from django_lifecycle import LifecycleModel
+from django_lifecycle.mixins import transaction
 
 from logs.models import LoggableModelMixin
-import json
 
 from .managers import (
     EntityManager,

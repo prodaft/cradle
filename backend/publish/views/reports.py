@@ -3,10 +3,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from django_filters.rest_framework import DjangoFilterBackend
 
 from notes.models import Note
-from publish.strategies import PUBLISH_STRATEGIES
 
 from ..models import PublishedReport, ReportStatus
 from ..tasks import generate_report, edit_report

@@ -154,7 +154,7 @@ def import_json_report(report_data, user_id, report_id):
     try:
         user = CradleUser.objects.get(id=user_id)
         report = PublishedReport.objects.get(id=report_id)
-    except (CradleUser.DoesNotExist, PublishedReport.DoesNotExist) as e:
+    except (CradleUser.DoesNotExist, PublishedReport.DoesNotExist):
         logger.error(
             "User or report not found: user_id=%s, report_id=%s", user_id, report_id
         )

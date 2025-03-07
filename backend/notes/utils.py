@@ -50,7 +50,7 @@ def extract_links(s: str) -> list[Link]:
 
 
 def get_guide_note(guide_name: str, request):
-    ## Check if the guide name only contains alphanumeric characters and underscores
+    # Check if the guide name only contains alphanumeric characters and underscores
     if not re.match(r"^[a-zA-Z0-9_]+$", guide_name):
         return None
 

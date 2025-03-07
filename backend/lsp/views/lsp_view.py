@@ -10,7 +10,7 @@ from entries.models import EntryClass
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from lsp.serializers import LspEntryClassSerializer
-from ..utils import LspUtils, Trie
+from ..utils import LspUtils
 from user.models import CradleUser
 
 

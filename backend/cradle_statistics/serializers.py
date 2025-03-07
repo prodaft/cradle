@@ -1,8 +1,5 @@
-from typing import Any, Dict
 from rest_framework import serializers
-from entries.serializers import EntryResponseSerializer, EntrySerializer
-from file_transfer.serializers import FileReferenceSerializer
-from notes.models import Note
+from entries.serializers import EntryResponseSerializer
 from notes.serializers import NoteRetrieveWithLinksSerializer
 
 

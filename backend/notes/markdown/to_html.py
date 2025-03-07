@@ -1,8 +1,7 @@
 import base64
 from io import BytesIO
-from typing import Any, Dict, List, Optional, Tuple, Callable
+from typing import Any, Dict, Optional, Tuple, Callable
 import mistune
-from mistune.core import BlockState
 from mistune.renderers.html import HTMLRenderer as BaseHTMLRenderer
 
 from .common import cradle_link_plugin, footnote_plugin
@@ -36,8 +35,6 @@ class HTMLRenderer(BaseHTMLRenderer):
         return f'<img src="{img_data}" title="{value}">'
 
     def cradle_link(self, key: str, value: str, alias: Optional[str] = None) -> str:
-        id = f"{key}:{value}"
-
         display = alias if alias else value
 
         return f'<span class="entry" data-type="{key}">{display}</span>'

@@ -1,15 +1,9 @@
 import base64
 from collections.abc import Callable, Iterable
 from io import BytesIO
-from typing import Any, Dict, List, Match, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 import mistune
 from mistune.core import BaseRenderer, BlockState
-
-from mistune.markdown import Markdown
-from mistune import InlineParser, InlineState
-from mistune.helpers import LINK_LABEL
-
-from notes.utils import LINK_REGEX
 
 from .common import cradle_link_plugin, footnote_plugin
 from .table import table

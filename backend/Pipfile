@@ -40,5 +40,6 @@ diff-match-patch = "*"
 rstr = "*"
 xeger = "*"
 bleach = "*"
+autoflake = "*"
 
 [dev-packages]

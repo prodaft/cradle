@@ -106,7 +106,8 @@ class AdvancedQueryView(APIView):
 
     @extend_schema(
         summary="Advanced Query Entries",
-        description="Allow a user to query entries they have access to using advanced syntax: `<subtype>:<name>` with wildcards and logical operators (&&, ||).",
+        description="Allow a user to query entries they have access to using advanced syntax:"
+        + "`<subtype>:<name>` with wildcards and logical operators (&&, ||).",
         parameters=[
             OpenApiParameter(
                 name="query",

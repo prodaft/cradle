@@ -1,6 +1,6 @@
 from django.db import models
-from django_lifecycle import AFTER_CREATE, LifecycleModel, LifecycleModelMixin, hook
-from mail.models import NewUserNotificationMail
+from django_lifecycle import AFTER_CREATE, LifecycleModel, hook
+from mail.models import AccessRequestMail, NewUserNotificationMail
 from mail.models import ReportReadyMail
 from mail.models import ReportErrorMail
 from mail.models import AccessGrantedMail
@@ -24,11 +24,12 @@ class MessageNotification(LifecycleModel):
 
     @property
     def get_mail(self):
-        raise NotImplementedError()
+        return None
 
     @hook(AFTER_CREATE)
     def send_mail(self, *args, **kwargs):
-        self.get_mail.dispatch()
+        if self.get_mail:
+            self.get_mail.dispatch()
 
 
 class AccessGrantedNotification(LifecycleModel):
@@ -47,7 +48,7 @@ class AccessRequestNotification(MessageNotification):
 
     @property
     def get_mail(self):
-        return AccessRequestNotification(self.user, self.requesting_user, self.entity)
+        return AccessRequestMail(self.user, self.requesting_user, self.entity)
 
 
 class NewUserNotification(MessageNotification):

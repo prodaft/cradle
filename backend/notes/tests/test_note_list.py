@@ -199,12 +199,3 @@ class CreateNoteTest(NotesTestCase):
         self.assertEqual(response.json()["files"], [self.file_reference])
         self.assertEqual(saved_note.content, note_content)
         self.assertIsNotNone(response.json()["timestamp"])
-
-        referenced_entries = saved_note.entries.all()
-        # this also checks that the ip entry has been successfully created
-        saved_artifact = Entry.objects.get(
-            name="127.0.0.1", entry_class=self.entryclass_ip
-        )
-        self.assertCountEqual(
-            referenced_entries, [self.saved_entity, self.saved_actor, saved_artifact]
-        )

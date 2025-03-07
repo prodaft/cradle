@@ -1,7 +1,7 @@
 from typing import Iterable, Tuple
 from entries.exceptions import AliasCannotBeLinked, InvalidEntryException
 from entries.models import Entry, EntryClass
-from django.db.models import Q, F, FilteredRelation
+from django.db.models import Q
 from notes.exceptions import (
     EntriesDoNotExistException,
     NotEnoughReferencesException,
@@ -12,7 +12,7 @@ from .base_task import BaseTask
 from ..models import Note
 
 from collections import defaultdict
-from django.conf import Settings, settings
+from django.conf import settings
 
 
 class ValidateNoteTask(BaseTask):
@@ -33,7 +33,7 @@ class ValidateNoteTask(BaseTask):
         links = note.reference_tree.links()
         unique_subtypes = {r.key for r in links}
 
-        ## Check if the note tries to link to an alias
+        # Check if the note tries to link to an alias
         if "alias" in unique_subtypes:
             raise AliasCannotBeLinked()
 

@@ -1,5 +1,4 @@
 import json
-import uuid
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -7,7 +6,7 @@ from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 
-from publish.models import PublishedReport, ReportStatus, ReportMode
+from publish.models import PublishedReport, ReportStatus
 from publish.tasks import import_json_report
 from user.permissions import HasAdminRole  # our new task
 

@@ -1,6 +1,5 @@
 from datetime import timedelta
 from rest_framework import serializers
-from rest_framework.fields import SerializerMethodField
 
 from file_transfer.exceptions import MinioObjectNotFound
 from file_transfer.utils import MinioClient
@@ -13,7 +12,6 @@ from .exceptions import (
     NoteNotPublishableException,
 )
 from entries.serializers import (
-    EntryListCompressedTreeSerializer,
     EntryResponseSerializer,
     EntryTypesCompressedTreeSerializer,
 )
@@ -22,7 +20,6 @@ from file_transfer.serializers import FileReferenceSerializer
 from file_transfer.models import FileReference
 from user.serializers import UserRetrieveSerializer
 from entries.models import Entry, EntryClass
-from entries.enums import EntryType
 from diff_match_patch import diff_match_patch
 
 

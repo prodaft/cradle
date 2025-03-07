@@ -12,7 +12,6 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from access.enums import AccessType
 from access.models import Access
 from entries.enums import EntryType
-from entries.models import Entry
 from user.models import CradleUser
 
 from ..models import Note

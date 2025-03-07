@@ -2,13 +2,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from access.models import Access
 from entries.exceptions import DuplicateEntryException
-from user.permissions import HasAdminRole, HasEntryManagerRole
+from user.permissions import HasEntryManagerRole
 
 from ..serializers import EntitySerializer, EntryResponseSerializer
 from ..models import Entry

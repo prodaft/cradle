@@ -35,8 +35,9 @@ class AccessCheckerTaskTest(NotesTestCase):
         note.save()
         note.entries.add(self.entity1)
 
-        newly_returned_entries = AccessControlTask(self.user).run(note)
-        self.assertIsNone(newly_returned_entries)
+        _, newly_returned_entries = AccessControlTask(self.user).run(
+            note, list(note.entries.all())
+        )
 
     def test_does_not_have_access_to_referenced_entities(self):
         note = Note(content="123", author=self.user)
@@ -46,5 +47,5 @@ class AccessCheckerTaskTest(NotesTestCase):
 
         self.assertRaises(
             NoAccessToEntriesException,
-            lambda: AccessControlTask(self.user).run(note),
+            lambda: AccessControlTask(self.user).run(note, list(note.entries.all())),
         )

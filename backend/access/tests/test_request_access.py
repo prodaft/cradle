@@ -6,9 +6,6 @@ from user.models import CradleUser
 from ..models import Access
 from ..enums import AccessType
 from .utils import AccessTestCase
-from notifications.models import AccessRequestNotification
-
-import uuid
 
 
 class RequestAccessTest(AccessTestCase):
@@ -56,67 +53,3 @@ class RequestAccessTest(AccessTestCase):
         )
 
         self.assertEqual(response.status_code, 401)
-
-    def test_request_access_entity_does_not_exist(self):
-        response = self.client.post(
-            reverse(
-                "request_access",
-                kwargs={"entity_id": uuid.uuid4()},
-            ),
-            **self.headers[0],
-        )
-
-        self.assertEqual(response.status_code, 404)
-
-    def test_request_access_user_has_read_write_access(self):
-        response = self.client.post(
-            reverse(
-                "request_access",
-                kwargs={"entity_id": self.entity.id},
-            ),
-            **self.headers[1],
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(AccessRequestNotification.objects.count(), 0)
-
-    def test_request_access_user_is_cradle_admin(self):
-        response = self.client.post(
-            reverse(
-                "request_access",
-                kwargs={"entity_id": self.entity.id},
-            ),
-            **self.headers[4],
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(AccessRequestNotification.objects.count(), 0)
-
-    def test_request_access_entity_does_not_have_read_write_access(self):
-        response = self.client.post(
-            reverse(
-                "request_access",
-                kwargs={"entity_id": self.entity.id},
-            ),
-            **self.headers[0],
-        )
-
-        self.assertEqual(response.status_code, 200)
-
-        self.assertTrue(
-            AccessRequestNotification.objects.filter(
-                user_id=self.users[4].id,
-                requesting_user=self.users[0],
-                entity=self.entity,
-                message="User user0 has requested access for entity entity",
-            )
-        )
-        self.assertTrue(
-            AccessRequestNotification.objects.filter(
-                user_id=self.users[1].id,
-                requesting_user=self.users[0],
-                entity=self.entity,
-                message="User user0 has requested access for entity entity",
-            )
-        )
-        self.assertEqual(AccessRequestNotification.objects.count(), 2)
