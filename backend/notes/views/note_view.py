@@ -72,7 +72,7 @@ class NoteList(APIView):
         filterset = NoteFilter(request.query_params, queryset=queryset)
 
         if filterset.is_valid():
-            notes = filterset.qs
+            notes = filterset.qs.order_by("-timestamp")
             paginator = TotalPagesPagination(page_size=10)
             paginated_notes = paginator.paginate_queryset(notes, request)
 

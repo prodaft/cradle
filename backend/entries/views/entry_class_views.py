@@ -26,7 +26,7 @@ from ..models import Entry, EntryClass
         responses={
             200: EntryClassSerializer(many=True),
             401: "User is not authenticated",
-        }
+        },
     ),
     post=extend_schema(
         summary="Create Entry Class",
@@ -36,8 +36,8 @@ from ..models import Entry, EntryClass
             200: EntryClassSerializer,
             400: "Invalid data provided",
             401: "User is not authenticated",
-        }
-    )
+        },
+    ),
 )
 class EntryClassList(APIView):
     authentication_classes = [JWTAuthentication]
@@ -67,7 +67,7 @@ class EntryClassList(APIView):
             200: EntryClassSerializer,
             401: "User is not authenticated",
             404: "Entry class not found",
-        }
+        },
     ),
     delete=extend_schema(
         summary="Delete Entry Class",
@@ -77,7 +77,7 @@ class EntryClassList(APIView):
             401: "User is not authenticated",
             403: "User is not an admin",
             404: "Entry class not found",
-        }
+        },
     ),
     post=extend_schema(
         summary="Update Entry Class",
@@ -89,8 +89,8 @@ class EntryClassList(APIView):
             401: "User is not authenticated",
             403: "User is not authorized to change entry class type",
             404: "Entry class not found",
-        }
-    )
+        },
+    ),
 )
 class EntryClassDetail(APIView):
     authentication_classes = [JWTAuthentication]
@@ -108,6 +108,11 @@ class EntryClassDetail(APIView):
         return Response(serializer.data)
 
     def delete(self, request: Request, class_subtype: str) -> Response:
+        if class_subtype == "alias":
+            return Response(
+                "Cannot delete the alias entry class.", status=status.HTTP_403_FORBIDDEN
+            )
+
         if not request.user.is_cradle_admin:
             return Response("User must be an admin to delete entry classes.")
 
@@ -122,6 +127,11 @@ class EntryClassDetail(APIView):
         return Response("Requested entry class was deleted", status=status.HTTP_200_OK)
 
     def post(self, request: Request, class_subtype: str) -> Response:
+        if class_subtype == "alias":
+            return Response(
+                "Cannot edit the alias entry class.", status=status.HTTP_403_FORBIDDEN
+            )
+
         user = cast(CradleUser, request.user)
 
         try:
@@ -170,7 +180,7 @@ class EntryClassDetail(APIView):
             401: "User is not authenticated",
             403: "User is not an admin",
             404: "Entry class not found",
-        }
+        },
     )
 )
 class NextName(APIView):

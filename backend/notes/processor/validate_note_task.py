@@ -1,5 +1,5 @@
 from typing import Iterable, Tuple
-from entries.exceptions import InvalidEntryException
+from entries.exceptions import AliasCannotBeLinked, InvalidEntryException
 from entries.models import Entry, EntryClass
 from django.db.models import Q, F, FilteredRelation
 from notes.exceptions import (
@@ -32,6 +32,10 @@ class ValidateNoteTask(BaseTask):
         """
         links = note.reference_tree.links()
         unique_subtypes = {r.key for r in links}
+
+        ## Check if the note tries to link to an alias
+        if "alias" in unique_subtypes:
+            raise AliasCannotBeLinked()
 
         # Prefetch all relevant EntryClass objects in one query
         eclasses = EntryClass.objects.filter(subtype__in=unique_subtypes)

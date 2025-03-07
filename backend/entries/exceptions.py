@@ -52,6 +52,12 @@ class InvalidEntryException(APIException):
     default_code = "unique"
 
 
+class AliasCannotBeLinked(APIException):
+    status_code = 409
+    default_detail = "An alias cannot be linked to directly!"
+    default_code = "unique"
+
+
 class InvalidClassFormatException(APIException):
     status_code = 409
     default_detail = "An entry class can only have regex or enum set as their format"
