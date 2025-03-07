@@ -32,7 +32,7 @@ class GetNoteTest(NotesTestCase):
 
     def test_get_note_not_authenticated(self):
         response = self.client.get(
-            reverse("note_detail", kwargs={"note_id": uuid.uuid4()}),
+            reverse("note_detail", kwargs={"note_id_s": uuid.uuid4()}),
         )
 
         with self.subTest("Check correct response code."):
@@ -43,7 +43,7 @@ class GetNoteTest(NotesTestCase):
         mock_get.side_effect = Note.DoesNotExist
 
         response = self.client.get(
-            reverse("note_detail", kwargs={"note_id": uuid.uuid4()}),
+            reverse("note_detail", kwargs={"note_id_s": uuid.uuid4()}),
             **self.headers,
         )
 
@@ -58,7 +58,7 @@ class GetNoteTest(NotesTestCase):
         mock_get.return_value = note
         mock_access.return_value = False
         response = self.client.get(
-            reverse("note_detail", kwargs={"note_id": uuid1}), **self.headers
+            reverse("note_detail", kwargs={"note_id_s": uuid1}), **self.headers
         )
 
         with self.subTest("Check correct response code."):
@@ -72,7 +72,7 @@ class GetNoteTest(NotesTestCase):
         mock_get.return_value = note
         mock_access.return_value = True
         response = self.client.get(
-            reverse("note_detail", kwargs={"note_id": uuid1}), **self.headers
+            reverse("note_detail", kwargs={"note_id_s": uuid1}), **self.headers
         )
 
         with self.subTest("Check correct response code."):
@@ -124,14 +124,14 @@ class DeleteNoteTest(NotesTestCase):
 
     def test_delete_note_not_authenticated(self):
         response = self.client.delete(
-            reverse("note_detail", kwargs={"note_id": self.notes[0].id})
+            reverse("note_detail", kwargs={"note_id_s": self.notes[0].id})
         )
 
         self.assertEqual(response.status_code, 401)
 
     def test_delete_note_not_found(self):
         response = self.client.delete(
-            reverse("note_detail", kwargs={"note_id": uuid.uuid4()}),
+            reverse("note_detail", kwargs={"note_id_s": uuid.uuid4()}),
             **self.headers,
         )
 
@@ -141,7 +141,8 @@ class DeleteNoteTest(NotesTestCase):
         note_id = self.notes[0].id
         archive_count = ArchivedNote.objects.count()
         response = self.client.delete(
-            reverse("note_detail", kwargs={"note_id": self.notes[0].id}), **self.headers
+            reverse("note_detail", kwargs={"note_id_s": self.notes[0].id}),
+            **self.headers,
         )
 
         self.assertEqual(response.status_code, 200)
@@ -156,7 +157,7 @@ class DeleteNoteTest(NotesTestCase):
         note_id = self.notes[1].id
         archive_count = ArchivedNote.objects.count()
         response = self.client.delete(
-            reverse("note_detail", kwargs={"note_id": note_id}), **self.headers
+            reverse("note_detail", kwargs={"note_id_s": note_id}), **self.headers
         )
 
         with self.subTest("Check response code is correct"):
@@ -176,7 +177,7 @@ class DeleteNoteTest(NotesTestCase):
         self.notes[1].entries.add(entity1)
         note_id = self.notes[1].id
         response = self.client.delete(
-            reverse("note_detail", kwargs={"note_id": note_id}), **self.headers
+            reverse("note_detail", kwargs={"note_id_s": note_id}), **self.headers
         )
 
         with self.subTest("Check response code is correct"):

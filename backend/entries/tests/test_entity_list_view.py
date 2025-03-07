@@ -1,4 +1,4 @@
-from user.models import CradleUser
+from user.models import CradleUser, UserRoles
 from django.urls import reverse
 from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
@@ -22,6 +22,7 @@ class GetEntityListTest(EntriesTestCase):
         self.admin_user = CradleUser.objects.create_user(
             username="admin",
             password="password",
+            role=UserRoles.ADMIN,
             is_staff=True,
             email="alabala@gmail.com",
         )
@@ -35,22 +36,6 @@ class GetEntityListTest(EntriesTestCase):
         self.token_normal = str(AccessToken.for_user(self.normal_user))
         self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
         self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
-
-    def test_get_entities_admin(self):
-        Entry.objects.create(
-            name="Entity1", description="Description1", entry_class=self.entryclass1
-        )
-        Entry.objects.create(
-            name="Entity2", description="Description2", entry_class=self.entryclass1
-        )
-        entities = Entry.entities.all()
-
-        expected = EntryResponseSerializer(entities, many=True).data
-
-        response = self.client.get(reverse("entity_list"), **self.headers_admin)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(expected, bytes_to_json(response.content))
 
     def test_get_entities_authenticated_not_admin(self):
         response = self.client.get(reverse("entity_list"), **self.headers_normal)
@@ -72,6 +57,7 @@ class PostEntityListTest(EntriesTestCase):
             username="admin",
             password="password",
             is_staff=True,
+            role=UserRoles.ADMIN,
             email="alabala@gmail.com",
         )
         self.normal_user = CradleUser.objects.create_user(

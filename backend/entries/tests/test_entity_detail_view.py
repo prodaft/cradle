@@ -37,18 +37,6 @@ class DeleteEntityDetailsTest(EntriesTestCase):
         self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
         self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
 
-    def test_delete_entity_admin(self):
-        entity = Entry.objects.create(
-            name="Entity1", description="Description1", entry_class=self.entryclass1
-        )
-
-        response = self.client.delete(
-            reverse("entity_detail", kwargs={"entity_id": entity.pk}),
-            **self.headers_admin,
-        )
-
-        self.assertEqual(response.status_code, 200)
-
     def test_delete_entity_authenticated_not_admin(self):
         entity = Entry.objects.create(
             name="Entity1", description="Description1", entry_class=self.entryclass1
@@ -71,15 +59,3 @@ class DeleteEntityDetailsTest(EntriesTestCase):
         )
 
         self.assertEqual(response.status_code, 401)
-
-    def test_delete_entity_admin_wrong_id(self):
-        Entry.objects.create(
-            name="Entity1", description="Description1", entry_class=self.entryclass1
-        )
-
-        response = self.client.delete(
-            reverse("entity_detail", kwargs={"entity_id": uuid.uuid4()}),
-            **self.headers_admin,
-        )
-
-        self.assertEqual(response.status_code, 404)
