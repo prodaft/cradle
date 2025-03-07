@@ -64,7 +64,7 @@ jobs:
           BUMPVERSION_TAG: "true"
         with:
           args: ${{ steps.determine_bump.outputs.bump_type }}
-          github-token: ${{ github.token }}
+          github-token: ${{ secrets.PAT }}
 
       - name: Skip bumping
         if: steps.determine_bump.outputs.bump_type == 'none'
@@ -74,12 +74,3 @@ jobs:
         if: steps.bump.outputs.bumped == 'true'
         run: |
           echo "Version was bumped from ${{ steps.bump.outputs.previous-version }} to ${{ steps.bump.outputs.current-version }}!"
-
-      - name: Create Git Tag
-        if: steps.bump.outputs.bumped == 'true'
-        run: |
-          new_version=${{ steps.bump.outputs.current-version }}
-          tag="v${new_version}"
-          echo "Creating tag $tag"
-          git tag $tag
-          git push origin $tag
