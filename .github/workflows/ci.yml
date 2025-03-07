@@ -15,6 +15,18 @@ jobs:
         working-directory: ./backend
     steps:
       - uses: actions/checkout@v3
+
+      # Cache pipenv dependencies (pip cache and virtualenvs)
+      - name: Cache pipenv dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.local/share/virtualenvs
+          key: ${{ runner.os }}-pipenv-${{ hashFiles('backend/Pipfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pipenv-
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -60,6 +72,18 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
+      # Cache pipenv dependencies (reuse the same caching step)
+      - name: Cache pipenv dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.local/share/virtualenvs
+          key: ${{ runner.os }}-pipenv-${{ hashFiles('backend/Pipfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pipenv-
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
