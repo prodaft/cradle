@@ -15,7 +15,7 @@ from ..utils import calculate_acvec
 class AccessControlTask(BaseTask):
     @property
     def is_validator(self) -> bool:
-        return True
+        return False
 
     def run(self, note: Note, entries: Iterable[Entry]) -> Tuple[None, Iterable[Entry]]:
         """
@@ -43,6 +43,8 @@ class AccessControlTask(BaseTask):
         for i in inaccessible.all():
             raise NoAccessToEntriesException([i])
 
-        note.access_vector = calculate_acvec(entities)
+        note.access_vector = calculate_acvec(
+            [x for x in entries if x.entry_class.type == EntryType.ENTITY]
+        )
 
         return None, entries

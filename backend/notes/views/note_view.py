@@ -65,7 +65,7 @@ class NoteList(APIView):
 
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")
-            queryset = Note.objects.annotate(
+            queryset = queryset.annotate(
                 matching_entries=Count("entries", filter=Q(entries__in=entrylist))
             ).filter(matching_entries=len(entrylist))
 
@@ -153,15 +153,8 @@ class NoteDetail(APIView):
             return Response("Invalid note ID.", status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            note: Note = Note.objects.get(id=note_id)
+            note: Note = Note.objects.get_accessible_notes(request.user).get(id=note_id)
         except Note.DoesNotExist:
-            return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
-
-        if not Access.objects.has_access_to_entities(
-            cast(CradleUser, request.user),
-            set(note.entries.filter(entry_class__type=EntryType.ENTITY)),
-            {AccessType.READ, AccessType.READ_WRITE},
-        ):
             return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
 
         if request.query_params.get("footnotes", "true") == "true":

@@ -98,7 +98,7 @@ export default function AdminPanel() {
                         users.map((user) => {
                             return (
                                 <AdminPanelCard
-                                    id={user.username}
+                                    id={user.id}
                                     key={user.username}
                                     name={user.username}
                                     searchKey={user.username}

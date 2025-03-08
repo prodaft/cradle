@@ -1,5 +1,5 @@
 import random
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any, Dict, Tuple
 
 import mistune
 from mistune.core import BlockState
@@ -57,8 +57,10 @@ class MarkdownRenderer(BaseMarkdownRenderer):
     def __init__(
         self,
         entryclass_remap: Dict[str, str] = {},
+        entry_remap: Dict[Tuple[str, str], str] = {},
     ) -> None:
         self.entryclass_remap = entryclass_remap
+        self.entry_remap = entry_remap
         super(MarkdownRenderer, self).__init__()
 
     def cradle_link(self, token: Dict[str, any], state: BlockState) -> str:
@@ -145,8 +147,11 @@ def anonymize_markdown(
 def remap_links(
     md: str,
     entryclass_remap: Dict[str, str],
+    entry_remap: Dict[Tuple[str, str], str],
 ) -> str:
-    renderer = MarkdownRenderer(entryclass_remap=entryclass_remap)
+    renderer = MarkdownRenderer(
+        entryclass_remap=entryclass_remap, entry_remap=entry_remap
+    )
 
     markdown = mistune.create_markdown(
         renderer=renderer, plugins=[table, cradle_link_plugin]

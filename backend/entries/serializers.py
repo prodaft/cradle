@@ -130,7 +130,7 @@ class EntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Entry
-        fields = ["id", "name", "description", "entry_class"]
+        fields = ["id", "name", "description", "entry_class", "is_public"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

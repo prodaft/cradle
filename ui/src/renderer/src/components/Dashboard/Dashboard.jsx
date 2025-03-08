@@ -223,19 +223,6 @@ export default function Dashboard() {
         }));
     };
 
-    const handleEnterPublishMode = useCallback(() => {
-        const publishableNotes = contentObject.notes.filter((note) => note.publishable);
-        if (publishableNotes.length === 0) {
-            setAlert({
-                show: true,
-                message: 'There are no publishable notes available.',
-                color: 'red',
-            });
-            return;
-        }
-        navigate(`/notes`, { state: contentObject });
-    }, [navigate, contentObject, setAlert]);
-
     const handleDelete = () => {
         deleteEntry(`entries/${pluralize(contentObject.type)}`, contentObject.id)
             .then((response) => {
@@ -270,23 +257,12 @@ export default function Dashboard() {
                 data-testid='delete-entry-btn'
             />
         ),
-
-        // A button to enter publish mode. Here the user can choose which notes they want to view in the publish preview
-        // This is only visible while the user is not in publish preview mode
-        <NavbarButton
-            key='publish-mode-btn'
-            icon={<TaskList />}
-            text='Enter Publish Mode'
-            data-testid='publish-mode-btn'
-            onClick={handleEnterPublishMode}
-        />,
     ];
     useNavbarContents(!entryMissing && navbarContents, [
         contentObject,
         location,
         auth.isAdmin(),
         entryMissing,
-        handleEnterPublishMode,
         setDeleteDialog,
     ]);
 

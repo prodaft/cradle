@@ -6,10 +6,12 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from access.enums import AccessType
 from logs.models import LoggableModelMixin
 from mail.models import ConfirmationMail, ResetPasswordMail
 
 from .managers import CradleUserManager
+from core.fields import BitStringField
 
 
 class UserRoles(models.TextChoices):
@@ -103,3 +105,20 @@ class CradleUser(AbstractUser, LoggableModelMixin):
     @property
     def is_cradle_admin(self):
         return self.role == UserRoles.ADMIN
+
+    @property
+    def access_vector(self):
+        if self.is_cradle_admin:
+            return "1" * 2048
+        acvec = 1
+
+        for access in self.accesses.all():
+            if access.access_type == AccessType.NONE:
+                continue
+            acvec |= 1 << access.entity.acvec_offset
+
+        fieldtype = BitStringField(
+            max_length=2048, null=False, default=1, varying=False
+        )
+
+        return fieldtype.get_prep_value(acvec)

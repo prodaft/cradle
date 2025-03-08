@@ -1,6 +1,6 @@
 from django.db import models
 from django_lifecycle import AFTER_UPDATE, LifecycleModel, hook
-from django_lifecycle.mixins import transaction
+from django_lifecycle.mixins import LifecycleModelMixin, transaction
 from django.db.models import Q
 
 from logs.models import LoggableModelMixin
@@ -24,7 +24,7 @@ import uuid
 import re
 
 
-class EntryClass(models.Model, LoggableModelMixin):
+class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
     type: models.CharField = models.CharField(max_length=20, choices=EntryType.choices)
     subtype: models.CharField = models.CharField(
         max_length=64, blank=False, primary_key=True
@@ -65,7 +65,7 @@ class EntryClass(models.Model, LoggableModelMixin):
         unique_notes = list(set(notes))
 
         for i in unique_notes:
-            i.content = remap_links(i.content, {self.subtype: None})
+            i.content = remap_links(i.content, {self.subtype: None}, {})
 
         Note.objects.bulk_update(notes, ["content"])
         super().delete(*args, **kwargs)
@@ -97,7 +97,7 @@ class EntryClass(models.Model, LoggableModelMixin):
             unique_notes = list(set(notes))
 
             for i in unique_notes:
-                i.content = remap_links(i.content, {old_subtype: new_subtype})
+                i.content = remap_links(i.content, {old_subtype: new_subtype}, {})
 
             Note.objects.bulk_update(notes, ["content"])
 
@@ -178,6 +178,11 @@ class EntryClass(models.Model, LoggableModelMixin):
     def __repr__(self):
         return self.subtype
 
+    @hook(AFTER_UPDATE, when="type", has_changed=True)
+    def update_access_level_of_children(self):
+        for i in self.entries.all():
+            i.save()
+
 
 class Entry(LifecycleModel, LoggableModelMixin):
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
@@ -195,6 +200,8 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
     # New field: acvec_offset is an unsigned integer.
     acvec_offset: models.PositiveIntegerField = models.PositiveIntegerField(default=0)
+
+    status: models.JSONField = models.JSONField(default=dict, null=True)
 
     class Meta:
         constraints = [
@@ -277,5 +284,6 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
     @hook(AFTER_UPDATE, when="acvec_offset", has_changed=True)
     def acvec_offset_updated(self):
-        # TODO: Update privilege vectors of all notes
-        pass
+        from .tasks import update_accesses
+
+        transaction.on_commit(lambda: update_accesses.apply_async((self.id,)))

@@ -35,16 +35,15 @@ class AccessManager(models.Manager):
 
         entities = entries.filter(entry_class__type=EntryType.ENTITY)
 
-        accessible = (
-            self.get_queryset()
-            .filter(
-                user_id=user.pk,
-                entity__in=entities,
-                access_type__in=access_types,
+        q = models.Q(user_id=user.pk, entity__in=entities, access_type__in=access_types)
+        accesses = self.get_queryset().filter(q).values("entity_id")
+
+        if AccessType.READ in access_types:
+            accesses = accesses.union(
+                Entry.entities.filter(is_public=True).values("id")
             )
-            .all()
-            .values_list("entity", flat=True)
-        )
+
+        accessible = accesses
 
         return entities.filter(~Q(pk__in=accessible))
 
@@ -70,10 +69,25 @@ class AccessManager(models.Manager):
         if user.is_cradle_admin:
             return True
 
-        accesses = self.get_queryset().filter(
-            user_id=user.pk, entity__in=entities, access_type__in=access_types
-        )
-        return accesses.count() == len(entities)
+        count = 0
+        if AccessType.READ in access_types:
+            q = models.Q(
+                user_id=user.pk,
+                entity__in=[e for e in entities if not e.is_public],
+                access_type__in=access_types,
+            )
+            count = len([e for e in entities if e.is_public])
+        else:
+            q = models.Q(
+                user_id=user.pk, entity__in=entities, access_type__in=access_types
+            )
+
+        accesses = self.get_queryset().filter(q).values("id")
+        count += accesses.count()
+        print(count)
+        print(entities)
+
+        return count == len(entities)
 
     def get_accessible_entity_ids(self, user_id: UUID) -> models.QuerySet:
         """For a given user id, get a list of all entity ids which
@@ -91,15 +105,16 @@ class AccessManager(models.Manager):
         return (
             self.get_queryset()
             .filter(
-                Q(user_id=user_id)
-                & (
-                    Q(access_type=AccessType.READ)
-                    | Q(access_type=AccessType.READ_WRITE)
+                (
+                    Q(user_id=user_id)
+                    & (
+                        Q(access_type=AccessType.READ)
+                        | Q(access_type=AccessType.READ_WRITE)
+                    )
                 )
             )
             .values("entity_id")
-            .distinct()
-        )
+        ).union(Entry.objects.filter(is_public=True).values("id"))
 
     def get_accesses(self, user_id: UUID) -> models.QuerySet:
         """Retrieves from the database the access_type of all

@@ -30,5 +30,4 @@ class Command(BaseCommand):
             note.access_vector = calculate_acvec(
                 note.entries.filter(entry_class__type=EntryType.ENTITY)
             )
-            print(note.access_vector)
             note.save()

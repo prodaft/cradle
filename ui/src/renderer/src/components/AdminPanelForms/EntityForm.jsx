@@ -8,7 +8,7 @@ import {
     getEntity,
     createEntity,
     editEntity,
-    getNextEntityName
+    getNextEntityName,
 } from '../../services/adminService/adminService';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
@@ -44,6 +44,7 @@ export default function EntityForm({ isEdit = false }) {
             name: '',
             subtype: '',
             description: '',
+            is_public: false,
         },
     });
 
@@ -78,6 +79,7 @@ export default function EntityForm({ isEdit = false }) {
                                 name: entity.name,
                                 subtype: entity.subtype,
                                 description: entity.description,
+                                is_public: entity.is_public,
                             });
                         }
                     }
@@ -92,6 +94,7 @@ export default function EntityForm({ isEdit = false }) {
             name: data.name,
             description: data.description,
             subtype: data.subtype,
+            is_public: data.is_public,
         };
 
         try {
@@ -108,16 +111,14 @@ export default function EntityForm({ isEdit = false }) {
 
     const watchSubtype = watch('subtype');
     useEffect(() => {
-      if (watchSubtype) {
-        getNextEntityName(watchSubtype)
-          .then((name) => {
-            if (name)
-              reset((prev) => ({ ...prev, name }));
-          })
-          .catch((err) => displayError(setAlert, navigate)(err));
-      }
+        if (!isEdit && watchSubtype) {
+            getNextEntityName(watchSubtype)
+                .then((name) => {
+                    if (name) reset((prev) => ({ ...prev, name }));
+                })
+                .catch((err) => displayError(setAlert, navigate)(err));
+        }
     }, [watchSubtype]);
-
 
     return (
         <div className='flex flex-row items-center justify-center h-screen'>
@@ -167,6 +168,15 @@ export default function EntityForm({ isEdit = false }) {
                                 )}
                             </div>
                         </div>
+
+                        <FormField
+                            type='checkbox'
+                            labelText='Publicly Available'
+                            className='switch switch-ghost-primary'
+                            {...register('is_public')}
+                            row={true}
+                            error={errors.is_public?.message}
+                        />
 
                         <div className='w-full'>
                             <label

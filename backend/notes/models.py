@@ -1,4 +1,5 @@
 from django.db import models
+from django_lifecycle.mixins import AFTER_UPDATE, LifecycleModelMixin
 
 from .markdown.to_links import LinkTreeNode, cradle_connections, heading_hierarchy
 from entries.models import Entry
@@ -6,7 +7,7 @@ from logs.models import LoggableModelMixin
 from .managers import NoteManager
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from django_lifecycle import AFTER_UPDATE, LifecycleModel, hook
+from django_lifecycle import AFTER_SAVE, LifecycleModel, hook
 
 import uuid
 from user.models import CradleUser
@@ -27,6 +28,10 @@ class Relation(LifecycleModel):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     content_object = GenericForeignKey("content_type", "object_id")
 
+    access_vector: BitStringField = BitStringField(
+        max_length=2048, null=False, default=1 << 2047, varying=False
+    )
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -42,7 +47,7 @@ class Relation(LifecycleModel):
     ]
 
 
-class Note(LifecycleModel, LoggableModelMixin):
+class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
     id: models.UUIDField = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -62,7 +67,7 @@ class Note(LifecycleModel, LoggableModelMixin):
     )
 
     access_vector: BitStringField = BitStringField(
-        max_length=2**24, null=False, default=1
+        max_length=2048, null=False, default=1 << 2047, varying=False
     )
 
     edit_timestamp: models.DateTimeField = models.DateTimeField(null=True)
@@ -105,11 +110,6 @@ class Note(LifecycleModel, LoggableModelMixin):
         super().delete()
 
         Entry.objects.filter(id__in=artifact_ids).unreferenced().delete()
-
-    @hook(AFTER_UPDATE, when="access_vector", has_changed=True)
-    def acvec_offset_updated(self):
-        # TODO: Update privilege vectors of all relations
-        pass
 
 
 class ArchivedNote(models.Model):
