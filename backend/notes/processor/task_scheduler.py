@@ -3,6 +3,8 @@ from typing import List, Optional
 from celery import chain
 from diff_match_patch import diff_match_patch
 
+from entries.enums import EntryType
+
 from ..utils import calculate_acvec
 
 from ..models import Note

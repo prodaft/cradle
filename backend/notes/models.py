@@ -1,5 +1,5 @@
 from django.db import models
-from django_lifecycle.mixins import AFTER_UPDATE, LifecycleModelMixin
+from django_lifecycle.mixins import LifecycleModelMixin
 
 from .markdown.to_links import LinkTreeNode, cradle_connections, heading_hierarchy
 from entries.models import Entry
@@ -7,7 +7,7 @@ from logs.models import LoggableModelMixin
 from .managers import NoteManager
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from django_lifecycle import AFTER_SAVE, LifecycleModel, hook
+from django_lifecycle import LifecycleModel
 
 import uuid
 from user.models import CradleUser

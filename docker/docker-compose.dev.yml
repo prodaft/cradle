@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: apache/age
+    image: postgres:16.8
     container_name: cradle_postgres
     environment:
      - POSTGRES_DB=cradle

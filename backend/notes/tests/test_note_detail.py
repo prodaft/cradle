@@ -3,7 +3,7 @@ from user.models import CradleUser
 from unittest.mock import patch
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.parsers import JSONParser
-from ..models import Note, ArchivedNote
+from ..models import Note
 from entries.models import Entry
 from access.models import Access
 from access.enums import AccessType
@@ -14,6 +14,14 @@ import uuid
 
 def bytes_to_json(data):
     return JSONParser().parse(io.BytesIO(data))
+
+
+class SingleNoteGetMocker:
+    def __init__(self, note):
+        self.note = note
+
+    def get(self, *args, **kwargs):
+        return self.note
 
 
 class GetNoteTest(NotesTestCase):
@@ -64,12 +72,12 @@ class GetNoteTest(NotesTestCase):
         with self.subTest("Check correct response code."):
             self.assertEqual(response.status_code, 404)
 
-    @patch("notes.models.Note.objects.get")
+    @patch("notes.models.Note.objects.get_accessible_notes")
     @patch("access.models.Access.objects.has_access_to_entities")
     def test_get_note_successful(self, mock_access, mock_get):
         uuid1 = uuid.uuid4()
         note = Note(id=uuid1)
-        mock_get.return_value = note
+        mock_get.return_value = SingleNoteGetMocker(note)
         mock_access.return_value = True
         response = self.client.get(
             reverse("note_detail", kwargs={"note_id_s": uuid1}), **self.headers
@@ -139,7 +147,6 @@ class DeleteNoteTest(NotesTestCase):
 
     def test_delete_note_successful(self):
         note_id = self.notes[0].id
-        archive_count = ArchivedNote.objects.count()
         response = self.client.delete(
             reverse("note_detail", kwargs={"note_id_s": self.notes[0].id}),
             **self.headers,
@@ -150,12 +157,9 @@ class DeleteNoteTest(NotesTestCase):
             Note.objects.get(id=note_id)
         with self.assertRaises(Entry.DoesNotExist):
             Entry.objects.get(id=self.entries[1].id)
-        with self.subTest("Check archive count"):
-            self.assertEqual(ArchivedNote.objects.count(), archive_count + 1)
 
     def test_delete_note_keeps_entities(self):
         note_id = self.notes[1].id
-        archive_count = ArchivedNote.objects.count()
         response = self.client.delete(
             reverse("note_detail", kwargs={"note_id_s": note_id}), **self.headers
         )
@@ -167,8 +171,6 @@ class DeleteNoteTest(NotesTestCase):
             Note.objects.get(id=note_id)
         with self.subTest("Check entity does not get deleted"):
             self.assertEqual(Entry.objects.get(id=self.entity.id).id, self.entity.id)
-        with self.subTest("Check archive count"):
-            self.assertEqual(ArchivedNote.objects.count(), archive_count + 1)
 
     def test_delete_note_no_access(self):
         entity1 = Entry.objects.create(
