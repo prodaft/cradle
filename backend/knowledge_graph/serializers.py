@@ -17,7 +17,6 @@ class EntryRequestSerializer(serializers.Serializer):
     def resolve(self, attrs: Any) -> Any:
         qs = None
         if "query" in attrs:
-            print(parse_query(attrs["query"]))
             qs = Entry.objects.filter(parse_query(attrs["query"]))
         else:
             qs = Entry.objects.filter(
@@ -112,14 +111,14 @@ class TraverseEntryTypesQuery(BaseGraphQuery):
             cursor.execute(
                 """
                 SELECT MIN(CASE WHEN can_access THEN 1 ELSE 0 END) = 1, entry_class_id FROM
-                    get_minimum_distances_for_user(
+                    get_minimum_distances(
                         %s, %s, %s
                     ) JOIN entries_entry e ON e.id = dst_entry WHERE distance >= %s
                     GROUP BY entry_class_id;
                 """,
                 [
                     str(self.validated_data["src"].id),
-                    str(self.context["request"].user.id),
+                    str(self.context["request"].user.access_vector),
                     self.validated_data["max_depth"],
                     self.validated_data["min_depth"],
                 ],
@@ -158,13 +157,13 @@ class InaccesibleQuery(BaseGraphQuery):
             cursor.execute(
                 """
                 SELECT can_access, id, entry_class_id, name, distance FROM
-                    get_minimum_distances_for_user(
+                    get_minimum_distances(
                         %s, %s, %s
                     ) JOIN entries_entry e ON e.id = dst_entry WHERE distance >= %s AND can_access = false;
                 """,
                 [
                     str(self.validated_data["src"].id),
-                    str(self.context["request"].user.id),
+                    str(self.context["request"].user.access_vector),
                     self.validated_data["max_depth"],
                     self.validated_data["min_depth"],
                 ],
@@ -197,13 +196,13 @@ class BFSQuery(BaseGraphQuery):
             cursor.execute(
                 """
                 SELECT path FROM
-                    get_related_entry_paths_for_user(
+                    get_related_entry_paths(
                         %s, %s, %s
                     ) WHERE depth >= %s;
                 """,
                 [
                     str(self.validated_data["src"].id),
-                    str(self.context["request"].user.id),
+                    str(self.context["request"].user.access_vector),
                     self.validated_data["max_depth"],
                     self.validated_data["min_depth"],
                 ],
@@ -224,14 +223,14 @@ class BFSQuery(BaseGraphQuery):
             cursor.execute(
                 """
                 SELECT can_access, id, entry_class_id, name, distance FROM
-                    get_minimum_distances_for_user(
+                    get_minimum_distances(
                         %s, %s, %s
                     ) JOIN entries_entry e ON e.id = dst_entry
                     WHERE distance >= %s AND name LIKE %s AND entry_class_id LIKE %s;
                 """,
                 [
                     str(self.validated_data["src"].id),
-                    str(self.context["request"].user.id),
+                    str(self.context["request"].user.access_vector),
                     self.validated_data["max_depth"],
                     self.validated_data["min_depth"],
                     "%" + self.validated_data.get("name", "") + "%",
@@ -271,10 +270,10 @@ class PathfindQuery(BaseGraphQuery):
                     WHERE depth >= %s AND can_access;
                 """,
                 [
-                    str(self.context["request"].user.id),
                     str(self.validated_data["src"].id),
                     str(self.validated_data["dst"].id),
                     self.validated_data["max_depth"],
+                    str(self.context["request"].user.access_vector),
                     self.validated_data["min_depth"],
                 ],
             )

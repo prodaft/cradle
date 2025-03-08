@@ -1,6 +1,7 @@
 from django.db import models
-from django_lifecycle import LifecycleModel
-from django_lifecycle.mixins import transaction
+from django_lifecycle import AFTER_UPDATE, LifecycleModel, hook
+from django_lifecycle.mixins import LifecycleModelMixin, transaction
+from django.db.models import Q
 
 from logs.models import LoggableModelMixin
 
@@ -17,13 +18,12 @@ from .exceptions import (
     InvalidRegexException,
 )
 from .enums import EntryType
-from notes.markdown.to_markdown import remap_links
 
 import uuid
 import re
 
 
-class EntryClass(models.Model, LoggableModelMixin):
+class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
     type: models.CharField = models.CharField(max_length=20, choices=EntryType.choices)
     subtype: models.CharField = models.CharField(
         max_length=64, blank=False, primary_key=True
@@ -54,54 +54,53 @@ class EntryClass(models.Model, LoggableModelMixin):
         return eclass.pk
 
     def delete(self, *args, **kwargs):
-        from notes.models import Note
+        from entries.tasks import remap_notes_task
 
         notes = []
-
         for e in self.entries.all():
             notes.extend(e.notes.all())
 
-        unique_notes = list(set(notes))
+        unique_note_ids = list({note.id for note in notes})
 
-        for i in unique_notes:
-            i.content = remap_links(i.content, {self.subtype: None})
+        from django.db import transaction
 
-        Note.objects.bulk_update(notes, ["content"])
+        transaction.on_commit(
+            lambda: remap_notes_task.delay(unique_note_ids, {self.subtype: None}, {})
+        )
+
         super().delete(*args, **kwargs)
 
     def rename(self, new_subtype: str):
         if new_subtype == self.subtype or not new_subtype:
             return None
 
-        from notes.models import Note
+        from django.db import transaction
+        from entries.tasks import remap_notes_task
 
-        with transaction.atomic():
-            entries = self.entries.all()
+        entries = self.entries.all()
+        for entry in entries:
+            entry.entry_class_id = new_subtype
+        Entry.objects.bulk_update(entries, ["entry_class_id"])
 
-            for entry in entries:
-                entry.entry_class_id = new_subtype
+        old_subtype = self.subtype
+        self.subtype = new_subtype
+        self.save()
 
-            Entry.objects.bulk_update(entries, ["entry_class_id"])
+        notes = []
+        for e in self.entries.all():
+            notes.extend(e.notes.all())
+        unique_note_ids = list({note.id for note in notes})
 
-            old_subtype = self.subtype
+        # Schedule remapping to update notes' content asynchronously.
+        transaction.on_commit(
+            lambda: remap_notes_task.delay(
+                unique_note_ids, {old_subtype: new_subtype}, {}
+            )
+        )
 
-            self.subtype = new_subtype
-            self.save()
-
-            notes = []
-
-            for e in self.entries.all():
-                notes.extend(e.notes.all())
-
-            unique_notes = list(set(notes))
-
-            for i in unique_notes:
-                i.content = remap_links(i.content, {old_subtype: new_subtype})
-
-            Note.objects.bulk_update(notes, ["content"])
-
-            EntryClass.objects.get(subtype=old_subtype).delete()
-            return self
+        # Optionally remove the old entry class if needed.
+        EntryClass.objects.get(subtype=old_subtype).delete()
+        return self
 
     def validate_text(self, t: str):
         """
@@ -177,6 +176,11 @@ class EntryClass(models.Model, LoggableModelMixin):
     def __repr__(self):
         return self.subtype
 
+    @hook(AFTER_UPDATE, when="type", has_changed=True)
+    def update_access_level_of_children(self):
+        for i in self.entries.all():
+            i.save()
+
 
 class Entry(LifecycleModel, LoggableModelMixin):
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
@@ -188,15 +192,26 @@ class Entry(LifecycleModel, LoggableModelMixin):
         related_name="entries",
     )
 
-    name: models.CharField = models.CharField()
+    name: models.CharField = models.CharField(max_length=255)
     description: models.TextField = models.TextField(null=True, blank=True)
     timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+
+    # New field: acvec_offset is an unsigned integer.
+    acvec_offset: models.PositiveIntegerField = models.PositiveIntegerField(default=0)
+
+    status: models.JSONField = models.JSONField(default=dict, null=True)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
                 fields=["name", "entry_class"], name="unique_name_class"
-            )
+            ),
+            # Enforces uniqueness on non-zero acvec_offset values.
+            models.UniqueConstraint(
+                fields=["acvec_offset"],
+                condition=~Q(acvec_offset=0),
+                name="unique_non_zero_acvec_offset",
+            ),
         ]
 
     objects = EntryManager()
@@ -206,7 +221,6 @@ class Entry(LifecycleModel, LoggableModelMixin):
     def __init__(self, *args, **kwargs):
         if "name" in kwargs:
             kwargs["name"] = kwargs["name"].strip()
-
         super().__init__(*args, **kwargs)
 
     def __repr__(self):
@@ -229,7 +243,43 @@ class Entry(LifecycleModel, LoggableModelMixin):
         if not self.entry_class.validate_text(self.name):
             raise InvalidEntryException(self.entry_class.subtype, self.name)
 
+        self.setup_access()
         return super().save(*args, **kwargs)
+
+    def setup_access(self):
+        # Artifacts and public entities have public access
+        if self.entry_class.type == EntryType.ARTIFACT or self.is_public:
+            self.is_public = True
+            self.acvec_offset = 0
+
+        elif self.acvec_offset == 0:
+            if self.entry_class.type == EntryType.ENTITY:
+                existing_offsets = set(
+                    self.__class__.objects.exclude(acvec_offset=0).values_list(
+                        "acvec_offset", flat=True
+                    )
+                )
+                offset = 1
+                while offset in existing_offsets:
+                    offset += 1
+                self.acvec_offset = offset
+
+    def delete(self, *args, **kwargs):
+        from entries.tasks import remap_notes_task
+
+        from django.db import transaction
+
+        note_ids = list({note.id for note in self.notes.all()})
+
+        transaction.on_commit(
+            lambda: remap_notes_task.delay(
+                note_ids,
+                {},
+                {self.entry_class.subtype + ":" + self.name: None},
+            )
+        )
+
+        super().delete(*args, **kwargs)
 
     def propagate_from(self, log):
         if self.entry_class.type == EntryType.ENTITY:
@@ -246,3 +296,9 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
     def log_fetch(self, user, details=None):
         super().log_fetch(user, details)
+
+    @hook(AFTER_UPDATE, when="acvec_offset", has_changed=True)
+    def acvec_offset_updated(self):
+        from .tasks import update_accesses
+
+        transaction.on_commit(lambda: update_accesses.apply_async((self.id,)))

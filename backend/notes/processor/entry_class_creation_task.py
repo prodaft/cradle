@@ -21,4 +21,6 @@ class EntryClassCreationTask(BaseTask):
         Returns:
             The processed note object.
         """
-        return entry_class_creation_task.si(note.id, self.user.id), entries
+        return entry_class_creation_task.si(
+            note.id, self.user.id if self.user else None
+        ), entries

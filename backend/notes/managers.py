@@ -1,17 +1,18 @@
 from django.db import models
-from django.db.models import CharField, Count, OuterRef, Subquery, Value
+from django.db.models import Count, Value
 
 from entries.enums import EntryType
 from entries.models import Entry
 from user.models import CradleUser
-from access.models import Access
-from django.db.models import Case, When, Q, F
-from django.contrib.postgres.aggregates import ArrayAgg
-from django.db.models.functions import Coalesce
+from django.db.models import Case, When, Q, F, ExpressionWrapper
 
 from typing import List
 from uuid import UUID
 from typing import Optional, Generator
+
+from core.fields import BitStringField
+
+fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
 
 class NoteQuerySet(models.QuerySet):
@@ -28,30 +29,15 @@ class NoteQuerySet(models.QuerySet):
         if user.is_cradle_admin:
             return self.none()
 
-        # Subquery to get access types
-        access_subquery = Access.objects.filter(
-            user=user,
-            entity_id=OuterRef("entry_id"),
-        ).values("access_type")
+        v = user.access_vector
 
-        rels = (
-            self.model.entries.through.objects.filter(
-                entry__entry_class__type=EntryType.ENTITY, note__in=self
+        queryset = self.annotate(
+            bit_or=ExpressionWrapper(
+                F("access_vector").bitor(Value(v)), output_field=fieldtype
             )
-            .values("note_id")
-            .annotate(
-                access_type=ArrayAgg(
-                    Coalesce(
-                        Subquery(access_subquery, output_field=CharField()),
-                        Value("<none>"),
-                        distinct=True,
-                    ),
-                )
-            )
-            .filter(Q(access_type__contains=["<none>"]))
-        )
+        ).filter(~Q(bit_or=v))
 
-        return self.filter(id__in=rels.values_list("note", flat=True))
+        return queryset
 
     def accessible(self, user: CradleUser) -> models.QuerySet:
         """
@@ -60,42 +46,15 @@ class NoteQuerySet(models.QuerySet):
         if user.is_cradle_admin:
             return self
 
-        # Subquery to get access types
-        access_subquery = Access.objects.filter(
-            user=user,
-            entity_id=OuterRef("entry_id"),
-        ).values("access_type")
+        v = user.access_vector
 
-        rels = (
-            self.model.entries.through.objects.filter(
-                entry__entry_class__type=EntryType.ENTITY, note__in=self
+        queryset = self.annotate(
+            bit_or=ExpressionWrapper(
+                F("access_vector").bitor(Value(v)), output_field=fieldtype
             )
-            .values("note_id")
-            .annotate(
-                access_type=ArrayAgg(
-                    Coalesce(
-                        Subquery(access_subquery, output_field=CharField()),
-                        Value("none"),
-                        distinct=True,
-                    ),
-                )
-            )
-            .filter(~Q(access_type__contains=["none"]))
-        )
-        return self.filter(id__in=rels.values_list("note", flat=True))
+        ).filter(bit_or=v)
 
-    def get_links(self):
-        """Retrieve pairs of entries connected
-        by those notes.
-
-        Args:
-            note_list (models.QuerySet): The list of note ids.
-
-        Returns:
-            models.QuerySet: The pairs of entries linked using notes.
-
-        """
-        return
+        return queryset
 
 
 class NoteManager(models.Manager):

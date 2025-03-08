@@ -2,14 +2,16 @@ from __future__ import absolute_import, unicode_literals
 import os
 from celery import Celery
 from django.conf import settings
+from django.apps import apps
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cradle.settings")
 
 app = Celery("cradle")
 
-app.config_from_object("django.conf:settings", namespace="CELERY")
+app.config_from_object(settings)
+app.conf.broker_url = settings.REDIS_URL
 
-app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
+app.autodiscover_tasks(lambda: [n.name for n in apps.get_app_configs()])
 
 app.conf.timezone = "UTC"
 app.conf.broker_connection_retry_on_startup = True
@@ -20,11 +22,14 @@ app.conf.task_routes = {
     "notes.tasks.smart_linker_task": {"queue": "notes"},
     "notes.tasks.entry_class_creation_task": {"queue": "notes"},
     "notes.tasks.entry_population_task": {"queue": "notes"},
+    "entries.tasks.remap_notes_task": {"queue": "notes"},
     "notes.tasks.connect_aliases": {"queue": "notes"},
     "publish.tasks.generate_report": {"queue": "publish"},
     "publish.tasks.edit_report": {"queue": "publish"},
     "publish.tasks.import_json_report": {"queue": "import"},
     "publish.tasks.download_file_for_note": {"queue": "import"},
+    "notes.tasks.propagate_acvec": {"queue": "access"},
+    "entries.tasks.update_accesses": {"queue": "access"},
 }
 
 app.conf.task_default_priority = 5

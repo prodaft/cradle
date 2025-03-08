@@ -1,8 +1,10 @@
+from collections.abc import Iterable
 import re
 from typing import Dict, NamedTuple
 
 from django.template.loader import render_to_string
 
+from entries.models import Entry
 from user.models import CradleUser
 
 from .models import Note
@@ -63,3 +65,12 @@ def get_guide_note(guide_name: str, request):
         return None
 
     return Note(content=content, author=CradleUser(username="yeet"))
+
+
+def calculate_acvec(entries: Iterable[Entry]):
+    acvec = 1
+
+    for e in entries:
+        acvec |= 1 << e.acvec_offset
+
+    return acvec

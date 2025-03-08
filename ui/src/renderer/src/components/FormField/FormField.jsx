@@ -29,31 +29,34 @@ const FormField = forwardRef(function (
         placeholder = '',
         autofocus = false,
         disabled = false,
+        row = false,
         ...props
     },
     ref,
 ) {
     return (
-        <div className='w-full'>
-            <label htmlFor={name} className='block text-sm font-medium leading-6'>
-                {labelText}
+        <div className='form-control flex flex-column justify-between items-center'>
+            <label
+                className={`label flex ${row ? 'flex-row' : 'flex-col'} justify-between w-full`}
+            >
+                <span className='label-text'>{labelText}</span>
+                <div className='mt-2'>
+                    <input
+                        id={name}
+                        name={name}
+                        type={type}
+                        autoComplete={name}
+                        onChange={(e) => handleInput(e.target.value)}
+                        disabled={disabled}
+                        className='form-input input-ghost-primary input-block input focus:ring-0'
+                        autoFocus={autofocus}
+                        placeholder={placeholder}
+                        value={value}
+                        ref={ref}
+                        {...props}
+                    />
+                </div>
             </label>
-            <div className='mt-2'>
-                <input
-                    id={name}
-                    name={name}
-                    type={type}
-                    autoComplete={name}
-                    onChange={(e) => handleInput(e.target.value)}
-                    disabled={disabled}
-                    className='form-input input-ghost-primary input-block input focus:ring-0'
-                    autoFocus={autofocus}
-                    placeholder={placeholder}
-                    value={value}
-                    ref={ref}
-                    {...props}
-                />
-            </div>
         </div>
     );
 });

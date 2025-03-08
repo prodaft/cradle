@@ -57,7 +57,7 @@ class EntityList(APIView):
             401: "User is not authenticated",
             403: "User lacks required permissions",
             404: "Entity not found",
-        }
+        },
     ),
     delete=extend_schema(
         summary="Delete Entity",
@@ -67,7 +67,7 @@ class EntityList(APIView):
             401: "User is not authenticated",
             403: "User is not an admin",
             404: "Entity not found",
-        }
+        },
     ),
     post=extend_schema(
         summary="Update Entity",
@@ -79,8 +79,8 @@ class EntityList(APIView):
             401: "User is not authenticated",
             403: "User lacks required permissions",
             404: "Entity not found",
-        }
-    )
+        },
+    ),
 )
 class EntityDetail(APIView):
     authentication_classes = [JWTAuthentication]
@@ -149,4 +149,4 @@ class EntityDetail(APIView):
             serializer.save()
             serializer.instance.log_edit(request.user)
             return Response(serializer.data)
-        return Response("Bad request", status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

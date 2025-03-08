@@ -1,4 +1,4 @@
-from notes.models import Note, ArchivedNote
+from notes.models import Note
 from entries.models import Entry
 from .utils import NotesTestCase
 
@@ -22,17 +22,3 @@ class DeleteNoteTest(NotesTestCase):
 
         with self.subTest("Note is deleted"):
             self.assertEqual(Note.objects.count(), 0)
-
-        with self.subTest("Chenck note is archived"):
-            self.assertEqual(ArchivedNote.objects.count(), 1)
-
-        archived_note = ArchivedNote.objects.first()
-
-        with self.subTest("Check content of archived note"):
-            self.assertEqual(archived_note.content, self.note.content)
-
-        with self.subTest("Check publishable status of archived note"):
-            self.assertEqual(archived_note.publishable, self.note.publishable)
-
-        with self.subTest("Check timestamp of archived note"):
-            self.assertEqual(archived_note.timestamp, self.note.timestamp)

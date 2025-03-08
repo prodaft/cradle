@@ -32,7 +32,7 @@ class MessageNotification(LifecycleModel):
             self.get_mail.dispatch()
 
 
-class AccessGrantedNotification(LifecycleModel):
+class AccessGrantedNotification(MessageNotification):
     entity: models.ForeignKey = models.ForeignKey(Entry, on_delete=models.CASCADE)
 
     @property

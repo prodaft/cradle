@@ -124,13 +124,15 @@ class EntryResponseSerializer(serializers.ModelSerializer):
 
 
 class EntitySerializer(serializers.ModelSerializer):
-    description = serializers.CharField(required=False, allow_blank=True)
+    description = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True
+    )
     entry_class = EntryClassSerializer(read_only=True)
     name = serializers.CharField(max_length=255, allow_blank=True)
 
     class Meta:
         model = Entry
-        fields = ["id", "name", "description", "entry_class"]
+        fields = ["id", "name", "description", "entry_class", "is_public"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

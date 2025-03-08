@@ -80,6 +80,7 @@ export default function AdminPanel() {
                                     searchKey={c.subtype}
                                     type={'entrytype'}
                                     onDelete={displayEntryTypes}
+                                    link={`/admin/edit/entry-type/${c.subtype.replace('/', '--')}`}
                                 />
                             );
                         }),
@@ -98,7 +99,7 @@ export default function AdminPanel() {
                         users.map((user) => {
                             return (
                                 <AdminPanelCard
-                                    id={user.username}
+                                    id={user.id}
                                     key={user.username}
                                     name={user.username}
                                     searchKey={user.username}

@@ -7,6 +7,7 @@ from access.models import Access
 from notes.models import Note
 
 from collections import Counter
+from ..utils import calculate_acvec
 
 
 class DeleteUnfilteredEntriesTest(NotesTestCase):
@@ -88,14 +89,17 @@ class AccessibleNotesTest(NotesTestCase):
     def create_notes(self):
         self.note1 = Note.objects.create(content="Note1")
         self.note1.entries.set([self.entity1, self.actor1, self.metadata1])
+        self.note1.access_vector = calculate_acvec(self.note1.entries.all())
         self.note1.save()
 
         self.note2 = Note.objects.create(content="Note2")
         self.note2.entries.set([self.entity2, self.actor2, self.entity1])
+        self.note2.access_vector = calculate_acvec(self.note2.entries.all())
         self.note2.save()
 
         self.note3 = Note.objects.create(content="Note3")
         self.note3.entries.set([self.entity3])
+        self.note3.access_vector = calculate_acvec(self.note3.entries.all())
         self.note3.save()
 
     def create_entities(self):
@@ -293,9 +297,13 @@ class GetEntriesOfTypeTest(NotesTestCase):
     def create_notes(self):
         self.note1 = Note.objects.create(content="Note1")
         self.note1.entries.set([self.entity1, self.actor1, self.metadata1])
+        self.note1.access_vector = calculate_acvec(self.note1.entries.all())
+        self.note1.save()
 
         self.note2 = Note.objects.create(content="Note2")
         self.note2.entries.set([self.entity2, self.actor2, self.entity1])
+        self.note2.access_vector = calculate_acvec(self.note2.entries.all())
+        self.note2.save()
 
     def create_entities(self):
         self.entity1 = Entry.objects.create(

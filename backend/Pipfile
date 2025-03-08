@@ -43,3 +43,4 @@ bleach = "*"
 autoflake = "*"
 
 [dev-packages]
+bump-my-version = "*"

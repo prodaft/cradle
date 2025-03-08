@@ -283,30 +283,24 @@ export default function AccountSettings({ isEdit = true }) {
                                             </p>
                                         )}
                                     </div>
-                                    <div className='form-control flex flex-row justify-between items-center'>
-                                        <label className='label flex justify-between w-full'>
-                                            <span className='label-text'>
-                                                Email Confirmed
-                                            </span>
-                                            <input
-                                                type='checkbox'
-                                                className='checkbox ml-4'
-                                                {...register('email_confirmed')}
-                                            />
-                                        </label>
-                                    </div>
-                                    <div className='form-control flex flex-row justify-between items-center'>
-                                        <label className='label flex justify-between w-full'>
-                                            <span className='label-text'>
-                                                Account Active
-                                            </span>
-                                            <input
-                                                type='checkbox'
-                                                className='checkbox ml-4'
-                                                {...register('is_active')}
-                                            />
-                                        </label>
-                                    </div>
+
+                                    <FormField
+                                        type='checkbox'
+                                        labelText='Email Confirmed'
+                                        className='switch switch-ghost-primary'
+                                        {...register('email_confirmed')}
+                                        row={true}
+                                        error={errors.email_confirmed?.message}
+                                    />
+
+                                    <FormField
+                                        type='checkbox'
+                                        labelText='Account Active'
+                                        className='switch switch-ghost-primary'
+                                        {...register('is_active')}
+                                        row={true}
+                                        error={errors.is_active?.message}
+                                    />
                                 </>
                             )}
 

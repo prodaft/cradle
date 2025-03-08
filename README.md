@@ -145,7 +145,7 @@ We welcome contributions from the security community! Here's how to help:
 
 ## Acknowledgments
 
-CRADLE is developed by PRODAFT in collaboration with students from TU Delft. Special thanks to everyone who contributes to making this project possible.
+CRADLE is developed by PRODAFT in collaboration with students from TU Delft. Special thanks to everyone who contributed to making this project possible.
 
 **Contributors**
 - [Tudor Măgirescu](https://github.com/TudorMagirescu)

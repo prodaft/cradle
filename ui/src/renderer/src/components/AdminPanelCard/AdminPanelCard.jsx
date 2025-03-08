@@ -104,7 +104,7 @@ export default function AdminPanelCard({
                             className='btn btn-ghost w-fit h-full p-1'
                             onClick={() => setDialog((prev) => !prev)}
                         >
-                            {type === 'entity' ? <Archive /> : <Trash />}
+                            {<Trash />}
                         </button>
                     )}
                 </div>

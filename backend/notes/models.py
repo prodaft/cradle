@@ -1,4 +1,5 @@
 from django.db import models
+from django_lifecycle.mixins import LifecycleModelMixin
 
 from .markdown.to_links import LinkTreeNode, cradle_connections, heading_hierarchy
 from entries.models import Entry
@@ -6,12 +7,11 @@ from logs.models import LoggableModelMixin
 from .managers import NoteManager
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from django_lifecycle import (
-    LifecycleModel,
-)
+from django_lifecycle import LifecycleModel
 
 import uuid
 from user.models import CradleUser
+from core.fields import BitStringField
 
 
 class Relation(LifecycleModel):
@@ -28,6 +28,10 @@ class Relation(LifecycleModel):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     content_object = GenericForeignKey("content_type", "object_id")
 
+    access_vector: BitStringField = BitStringField(
+        max_length=2048, null=False, default=1 << 2047, varying=False
+    )
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -43,7 +47,7 @@ class Relation(LifecycleModel):
     ]
 
 
-class Note(models.Model, LoggableModelMixin):
+class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
     id: models.UUIDField = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -60,6 +64,10 @@ class Note(models.Model, LoggableModelMixin):
 
     editor = models.ForeignKey[CradleUser](
         CradleUser, related_name="editor", on_delete=models.SET_NULL, null=True
+    )
+
+    access_vector: BitStringField = BitStringField(
+        max_length=2048, null=False, default=1 << 2047, varying=False
     )
 
     edit_timestamp: models.DateTimeField = models.DateTimeField(null=True)
@@ -82,26 +90,7 @@ class Note(models.Model, LoggableModelMixin):
         return
 
     def delete(self):
-        """Override the delete method to archive the note before deleting it.
-        A new note with the same content, timestamp, and publishable status
-        will be created in the ArchivedNote table.
-
-        Args:
-
-        Returns:
-        """
-
-        archived_note = ArchivedNote(
-            content=self.content,
-            timestamp=self.timestamp,
-            publishable=self.publishable,
-        )
-
-        artifact_ids = self.entries.is_artifact().values_list("id", flat=True)
-        archived_note.save()
         super().delete()
-
-        Entry.objects.filter(id__in=artifact_ids).unreferenced().delete()
 
 
 class ArchivedNote(models.Model):

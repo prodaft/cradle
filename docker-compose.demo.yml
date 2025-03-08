@@ -21,7 +21,7 @@ services:
         ipv4_address: 192.168.42.5
 
   postgres:
-    image: postgres:15
+    image: postgres:16.8
     container_name: postgres
     restart: unless-stopped
     environment:

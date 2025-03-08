@@ -52,7 +52,12 @@ def smart_linker_task(note_id):
         # Bulk create relations
         Relation.objects.bulk_create(
             [
-                Relation(src_entry=src, dst_entry=dst, content_object=note)
+                Relation(
+                    src_entry=src,
+                    dst_entry=dst,
+                    content_object=note,
+                    access_vector=note.access_vector,
+                )
                 for src, dst in pairs_resolved
             ]
         )
@@ -71,7 +76,8 @@ def entry_class_creation_task(note_id, user_id=None):
     Celery task to create missing entry classes for a note.
     """
     note = Note.objects.get(id=note_id)
-    user = CradleUser.objects.get(id=user_id)
+    if user_id:
+        user = CradleUser.objects.get(id=user_id)
 
     nonexistent_entries = set()
 
@@ -83,7 +89,8 @@ def entry_class_creation_task(note_id, user_id=None):
                 entry = EntryClass.objects.create(
                     type=EntryType.ARTIFACT, subtype=r.key
                 )
-                entry.log_create(user)
+                if user_id:
+                    entry.log_create(user)
 
     if nonexistent_entries:
         raise EntryClassesDoNotExistException(nonexistent_entries)
@@ -97,7 +104,8 @@ def entry_population_task(note_id, user_id=None):
     Celery task to create missing entries for a note.
     """
     note = Note.objects.get(id=note_id)
-    user = CradleUser.objects.get(id=user_id)
+    if user_id:
+        user = CradleUser.objects.get(id=user_id)
 
     with transaction.atomic():
         note.entries.clear()
@@ -176,3 +184,11 @@ def connect_aliases(note_id, user_id=None):
             )
 
         Relation.objects.bulk_create(relations)
+
+
+@shared_task
+@distributed_lock("propagate_acvec_{note_id}", timeout=3600)
+def propagate_acvec(note_id):
+    note = Note.objects.get(id=note_id)
+
+    return note.relations.update(access_vector=note.access_vector)

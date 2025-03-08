@@ -3,6 +3,10 @@ from typing import List, Optional
 from celery import chain
 from diff_match_patch import diff_match_patch
 
+from entries.enums import EntryType
+
+from ..utils import calculate_acvec
+
 from ..models import Note
 from .connect_aliases_task import AliasConnectionTask
 from .smart_linker_task import SmartLinkerTask
@@ -81,11 +85,16 @@ class TaskScheduler:
 
             task_chain = chain(*tasks)
             transaction.on_commit(lambda: task_chain.apply_async())
+
+            note.access_vector = calculate_acvec(
+                [x for x in entries if x.entry_class.type == EntryType.ENTITY]
+            )
+
             note.save()
 
         if patches is None:
             note.log_create(self.user)
-        else:
+        elif len(patches) > 0:
             note.log_edit(self.user, dmp.patch_toText(patches))
 
         return note
