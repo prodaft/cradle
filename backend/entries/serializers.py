@@ -124,7 +124,9 @@ class EntryResponseSerializer(serializers.ModelSerializer):
 
 
 class EntitySerializer(serializers.ModelSerializer):
-    description = serializers.CharField(required=False, allow_blank=True)
+    description = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True
+    )
     entry_class = EntryClassSerializer(read_only=True)
     name = serializers.CharField(max_length=255, allow_blank=True)
 
