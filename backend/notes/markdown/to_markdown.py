@@ -72,6 +72,12 @@ class MarkdownRenderer(BaseMarkdownRenderer):
 
         key = self.entryclass_remap.get(key, key)
 
+        if (key, value) in self.entry_remap:
+            if self.entry_remap[(key, value)] is None:
+                return value
+            else:
+                value = self.entry_remap[(key, value)]
+
         if key is None:
             if alias:
                 return f"{value} ({alias})"

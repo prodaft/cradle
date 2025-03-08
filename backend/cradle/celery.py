@@ -22,6 +22,7 @@ app.conf.task_routes = {
     "notes.tasks.smart_linker_task": {"queue": "notes"},
     "notes.tasks.entry_class_creation_task": {"queue": "notes"},
     "notes.tasks.entry_population_task": {"queue": "notes"},
+    "entries.tasks.remap_notes_task": {"queue": "notes"},
     "notes.tasks.connect_aliases": {"queue": "notes"},
     "publish.tasks.generate_report": {"queue": "publish"},
     "publish.tasks.edit_report": {"queue": "publish"},

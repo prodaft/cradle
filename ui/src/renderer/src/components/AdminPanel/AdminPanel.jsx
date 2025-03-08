@@ -80,6 +80,7 @@ export default function AdminPanel() {
                                     searchKey={c.subtype}
                                     type={'entrytype'}
                                     onDelete={displayEntryTypes}
+                                    link={`/admin/edit/entry-type/${c.subtype.replace('/', '--')}`}
                                 />
                             );
                         }),

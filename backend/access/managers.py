@@ -84,8 +84,6 @@ class AccessManager(models.Manager):
 
         accesses = self.get_queryset().filter(q).values("id")
         count += accesses.count()
-        print(count)
-        print(entities)
 
         return count == len(entities)
 

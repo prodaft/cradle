@@ -55,54 +55,53 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
         return eclass.pk
 
     def delete(self, *args, **kwargs):
-        from notes.models import Note
+        from entries.tasks import remap_notes_task
 
         notes = []
-
         for e in self.entries.all():
             notes.extend(e.notes.all())
 
-        unique_notes = list(set(notes))
+        unique_note_ids = list({note.id for note in notes})
 
-        for i in unique_notes:
-            i.content = remap_links(i.content, {self.subtype: None}, {})
+        from django.db import transaction
 
-        Note.objects.bulk_update(notes, ["content"])
+        transaction.on_commit(
+            lambda: remap_notes_task.delay(unique_note_ids, {self.subtype: None}, {})
+        )
+
         super().delete(*args, **kwargs)
 
     def rename(self, new_subtype: str):
         if new_subtype == self.subtype or not new_subtype:
             return None
 
-        from notes.models import Note
+        from django.db import transaction
+        from entries.tasks import remap_notes_task
 
-        with transaction.atomic():
-            entries = self.entries.all()
+        entries = self.entries.all()
+        for entry in entries:
+            entry.entry_class_id = new_subtype
+        Entry.objects.bulk_update(entries, ["entry_class_id"])
 
-            for entry in entries:
-                entry.entry_class_id = new_subtype
+        old_subtype = self.subtype
+        self.subtype = new_subtype
+        self.save()
 
-            Entry.objects.bulk_update(entries, ["entry_class_id"])
+        notes = []
+        for e in self.entries.all():
+            notes.extend(e.notes.all())
+        unique_note_ids = list({note.id for note in notes})
 
-            old_subtype = self.subtype
+        # Schedule remapping to update notes' content asynchronously.
+        transaction.on_commit(
+            lambda: remap_notes_task.delay(
+                unique_note_ids, {old_subtype: new_subtype}, {}
+            )
+        )
 
-            self.subtype = new_subtype
-            self.save()
-
-            notes = []
-
-            for e in self.entries.all():
-                notes.extend(e.notes.all())
-
-            unique_notes = list(set(notes))
-
-            for i in unique_notes:
-                i.content = remap_links(i.content, {old_subtype: new_subtype}, {})
-
-            Note.objects.bulk_update(notes, ["content"])
-
-            EntryClass.objects.get(subtype=old_subtype).delete()
-            return self
+        # Optionally remove the old entry class if needed.
+        EntryClass.objects.get(subtype=old_subtype).delete()
+        return self
 
     def validate_text(self, t: str):
         """
@@ -265,6 +264,23 @@ class Entry(LifecycleModel, LoggableModelMixin):
                 while offset in existing_offsets:
                     offset += 1
                 self.acvec_offset = offset
+
+    def delete(self, *args, **kwargs):
+        from entries.tasks import remap_notes_task
+
+        from django.db import transaction
+
+        note_ids = list({note.id for note in self.notes.all()})
+
+        transaction.on_commit(
+            lambda: remap_notes_task.delay(
+                note_ids,
+                {},
+                {self.entry_class.subtype + ":" + self.name: None},
+            )
+        )
+
+        super().delete(*args, **kwargs)
 
     def propagate_from(self, log):
         if self.entry_class.type == EntryType.ENTITY:

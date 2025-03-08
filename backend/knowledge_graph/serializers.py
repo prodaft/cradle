@@ -17,7 +17,6 @@ class EntryRequestSerializer(serializers.Serializer):
     def resolve(self, attrs: Any) -> Any:
         qs = None
         if "query" in attrs:
-            print(parse_query(attrs["query"]))
             qs = Entry.objects.filter(parse_query(attrs["query"]))
         else:
             qs = Entry.objects.filter(

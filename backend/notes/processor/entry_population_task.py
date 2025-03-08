@@ -26,4 +26,6 @@ class EntryPopulationTask(BaseTask):
             The processed note object.
         """
 
-        return entry_population_task.si(note.id, user_id=self.user.id), entries
+        return entry_population_task.si(
+            note.id, user_id=self.user.id if self.user else None
+        ), entries

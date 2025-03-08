@@ -90,26 +90,7 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
         return
 
     def delete(self):
-        """Override the delete method to archive the note before deleting it.
-        A new note with the same content, timestamp, and publishable status
-        will be created in the ArchivedNote table.
-
-        Args:
-
-        Returns:
-        """
-
-        archived_note = ArchivedNote(
-            content=self.content,
-            timestamp=self.timestamp,
-            publishable=self.publishable,
-        )
-
-        artifact_ids = self.entries.is_artifact().values_list("id", flat=True)
-        archived_note.save()
         super().delete()
-
-        Entry.objects.filter(id__in=artifact_ids).unreferenced().delete()
 
 
 class ArchivedNote(models.Model):

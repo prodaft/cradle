@@ -76,7 +76,8 @@ def entry_class_creation_task(note_id, user_id=None):
     Celery task to create missing entry classes for a note.
     """
     note = Note.objects.get(id=note_id)
-    user = CradleUser.objects.get(id=user_id)
+    if user_id:
+        user = CradleUser.objects.get(id=user_id)
 
     nonexistent_entries = set()
 
@@ -88,7 +89,8 @@ def entry_class_creation_task(note_id, user_id=None):
                 entry = EntryClass.objects.create(
                     type=EntryType.ARTIFACT, subtype=r.key
                 )
-                entry.log_create(user)
+                if user_id:
+                    entry.log_create(user)
 
     if nonexistent_entries:
         raise EntryClassesDoNotExistException(nonexistent_entries)
@@ -102,7 +104,8 @@ def entry_population_task(note_id, user_id=None):
     Celery task to create missing entries for a note.
     """
     note = Note.objects.get(id=note_id)
-    user = CradleUser.objects.get(id=user_id)
+    if user_id:
+        user = CradleUser.objects.get(id=user_id)
 
     with transaction.atomic():
         note.entries.clear()
