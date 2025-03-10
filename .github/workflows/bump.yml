@@ -55,6 +55,7 @@ jobs:
 
           echo "Determined bump type: $bump_type"
           echo "bump_type=$bump_type" >> $GITHUB_OUTPUT
+          touch requirements.txt
 
       - name: Bump version
         id: bump
