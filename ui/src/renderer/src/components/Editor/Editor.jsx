@@ -19,6 +19,9 @@ import { debounce } from 'lodash';
 import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
 import { CradleEditor } from '../../utils/editorUtils/editorUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
+import NoteOutline from '../NoteOutline/NoteOutline';
+import { TreeView } from '@phosphor-icons/react';
+import extractHeaderHierarchy from '../../utils/editorUtils/markdownOutliner';
 
 /**
  * This component makes use of a pre-existing code editor component (CodeMirror, see https://github.com/uiwjs/react-codemirror)
@@ -60,9 +63,13 @@ export default function Editor({
     const [prevNoteId, setPrevNoteId] = useState(null);
     const [pendingFiles, setPendingFiles] = useState(EMPTY_FILE_LIST);
     const [lspLoaded, setLspLoaded] = useState(false);
-    const [scrollMap, setScrollMap] = useState(null);
+    const [showOutline, setShowOutline] = useState(() => {
+        const saved = localStorage.getItem('showOutline');
+        return saved === 'true' ? true : false;
+    });
     const [top, setTop] = useState(0);
     const [codeMirrorContent, setCodeMirrorContent] = useState('');
+    const [noteOutline, setNoteOutline] = useState([]);
     const { isDarkMode } = useTheme();
     const autoLinkId = useId();
     const vimModeId = useId();
@@ -80,14 +87,15 @@ export default function Editor({
         }, 50),
     ).current;
 
+    useEffect(() => {
+        localStorage.setItem('showOutline', showOutline);
+    }, [showOutline]);
+
     // Adjusted instantiation to pass an empty options object and the error handler
-    const editorUtils = useMemo(
-        () => {
-          CradleEditor.clearCache()
-          return new CradleEditor({}, setLspLoaded, displayError(setAlert))
-        },
-        [setAlert],
-    );
+    const editorUtils = useMemo(() => {
+        CradleEditor.clearCache();
+        return new CradleEditor({}, setLspLoaded, displayError(setAlert));
+    }, [setAlert]);
 
     let extensions = [
         editorUtils.markdown({ codeLanguages: languages }),
@@ -225,11 +233,25 @@ export default function Editor({
         });
     };
 
+    useEffect(() => {
+        setNoteOutline(extractHeaderHierarchy(markdownContent, setCurrentLine));
+    }, [markdownContent]);
+
     return (
         <div className='h-full w-full flex flex-col flex-1'>
             <div className='h-full w-full flex flex-col overflow-auto'>
                 <div className='flex flex-row justify-between p-2'>
                     <span className='max-w-[55%] flex flex-row space-x-3 items-center'>
+                        <button
+                            id='note-outline-toggle'
+                            name='note-outline-toggle'
+                            type='button'
+                            className='flex flex-row items-center hover:bg-gray-4 tooltip tooltip-right tooltip-primary text-cradle2'
+                            data-tooltip={'Toggle Outline'}
+                            onClick={() => setShowOutline(!showOutline)}
+                        >
+                            <TreeView size={24} />
+                        </button>
                         <FileInput
                             fileData={fileData}
                             setFileData={setFileData}
@@ -284,20 +306,37 @@ export default function Editor({
                         </button>
                     </span>
                 </div>
-                <div className='overflow-hidden w-full rounded-lg'>
-                    <CodeMirror
-                        name='markdown-input'
-                        id='markdown-input'
-                        key='markdown-input'
-                        value={codeMirrorContent}
-                        data-testid='markdown-input'
-                        theme={isDarkMode ? vscodeDark : eclipse}
-                        height='100%'
-                        extensions={extensions}
-                        className='w-full h-full resize-none CodeMirror'
-                        onChange={onEditorChange}
-                        ref={editorRef}
-                    />
+                <div className='flex h-full overflow-y-hidden'>
+                    {showOutline && (
+                        <div className='w-1/5 pr-2 overflow-y-auto'>
+                            <NoteOutline
+                                data={noteOutline}
+                                title='Note Outline'
+                                showSeparators={true}
+                            />
+                        </div>
+                    )}
+                    <div
+                        className={
+                            showOutline
+                                ? 'w-4/5 overflow-y-auto rounded-lg'
+                                : 'w-full overflow-y-auto rounded-lg'
+                        }
+                    >
+                        <CodeMirror
+                            name='markdown-input'
+                            id='markdown-input'
+                            key='markdown-input'
+                            value={codeMirrorContent}
+                            data-testid='markdown-input'
+                            theme={isDarkMode ? vscodeDark : eclipse}
+                            height='100%'
+                            extensions={extensions}
+                            className='w-full h-full resize-none CodeMirror'
+                            onChange={onEditorChange}
+                            ref={editorRef}
+                        />
+                    </div>
                 </div>
             </div>
             {fileData && fileData.length > 0 && (

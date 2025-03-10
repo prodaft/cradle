@@ -11,23 +11,16 @@ const ResizableSplitPane = ({
     maxSplitPercentage = 80,
     className = '',
     showRightPane = true,
+    showLeftPane = true,  // New prop to control left pane visibility
     onSplitChange,
 }) => {
     const containerRef = useRef(null);
     const resizeRef = useRef(null);
     const [isResizing, setIsResizing] = useState(false);
     const [splitPosition, setSplitPosition] = useState(initialSplitPosition);
-    // Keep track of the last non-collapsed size
     const [lastPosition, setLastPosition] = useState(initialSplitPosition);
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
     const isVertical = orientation === 'vertical';
-
-    useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 768);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
 
     useEffect(() => {
         const handleMouseMove = (e) => {
@@ -73,75 +66,95 @@ const ResizableSplitPane = ({
 
     useEffect(() => {
         if (showRightPane) {
-            setSplitPosition(initialSplitPosition);
+            setSplitPosition(lastPosition);
         } else {
+            setLastPosition(splitPosition);
             setSplitPosition(100);
         }
-    }, [showRightPane, initialSplitPosition]);
+    }, [showRightPane, lastPosition]);
+
+    useEffect(() => {
+        if (showLeftPane) {
+            setSplitPosition(lastPosition);
+        } else {
+            setLastPosition(splitPosition);
+            setSplitPosition(0);
+        }
+    }, [showLeftPane, lastPosition]);
 
     return (
         <div
             ref={containerRef}
             className={`overflow-hidden w-full h-full relative flex ${isVertical ? 'flex-col' : 'flex-row'} ${className}`}
         >
-            <div
-                className={`rounded-md transition-[width,height] duration-200 ease-out ${leftClassName}`}
-                style={{
-                    width: !isVertical ? `${splitPosition}%` : '100%',
-                    height: isVertical ? `${splitPosition}%` : '100%',
-                }}
-            >
-                {leftContent}
-            </div>
+            {showLeftPane && (
+                <div
+                    className={`rounded-md transition-[width,height] duration-200 ease-out ${leftClassName}`}
+                    style={{
+                        width: !isVertical ? `${splitPosition}%` : '100%',
+                        height: isVertical ? `${splitPosition}%` : '100%',
+                    }}
+                >
+                    {leftContent}
+                </div>
+            )}
+
+            {showLeftPane && showRightPane && (
+                <div
+                    ref={resizeRef}
+                    className={`
+                      ${isVertical ? 'h-1.5 w-full' : 'w-1.5 h-full'}
+                      bg-gray-3 hover:bg-gray-4 active:bg-gray-5
+                      transition-colors duration-200
+                      ${isResizing ? 'bg-gray-5' : ''}
+                      ${isVertical ? 'cursor-row-resize' : 'cursor-col-resize'}
+                      relative group
+                    `}
+                    onMouseDown={() => setIsResizing(true)}
+                    onDoubleClick={() => {
+                        if (splitPosition !== 0) {
+                            // Collapse left side
+                            setLastPosition(splitPosition);
+                            setSplitPosition(0);
+                            onSplitChange?.(0);
+                        } else {
+                            // Expand left side
+                            const newPos = lastPosition > 0 ? lastPosition : initialSplitPosition;
+                            setSplitPosition(newPos);
+                            onSplitChange?.(newPos);
+                        }
+                    }}
+                >
+                    <div className='absolute inset-0 flex items-center justify-center'>
+                        <div
+                            className={`
+                            w-1 h-6 bg-gray-6 rounded-full opacity-0
+                            group-hover:opacity-100 transition-opacity duration-200 z-0
+                            ${isVertical ? 'rotate-90' : ''}
+                          `}
+                        />
+                    </div>
+                </div>
+            )}
 
             {showRightPane && (
-                <>
-                    <div
-                        ref={resizeRef}
-                        className={`
-              ${isVertical ? 'h-1.5 w-full' : 'w-1.5 h-full'}
-              bg-gray-3 hover:bg-gray-4 active:bg-gray-5
-              transition-colors duration-200
-              ${isResizing ? 'bg-gray-5' : ''}
-              ${isVertical ? 'cursor-row-resize' : 'cursor-col-resize'}
-              relative group
-            `}
-                        onMouseDown={() => setIsResizing(true)}
-                        onDoubleClick={() => {
-                            if (splitPosition !== 0) {
-                                // Collapse left side
-                                setLastPosition(splitPosition);
-                                setSplitPosition(0);
-                                onSplitChange?.(0);
-                            } else {
-                                // Expand left side
-                                const newPos = lastPosition > 0 ? lastPosition : initialSplitPosition;
-                                setSplitPosition(newPos);
-                                onSplitChange?.(newPos);
-                            }
-                        }}
-                    >
-                        <div className='absolute inset-0 flex items-center justify-center'>
-                            <div
-                                className={`
-                w-1 h-6 bg-gray-6 rounded-full opacity-0
-                group-hover:opacity-100 transition-opacity duration-200 z-0
-                ${isVertical ? 'rotate-90' : ''}
-              `}
-                            />
-                        </div>
-                    </div>
-
-                    <div
-                        className={`rounded-md transition-[width,height] duration-200 ease-out ${rightClassName}`}
-                        style={{
-                            width: !isVertical ? `${100 - splitPosition}%` : '100%',
-                            height: isVertical ? `${100 - splitPosition}%` : '100%',
-                        }}
-                    >
-                        {rightContent}
-                    </div>
-                </>
+                <div
+                    className={`rounded-md transition-[width,height] duration-200 ease-out ${rightClassName}`}
+                    style={{
+                        width: !isVertical 
+                            ? showLeftPane 
+                                ? `${100 - splitPosition}%` 
+                                : '100%'
+                            : '100%',
+                        height: isVertical 
+                            ? showLeftPane 
+                                ? `${100 - splitPosition}%` 
+                                : '100%'
+                            : '100%',
+                    }}
+                >
+                    {rightContent}
+                </div>
             )}
         </div>
     );
