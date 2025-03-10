@@ -124,11 +124,7 @@ class EntryResponseSerializer(serializers.ModelSerializer):
 
 
 class EntitySerializer(serializers.ModelSerializer):
-    description = serializers.CharField(
-        required=False, allow_blank=True, allow_null=True
-    )
     entry_class = EntryClassSerializer(read_only=True)
-    name = serializers.CharField(max_length=255, allow_blank=True)
 
     class Meta:
         model = Entry
@@ -149,7 +145,10 @@ class EntitySerializer(serializers.ModelSerializer):
         """Move fields from profile to user representation."""
         representation = super().to_representation(instance)
         entry_class_repr = representation.pop("entry_class")
+
         for key in entry_class_repr:
+            if key in representation:
+                continue
             representation[key] = entry_class_repr[key]
 
         return representation
@@ -229,7 +228,10 @@ class ArtifactSerializer(serializers.ModelSerializer):
         """Move fields from profile to user representation."""
         representation = super().to_representation(instance)
         entry_class_repr = representation.pop("entry_class")
+
         for key in entry_class_repr:
+            if key in representation:
+                continue
             representation[key] = entry_class_repr[key]
 
         return representation

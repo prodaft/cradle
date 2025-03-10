@@ -40,7 +40,9 @@ class AccessManager(models.Manager):
 
         if AccessType.READ in access_types:
             accesses = accesses.union(
-                Entry.entities.filter(is_public=True).values("id")
+                Entry.entities.filter(
+                    entry_class__type=EntryType.ENTITY, is_public=True
+                ).values("id")
             )
 
         accessible = accesses
@@ -100,19 +102,29 @@ class AccessManager(models.Manager):
             a QuerySet instance which gives all the entity ids to which the user
             id has READ or READ_WRITE access.
         """
-        return (
-            self.get_queryset()
-            .filter(
-                (
-                    Q(user_id=user_id)
-                    & (
-                        Q(access_type=AccessType.READ)
-                        | Q(access_type=AccessType.READ_WRITE)
+        ids = set(
+            (
+                self.get_queryset()
+                .filter(
+                    (
+                        Q(user_id=user_id)
+                        & (
+                            Q(access_type=AccessType.READ)
+                            | Q(access_type=AccessType.READ_WRITE)
+                        )
                     )
                 )
+                .values_list("entity_id", flat=True)
             )
-            .values("entity_id")
-        ).union(Entry.objects.filter(is_public=True).values("id"))
+        )
+
+        ids = ids | set(
+            Entry.objects.filter(
+                entry_class__type=EntryType.ENTITY, is_public=True
+            ).values_list("id", flat=True)
+        )
+
+        return Entry.entities.filter(pk__in=ids).values_list("pk", flat=True)
 
     def get_accesses(self, user_id: UUID) -> models.QuerySet:
         """Retrieves from the database the access_type of all

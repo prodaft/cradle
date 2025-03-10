@@ -177,10 +177,20 @@ def connect_aliases(note_id, user_id=None):
         for subtype, name in entries:
             e = Entry.objects.get(name=name, entry_class__subtype=subtype)
             relations.append(
-                Relation(src_entry=alias, dst_entry=e, content_object=note)
+                Relation(
+                    src_entry=alias,
+                    dst_entry=e,
+                    content_object=note,
+                    access_vector=note.access_vector,
+                )
             )
             relations.append(
-                Relation(src_entry=e, dst_entry=alias, content_object=note)
+                Relation(
+                    src_entry=e,
+                    dst_entry=alias,
+                    content_object=note,
+                    access_vector=note.access_vector,
+                )
             )
 
         Relation.objects.bulk_create(relations)

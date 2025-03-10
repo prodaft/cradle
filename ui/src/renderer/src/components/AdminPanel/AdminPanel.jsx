@@ -48,7 +48,7 @@ export default function AdminPanel() {
                             return (
                                 <AdminPanelCard
                                     id={c.id}
-                                    key={c.id}
+                                    key={`${c.subtype}:${c.name}`}
                                     name={c.name}
                                     searchKey={c.name}
                                     description={c.description}
