@@ -148,7 +148,7 @@ class AccessManagerGetAccessibleTest(AccessTestCase):
         for i in range(len(query_result)):
             with self.subTest("Test access type is not NONE"):
                 access_type = Access.objects.get(
-                    user=self.users[0], entity_id=query_result[i]["entity_id"]
+                    user=self.users[0], entity_id=query_result[i]
                 ).access_type
                 self.assertNotEqual(access_type, AccessType.NONE)
 
@@ -161,7 +161,7 @@ class AccessManagerGetAccessibleTest(AccessTestCase):
         for i in range(len(query_result)):
             with self.subTest("Test access type is not NONE"):
                 access_type = Access.objects.get(
-                    user=self.users[1], entity_id=query_result[i]["entity_id"]
+                    user=self.users[1], entity_id=query_result[i]
                 ).access_type
                 self.assertNotEqual(access_type, AccessType.NONE)
 
@@ -174,7 +174,7 @@ class AccessManagerGetAccessibleTest(AccessTestCase):
         for i in range(len(query_result)):
             with self.subTest("Test access type is not NONE"):
                 access_type = Access.objects.get(
-                    user=self.users[2], entity_id=query_result[i]["entity_id"]
+                    user=self.users[2], entity_id=query_result[i]
                 ).access_type
                 self.assertNotEqual(access_type, AccessType.NONE)
 
