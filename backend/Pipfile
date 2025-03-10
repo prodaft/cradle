@@ -29,6 +29,7 @@ python-redis-lock = "*"
 diff-match-patch = "*"
 xeger = "*"
 bleach = "*"
+psycopg2 = "*"
 
 [dev-packages]
 bump-my-version = "*"
