@@ -34,7 +34,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install pipenv
-          pipenv lock
+          pipenv lock -d
           pipenv sync
       - name: Run flake8
         run: pipenv run python3 -m flake8 --verbose .
@@ -91,7 +91,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install pipenv
-          pipenv lock
+          pipenv lock -d
           pipenv sync
       - name: Settings Copy
         run: cp cradle/settings_test.py cradle/settings.py
