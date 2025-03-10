@@ -23,7 +23,7 @@ export default function TextEditor({
         Number(localStorage.getItem('editor.splitPosition')) || 50,
     );
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const { isDarkMode, toggleTheme } = useTheme();
+    const { isDarkMode } = useTheme();
     const [parsedContent, setParsedContent] = useState(null);
     const [previewCollapsed, setPreviewCollapsed] = useState(
         localStorage.getItem('preview.collapse') === 'true',
@@ -32,6 +32,15 @@ export default function TextEditor({
     const [isParsing, setIsParsing] = useState(false);
     const [currentLine, setCurrentLine] = useState(0);
     const pendingParseRef = useRef(false);
+
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
 
     useEffect(() => {
         const workerInstance = parseWorker();
@@ -118,6 +127,7 @@ export default function TextEditor({
                 }}
                 leftClassName='bg-gray-2'
                 rightClassName='bg-gray-2'
+                orientation={isMobile ? 'vertical' : 'horizontal'}
                 leftContent={
                     <Editor
                         noteid={noteid}

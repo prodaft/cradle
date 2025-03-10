@@ -41,6 +41,7 @@ rstr = "*"
 xeger = "*"
 bleach = "*"
 autoflake = "*"
+flake8-pyproject = "*"
 
 [dev-packages]
 bump-my-version = "*"

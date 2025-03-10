@@ -49,7 +49,7 @@ type LspEntryClass = {
 };
 
 interface Suggestion {
-    from: int;
+    from: number;
     type: string;
     match: string;
 }

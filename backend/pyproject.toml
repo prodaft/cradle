@@ -1,0 +1,13 @@
+[tool.mypy]
+namespace_packages = true
+warn_unused_ignores = false
+files = "**/*.py"
+exclude = "*/migrations/*.py,*/tests/*.py"
+
+[tool.mypy.plugins.django-stubs]
+django_settings_module = "cradle.settings"
+
+[tool.flake8]
+exclude = ".git,__pycache__,.vscode,cradle,manage.py,env,venv,*/migrations/*"
+max-line-length = 120
+extend-ignore = "E203"
