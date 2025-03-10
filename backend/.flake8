@@ -1,4 +1,6 @@
 [flake8]
-exclude = ".git,__pycache__,.vscode,cradle,manage.py,env,venv,*/migrations/*"
+exclude = .git,__pycache__,.vscode,cradle,manage.py,env,venv,*/migrations/*
 max-line-length = 120
-extend-ignore = "E203"
+extend-ignore =
+    # See https://github.com/PyCQA/pycodestyle/issues/373
+    E203,
