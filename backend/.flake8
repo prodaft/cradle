@@ -1,0 +1,4 @@
+[flake8]
+exclude = ".git,__pycache__,.vscode,cradle,manage.py,env,venv,*/migrations/*"
+max-line-length = 120
+extend-ignore = "E203"
