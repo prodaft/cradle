@@ -8,8 +8,29 @@ from rest_framework import status
 from .utils import MinioClient
 from .serializers import FileUploadSerializer, FileDownloadSerializer
 import time
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
 
+@extend_schema_view(
+    get=extend_schema(
+        summary="Generate file upload URL",
+        description="Generates a presigned URL that allows uploading a file to MinIO storage without requiring credentials. The URL expires after 5 minutes.",
+        parameters=[
+            OpenApiParameter(
+                name="fileName",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Name of the file to be uploaded",
+                required=True
+            )
+        ],
+        responses={
+            200: FileUploadSerializer,
+            400: {"description": "Query parameters are invalid"},
+            401: {"description": "User is not authenticated"}
+        }
+    )
+)
 class FileUpload(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -54,7 +75,26 @@ class FileUpload(APIView):
 
         return Response(FileUploadSerializer(response_data).data)
 
-
+@extend_schema_view(
+    get=extend_schema(
+        summary="Get file upload URL",
+        description="Generates a presigned URL that allows clients to upload files to Minio without requiring credentials. The URL expires after 5 minutes.",
+        parameters=[
+            OpenApiParameter(
+                name="fileName",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Name of the file to be uploaded",
+                required=True
+            )
+        ],
+        responses={
+            200: FileUploadSerializer,
+            400: {"description": "Query parameters are invalid"},
+            401: {"description": "User is not authenticated"}
+        }
+    )
+)
 class FileDownload(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

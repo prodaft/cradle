@@ -10,6 +10,82 @@ from .exceptions import (
     EntryTypeDoesNotExist,
 )
 
+from drf_spectacular.extensions import OpenApiSerializerExtension
+from drf_spectacular.plumbing import build_basic_type, build_array_type
+from drf_spectacular.types import OpenApiTypes
+
+class EntryListCompressedTreeSerializerExtension(OpenApiSerializerExtension):
+    target_class = 'entries.serializers.EntryListCompressedTreeSerializer' 
+    
+    def map_serializer(self, auto_schema, direction):
+        # Define the schema for the serializer
+        entities_schema = {
+            'type': 'object',
+            'additionalProperties': {
+                'type': 'array',
+                'items': {
+                    'oneOf': [
+                        {'type': 'string'},  # For single field case
+                        {'type': 'object', 'additionalProperties': {'type': 'string'}}  # For multiple fields case
+                    ]
+                }
+            }
+        }
+        
+        artifacts_schema = {
+            'type': 'object',
+            'additionalProperties': {
+                'type': 'array',
+                'items': {
+                    'oneOf': [
+                        {'type': 'string'},  # For single field case
+                        {'type': 'object', 'additionalProperties': {'type': 'string'}}  # For multiple fields case
+                    ]
+                }
+            }
+        }
+        
+        # Combined schema
+        return {
+            'type': 'object',
+            'properties': {
+                'entities': entities_schema,
+                'artifacts': artifacts_schema
+            },
+            'required': ['entities', 'artifacts'],
+            'description': 'A compressed tree representation of entries, organized by type (entities/artifacts) and subtype.'
+        }
+    
+    def get_schema_operation_parameters(self, auto_schema, *args, **kwargs):
+        return [
+            {
+                'name': 'fields',
+                'in': 'query',
+                'description': 'Comma-separated list of fields to include in the serialized output',
+                'schema': {'type': 'string'},
+                'example': 'name,id,description'
+            }
+        ]
+
+
+class EntryTypesCompressedTreeSerializerExtension(OpenApiSerializerExtension):
+    target_class = 'entries.serializers.EntryTypesCompressedTreeSerializer'
+    
+    def map_serializer(self, auto_schema, direction):
+        # Define the schema for the serializer
+        return {'type': 'array', 'items': {'type': 'string'}}
+    
+    def get_schema_operation_parameters(self, auto_schema, *args, **kwargs):
+        return [
+            {
+                'name': 'fields',
+                'in': 'query',
+                'description': 'Comma-separated list of fields to include in the serialized output',
+                'schema': {'type': 'string'},
+                'example': 'name'
+            }
+        ]
+
 
 class EntryListCompressedTreeSerializer(serializers.BaseSerializer):
     def __init__(self, *args, fields=("name",), **kwargs):

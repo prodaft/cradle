@@ -15,8 +15,36 @@ from notifications.models import AccessGrantedNotification
 from django.db import transaction
 
 from uuid import UUID
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
 
+@extend_schema_view(
+    put=extend_schema(
+        summary="Update user access for entity",
+        description="Updates a user's access privileges for a specific entity. Admin users can update access for non-admin users. Users with read-write access can update access for non-admin users who don't have read-write access.",
+        parameters=[
+            OpenApiParameter(
+                name="user_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the user whose access is being updated"
+            ),
+            OpenApiParameter(
+                name="entity_id",
+                type=str, 
+                location=OpenApiParameter.PATH,
+                description="UUID of the entity to update access for"
+            )
+        ],
+        request=AccessSerializer,
+        responses={
+            200: {"description": "Access updated successfully"},
+            401: {"description": "User is not authenticated"},
+            403: {"description": "User is not allowed to update this access"},
+            404: {"description": "User or entity not found"}
+        }
+    )
+)
 class UpdateAccess(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
