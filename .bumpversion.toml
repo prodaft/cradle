@@ -22,3 +22,7 @@ post_commit_hooks = []
 
 [[tool.bumpversion.files]]
 filename = "docs/content/_index.md"
+
+
+[[tool.bumpversion.files]]
+filename = "backend/cradle/settings_common.py"
