@@ -18,25 +18,6 @@ from uuid import UUID
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
 
-@extend_schema_view(
-    post=extend_schema(
-        summary="Request Entity Access",
-        description="Request access to a specific entity. Notifies users with read-write access.",
-        parameters=[
-            OpenApiParameter(
-                name="subtype",
-                description="The subtype of the entity",
-                required=False,
-                type=str,
-            ),
-        ],
-        responses={
-            200: "Request successful",
-            401: "User is not authenticated",
-            404: "Entity not found",
-        }
-    )
-)
 class RequestAccess(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

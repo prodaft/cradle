@@ -15,19 +15,6 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from uuid import UUID
 
 
-@extend_schema_view(
-    put=extend_schema(
-        summary="Convert to Regular Note",
-        description="Convert a fleeting note to a regular note.",
-        responses={
-            200: "Note created successfully",
-            400: "Invalid note references or file paths",
-            401: "User is not authenticated",
-            403: "Insufficient permissions",
-            404: "Fleeting note not found",
-        }
-    )
-)
 class FleetingNotesFinal(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

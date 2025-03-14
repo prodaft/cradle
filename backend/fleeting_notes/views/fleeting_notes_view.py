@@ -75,17 +75,6 @@ class FleetingNotesList(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@extend_schema_view(
-    get=extend_schema(
-        summary="Get Fleeting Note",
-        description="Retrieve a specific fleeting note by ID.",
-        responses={
-            200: "Fleeting note details",
-            401: "User is not authenticated",
-            404: "Fleeting note not found",
-        }
-    )
-)
 class FleetingNotesDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

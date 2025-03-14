@@ -18,18 +18,6 @@ from ..models import Note
 from ..serializers import NotePublishSerializer
 
 
-@extend_schema_view(
-    put=extend_schema(
-        summary="Update Note Publishable Status",
-        description="Allow a user to change a Note's publishable status, either to publishable or not publishable.",
-        request=NotePublishSerializer,
-        responses={
-            200: "Successfully updated the note's publishable status.",
-            404: "Note does not exist.",
-            401: "Unauthorized",
-        },
-    )
-)
 class NotePublishDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

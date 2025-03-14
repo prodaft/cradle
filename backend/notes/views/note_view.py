@@ -30,31 +30,6 @@ from access.models import Access
 from uuid import UUID
 
 
-@extend_schema_view(
-    get=extend_schema(
-        description="Retrieve all notes accessible to the user, with optional pagination.",
-        responses={
-            200: NoteRetrieveSerializer(many=True),
-            400: "Invalid filterset",
-            401: "User is not authenticated",
-        },
-        summary="Get Accessible Notes",
-    ),
-    post=extend_schema(
-        description="Create a new note. Requires referencing at least two entries, "
-        "one of which must be an entity, and linking file references to files "
-        "uploaded to MinIO.",
-        request=NoteCreateSerializer,
-        responses={
-            200: NoteRetrieveSerializer,
-            400: "Invalid request data or minimum references not met",
-            401: "User is not authenticated",
-            403: "User lacks Read-Write access",
-            404: "File reference does not exist",
-        },
-        summary="Create New Note",
-    ),
-)
 class NoteList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -101,38 +76,6 @@ class NoteList(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@extend_schema_view(
-    get=extend_schema(
-        description="Retrieve a specific note by ID if the user has READ access.",
-        responses={
-            200: NoteRetrieveSerializer,
-            401: "User is not authenticated",
-            404: "Note not found or access denied",
-        },
-        summary="Retrieve Note",
-    ),
-    post=extend_schema(
-        description="Edit an existing note by ID. Requires READ access for all entities.",
-        request=NoteCreateSerializer,
-        responses={
-            200: NoteRetrieveSerializer,
-            401: "User is not authenticated",
-            403: "User cannot edit this note",
-            404: "Note not found",
-        },
-        summary="Edit Note",
-    ),
-    delete=extend_schema(
-        description="Delete a note by ID if the user has Read-Write access.",
-        responses={
-            200: "Note deleted",
-            401: "User is not authenticated",
-            403: "User lacks permission",
-            404: "Note not found",
-        },
-        summary="Delete Note",
-    ),
-)
 class NoteDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

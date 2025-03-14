@@ -21,27 +21,6 @@ from ..serializers import (
 from ..models import CradleUser
 
 
-@extend_schema_view(
-    get=extend_schema(
-        description="Allows an admin to view a list of all users.",
-        responses={
-            200: UserRetrieveSerializer(many=True),
-            401: "User is not authenticated.",
-            403: "User is not an admin.",
-        },
-        summary="List All Users",
-    ),
-    post=extend_schema(
-        description="Allows a user to create a new account with a unique username and password.",
-        request=UserCreateSerializer,
-        responses={
-            200: "User created successfully.",
-            400: "Invalid data or missing fields.",
-            409: "User already exists.",
-        },
-        summary="Create New User",
-    ),
-)
 class UserList(APIView):
     authentication_classes = [JWTAuthentication]
 
@@ -72,39 +51,6 @@ class UserList(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@extend_schema_view(
-    get=extend_schema(
-        description="Retrieve details for a specific user by ID, or the current user if 'me' is specified.",
-        responses={
-            200: UserRetrieveSerializer,
-            401: "User is not authenticated.",
-            403: "Access denied.",
-            404: "User not found.",
-        },
-        summary="Retrieve User Details",
-    ),
-    post=extend_schema(
-        description="Edit a user's details, either their own or another user's if allowed.",
-        request=UserCreateSerializer,
-        responses={
-            200: UserRetrieveSerializer,
-            401: "User is not authenticated.",
-            403: "Unauthorized edit attempt.",
-            404: "User not found.",
-        },
-        summary="Edit User Details",
-    ),
-    delete=extend_schema(
-        description="Delete a user account by ID. Admins can delete other users' accounts.",
-        responses={
-            200: "User account deleted successfully.",
-            401: "User is not authenticated.",
-            403: "Access denied.",
-            404: "User not found.",
-        },
-        summary="Delete User Account",
-    ),
-)
 class UserDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

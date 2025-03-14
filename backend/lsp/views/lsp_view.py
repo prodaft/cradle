@@ -14,16 +14,6 @@ from ..utils import LspUtils
 from user.models import CradleUser
 
 
-@extend_schema_view(
-    get=extend_schema(
-        summary="Get LSP Types",
-        description="Retrieve all entry class types for LSP functionality.",
-        responses={
-            200: LspEntryClassSerializer(many=True),
-            401: "User is not authenticated",
-        },
-    )
-)
 class LspTypes(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

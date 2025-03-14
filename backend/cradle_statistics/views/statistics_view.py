@@ -12,16 +12,6 @@ from user.models import CradleUser
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 
-@extend_schema_view(
-    get=extend_schema(
-        summary="Get User Statistics",
-        description="Retrieve user statistics including recent notes and most referenced entities/artifacts.",
-        responses={
-            200: HomePageStatisticsSerializer,
-            401: "User is not authenticated",
-        }
-    )
-)
 class StatisticsList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

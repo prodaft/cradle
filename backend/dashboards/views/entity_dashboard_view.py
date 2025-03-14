@@ -17,25 +17,6 @@ from typing import cast
 from drf_spectacular.utils import extend_schema_view
 
 
-@extend_schema_view(
-    get=extend_schema(
-        summary="Get Entity Dashboard",
-        description="Retrieve dashboard information for a specific entity by name.",
-        parameters=[
-            OpenApiParameter(
-                name="subtype",
-                description="The subtype of the entity",
-                required=True,
-                type=str,
-            ),
-        ],
-        responses={
-            200: EntityDashboardSerializer,
-            401: "User is not authenticated",
-            404: "Entity not found or no access",
-        },
-    )
-)
 class EntityDashboard(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
