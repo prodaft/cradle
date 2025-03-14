@@ -219,4 +219,5 @@ CATALYST_HOST = "https://prod.blindspot.prodaft.com"
 CATALYST_PUBLISH_CATEGORY = "RESEARCH"
 CATALYST_PUBLISH_SUBCATEGORY = "4dff0ddf-fc2f-4a8e-b43f-1bc25973537b"
 
-VERSION = "1.5.3"
+VERSION = "1.5.2"
+
