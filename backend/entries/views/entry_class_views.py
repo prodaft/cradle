@@ -22,18 +22,18 @@ from ..models import Entry, EntryClass
     get=extend_schema(
         summary="List entry classes",
         description="Returns a list of all entry classes.",
-        responses={200: EntryClassSerializer(many=True)}
+        responses={200: EntryClassSerializer(many=True)},
     ),
     post=extend_schema(
-        summary="Create entry class", 
+        summary="Create entry class",
         description="Creates a new entry class. Only available to admin users.",
         request=EntryClassSerializer,
         responses={
             200: EntryClassSerializer,
             400: {"description": "Invalid data provided"},
-            403: {"description": "User is not an admin"}
-        }
-    )
+            403: {"description": "User is not an admin"},
+        },
+    ),
 )
 class EntryClassList(APIView):
     authentication_classes = [JWTAuthentication]
@@ -64,67 +64,13 @@ class EntryClassList(APIView):
                 name="class_subtype",
                 type=str,
                 location=OpenApiParameter.PATH,
-                description="Subtype of the entry class"
+                description="Subtype of the entry class",
             )
         ],
         responses={
             200: EntryClassSerializer,
-            404: {"description": "Entry class not found"}
-        }
-    ),
-    delete=extend_schema(
-        summary="Delete entry class", 
-        description="Deletes an entry class. Only available to admin users. Cannot delete the 'alias' entry class.",
-        parameters=[
-            OpenApiParameter(
-                name="class_subtype", 
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="Subtype of the entry class to delete"
-            )
-        ],
-        responses={
-            200: {"description": "Entry class successfully deleted"},
-            403: {"description": "User is not an admin or trying to delete 'alias' class"},
-            404: {"description": "Entry class not found"}
-        }
-    ),
-    post=extend_schema(
-        summary="Update entry class",
-        description="Updates an existing entry class. Cannot edit the 'alias' entry class.",
-        request=EntryClassSerializer,
-        parameters=[
-            OpenApiParameter(
-                name="class_subtype",
-                type=str, 
-                location=OpenApiParameter.PATH,
-                description="Subtype of the entry class to update"
-            )
-        ],
-        responses={
-            200: EntryClassSerializer,
-            403: {"description": "Trying to edit 'alias' class"},
-            404: {"description": "Entry class not found"}
-        }
-    )
-)
-
-@extend_schema_view(
-    get=extend_schema(
-        summary="Get entry class details",
-        description="Returns details of a specific entry class.",
-        parameters=[
-            OpenApiParameter(
-                name="class_subtype",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="Subtype of the entry class"
-            )
-        ],
-        responses={
-            200: EntryClassSerializer,
-            404: {"description": "Entry class not found"}
-        }
+            404: {"description": "Entry class not found"},
+        },
     ),
     delete=extend_schema(
         summary="Delete entry class",
@@ -134,14 +80,16 @@ class EntryClassList(APIView):
                 name="class_subtype",
                 type=str,
                 location=OpenApiParameter.PATH,
-                description="Subtype of the entry class to delete"
+                description="Subtype of the entry class to delete",
             )
         ],
         responses={
             200: {"description": "Entry class successfully deleted"},
-            403: {"description": "User is not an admin or trying to delete 'alias' class"},
-            404: {"description": "Entry class not found"}
-        }
+            403: {
+                "description": "User is not an admin or trying to delete 'alias' class"
+            },
+            404: {"description": "Entry class not found"},
+        },
     ),
     post=extend_schema(
         summary="Update entry class",
@@ -152,15 +100,70 @@ class EntryClassList(APIView):
                 name="class_subtype",
                 type=str,
                 location=OpenApiParameter.PATH,
-                description="Subtype of the entry class to update"
+                description="Subtype of the entry class to update",
             )
         ],
         responses={
             200: EntryClassSerializer,
             403: {"description": "Trying to edit 'alias' class"},
-            404: {"description": "Entry class not found"}
-        }
-    )
+            404: {"description": "Entry class not found"},
+        },
+    ),
+)
+@extend_schema_view(
+    get=extend_schema(
+        summary="Get entry class details",
+        description="Returns details of a specific entry class.",
+        parameters=[
+            OpenApiParameter(
+                name="class_subtype",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Subtype of the entry class",
+            )
+        ],
+        responses={
+            200: EntryClassSerializer,
+            404: {"description": "Entry class not found"},
+        },
+    ),
+    delete=extend_schema(
+        summary="Delete entry class",
+        description="Deletes an entry class. Only available to admin users. Cannot delete the 'alias' entry class.",
+        parameters=[
+            OpenApiParameter(
+                name="class_subtype",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Subtype of the entry class to delete",
+            )
+        ],
+        responses={
+            200: {"description": "Entry class successfully deleted"},
+            403: {
+                "description": "User is not an admin or trying to delete 'alias' class"
+            },
+            404: {"description": "Entry class not found"},
+        },
+    ),
+    post=extend_schema(
+        summary="Update entry class",
+        description="Updates an existing entry class. Cannot edit the 'alias' entry class.",
+        request=EntryClassSerializer,
+        parameters=[
+            OpenApiParameter(
+                name="class_subtype",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Subtype of the entry class to update",
+            )
+        ],
+        responses={
+            200: EntryClassSerializer,
+            403: {"description": "Trying to edit 'alias' class"},
+            404: {"description": "Entry class not found"},
+        },
+    ),
 )
 class EntryClassDetail(APIView):
     authentication_classes = [JWTAuthentication]
@@ -244,13 +247,13 @@ class EntryClassDetail(APIView):
 @extend_schema_view(
     get=extend_schema(
         summary="Get next available name",
-        description="Returns the next available name for entries of this class based on the class prefix and existing entries.",
+        description="Returns the next available name for entries of this class based on the class prefix and existing entries.",  # noqa: E501
         parameters=[
             OpenApiParameter(
                 name="class_subtype",
                 type=str,
                 location=OpenApiParameter.PATH,
-                description="Subtype of the entry class"
+                description="Subtype of the entry class",
             )
         ],
         responses={
@@ -260,12 +263,12 @@ class EntryClassDetail(APIView):
                     "name": {
                         "type": "string",
                         "nullable": True,
-                        "description": "Next available name, or null if class has no prefix"
+                        "description": "Next available name, or null if class has no prefix",
                     }
-                }
+                },
             },
-            404: {"description": "Entry class not found"}
-        }
+            404: {"description": "Entry class not found"},
+        },
     )
 )
 class NextName(APIView):

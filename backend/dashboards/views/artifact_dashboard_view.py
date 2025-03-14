@@ -5,14 +5,12 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from typing import cast
-from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from entries.models import Entry, EntryClass
 from user.models import CradleUser
 from ..utils.dashboard_utils import DashboardUtils
 from ..serializers import ArtifactDashboardSerializer
 from notes.models import Note
-from drf_spectacular.utils import extend_schema_view
 
 
 class ArtifactDashboard(APIView):

@@ -28,18 +28,18 @@ from ..models import CradleUser
         responses={
             200: UserRetrieveSerializer(many=True),
             401: {"description": "User is not authenticated"},
-            403: {"description": "User is not an admin"}
-        }
+            403: {"description": "User is not an admin"},
+        },
     ),
     post=extend_schema(
-        summary="Create user", 
+        summary="Create user",
         description="Creates a new user account. Available to unauthenticated users.",
         request=UserCreateSerializer,
         responses={
             200: {"description": "User created successfully"},
-            400: {"description": "Invalid data provided"}
-        }
-    )
+            400: {"description": "Invalid data provided"},
+        },
+    ),
 )
 class UserList(APIView):
     authentication_classes = [JWTAuthentication]
@@ -70,43 +70,44 @@ class UserList(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @extend_schema_view(
     get=extend_schema(
         summary="Get user details",
-        description="Returns details of a specific user. Regular users can only access their own details. Admin users can access details of non-admin users.",
+        description="Returns details of a specific user. Regular users can only access their own details. Admin users can access details of non-admin users.",  # noqa: E501
         parameters=[
             OpenApiParameter(
                 name="user_id",
                 type=str,
                 location=OpenApiParameter.PATH,
-                description="UUID of the user, or 'me' to get own details"
+                description="UUID of the user, or 'me' to get own details",
             )
         ],
         responses={
             200: UserRetrieveSerializer,
             401: {"description": "User is not authenticated"},
             403: {"description": "User is not allowed to view this profile"},
-            404: {"description": "User not found"}
-        }
+            404: {"description": "User not found"},
+        },
     ),
     post=extend_schema(
         summary="Update user details",
-        description="Updates details of a specific user. Regular users can only update their own details. Admin users can update details of non-admin users.",
+        description="Updates details of a specific user. Regular users can only update their own details. Admin users can update details of non-admin users.",  # noqa: E501
         parameters=[
             OpenApiParameter(
-                name="user_id", 
+                name="user_id",
                 type=str,
                 location=OpenApiParameter.PATH,
-                description="UUID of the user, or 'me' to update own details"
+                description="UUID of the user, or 'me' to update own details",
             )
         ],
         responses={
             200: UserRetrieveSerializer,
             401: {"description": "User is not authenticated"},
             403: {"description": "User is not allowed to edit this profile"},
-            404: {"description": "User not found"}
-        }
-    )
+            404: {"description": "User not found"},
+        },
+    ),
 )
 class UserDetail(APIView):
     authentication_classes = [JWTAuthentication]
@@ -208,42 +209,42 @@ class UserDetail(APIView):
 @extend_schema_view(
     post=extend_schema(
         summary="Change Password",
-        description="Allows authenticated users to change their password by providing their old password and a new password.",
+        description="Allows authenticated users to change their password by providing their old password and a new password.",  # noqa: E501
         request={
-            'application/json': {
-                'type': 'object',
-                'properties': {
-                    'old_password': {
-                        'type': 'string',
-                        'description': 'Current password of the user'
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "old_password": {
+                        "type": "string",
+                        "description": "Current password of the user",
                     },
-                    'new_password': {
-                        'type': 'string', 
-                        'description': 'New password to set'
-                    }
+                    "new_password": {
+                        "type": "string",
+                        "description": "New password to set",
+                    },
                 },
-                'required': ['old_password', 'new_password']
+                "required": ["old_password", "new_password"],
             }
         },
         responses={
             200: {
-                'type': 'object',
-                'properties': {
-                    'detail': {
-                        'type': 'string',
-                        'example': 'Password changed successfully.'
+                "type": "object",
+                "properties": {
+                    "detail": {
+                        "type": "string",
+                        "example": "Password changed successfully.",
                     }
-                }
+                },
             },
             400: {
-                'type': 'string',
-                'description': 'Bad Request: Invalid data or incorrect old password'
+                "type": "string",
+                "description": "Bad Request: Invalid data or incorrect old password",
             },
             401: {
-                'type': 'string', 
-                'description': 'Unauthorized: Authentication credentials were not provided'
-            }
-        }
+                "type": "string",
+                "description": "Unauthorized: Authentication credentials were not provided",
+            },
+        },
     )
 )
 class ChangePasswordView(APIView):
@@ -282,20 +283,20 @@ class ChangePasswordView(APIView):
 @extend_schema_view(
     get=extend_schema(
         summary="Manage user actions",
-        description="Perform various admin actions on a user account. Available actions: simulate, send_email_confirmation, password_reset_email",
+        description="Perform various admin actions on a user account. Available actions: simulate, send_email_confirmation, password_reset_email",  # noqa: E501
         parameters=[
             OpenApiParameter(
                 name="user_id",
                 type=str,
                 location=OpenApiParameter.PATH,
-                description="UUID of the user to perform action on"
+                description="UUID of the user to perform action on",
             ),
             OpenApiParameter(
                 name="action_name",
                 type=str,
                 location=OpenApiParameter.PATH,
-                description="Action to perform: simulate, send_email_confirmation, or password_reset_email"
-            )
+                description="Action to perform: simulate, send_email_confirmation, or password_reset_email",
+            ),
         ],
         responses={
             200: {
@@ -303,23 +304,23 @@ class ChangePasswordView(APIView):
                 "properties": {
                     "refresh": {
                         "type": "string",
-                        "description": "JWT refresh token (only for simulate action)"
+                        "description": "JWT refresh token (only for simulate action)",
                     },
                     "access": {
-                        "type": "string", 
-                        "description": "JWT access token (only for simulate action)"
+                        "type": "string",
+                        "description": "JWT access token (only for simulate action)",
                     },
                     "message": {
                         "type": "string",
-                        "description": "Success message for other actions"
-                    }
-                }
+                        "description": "Success message for other actions",
+                    },
+                },
             },
             400: {"description": "Bad Request: Unknown action or invalid state"},
             401: {"description": "Unauthorized: User is not authenticated"},
             403: {"description": "Forbidden: User is not an admin"},
-            404: {"description": "Not Found: User not found"}
-        }
+            404: {"description": "Not Found: User not found"},
+        },
     )
 )
 class ManageUser(APIView):
@@ -395,10 +396,9 @@ class ManageUser(APIView):
             )
         return Response(self.get_tokens_for_user(user), status=status.HTTP_200_OK)
 
+
 @extend_schema_view(
-    get_tokens_for_user=extend_schema(
-        exclude=True
-    ),
+    get_tokens_for_user=extend_schema(exclude=True),
     send_password_reset=extend_schema(
         summary="Send password reset email",
         description="Sends a password reset email to the specified user.",
@@ -407,13 +407,13 @@ class ManageUser(APIView):
                 name="user_id",
                 type=str,
                 location=OpenApiParameter.PATH,
-                description="UUID of the user"
+                description="UUID of the user",
             )
         ],
         responses={
             200: {"description": "Password reset email sent successfully"},
-            404: {"description": "User not found"}
-        }
+            404: {"description": "User not found"},
+        },
     ),
     send_email_confirmation=extend_schema(
         summary="Send email confirmation",
@@ -421,16 +421,16 @@ class ManageUser(APIView):
         parameters=[
             OpenApiParameter(
                 name="user_id",
-                type=str, 
+                type=str,
                 location=OpenApiParameter.PATH,
-                description="UUID of the user"
+                description="UUID of the user",
             )
         ],
         responses={
             200: {"description": "Email confirmation sent successfully"},
             400: {"description": "User's email is already confirmed"},
-            404: {"description": "User not found"}
-        }
+            404: {"description": "User not found"},
+        },
     ),
     simulate=extend_schema(
         summary="Simulate user login",
@@ -439,8 +439,8 @@ class ManageUser(APIView):
             OpenApiParameter(
                 name="user_id",
                 type=str,
-                location=OpenApiParameter.PATH, 
-                description="UUID of the user to simulate"
+                location=OpenApiParameter.PATH,
+                description="UUID of the user to simulate",
             )
         ],
         responses={
@@ -448,13 +448,13 @@ class ManageUser(APIView):
                 "type": "object",
                 "properties": {
                     "refresh": {"type": "string"},
-                    "access": {"type": "string"}
-                }
+                    "access": {"type": "string"},
+                },
             },
             403: {"description": "Cannot simulate admin users"},
-            404: {"description": "User not found"}
-        }
-    )
+            404: {"description": "User not found"},
+        },
+    ),
 )
 class EmailConfirm(APIView):
     permission_classes = ()
@@ -493,6 +493,7 @@ class EmailConfirm(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @extend_schema_view(
     post=extend_schema(
         summary="Confirm email address",
@@ -502,8 +503,8 @@ class EmailConfirm(APIView):
             200: {"description": "Email confirmed successfully"},
             400: {
                 "description": "Invalid token provided or token expired. If token expired, a new one will be sent."
-            }
-        }
+            },
+        },
     )
 )
 class PasswordReset(APIView):

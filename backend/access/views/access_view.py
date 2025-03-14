@@ -16,21 +16,21 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 @extend_schema_view(
     get=extend_schema(
         summary="Get user access privileges",
-        description="Returns a list of all entities with their access types for a specific user. Only available to admin users.",
+        description="Returns a list of all entities with their access types for a specific user. Only available to admin users.",  # noqa: E501
         parameters=[
             OpenApiParameter(
                 name="user_id",
                 type=str,
                 location=OpenApiParameter.PATH,
-                description="UUID of the user to get access privileges for"
+                description="UUID of the user to get access privileges for",
             )
         ],
         responses={
             200: AccessEntitySerializer(many=True),
             401: {"description": "User is not authenticated"},
             403: {"description": "User is not an admin"},
-            404: {"description": "User not found"}
-        }
+            404: {"description": "User not found"},
+        },
     )
 )
 class AccessList(APIView):

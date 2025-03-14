@@ -32,18 +32,21 @@ from user.models import CradleUser
                                     "type": {"type": "string"},
                                     "subtype": {"type": "string"},
                                     "regex": {"type": "string"},
-                                    "options": {"type": "array", "items": {"type": "string"}},
+                                    "options": {
+                                        "type": "array",
+                                        "items": {"type": "string"},
+                                    },
                                     "description": {"type": "string"},
                                     "icon": {"type": "string"},
-                                    "color": {"type": "string"}
-                                }
-                            }
+                                    "color": {"type": "string"},
+                                },
+                            },
                         }
                     }
-                }
+                },
             },
-            401: {"description": "User is not authenticated"}
-        }
+            401: {"description": "User is not authenticated"},
+        },
     )
 )
 class LspTypes(APIView):
@@ -61,11 +64,12 @@ class LspTypes(APIView):
 
         return Response(grouped_data)
 
+
 @extend_schema_view(
     get=extend_schema(
         summary="Get LSP Completion Trie",
-        description="Returns LSP completion trie data for entity types and types without regex/options. "
-                   "Used for autocomplete suggestions in the LSP interface.",
+        description="Returns LSP completion trie data for entity types and types without regex/options. "  # noqa: E501
+        "Used for autocomplete suggestions in the LSP interface.",
         responses={
             200: {
                 "description": "Successful retrieval of completion trie data",
@@ -76,7 +80,7 @@ class LspTypes(APIView):
                             "properties": {
                                 "trie": {
                                     "type": "object",
-                                    "description": "Trie structure containing completion data"
+                                    "description": "Trie structure containing completion data",  # noqa: E501
                                 },
                                 "classes": {
                                     "type": "object",
@@ -88,23 +92,25 @@ class LspTypes(APIView):
                                             "type": {"type": "string"},
                                             "subtype": {"type": "string"},
                                             "regex": {"type": "string"},
-                                            "options": {"type": "array", "items": {"type": "string"}},
+                                            "options": {
+                                                "type": "array",
+                                                "items": {"type": "string"},
+                                            },
                                             "description": {"type": "string"},
                                             "icon": {"type": "string"},
-                                            "color": {"type": "string"}
-                                        }
-                                    }
-                                }
-                            }
+                                            "color": {"type": "string"},
+                                        },
+                                    },
+                                },
+                            },
                         }
                     }
-                }
+                },
             },
-            401: {"description": "User is not authenticated"}
-        }
+            401: {"description": "User is not authenticated"},
+        },
     )
 )
-
 class CompletionTrie(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

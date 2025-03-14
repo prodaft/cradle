@@ -18,26 +18,26 @@ from uuid import UUID
 @extend_schema_view(
     put=extend_schema(
         summary="Convert fleeting note to note",
-        description="Converts a fleeting note to a regular note. The user must be the owner of the fleeting note. The fleeting note is deleted after conversion. Optionally specify if the note is publishable - defaults to not publishable if unspecified.",
+        description="Converts a fleeting note to a regular note. The user must be the owner of the fleeting note. The fleeting note is deleted after conversion. Optionally specify if the note is publishable - defaults to not publishable if unspecified.",  # noqa: E501
         parameters=[
             OpenApiParameter(
                 name="pk",
                 type=str,
                 location=OpenApiParameter.PATH,
-                description="UUID of the fleeting note to convert"
+                description="UUID of the fleeting note to convert",
             )
         ],
         responses={
             200: {"description": "Note created successfully"},
             400: {
-                "description": "Note does not meet minimum reference requirements or has invalid file references"
+                "description": "Note does not meet minimum reference requirements or has invalid file references"  # noqa: E501
             },
             401: {"description": "User is not authenticated"},
             403: {"description": "User does not own the fleeting note"},
             404: {
-                "description": "Fleeting note not found, referenced entities don't exist, or file references are invalid"
-            }
-        }
+                "description": "Fleeting note not found, referenced entities don't exist, or file references are invalid"  # noqa: E501
+            },
+        },
     )
 )
 class FleetingNotesFinal(APIView):

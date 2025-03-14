@@ -21,27 +21,27 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 @extend_schema_view(
     post=extend_schema(
         summary="Request access to entity",
-        description="Allows a user to request access for an entity. All users with read-write access for that specific entity will receive a notification. If the user making the request already has read-write access, no notifications are sent but the request is deemed successful.",
+        description="Allows a user to request access for an entity. All users with read-write access for that specific entity will receive a notification. If the user making the request already has read-write access, no notifications are sent but the request is deemed successful.",  # noqa: E501
         parameters=[
             OpenApiParameter(
                 name="entity_id",
                 type=str,
                 location=OpenApiParameter.PATH,
-                description="UUID of the entity to request access for"
+                description="UUID of the entity to request access for",
             ),
             OpenApiParameter(
                 name="subtype",
                 type=str,
                 location=OpenApiParameter.QUERY,
                 description="Optional subtype/entry class ID to filter entity by",
-                required=False
-            )
+                required=False,
+            ),
         ],
         responses={
             200: {"description": "Access request sent successfully"},
             401: {"description": "User is not authenticated"},
-            404: {"description": "Entity does not exist"}
-        }
+            404: {"description": "Entity does not exist"},
+        },
     )
 )
 class RequestAccess(APIView):

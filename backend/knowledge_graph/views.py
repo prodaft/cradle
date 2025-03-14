@@ -11,8 +11,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
     post=extend_schema(
         summary="Query Knowledge Graph",
         description="Traverse the knowledge graph using specified algorithm and parameters. "
-                   "Supports BFS (breadth-first search) and pathfinding between nodes. "
-                   "Results can be filtered by depth and entity types.",
+        "Supports BFS (breadth-first search) and pathfinding between nodes. "
+        "Results can be filtered by depth and entity types.",
         request=GraphQueryRequestSerializer,
         responses={
             200: {
@@ -24,57 +24,62 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
                             "properties": {
                                 "operation": {
                                     "type": "string",
-                                    "enum": ["entry_types", "bfs", "pathfind", "inaccessible"],
-                                    "description": "Graph traversal operation to perform"
+                                    "enum": [
+                                        "entry_types",
+                                        "bfs",
+                                        "pathfind",
+                                        "inaccessible",
+                                    ],
+                                    "description": "Graph traversal operation to perform",
                                 },
                                 "result_type": {
                                     "type": "string",
                                     "enum": ["vertices", "paths"],
-                                    "description": "Type of results to return"
+                                    "description": "Type of results to return",
                                 },
                                 "params": {
                                     "type": "object",
                                     "properties": {
                                         "src": {
                                             "type": "object",
-                                            "description": "Source entry for traversal"
+                                            "description": "Source entry for traversal",
                                         },
                                         "dst": {
                                             "type": "object",
-                                            "description": "Destination entry for pathfinding (required for pathfind operation)"
+                                            "description": "Destination entry for pathfinding (required for pathfind operation)",  # noqa: E501
                                         },
                                         "min_depth": {
                                             "type": "integer",
                                             "minimum": 1,
                                             "default": 1,
-                                            "description": "Minimum depth for traversal"
+                                            "description": "Minimum depth for traversal",
                                         },
                                         "max_depth": {
                                             "type": "integer",
                                             "maximum": 3,
-                                            "description": "Maximum depth for traversal"
+                                            "description": "Maximum depth for traversal",
                                         },
                                         "subtype": {
                                             "type": "string",
-                                            "description": "Filter results by entry subtype (optional for BFS)"
+                                            "description": "Filter results by entry subtype (optional for BFS)",
                                         },
                                         "name": {
                                             "type": "string",
-                                            "description": "Filter results by entry name (optional for BFS)"
-                                        }
+                                            "description": "Filter results by entry name (optional for BFS)",
+                                        },
                                     },
-                                    "required": ["src", "max_depth"]
-                                }
+                                    "required": ["src", "max_depth"],
+                                },
                             },
-                            "required": ["operation", "params", "result_type"]
+                            "required": ["operation", "params", "result_type"],
                         }
                     }
-                }
+                },
             },
             400: {"description": "Invalid query parameters"},
             401: {"description": "User is not authenticated"},
-            403: {"description": "User does not have access to requested entities"}
-        }
+            403: {"description": "User does not have access to requested entities"},
+        },
     )
 )
 class GraphTraverseView(APIView):

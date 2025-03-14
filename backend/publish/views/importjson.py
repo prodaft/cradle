@@ -10,12 +10,13 @@ from publish.models import PublishedReport, ReportStatus
 from publish.tasks import import_json_report
 from user.permissions import HasAdminRole  # our new task
 
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from drf_spectacular.utils import extend_schema, extend_schema_view
+
 
 @extend_schema_view(
     post=extend_schema(
         summary="Import JSON report",
-        description="Import a JSON report file containing notes and entry classes. Creates a PublishedReport record and queues processing task.",
+        description="Import a JSON report file containing notes and entry classes. Creates a PublishedReport record and queues processing task.",  # noqa: E501
         request={
             "multipart/form-data": {
                 "type": "object",
@@ -23,39 +24,33 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
                     "report": {
                         "type": "string",
                         "format": "binary",
-                        "description": "JSON file containing report data with 'notes' and 'entry_classes' keys"
+                        "description": "JSON file containing report data with 'notes' and 'entry_classes' keys",
                     }
                 },
-                "required": ["report"]
+                "required": ["report"],
             }
         },
         responses={
             202: {
                 "type": "object",
                 "properties": {
-                    "detail": {
-                        "type": "string",
-                        "example": "Report import queued."
-                    },
+                    "detail": {"type": "string", "example": "Report import queued."},
                     "report_id": {
                         "type": "string",
                         "format": "uuid",
-                        "example": "123e4567-e89b-12d3-a456-426614174000"
-                    }
-                }
+                        "example": "123e4567-e89b-12d3-a456-426614174000",
+                    },
+                },
             },
             400: {
-                "type": "object", 
+                "type": "object",
                 "properties": {
-                    "detail": {
-                        "type": "string",
-                        "example": "No report file provided."
-                    }
-                }
+                    "detail": {"type": "string", "example": "No report file provided."}
+                },
             },
             401: {"description": "User is not authenticated"},
-            403: {"description": "User does not have admin role"}
-        }
+            403: {"description": "User does not have admin role"},
+        },
     )
 )
 class ImportJSONReportAPIView(APIView):

@@ -14,21 +14,21 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 @extend_schema_view(
     get=extend_schema(
         summary="Generate file upload URL",
-        description="Generates a presigned URL that allows uploading a file to MinIO storage without requiring credentials. The URL expires after 5 minutes.",
+        description="Generates a presigned URL that allows uploading a file to MinIO storage without requiring credentials. The URL expires after 5 minutes.",  # noqa: E501
         parameters=[
             OpenApiParameter(
                 name="fileName",
                 type=str,
                 location=OpenApiParameter.QUERY,
                 description="Name of the file to be uploaded",
-                required=True
+                required=True,
             )
         ],
         responses={
             200: FileUploadSerializer,
             400: {"description": "Query parameters are invalid"},
-            401: {"description": "User is not authenticated"}
-        }
+            401: {"description": "User is not authenticated"},
+        },
     )
 )
 class FileUpload(APIView):
@@ -75,24 +75,25 @@ class FileUpload(APIView):
 
         return Response(FileUploadSerializer(response_data).data)
 
+
 @extend_schema_view(
     get=extend_schema(
         summary="Get file upload URL",
-        description="Generates a presigned URL that allows clients to upload files to Minio without requiring credentials. The URL expires after 5 minutes.",
+        description="Generates a presigned URL that allows clients to upload files to Minio without requiring credentials. The URL expires after 5 minutes.",  # noqa: E501
         parameters=[
             OpenApiParameter(
                 name="fileName",
                 type=str,
                 location=OpenApiParameter.QUERY,
                 description="Name of the file to be uploaded",
-                required=True
+                required=True,
             )
         ],
         responses={
             200: FileUploadSerializer,
             400: {"description": "Query parameters are invalid"},
-            401: {"description": "User is not authenticated"}
-        }
+            401: {"description": "User is not authenticated"},
+        },
     )
 )
 class FileDownload(APIView):

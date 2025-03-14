@@ -15,11 +15,12 @@ from ..serializers import EntitySerializer, EntryResponseSerializer
 from ..models import Entry
 from uuid import UUID
 
+
 @extend_schema_view(
     get=extend_schema(
         summary="List entities",
-        description="Returns a list of entities. For regular users, returns only entities they have access to. For admin users, returns all entities.",
-        responses={200: EntryResponseSerializer(many=True)}
+        description="Returns a list of entities. For regular users, returns only entities they have access to. For admin users, returns all entities.",  # noqa: E501
+        responses={200: EntryResponseSerializer(many=True)},
     ),
     post=extend_schema(
         summary="Create entity",
@@ -29,9 +30,9 @@ from uuid import UUID
             200: EntitySerializer,
             400: {"description": "Invalid data provided"},
             403: {"description": "User is not an admin"},
-            409: {"description": "Entity already exists"}
-        }
-    )
+            409: {"description": "Entity already exists"},
+        },
+    ),
 )
 class EntityList(APIView):
     authentication_classes = [JWTAuthentication]
@@ -65,22 +66,23 @@ class EntityList(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @extend_schema_view(
     get=extend_schema(
         summary="Get entity details",
-        description="Returns details of a specific entity. Regular users can only access entities they have permissions for. Admin users can access any entity.",
+        description="Returns details of a specific entity. Regular users can only access entities they have permissions for. Admin users can access any entity.",  # noqa: E501
         parameters=[
             OpenApiParameter(
                 name="entity_id",
                 type=UUID,
                 location=OpenApiParameter.PATH,
-                description="UUID of the entity"
+                description="UUID of the entity",
             )
         ],
         responses={
             200: EntitySerializer,
-            404: {"description": "Entity not found or user doesn't have access"}
-        }
+            404: {"description": "Entity not found or user doesn't have access"},
+        },
     ),
     delete=extend_schema(
         summary="Delete entity",
@@ -90,14 +92,14 @@ class EntityList(APIView):
                 name="entity_id",
                 type=UUID,
                 location=OpenApiParameter.PATH,
-                description="UUID of the entity to delete"
+                description="UUID of the entity to delete",
             )
         ],
         responses={
             200: {"description": "Entity successfully deleted"},
             403: {"description": "User is not an admin"},
-            404: {"description": "Entity not found"}
-        }
+            404: {"description": "Entity not found"},
+        },
     ),
     post=extend_schema(
         summary="Update entity",
@@ -108,15 +110,14 @@ class EntityList(APIView):
                 name="entity_id",
                 type=UUID,
                 location=OpenApiParameter.PATH,
-                description="UUID of the entity to update"
+                description="UUID of the entity to update",
             )
         ],
         responses={
             404: {"description": "Entity not found or user doesn't have access"}
-        }
-    )
+        },
+    ),
 )
-
 class EntityDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasEntryManagerRole]

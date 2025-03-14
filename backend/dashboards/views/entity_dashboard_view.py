@@ -4,7 +4,6 @@ from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
-from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from entries.models import Entry
 from user.models import CradleUser
@@ -14,7 +13,6 @@ from ..serializers import EntityDashboardSerializer
 from access.enums import AccessType
 
 from typing import cast
-from drf_spectacular.utils import extend_schema_view
 
 
 class EntityDashboard(APIView):
