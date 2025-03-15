@@ -1,5 +1,5 @@
 from environs import Env
-from .settings_common import *
+from .settings_common import *  # NOQA
 import sentry_sdk
 
 # Initialize environs
