@@ -11,7 +11,55 @@ from ..strategies import PUBLISH_STRATEGIES
 from ..models import UploadStrategies, DownloadStrategies
 from ..tasks import generate_report
 
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
+
+@extend_schema_view(
+    get=extend_schema(
+        summary="Get publish strategies",
+        description="Returns available upload and download strategies for publishing reports.",  # noqa: E501
+        responses={
+            200: {
+                "type": "object",
+                "properties": {
+                    "upload": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "label": {"type": "string"},
+                                "strategy": {"type": "string"},
+                            },
+                        },
+                    },
+                    "download": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "label": {"type": "string"},
+                                "strategy": {"type": "string"},
+                            },
+                        },
+                    },
+                },
+            },
+            401: {"description": "User is not authenticated"},
+        },
+    ),
+    post=extend_schema(
+        summary="Create published report",
+        description="Creates a new published report from selected notes using specified strategy.",  # noqa: E501
+        request=PublishReportSerializer,
+        responses={
+            200: ReportSerializer,
+            400: {"description": "Invalid request data"},
+            401: {"description": "User is not authenticated"},
+            403: {"description": "Note is not publishable"},
+            404: {"description": "One or more notes not found or strategy not found"},
+        },
+    ),
+)
 class PublishReportAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

@@ -12,6 +12,10 @@ from typing import Any, Optional
 
 
 class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MessageNotification
+        fields = []
+
     def to_representation(self, instance: Any) -> dict[str, Any]:
         """Determines the type of notification and serializes the data accordingly.
 

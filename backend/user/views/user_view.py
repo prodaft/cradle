@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
 from notifications.models import NewUserNotification
 from user.permissions import HasAdminRole
@@ -23,23 +23,22 @@ from ..models import CradleUser
 
 @extend_schema_view(
     get=extend_schema(
-        description="Allows an admin to view a list of all users.",
+        summary="List users",
+        description="Returns a list of all users. Only available to admin users.",
         responses={
             200: UserRetrieveSerializer(many=True),
-            401: "User is not authenticated.",
-            403: "User is not an admin.",
+            401: {"description": "User is not authenticated"},
+            403: {"description": "User is not an admin"},
         },
-        summary="List All Users",
     ),
     post=extend_schema(
-        description="Allows a user to create a new account with a unique username and password.",
+        summary="Create user",
+        description="Creates a new user account. Available to unauthenticated users.",
         request=UserCreateSerializer,
         responses={
-            200: "User created successfully.",
-            400: "Invalid data or missing fields.",
-            409: "User already exists.",
+            200: {"description": "User created successfully"},
+            400: {"description": "Invalid data provided"},
         },
-        summary="Create New User",
     ),
 )
 class UserList(APIView):
@@ -74,35 +73,40 @@ class UserList(APIView):
 
 @extend_schema_view(
     get=extend_schema(
-        description="Retrieve details for a specific user by ID, or the current user if 'me' is specified.",
+        summary="Get user details",
+        description="Returns details of a specific user. Regular users can only access their own details. Admin users can access details of non-admin users.",  # noqa: E501
+        parameters=[
+            OpenApiParameter(
+                name="user_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the user, or 'me' to get own details",
+            )
+        ],
         responses={
             200: UserRetrieveSerializer,
-            401: "User is not authenticated.",
-            403: "Access denied.",
-            404: "User not found.",
+            401: {"description": "User is not authenticated"},
+            403: {"description": "User is not allowed to view this profile"},
+            404: {"description": "User not found"},
         },
-        summary="Retrieve User Details",
     ),
     post=extend_schema(
-        description="Edit a user's details, either their own or another user's if allowed.",
-        request=UserCreateSerializer,
+        summary="Update user details",
+        description="Updates details of a specific user. Regular users can only update their own details. Admin users can update details of non-admin users.",  # noqa: E501
+        parameters=[
+            OpenApiParameter(
+                name="user_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the user, or 'me' to update own details",
+            )
+        ],
         responses={
             200: UserRetrieveSerializer,
-            401: "User is not authenticated.",
-            403: "Unauthorized edit attempt.",
-            404: "User not found.",
+            401: {"description": "User is not authenticated"},
+            403: {"description": "User is not allowed to edit this profile"},
+            404: {"description": "User not found"},
         },
-        summary="Edit User Details",
-    ),
-    delete=extend_schema(
-        description="Delete a user account by ID. Admins can delete other users' accounts.",
-        responses={
-            200: "User account deleted successfully.",
-            401: "User is not authenticated.",
-            403: "Access denied.",
-            404: "User not found.",
-        },
-        summary="Delete User Account",
     ),
 )
 class UserDetail(APIView):
@@ -202,6 +206,47 @@ class UserDetail(APIView):
         )
 
 
+@extend_schema_view(
+    post=extend_schema(
+        summary="Change Password",
+        description="Allows authenticated users to change their password by providing their old password and a new password.",  # noqa: E501
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "old_password": {
+                        "type": "string",
+                        "description": "Current password of the user",
+                    },
+                    "new_password": {
+                        "type": "string",
+                        "description": "New password to set",
+                    },
+                },
+                "required": ["old_password", "new_password"],
+            }
+        },
+        responses={
+            200: {
+                "type": "object",
+                "properties": {
+                    "detail": {
+                        "type": "string",
+                        "example": "Password changed successfully.",
+                    }
+                },
+            },
+            400: {
+                "type": "string",
+                "description": "Bad Request: Invalid data or incorrect old password",
+            },
+            401: {
+                "type": "string",
+                "description": "Unauthorized: Authentication credentials were not provided",
+            },
+        },
+    )
+)
 class ChangePasswordView(APIView):
     """
     An endpoint for users to change their password if they know their old password.
@@ -235,6 +280,49 @@ class ChangePasswordView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema_view(
+    get=extend_schema(
+        summary="Manage user actions",
+        description="Perform various admin actions on a user account. Available actions: simulate, send_email_confirmation, password_reset_email",  # noqa: E501
+        parameters=[
+            OpenApiParameter(
+                name="user_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the user to perform action on",
+            ),
+            OpenApiParameter(
+                name="action_name",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Action to perform: simulate, send_email_confirmation, or password_reset_email",
+            ),
+        ],
+        responses={
+            200: {
+                "type": "object",
+                "properties": {
+                    "refresh": {
+                        "type": "string",
+                        "description": "JWT refresh token (only for simulate action)",
+                    },
+                    "access": {
+                        "type": "string",
+                        "description": "JWT access token (only for simulate action)",
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "Success message for other actions",
+                    },
+                },
+            },
+            400: {"description": "Bad Request: Unknown action or invalid state"},
+            401: {"description": "Unauthorized: User is not authenticated"},
+            403: {"description": "Forbidden: User is not an admin"},
+            404: {"description": "Not Found: User not found"},
+        },
+    )
+)
 class ManageUser(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
@@ -309,6 +397,65 @@ class ManageUser(APIView):
         return Response(self.get_tokens_for_user(user), status=status.HTTP_200_OK)
 
 
+@extend_schema_view(
+    get_tokens_for_user=extend_schema(exclude=True),
+    send_password_reset=extend_schema(
+        summary="Send password reset email",
+        description="Sends a password reset email to the specified user.",
+        parameters=[
+            OpenApiParameter(
+                name="user_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the user",
+            )
+        ],
+        responses={
+            200: {"description": "Password reset email sent successfully"},
+            404: {"description": "User not found"},
+        },
+    ),
+    send_email_confirmation=extend_schema(
+        summary="Send email confirmation",
+        description="Sends an email confirmation to the specified user.",
+        parameters=[
+            OpenApiParameter(
+                name="user_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the user",
+            )
+        ],
+        responses={
+            200: {"description": "Email confirmation sent successfully"},
+            400: {"description": "User's email is already confirmed"},
+            404: {"description": "User not found"},
+        },
+    ),
+    simulate=extend_schema(
+        summary="Simulate user login",
+        description="Returns JWT tokens for the specified user. Only available for non-admin users.",
+        parameters=[
+            OpenApiParameter(
+                name="user_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the user to simulate",
+            )
+        ],
+        responses={
+            200: {
+                "type": "object",
+                "properties": {
+                    "refresh": {"type": "string"},
+                    "access": {"type": "string"},
+                },
+            },
+            403: {"description": "Cannot simulate admin users"},
+            404: {"description": "User not found"},
+        },
+    ),
+)
 class EmailConfirm(APIView):
     permission_classes = ()
     authentication_classes = ()
@@ -347,6 +494,19 @@ class EmailConfirm(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema_view(
+    post=extend_schema(
+        summary="Confirm email address",
+        description="Confirms a user's email address using the confirmation token sent to their email.",
+        request=EmailConfirmSerializer,
+        responses={
+            200: {"description": "Email confirmed successfully"},
+            400: {
+                "description": "Invalid token provided or token expired. If token expired, a new one will be sent."
+            },
+        },
+    )
+)
 class PasswordReset(APIView):
     permission_classes = ()
     authentication_classes = ()

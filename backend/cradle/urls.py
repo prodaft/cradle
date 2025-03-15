@@ -43,14 +43,14 @@ urlpatterns = [
                 path("knowledge-graph/", include("knowledge_graph.urls")),
                 path("statistics/", include("cradle_statistics.urls")),
                 path("lsp/", include("lsp.urls")),
-                path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+                path("schema/", SpectacularAPIView.as_view(api_version=settings.VERSION), name="schema"),
                 path(
-                    "api/schema/swagger-ui/",
+                    "schema/swagger-ui/",
                     SpectacularSwaggerView.as_view(url_name="schema"),
                     name="swagger-ui",
                 ),
                 path(
-                    "api/schema/redoc/",
+                    "schema/redoc/",
                     SpectacularRedocView.as_view(url_name="schema"),
                     name="redoc",
                 ),
