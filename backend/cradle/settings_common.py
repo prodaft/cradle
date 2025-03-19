@@ -6,6 +6,8 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+VERSION = "1.5.3"
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -134,9 +136,8 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "CRADLE",
     "DESCRIPTION": "Threat Intelligence Knowledge Management",
-    "VERSION": "1.0.0",
+    "VERSION": VERSION,
     "SERVE_INCLUDE_SCHEMA": False,
-    # OTHER SETTINGS
 }
 
 SIMPLE_JWT = {
@@ -218,6 +219,3 @@ ADMIN_PATH = "29acee84-15db-481b-b602-2c1a579178d0/"
 CATALYST_HOST = "https://prod.blindspot.prodaft.com"
 CATALYST_PUBLISH_CATEGORY = "RESEARCH"
 CATALYST_PUBLISH_SUBCATEGORY = "4dff0ddf-fc2f-4a8e-b43f-1bc25973537b"
-
-VERSION = "1.5.2"
-
