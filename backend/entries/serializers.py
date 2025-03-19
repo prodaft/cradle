@@ -201,13 +201,29 @@ class EntryResponseSerializer(serializers.ModelSerializer):
         return internal
 
 
+class EntitySerializerExtension(OpenApiSerializerExtension):
+    target_class = "entries.serializers.EntitySerializer"
+    match_subclasses = True
+
+    def map_serializer(self, auto_schema, direction):
+        schema = super().map_serializer(auto_schema, direction)
+        schema["properties"]["subtype"] = {
+            "type": "string",
+            "description": "Subtype for the entry",
+        }
+        required = schema.get("required", [])
+        if "subtype" not in required:
+            required.append("subtype")
+        schema["required"] = required
+        return schema
+
+
 class EntitySerializer(serializers.ModelSerializer):
     entry_class = EntryClassSerializer(read_only=True)
-    subtype = serializers.CharField(required=True, allow_blank=False)
 
     class Meta:
         model = Entry
-        fields = ["id", "name", "description", "entry_class", "is_public", "subtype"]
+        fields = ["id", "name", "description", "entry_class", "is_public"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
