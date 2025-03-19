@@ -41,7 +41,7 @@ export default function AdminPanelSection({
         : [];
     return (
         <div className='w-full h-full flex flex-col rounded-md p-3'>
-            <div className='w-full flex flex-row items-center justify-between mb-2'>
+            <div className='w-full flex flex-row items-center justify-between my-2'>
                 <input
                     type='text'
                     placeholder='Search'
@@ -53,13 +53,13 @@ export default function AdminPanelSection({
                         className='tooltip tooltip-bottom'
                         data-tooltip={addTooltipText}
                     >
-                        <button className='h-fit m-2' onClick={handleAdd}>
+                        <button className='h-fit mx-2' onClick={handleAdd}>
                             <PlusCircle />
                         </button>
                     </span>
                 )}
             </div>
-            <div className='w-full flex-grow overflow-y-auto flex flex-col space-y-2 gap-1 h-screen'>
+            <div className='w-full flex-grow overflow-y-auto flex flex-col space-y-2 gap-1 h-[80vh]'>
                 {isLoading ? (
                     // Loading spinner
                     <div className='flex items-center justify-center min-h-[200px]'>

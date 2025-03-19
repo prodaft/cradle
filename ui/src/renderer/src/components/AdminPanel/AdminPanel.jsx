@@ -4,6 +4,7 @@ import {
     getEntryClasses,
     getUsers,
 } from '../../services/adminService/adminService';
+import AdminPanelCardTypeMapping from '../AdminPanelCard/AdminPanelCardTypeMapping';
 import AdminPanelCardEntity from '../AdminPanelCard/AdminPanelCardEntity';
 import AdminPanelCardUser from '../AdminPanelCard/AdminPanelCardUser';
 import AdminPanelCardEntryType from '../AdminPanelCard/AdminPanelCardEntryType';
@@ -18,6 +19,7 @@ import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
 import EntityForm from '../AdminPanelForms/EntityForm';
 import EntryTypeForm from '../AdminPanelForms/EntryTypeForm';
 import AccountSettings from '../AccountSettings/AccountSettings';
+import { getMappingTypes } from '../../services/intelioService/intelioService';
 
 /**
  * AdminPanel component - This component is used to display the AdminPanel.
@@ -33,6 +35,7 @@ import AccountSettings from '../AccountSettings/AccountSettings';
  */
 export default function AdminPanel() {
     const [entities, setEntities] = useState(null);
+    const [mappingTypes, setMappingTypes] = useState(null);
     const [users, setUsers] = useState(null);
     const [entryTypes, setEntryTypes] = useState(null);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
@@ -116,12 +119,32 @@ export default function AdminPanel() {
             .catch(handleError);
     };
 
+    const displayMappingTypes = async () => {
+        getMappingTypes()
+            .then((response) => {
+                if (response.status === 200) {
+                    const mappingTypes = response.data;
+                    setMappingTypes(
+                        mappingTypes.map((x) => (
+                            <AdminPanelCardTypeMapping
+                                id={x.class}
+                                name={x.name}
+                                setRightPane={setRightPane}
+                            />
+                        )),
+                    );
+                }
+            })
+            .catch(handleError);
+    };
+
     useEffect(() => {
         if (auth?.isAdmin()) {
             displayUsers();
         }
         displayEntities();
         displayEntryTypes();
+        displayMappingTypes();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location.state]);
 
@@ -130,7 +153,7 @@ export default function AdminPanel() {
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='w-full h-full'>
                 <ResizableSplitPane
-                    initialSplitPosition={40} // matches the original 2/5 width
+                    initialSplitPosition={30} // matches the original 2/5 width
                     leftClassName='m-3'
                     leftContent={
                         <Tabs defaultTab={0}>
@@ -174,6 +197,17 @@ export default function AdminPanel() {
                                     </AdminPanelSection>
                                 </Tab>
                             )}
+                            <Tab title='Type Mappings'>
+                                <AdminPanelSection
+                                    addEnabled={false}
+                                    handleAdd={() =>
+                                        setRightPane(<EntryTypeForm isEdit={false} />)
+                                    }
+                                    isLoading={mappingTypes === null}
+                                >
+                                    {mappingTypes}
+                                </AdminPanelSection>
+                            </Tab>
                         </Tabs>
                     }
                     rightContent={<div>{rightPane}</div>}

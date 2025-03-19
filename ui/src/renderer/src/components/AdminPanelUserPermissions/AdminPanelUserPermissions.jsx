@@ -87,17 +87,16 @@ export default function AdminPanelUserPermissions({ username, id }) {
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='w-full h-full overflow-x-hidden overflow-y-scroll'>
-                <div className='container w-[90%] h-fit mx-auto my-4 center bg-gray-2 p-10 rounded-md'>
-                    <h1 className='text-3xl font-bold'>
+                <div className='container w-[90%] h-fit mx-auto py-4 center'>
+                    <h1 className='text-3xl font-bold my-4'>
                         User Settings:
                         <span className='text-3xl text-zinc-500'> {username}</span>
                     </h1>
-                    <br />
+                <div className='bg-gray-2 p-4 rounded-md'>
                     <div
                         id='actions'
-                        className='w-full h-fit mt-1 flex flex-row justify-start items-center text-zinc-400'
+                        className='w-full h-fit mt-1 flex flex-row justify-start items-center text-zinc-400 pb-2'
                     >
-                        <h3 className='text-l font-bold mr-2'>Actions:</h3>
                         <button
                             id='edit-user'
                             data-testid='edit-user'
@@ -155,6 +154,7 @@ export default function AdminPanelUserPermissions({ username, id }) {
                     <div className='w-full h-fit rounded-lg my-2'>
                         {filteredChildren}
                     </div>
+                </div>
                 </div>
             </div>
         </>

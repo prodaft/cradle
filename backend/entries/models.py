@@ -42,6 +42,14 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
 
     prefix: models.CharField = models.CharField(max_length=64, blank=True)
 
+    children = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        blank=True,
+        related_name="parents",
+        help_text="Possible children of this entry class",
+    )
+
     @classmethod
     def get_default_pk(cls):
         eclass, created = cls.objects.get_or_create(
@@ -214,6 +222,14 @@ class Entry(LifecycleModel, LoggableModelMixin):
     objects = EntryManager()
     entities = EntityManager()
     artifacts = ArtifactManager()
+
+    aliases = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        blank=True,
+        related_name="aliased_by",
+        help_text="Entries that are equivalent to this one",
+    )
 
     def __init__(self, *args, **kwargs):
         if "name" in kwargs:

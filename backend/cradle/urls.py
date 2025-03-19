@@ -43,6 +43,7 @@ urlpatterns = [
                 path("knowledge-graph/", include("knowledge_graph.urls")),
                 path("statistics/", include("cradle_statistics.urls")),
                 path("lsp/", include("lsp.urls")),
+                path("intelio/", include("intelio.urls")),
                 path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
                 path(
                     "api/schema/swagger-ui/",

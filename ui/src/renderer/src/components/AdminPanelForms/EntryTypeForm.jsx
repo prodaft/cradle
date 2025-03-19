@@ -6,6 +6,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { HexColorPicker } from 'react-colorful';
 import {
     getEntryClass,
+    getEntryClasses,
     createArtifactClass,
     editArtifactClass,
 } from '../../services/adminService/adminService';
@@ -14,6 +15,7 @@ import FormField from '../FormField/FormField';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { GoldenRatioColorGenerator } from '../../utils/colorUtils/colorUtils';
 import { Tabs, Tab } from '../Tabs/Tabs';
+import Selector from '../Selector/Selector'; // imported Selector
 
 const entryTypeSchema = Yup.object().shape({
     type: Yup.string().required('Class Type is required'),
@@ -35,6 +37,7 @@ const entryTypeSchema = Yup.object().shape({
     }),
     generativeRegex: Yup.string().notRequired(),
     color: Yup.string().required('Color is required'),
+    children: Yup.array().notRequired(), // added children validation
 });
 
 /**
@@ -48,6 +51,24 @@ export default function EntryTypeForm({ id = null, isEdit = false }) {
     const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
     const [showColorPicker, setShowColorPicker] = useState(false);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+
+    // Fetch all entry types for the Children selector.
+    const fetchEntryTypes = async (q) => {
+        try {
+            const response = await getEntryClasses();
+            if (response.status === 200 && response.data) {
+                return response.data.map((entry) => ({
+                    value: entry.subtype,
+                    label: `${entry.subtype}`,
+                }));
+            } else {
+                return [];
+            }
+        } catch (err) {
+            displayError(setAlert, navigate)(err);
+            return [];
+        }
+    };
 
     const {
         register,
@@ -70,6 +91,7 @@ export default function EntryTypeForm({ id = null, isEdit = false }) {
             options: '',
             generativeRegex: '',
             color: colorGenerator.nextHexColor(),
+            children: [],  // added default for children
         },
     });
 
@@ -106,6 +128,7 @@ export default function EntryTypeForm({ id = null, isEdit = false }) {
                                       : '',
                             regex: entrytype.regex,
                             options: entrytype.options,
+                            children: entrytype.children || [], // prepopulate children if available
                         });
                     }
                 })
@@ -122,24 +145,27 @@ export default function EntryTypeForm({ id = null, isEdit = false }) {
                 options: '',
                 generativeRegex: '',
                 color: colorGenerator.nextHexColor(),
+                children: [], // default empty children
             });
         }
+        setAlert({ show: false, message: '', color: 'red' });
     }, [isEdit, id, reset, navigate]);
 
     const onSubmit = async (data) => {
         try {
             if (isEdit) {
                 await editArtifactClass(
-                    { generative_regex: data.generativeRegex, ...data },
+                    { generative_regex: data.generativeRegex, ...data, children: data.children.map(child => child.value) },
                     id,
                 );
             } else {
                 await createArtifactClass({
                     generative_regex: data.generativeRegex,
                     ...data,
+                    children: data.children.map(child => child.value)
                 });
             }
-            navigate('/admin', { state: Date.now() });
+          setAlert({ show: true, message: 'Entry Type saved successfully!', color: 'green' });
         } catch (err) {
             displayError(setAlert, navigate)(err);
         }
@@ -411,20 +437,43 @@ export default function EntryTypeForm({ id = null, isEdit = false }) {
                                             </div>
                                         </div>
                                     )}
+
+                                {/* Children Selector Field */}
+                                <div className='w-full mt-4'>
+                                    <label
+                                        htmlFor='children'
+                                        className='block text-sm font-medium'
+                                    >
+                                        Children
+                                    </label>
+                                    <div className='mt-1'>
+                                        <Controller
+                                            name='children'
+                                            control={control}
+                                            render={({ field: { onChange, value, ref } }) => (
+                                                <Selector
+                                                    value={value}
+                                                    onChange={onChange}
+                                                    fetchOptions={fetchEntryTypes}
+                                                    isMulti={true}
+                                                    placeholder='Select child entry types...'
+                                                    inputRef={ref}
+                                                />
+                                            )}
+                                        />
+                                        {errors.children && (
+                                            <p className='text-red-600 text-sm'>
+                                                {errors.children.message}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
                             </Tab>
                         </Tabs>
-                        <div className='mt-4' />
 
                         <AlertBox alert={alert} />
 
                         <div className='flex gap-2 pt-4'>
-                            <button
-                                type='button'
-                                className='btn btn-ghost btn-block'
-                                onClick={() => navigate('/admin')}
-                            >
-                                Cancel
-                            </button>
                             <button type='submit' className='btn btn-primary btn-block'>
                                 {isEdit ? 'Edit' : 'Add'}
                             </button>

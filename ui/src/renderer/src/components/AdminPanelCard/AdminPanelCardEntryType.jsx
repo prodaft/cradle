@@ -42,7 +42,9 @@ export default function AdminPanelCardEntryType({ name, id, onDelete, setRightPa
                 handleConfirm={handleDelete}
             />
             <div className='h-fit w-full bg-cradle3 p-3 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl'>
-                <h2 className='card-header w-full mx-2 px-1 break-all'>{name}</h2>
+                <Link onClick={handleEditClick}>
+                  <h2 className='card-header w-full mx-2 px-1 break-all'>{name}</h2>
+                </Link>
                 <div className='w-full flex flex-row justify-end'>
                     {auth?.isAdmin() && (
                         <button

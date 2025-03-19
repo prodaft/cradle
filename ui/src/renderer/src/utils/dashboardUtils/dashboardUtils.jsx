@@ -258,3 +258,13 @@ export const truncateText = (text, maxLength) => {
 
     return text.slice(0, maxLength) + '...';
 };
+
+export function capitalizeString(input) {
+    const words = input.split('_');
+
+    const formattedWords = words.map(
+        (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+    );
+
+    return formattedWords.join(' ');
+}

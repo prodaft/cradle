@@ -1,7 +1,6 @@
 from django.db import models
-from django.contrib.postgres.fields import JSONField
 from core.fields import BitStringField
-from entries.models import EntryClass
+from entries.models import EntryClass, Entry
 
 
 class Association(models.Model):
@@ -10,15 +9,15 @@ class Association(models.Model):
     """
 
     reason = models.CharField(max_length=255)
-    details = JSONField(default=dict, blank=True)
+    details = models.JSONField(default=dict, blank=True)
     access_vector: BitStringField = BitStringField(
         max_length=2048, null=False, default=1 << 2047, varying=False
     )
     entry1 = models.ForeignKey(
-        "Entry", on_delete=models.CASCADE, related_name="associations_as_entry1"
+        Entry, on_delete=models.CASCADE, related_name="associations_as_entry1"
     )
     entry2 = models.ForeignKey(
-        "Entry", on_delete=models.CASCADE, related_name="associations_as_entry2"
+        Entry, on_delete=models.CASCADE, related_name="associations_as_entry2"
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -36,9 +35,9 @@ class Encounter(models.Model):
     )  # Avoid conflicts with SQL reserved keyword
     created_at = models.DateTimeField(auto_now_add=True)
     entry = models.ForeignKey(
-        "Entry", on_delete=models.CASCADE, related_name="encounters"
+        Entry, on_delete=models.CASCADE, related_name="encounters"
     )
-    details = JSONField(default=dict, blank=True)
+    details = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
         return f"Encounter[{self.from_source}]({self.entry})"
@@ -59,11 +58,14 @@ class ClassMapping(models.Model):
     class Meta:
         abstract = True
 
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
 
-class CatalystMapping(ClassMapping):
-    """
-    A mapping for Catalyst types.
-    """
+        if cls._meta.abstract:
+            return
 
-    level = models.CharField(max_length=255)
-    name = models.CharField(max_length=255)
+        display_name = getattr(cls, "display_name", None)
+        if not isinstance(display_name, str):
+            raise TypeError(
+                f"{cls.__name__} must define a class attribute 'name' as a string"
+            )

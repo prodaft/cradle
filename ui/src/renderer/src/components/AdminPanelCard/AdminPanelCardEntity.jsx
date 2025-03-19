@@ -32,13 +32,6 @@ export default function AdminPanelCardEntity({
     };
 
     const handleActivityClick = () => {
-        setRightPane(
-            <TypeMappingsEditor
-                columns={['date', 'amount', 'description']}
-                onSave={(a) => console.log(a)}
-            />,
-        );
-        return;
         navigate(`/activity?content_type=entry&object_id=${id}`);
     };
 
@@ -58,10 +51,10 @@ export default function AdminPanelCardEntity({
             />
             <div className='h-fit w-full bg-cradle3 p-3 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl'>
                 <h2 className='card-header w-full mx-2 px-1 break-all'>
-                    <span>
+                    <Link onClick={handleEditClick}>
                         <span className='text-zinc-500'>{`${typename}: `}</span>
                         {name}
-                    </span>
+                    </Link>
                 </h2>
                 <div className='w-full flex flex-row justify-end'>
                     {auth?.isAdmin() && (

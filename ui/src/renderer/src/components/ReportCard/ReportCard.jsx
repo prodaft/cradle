@@ -6,6 +6,7 @@ import {
     deleteReport,
     retryReport,
 } from '../../services/publishService/publishService';
+import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
 import { useNavigate } from 'react-router-dom';
 
 /**
@@ -89,16 +90,6 @@ export default function ReportCard({ report, setAlert }) {
         }
     };
 
-    function formatString(input) {
-        const words = input.split('_');
-
-        const formattedWords = words.map(
-            (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
-        );
-
-        return formattedWords.join(' ');
-    }
-
     if (!visible) return null;
 
     return (
@@ -179,7 +170,7 @@ export default function ReportCard({ report, setAlert }) {
                 {localReport.extra_data &&
                     Object.keys(localReport.extra_data).map((key) => (
                         <p>
-                            <strong>{formatString(key)}:</strong>{' '}
+                            <strong>{capitalizeString(key)}:</strong>{' '}
                             {localReport.extra_data[key]}
                         </p>
                     ))}

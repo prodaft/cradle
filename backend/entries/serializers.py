@@ -78,6 +78,11 @@ class ArtifactClassSerializer(serializers.ModelSerializer):
 
 
 class EntryClassSerializer(serializers.ModelSerializer):
+    children = serializers.PrimaryKeyRelatedField(
+        queryset=EntryClass.objects.all(), many=True, write_only=True, required=False
+    )
+    children_detail = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = EntryClass
         fields = [
@@ -89,7 +94,25 @@ class EntryClassSerializer(serializers.ModelSerializer):
             "options",
             "prefix",
             "color",
+            "children",
+            "children_detail",
         ]
+
+    def create(self, validated_data):
+        children_data = validated_data.pop("children", [])
+        eclass = EntryClass.objects.create(**validated_data)
+        eclass.children.set(children_data)
+        return eclass
+
+    def update(self, instance, validated_data):
+        children_data = validated_data.pop("children", [])
+        instance = super().update(instance, validated_data)
+        if children_data is not None:
+            instance.children.set(children_data)
+        return instance
+
+    def get_children_detail(self, obj):
+        return EntryClassSerializer(obj.children.all(), many=True).data
 
 
 class EntryResponseSerializer(serializers.ModelSerializer):
@@ -106,6 +129,8 @@ class EntryResponseSerializer(serializers.ModelSerializer):
         entry_class_repr = representation.pop("entry_class")
 
         for key in entry_class_repr:
+            if key in representation:
+                continue
             representation[key] = entry_class_repr[key]
 
         return representation
@@ -122,15 +147,52 @@ class EntryResponseSerializer(serializers.ModelSerializer):
         return internal
 
 
-class EntitySerializer(serializers.ModelSerializer):
+class EntrySerializer(serializers.ModelSerializer):
     entry_class = EntryClassSerializer(read_only=True)
 
     class Meta:
         model = Entry
-        fields = ["id", "name", "description", "entry_class", "is_public"]
+        fields = ["id", "name", "entry_class"]
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def to_representation(self, instance):
+        """Move fields from profile to user representation."""
+        representation = super().to_representation(instance)
+        entry_class_repr = representation.pop("entry_class")
+        for key in entry_class_repr:
+            representation[key] = entry_class_repr[key]
+
+        return representation
+
+    def to_internal_value(self, data):
+        """Move fields related to profile to their own profile dictionary."""
+        entry_class_internal = {}
+
+        for key in EntryClassSerializer.Meta.fields:
+            if key in data:
+                entry_class_internal[key] = data.pop(key)
+
+        internal = super().to_internal_value(data)
+        internal["entry_class"] = entry_class_internal
+        return internal
+
+
+class EntitySerializer(serializers.ModelSerializer):
+    entry_class = EntryClassSerializer(read_only=True)
+    aliases = serializers.PrimaryKeyRelatedField(
+        queryset=Entry.objects.all(), many=True, write_only=True, required=False
+    )
+    aliases_detail = EntrySerializer(source="aliases", many=True, read_only=True)
+
+    class Meta:
+        model = Entry
+        fields = [
+            "id",
+            "name",
+            "description",
+            "entry_class",
+            "aliases",
+            "aliases_detail",
+        ]
 
     def exists(self) -> bool:
         if Entry.objects.filter(
@@ -150,6 +212,8 @@ class EntitySerializer(serializers.ModelSerializer):
                 continue
             representation[key] = entry_class_repr[key]
 
+        representation.pop("aliases", None)
+
         return representation
 
     def to_internal_value(self, data):
@@ -158,10 +222,6 @@ class EntitySerializer(serializers.ModelSerializer):
 
         if "subtype" not in data or not data["subtype"]:
             raise EntryMustHaveASubtype()
-
-        for i in data:  # For lists in querydict
-            if isinstance(data[i], list):
-                data[i] = data[i][0]
 
         internal = super().to_internal_value(data)
         entryclass = EntryClass.objects.filter(
@@ -203,17 +263,17 @@ class EntitySerializer(serializers.ModelSerializer):
         return super().validate(data)
 
     def create(self, validated_data):
-        """Creates a new Entry based on the validated data.
-            Also sets the type attribute to "entity" before creating the entry.
+        aliases_data = validated_data.pop("aliases", [])
+        entry = Entry.objects.create(**validated_data)
+        entry.aliases.set(aliases_data)
+        return entry
 
-        Args:
-            validated_data: a dictionary containing the attributes of
-                the Entry
-
-        Returns:
-            The created Entry entry
-        """
-        return super().create(validated_data)
+    def update(self, instance, validated_data):
+        aliases_data = validated_data.pop("aliases", None)
+        instance = super().update(instance, validated_data)
+        if aliases_data is not None:
+            instance.aliases.set(aliases_data)
+        return instance
 
 
 class ArtifactSerializer(serializers.ModelSerializer):
@@ -290,34 +350,6 @@ class ArtifactSerializer(serializers.ModelSerializer):
         EntryClass.objects.get_or_create(**entry_class_serializer.data)
 
         return super().create(validated_data)
-
-
-class EntrySerializer(serializers.ModelSerializer):
-    entry_class = EntryClassSerializer(read_only=True)
-
-    class Meta:
-        model = Entry
-        fields = ["id", "name", "entry_class"]
-
-    def to_representation(self, instance):
-        """Move fields from profile to user representation."""
-        representation = super().to_representation(instance)
-        entry_class_repr = representation.pop("entry_class")
-        for key in entry_class_repr:
-            representation[key] = entry_class_repr[key]
-
-        return representation
-
-    def to_internal_value(self, data):
-        """Move fields related to profile to their own profile dictionary."""
-        entry_class_internal = {}
-        for key in EntryClassSerializer.Meta.fields:
-            if key in data:
-                entry_class_internal[key] = data.pop(key)
-
-        internal = super().to_internal_value(data)
-        internal["entry_class"] = entry_class_internal
-        return internal
 
 
 class EntityAccessAdminSerializer(serializers.ModelSerializer):

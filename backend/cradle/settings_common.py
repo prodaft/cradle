@@ -18,6 +18,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 # Application definition
 INSTALLED_APPS = [
     "corsheaders",
+    "intelio.apps.IntelIOConfig",
     "lsp.apps.LspConfig",
     "cradle_statistics.apps.CradleStatisticsConfig",
     "notifications.apps.NotificationsConfig",

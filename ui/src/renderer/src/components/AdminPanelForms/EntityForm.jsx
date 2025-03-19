@@ -14,6 +14,7 @@ import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import Selector from '../Selector/Selector';
+import { queryEntries } from '../../services/queryService/queryService';
 
 const entitySchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -22,22 +23,25 @@ const entitySchema = Yup.object().shape({
     aliases: Yup.array().notRequired(),
 });
 
-export default function EntityForm({ id, isEdit = false }) {
+export default function EntityForm({ id = null, isEdit = false }) {
     const navigate = useNavigate();
     const [subclasses, setSubclasses] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
 
-    // Dummy callback to fetch alias options.
-    const fetchAliases = async () => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve([
-                    { value: 'alias1', label: 'Alias 1' },
-                    { value: 'alias2', label: 'Alias 2' },
-                    { value: 'alias3', label: 'Alias 3' },
-                ]);
-            }, 500);
-        });
+    const fetchAliases = async (q) => {
+        const results = await queryEntries({ name: q });
+
+        if (results.status === 200) {
+            let a = results.data.results.map((alias) => ({
+                value: alias.id,
+                label: `${alias.subtype}:${alias.name}`,
+            }));
+            console.log(a);
+            return a;
+        } else {
+            displayError(setAlert, navigate)(results);
+            return [];
+        }
     };
 
     const {
@@ -86,7 +90,10 @@ export default function EntityForm({ id, isEdit = false }) {
                             subtype: response.data.subtype,
                             description: response.data.description,
                             is_public: response.data.is_public,
-                            aliases: [], // Populate with response.data.aliases if available.
+                            aliases: response.data.aliases_detail.map((alias) => ({
+                                value: alias.id,
+                                label: `${alias.subtype}:${alias.name}`,
+                            })),
                         });
                     }
                 })
@@ -100,6 +107,7 @@ export default function EntityForm({ id, isEdit = false }) {
                 aliases: [],
             });
         }
+        setAlert({ show: false, message: '', color: 'red' });
     }, [isEdit, id, navigate, reset]);
 
     const onSubmit = async (data) => {
@@ -109,7 +117,7 @@ export default function EntityForm({ id, isEdit = false }) {
             description: data.description,
             subtype: data.subtype,
             is_public: data.is_public,
-            aliases: data.aliases, // Contains the selected alias objects.
+            aliases: data.aliases.map((alias) => alias.value),
         };
 
         try {
@@ -118,7 +126,11 @@ export default function EntityForm({ id, isEdit = false }) {
             } else {
                 await createEntity(payload);
             }
-            navigate('/admin', { state: Date.now() });
+            setAlert({
+                show: true,
+                message: 'Successfully saved entity!',
+                color: 'green',
+            });
         } catch (err) {
             displayError(setAlert, navigate)(err);
         }
@@ -233,13 +245,6 @@ export default function EntityForm({ id, isEdit = false }) {
                         </div>
                         <AlertBox alert={alert} />
                         <div className='flex gap-2'>
-                            <button
-                                type='button'
-                                className='btn btn-ghost btn-block'
-                                onClick={() => navigate('/admin')}
-                            >
-                                Cancel
-                            </button>
                             <button type='submit' className='btn btn-primary btn-block'>
                                 {isEdit ? 'Edit' : 'Add'}
                             </button>

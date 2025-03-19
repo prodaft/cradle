@@ -116,6 +116,13 @@ class AdvancedQueryView(APIView):
                 type=str,
             ),
             OpenApiParameter(
+                name="wildcard",
+                description="Run the query as if there is a * at the end of it.",
+                required=False,
+                default=False,
+                type=bool,
+            ),
+            OpenApiParameter(
                 name="page",
                 description="Pagination page number",
                 required=False,
@@ -138,6 +145,10 @@ class AdvancedQueryView(APIView):
     def get(self, request: Request) -> Response:
         # Get the query parameter from the request
         query_str = request.query_params.get("query")
+
+        if request.query_params.get("wildcard"):
+            query_str += "*"
+
         if not query_str:
             query_filter = Q()
         else:

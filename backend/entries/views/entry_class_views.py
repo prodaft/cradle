@@ -40,7 +40,18 @@ from ..models import Entry, EntryClass
 )
 class EntryClassList(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+
+    def has_permission(self, request, view):
+        if not IsAuthenticated.has_permission(self, request, view):
+            return False
+
+        if request.method == "GET":
+            return True
+
+        if HasEntryManagerRole.has_permission(self, request, view):
+            return True
+
+        return False
 
     def get(self, request: Request) -> Response:
         entities = EntryClass.objects.all()
@@ -93,7 +104,18 @@ class EntryClassList(APIView):
 )
 class EntryClassDetail(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, HasEntryManagerRole]
+
+    def has_permission(self, request, view):
+        if not IsAuthenticated.has_permission(self, request, view):
+            return False
+
+        if request.method == "GET":
+            return True
+
+        if HasEntryManagerRole.has_permission(self, request, view):
+            return True
+
+        return False
 
     def get(self, request: Request, class_subtype: str) -> Response:
         try:
