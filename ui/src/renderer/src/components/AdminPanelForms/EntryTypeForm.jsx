@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { HexColorPicker } from 'react-colorful';
@@ -13,11 +13,11 @@ import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { GoldenRatioColorGenerator } from '../../utils/colorUtils/colorUtils';
+import { Tabs, Tab } from '../Tabs/Tabs';
 
 const entryTypeSchema = Yup.object().shape({
     type: Yup.string().required('Class Type is required'),
     subtype: Yup.string().required('Subtype is required'),
-    catalystType: Yup.string(),
     description: Yup.string().notRequired(),
     prefix: Yup.string().notRequired(),
     typeFormat: Yup.string().nullable(),
@@ -43,17 +43,10 @@ const entryTypeSchema = Yup.object().shape({
  * @param {Object} props
  * @param {boolean} [props.isEdit=false] - If true, the form will be used for editing.
  */
-export default function EntryTypeForm({ isEdit = false }) {
+export default function EntryTypeForm({ id = null, isEdit = false }) {
     const navigate = useNavigate();
-    let { id } = useParams();
     const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
     const [showColorPicker, setShowColorPicker] = useState(false);
-
-    // When editing an EntryType, the id may be encoded (using '--' instead of '/')
-    if (isEdit && id) {
-        id = id.replace('--', '/');
-    }
-
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
 
     const {
@@ -95,32 +88,41 @@ export default function EntryTypeForm({ isEdit = false }) {
         if (isEdit && id) {
             getEntryClass(id)
                 .then((response) => {
-                    if (response.status === 200) {
+                    if (response.status === 200 && response.data) {
                         const entrytype = response.data;
-                        // Find the entry type with matching subtype (which is used as the identifier)
-                        if (entrytype) {
-                            reset({
-                                type: entrytype.type,
-                                subtype: entrytype.subtype,
-                                catalystType: entrytype.catalyst_type,
-                                description: entrytype.description,
-                                prefix: entrytype.prefix,
-                                color: entrytype.color,
-                                generativeRegex: entrytype.generative_regex || '',
-                                typeFormat:
-                                    entrytype.regex && entrytype.regex.length > 0
-                                        ? 'regex'
-                                        : entrytype.options &&
-                                            entrytype.options.length > 0
-                                          ? 'options'
-                                          : '',
-                                regex: entrytype.regex,
-                                options: entrytype.options,
-                            });
-                        }
+                        reset({
+                            type: entrytype.type,
+                            subtype: entrytype.subtype,
+                            catalystType: entrytype.catalyst_type,
+                            description: entrytype.description,
+                            prefix: entrytype.prefix,
+                            color: entrytype.color,
+                            generativeRegex: entrytype.generative_regex || '',
+                            typeFormat:
+                                entrytype.regex && entrytype.regex.length > 0
+                                    ? 'regex'
+                                    : entrytype.options && entrytype.options.length > 0
+                                      ? 'options'
+                                      : '',
+                            regex: entrytype.regex,
+                            options: entrytype.options,
+                        });
                     }
                 })
                 .catch((err) => displayError(setAlert, navigate)(err));
+        } else {
+            reset({
+                type: 'artifact',
+                subtype: '',
+                catalystType: '',
+                description: '',
+                prefix: '',
+                typeFormat: '',
+                regex: '',
+                options: '',
+                generativeRegex: '',
+                color: colorGenerator.nextHexColor(),
+            });
         }
     }, [isEdit, id, reset, navigate]);
 
@@ -144,269 +146,278 @@ export default function EntryTypeForm({ isEdit = false }) {
     };
 
     return (
-        <div className='flex flex-row items-center justify-center h-screen'>
-            <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 md:h-fit xl:w-1/3'>
-                <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8'>
-                    <div className='sm:mx-auto sm:w-full sm:max-w-sm'>
-                        <h1 className='mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-cradle2'>
-                            {isEdit ? 'Edit Entry Type' : 'Add New Entry Type'}
-                        </h1>
-                    </div>
-                    <form
-                        onSubmit={handleSubmit(onSubmit)}
-                        className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm space-y-6'
-                    >
-                        <div className='w-full'>
-                            <label
-                                htmlFor='type'
-                                className='block text-sm font-medium leading-6'
-                            >
-                                Class Type
-                            </label>
-                            <div className='mt-2'>
-                                <select
-                                    className='form-select select select-ghost-primary select-block focus:ring-0'
-                                    {...register('type')}
-                                >
-                                    <option value='artifact'>Artifact</option>
-                                    <option value='entity'>Entity</option>
-                                </select>
-                                {errors.type && (
-                                    <p className='text-red-600 text-sm'>
-                                        {errors.type.message}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-
-                        <FormField
-                            type='text'
-                            name='subtype'
-                            labelText={isEdit ? 'Name' : 'Subtype'}
-                            className='form-input input input-ghost-primary input-block focus:ring-0'
-                            {...register('subtype')}
-                            error={errors.subtype?.message}
-                        />
-
-                        <FormField
-                            type='text'
-                            name='catalystType'
-                            labelText='Catalyst Type'
-                            placeholder='type/subtype|model_class|level'
-                            className='form-input input input-ghost-primary input-block focus:ring-0'
-                            {...register('catalystType')}
-                            error={errors.catalystType?.message}
-                        />
-
-                        <div className='w-full'>
-                            <label
-                                htmlFor='description'
-                                className='block text-sm font-medium leading-6'
-                            >
-                                Description
-                            </label>
-                            <div className='mt-2'>
-                                <textarea
-                                    placeholder='Description'
-                                    className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
-                                    {...register('description')}
-                                />
-                                {errors.description && (
-                                    <p className='text-red-600 text-sm'>
-                                        {errors.description.message}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-
-                        {watchType === 'entity' && (
-                            <FormField
-                                type='text'
-                                name='prefix'
-                                labelText='Prefix'
-                                className='form-input input input-ghost-primary input-block focus:ring-0'
-                                {...register('prefix')}
-                                error={errors.prefix?.message}
-                            />
-                        )}
-
-                        {watchType === 'artifact' && (
-                            <div className='w-full'>
-                                <label
-                                    htmlFor='typeFormat'
-                                    className='block text-sm font-medium leading-6'
-                                >
-                                    Format
-                                </label>
-                                <div className='mt-2'>
-                                    <select
-                                        className='form-select select select-ghost-primary select-block focus:ring-0'
-                                        {...register('typeFormat')}
+        <div className='flex items-center justify-center min-h-screen'>
+            <div className='w-full max-w-md relative'>
+                <h1 className='text-center text-xl font-bold text-cradle2 mb-4'>
+                    {isEdit ? 'Edit Entry Type' : 'Add New Entry Type'}
+                </h1>
+                <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
+                    <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+                        <Tabs tabClasses='tabs gap-1' perTabClass='tab-pill'>
+                            <Tab title='Basic' classes='space-y-4'>
+                                <div className='mt-4' />
+                                <div className='w-full'>
+                                    <label
+                                        htmlFor='type'
+                                        className='block text-sm font-medium'
                                     >
-                                        <option value=''>Any Format</option>
-                                        <option value='options'>Enumerator</option>
-                                        <option value='regex'>Regex</option>
-                                    </select>
-                                    {errors.typeFormat && (
-                                        <p className='text-red-600 text-sm'>
-                                            {errors.typeFormat.message}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {watchType === 'artifact' && watchTypeFormat == 'options' && (
-                            <div className='w-full'>
-                                <label
-                                    htmlFor='typeFormatDetails'
-                                    className='block text-sm font-medium leading-6'
-                                >
-                                    Options
-                                </label>
-                                <div className='mt-2'>
-                                    <textarea
-                                        placeholder='Please enter the possible values for the type, separated by newlines.'
-                                        className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
-                                        {...register('options')}
-                                    />
-                                    {errors.typeFormatDetails && (
-                                        <p className='text-red-600 text-sm'>
-                                            Please enter the possible values for the
-                                            type, separated by newlines.
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {watchType === 'artifact' && watchTypeFormat == 'regex' && (
-                            <div className='w-full'>
-                                <label
-                                    htmlFor='typeFormatDetails'
-                                    className='block text-sm font-medium leading-6'
-                                >
-                                    Regex
-                                </label>
-                                <div className='mt-2'>
-                                    <textarea
-                                        placeholder='Please enter the regex for the type in this area.'
-                                        className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
-                                        {...register('regex')}
-                                    />
-                                    {errors.typeFormatDetails && (
-                                        <p className='text-red-600 text-sm'>
-                                            Please enter the regex for the type in this
-                                            area.
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {watchType === 'artifact' && watchTypeFormat !== 'options' && (
-                            <div className='w-full'>
-                                <label
-                                    htmlFor='generativeRegex'
-                                    className='block text-sm font-medium leading-6'
-                                >
-                                    Generative Regex
-                                </label>
-                                <div className='mt-2'>
-                                    <textarea
-                                        placeholder='Regex used to generate random values for this type.'
-                                        className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
-                                        {...register('generativeRegex')}
-                                    />
-                                    {errors.generativeRegex && (
-                                        <p className='text-red-600 text-sm'>
-                                            {errors.generativeRegex.message}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        <div className='w-full'>
-                            <label
-                                htmlFor='color'
-                                className='block text-sm font-medium leading-6'
-                            >
-                                Color
-                            </label>
-                            <div className='mt-2 flex items-center space-x-2'>
-                                <Controller
-                                    name='color'
-                                    control={control}
-                                    render={({ field }) => (
-                                        <input
-                                            type='text'
-                                            className='form-input input input-ghost-primary focus:ring-0'
-                                            {...field}
-                                        />
-                                    )}
-                                />
-                                <div
-                                    className='h-8 w-12 rounded cursor-pointer border border-gray-300'
-                                    style={{ backgroundColor: watchColor }}
-                                    onClick={() => setShowColorPicker(!showColorPicker)}
-                                />
-                                <button
-                                    type='button'
-                                    className='btn btn-sm btn-outline'
-                                    onClick={generateRandomColor}
-                                >
-                                    <svg
-                                        xmlns='http://www.w3.org/2000/svg'
-                                        className='h-4 w-4'
-                                        fill='none'
-                                        viewBox='0 0 24 24'
-                                        stroke='currentColor'
-                                    >
-                                        <path
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                            strokeWidth={2}
-                                            d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
-                                        />
-                                    </svg>
-                                </button>
-                            </div>
-                            {showColorPicker && (
-                                <div
-                                    className='absolute z-10'
-                                    style={{
-                                        left: '74%',
-                                        bottom: '14%',
-                                        marginLeft: '8px',
-                                    }}
-                                >
-                                    <div
-                                        className='fixed inset-0'
-                                        onClick={() => setShowColorPicker(false)}
-                                    />
-                                    <Controller
-                                        name='color'
-                                        control={control}
-                                        render={({ field }) => (
-                                            <HexColorPicker
-                                                color={field.value}
-                                                onChange={field.onChange}
-                                            />
+                                        Class Type
+                                    </label>
+                                    <div className='mt-1'>
+                                        <select
+                                            className='form-select select select-ghost-primary select-block focus:ring-0'
+                                            {...register('type')}
+                                        >
+                                            <option value='artifact'>Artifact</option>
+                                            <option value='entity'>Entity</option>
+                                        </select>
+                                        {errors.type && (
+                                            <p className='text-red-600 text-sm'>
+                                                {errors.type.message}
+                                            </p>
                                         )}
-                                    />
+                                    </div>
                                 </div>
-                            )}
-                            {errors.color && (
-                                <p className='text-red-600 text-sm'>
-                                    {errors.color.message}
-                                </p>
-                            )}
-                        </div>
+
+                                <div className='mt-4' />
+
+                                <FormField
+                                    type='text'
+                                    name='subtype'
+                                    labelText={isEdit ? 'Name' : 'Subtype'}
+                                    className='form-input input input-ghost-primary input-block focus:ring-0'
+                                    {...register('subtype')}
+                                    error={errors.subtype?.message}
+                                />
+
+                                <div className='mt-4' />
+
+                                <div className='w-full'>
+                                    <label
+                                        htmlFor='description'
+                                        className='block text-sm font-medium'
+                                    >
+                                        Description
+                                    </label>
+                                    <div className='mt-1'>
+                                        <textarea
+                                            placeholder='Description'
+                                            className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
+                                            {...register('description')}
+                                        />
+                                        {errors.description && (
+                                            <p className='text-red-600 text-sm'>
+                                                {errors.description.message}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className='mt-2' />
+
+                                {showColorPicker && (
+                                    <div
+                                        className='absolute z-10'
+                                        style={{
+                                            left: '74%',
+                                            bottom: '14%',
+                                            marginLeft: '8px',
+                                        }}
+                                    >
+                                        <div
+                                            className='fixed inset-0'
+                                            onClick={() => setShowColorPicker(false)}
+                                        />
+                                        <Controller
+                                            name='color'
+                                            control={control}
+                                            render={({ field }) => (
+                                                <HexColorPicker
+                                                    color={field.value}
+                                                    onChange={field.onChange}
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                )}
+
+                                <div className='w-full'>
+                                    <label
+                                        htmlFor='color'
+                                        className='block text-sm font-medium'
+                                    >
+                                        Color
+                                    </label>
+                                    <div className='mt-1 flex items-center space-x-2'>
+                                        <Controller
+                                            name='color'
+                                            control={control}
+                                            render={({ field }) => (
+                                                <input
+                                                    type='text'
+                                                    className='form-input input input-ghost-primary focus:ring-0'
+                                                    {...field}
+                                                />
+                                            )}
+                                        />
+                                        <div
+                                            className='h-8 w-12 rounded cursor-pointer border border-gray-300'
+                                            style={{ backgroundColor: watchColor }}
+                                            onClick={() =>
+                                                setShowColorPicker(!showColorPicker)
+                                            }
+                                        />
+                                        <button
+                                            type='button'
+                                            className='btn btn-sm btn-outline'
+                                            onClick={generateRandomColor}
+                                        >
+                                            <svg
+                                                xmlns='http://www.w3.org/2000/svg'
+                                                className='h-4 w-4'
+                                                fill='none'
+                                                viewBox='0 0 24 24'
+                                                stroke='currentColor'
+                                            >
+                                                <path
+                                                    strokeLinecap='round'
+                                                    strokeLinejoin='round'
+                                                    strokeWidth={2}
+                                                    d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+                                                />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className='mt-4' />
+                                {errors.color && (
+                                    <p className='text-red-600 text-sm'>
+                                        {errors.color.message}
+                                    </p>
+                                )}
+                            </Tab>
+                            <Tab title='Advanced'>
+                                {watchType === 'entity' && (
+                                    <div className='mt-4'>
+                                        <FormField
+                                            type='text'
+                                            name='prefix'
+                                            labelText='Prefix'
+                                            className='form-input input input-ghost-primary input-block focus:ring-0'
+                                            {...register('prefix')}
+                                            error={errors.prefix?.message}
+                                        />
+                                    </div>
+                                )}
+
+                                {watchType === 'artifact' && (
+                                    <div className='w-full mt-4'>
+                                        <label
+                                            htmlFor='typeFormat'
+                                            className='block text-sm font-medium'
+                                        >
+                                            Format
+                                        </label>
+                                        <div className='mt-1'>
+                                            <select
+                                                className='form-select select select-ghost-primary select-block focus:ring-0'
+                                                {...register('typeFormat')}
+                                            >
+                                                <option value=''>Any Format</option>
+                                                <option value='options'>
+                                                    Enumerator
+                                                </option>
+                                                <option value='regex'>Regex</option>
+                                            </select>
+                                            {errors.typeFormat && (
+                                                <p className='text-red-600 text-sm'>
+                                                    {errors.typeFormat.message}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {watchType === 'artifact' &&
+                                    watchTypeFormat === 'options' && (
+                                        <div className='w-full mt-4'>
+                                            <label
+                                                htmlFor='options'
+                                                className='block text-sm font-medium'
+                                            >
+                                                Options
+                                            </label>
+                                            <div className='mt-1'>
+                                                <textarea
+                                                    placeholder='Enter possible values separated by newlines.'
+                                                    className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
+                                                    {...register('options')}
+                                                />
+                                                {errors.options && (
+                                                    <p className='text-red-600 text-sm'>
+                                                        {errors.options.message ||
+                                                            'Please enter the possible values.'}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                {watchType === 'artifact' &&
+                                    watchTypeFormat === 'regex' && (
+                                        <div className='w-full mt-4'>
+                                            <label
+                                                htmlFor='regex'
+                                                className='block text-sm font-medium'
+                                            >
+                                                Regex
+                                            </label>
+                                            <div className='mt-1'>
+                                                <textarea
+                                                    placeholder='Enter the regex for the type.'
+                                                    className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
+                                                    {...register('regex')}
+                                                />
+                                                {errors.regex && (
+                                                    <p className='text-red-600 text-sm'>
+                                                        {errors.regex.message ||
+                                                            'Please enter the regex.'}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                {watchType === 'artifact' &&
+                                    watchTypeFormat !== 'options' && (
+                                        <div className='w-full mt-4'>
+                                            <label
+                                                htmlFor='generativeRegex'
+                                                className='block text-sm font-medium'
+                                            >
+                                                Generative Regex
+                                            </label>
+                                            <div className='mt-1'>
+                                                <textarea
+                                                    placeholder='Regex used to generate random values.'
+                                                    className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
+                                                    {...register('generativeRegex')}
+                                                />
+                                                {errors.generativeRegex && (
+                                                    <p className='text-red-600 text-sm'>
+                                                        {errors.generativeRegex.message}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                            </Tab>
+                        </Tabs>
+                        <div className='mt-4' />
 
                         <AlertBox alert={alert} />
 
-                        <div className='flex gap-2'>
+                        <div className='flex gap-2 pt-4'>
                             <button
                                 type='button'
                                 className='btn btn-ghost btn-block'

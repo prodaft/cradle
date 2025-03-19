@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useForm, Controller } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import {
@@ -13,30 +13,39 @@ import {
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
 import { displayError } from '../../utils/responseUtils/responseUtils';
+import Selector from '../Selector/Selector';
 
 const entitySchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     subtype: Yup.string().required('Subtype is required'),
     description: Yup.string().notRequired(),
+    aliases: Yup.array().notRequired(),
 });
 
-/**
- * EntityForm component
- *
- * @param {Object} props
- * @param {boolean} [props.isEdit=false] - If true, the form will be used for editing.
- */
-export default function EntityForm({ isEdit = false }) {
+export default function EntityForm({ id, isEdit = false }) {
     const navigate = useNavigate();
-    const { id } = useParams(); // id will be available when editing
     const [subclasses, setSubclasses] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+
+    // Dummy callback to fetch alias options.
+    const fetchAliases = async () => {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve([
+                    { value: 'alias1', label: 'Alias 1' },
+                    { value: 'alias2', label: 'Alias 2' },
+                    { value: 'alias3', label: 'Alias 3' },
+                ]);
+            }, 500);
+        });
+    };
 
     const {
         register,
         handleSubmit,
         watch,
         reset,
+        control,
         formState: { errors },
     } = useForm({
         resolver: yupResolver(entitySchema),
@@ -45,20 +54,19 @@ export default function EntityForm({ isEdit = false }) {
             subtype: '',
             description: '',
             is_public: false,
+            aliases: [],
         },
     });
 
-    // Always populate subclass options
+    // Populate subclass options.
     useEffect(() => {
         getEntryClasses(true)
             .then((response) => {
                 if (response.status === 200) {
-                    const entities = response.data;
-                    const filtered = entities.filter(
+                    const filtered = response.data.filter(
                         (entity) => entity.type === 'entity',
                     );
                     setSubclasses(filtered);
-                    // In creation mode, set the default subtype if available.
                     if (!isEdit && filtered.length > 0) {
                         reset((prev) => ({ ...prev, subtype: filtered[0].subtype }));
                     }
@@ -67,24 +75,30 @@ export default function EntityForm({ isEdit = false }) {
             .catch((err) => displayError(setAlert, navigate)(err));
     }, [isEdit, navigate, reset]);
 
-    // If editing, fetch the entity details and prepopulate the form.
+    // Prepopulate form data if editing.
     useEffect(() => {
         if (isEdit && id) {
             getEntity(id)
                 .then((response) => {
-                    if (response.status === 200) {
-                        const entity = response.data;
-                        if (entity) {
-                            reset({
-                                name: entity.name,
-                                subtype: entity.subtype,
-                                description: entity.description,
-                                is_public: entity.is_public,
-                            });
-                        }
+                    if (response.status === 200 && response.data) {
+                        reset({
+                            name: response.data.name,
+                            subtype: response.data.subtype,
+                            description: response.data.description,
+                            is_public: response.data.is_public,
+                            aliases: [], // Populate with response.data.aliases if available.
+                        });
                     }
                 })
                 .catch((err) => displayError(setAlert, navigate)(err));
+        } else {
+            reset({
+                name: '',
+                subtype: '',
+                description: '',
+                is_public: false,
+                aliases: [],
+            });
         }
     }, [isEdit, id, navigate, reset]);
 
@@ -95,6 +109,7 @@ export default function EntityForm({ isEdit = false }) {
             description: data.description,
             subtype: data.subtype,
             is_public: data.is_public,
+            aliases: data.aliases, // Contains the selected alias objects.
         };
 
         try {
@@ -109,6 +124,7 @@ export default function EntityForm({ isEdit = false }) {
         }
     };
 
+    // Auto-fill name when subtype changes in creation mode.
     const watchSubtype = watch('subtype');
     useEffect(() => {
         if (!isEdit && watchSubtype) {
@@ -118,42 +134,36 @@ export default function EntityForm({ isEdit = false }) {
                 })
                 .catch((err) => displayError(setAlert, navigate)(err));
         }
-    }, [watchSubtype]);
+    }, [watchSubtype, isEdit, navigate, reset]);
 
     return (
-        <div className='flex flex-row items-center justify-center h-screen'>
-            <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 md:h-fit xl:w-1/3'>
-                <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8'>
-                    <div className='sm:mx-auto sm:w-full sm:max-w-sm'>
-                        <h1 className='mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-cradle2'>
-                            {isEdit ? 'Edit Entity' : 'Add New Entity'}
-                        </h1>
-                    </div>
-                    <form
-                        onSubmit={handleSubmit(onSubmit)}
-                        className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm space-y-6'
-                    >
+        <div className='flex items-center justify-center min-h-screen'>
+            <div className='w-full max-w-md'>
+                <h1 className='text-center text-xl font-bold text-cradle2 mb-4'>
+                    {isEdit ? 'Edit Entity' : 'Add New Entity'}
+                </h1>
+                <div className='p-8 backdrop-blur-sm rounded-md bg-cradle3 bg-opacity-20'>
+                    <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
                         <FormField
                             type='text'
                             labelText='Name'
                             className='form-input input input-ghost-primary input-block focus:ring-0'
                             {...register('name')}
                             error={errors.name?.message}
-                            disabled={isEdit} // Disable name in edit mode
+                            disabled={isEdit}
                         />
-
                         <div className='w-full'>
                             <label
                                 htmlFor='subtype'
-                                className='block text-sm font-medium leading-6'
+                                className='block text-sm font-medium'
                             >
                                 Subtype
                             </label>
-                            <div className='mt-2'>
+                            <div className='mt-1'>
                                 <select
                                     className='form-select select select-ghost-primary select-block focus:ring-0'
                                     {...register('subtype')}
-                                    disabled={isEdit} // Disable subtype in edit mode
+                                    disabled={isEdit}
                                 >
                                     {subclasses.map((subclass, index) => (
                                         <option key={index} value={subclass.subtype}>
@@ -168,7 +178,6 @@ export default function EntityForm({ isEdit = false }) {
                                 )}
                             </div>
                         </div>
-
                         <FormField
                             type='checkbox'
                             labelText='Publicly Available'
@@ -177,15 +186,14 @@ export default function EntityForm({ isEdit = false }) {
                             row={true}
                             error={errors.is_public?.message}
                         />
-
                         <div className='w-full'>
                             <label
                                 htmlFor='description'
-                                className='block text-sm font-medium leading-6'
+                                className='block text-sm font-medium'
                             >
                                 Description
                             </label>
-                            <div className='mt-2'>
+                            <div className='mt-1'>
                                 <textarea
                                     placeholder='Description'
                                     className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
@@ -198,9 +206,32 @@ export default function EntityForm({ isEdit = false }) {
                                 )}
                             </div>
                         </div>
-
+                        {/* Aliases Field */}
+                        <div className='w-full'>
+                            <label className='block text-sm font-medium'>Aliases</label>
+                            <div className='mt-1'>
+                                <Controller
+                                    name='aliases'
+                                    control={control}
+                                    render={({ field: { onChange, value, ref } }) => (
+                                        <Selector
+                                            value={value}
+                                            onChange={onChange}
+                                            fetchOptions={fetchAliases}
+                                            isMulti={true}
+                                            placeholder='Select aliases...'
+                                            inputRef={ref}
+                                        />
+                                    )}
+                                />
+                                {errors.aliases && (
+                                    <p className='text-red-600 text-sm'>
+                                        {errors.aliases.message}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
                         <AlertBox alert={alert} />
-
                         <div className='flex gap-2'>
                             <button
                                 type='button'

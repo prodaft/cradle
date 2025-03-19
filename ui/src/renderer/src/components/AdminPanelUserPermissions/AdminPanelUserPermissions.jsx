@@ -18,8 +18,7 @@ import useAuth from '../../hooks/useAuth/useAuth';
  * @returns {AdminPanelUserPermissions}
  * @constructor
  */
-export default function AdminPanelUserPermissions() {
-    const { username, id } = useParams();
+export default function AdminPanelUserPermissions({ username, id }) {
     const [entities, setEntities] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
@@ -88,7 +87,7 @@ export default function AdminPanelUserPermissions() {
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='w-full h-full overflow-x-hidden overflow-y-scroll'>
-                <div className='container w-[70%] h-fit mx-auto my-4 center bg-gray-2 p-10 rounded-md'>
+                <div className='container w-[90%] h-fit mx-auto my-4 center bg-gray-2 p-10 rounded-md'>
                     <h1 className='text-3xl font-bold'>
                         User Settings:
                         <span className='text-3xl text-zinc-500'> {username}</span>

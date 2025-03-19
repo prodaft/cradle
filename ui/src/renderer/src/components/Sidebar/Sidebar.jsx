@@ -97,7 +97,7 @@ export default function Sidebar({
         navigate(reportsLocation);
     }, [navigate]);
 
-    const accountSettingsLocation = '/account/me';
+    const accountSettingsLocation = '/account';
     const handleAccountSettings = useCallback(() => {
         navigate(accountSettingsLocation);
     }, [navigate]);

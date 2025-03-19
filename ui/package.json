@@ -69,6 +69,7 @@
     "react-hook-form": "^7.54.2",
     "react-hotkeys-hook": "^4.6.1",
     "react-router-dom": "^6.23.0",
+    "react-select": "^5.10.1",
     "rippleui": "^1.12.1",
     "selenium-webdriver": "^4.21.0",
     "tailwind-scrollbar": "^3.1.0",

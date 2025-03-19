@@ -29,6 +29,14 @@ class FileReference(models.Model):
         blank=True,
     )
 
+    report: models.ForeignKey = models.ForeignKey(
+        "publish.PublishedReport",
+        related_name="files",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+
     def to_dict(self) -> dict[str, str]:
         """Provides a dictionary representation of the FileReference
         entry.

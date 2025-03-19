@@ -1,38 +1,42 @@
-import AdminPanelSection from '../AdminPanelSection/AdminPanelSection';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     getEntities,
     getEntryClasses,
     getUsers,
 } from '../../services/adminService/adminService';
-import AdminPanelCard from '../AdminPanelCard/AdminPanelCard';
+import AdminPanelCardEntity from '../AdminPanelCard/AdminPanelCardEntity';
+import AdminPanelCardUser from '../AdminPanelCard/AdminPanelCardUser';
+import AdminPanelCardEntryType from '../AdminPanelCard/AdminPanelCardEntryType';
+import AdminPanelSection from '../AdminPanelSection/AdminPanelSection';
 import { useEffect, useState } from 'react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 import useAuth from '../../hooks/useAuth/useAuth';
+import { Tabs, Tab } from '../Tabs/Tabs';
+import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
+import EntityForm from '../AdminPanelForms/EntityForm';
+import EntryTypeForm from '../AdminPanelForms/EntryTypeForm';
+import AccountSettings from '../AccountSettings/AccountSettings';
 
 /**
  * AdminPanel component - This component is used to display the AdminPanel.
- * Displays the AdminPanel with the following sections:
- * - Actors
+ * Displays the AdminPanel with tabs for:
  * - Entities
- * - Users
- * Each section contains a list of cards with the respective information and actions.
- * The actions are:
- * - Create new entry
- * - Delete entry
- * When deleting an entry a dialog will be displayed to confirm the deletion.
+ * - Entry Types
+ * - Users (admin only)
  *
- * @function AdminPanel
- * @returns {AdminPanel}
- * @constructor
+ * Each tab contains a list of cards using the adjusted cards which encapsulate
+ * the logic for deletion, editing, and activity navigation.
+ *
+ * @returns {JSX.Element} AdminPanel
  */
 export default function AdminPanel() {
     const [entities, setEntities] = useState(null);
     const [users, setUsers] = useState(null);
     const [entryTypes, setEntryTypes] = useState(null);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const [rightPane, setRightPane] = useState(null);
     const auth = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
@@ -42,23 +46,21 @@ export default function AdminPanel() {
         getEntities()
             .then((response) => {
                 if (response.status === 200) {
-                    let entities = response.data;
+                    const fetchedEntities = response.data;
                     setEntities(
-                        entities.map((c) => {
-                            return (
-                                <AdminPanelCard
-                                    id={c.id}
-                                    key={`${c.subtype}:${c.name}`}
-                                    name={c.name}
-                                    searchKey={c.name}
-                                    description={c.description}
-                                    type={'entity'}
-                                    onDelete={displayEntities}
-                                    link={createDashboardLink(c)}
-                                    typename={c.subtype}
-                                />
-                            );
-                        }),
+                        fetchedEntities.map((c) => (
+                            <AdminPanelCardEntity
+                                id={c.id}
+                                key={`${c.subtype}:${c.name}`}
+                                name={c.name}
+                                searchKey={c.name}
+                                description={c.description}
+                                onDelete={displayEntities}
+                                link={createDashboardLink(c)}
+                                typename={c.subtype}
+                                setRightPane={setRightPane}
+                            />
+                        )),
                     );
                 }
             })
@@ -69,21 +71,19 @@ export default function AdminPanel() {
         getEntryClasses(true)
             .then((response) => {
                 if (response.status === 200) {
-                    let entities = response.data;
+                    const fetchedEntryTypes = response.data;
                     setEntryTypes(
-                        entities.map((c) => {
-                            return (
-                                <AdminPanelCard
-                                    id={c.subtype}
-                                    key={c.subtype}
-                                    name={c.subtype}
-                                    searchKey={c.subtype}
-                                    type={'entrytype'}
-                                    onDelete={displayEntryTypes}
-                                    link={`/admin/edit/entry-type/${c.subtype.replace('/', '--')}`}
-                                />
-                            );
-                        }),
+                        fetchedEntryTypes.map((c) => (
+                            <AdminPanelCardEntryType
+                                id={c.subtype}
+                                key={c.subtype}
+                                name={c.subtype}
+                                searchKey={c.subtype}
+                                onDelete={displayEntryTypes}
+                                link={`/admin/edit/entry-type/${c.subtype.replace('/', '--')}`}
+                                setRightPane={setRightPane}
+                            />
+                        )),
                     );
                 }
             })
@@ -94,21 +94,22 @@ export default function AdminPanel() {
         getUsers()
             .then((response) => {
                 if (response.status === 200) {
-                    let users = response.data;
+                    const fetchedUsers = response.data;
                     setUsers(
-                        users.map((user) => {
-                            return (
-                                <AdminPanelCard
-                                    id={user.id}
-                                    key={user.username}
-                                    name={user.username}
-                                    searchKey={user.username}
-                                    type={'user'}
-                                    onDelete={displayUsers}
-                                    link={`/admin/user-permissions/${encodeURIComponent(user.username)}/${encodeURIComponent(user.id)}`}
-                                />
-                            );
-                        }),
+                        fetchedUsers.map((user) => (
+                            <AdminPanelCardUser
+                                id={user.id}
+                                key={user.username}
+                                name={user.username}
+                                searchKey={user.username}
+                                type={'user'}
+                                onDelete={displayUsers}
+                                link={`/admin/user-permissions/${encodeURIComponent(
+                                    user.username,
+                                )}/${encodeURIComponent(user.id)}`}
+                                setRightPane={setRightPane}
+                            />
+                        )),
                     );
                 }
             })
@@ -121,41 +122,62 @@ export default function AdminPanel() {
         }
         displayEntities();
         displayEntryTypes();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location.state]);
 
     return (
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
-            <div className='w-full h-full rounded-md flex flex-row p-1.5 gap-1.5 overflow-x-hidden overflow-y-scroll'>
-                <AdminPanelSection
-                    title={'Entities'}
-                    addEnabled={auth?.isAdmin()}
-                    addTooltipText={'Add Entity'}
-                    handleAdd={() => navigate('/admin/add/entity')}
-                    isLoading={entities === null}
-                >
-                    {entities}
-                </AdminPanelSection>
-                <AdminPanelSection
-                    title={'Entry Types'}
-                    addEnabled={auth?.isAdmin()}
-                    addTooltipText={'Add Entry Class'}
-                    handleAdd={() => navigate('/admin/add/entry-type')}
-                    isLoading={entryTypes === null}
-                >
-                    {entryTypes}
-                </AdminPanelSection>
-                {auth?.isAdmin() && (
-                    <AdminPanelSection
-                        title={'Users'}
-                        addEnabled={true}
-                        addTooltipText={'Add User'}
-                        handleAdd={() => navigate('/admin/add/user')}
-                        isLoading={users === null}
-                    >
-                        {users}
-                    </AdminPanelSection>
-                )}
+            <div className='w-full h-full'>
+                <ResizableSplitPane
+                    initialSplitPosition={40} // matches the original 2/5 width
+                    leftClassName='m-3'
+                    leftContent={
+                        <Tabs defaultTab={0}>
+                            <Tab title='Entities'>
+                                <AdminPanelSection
+                                    addEnabled={auth?.isAdmin()}
+                                    addTooltipText='Add Entity'
+                                    handleAdd={() =>
+                                        setRightPane(<EntityForm isEdit={false} />)
+                                    }
+                                    isLoading={entities === null}
+                                >
+                                    {entities}
+                                </AdminPanelSection>
+                            </Tab>
+                            <Tab title='Entry Types'>
+                                <AdminPanelSection
+                                    addEnabled={auth?.isAdmin()}
+                                    addTooltipText='Add Entry Class'
+                                    handleAdd={() =>
+                                        setRightPane(<EntryTypeForm isEdit={false} />)
+                                    }
+                                    isLoading={entryTypes === null}
+                                >
+                                    {entryTypes}
+                                </AdminPanelSection>
+                            </Tab>
+                            {auth?.isAdmin() && (
+                                <Tab title='Users'>
+                                    <AdminPanelSection
+                                        addEnabled={true}
+                                        addTooltipText='Add User'
+                                        handleAdd={() =>
+                                            setRightPane(
+                                                <AccountSettings isEdit={false} />,
+                                            )
+                                        }
+                                        isLoading={users === null}
+                                    >
+                                        {users}
+                                    </AdminPanelSection>
+                                </Tab>
+                            )}
+                        </Tabs>
+                    }
+                    rightContent={<div>{rightPane}</div>}
+                />
             </div>
         </>
     );

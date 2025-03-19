@@ -38,9 +38,6 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
         max_length=65536, blank=True, default=""
     )
 
-    catalyst_type: models.CharField = models.CharField(
-        max_length=64, blank=True, default=""
-    )
     color: models.CharField = models.CharField(max_length=7, default="#e66100")
 
     prefix: models.CharField = models.CharField(max_length=64, blank=True)

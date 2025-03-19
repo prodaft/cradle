@@ -136,7 +136,6 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Threat Intelligence Knowledge Management",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
-    # OTHER SETTINGS
 }
 
 SIMPLE_JWT = {

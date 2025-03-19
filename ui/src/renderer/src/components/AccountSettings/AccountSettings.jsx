@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import AlertBox from '../AlertBox/AlertBox';
@@ -14,14 +14,8 @@ import {
     deleteUser,
     createUser,
 } from '../../services/userService/userService';
+import { Tabs, Tab } from '../Tabs/Tabs';
 
-/*
-  The Yup schema is context-sensitive:
-  - When adding a user (isEdit=false) the password is required.
-  - When editing (isEdit=true), the default password value "password" means "unchanged".
-  - Admin-only fields (role, email_confirmed, is_active) are only required when the logged in user is an admin
-    editing another account (or adding a user).
-*/
 const accountSettingsSchema = Yup.object().shape({
     username: Yup.string().required('Username is required'),
     email: Yup.string().email('Invalid email').required('Email is required'),
@@ -41,17 +35,13 @@ const accountSettingsSchema = Yup.object().shape({
     is_active: Yup.boolean(),
 });
 
-export default function AccountSettings({ isEdit = true }) {
-    const { target } = useParams();
+export default function AccountSettings({ target, isEdit = true }) {
     const navigate = useNavigate();
     const auth = useAuth();
     const isAdmin = auth?.isAdmin();
-
     const isOwnAccount = isEdit ? target === 'me' || auth?.userId === target : false;
     const isAdminAndNotOwn = isAdmin && !isOwnAccount;
 
-    // For deletion and update, the form's id is important.
-    // In add mode, there is no existing id.
     const defaultValues = isEdit
         ? {
               id: '',
@@ -92,7 +82,7 @@ export default function AccountSettings({ isEdit = true }) {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [dialog, setDialog] = useState(false);
 
-    // In edit mode, load the user details to prepopulate the form.
+    // Prepopulate form in edit mode.
     useEffect(() => {
         if (isEdit && target) {
             getUser(target)
@@ -110,12 +100,13 @@ export default function AccountSettings({ isEdit = true }) {
                     });
                 })
                 .catch(displayError(setAlert, navigate));
+        } else {
+            reset(defaultValues);
         }
     }, [isEdit, target, reset, navigate]);
 
     const onSubmit = async (data) => {
         if (isEdit) {
-            // For editing, only update password if it has been changed.
             const payload = {};
             if (data.password !== 'password') {
                 payload.password = data.password;
@@ -142,7 +133,6 @@ export default function AccountSettings({ isEdit = true }) {
                 displayError(setAlert, navigate)(err);
             }
         } else {
-            // In add mode, all fields (including password) are taken as entered.
             const payload = {
                 username: data.username,
                 email: data.email,
@@ -188,125 +178,133 @@ export default function AccountSettings({ isEdit = true }) {
                 description='This is permanent'
                 handleConfirm={handleDelete}
             />
-            <div className='flex flex-row items-center justify-center h-screen'>
-                <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 md:h-fit xl:w-1/3'>
-                    <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8'>
-                        <div className='sm:mx-auto sm:w-full sm:max-w-sm'>
-                            <h1 className='mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-cradle2'>
-                                {isEdit ? 'Account Settings' : 'Add New User'}
-                            </h1>
-                        </div>
-                        <form
-                            onSubmit={handleSubmit(onSubmit)}
-                            className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm space-y-6'
-                        >
-                            <FormField
-                                name='username'
-                                type='text'
-                                labelText='Username'
-                                placeholder='Username'
-                                {...register('username')}
-                                error={errors.username?.message}
-                                disabled={isEdit}
-                            />
-                            <FormField
-                                name='email'
-                                type='text'
-                                labelText='Email'
-                                placeholder='Email'
-                                {...register('email')}
-                                error={errors.email?.message}
-                                disabled={isEdit}
-                            />
-
-                            {isEdit ? (
-                                isAdminAndNotOwn && (
+            <div className='flex items-center justify-center min-h-screen'>
+                <div className='w-full max-w-md'>
+                    <h1 className='text-center text-xl font-bold text-cradle2 mb-4'>
+                        {isEdit ? 'Account Settings' : 'Add New User'}
+                    </h1>
+                    <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
+                        <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+                            <Tabs tabClasses='tabs gap-1' perTabClass='tab-pill'>
+                                <Tab title='Settings'>
+                                    <div className='mt-4' />
                                     <FormField
-                                        name='password'
+                                        name='username'
+                                        type='text'
+                                        labelText='Username'
+                                        placeholder='Username'
+                                        {...register('username')}
+                                        error={errors.username?.message}
+                                        disabled={isEdit}
+                                    />
+                                    <div className='mt-4' />
+                                    <FormField
+                                        name='email'
+                                        type='text'
+                                        labelText='Email'
+                                        placeholder='Email'
+                                        {...register('email')}
+                                        error={errors.email?.message}
+                                        disabled={isEdit}
+                                    />
+
+                                    <div className='mt-4' />
+                                    {isEdit ? (
+                                        isAdminAndNotOwn && (
+                                            <FormField
+                                                name='password'
+                                                type='password'
+                                                labelText='Password'
+                                                placeholder='Password'
+                                                {...register('password')}
+                                                error={errors.password?.message}
+                                            />
+                                        )
+                                    ) : (
+                                        <FormField
+                                            name='password'
+                                            type='password'
+                                            labelText='Password'
+                                            placeholder='Password'
+                                            {...register('password')}
+                                            error={errors.password?.message}
+                                        />
+                                    )}
+                                    {isAdmin && (!isEdit || isAdminAndNotOwn) && (
+                                        <>
+                                            <div className='w-full mt-4'>
+                                                <label className='block text-sm font-medium'>
+                                                    Role
+                                                </label>
+                                                <div className='mt-1'>
+                                                    <select
+                                                        className='form-select select select-ghost-primary select-block focus:ring-0'
+                                                        {...register('role')}
+                                                    >
+                                                        <option value='author'>
+                                                            User
+                                                        </option>
+                                                        <option value='entrymanager'>
+                                                            Entry Manager
+                                                        </option>
+                                                        <option value='admin'>
+                                                            Admin
+                                                        </option>
+                                                    </select>
+                                                </div>
+                                                {errors.role && (
+                                                    <p className='text-red-600 text-sm'>
+                                                        {errors.role.message}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className='mt-4' />
+                                            <FormField
+                                                type='checkbox'
+                                                labelText='Email Confirmed'
+                                                className='switch switch-ghost-primary'
+                                                {...register('email_confirmed')}
+                                                row={true}
+                                                error={errors.email_confirmed?.message}
+                                            />
+                                            <div className='mt-4' />
+                                            <FormField
+                                                type='checkbox'
+                                                labelText='Account Active'
+                                                className='switch switch-ghost-primary'
+                                                {...register('is_active')}
+                                                row={true}
+                                                error={errors.is_active?.message}
+                                            />
+                                        </>
+                                    )}
+                                </Tab>
+                                <Tab title='API Keys'>
+                                    <div className='mt-4' />
+                                    <FormField
+                                        name='vtKey'
                                         type='password'
-                                        labelText='Password'
-                                        placeholder='Password'
-                                        {...register('password')}
-                                        error={errors.password?.message}
+                                        labelText='VirusTotal API Key'
+                                        placeholder='VirusTotal API Key'
+                                        {...register('vtKey')}
+                                        error={errors.vtKey?.message}
                                     />
-                                )
-                            ) : (
-                                // In add mode, always show the password field (and require it).
-                                <FormField
-                                    name='password'
-                                    type='password'
-                                    labelText='Password'
-                                    placeholder='Password'
-                                    {...register('password')}
-                                    error={errors.password?.message}
-                                />
-                            )}
-
-                            <FormField
-                                name='vtKey'
-                                type='password'
-                                labelText='VirusTotal API Key'
-                                placeholder='VirusTotal API Key'
-                                {...register('vtKey')}
-                                error={errors.vtKey?.message}
-                            />
-                            <FormField
-                                name='catalystKey'
-                                type='password'
-                                labelText='Catalyst API Key'
-                                placeholder='Catalyst API Key'
-                                {...register('catalystKey')}
-                                error={errors.catalystKey?.message}
-                            />
-
-                            {isAdmin && (!isEdit || isAdminAndNotOwn) && (
-                                <>
-                                    <div className='w-full'>
-                                        <label className='block text-sm font-medium leading-6'>
-                                            Role
-                                        </label>
-                                        <div className='mt-2'>
-                                            <select
-                                                className='form-select select select-ghost-primary select-block focus:ring-0'
-                                                {...register('role')}
-                                            >
-                                                <option value='author'>User</option>
-                                                <option value='entrymanager'>
-                                                    Entry Manager
-                                                </option>
-                                                <option value='admin'>Admin</option>
-                                            </select>
-                                        </div>
-                                        {errors.role && (
-                                            <p className='text-red-600 text-sm'>
-                                                {errors.role.message}
-                                            </p>
-                                        )}
-                                    </div>
-
+                                    <div className='mt-4' />
                                     <FormField
-                                        type='checkbox'
-                                        labelText='Email Confirmed'
-                                        className='switch switch-ghost-primary'
-                                        {...register('email_confirmed')}
-                                        row={true}
-                                        error={errors.email_confirmed?.message}
+                                        name='catalystKey'
+                                        type='password'
+                                        labelText='Catalyst API Key'
+                                        placeholder='Catalyst API Key'
+                                        {...register('catalystKey')}
+                                        error={errors.catalystKey?.message}
                                     />
-
-                                    <FormField
-                                        type='checkbox'
-                                        labelText='Account Active'
-                                        className='switch switch-ghost-primary'
-                                        {...register('is_active')}
-                                        row={true}
-                                        error={errors.is_active?.message}
-                                    />
-                                </>
-                            )}
-
+                                </Tab>
+                            </Tabs>
                             <AlertBox alert={alert} />
-
-                            <button type='submit' className='btn btn-primary btn-block'>
+                            <button
+                                type='submit'
+                                className='btn btn-primary btn-block mt-4'
+                            >
                                 {isEdit ? 'Save' : 'Add'}
                             </button>
                             {isEdit && isOwnAccount && (

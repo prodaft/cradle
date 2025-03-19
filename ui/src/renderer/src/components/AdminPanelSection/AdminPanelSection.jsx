@@ -1,7 +1,6 @@
 import { PlusCircle } from 'iconoir-react';
 import useFrontendSearch from '../../hooks/useFrontendSearch/useFrontendSearch';
 import useAuth from '../../hooks/useAuth/useAuth';
-
 /**
  * AdminPanelSection component - This component is used to display a section in the AdminPanel.
  * The section contains the following elements:
@@ -28,10 +27,9 @@ export default function AdminPanelSection({
     addTooltipText,
     handleAdd,
     children,
-    isLoading = false, // New prop to track loading state
+    isLoading = false,
 }) {
     const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(children);
-
     // Sort the filtered children based on their key property
     const sortedFilteredChildren = filteredChildren
         ? [...filteredChildren].sort((a, b) => {
@@ -41,31 +39,27 @@ export default function AdminPanelSection({
               return aKey.localeCompare(bKey);
           })
         : [];
-
     return (
-        <div className='w-full h-fit bg-gray-2 rounded-md p-3'>
-            <div className='w-full h-12 flex flex-row items-center justify-between'>
-                <h1 className='text-2xl font-bold pl-2'>{title}</h1>
-                {addEnabled && (
-                    <span
-                        className='tooltip tooltip-bottom'
-                        data-tooltip={addTooltipText}
-                    >
-                        <button className='h-fit m-1' onClick={handleAdd}>
-                            <PlusCircle />
-                        </button>
-                    </span>
-                )}
-            </div>
-            <div className='w-full h-12 my-2'>
+        <div className='w-full h-full flex flex-col rounded-md p-3'>
+            <div className='w-full flex flex-row items-center justify-between mb-2'>
                 <input
                     type='text'
                     placeholder='Search'
                     className='form-input input input-rounded input-md input-block input-ghost-primary focus:ring-0 w-full'
                     onChange={(e) => setSearchVal(e.target.value)}
                 />
+                {addEnabled && (
+                    <span
+                        className='tooltip tooltip-bottom'
+                        data-tooltip={addTooltipText}
+                    >
+                        <button className='h-fit m-2' onClick={handleAdd}>
+                            <PlusCircle />
+                        </button>
+                    </span>
+                )}
             </div>
-            <div className='w-full flex flex-col space-y-2 gap-1'>
+            <div className='w-full flex-grow overflow-y-auto flex flex-col space-y-2 gap-1 h-screen'>
                 {isLoading ? (
                     // Loading spinner
                     <div className='flex items-center justify-center min-h-[200px]'>
