@@ -134,14 +134,14 @@ export class CradleEditor {
             if (criteria.regex) {
                 // Wrap each pattern in a named capturing group using the entry type.
                 patterns.push(
-                    `(?<${replaceSlashWithDoubleUnderscore(type)}>${criteria.regex})`,
+                    `(?<${replaceSlashWithDoubleUnderscore(type)}>(?<=^|\\s)${criteria.regex}(?=$|\\s))`,
                 );
             }
         }
         if (patterns.length > 0) {
             const pattern = patterns.join('|');
             this.combinedRegex = new RegExp(pattern, 'gi'); // For scanning text
-            this.combinedWordRegex = new RegExp(`^(?:${pattern})$`, 'i'); // For matching whole words
+            this.combinedWordRegex = this.combinedRegex;
         }
     }
 
