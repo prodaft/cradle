@@ -5,36 +5,14 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from typing import cast
-from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from entries.models import Entry, EntryClass
 from user.models import CradleUser
 from ..utils.dashboard_utils import DashboardUtils
 from ..serializers import ArtifactDashboardSerializer
 from notes.models import Note
-from drf_spectacular.utils import extend_schema_view
 
 
-@extend_schema_view(
-    get=extend_schema(
-        summary="Get Artifact Dashboard",
-        description="Retrieve dashboard information for a specific artifact by name.",
-        parameters=[
-            OpenApiParameter(
-                name="subtype",
-                description="The subtype of the artifact",
-                required=True,
-                type=str,
-            ),
-        ],
-        responses={
-            200: ArtifactDashboardSerializer,
-            400: "Invalid artifact subtype",
-            401: "User is not authenticated",
-            404: "Artifact not found",
-        },
-    )
-)
 class ArtifactDashboard(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

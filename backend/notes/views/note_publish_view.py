@@ -17,16 +17,30 @@ from user.models import CradleUser
 from ..models import Note
 from ..serializers import NotePublishSerializer
 
+from drf_spectacular.utils import OpenApiParameter
+
 
 @extend_schema_view(
     put=extend_schema(
-        summary="Update Note Publishable Status",
-        description="Allow a user to change a Note's publishable status, either to publishable or not publishable.",
+        summary="Update note publishable status",
+        description="Updates whether a note is publishable or not. User must have read-write access to all entities referenced in the note.",  # noqa: E501
+        parameters=[
+            OpenApiParameter(
+                name="note_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the note to update publishable status",
+            )
+        ],
         request=NotePublishSerializer,
         responses={
-            200: "Successfully updated the note's publishable status.",
-            404: "Note does not exist.",
-            401: "Unauthorized",
+            200: {"description": "Publishable status updated successfully"},
+            400: {"description": "Invalid request data"},
+            401: {"description": "User is not authenticated"},
+            403: {
+                "description": "User does not have read-write access to all referenced entities"
+            },
+            404: {"description": "Note not found"},
         },
     )
 )

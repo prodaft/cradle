@@ -73,4 +73,4 @@ You now have a fully functional demo of CRADLE running on your machine! When you
 docker compose -f docker-compose.demo.yml down
 ```
 
-For more detailed documentation and advanced configuration, please refer to the [CRADLE Documentation](https://github.com/prodaft/cradle).
+For more detailed documentation and advanced configuration, please refer to the [CRADLE Documentation](https://github.com/prodaft/cradle/tree/main/docker).

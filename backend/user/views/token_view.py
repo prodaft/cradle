@@ -8,11 +8,26 @@ from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
     TokenRefreshSerializer,
 )
+from drf_spectacular.utils import extend_schema_view
 
 
+@extend_schema_view(
+    post=extend_schema(
+        summary="Obtain JWT Pair",
+        description="Obtain a new pair of access and refresh tokens by providing valid user credentials.",  # noqa: E501
+        request=TokenObtainPairSerializer,
+        responses={
+            200: TokenObtainPairSerializer,
+            400: {"description": "Bad Request: Invalid credentials"},
+            401: {
+                "description": "Unauthorized: Authentication failed or email not confirmed or account not activated"  # noqa: E501
+            },
+        },
+    )
+)
 class TokenObtainPairLogView(TokenObtainPairView):
     @extend_schema(
-        description="Obtain a new pair of access and refresh tokens by providing valid user credentials.",
+        description="Obtain a new pair of access and refresh tokens by providing valid user credentials.",  # noqa: E501
         request=TokenObtainPairSerializer,
         responses={
             200: TokenObtainPairSerializer,
@@ -43,6 +58,18 @@ class TokenObtainPairLogView(TokenObtainPairView):
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
+@extend_schema_view(
+    post=extend_schema(
+        summary="Refresh Access Token",
+        description="Refresh the access token using a valid refresh token.",
+        request=TokenRefreshSerializer,
+        responses={
+            200: TokenRefreshSerializer,
+            400: {"description": "Bad Request: Invalid refresh token"},
+            401: {"description": "Unauthorized: Refresh token expired or invalid"},
+        },
+    )
+)
 class TokenRefreshLogView(TokenRefreshView):
     @extend_schema(
         description="Refresh the access token using a valid refresh token.",

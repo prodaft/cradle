@@ -1,5 +1,5 @@
 [tool.bumpversion]
-current_version = "1.5.3"
+current_version = "1.5.4"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
 serialize = ["{major}.{minor}.{patch}"]
 search = "{current_version}"
@@ -22,3 +22,7 @@ post_commit_hooks = []
 
 [[tool.bumpversion.files]]
 filename = "docs/content/_index.md"
+
+
+[[tool.bumpversion.files]]
+filename = "backend/cradle/settings_common.py"
