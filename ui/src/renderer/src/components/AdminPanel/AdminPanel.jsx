@@ -19,7 +19,8 @@ import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
 import EntityForm from '../AdminPanelForms/EntityForm';
 import EntryTypeForm from '../AdminPanelForms/EntryTypeForm';
 import AccountSettings from '../AccountSettings/AccountSettings';
-import { getMappingTypes } from '../../services/intelioService/intelioService';
+import { getEnrichmentTypes, getMappingTypes } from '../../services/intelioService/intelioService';
+import AdminPanelCardEnrichment from '../AdminPanelCard/AdminPanelCardEnrichment';
 
 /**
  * AdminPanel component - This component is used to display the AdminPanel.
@@ -36,6 +37,7 @@ import { getMappingTypes } from '../../services/intelioService/intelioService';
 export default function AdminPanel() {
     const [entities, setEntities] = useState(null);
     const [mappingTypes, setMappingTypes] = useState(null);
+    const [enrichmentTypes, setEnrichmentTypes] = useState(null);
     const [users, setUsers] = useState(null);
     const [entryTypes, setEntryTypes] = useState(null);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
@@ -54,10 +56,7 @@ export default function AdminPanel() {
                         fetchedEntities.map((c) => (
                             <AdminPanelCardEntity
                                 id={c.id}
-                                key={`${c.subtype}:${c.name}`}
                                 name={c.name}
-                                searchKey={c.name}
-                                description={c.description}
                                 onDelete={displayEntities}
                                 link={createDashboardLink(c)}
                                 typename={c.subtype}
@@ -79,11 +78,8 @@ export default function AdminPanel() {
                         fetchedEntryTypes.map((c) => (
                             <AdminPanelCardEntryType
                                 id={c.subtype}
-                                key={c.subtype}
                                 name={c.subtype}
-                                searchKey={c.subtype}
                                 onDelete={displayEntryTypes}
-                                link={`/admin/edit/entry-type/${c.subtype.replace('/', '--')}`}
                                 setRightPane={setRightPane}
                             />
                         )),
@@ -102,14 +98,8 @@ export default function AdminPanel() {
                         fetchedUsers.map((user) => (
                             <AdminPanelCardUser
                                 id={user.id}
-                                key={user.username}
                                 name={user.username}
-                                searchKey={user.username}
-                                type={'user'}
                                 onDelete={displayUsers}
-                                link={`/admin/user-permissions/${encodeURIComponent(
-                                    user.username,
-                                )}/${encodeURIComponent(user.id)}`}
                                 setRightPane={setRightPane}
                             />
                         )),
@@ -138,6 +128,25 @@ export default function AdminPanel() {
             .catch(handleError);
     };
 
+    const displayEnrichmentTypes = async () => {
+        getEnrichmentTypes()
+            .then((response) => {
+                if (response.status === 200) {
+                    const enrichmentTypes = response.data;
+                    setEnrichmentTypes(
+                        enrichmentTypes.map((x) => (
+                            <AdminPanelCardEnrichment
+                                id={x.class}
+                                name={x.name}
+                                setRightPane={setRightPane}
+                            />
+                        )),
+                    );
+                }
+            })
+            .catch(handleError);
+    };
+
     useEffect(() => {
         if (auth?.isAdmin()) {
             displayUsers();
@@ -145,6 +154,7 @@ export default function AdminPanel() {
         displayEntities();
         displayEntryTypes();
         displayMappingTypes();
+        displayEnrichmentTypes();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location.state]);
 
@@ -200,12 +210,17 @@ export default function AdminPanel() {
                             <Tab title='Type Mappings'>
                                 <AdminPanelSection
                                     addEnabled={false}
-                                    handleAdd={() =>
-                                        setRightPane(<EntryTypeForm isEdit={false} />)
-                                    }
                                     isLoading={mappingTypes === null}
                                 >
                                     {mappingTypes}
+                                </AdminPanelSection>
+                            </Tab>
+                            <Tab title='Enrichment'>
+                                <AdminPanelSection
+                                    addEnabled={false}
+                                    isLoading={enrichmentTypes === null}
+                                >
+                                    {enrichmentTypes}
                                 </AdminPanelSection>
                             </Tab>
                         </Tabs>

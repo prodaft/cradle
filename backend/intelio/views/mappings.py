@@ -7,6 +7,7 @@ from django.apps import apps
 
 from ..models.base import ClassMapping
 from ..serializers import ClassMappingSerializer
+from ..utils import fields_to_form
 from user.permissions import HasEntryManagerRole
 
 
@@ -46,32 +47,7 @@ class MappingKeysSchemaView(APIView):
         if not issubclass(mapping_class, ClassMapping) or mapping_class._meta.abstract:
             return Response({"error": "Not a valid mapping class"}, status=400)
 
-        field_mapping = {}
-        for field in mapping_class._meta.fields:
-            if field == mapping_class._meta.pk:
-                continue
-            if isinstance(field, models.CharField):
-                field_type = "string"
-                options = None
-                if hasattr(field, "choices") and field.choices:
-                    field_type = "options"
-                    options = [choice[0] for choice in field.choices]
-            elif isinstance(field, models.IntegerField) or isinstance(
-                field, models.FloatField
-            ):
-                field_type = "number"
-                options = None
-            else:
-                continue
-
-            field_mapping[field.name] = {
-                "type": field_type,
-                "options": options,
-                "required": not field.null and not field.blank,
-                "default": field.default
-                if field.default != models.fields.NOT_PROVIDED
-                else None,
-            }
+        field_mapping = fields_to_form({f.name: f for f in mapping_class._meta.fields})
 
         return Response(field_mapping)
 

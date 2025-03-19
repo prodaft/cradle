@@ -195,7 +195,7 @@ export default function AccountSettings({ target, isEdit = true }) {
                                         placeholder='Username'
                                         {...register('username')}
                                         error={errors.username?.message}
-                                        disabled={isEdit}
+                                        disabled={!isAdmin && isEdit}
                                     />
                                     <div className='mt-4' />
                                     <FormField
@@ -205,7 +205,7 @@ export default function AccountSettings({ target, isEdit = true }) {
                                         placeholder='Email'
                                         {...register('email')}
                                         error={errors.email?.message}
-                                        disabled={isEdit}
+                                        disabled={!isAdmin && isEdit}
                                     />
 
                                     <div className='mt-4' />

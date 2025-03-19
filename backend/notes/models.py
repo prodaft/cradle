@@ -37,7 +37,7 @@ class Relation(LifecycleModel):
             models.UniqueConstraint(
                 fields=["src_entry", "dst_entry", "content_type", "object_id"],
                 name="unique_src_dst_object",
-            )
+            ),
         ]
 
     indexes = [

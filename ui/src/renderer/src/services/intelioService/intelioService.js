@@ -12,6 +12,18 @@ export function getMappingTypes() {
     });
 }
 
+/**
+ * Function to get the enrichment types
+ *
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export function getEnrichmentTypes() {
+    return authAxios({
+        method: 'GET',
+        url: '/intelio/enrichment/',
+    });
+}
+
 
 /**
  * Function to get the mapping keys
@@ -62,5 +74,32 @@ export function deleteMapping(id, mappingId) {
         method: 'DELETE',
         url: `/intelio/mappings/${id}/`,
         params: { mapping_id: mappingId },
+    });
+}
+
+
+/**
+ * Function to get an enrichment
+ *
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export function getEnrichmentSettings(id) {
+    return authAxios({
+        method: 'GET',
+        url: `/intelio/enrichment/${id}/`,
+    });
+}
+
+
+/**
+ * Function to save a mapping
+ *
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export function saveEnrichmentSettings(id, enrichment) {
+    return authAxios({
+        method: 'POST',
+        url: `/intelio/enrichment/${id}/`,
+        data: enrichment,
     });
 }

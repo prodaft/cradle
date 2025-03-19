@@ -7,13 +7,11 @@ import { deleteEntry } from '../../services/adminService/adminService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import useAuth from '../../hooks/useAuth/useAuth';
 import EntityForm from '../AdminPanelForms/EntityForm';
+import EnrichmentSettingsForm from '../AdminPanelForms/EnrichmentSettingsForm';
 
-export default function AdminPanelCardEntity({
+export default function AdminPanelCardEnrichment({
     name,
     id,
-    link,
-    onDelete,
-    typename,
     setRightPane,
 }) {
     const [dialog, setDialog] = useState(false);
@@ -21,37 +19,20 @@ export default function AdminPanelCardEntity({
     const navigate = useNavigate();
     const auth = useAuth();
 
-    const handleDelete = async () => {
-        try {
-            const response = await deleteEntry('entities', id);
-            if (response.status === 200) onDelete();
-        } catch (error) {
-            displayError(setAlert, navigate)(error);
-        }
-    };
-
     const handleActivityClick = () => {
         navigate(`/activity?content_type=entry&object_id=${id}`);
     };
 
     const handleEditClick = () => {
-        setRightPane(<EntityForm id={id} isEdit={true} />);
+        setRightPane(<EnrichmentSettingsForm enrichment_class={id} />);
     };
 
     return (
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
-            <ConfirmationDialog
-                open={dialog}
-                setOpen={setDialog}
-                title='Confirm Deletion'
-                description='This is permanent'
-                handleConfirm={handleDelete}
-            />
             <div className='h-fit w-full bg-cradle3 p-3 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl'>
                 <h2 className='card-header w-full mx-2 px-1 break-all'>
                     <Link onClick={handleEditClick}>
-                        <span className='text-zinc-500'>{`${typename}: `}</span>
                         {name}
                     </Link>
                 </h2>
@@ -70,14 +51,6 @@ export default function AdminPanelCardEntity({
                     >
                         <EditPencil />
                     </button>
-                    {auth?.isAdmin() && (
-                        <button
-                            className='btn btn-ghost w-fit h-full p-1'
-                            onClick={() => setDialog((prev) => !prev)}
-                        >
-                            <Trash />
-                        </button>
-                    )}
                 </div>
             </div>
         </>

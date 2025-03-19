@@ -5,6 +5,8 @@ from .views.mappings import (
     MappingKeysSchemaView,
 )
 
+from .views.enrichment import EnrichmentSubclassesAPIView, EnrichmentSettingsAPIView
+
 urlpatterns = [
     path(
         "mappings/",
@@ -20,5 +22,15 @@ urlpatterns = [
         "mappings/<str:class_name>/keys",
         MappingKeysSchemaView.as_view(),
         name="mapping-keys-schema",
+    ),
+    path(
+        "enrichment/",
+        EnrichmentSubclassesAPIView.as_view(),
+        name="enrichment-subclasses",
+    ),
+    path(
+        "enrichment/<str:enricher_type>/",
+        EnrichmentSettingsAPIView.as_view(),
+        name="enrichment-schema",
     ),
 ]
