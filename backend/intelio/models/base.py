@@ -1,4 +1,6 @@
+from typing import Any
 from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.fields.related import ForeignKey
@@ -26,11 +28,38 @@ class BaseDigest(models.Model):
     name = models.CharField(max_length=255, null=False, blank=False)
     fpath = models.CharField(max_length=255, null=False, blank=False)
 
-    errors = models.JSONField(default=[], blank=True)
-    warnings = models.JSONField(default=[], blank=True)
+    errors = models.JSONField(default=list, blank=True)
+    warnings = models.JSONField(default=list, blank=True)
+
+    enricher_type = models.CharField(max_length=255, null=False, blank=False)
 
     class Meta:
-        abstract = True
+        ordering = ["-created_at"]
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.enricher_type = self.__class__.__name__
+
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        for i in range(len(field_names)):
+            if field_names[i] == "content_type":
+                if cls.get_subclass(values[i]) is not None:
+                    cls = cls.get_subclass(values[i])
+                else:
+                    raise ValueError(f"Unknown subclass: {values[i]}")
+
+        instance = cls.from_db(db, field_names, values)
+
+        return instance
+
+    @classmethod
+    def get_subclass(cls, name):
+        for subclass in cls.__subclasses__():
+            if subclass.__name__ == name:
+                return subclass
+
+        return None
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -75,6 +104,7 @@ class Association(LifecycleModel):
 
     class Meta:
         abstract = True
+        ordering = ["-created_at"]
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -137,6 +167,7 @@ class Encounter(models.Model):
 
     class Meta:
         abstract = True
+        ordering = ["-created_at"]
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -223,6 +254,8 @@ class EnricherSettings(models.Model):
 
     enricher_type = models.CharField(max_length=255, unique=True)
     settings = models.JSONField(default=dict, blank=True)
+
+    enabled = models.BooleanField(default=False)
 
     def __str__(self):
         config = self.get_type_config()

@@ -1,15 +1,12 @@
-from django.db import models
-from django.forms import ValidationError
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import viewsets, status
-from django.apps import apps
+from rest_framework import status
 
 from ..utils import get_or_default_enricher
 
-from ..models.base import BaseEnricher, EnricherSettings
+from ..models.base import BaseEnricher
 
 from ..serializers import EnrichmentSettingsSerializer
 from user.permissions import HasAdminRole

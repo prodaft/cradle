@@ -297,6 +297,15 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
                                     </div>
                                 )}
 
+                                <FormField
+                                    type='checkbox'
+                                    labelText='Enabled'
+                                    className='switch switch-ghost-primary'
+                                    {...register('enabled')}
+                                    row={true}
+                                    error={errors.enabled?.message}
+                                />
+
                                 <div className='w-full mt-4'>
                                     <label
                                         htmlFor='for_eclasses'

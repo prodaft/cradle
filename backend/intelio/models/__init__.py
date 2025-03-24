@@ -3,6 +3,9 @@ from .base import Association as Association
 from .base import Encounter as Encounter
 from .base import EnricherSettings as EnricherSettings
 
+# Digests
+from .digest.stix import StixDigest as StixDigest
+
 # Mappings
 from .mappings.catalyst import CatalystMapping as CatalystMapping
 

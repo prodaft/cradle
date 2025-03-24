@@ -3,6 +3,7 @@ from rest_framework.fields import SerializerMethodField
 
 from entries.models import EntryClass
 from entries.serializers import EntryClassSerializer
+from intelio.models.base import BaseDigest
 from intelio.utils import fields_to_form
 from .models import EnricherSettings, BaseEnricher
 
@@ -52,6 +53,7 @@ class EnrichmentSettingsSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "strategy",
+            "enabled",
             "periodicity",
             "for_eclasses",
             "for_eclasses_detail",
@@ -87,3 +89,25 @@ class EnrichmentSettingsSerializer(serializers.ModelSerializer):
             instance.for_eclasses.set(for_eclasses_data)
 
         return instance
+
+
+class BaseDigestSerializer(serializers.ModelSerializer):
+    display_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BaseDigest
+        fields = [
+            "id",
+            "user",
+            "created_at",
+            "name",
+            "fpath",
+            "errors",
+            "warnings",
+            "enricher_type",
+            "display_name",
+        ]
+        read_only_fields = ["id", "created_at", "enricher_type", "display_name"]
+
+    def get_display_name(self, obj):
+        return getattr(obj.__class__, "display_name", obj.__class__.__name__)
