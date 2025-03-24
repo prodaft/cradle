@@ -340,10 +340,12 @@ class Entry(LifecycleModel, LoggableModelMixin):
     def enrich_entry(self):
         from .tasks import enrich_entry, scan_for_children
 
-        transaction.on_commit(lambda: scan_for_children.apply_async((self.id,)))
+        if self.entry_class.children.count() > 0:
+            transaction.on_commit(lambda: scan_for_children.apply_async((self.id,)))
 
         for e in self.entry_class.enrichers.filter(
-            strategy=EnrichmentStrategy.ON_CREATE
+            strategy=EnrichmentStrategy.ON_CREATE,
+            for_eclasses__contains=self.entry_class,
         ):
             transaction.on_commit(lambda: enrich_entry.apply_async((self.id, e.id)))
 
@@ -352,6 +354,14 @@ class Entry(LifecycleModel, LoggableModelMixin):
         from .tasks import update_accesses
 
         transaction.on_commit(lambda: update_accesses.apply_async((self.id,)))
+
+    def reconnect_aliases(self):
+        from intelio.models import AliasAssociation
+
+        AliasAssociation.objects.filter(e1=self).delete()
+
+        for e in self.aliases.all():
+            AliasAssociation.objects.create(e1=self, e2=e)
 
 
 class Relation(LifecycleModel):

@@ -119,13 +119,6 @@ class EntryClassSerializer(serializers.ModelSerializer):
         eclass.children.set(children_data)
         return eclass
 
-    def update(self, instance, validated_data):
-        children_data = validated_data.pop("children", [])
-        instance = super().update(instance, validated_data)
-        if children_data is not None:
-            instance.children.set(children_data)
-        return instance
-
     def get_children_detail(self, obj):
         return EntryClassSerializerNoChildren(obj.children.all(), many=True).data
 
@@ -306,13 +299,26 @@ class EntitySerializer(serializers.ModelSerializer):
         aliases_data = validated_data.pop("aliases", [])
         entry = Entry.objects.create(**validated_data)
         entry.aliases.set(aliases_data)
+        entry.reconnect_aliases()
         return entry
 
     def update(self, instance, validated_data):
         aliases_data = validated_data.pop("aliases", None)
         instance = super().update(instance, validated_data)
+
         if aliases_data is not None:
-            instance.aliases.set(aliases_data)
+            # Get current alias IDs from the instance
+            current_alias_ids = set(instance.aliases.values_list("id", flat=True))
+
+            # Normalize incoming alias data to IDs
+            new_alias_ids = {
+                alias.id if hasattr(alias, "id") else alias for alias in aliases_data
+            }
+
+            if current_alias_ids != new_alias_ids:
+                instance.aliases.set(aliases_data)
+                instance.reconnect_aliases()
+
         return instance
 
 

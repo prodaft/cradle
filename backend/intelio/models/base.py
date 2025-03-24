@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.fields.related import ForeignKey
 from core.fields import BitStringField
+from entries.enums import EntryType
 from entries.models import EntryClass, Entry
 from entries.models import Relation
 import os
@@ -50,8 +51,6 @@ class BaseDigest(LifecycleModel):
         Entry, on_delete=models.CASCADE, related_name="digests", null=True
     )
 
-    infer_entities = False
-
     class Meta:
         ordering = ["-created_at"]
 
@@ -60,7 +59,11 @@ class BaseDigest(LifecycleModel):
             models.CheckConstraint(
                 check=~models.Q(digest_type="BaseDigest"),
                 name="digest_type_not_base_digest",
-            )
+            ),
+            models.CheckConstraint(
+                check=models.Q(entity__entry_class__type=EntryType.ENTITY),
+                name="digest_entity_must_be_entity",
+            ),
         ]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -111,6 +114,28 @@ class BaseDigest(LifecycleModel):
         return fpath
 
     def digest(self):
+        """
+        Perform the actual digesting of the external data.
+        """
+        self.status = DigestStatus.WORKING
+        self.save()
+
+        try:
+            if self._digest():
+                self.status = DigestStatus.DONE
+            else:
+                self.status = DigestStatus.ERROR
+        except Exception as e:
+            self.status = DigestStatus.ERROR
+            self.errors.append(
+                "An unknown error has occured, please contact your administrator"
+            )
+            self.save()
+            raise e
+
+        self.save()
+
+    def _digest(self):
         raise NotImplementedError
 
     @hook(AFTER_DELETE)
@@ -132,23 +157,22 @@ class Association(LifecycleModel):
         max_length=2048, null=False, default=1 << 2047, varying=False
     )
 
-    e1 = models.ForeignKey(
-        Entry, on_delete=models.CASCADE, related_name="associations_as_entry1"
-    )
-    e2 = models.ForeignKey(
-        Entry, on_delete=models.CASCADE, related_name="associations_as_entry2"
-    )
+    e1 = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="%(class)s_e1")
+    e2 = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="%(class)s_e2")
 
     entity = models.ForeignKey(
-        Entry, on_delete=models.CASCADE, related_name="associations", null=True
+        Entry,
+        on_delete=models.CASCADE,
+        related_name="%(class)s_associations",
+        null=True,
     )
 
-    relations = GenericRelation(Relation, related_query_name="association")
+    relations = GenericRelation(Relation, related_query_name="%(class)s_ass")
 
     created_at = models.DateTimeField(auto_now_add=True)
 
     digest = models.ForeignKey(
-        BaseDigest, related_name="associations", null=True, on_delete=models.CASCADE
+        BaseDigest, related_name="%(class)s_ass", null=True, on_delete=models.CASCADE
     )
 
     class Meta:

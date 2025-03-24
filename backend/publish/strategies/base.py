@@ -3,18 +3,7 @@ from entries.models import Entry, EntryClass
 from notes.markdown.to_markdown import Anonymizer, anonymize_markdown
 from notes.models import Note
 from user.models import CradleUser
-
-
-class PublishResult:
-    def __init__(
-        self, success: bool, data: Optional[str] = None, error: Optional[str] = None
-    ):
-        self.success = success
-        self.data = data
-        self.error = error
-
-    def __bool__(self):
-        return self.success
+from ..models import PublishedReport
 
 
 class BasePublishStrategy:
@@ -67,29 +56,19 @@ class BasePublishStrategy:
             entry_class=entry.entry_class,
         )
 
-    def generate_access_link(self, report_location: str, user: CradleUser) -> str:
+    def edit_report(self, report: PublishedReport) -> bool:
         """
-        Generate an access link to an existing published resource.
-        """
-        raise NotImplementedError()
-
-    def edit_report(
-        self, title: str, report_location: str, notes: List[Note], user: CradleUser
-    ) -> PublishResult:
-        """
-        Edit an existing published resource (given its location).
+        Edit an existing published resource
         """
         raise NotImplementedError()
 
-    def create_report(
-        self, title: str, notes: List[Note], user: CradleUser
-    ) -> PublishResult:
+    def create_report(self, report: PublishedReport) -> bool:
         """
         Create a brand new report/publication from scratch.
         """
         raise NotImplementedError()
 
-    def delete_report(self, report_location: str, user: CradleUser) -> PublishResult:
+    def delete_report(self, report: PublishedReport) -> bool:
         """
         Delete an existing published resource (given its location).
         """

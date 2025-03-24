@@ -30,7 +30,6 @@ def generate_report(report_id):
         logger.error("Report with id %s does not exist.", report_id)
         return
 
-    notes = list(report.notes.all())
     user = report.user
 
     try:
@@ -39,12 +38,19 @@ def generate_report(report_id):
             raise ValueError("Strategy not found.")
 
         publisher = publisher_factory(report.anonymized)
-        result = publisher.create_report(report.title, notes, user)
+        result = publisher.create_report(report)
 
-        if not result.success:
-            raise Exception(result.error)
+        if not result:
+            ReportProcessingErrorNotification.objects.create(
+                user=user,
+                message=f"There was an error processing your report: {report.title}",
+                published_report=report,
+                error_message=report.error_message,
+            )
+            report.status = ReportStatus.ERROR
+            report.save()
+            return
 
-        report.report_location = result.data
         report.status = ReportStatus.DONE
         report.save()
 
@@ -54,9 +60,8 @@ def generate_report(report_id):
             published_report=report,
         )
     except Exception as e:
-        logger.exception("Error generating report (id: %s): %s", report_id, e)
         report.status = ReportStatus.ERROR
-        report.error_message = str(e)
+        report.error_message = "An unknown error occurred when generating report, please contact your admin."
         report.save()
 
         ReportProcessingErrorNotification.objects.create(
@@ -65,6 +70,7 @@ def generate_report(report_id):
             published_report=report,
             error_message=report.error_message,
         )
+        raise e
 
 
 @shared_task
@@ -85,19 +91,22 @@ def edit_report(report_id):
             raise ValueError("Strategy not found.")
 
         publisher = publisher_factory(report.anonymized)
-        result = publisher.edit_report(title, report.report_location, notes, user)
+        result = publisher.edit_report(report)
 
-        if not result.success:
-            raise Exception(result.error)
+        if not result:
+            report.status = ReportStatus.ERROR
+            report.save()
+            return
 
         report.title = title
-        report.report_location = result.data
         report.notes.set(notes)
         report.status = ReportStatus.DONE
-        report.error_message = ""
         report.save()
+
     except Exception as e:
-        logger.exception("Error editing report (id: %s): %s", report_id, e)
         report.status = ReportStatus.ERROR
-        report.error_message = str(e)
+        report.error_message = (
+            "An unknown error occurred when editing report, please contact your admin."
+        )
         report.save()
+        raise e

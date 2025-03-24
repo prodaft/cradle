@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("file_transfer", "0004_alter_filereference_report"),
         ("intelio", "0001_initial"),

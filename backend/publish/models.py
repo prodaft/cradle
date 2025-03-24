@@ -39,7 +39,6 @@ class PublishedReport(models.Model, LoggableModelMixin):
         max_length=255, choices=UploadStrategies.choices + DownloadStrategies.choices
     )
     anonymized = models.BooleanField(default=False)
-    report_location = models.CharField(max_length=1024, null=True)
     extra_data = models.JSONField(null=True, blank=True)
 
     status = models.CharField(

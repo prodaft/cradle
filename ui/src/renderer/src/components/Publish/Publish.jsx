@@ -188,13 +188,13 @@ export default function Publish() {
         if (isEditing && reportId) {
             editReport(reportId, { note_ids: noteIds, title: enteredTitle })
                 .then(() => {
-                    navigate(`/reports/`);
+                    navigate(`/connectivity/`);
                 })
                 .catch(displayError(setAlert));
         } else {
             publishReport(publishStrategy, noteIds, enteredTitle, anonymize)
                 .then(() => {
-                    navigate(`/reports/`);
+                    navigate(`/connectivity/`);
                 })
                 .catch(displayError(setAlert));
         }

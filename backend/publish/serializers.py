@@ -1,7 +1,9 @@
+from datetime import timedelta
 from rest_framework import serializers
 
-from publish.strategies import PUBLISH_STRATEGIES
 from .models import PublishedReport, ReportStatus
+from file_transfer.utils import MinioClient
+from file_transfer.models import FileReference
 
 
 class ReportSerializer(serializers.ModelSerializer):
@@ -29,15 +31,21 @@ class ReportSerializer(serializers.ModelSerializer):
         return list(obj.notes.values_list("id", flat=True))
 
     def get_report_url(self, obj):
-        if obj.status != ReportStatus.DONE or obj.report_location is None:
+        if obj.status != ReportStatus.DONE:
             return None
 
-        publisher_factory = PUBLISH_STRATEGIES.get(obj.strategy)
-        if publisher_factory is None:
-            raise ValueError("Strategy not found.")
+        if obj.remote_url:
+            return obj.remote_url
 
-        publisher = publisher_factory(False)
-        return publisher.generate_access_link(obj.report_location, obj.user)
+        if FileReference.objects.filter(report=obj).exists():
+            client = MinioClient()
+            return client.create_presigned_get(
+                obj.file.bucket_name,
+                obj.file.minio_file_name,
+                expiry_time=timedelta(hours=8),
+            )
+
+        return None
 
     def get_strategy_label(self, obj):
         return obj.get_strategy_display()

@@ -13,3 +13,6 @@ from .mappings.catalyst import CatalystMapping as CatalystMapping
 # Enrichments
 from .base import BaseEnricher as BaseEnricher
 from .enrichments.matrushka import MatrushkaAssociation as MatrushkaAssociation
+
+# Associations
+from .enrichments.alias import AliasAssociation

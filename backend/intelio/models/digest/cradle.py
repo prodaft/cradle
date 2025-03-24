@@ -1,4 +1,5 @@
 from rest_framework.fields import logger
+from entries.enums import EntryType
 from entries.models import Entry, EntryClass
 from intelio.enums import DigestStatus
 from notes.processor.task_scheduler import TaskScheduler
@@ -8,24 +9,31 @@ import json
 
 class CradleDigest(BaseDigest):
     display_name = "CRADLE Report"
-    infer_entities = True
 
     class Meta:
         proxy = True
 
-    def digest(self):
+    def _digest(self):
         with open(self.path, "r") as report_file:
             report_data = json.load(report_file)
+
+        valid_entryclass_fields = set([x.name for x in EntryClass._meta.fields])
 
         try:
             # Import or create entry classes
             for eclass in report_data.get("entry_classes", []):
                 if not EntryClass.objects.filter(subtype=eclass["subtype"]).exists():
-                    EntryClass.objects.create(**eclass)
+                    EntryClass.objects.create(
+                        **{
+                            k: v
+                            for k, v in eclass.items()
+                            if k in valid_entryclass_fields
+                        }
+                    )
 
             # Cache existing entity subtypes
             entity_subtypes = set(
-                EntryClass.objects.filter(type=EntryClass.ENTITY).values_list(
+                EntryClass.objects.filter(type=EntryType.ENTITY).values_list(
                     "subtype", flat=True
                 )
             )
@@ -49,7 +57,9 @@ class CradleDigest(BaseDigest):
             files_scheduled = 0
 
             for note_data in report_data.get("notes", []):
-                scheduler = TaskScheduler(self.user, content=note_data["content"])
+                scheduler = TaskScheduler(
+                    self.user, content=note_data["content"], digest=self
+                )
                 created_note = scheduler.run_pipeline(validate=False)
 
                 file_urls = note_data.get("file_urls", {})
@@ -73,4 +83,4 @@ class CradleDigest(BaseDigest):
             self.status = DigestStatus.ERROR
             self.errors = [str(e)]
             self.save()
-            return {"error": str(e)}
+            raise e

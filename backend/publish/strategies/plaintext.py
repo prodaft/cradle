@@ -3,9 +3,11 @@ from io import BytesIO
 from datetime import timedelta
 from typing import List
 
+from file_transfer.models import FileReference
 from notes.models import Note
+from publish.models import PublishedReport, ReportStatus
 from user.models import CradleUser
-from publish.strategies.base import BasePublishStrategy, PublishResult
+from publish.strategies.base import BasePublishStrategy
 from file_transfer.utils import MinioClient
 
 
@@ -14,44 +16,26 @@ class PlaintextPublish(BasePublishStrategy):
     A publishing strategy that generates a plaintext report from a list of notes.
     """
 
-    def generate_access_link(self, report_location: str, user: CradleUser) -> str:
-        bucket_name = self._get_bucket_name(user)
-        client = MinioClient().client
-        return client.presigned_get_object(
-            bucket_name,
-            report_location,
-            expires=timedelta(hours=1),
-            response_headers={
-                "Content-Disposition": f'attachment; filename="{report_location}"'
-            },
-        )
+    def create_report(self, report: PublishedReport) -> bool:
+        text_content = self._build_text(report.title, report.notes.all())
+        return self._upload_text(text_content, report)
 
-    def create_report(
-        self, title: str, notes: List[Note], user: CradleUser
-    ) -> PublishResult:
-        text_content = self._build_text(title, notes)
-        file_name = f"{uuid.uuid4()}.txt"
-        return self._upload_text(text_content, user, file_name, "upload")
+    def edit_report(self, report: PublishedReport) -> bool:
+        text_content = self._build_text(report.title, report.notes.all())
+        return self._upload_text(text_content, report)
 
-    def edit_report(
-        self, title: str, report_location: str, notes: List[Note], user: CradleUser
-    ) -> PublishResult:
-        text_content = self._build_text(title, notes)
-        return self._upload_text(text_content, user, report_location, "update")
-
-    def delete_report(self, report_location: str, user: CradleUser) -> PublishResult:
-        bucket_name = self._get_bucket_name(user)
+    def delete_report(self, report: PublishedReport) -> bool:
+        bucket_name = str(report.user.id)
         client = MinioClient().client
         try:
-            client.remove_object(bucket_name, report_location)
+            client.remove_object(bucket_name, f"{report.id}.txt")
         except Exception as e:
-            return PublishResult(
-                success=False, error=f"Failed to delete plaintext report: {e}"
-            )
-        return PublishResult(success=True, data=f"Deleted: {report_location}")
+            report.error_message = "Failed to delete plaintext report."
+            report.status = ReportStatus.ERROR
+            report.save()
+            return False
 
-    def _get_bucket_name(self, user: CradleUser) -> str:
-        return str(user.id) if user else "default_bucket"
+        return True
 
     def _build_text(self, title: str, notes: List[Note]) -> str:
         contents = []
@@ -62,21 +46,29 @@ class PlaintextPublish(BasePublishStrategy):
         notes_text = separator.join(contents)
         return f"{title}\n\n{notes_text}"
 
-    def _upload_text(
-        self, text: str, user: CradleUser, file_name: str, action: str
-    ) -> PublishResult:
-        bucket_name = self._get_bucket_name(user)
+    def _upload_text(self, text: dict, report: PublishedReport) -> bool:
         client = MinioClient().client
         data = BytesIO(text.encode("utf-8"))
+        bucket_name = str(report.user.id)
         size = len(text)
         content_type = "text/plain"
+        file_name = f"{report.id}.txt"
 
         try:
             client.put_object(
                 bucket_name, file_name, data, size, content_type=content_type
             )
-        except Exception as e:
-            return PublishResult(
-                success=False, error=f"Failed to {action} plaintext report: {e}"
+            FileReference.objects.filter(report=report).delete()
+            FileReference.objects.create(
+                minio_file_name=file_name,
+                file_name=file_name,
+                bucket_name=bucket_name,
+                report=report,
             )
-        return PublishResult(success=True, data=file_name)
+        except Exception as e:
+            report.error_message = "Failed to upload plaintext report."
+            report.status = ReportStatus.ERROR
+            report.save()
+            return False
+
+        return True
