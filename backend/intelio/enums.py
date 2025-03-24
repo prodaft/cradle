@@ -12,6 +12,11 @@ class EnrichmentStrategy(models.TextChoices):
 #    PERIODIC = "periodic", _("Periodic")
 
 
+class AssociationReason(models.TextChoices):
+    CONTAINS = "contains", _("Contains")
+    ALIAS = "alias", _("Alias")
+
+
 class DigestStatus(models.TextChoices):
     WORKING = "working", "Working"
     DONE = "done", "Done"

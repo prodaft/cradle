@@ -3,7 +3,8 @@ from core.fields import BitStringField
 from entries.enums import EntryType
 from core.decorators import distributed_lock
 from entries.models import Entry
-from intelio.models.enrichments.matrushka import MatrushkaAssociation
+from intelio.models import Association
+from intelio.enums import AssociationReason
 from notes.processor.task_scheduler import TaskScheduler
 from notes.utils import calculate_acvec
 from notes.tasks import propagate_acvec
@@ -72,7 +73,7 @@ def scan_for_children(entry_id):
     for k, v in matches.items():
         for i in v:
             e, _ = Entry.objects.get_or_create(name=i, entry_class=k)
-            ass = MatrushkaAssociation(access_vector=1, e1=e, e2=entry)
+            ass = Association(e1=e, e2=entry, reason=AssociationReason.CONTAINS)
             ass.save()
 
 

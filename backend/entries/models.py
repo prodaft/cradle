@@ -355,6 +355,9 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
         transaction.on_commit(lambda: update_accesses.apply_async((self.id,)))
 
+    def get_acvec(self):
+        return 1 | (1 << self.acvec_offset)
+
     def reconnect_aliases(self):
         from intelio.models import AliasAssociation
 

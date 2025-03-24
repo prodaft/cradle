@@ -21,7 +21,7 @@ from django_lifecycle import (
 
 from django.utils.translation import gettext_lazy as _
 
-from ..enums import EnrichmentStrategy, DigestStatus
+from ..enums import AssociationReason, EnrichmentStrategy, DigestStatus
 import uuid
 
 
@@ -157,39 +157,34 @@ class Association(LifecycleModel):
         max_length=2048, null=False, default=1 << 2047, varying=False
     )
 
-    e1 = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="%(class)s_e1")
-    e2 = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="%(class)s_e2")
+    e1 = models.ForeignKey(
+        Entry, on_delete=models.CASCADE, related_name="associations_e1"
+    )
+    e2 = models.ForeignKey(
+        Entry, on_delete=models.CASCADE, related_name="associations_e2"
+    )
 
     entity = models.ForeignKey(
         Entry,
         on_delete=models.CASCADE,
-        related_name="%(class)s_associations",
+        related_name="associations",
         null=True,
     )
 
-    relations = GenericRelation(Relation, related_query_name="%(class)s_ass")
+    relations = GenericRelation(Relation, related_query_name="association")
 
     created_at = models.DateTimeField(auto_now_add=True)
 
     digest = models.ForeignKey(
-        BaseDigest, related_name="%(class)s_ass", null=True, on_delete=models.CASCADE
+        BaseDigest, related_name="associations", null=True, on_delete=models.CASCADE
+    )
+
+    reason: models.CharField = models.CharField(
+        max_length=255, null=False, blank=False, choices=AssociationReason.choices
     )
 
     class Meta:
-        abstract = True
         ordering = ["-created_at"]
-
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-
-        if cls._meta.abstract:
-            return
-
-        display_name = getattr(cls, "display_name", None)
-        if not isinstance(display_name, str):
-            raise TypeError(
-                f"{cls.__name__} must define a class attribute 'name' as a string"
-            )
 
     def __str__(self):
         return f"Association [{self.reason}]({self.entry1}-{self.entry2}) "
