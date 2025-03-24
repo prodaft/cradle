@@ -60,10 +60,6 @@ class BaseDigest(LifecycleModel):
                 check=~models.Q(digest_type="BaseDigest"),
                 name="digest_type_not_base_digest",
             ),
-            models.CheckConstraint(
-                check=models.Q(entity__entry_class__type=EntryType.ENTITY),
-                name="digest_entity_must_be_entity",
-            ),
         ]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

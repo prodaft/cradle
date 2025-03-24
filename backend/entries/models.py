@@ -2,6 +2,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django_lifecycle import AFTER_CREATE, AFTER_UPDATE, LifecycleModel, hook
+from django_lifecycle.conditions import WhenFieldHasChanged
 from django_lifecycle.mixins import LifecycleModelMixin, transaction
 from django.db.models import Q
 
@@ -349,7 +350,7 @@ class Entry(LifecycleModel, LoggableModelMixin):
         ):
             transaction.on_commit(lambda: enrich_entry.apply_async((self.id, e.id)))
 
-    @hook(AFTER_UPDATE, when="acvec_offset", has_changed=True)
+    @hook(AFTER_UPDATE, condition=WhenFieldHasChanged("acvec_offset", True))
     def acvec_offset_updated(self):
         from .tasks import update_accesses
 
