@@ -39,7 +39,7 @@ const FormField = forwardRef(function (
             <label
                 className={`label flex ${row ? 'flex-row' : 'flex-col'} justify-between w-full`}
             >
-                <span className='label-text'>{labelText}</span>
+                <span className='label-text my-auto'>{labelText}</span>
                 <div className='mt-2'>
                     <input
                         id={name}

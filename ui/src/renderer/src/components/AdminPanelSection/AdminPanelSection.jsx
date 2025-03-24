@@ -40,8 +40,8 @@ export default function AdminPanelSection({
           })
         : [];
     return (
-        <div className='w-full h-full flex flex-col rounded-md p-3'>
-            <div className='w-full flex flex-row items-center justify-between my-2'>
+        <div className='w-full h-full flex flex-col rounded-md px-3'>
+            <div className='w-full flex flex-row items-center justify-between mb-2'>
                 <input
                     type='text'
                     placeholder='Search'

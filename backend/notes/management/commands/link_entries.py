@@ -1,7 +1,8 @@
 from django.core.management.base import BaseCommand
 
 from entries.models import Entry
-from notes.models import Note, Relation
+from notes.models import Note
+from entries.models import Relation
 from notes.processor.smart_linker_task import SmartLinkerTask
 
 

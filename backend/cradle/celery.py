@@ -30,6 +30,8 @@ app.conf.task_routes = {
     "publish.tasks.download_file_for_note": {"queue": "import"},
     "notes.tasks.propagate_acvec": {"queue": "access"},
     "entries.tasks.update_accesses": {"queue": "access"},
+    "entries.tasks.scan_for_children": {"queue": "enrich"},
+    "entries.tasks.enrich_entry": {"queue": "enrich"},
 }
 
 app.conf.task_default_priority = 5

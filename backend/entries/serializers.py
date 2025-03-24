@@ -77,6 +77,21 @@ class ArtifactClassSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+class EntryClassSerializerNoChildren(serializers.ModelSerializer):
+    class Meta:
+        model = EntryClass
+        fields = [
+            "type",
+            "subtype",
+            "description",
+            "generative_regex",
+            "regex",
+            "options",
+            "prefix",
+            "color",
+        ]
+
+
 class EntryClassSerializer(serializers.ModelSerializer):
     children = serializers.PrimaryKeyRelatedField(
         queryset=EntryClass.objects.all(), many=True, write_only=True, required=False
@@ -112,7 +127,7 @@ class EntryClassSerializer(serializers.ModelSerializer):
         return instance
 
     def get_children_detail(self, obj):
-        return EntryClassSerializer(obj.children.all(), many=True).data
+        return EntryClassSerializerNoChildren(obj.children.all(), many=True).data
 
 
 class EntryResponseSerializer(serializers.ModelSerializer):

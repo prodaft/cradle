@@ -1,8 +1,11 @@
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django_lifecycle import AFTER_UPDATE, LifecycleModel, hook
+from django_lifecycle import AFTER_CREATE, AFTER_UPDATE, LifecycleModel, hook
 from django_lifecycle.mixins import LifecycleModelMixin, transaction
 from django.db.models import Q
 
+from core.fields import BitStringField
 from logs.models import LoggableModelMixin
 
 from .managers import (
@@ -16,8 +19,10 @@ from .exceptions import (
     InvalidClassFormatException,
     InvalidEntryException,
     InvalidRegexException,
+    OutOfEntitySlotsException,
 )
 from .enums import EntryType
+from intelio.enums import EnrichmentStrategy
 
 import uuid
 import re
@@ -181,6 +186,20 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
     def __repr__(self):
         return self.subtype
 
+    def match(self, s):
+        """
+        Find all matches of regex or options in a string
+        """
+        if self.type == EntryType.ENTITY:
+            return []
+
+        if self.regex:
+            return re.findall(self.regex, s)
+        elif self.options:
+            return [o for o in self.options.split("\n") if o.lower() in s.lower()]
+
+        return []
+
     @hook(AFTER_UPDATE, when="type", has_changed=True)
     def update_access_level_of_children(self):
         for i in self.entries.all():
@@ -231,6 +250,10 @@ class Entry(LifecycleModel, LoggableModelMixin):
         help_text="Entries that are equivalent to this one",
     )
 
+    related_entries = models.ManyToManyField(
+        "self", through="Relation", symmetrical=False
+    )
+
     def __init__(self, *args, **kwargs):
         if "name" in kwargs:
             kwargs["name"] = kwargs["name"].strip()
@@ -277,6 +300,9 @@ class Entry(LifecycleModel, LoggableModelMixin):
                     offset += 1
                 self.acvec_offset = offset
 
+        if self.acvec_offset > 2047:
+            raise OutOfEntitySlotsException()
+
     def delete(self, *args, **kwargs):
         from entries.tasks import remap_notes_task
 
@@ -310,8 +336,55 @@ class Entry(LifecycleModel, LoggableModelMixin):
     def log_fetch(self, user, details=None):
         super().log_fetch(user, details)
 
+    @hook(AFTER_CREATE)
+    def enrich_entry(self):
+        from .tasks import enrich_entry, scan_for_children
+
+        transaction.on_commit(lambda: scan_for_children.apply_async((self.id,)))
+
+        for e in self.entry_class.enrichers.filter(
+            strategy=EnrichmentStrategy.ON_CREATE
+        ):
+            transaction.on_commit(lambda: enrich_entry.apply_async((self.id, e.id)))
+
     @hook(AFTER_UPDATE, when="acvec_offset", has_changed=True)
     def acvec_offset_updated(self):
         from .tasks import update_accesses
 
         transaction.on_commit(lambda: update_accesses.apply_async((self.id,)))
+
+
+class Relation(LifecycleModel):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    src_entry = models.ForeignKey(
+        Entry, related_name="src_relations", on_delete=models.CASCADE
+    )
+    dst_entry = models.ForeignKey(
+        Entry, related_name="dst_relations", on_delete=models.CASCADE
+    )
+
+    # Generic foreign key to support different types of objects
+    object_id = models.UUIDField()
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    content_object = GenericForeignKey("content_type", "object_id")
+
+    access_vector: BitStringField = BitStringField(
+        max_length=2048, null=False, default=1 << 2047, varying=False
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["src_entry", "dst_entry", "content_type", "object_id"],
+                name="unique_src_dst_object",
+            ),
+        ]
+
+    indexes = [
+        models.Index(fields=["src_entry"], name="idx_src_entry"),
+        models.Index(fields=["dst_entry"], name="idx_dst_entry"),
+        models.Index(fields=["content_type", "object_id"], name="idx_content_object"),
+        models.Index(fields=["created_at"], name="idx_created_at"),
+    ]

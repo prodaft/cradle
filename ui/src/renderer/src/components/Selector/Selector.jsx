@@ -15,7 +15,7 @@ const Selector = ({
 }) => {
     const customSelectClassNames = {
         control: (state) =>
-            `bg-transparent border border-white dark:border-gray-800 rounded-md min-h-[2.5rem] p-1.5 ${
+            `input input-block bg-transparent min-h-[2.5rem] px-1.5 ${
                 state.isFocused ? 'ring-2 ring-cradle2' : ''
             }`,
         placeholder: () => 'dark:text-gray-400',
@@ -25,7 +25,7 @@ const Selector = ({
         menuList: () => 'bg-transparent p-0',
         option: (state) =>
             `${state.isFocused ? 'bg-gray-300 text-gray-800' : 'bg-transparent'} p-1`,
-        multiValue: () => 'bg-gray-400 rounded-sm mx-1 mb-2',
+        multiValue: () => 'bg-gray-400 rounded-sm mx-1 my-1 ',
         multiValueLabel: () => 'text-gray-800 pl-1',
         multiValueRemove: () =>
             'text-gray-800 hover:bg-gray-300 hover:text-gray-900 ml-1',

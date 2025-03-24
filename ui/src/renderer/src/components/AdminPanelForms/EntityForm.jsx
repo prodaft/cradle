@@ -14,7 +14,7 @@ import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import Selector from '../Selector/Selector';
-import { queryEntries } from '../../services/queryService/queryService';
+import { advancedQuery, queryEntries } from '../../services/queryService/queryService';
 
 const entitySchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -29,7 +29,7 @@ export default function EntityForm({ id = null, isEdit = false }) {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
 
     const fetchAliases = async (q) => {
-        const results = await queryEntries({ name: q });
+        const results = await advancedQuery(q, true);
 
         if (results.status === 200) {
             let a = results.data.results.map((alias) => ({
@@ -155,7 +155,7 @@ export default function EntityForm({ id = null, isEdit = false }) {
                     {isEdit ? 'Edit Entity' : 'Add New Entity'}
                 </h1>
                 <div className='p-8 backdrop-blur-sm rounded-md bg-cradle3 bg-opacity-20'>
-                    <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+                    <form onSubmit={handleSubmit(onSubmit)} className='space-y-2'>
                         <FormField
                             type='text'
                             labelText='Name'

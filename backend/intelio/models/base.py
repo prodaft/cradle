@@ -1,23 +1,48 @@
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models.fields.related import ForeignKey
 from core.fields import BitStringField
 from entries.models import EntryClass, Entry
-from notes.models import Relation
+from entries.models import Relation
 
 from django_lifecycle import AFTER_CREATE, AFTER_UPDATE, LifecycleModel, hook
 
 from django.utils.translation import gettext_lazy as _
 
-from django import forms
+from ..enums import EnrichmentStrategy
 
 
-class EnrichmentStrategy(models.TextChoices):
-    MANUAL = "manual", _("Manual")
-    ON_CREATE = "on_create", _("On Create")
+class BaseDigest(models.Model):
+    """
+    An import of multiple external objects and connections, bulk "digested" into the platform
+    """
 
+    user = models.ForeignKey(
+        "user.CradleUser", on_delete=models.CASCADE, related_name="digests"
+    )
 
-#    PERIODIC = "periodic", _("Periodic")
+    created_at = models.DateTimeField(auto_now_add=True)
+    name = models.CharField(max_length=255, null=False, blank=False)
+    fpath = models.CharField(max_length=255, null=False, blank=False)
+
+    errors = models.JSONField(default=[], blank=True)
+    warnings = models.JSONField(default=[], blank=True)
+
+    class Meta:
+        abstract = True
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+
+        if cls._meta.abstract:
+            return
+
+        display_name = getattr(cls, "display_name", None)
+        if not isinstance(display_name, str):
+            raise TypeError(
+                f"{cls.__name__} must define a class attribute 'name' as a string"
+            )
 
 
 class Association(LifecycleModel):
@@ -25,20 +50,43 @@ class Association(LifecycleModel):
     A model representing a generic link between two entries.
     """
 
-    reason = models.CharField(max_length=255)
-    details = models.JSONField(default=dict, blank=True)
     access_vector: BitStringField = BitStringField(
         max_length=2048, null=False, default=1 << 2047, varying=False
     )
-    entry1 = models.ForeignKey(
+
+    e1 = models.ForeignKey(
         Entry, on_delete=models.CASCADE, related_name="associations_as_entry1"
     )
-    entry2 = models.ForeignKey(
+    e2 = models.ForeignKey(
         Entry, on_delete=models.CASCADE, related_name="associations_as_entry2"
     )
 
-    relation = GenericRelation(Relation, related_query_name="association")
+    entities = models.ForeignKey(
+        Entry, on_delete=models.CASCADE, related_name="associations", null=True
+    )
+
+    relations = GenericRelation(Relation, related_query_name="association")
+
     created_at = models.DateTimeField(auto_now_add=True)
+
+    digest = models.ForeignKey(
+        BaseDigest, related_name="associations", null=True, on_delete=models.CASCADE
+    )
+
+    class Meta:
+        abstract = True
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+
+        if cls._meta.abstract:
+            return
+
+        display_name = getattr(cls, "display_name", None)
+        if not isinstance(display_name, str):
+            raise TypeError(
+                f"{cls.__name__} must define a class attribute 'name' as a string"
+            )
 
     def __str__(self):
         return f"Association [{self.reason}]({self.entry1}-{self.entry2}) "
@@ -46,18 +94,27 @@ class Association(LifecycleModel):
     @hook(AFTER_CREATE)
     def create_relation(self, *args, **kwargs):
         Relation.objects.create(
-            src_entry=self.entry1,
-            dst_entry=self.entry2,
+            src_entry=self.e1,
+            dst_entry=self.e2,
+            content_object=self,
+            access_vector=self.access_vector,
+        )
+
+        Relation.objects.create(
+            src_entry=self.e2,
+            dst_entry=self.e1,
             content_object=self,
             access_vector=self.access_vector,
         )
 
     @hook(AFTER_UPDATE, when="access_vector")
     def update_relation(self, *args, **kwargs):
-        relation = self.relation.first()
+        relations = self.relations.first()
 
-        if relation:
-            relation.save()
+        if relations.exists():
+            for r in relations:
+                r.access_vector = self.access_vector
+                r.save()
 
 
 class Encounter(models.Model):
@@ -65,12 +122,33 @@ class Encounter(models.Model):
     A model representing an observation of an entry from an outside source.
     """
 
-    from_source = models.CharField(max_length=255, db_column="from")
     created_at = models.DateTimeField(auto_now_add=True)
     entry = models.ForeignKey(
         Entry, on_delete=models.CASCADE, related_name="encounters"
     )
-    details = models.JSONField(default=dict, blank=True)
+
+    entities = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    digest = models.ForeignKey(
+        BaseDigest, related_name="encounters", null=True, on_delete=models.CASCADE
+    )
+
+    class Meta:
+        abstract = True
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+
+        if cls._meta.abstract:
+            return
+
+        display_name = getattr(cls, "display_name", None)
+        if not isinstance(display_name, str):
+            raise TypeError(
+                f"{cls.__name__} must define a class attribute 'name' as a string"
+            )
 
     def __str__(self):
         return f"Encounter[{self.from_source}]({self.entry})"
@@ -138,6 +216,7 @@ class EnricherSettings(models.Model):
         default=EnrichmentStrategy.MANUAL,
     )
     periodicity = models.DurationField(null=True, blank=True)
+
     for_eclasses = models.ManyToManyField(
         EntryClass, related_name="enrichers", blank=True
     )

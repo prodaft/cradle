@@ -14,6 +14,52 @@ import {
 import Editor from '../Editor/Editor';
 import { ForceGraph2D } from 'react-force-graph';
 import NotesList from '../NotesList/NotesList';
+import Selector from '../Selector/Selector';
+import { advancedQuery } from '../../services/queryService/queryService';
+import { DateRange } from 'react-date-range';
+import 'react-date-range/dist/styles.css';
+import 'react-date-range/dist/theme/default.css';
+import { format, parseISO } from 'date-fns';
+import Datepicker from 'react-tailwindcss-datepicker';
+import { Formik, Form, Field, ErrorMessage } from 'formik';
+import * as Yup from 'yup';
+
+// Define Yup validation schema
+const GraphQuerySchema = Yup.object().shape({
+    operation: Yup.string().required('Operation is required'),
+    src: Yup.string().required('Start node is required'),
+    dst: Yup.string().required('Destination is required'),
+    min_depth: Yup.number()
+        .required('Minimum depth is required')
+        .positive('Must be positive')
+        .integer('Must be an integer')
+        .min(1, 'Minimum depth must be at least 1'),
+    max_depth: Yup.number()
+        .required('Maximum depth is required')
+        .positive('Must be positive')
+        .integer('Must be an integer')
+        .max(3, 'Maximum depth cannot exceed 3')
+        .test(
+            'min-max',
+            'Maximum depth must be greater than or equal to minimum depth',
+            function (value) {
+                return value >= this.parent.min_depth;
+            },
+        ),
+    edges_per_node: Yup.number()
+        .required('Edges per node is required')
+        .positive('Must be positive')
+        .integer('Must be an integer')
+        .min(1, 'Must have at least 1 edge per node')
+        .max(10, 'Cannot exceed 10 edges per node'),
+    matchType: Yup.string()
+        .required('Match type is required')
+        .oneOf(['type', 'entry'], 'Invalid match type'),
+    startDate: Yup.date().required('Start date is required'),
+    endDate: Yup.date()
+        .required('End date is required')
+        .min(Yup.ref('startDate'), 'End date must be after or equal to start date'),
+});
 
 export default function GraphQuery({
     graphData,
@@ -28,43 +74,111 @@ export default function GraphQuery({
 }) {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    // Initialize form values from search params
+    const initialValues = {
+        operation: searchParams.get('operation') || 'pathfind',
+        src: searchParams.get('src') || '',
+        dst: searchParams.get('dst') || '',
+        min_depth: parseInt(searchParams.get('min_depth')) || 1,
+        max_depth: parseInt(searchParams.get('max_depth')) || 2,
+        edges_per_node: parseInt(searchParams.get('edges_per_node')) || 5,
+        startDate: searchParams.get('startDate') || format(new Date(), 'yyyy-MM-dd'),
+        endDate: searchParams.get('endDate') || format(new Date(), 'yyyy-MM-dd'),
+        matchType: searchParams.get('matchType') || 'type',
+    };
+
+    // For Selector components state
+    const [startEntry, setStartEntry] = useState(null);
+    const [destinationSelector, setDestinationSelector] = useState(null);
+    const [matchDestination, setMatchDestination] = useState(initialValues.matchType);
+
+    // Date range state
+    const [dateRange, setDateRange] = useState([
+        {
+            startDate: parseISO(initialValues.startDate),
+            endDate: parseISO(initialValues.endDate),
+            key: 'selection',
+        },
+    ]);
 
     const parseEntry = (entry) => {
         return { query: entry };
     };
 
-    const [query, setQuery] = useState(() => ({
-        operation: searchParams.get('operation') || 'pathfind',
-        params: {
-            src: searchParams.get('src') || '',
-            dst: searchParams.get('dst') || '',
-            min_depth: parseInt(searchParams.get('min_depth')) || 1,
-            max_depth: parseInt(searchParams.get('max_depth')) || 2,
-        },
-    }));
+    const fetchAliases = async (q) => {
+        const results = await advancedQuery(q, true);
+
+        if (results.status === 200) {
+            let a = results.data.results.map((alias) => ({
+                value: alias.id,
+                label: `${alias.subtype}:${alias.name}`,
+            }));
+            return a;
+        } else {
+            displayError(setAlert, navigate)(results);
+            return [];
+        }
+    };
+
+    // Handle date range change
+    const handleDateRangeChange = (range, setFieldValue) => {
+        if (range.startDate && range.endDate) {
+            setDateRange([
+                {
+                    startDate: range.startDate,
+                    endDate: range.endDate,
+                    key: 'selection',
+                },
+            ]);
+            setFieldValue('startDate', format(range.startDate, 'yyyy-MM-dd'));
+            setFieldValue('endDate', format(range.endDate, 'yyyy-MM-dd'));
+        }
+    };
+
+    // Update source and destination in Formik when selectors change
+    useEffect(() => {
+        if (startEntry) {
+            // This will be used by Formik's setFieldValue
+        }
+    }, [startEntry]);
 
     useEffect(() => {
-        const params = new URLSearchParams();
-        params.set('operation', query.operation);
-        params.set('src', query.params.src);
-        params.set('dst', query.params.dst);
-        params.set('min_depth', query.params.min_depth);
-        params.set('max_depth', query.params.max_depth);
-        setSearchParams(params);
-    }, [query, setSearchParams]);
+        if (destinationSelector) {
+            // This will be used by Formik's setFieldValue
+        }
+    }, [destinationSelector]);
 
-    const [loading, setLoading] = useState(false);
-
-    const handleSearch = async (e) => {
-        e.preventDefault();
+    // Handle form submission
+    const handleSubmit = async (values, { setSubmitting }) => {
         setLoading(true);
+        setSubmitting(true);
 
-        // Deep-copy query object
         try {
-            let parsedQuery = JSON.parse(JSON.stringify(query));
-            parsedQuery.params.src = parseEntry(parsedQuery.params.src);
-            parsedQuery.params.dst = parseEntry(parsedQuery.params.dst);
-            parsedQuery.result_type = 'vertices';
+            // Update URL search params
+            const params = new URLSearchParams();
+            Object.entries(values).forEach(([key, value]) => {
+                params.set(key, value);
+            });
+            setSearchParams(params);
+
+            // Deep-copy query object
+            let parsedQuery = {
+                operation: values.operation,
+                params: {
+                    src: parseEntry(values.src),
+                    dst: parseEntry(values.dst),
+                    min_depth: values.min_depth,
+                    max_depth: values.max_depth,
+                    edges_per_node: values.edges_per_node,
+                    startDate: values.startDate,
+                    endDate: values.endDate,
+                    matchType: values.matchType,
+                },
+                result_type: 'vertices',
+            };
 
             let response = await queryGraph(parsedQuery);
             let allColors = response.data.colors;
@@ -155,7 +269,7 @@ export default function GraphQuery({
             }));
             setCache(cache);
             setEntryColors((prev) => ({ ...prev, ...colors }));
-            if (query.operation === 'pathfind') {
+            if (values.operation === 'pathfind') {
                 setHighlightedLinks(new Set(links));
                 setHighlightedNodes(new Set(nodes));
             }
@@ -163,130 +277,204 @@ export default function GraphQuery({
             displayError(setAlert, navigate)(error);
         } finally {
             setLoading(false);
+            setSubmitting(false);
         }
     };
 
     return (
         <>
-            <div className='h-full p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col'>
-                <h2 className='text-xl font-semibold mb-2'>Graph Explorer</h2>
-
+            <div className='h-full p-3 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col'>
                 <div className='flex flex-col flex-1 overflow-hidden'>
-                    <form
-                        className='flex flex-col space-y-4 px-3 pb-2'
-                        onSubmit={handleSearch}
+                    <Formik
+                        initialValues={initialValues}
+                        validationSchema={GraphQuerySchema}
+                        onSubmit={handleSubmit}
+                        enableReinitialize
                     >
-                        <div className='flex space-x-4'>
-                            <select
-                                id='operation'
-                                value={query.operation}
-                                onChange={(e) =>
-                                    setQuery({
-                                        ...query,
-                                        operation: e.target.value,
-                                    })
-                                }
-                                className='input w-2/3'
-                            >
-                                <option value='' disabled>
-                                    Select operation
-                                </option>
-                                <option value='pathfind'>Pathfind</option>
-                                <option value='bfs'>Breadth-First Search (BFS)</option>
-                            </select>
-
-                            <input
-                                type='number'
-                                id='min_depth'
-                                placeholder='Min Depth'
-                                value={query.params.min_depth}
-                                min={0}
-                                onChange={(e) =>
-                                    setQuery({
-                                        ...query,
-                                        params: {
-                                            ...query.params,
-                                            min_depth:
-                                                parseInt(e.target.value, 10) || 0,
-                                        },
-                                    })
-                                }
-                                className='input w-1/6'
-                            />
-
-                            <input
-                                type='number'
-                                id='max_depth'
-                                placeholder='Max Depth'
-                                value={query.params.max_depth}
-                                min={query.params.min_depth}
-                                max={3}
-                                onChange={(e) =>
-                                    setQuery({
-                                        ...query,
-                                        params: {
-                                            ...query.params,
-                                            max_depth:
-                                                parseInt(e.target.value, 10) ||
-                                                query.params.min_depth,
-                                        },
-                                    })
-                                }
-                                className='input w-1/6'
-                            />
-
-                            <button
-                                type='submit'
-                                className='btn w-2/6'
-                                disabled={loading}
-                            >
-                                {loading ? (
-                                    <div className='spinner-dot-pulse spinner-sm'>
-                                        <div className='spinner-pulse-dot spinner-sm '></div>
+                        {({ isSubmitting, setFieldValue, errors, touched, values }) => (
+                            <Form className='flex flex-col space-y-2 px-2'>
+                                {/* Start and Destination selectors */}
+                                <div className='grid grid-cols-2 gap-2'>
+                                    <div className='flex flex-col'>
+                                        <label className='text-xs text-gray-600 mb-1'>
+                                            Start Node
+                                        </label>
+                                        <Selector
+                                            value={startEntry}
+                                            onChange={(selected) => {
+                                                setStartEntry(selected);
+                                                setFieldValue(
+                                                    'src',
+                                                    selected?.value || '',
+                                                );
+                                            }}
+                                            fetchOptions={fetchAliases}
+                                            isMulti={false}
+                                            placeholder='Select a single entry to start from'
+                                            className='text-sm'
+                                        />
+                                        {errors.src && touched.src && (
+                                            <div className='text-red-500 text-xs mt-1'>
+                                                {errors.src}
+                                            </div>
+                                        )}
                                     </div>
-                                ) : (
-                                    <>
-                                        <Search /> Search
-                                    </>
-                                )}
-                            </button>
-                        </div>
+                                    <div className='flex flex-col'>
+                                        <label className='text-xs text-gray-600 mb-1'>
+                                            Select Destination {values.matchType}
+                                        </label>
+                                        <Selector
+                                            value={destinationSelector}
+                                            onChange={(selected) => {
+                                                setDestinationSelector(selected);
+                                                setFieldValue(
+                                                    'dst',
+                                                    selected?.value || '',
+                                                );
+                                            }}
+                                            fetchOptions={fetchAliases}
+                                            isMulti={false}
+                                            placeholder={`Select ${values.matchType}`}
+                                            className='text-sm'
+                                        />
+                                        {errors.dst && touched.dst && (
+                                            <div className='text-red-500 text-xs mt-1'>
+                                                {errors.dst}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
 
-                        <div className='flex space-x-4'>
-                            <input
-                                type='text'
-                                placeholder='Source'
-                                value={query.params.src}
-                                onChange={(e) =>
-                                    setQuery({
-                                        ...query,
-                                        params: {
-                                            ...query.params,
-                                            src: e.target.value,
-                                        },
-                                    })
-                                }
-                                className='input !max-w-full w-full'
-                            />
-                            <input
-                                type='text'
-                                disabled={query.operation in { bfs: true }}
-                                placeholder='Destination'
-                                value={query.params.dst}
-                                onChange={(e) =>
-                                    setQuery({
-                                        ...query,
-                                        params: {
-                                            ...query.params,
-                                            dst: e.target.value,
-                                        },
-                                    })
-                                }
-                                className='input !max-w-full w-full'
-                            />
-                        </div>
-                    </form>
-                    <div className='flex-1 overflow-y-auto'>
+                                {/* Parameters row */}
+                                <div className='grid grid-cols-4 gap-2'>
+                                    <div className='flex flex-col'>
+                                        <label className='text-xs text-gray-600 mb-1'>
+                                            Match Technique
+                                        </label>
+                                        <Field
+                                            as='select'
+                                            name='matchType'
+                                            className='input py-1 px-2 text-sm'
+                                            onChange={(e) => {
+                                                setMatchDestination(e.target.value);
+                                                setFieldValue(
+                                                    'matchType',
+                                                    e.target.value,
+                                                );
+                                            }}
+                                        >
+                                            <option value='type'>Type</option>
+                                            <option value='entry'>Entry</option>
+                                        </Field>
+                                        {errors.matchType && touched.matchType && (
+                                            <div className='text-red-500 text-xs mt-1'>
+                                                {errors.matchType}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className='flex flex-col'>
+                                        <label className='text-xs text-gray-600 mb-1'>
+                                            Min Depth
+                                        </label>
+                                        <Field
+                                            type='number'
+                                            name='min_depth'
+                                            min={1}
+                                            className='input py-1 px-2 text-sm'
+                                        />
+                                        {errors.min_depth && touched.min_depth && (
+                                            <div className='text-red-500 text-xs mt-1'>
+                                                {errors.min_depth}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className='flex flex-col'>
+                                        <label className='text-xs text-gray-600 mb-1'>
+                                            Max Depth
+                                        </label>
+                                        <Field
+                                            type='number'
+                                            name='max_depth'
+                                            min={values.min_depth}
+                                            max={3}
+                                            className='input py-1 px-2 text-sm'
+                                        />
+                                        {errors.max_depth && touched.max_depth && (
+                                            <div className='text-red-500 text-xs mt-1'>
+                                                {errors.max_depth}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className='flex flex-col'>
+                                        <label className='text-xs text-gray-600 mb-1'>
+                                            Edges per Node
+                                        </label>
+                                        <Field
+                                            type='number'
+                                            name='edges_per_node'
+                                            min={1}
+                                            max={10}
+                                            className='input py-1 px-2 text-sm'
+                                        />
+                                        {errors.edges_per_node &&
+                                            touched.edges_per_node && (
+                                                <div className='text-red-500 text-xs mt-1'>
+                                                    {errors.edges_per_node}
+                                                </div>
+                                            )}
+                                    </div>
+                                </div>
+
+                                {/* Date picker and submit button */}
+                                <div className='grid grid-cols-2 gap-2'>
+                                    <div className='flex flex-col'>
+                                        <label className='text-xs text-gray-600 mb-1'>
+                                            Date Range
+                                        </label>
+                                        <Datepicker
+                                            value={{
+                                                startDate: parseISO(values.startDate),
+                                                endDate: parseISO(values.endDate),
+                                            }}
+                                            onChange={(value) =>
+                                                handleDateRangeChange(
+                                                    value,
+                                                    setFieldValue,
+                                                )
+                                            }
+                                            inputClassName='input py-1 px-2 text-sm'
+                                            toggleClassName='hidden'
+                                        />
+                                        {(errors.startDate || errors.endDate) &&
+                                            (touched.startDate || touched.endDate) && (
+                                                <div className='text-red-500 text-xs mt-1'>
+                                                    {errors.startDate || errors.endDate}
+                                                </div>
+                                            )}
+                                    </div>
+                                    <button
+                                        type='submit'
+                                        className='btn flex items-center mt-auto'
+                                        disabled={isSubmitting || loading}
+                                    >
+                                        {isSubmitting || loading ? (
+                                            <div className='spinner-dot-pulse'>
+                                                <div className='spinner-pulse-dot'></div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <Search className='mr-2' /> Search
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </Form>
+                        )}
+                    </Formik>
+                    <div className='flex-1 overflow-y-auto mt-2'>
                         {notesQuery && <NotesList query={notesQuery} />}
                     </div>
                 </div>

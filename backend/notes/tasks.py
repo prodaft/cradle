@@ -5,7 +5,9 @@ from django_lifecycle.mixins import transaction
 from entries.enums import EntryType
 from user.models import CradleUser
 from .markdown.to_links import Link
-from .models import Note, Relation
+from .models import Note
+from entries.models import Relation
+
 from core.decorators import distributed_lock
 from django.conf import settings
 from notes.exceptions import EntriesDoNotExistException, EntryClassesDoNotExistException

@@ -33,7 +33,7 @@ const Tabs = ({
                             />
                             <label
                                 htmlFor={tabId}
-                                className={`tab px-6 cursor-pointer ${perTabClass}`}
+                                className={`mb-2 tab px-6 cursor-pointer ${perTabClass}`}
                                 onClick={() => setActiveTab(index)}
                             >
                                 {tab.props.title}
@@ -43,7 +43,7 @@ const Tabs = ({
                 })}
             </div>
 
-            <div className='mt-4 space-y-4'>
+            <div className=''>
                 {tabs.map((tab, index) => (
                     <div
                         key={`tab-content-${index}`}

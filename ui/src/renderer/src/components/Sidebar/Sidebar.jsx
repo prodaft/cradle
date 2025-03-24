@@ -11,6 +11,7 @@ import {
     HalfMoon,
     HelpCircle,
     StatsReport,
+    CloudUpload,
 } from 'iconoir-react';
 import { Graph, QuestionMark } from '@phosphor-icons/react';
 import SidebarItem from '../SidebarItem/SidebarItem';
@@ -102,6 +103,11 @@ export default function Sidebar({
         navigate(accountSettingsLocation);
     }, [navigate]);
 
+    const uploadsLocation = '/upload';
+    const handleUploads = useCallback(() => {
+        navigate(uploadsLocation);
+    }, [navigate]);
+
     const adminLocation = '/admin';
     const handleAdminPanel = useCallback(() => {
         navigate(adminLocation);
@@ -158,6 +164,13 @@ export default function Sidebar({
                                 icon={<StatsReport />}
                                 text='Reports'
                                 highlightedLocation={reportsLocation}
+                            />
+
+                            <SidebarItem
+                                handleClick={handleUploads}
+                                icon={<CloudUpload />}
+                                text='Upload Data'
+                                highlightedLocation={uploadsLocation}
                             />
 
                             <SidebarItem

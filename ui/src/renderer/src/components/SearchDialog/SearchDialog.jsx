@@ -78,7 +78,6 @@ export default function SearchDialog({ isOpen, onClose }) {
     };
 
     const performSearch = () => {
-        setPage(1)
         setAlert({ ...alert, show: false });
         setIsLoading(true);
 
@@ -123,6 +122,12 @@ export default function SearchDialog({ isOpen, onClose }) {
         }
         populateEntrySubtypes();
     }, [isOpen, page]);
+
+    useEffect(() => {
+        if (isOpen) {
+            setPage(1);
+        }
+    }, [isOpen]);
 
     if (!isOpen) return null;
 

@@ -159,6 +159,12 @@ class UserDetail(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        if request.data.get("username", None) == edited.username:
+            request.data.pop("username")
+
+        if request.data.get("email", None) == edited.email:
+            request.data.pop("email")
+
         if editor.is_cradle_admin and editor.pk != edited.pk:
             serializer = UserCreateSerializerAdmin(
                 edited, data=request.data, partial=True

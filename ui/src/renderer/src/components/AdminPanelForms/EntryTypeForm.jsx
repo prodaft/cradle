@@ -50,6 +50,7 @@ export default function EntryTypeForm({ id = null, isEdit = false }) {
     const navigate = useNavigate();
     const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
     const [showColorPicker, setShowColorPicker] = useState(false);
+    const [entryTypes, setEntryTypes] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
 
     // Fetch all entry types for the Children selector.
@@ -57,10 +58,12 @@ export default function EntryTypeForm({ id = null, isEdit = false }) {
         try {
             const response = await getEntryClasses();
             if (response.status === 200 && response.data) {
-                return response.data.map((entry) => ({
-                    value: entry.subtype,
-                    label: `${entry.subtype}`,
-                }));
+                setEntryTypes(
+                    response.data.map((entry) => ({
+                        value: entry.subtype,
+                        label: `${entry.subtype}`,
+                    })),
+                );
             } else {
                 return [];
             }
@@ -91,7 +94,7 @@ export default function EntryTypeForm({ id = null, isEdit = false }) {
             options: '',
             generativeRegex: '',
             color: colorGenerator.nextHexColor(),
-            children: [],  // added default for children
+            children: [], // added default for children
         },
     });
 
@@ -128,7 +131,11 @@ export default function EntryTypeForm({ id = null, isEdit = false }) {
                                       : '',
                             regex: entrytype.regex,
                             options: entrytype.options,
-                            children: entrytype.children || [], // prepopulate children if available
+                            children:
+                                entrytype.children_detail.map((x) => ({
+                                    value: x.subtype,
+                                    label: x.subtype,
+                                })) || [], // prepopulate children if available
                         });
                     }
                 })
@@ -149,23 +156,32 @@ export default function EntryTypeForm({ id = null, isEdit = false }) {
             });
         }
         setAlert({ show: false, message: '', color: 'red' });
+        fetchEntryTypes();
     }, [isEdit, id, reset, navigate]);
 
     const onSubmit = async (data) => {
         try {
             if (isEdit) {
                 await editArtifactClass(
-                    { generative_regex: data.generativeRegex, ...data, children: data.children.map(child => child.value) },
+                    {
+                        generative_regex: data.generativeRegex,
+                        ...data,
+                        children: data.children.map((child) => child.value),
+                    },
                     id,
                 );
             } else {
                 await createArtifactClass({
                     generative_regex: data.generativeRegex,
                     ...data,
-                    children: data.children.map(child => child.value)
+                    children: data.children.map((child) => child.value),
                 });
             }
-          setAlert({ show: true, message: 'Entry Type saved successfully!', color: 'green' });
+            setAlert({
+                show: true,
+                message: 'Entry Type saved successfully!',
+                color: 'green',
+            });
         } catch (err) {
             displayError(setAlert, navigate)(err);
         }
@@ -450,11 +466,13 @@ export default function EntryTypeForm({ id = null, isEdit = false }) {
                                         <Controller
                                             name='children'
                                             control={control}
-                                            render={({ field: { onChange, value, ref } }) => (
+                                            render={({
+                                                field: { onChange, value, ref },
+                                            }) => (
                                                 <Selector
                                                     value={value}
                                                     onChange={onChange}
-                                                    fetchOptions={fetchEntryTypes}
+                                                    staticOptions={entryTypes}
                                                     isMulti={true}
                                                     placeholder='Select child entry types...'
                                                     inputRef={ref}

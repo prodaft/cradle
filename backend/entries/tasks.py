@@ -1,7 +1,9 @@
 from celery import group, shared_task
+from core.fields import BitStringField
 from entries.enums import EntryType
 from core.decorators import distributed_lock
 from entries.models import Entry
+from intelio.models.enrichments.matrushka import MatrushkaAssociation
 from notes.processor.task_scheduler import TaskScheduler
 from notes.utils import calculate_acvec
 from notes.tasks import propagate_acvec
@@ -57,3 +59,25 @@ def remap_notes_task(note_ids, mapping_eclass, mapping_entry):
 
     for n in notes:
         TaskScheduler(None).run_pipeline(n, validate=False)
+
+
+@shared_task
+def scan_for_children(entry_id):
+    entry = Entry.objects.get(id=entry_id)
+
+    matches = {}
+    for child in entry.entry_class.children.all():
+        matches[child] = child.match(entry.name)
+
+    print(matches)
+
+    for k, v in matches.items():
+        for i in v:
+            e, _ = Entry.objects.get_or_create(name=i, entry_class=k)
+            ass = MatrushkaAssociation(access_vector=1, e1=e, e2=entry)
+            ass.save()
+
+
+@shared_task
+def enrich_entry(entry_id, enricher_id):
+    pass

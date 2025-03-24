@@ -19,10 +19,12 @@ import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 import TextEditor from '../TextEditor/TextEditor';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { keymap } from '@codemirror/view';
+import NavbarSwitch from '../NavbarSwitch/NavbarSwitch';
 
 export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
     const [markdownContent, setMarkdownContent] = useState('');
     const [fileData, setFileData] = useState([]);
+    const [publishable, setPublishable] = useState(false);
     const [saving, setSaving] = useState(false);
     const savingRef = useRef(saving);
 
@@ -158,7 +160,7 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
     };
 
     // Function to make final note
-    const handleMakeFinal = (publishable) => () => {
+    const handleMakeFinal = () => {
         if (!validateContent()) return;
         if (id) {
             saveFleetingNoteAsFinal(id, publishable)
@@ -235,35 +237,26 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
 
     useNavbarContents(
         id !== NEW_NOTE_PLACEHOLDER_ID && [
+            <NavbarSwitch
+                key='editor-publishable-switch'
+                text={'Publishable'}
+                checked={publishable}
+                onChange={(e) => setPublishable(e.target.checked)}
+            />,
+            <NavbarButton
+                key='editor-save-btn'
+                icon={<FloppyDisk />}
+                text={'Save As Final'}
+                onClick={handleMakeFinal}
+            />,
             <NavbarButton
                 key='editor-delete-btn'
                 icon={<Trash />}
                 text={'Delete'}
                 onClick={() => setDialog(true)}
             />,
-            <NavbarDropdown
-                key='editor-save-final-btn'
-                icon={<FloppyDisk />}
-                text={'Save As Final'}
-                contents={[
-                    {
-                        label: 'Publishable',
-                        handler: handleMakeFinal(true),
-                    },
-                    {
-                        label: 'Not Publishable',
-                        handler: handleMakeFinal(false),
-                    },
-                ]}
-            />,
-            <NavbarButton
-                key='editor-save-btn'
-                icon={<FloppyDisk />}
-                text={'Save'}
-                onClick={() => handleSaveNote('Changes saved successfully.')}
-            />,
         ],
-        [auth, id],
+        [auth, id, publishable],
     );
 
     return (

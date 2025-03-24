@@ -19,7 +19,10 @@ import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
 import EntityForm from '../AdminPanelForms/EntityForm';
 import EntryTypeForm from '../AdminPanelForms/EntryTypeForm';
 import AccountSettings from '../AccountSettings/AccountSettings';
-import { getEnrichmentTypes, getMappingTypes } from '../../services/intelioService/intelioService';
+import {
+    getEnrichmentTypes,
+    getMappingTypes,
+} from '../../services/intelioService/intelioService';
 import AdminPanelCardEnrichment from '../AdminPanelCard/AdminPanelCardEnrichment';
 
 /**
@@ -57,6 +60,7 @@ export default function AdminPanel() {
                             <AdminPanelCardEntity
                                 id={c.id}
                                 name={c.name}
+                                searchKey={c.name}
                                 onDelete={displayEntities}
                                 link={createDashboardLink(c)}
                                 typename={c.subtype}
@@ -77,6 +81,7 @@ export default function AdminPanel() {
                     setEntryTypes(
                         fetchedEntryTypes.map((c) => (
                             <AdminPanelCardEntryType
+                                searchKey={c.subtype}
                                 id={c.subtype}
                                 name={c.subtype}
                                 onDelete={displayEntryTypes}
@@ -98,6 +103,7 @@ export default function AdminPanel() {
                         fetchedUsers.map((user) => (
                             <AdminPanelCardUser
                                 id={user.id}
+                                searchKey={user.username}
                                 name={user.username}
                                 onDelete={displayUsers}
                                 setRightPane={setRightPane}
@@ -118,6 +124,7 @@ export default function AdminPanel() {
                         mappingTypes.map((x) => (
                             <AdminPanelCardTypeMapping
                                 id={x.class}
+                                searchKey={x.name}
                                 name={x.name}
                                 setRightPane={setRightPane}
                             />

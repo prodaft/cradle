@@ -1,7 +1,11 @@
 // eslint-disable-next-line no-undef
 module.exports = {
     darkMode: ['selector', '[data-theme="dark"]'],
-    content: ['./src/**/*.{html,js,jsx,ts,tsx}', './src/index.html'],
+    content: [
+        './src/**/*.{html,js,jsx,ts,tsx}',
+        './src/index.html',
+        './node_modules/react-tailwindcss-datepicker/dist/index.esm.js',
+    ],
     plugins: [],
     theme: {
         extend: {

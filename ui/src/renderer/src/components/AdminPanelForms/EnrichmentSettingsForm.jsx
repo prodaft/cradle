@@ -36,15 +36,15 @@ const createEnrichmentSchema = (form_fields) => {
 
                 acc[key] = validator;
                 return acc;
-            }, {})
-        )
+            }, {}),
+        ),
     };
 
     // Add periodicity validation if it exists
     schemaFields.periodicity = Yup.string().when('strategy', {
         is: (val) => val === 'periodicity',
         then: () => Yup.string().required('Periodicity is required'),
-        otherwise: () => Yup.string().notRequired()
+        otherwise: () => Yup.string().notRequired(),
     });
 
     return Yup.object().shape(schemaFields);
@@ -65,7 +65,7 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
 
     // For dynamic form validation
     const [validationSchema, setValidationSchema] = useState(
-        createEnrichmentSchema({})
+        createEnrichmentSchema({}),
     );
 
     // Setup form with resolver
@@ -81,9 +81,9 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
         resolver: yupResolver(validationSchema),
         defaultValues: {
             strategy: 'manual',
-            periodicity: "24:00:00",
+            periodicity: '24:00:00',
             for_eclasses: [],
-            settings: {}
+            settings: {},
         },
     });
 
@@ -122,27 +122,30 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
                         setFormFields(settings.form_fields || {});
 
                         // Update validation schema based on form_fields
-                        setValidationSchema(createEnrichmentSchema(settings.form_fields || {}));
+                        setValidationSchema(
+                            createEnrichmentSchema(settings.form_fields || {}),
+                        );
 
                         // Initialize settings object with defaults
                         const initialSettings = {};
-                        Object.keys(settings.form_fields || {}).forEach(key => {
+                        Object.keys(settings.form_fields || {}).forEach((key) => {
                             initialSettings[key] = settings.settings?.[key] || '';
                         });
 
                         // Format for_eclasses for the selector
-                        const formattedEclasses = settings.for_eclasses_detail?.map(eclass => ({
-                            value: eclass.subtype,
-                            label: eclass.subtype
-                        })) || [];
+                        const formattedEclasses =
+                            settings.for_eclasses_detail?.map((eclass) => ({
+                                value: eclass.subtype,
+                                label: eclass.subtype,
+                            })) || [];
 
                         // Set form values
                         reset({
                             strategy: settings.strategy || 'manual',
-                            periodicity: settings.periodicity || "24:00:00",
+                            periodicity: settings.periodicity || '24:00:00',
                             for_eclasses: formattedEclasses,
                             settings: initialSettings,
-                            id: settings.id
+                            id: settings.id,
                         });
                     }
                     setLoading(false);
@@ -158,11 +161,15 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
         try {
             const formatted_data = {
                 ...data,
-                for_eclasses: data.for_eclasses.map(item => item.value)
+                for_eclasses: data.for_eclasses.map((item) => item.value),
             };
 
             await saveEnrichmentSettings(enrichment_class, formatted_data);
-            setAlert({ show: true, message: 'Enrichment settings saved successfully!', color: 'green' });
+            setAlert({
+                show: true,
+                message: 'Enrichment settings saved successfully!',
+                color: 'green',
+            });
         } catch (err) {
             displayError(setAlert, navigate)(err);
         }
@@ -174,7 +181,10 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
             if (field.type === 'choice') {
                 return (
                     <div className='w-full mt-4' key={key}>
-                        <label htmlFor={`settings.${key}`} className='block text-sm font-medium'>
+                        <label
+                            htmlFor={`settings.${key}`}
+                            className='block text-sm font-medium'
+                        >
                             {capitalizeString(key)}
                         </label>
                         <div className='mt-1'>
@@ -198,41 +208,45 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
                 );
             } else if (field.type === 'number') {
                 return (
-                  <>
-                  <div className='mt-4'/>
-                    <FormField
-                        key={key}
-                        type='number'
-                        name={`settings.${key}`}
-                        labelText={capitalizeString(key)}
-                        className='form-input input input-ghost-primary input-block focus:ring-0'
-                        {...register(`settings.${key}`)}
-                        error={errors.settings?.[key]?.message}
-                    />
-                  </>
+                    <>
+                        <div className='mt-4' />
+                        <FormField
+                            key={key}
+                            type='number'
+                            name={`settings.${key}`}
+                            labelText={capitalizeString(key)}
+                            className='form-input input input-ghost-primary input-block focus:ring-0'
+                            {...register(`settings.${key}`)}
+                            error={errors.settings?.[key]?.message}
+                        />
+                    </>
                 );
             } else {
                 // Default to string input
                 return (
-                  <>
-                  <div className='mt-4'/>
-                    <FormField
-                        key={key}
-                        type='text'
-                        name={`settings.${key}`}
-                        labelText={capitalizeString(key)}
-                        className='form-input input input-ghost-primary input-block focus:ring-0'
-                        {...register(`settings.${key}`)}
-                        error={errors.settings?.[key]?.message}
-                    />
-                  </>
+                    <>
+                        <div className='mt-4' />
+                        <FormField
+                            key={key}
+                            type='text'
+                            name={`settings.${key}`}
+                            labelText={capitalizeString(key)}
+                            className='form-input input input-ghost-primary input-block focus:ring-0'
+                            {...register(`settings.${key}`)}
+                            error={errors.settings?.[key]?.message}
+                        />
+                    </>
                 );
             }
         });
     };
 
     if (loading) {
-        return <div className='flex justify-center items-center min-h-screen'>Loading enrichment settings...</div>;
+        return (
+            <div className='flex justify-center items-center min-h-screen'>
+                Loading enrichment settings...
+            </div>
+        );
     }
 
     return (
@@ -294,7 +308,9 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
                                         <Controller
                                             name='for_eclasses'
                                             control={control}
-                                            render={({ field: { onChange, value, ref } }) => (
+                                            render={({
+                                                field: { onChange, value, ref },
+                                            }) => (
                                                 <Selector
                                                     value={value}
                                                     onChange={onChange}
@@ -313,10 +329,12 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
                                     </div>
                                 </div>
                             </Tab>
-                            <Tab title='Settings' classes='space-y-4'>
-                                <div className='mt-4' />
-                                {renderSettingsFields()}
-                            </Tab>
+                            {Object.keys(formFields).length > 0 && (
+                                <Tab title='Settings' classes='space-y-4'>
+                                    <div className='mt-4' />
+                                    {renderSettingsFields()}
+                                </Tab>
+                            )}
                         </Tabs>
 
                         <AlertBox alert={alert} />

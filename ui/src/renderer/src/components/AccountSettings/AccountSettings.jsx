@@ -118,6 +118,8 @@ export default function AccountSettings({ target, isEdit = true }) {
                 payload.catalyst_api_key = data.catalystKey;
             }
             if (isAdminAndNotOwn) {
+                payload.username = data.username;
+                payload.email = data.email;
                 payload.email_confirmed = data.email_confirmed;
                 payload.is_active = data.is_active;
                 payload.role = data.role;
@@ -195,7 +197,7 @@ export default function AccountSettings({ target, isEdit = true }) {
                                         placeholder='Username'
                                         {...register('username')}
                                         error={errors.username?.message}
-                                        disabled={!isAdmin && isEdit}
+                                        disabled={!isAdminAndNotOwn && isEdit}
                                     />
                                     <div className='mt-4' />
                                     <FormField
@@ -205,7 +207,7 @@ export default function AccountSettings({ target, isEdit = true }) {
                                         placeholder='Email'
                                         {...register('email')}
                                         error={errors.email?.message}
-                                        disabled={!isAdmin && isEdit}
+                                        disabled={!isAdminAndNotOwn && isEdit}
                                     />
 
                                     <div className='mt-4' />
