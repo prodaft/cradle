@@ -54,7 +54,6 @@ class ImportJSONReportAPIView(APIView):
             report_location="",
             status=ReportStatus.WORKING,
         )
-        report.set_mode()
 
         import_json_report.delay(report_data, request.user.id, str(report.id))
         return Response(

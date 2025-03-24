@@ -28,6 +28,13 @@ class FileReference(models.Model):
         null=True,
         blank=True,
     )
+    report: models.ForeignKey = models.OneToOneField(
+        "publish.PublishedReport",
+        related_name="file",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
 
     def to_dict(self) -> dict[str, str]:
         """Provides a dictionary representation of the FileReference

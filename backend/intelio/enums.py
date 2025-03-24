@@ -10,3 +10,9 @@ class EnrichmentStrategy(models.TextChoices):
 
 
 #    PERIODIC = "periodic", _("Periodic")
+
+
+class DigestStatus(models.TextChoices):
+    WORKING = "working", "Working"
+    DONE = "done", "Done"
+    ERROR = "error", "Error"

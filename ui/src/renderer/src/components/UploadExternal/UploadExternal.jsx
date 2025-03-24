@@ -1,86 +1,243 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { Upload, X, Plus, CloudUpload } from 'iconoir-react';
+import { Upload, Eye, RefreshCircle, Trash } from 'iconoir-react';
 import Selector from '../Selector/Selector';
-import { advancedQuery } from '../../services/queryService/queryService';
+import { queryEntries } from '../../services/queryService/queryService';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import {
+    getDigestTypes,
+    saveDigest,
+    getDigests,
+    deleteDigest,
+} from '../../services/intelioService/intelioService';
+import Pagination from '../Pagination/Pagination';
 
 const UploadSchema = Yup.object().shape({
     dataType: Yup.object()
         .shape({
             value: Yup.string().required('Data type is required'),
             label: Yup.string().required(),
+            inferEntities: Yup.boolean(),
         })
         .required('Please select a data type'),
-    associatedEntries: Yup.array()
-        .of(
-            Yup.object().shape({
-                value: Yup.string().required(),
-                label: Yup.string().required(),
-            }),
-        )
-        .min(1, 'Please select at least one associated entry'),
+    associatedEntry: Yup.object().when('dataType', {
+        is: (dataType) => dataType && !dataType.inferEntities,
+        then: () =>
+            Yup.object()
+                .shape({
+                    value: Yup.string().required(),
+                    label: Yup.string().required(),
+                })
+                .notRequired(),
+        otherwise: () => Yup.array(),
+    }),
     files: Yup.array()
-        .min(1, 'Please upload at least one file')
-        .required('Files are required'),
+        .min(1, 'Please upload a file')
+        .max(1, 'Only a single file is allowed')
+        .required('File is required'),
 });
 
-export default function UploadExternal({ onUploadComplete, setAlert }) {
-    // State for storing fetched data types
-    const [dataTypesLoading, setDataTypesLoading] = useState(false);
-    const [entriesLoading, setEntriesLoading] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState(0);
-    const [isUploading, setIsUploading] = useState(false);
+/**
+ * DigestCard component - Displays details of a digest.
+ */
+function DigestCard({ digest, setAlert, onDelete }) {
+    const [formattedDate, setFormattedDate] = useState('');
+    const [localDigest, setLocalDigest] = useState(digest);
+    const [visible, setVisible] = useState(true);
 
-    // Fetch data types from API
-    const fetchDataTypes = async (query) => {
-        setDataTypesLoading(true);
+    useEffect(() => {
+        setFormattedDate(new Date(localDigest.created_at).toLocaleString());
+    }, [localDigest]);
+
+    /**
+     * Attempt to delete the digest.
+     */
+    const handleDelete = async () => {
         try {
-            // Replace with your actual API call to fetch data types
-            const response = await advancedQuery(`type:${query}`, true);
-
-            if (response.status === 200) {
-                const dataTypes = response.data.results.map((type) => ({
-                    value: type.id,
-                    label: type.name || type.id,
-                }));
-                return dataTypes;
-            } else {
-                setAlert({
-                    type: 'error',
-                    message: 'Failed to load data types',
-                    show: true,
-                });
-                return [];
-            }
-        } catch (error) {
+            await deleteDigest(localDigest.id);
+            setVisible(false);
             setAlert({
-                type: 'error',
-                message: `Error fetching data types: ${error.message}`,
                 show: true,
+                message: 'Digest deleted successfully',
+                color: 'green',
             });
-            return [];
-        } finally {
-            setDataTypesLoading(false);
+            if (onDelete) onDelete();
+        } catch (error) {
+            console.error('Delete digest failed:', error);
+            setAlert({ show: true, message: 'Failed to delete digest', color: 'red' });
         }
     };
 
-    // Fetch related entries based on selected data type
-    const fetchRelatedEntries = async (query) => {
-        try {
-            const response = await advancedQuery(`${selectedType}:${query}`, true);
+    if (!visible) return null;
 
+    return (
+        <div className='bg-gray-800 bg-opacity-75 p-4 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 m-2'>
+            <div className='flex justify-between items-center mb-2'>
+                <div className='flex items-center space-x-2'>
+                    <h2 className='text-lg font-bold text-white'>
+                        {localDigest.display_name || 'Unnamed Digest'}
+                    </h2>
+                    <button
+                        title='Delete Digest'
+                        className='text-red-400 hover:text-red-300 transition-colors'
+                        onClick={handleDelete}
+                    >
+                        <Trash className='w-5 h-5' />
+                    </button>
+                </div>
+                <span
+                    className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        localDigest.status === 'completed'
+                            ? 'bg-green-500 text-white'
+                            : localDigest.status === 'failed'
+                              ? 'bg-red-500 text-white'
+                              : 'bg-yellow-500 text-white'
+                    }`}
+                >
+                    {localDigest.status.charAt(0).toUpperCase() +
+                        localDigest.status.slice(1)}
+                </span>
+            </div>
+            <div className='text-gray-300 text-sm space-y-1'>
+                {localDigest.entity_detail && (
+                    <p>
+                        <strong>Entity:</strong> {localDigest.entity_detail.subtype}:
+                        {localDigest.entity_detail.name}
+                    </p>
+                )}
+                <p>
+                    <strong>User:</strong> {localDigest.user_detail.username}
+                </p>
+                <p>
+                    <strong>Created On:</strong> {formattedDate}
+                </p>
+                <p>
+                    <strong>Associations:</strong> {localDigest.num_associations || 0}
+                </p>
+                <p>
+                    <strong>Encounters:</strong> {localDigest.num_encounters || 0}
+                </p>
+                <p>
+                    <strong>Notes:</strong> {localDigest.num_notes || 0}
+                </p>
+                <p>
+                    <strong>Files:</strong> {localDigest.num_files || 0}
+                </p>
+
+                {localDigest.errors && localDigest.errors.length > 0 && (
+                    <div className='mt-2'>
+                        <strong className='text-red-300'>Errors:</strong>
+                        <ul className='list-disc pl-5 text-red-300'>
+                            {localDigest.errors.map((error, index) => (
+                                <li key={`error-${index}`}>{error}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
+                {localDigest.warnings && localDigest.warnings.length > 0 && (
+                    <div className='mt-2'>
+                        <strong className='text-yellow-300'>Warnings:</strong>
+                        <ul className='list-disc pl-5 text-yellow-300'>
+                            {localDigest.warnings.map((warning, index) => (
+                                <li key={`warning-${index}`}>{warning}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+export default function UploadExternal() {
+    const [dataTypeOptions, setDataTypeOptions] = useState([]);
+    const [entriesLoading, setEntriesLoading] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+
+    // Manage form state
+    const [formValues, setFormValues] = useState({
+        dataType: null,
+        associatedEntry: [],
+        files: [],
+    });
+    const [errors, setErrors] = useState({});
+    const [touched, setTouched] = useState({});
+
+    // Digest list state
+    const [digests, setDigests] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
+    useEffect(() => {
+        getDigestTypes()
+            .then((response) => {
+                if (response.status === 200) {
+                    const dataTypes = response.data.map((type) => ({
+                        value: type.class,
+                        label: type.name,
+                        inferEntities: type.infer_entities,
+                    }));
+                    setDataTypeOptions(dataTypes);
+                } else {
+                    setAlert({
+                        color: 'red',
+                        message: 'Failed to load data types',
+                        show: true,
+                    });
+                }
+            })
+            .catch((error) => {
+                setAlert({
+                    color: 'red',
+                    message: `Error fetching data types: ${error.message}`,
+                    show: true,
+                });
+            });
+
+        // Initial fetch of digests
+        fetchDigests();
+    }, [page]);
+
+    const fetchDigests = async () => {
+        setLoading(true);
+        try {
+            const response = await getDigests(page);
+            setDigests(response.data.results);
+            setTotalPages(response.data.total_pages);
+        } catch (error) {
+            console.error('Failed to fetch digests', error);
+            setAlert({
+                color: 'red',
+                message: `Error fetching digests: ${error.message}`,
+                show: true,
+            });
+            setDigests([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handlePageChange = (newPage) => {
+        setPage(newPage);
+    };
+
+    const fetchRelatedEntries = async (query) => {
+        setEntriesLoading(true);
+        try {
+            const response = await queryEntries({ name: `${query}`, type: 'entity' });
             if (response.status === 200) {
                 const entries = response.data.results.map((entry) => ({
                     value: entry.id,
-                    label: `${entry.name || entry.id}`,
+                    label: `${entry.subtype}:${entry.name}`,
                 }));
                 return entries;
             } else {
                 setAlert({
-                    type: 'error',
+                    color: 'red',
                     message: 'Failed to load associated entries',
                     show: true,
                 });
@@ -88,7 +245,7 @@ export default function UploadExternal({ onUploadComplete, setAlert }) {
             }
         } catch (error) {
             setAlert({
-                type: 'error',
+                color: 'red',
                 message: `Error fetching entries: ${error.message}`,
                 show: true,
             });
@@ -98,69 +255,42 @@ export default function UploadExternal({ onUploadComplete, setAlert }) {
         }
     };
 
-    // Handle file upload
     const handleUpload = async (values) => {
         setIsUploading(true);
-        setUploadProgress(0);
-
         try {
-            const formData = new FormData();
+            const body = {
+                digest_type: values.dataType.value,
+                entity: values.associatedEntry?.value,
+            };
 
-            // Add data type
-            formData.append('dataType', values.dataType.value);
+            const response = await saveDigest(body, values.files);
 
-            // Add associated entries
-            values.associatedEntries.forEach((entry) => {
-                formData.append('associatedEntries', entry.value);
-            });
-
-            // Add files
-            values.files.forEach((file) => {
-                formData.append('files', file);
-            });
-
-            // Simulate upload progress
-            const uploadInterval = setInterval(() => {
-                setUploadProgress((prev) => {
-                    const newProgress = prev + 10;
-                    if (newProgress >= 100) {
-                        clearInterval(uploadInterval);
-                        return 100;
-                    }
-                    return newProgress;
+            if (response.status === 201) {
+                setAlert({
+                    color: 'green',
+                    message: 'File uploaded successfully',
+                    show: true,
                 });
-            }, 300);
-
-            // Replace with your actual upload API call
-            // const response = await uploadFiles(formData, (progress) => {
-            //   setUploadProgress(progress);
-            // });
-
-            // Simulate API delay
-            await new Promise((resolve) => setTimeout(resolve, 3000));
-
-            clearInterval(uploadInterval);
-            setUploadProgress(100);
-
-            // Reset form after successful upload
-            formik.resetForm();
-
-            setAlert({
-                type: 'success',
-                message: 'Files uploaded successfully',
-                show: true,
-            });
-
-            if (onUploadComplete) {
-                onUploadComplete({
-                    dataType: values.dataType,
-                    associatedEntries: values.associatedEntries,
-                    fileCount: values.files.length,
+                // Reset form state on success
+                setFormValues({
+                    dataType: null,
+                    associatedEntry: [],
+                    files: [],
+                });
+                setTouched({});
+                setErrors({});
+                // Refresh the digest list
+                fetchDigests();
+            } else {
+                setAlert({
+                    color: 'red',
+                    message: 'Upload failed',
+                    show: true,
                 });
             }
         } catch (error) {
             setAlert({
-                type: 'error',
+                color: 'red',
                 message: `Upload failed: ${error.message}`,
                 show: true,
             });
@@ -169,194 +299,226 @@ export default function UploadExternal({ onUploadComplete, setAlert }) {
         }
     };
 
-    // Initialize formik
-    const formik = useFormik({
-        initialValues: {
-            dataType: null,
-            associatedEntries: [],
-            files: [],
-        },
-        validationSchema: UploadSchema,
-        onSubmit: handleUpload,
-    });
+    const validateForm = async () => {
+        try {
+            await UploadSchema.validate(formValues, { abortEarly: false });
+            setErrors({});
+            return true;
+        } catch (err) {
+            const formErrors = {};
+            if (err.inner) {
+                err.inner.forEach((error) => {
+                    formErrors[error.path] = error.message;
+                });
+            } else if (err.path) {
+                formErrors[err.path] = err.message;
+            }
+            console.log(errors);
+            setErrors(formErrors);
+            return false;
+        }
+    };
 
-    // Configure dropzone
-    const onDrop = useCallback(
-        (acceptedFiles) => {
-            formik.setFieldValue('files', [...formik.values.files, ...acceptedFiles]);
-        },
-        [formik.values.files, formik.setFieldValue],
-    );
+    const onSubmit = async (e) => {
+        e.preventDefault();
+        // Mark all fields as touched
+        setTouched({
+            dataType: true,
+            associatedEntry: true,
+            files: true,
+        });
+        const isValid = await validateForm();
+        if (isValid) {
+            await handleUpload(formValues);
+        }
+    };
+
+    const handleDataTypeChange = (value) => {
+        console.log(value);
+        setFormValues((prev) => ({
+            ...prev,
+            dataType: value,
+            // Clear associated entries if inferEntities is true
+            associatedEntry: value && value.inferEntities ? [] : prev.associatedEntry,
+        }));
+        setTouched((prev) => ({ ...prev, dataType: true }));
+    };
+
+    const handleAssociatedEntriesChange = (value) => {
+        setFormValues((prev) => ({
+            ...prev,
+            associatedEntry: value,
+        }));
+        setTouched((prev) => ({ ...prev, associatedEntry: true }));
+    };
+
+    const onDrop = useCallback((acceptedFiles) => {
+        if (acceptedFiles.length > 0) {
+            setFormValues((prev) => ({ ...prev, files: [acceptedFiles[0]] }));
+            setTouched((prev) => ({ ...prev, files: true }));
+        }
+    }, []);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
         accept: {},
+        maxFiles: 1,
     });
 
-    // Remove a file from the list
-    const removeFile = (index) => {
-        const newFiles = [...formik.values.files];
-        newFiles.splice(index, 1);
-        formik.setFieldValue('files', newFiles);
+    const removeFile = () => {
+        setFormValues((prev) => ({ ...prev, files: [] }));
+        setTouched((prev) => ({ ...prev, files: true }));
     };
 
+    // Determine if the form is valid (used to disable the submit button)
+    let isValid = false;
+    try {
+        UploadSchema.validateSync(formValues, { abortEarly: false });
+        isValid = true;
+    } catch (err) {
+        isValid = false;
+    }
+
     return (
-        <div className='p-8'>
-            <h2 className='text-xl font-semibold mb-4'>Upload External Data</h2>
+        <>
+            <AlertDismissible alert={alert} setAlert={setAlert} />
+            <div className='p-8'>
+                <h2 className='text-xl font-semibold mb-4'>Upload External Data</h2>
 
-            <form onSubmit={formik.handleSubmit}>
-                <div className='grid grid-cols-4 gap-4 mb-4'>
-                    {/* Data Type Selector */}
-                    <div className='col-span-1'>
-                        <label className='block text-sm font-medium text-gray-700 mb-1'>
-                            Data Type
-                        </label>
-                        <Selector
-                            value={formik.values.dataType}
-                            onChange={(value) =>
-                                formik.setFieldValue('dataType', value)
-                            }
-                            fetchOptions={fetchDataTypes}
-                            isLoading={dataTypesLoading}
-                            placeholder='Select data type'
-                            className='w-full'
-                            isMulti={false}
-                        />
-                        {formik.touched.dataType && formik.errors.dataType && (
-                            <p className='mt-1 text-xs text-red-600'>
-                                {formik.errors.dataType}
-                            </p>
-                        )}
-                    </div>
-
-                    {/* File Upload Area */}
-                    <div className='col-span-1'>
-                        <label className='block text-sm font-medium text-gray-700 mb-1'>
-                            Upload Files
-                        </label>
-                        <div
-                            {...getRootProps()}
-                            className={`border-2 border-dashed rounded-md p-2 text-center cursor-pointer h-10 flex items-center justify-center ${
-                                isDragActive
-                                    ? 'bg-blue-50 border-blue-300'
-                                    : 'border-gray-300 hover:border-blue-400'
-                            }`}
-                        >
-                            <input {...getInputProps()} />
-                            <p className='text-sm text-gray-500 truncate'>
-                                {isDragActive
-                                    ? 'Drop files here'
-                                    : 'Drag files or click'}
-                            </p>
-                        </div>
-                        {formik.touched.files && formik.errors.files && (
-                            <p className='mt-1 text-xs text-red-600'>
-                                {formik.errors.files}
-                            </p>
-                        )}
-                    </div>
-
-                    {/* Associated Entries Selector */}
-                    <div className='col-span-1'>
-                        <label className='block text-sm font-medium text-gray-700 mb-1'>
-                            Associated Entries
-                        </label>
-                        <Selector
-                            value={formik.values.associatedEntries}
-                            onChange={(value) =>
-                                formik.setFieldValue('associatedEntries', value)
-                            }
-                            fetchOptions={fetchRelatedEntries}
-                            isLoading={entriesLoading}
-                            placeholder='Select entries'
-                            className='w-full'
-                            isMulti={true}
-                            isDisabled={!formik.values.dataType}
-                        />
-                        {formik.touched.associatedEntries &&
-                            formik.errors.associatedEntries && (
+                <form onSubmit={onSubmit}>
+                    <div className='grid grid-cols-4 gap-4 mb-4'>
+                        {/* Data Type Selector */}
+                        <div className='col-span-1'>
+                            <label className='block text-sm font-medium text-gray-700 mb-1'>
+                                Data Type
+                            </label>
+                            <Selector
+                                value={formValues.dataType}
+                                onChange={handleDataTypeChange}
+                                staticOptions={dataTypeOptions}
+                                placeholder='Select digest type'
+                                className='w-full'
+                                isMulti={false}
+                            />
+                            {touched.dataType && errors.dataType && (
                                 <p className='mt-1 text-xs text-red-600'>
-                                    {formik.errors.associatedEntries}
+                                    {errors.dataType}
                                 </p>
                             )}
-                    </div>
-
-                    {/* Submit Button */}
-                    <div className='col-span-1 flex items-end'>
-                        <button
-                            type='submit'
-                            disabled={isUploading || !formik.isValid}
-                            className={`w-full btn flex items-center justify-center ${
-                                isUploading || !formik.isValid
-                                    ? 'opacity-50 cursor-not-allowed'
-                                    : ''
-                            }`}
-                        >
-                            {isUploading ? (
-                                <>
-                                    <div className='mr-2 h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin'></div>
-                                    Uploading...
-                                </>
-                            ) : (
-                                <>
-                                    <Upload className='mr-2' size={18} />
-                                    Upload
-                                </>
-                            )}
-                        </button>
-                    </div>
-                </div>
-
-                {/* File List */}
-                {formik.values.files.length > 0 && (
-                    <div className='mt-4'>
-                        <h3 className='text-sm font-medium text-gray-700 mb-2'>
-                            Selected Files
-                        </h3>
-                        <div className='space-y-2 max-h-40 overflow-y-auto'>
-                            {formik.values.files.map((file, index) => (
-                                <div
-                                    key={`${file.name}-${index}`}
-                                    className='flex items-center justify-between bg-gray-50 p-2 rounded'
-                                >
-                                    <div className='flex items-center'>
-                                        <CloudUpload />
-                                        <span className='text-sm truncate max-w-md'>
-                                            {file.name}
-                                        </span>
-                                        <span className='text-xs text-gray-500 ml-2'>
-                                            ({(file.size / 1024).toFixed(1)} KB)
-                                        </span>
-                                    </div>
-                                    <button
-                                        type='button'
-                                        onClick={() => removeFile(index)}
-                                        className='text-red-500 hover:text-red-700'
-                                    >
-                                        <X size={16} />
-                                    </button>
-                                </div>
-                            ))}
                         </div>
-                    </div>
-                )}
 
-                {/* Upload Progress */}
-                {isUploading && (
-                    <div className='mt-4'>
-                        <div className='flex justify-between text-xs text-gray-600 mb-1'>
-                            <span>Upload Progress</span>
-                            <span>{uploadProgress}%</span>
-                        </div>
-                        <div className='w-full bg-gray-200 rounded-full h-2'>
+                        {/* File Upload Area */}
+                        <div className='col-span-1'>
+                            <label className='block text-sm font-medium text-gray-700 mb-1'>
+                                Upload File
+                            </label>
                             <div
-                                className='bg-blue-600 h-2 rounded-full'
-                                style={{ width: `${uploadProgress}%` }}
-                            ></div>
+                                {...getRootProps()}
+                                className={`border-2 border-dashed rounded-md p-2 text-center cursor-pointer h-10 flex items-center justify-center ${
+                                    isDragActive
+                                        ? 'bg-blue-50 border-blue-300'
+                                        : 'border-gray-300 hover:border-blue-400'
+                                }`}
+                            >
+                                <input {...getInputProps()} />
+                                <p className='text-sm text-gray-500 truncate'>
+                                    {formValues.files.length > 0
+                                        ? `${formValues.files[0].name} (${(
+                                              formValues.files[0].size / 1024
+                                          ).toFixed(1)} KB)`
+                                        : isDragActive
+                                          ? 'Drop file here'
+                                          : 'Drag file or click'}
+                                </p>
+                            </div>
+                            {touched.files && errors.files && (
+                                <p className='mt-1 text-xs text-red-600'>
+                                    {errors.files}
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Associated Entries Selector */}
+                        <div className='col-span-1'>
+                            <label className='block text-sm font-medium text-gray-700 mb-1'>
+                                Associated Entries
+                            </label>
+                            <Selector
+                                value={formValues.associatedEntry}
+                                onChange={handleAssociatedEntriesChange}
+                                fetchOptions={fetchRelatedEntries}
+                                isLoading={entriesLoading}
+                                placeholder={
+                                    'Select entries' +
+                                    (formValues.dataType?.inferEntities
+                                        ? ' (disabled)'
+                                        : '')
+                                }
+                                className='w-full'
+                                isMulti={false}
+                                isDisabled={
+                                    !formValues.dataType ||
+                                    formValues.dataType.inferEntities
+                                }
+                            />
+                            {touched.associatedEntry && errors.associatedEntry && (
+                                <p className='mt-1 text-xs text-red-600'>
+                                    {errors.associatedEntry}
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Submit Button */}
+                        <div className='col-span-1 flex items-end'>
+                            <button
+                                type='submit'
+                                disabled={isUploading}
+                                className={`w-full btn flex items-center justify-center ${
+                                    isUploading ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                            >
+                                {isUploading ? (
+                                    <>
+                                        <div className='mr-2 h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin'></div>
+                                        Uploading...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload className='mr-2' />
+                                        Upload
+                                    </>
+                                )}
+                            </button>
                         </div>
                     </div>
-                )}
-            </form>
-        </div>
+                </form>
+
+                {/* Digest List Section */}
+                <div className='mt-8'>
+                    {loading ? (
+                        <p className='text-gray-400'>Loading digests...</p>
+                    ) : digests.length > 0 ? (
+                        <>
+                            {digests.map((digest) => (
+                                <DigestCard
+                                    key={digest.id}
+                                    digest={digest}
+                                    setAlert={setAlert}
+                                    onDelete={fetchDigests}
+                                    onRetry={fetchDigests}
+                                />
+                            ))}
+                            <Pagination
+                                currentPage={page}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}
+                            />
+                        </>
+                    ) : (
+                        <p className='text-gray-400'>No previous uploads found.</p>
+                    )}
+                </div>
+            </div>
+        </>
     );
 }

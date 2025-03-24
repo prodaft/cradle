@@ -1,10 +1,12 @@
 from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
 
-from entries.models import EntryClass
-from entries.serializers import EntryClassSerializer
+from entries.models import Entry, EntryClass
+from entries.serializers import EntryClassSerializer, EntrySerializer
 from intelio.models.base import BaseDigest
 from intelio.utils import fields_to_form
+from user.models import CradleUser
+from user.serializers import EssentialUserRetrieveSerializer
 from .models import EnricherSettings, BaseEnricher
 
 
@@ -76,13 +78,11 @@ class EnrichmentSettingsSerializer(serializers.ModelSerializer):
         for_eclasses_data = validated_data.pop("for_eclasses", [])
         settings = EnricherSettings.objects.create(**validated_data)
 
-        print(for_eclasses_data)
         settings.for_eclasses.set(for_eclasses_data)
         return settings
 
     def update(self, instance, validated_data):
         for_eclasses_data = validated_data.pop("for_eclasses", [])
-        print(for_eclasses_data)
         instance = super().update(instance, validated_data)
 
         if for_eclasses_data is not None:
@@ -92,22 +92,43 @@ class EnrichmentSettingsSerializer(serializers.ModelSerializer):
 
 
 class BaseDigestSerializer(serializers.ModelSerializer):
+    id = serializers.UUIDField(read_only=True)
     display_name = serializers.SerializerMethodField()
+
+    entity = serializers.PrimaryKeyRelatedField(
+        queryset=Entry.objects.all(), write_only=True, required=False
+    )
+    entity_detail = EntrySerializer(source="entity", read_only=True)
+
+    user = serializers.PrimaryKeyRelatedField(
+        queryset=CradleUser.objects.all(), write_only=True, required=True
+    )
+    user_detail = EssentialUserRetrieveSerializer(source="user", read_only=True)
 
     class Meta:
         model = BaseDigest
         fields = [
             "id",
             "user",
+            "user_detail",
             "created_at",
-            "name",
-            "fpath",
+            "status",
             "errors",
             "warnings",
-            "enricher_type",
+            "digest_type",
             "display_name",
+            "entity",
+            "entity_detail",
         ]
         read_only_fields = ["id", "created_at", "enricher_type", "display_name"]
 
     def get_display_name(self, obj):
         return getattr(obj.__class__, "display_name", obj.__class__.__name__)
+
+    def to_internal_value(self, data):
+        self.Meta.model = BaseDigest.get_subclass(data["digest_type"])
+
+        if self.Meta.model is None:
+            raise serializers.ValidationError("Invalid digest type")
+
+        return super().to_internal_value(data)

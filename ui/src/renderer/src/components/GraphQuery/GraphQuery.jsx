@@ -296,7 +296,7 @@ export default function GraphQuery({
                                 {/* Start and Destination selectors */}
                                 <div className='grid grid-cols-2 gap-2'>
                                     <div className='flex flex-col'>
-                                        <label className='text-xs text-gray-600 mb-1'>
+                                        <label className='text-xs text-gray-400 mb-1'>
                                             Start Node
                                         </label>
                                         <Selector
@@ -320,7 +320,7 @@ export default function GraphQuery({
                                         )}
                                     </div>
                                     <div className='flex flex-col'>
-                                        <label className='text-xs text-gray-600 mb-1'>
+                                        <label className='text-xs text-gray-400 mb-1'>
                                             Select Destination {values.matchType}
                                         </label>
                                         <Selector
@@ -348,7 +348,7 @@ export default function GraphQuery({
                                 {/* Parameters row */}
                                 <div className='grid grid-cols-4 gap-2'>
                                     <div className='flex flex-col'>
-                                        <label className='text-xs text-gray-600 mb-1'>
+                                        <label className='text-xs text-gray-400 mb-1'>
                                             Match Technique
                                         </label>
                                         <Field
@@ -374,7 +374,7 @@ export default function GraphQuery({
                                     </div>
 
                                     <div className='flex flex-col'>
-                                        <label className='text-xs text-gray-600 mb-1'>
+                                        <label className='text-xs text-gray-400 mb-1'>
                                             Min Depth
                                         </label>
                                         <Field
@@ -391,7 +391,7 @@ export default function GraphQuery({
                                     </div>
 
                                     <div className='flex flex-col'>
-                                        <label className='text-xs text-gray-600 mb-1'>
+                                        <label className='text-xs text-gray-400 mb-1'>
                                             Max Depth
                                         </label>
                                         <Field
@@ -409,7 +409,7 @@ export default function GraphQuery({
                                     </div>
 
                                     <div className='flex flex-col'>
-                                        <label className='text-xs text-gray-600 mb-1'>
+                                        <label className='text-xs text-gray-400 mb-1'>
                                             Edges per Node
                                         </label>
                                         <Field
@@ -431,7 +431,7 @@ export default function GraphQuery({
                                 {/* Date picker and submit button */}
                                 <div className='grid grid-cols-2 gap-2'>
                                     <div className='flex flex-col'>
-                                        <label className='text-xs text-gray-600 mb-1'>
+                                        <label className='text-xs text-gray-400 mb-1'>
                                             Date Range
                                         </label>
                                         <Datepicker

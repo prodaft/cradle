@@ -5,6 +5,7 @@ from .base import EnricherSettings as EnricherSettings
 
 # Digests
 from .digest.stix import StixDigest as StixDigest
+from .digest.cradle import CradleDigest as CradleDigest
 
 # Mappings
 from .mappings.catalyst import CatalystMapping as CatalystMapping

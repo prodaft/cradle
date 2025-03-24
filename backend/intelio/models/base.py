@@ -1,4 +1,5 @@
 from typing import Any
+from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -7,47 +8,76 @@ from django.db.models.fields.related import ForeignKey
 from core.fields import BitStringField
 from entries.models import EntryClass, Entry
 from entries.models import Relation
+import os
 
-from django_lifecycle import AFTER_CREATE, AFTER_UPDATE, LifecycleModel, hook
+from django_lifecycle import (
+    AFTER_CREATE,
+    AFTER_DELETE,
+    AFTER_UPDATE,
+    LifecycleModel,
+    hook,
+)
 
 from django.utils.translation import gettext_lazy as _
 
-from ..enums import EnrichmentStrategy
+from ..enums import EnrichmentStrategy, DigestStatus
+import uuid
 
 
-class BaseDigest(models.Model):
+class BaseDigest(LifecycleModel):
     """
     An import of multiple external objects and connections, bulk "digested" into the platform
     """
 
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.ForeignKey(
         "user.CradleUser", on_delete=models.CASCADE, related_name="digests"
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
-    name = models.CharField(max_length=255, null=False, blank=False)
-    fpath = models.CharField(max_length=255, null=False, blank=False)
 
+    status = models.CharField(
+        max_length=255,
+        choices=DigestStatus.choices,
+        default=DigestStatus.WORKING,
+    )
     errors = models.JSONField(default=list, blank=True)
     warnings = models.JSONField(default=list, blank=True)
 
-    enricher_type = models.CharField(max_length=255, null=False, blank=False)
+    digest_type = models.CharField(max_length=255, null=False, blank=False)
+
+    entity = models.ForeignKey(
+        Entry, on_delete=models.CASCADE, related_name="digests", null=True
+    )
+
+    infer_entities = False
 
     class Meta:
         ordering = ["-created_at"]
 
+        # digest_type cannot be BaseDigest
+        constraints = [
+            models.CheckConstraint(
+                check=~models.Q(digest_type="BaseDigest"),
+                name="digest_type_not_base_digest",
+            )
+        ]
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.enricher_type = self.__class__.__name__
+        self.digest_type = self.__class__.__name__
 
     @classmethod
     def from_db(cls, db, field_names, values):
+        if cls.__name__ != "BaseDigest":
+            return super().from_db(db, field_names, values)
+
         for i in range(len(field_names)):
-            if field_names[i] == "content_type":
+            if field_names[i] == "digest_type":
                 if cls.get_subclass(values[i]) is not None:
                     cls = cls.get_subclass(values[i])
                 else:
-                    raise ValueError(f"Unknown subclass: {values[i]}")
+                    return super().from_db(db, field_names, values)
 
         instance = cls.from_db(db, field_names, values)
 
@@ -73,11 +103,27 @@ class BaseDigest(models.Model):
                 f"{cls.__name__} must define a class attribute 'name' as a string"
             )
 
+    @property
+    def path(self):
+        upload_dir = os.path.join(settings.MEDIA_ROOT, "digests", str(self.user.id))
+        os.makedirs(upload_dir, exist_ok=True)
+        fpath = os.path.join(upload_dir, str(self.id))
+        return fpath
+
+    @hook(AFTER_DELETE)
+    def delete_file(self):
+        self.id = self._initial_state.get_value(self, "id")
+
+        if os.path.exists(self.path):
+            os.remove(self.path)
+
 
 class Association(LifecycleModel):
     """
     A model representing a generic link between two entries.
     """
+
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
     access_vector: BitStringField = BitStringField(
         max_length=2048, null=False, default=1 << 2047, varying=False
@@ -151,6 +197,8 @@ class Encounter(models.Model):
     """
     A model representing an observation of an entry from an outside source.
     """
+
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
     created_at = models.DateTimeField(auto_now_add=True)
     entry = models.ForeignKey(
@@ -241,6 +289,8 @@ class EnricherSettings(models.Model):
     A strategy for enriching an entry with additional information.
     """
 
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
+
     strategy = models.CharField(
         max_length=255,
         choices=EnrichmentStrategy.choices,
@@ -284,6 +334,8 @@ class ClassMapping(models.Model):
 
     Subclasses should implement the actual key-value pairs.
     """
+
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
     internal_class = models.ForeignKey(
         EntryClass, related_name="%(class)ss", on_delete=models.CASCADE

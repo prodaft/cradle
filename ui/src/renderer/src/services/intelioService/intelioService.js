@@ -24,6 +24,17 @@ export function getEnrichmentTypes() {
     });
 }
 
+/**
+ * Function to get digest types
+ *
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export function getDigestTypes() {
+    return authAxios({
+        method: 'GET',
+        url: '/intelio/digest/options/',
+    });
+}
 
 /**
  * Function to get the mapping keys
@@ -49,7 +60,6 @@ export function getMappings(id) {
     });
 }
 
-
 /**
  * Function to save a mapping
  *
@@ -62,7 +72,6 @@ export function saveMapping(id, mapping) {
         data: mapping,
     });
 }
-
 
 /**
  * Function to delete a mapping
@@ -77,7 +86,6 @@ export function deleteMapping(id, mappingId) {
     });
 }
 
-
 /**
  * Function to get an enrichment
  *
@@ -90,7 +98,6 @@ export function getEnrichmentSettings(id) {
     });
 }
 
-
 /**
  * Function to save a mapping
  *
@@ -101,5 +108,69 @@ export function saveEnrichmentSettings(id, enrichment) {
         method: 'POST',
         url: `/intelio/enrichment/${id}/`,
         data: enrichment,
+    });
+}
+
+/**
+ * Function to get the digests
+ *
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export function getDigests(page) {
+    return authAxios({
+        method: 'GET',
+        url: `/intelio/digest/`,
+        params: { page },
+    });
+}
+
+/**
+ * Function to upload a digest
+ *
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export function saveDigest(body, file) {
+    const formData = new FormData();
+
+    Object.entries(body).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+            value.forEach((item) => {
+                if (item && typeof item === 'object' && item.value) {
+                    formData.append(key, item.value);
+                } else {
+                    formData.append(key, item);
+                }
+            });
+        } else {
+            formData.append(key, value);
+        }
+    });
+
+    if (Array.isArray(file)) {
+        file.forEach((f) => formData.append('file', f));
+    } else {
+        formData.append('file', file);
+    }
+
+    return authAxios({
+        method: 'POST',
+        url: '/intelio/digest/',
+        data: formData,
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+}
+
+/**
+ * Function to delete a digestion
+ *
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export function deleteDigest(id) {
+    return authAxios({
+        method: 'DELETE',
+        url: '/intelio/digest',
+        params: { id: id },
     });
 }

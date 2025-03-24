@@ -1,3 +1,5 @@
+from django.conf import settings
+from rest_framework.parsers import MultiPartParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -10,6 +12,7 @@ from core.pagination import TotalPagesPagination
 from ..models.base import BaseDigest
 
 from ..serializers import BaseDigestSerializer
+from ..tasks import start_digest
 from user.permissions import HasAdminRole
 
 from django.shortcuts import get_object_or_404
@@ -30,7 +33,11 @@ class DigestSubclassesAPIView(APIView):
         subclasses = BaseDigest.__subclasses__()
 
         subclass_names = [
-            {"class": subclass.__name__, "name": subclass.display_name}
+            {
+                "class": subclass.__name__,
+                "name": subclass.display_name,
+                "infer_entities": getattr(subclass, "infer_entities", False),
+            }
             for subclass in subclasses
             if hasattr(subclass, "display_name")
         ]
@@ -40,6 +47,7 @@ class DigestSubclassesAPIView(APIView):
 class DigestAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
 
     def get(self, request):
         """Fetch all digests for the current user."""
@@ -48,38 +56,33 @@ class DigestAPIView(APIView):
         result_page = paginator.paginate_queryset(digests, request)
 
         serializer = BaseDigestSerializer(result_page, many=True)
-        return Response(serializer.data)
+        return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
         """Create a new digest for the current user."""
-        file = request.FILES.get("file")
-        if not file:
-            return Response({"detail": "Missing 'file' in request."}, status=400)
-
-        # Save file to MEDIA_ROOT/digests/<user_id>/<filename>
-        user_id = request.user.id
-        upload_dir = os.path.join(settings.MEDIA_ROOT, "digests", str(user_id))
-        os.makedirs(upload_dir, exist_ok=True)
-        fpath = os.path.join(upload_dir, file.name)
-
-        with open(fpath, "wb+") as destination:
-            for chunk in file.chunks():
-                destination.write(chunk)
-
-        # Create the Digest
         data = request.data.copy()
-        data["user"] = user_id
-        data["fpath"] = fpath  # set path on the model
+
+        data["user"] = request.user.id
 
         serializer = BaseDigestSerializer(data=data)
         if serializer.is_valid():
             digest = serializer.save()
+        else:
+            return Response(serializer.errors, status=400)
 
-            # Queue Celery task
-            process_digest_file.delay(digest.id)
+        file = request.FILES.get("file")
 
-            return Response(BaseDigestSerializer(digest).data, status=201)
-        return Response(serializer.errors, status=400)
+        if not file:
+            return Response({"detail": "Missing 'file' in request."}, status=400)
+
+        user_id = request.user.id
+
+        with open(digest.path, "wb+") as destination:
+            for chunk in file.chunks():
+                destination.write(chunk)
+
+        start_digest.delay(digest.id)
+        return Response(BaseDigestSerializer(digest).data, status=201)
 
     def delete(self, request):
         """

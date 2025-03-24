@@ -104,7 +104,6 @@ class MappingSchemaView(APIView):
             return Response(serializer(mappingf.first()).data)
         else:
             mapping = mapping_class.objects.create(**values)
-            print(mapping)
             return Response(serializer(mapping).data)
 
     def delete(self, request, class_name):

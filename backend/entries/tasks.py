@@ -69,8 +69,6 @@ def scan_for_children(entry_id):
     for child in entry.entry_class.children.all():
         matches[child] = child.match(entry.name)
 
-    print(matches)
-
     for k, v in matches.items():
         for i in v:
             e, _ = Entry.objects.get_or_create(name=i, entry_class=k)

@@ -32,6 +32,10 @@ app.conf.task_routes = {
     "entries.tasks.update_accesses": {"queue": "access"},
     "entries.tasks.scan_for_children": {"queue": "enrich"},
     "entries.tasks.enrich_entry": {"queue": "enrich"},
+    "entries.tasks.enrich_all": {"queue": "enrich"},
+    "intelio.tasks.enrich_periodic": {"queue": "enrich"},
+    "intelio.tasks.enrich_entry": {"queue": "enrich"},
+    "intelio.tasks.start_digest": {"queue": "digest"},
 }
 
 app.conf.task_default_priority = 5

@@ -1,4 +1,6 @@
 from django.urls import path
+
+from intelio.views.digest import DigestAPIView, DigestSubclassesAPIView
 from .views.mappings import (
     ClassMappingSubclassesAPIView,
     MappingSchemaView,
@@ -32,5 +34,15 @@ urlpatterns = [
         "enrichment/<str:enricher_type>/",
         EnrichmentSettingsAPIView.as_view(),
         name="enrichment-schema",
+    ),
+    path(
+        "digest/options/",
+        DigestSubclassesAPIView.as_view(),
+        name="enrichment-subclasses",
+    ),
+    path(
+        "digest/",
+        DigestAPIView.as_view(),
+        name="enrichment-subclasses",
     ),
 ]

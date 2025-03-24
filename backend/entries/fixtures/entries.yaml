@@ -5,7 +5,6 @@
     timestamp: 2024-10-16 11:45:20.354324+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#dc00e6'
     prefix: ''
 - model: entries.entryclass
@@ -15,7 +14,6 @@
     timestamp: 2024-10-16 11:45:20.354324+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -25,7 +23,6 @@
     timestamp: 2025-02-03 16:50:21.990127+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#35a200'
     prefix: ''
 - model: entries.entryclass
@@ -35,7 +32,6 @@
     timestamp: 2024-10-16 11:45:20.354324+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -363,7 +359,6 @@
       Zambia
 
       Zimbabwe'
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -373,7 +368,6 @@
     timestamp: 2024-10-15 14:43:28.730491+00:00
     regex: (bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}
     options: ''
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -383,7 +377,6 @@
     timestamp: 2024-10-24 21:14:58.785834+00:00
     regex: (0x)?[0-9a-fA-F]{40}
     options: ''
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -393,7 +386,6 @@
     timestamp: 2024-10-28 19:59:10.609980+00:00
     regex: (?:L[a-km-zA-HJ-NP-Z1-9]{26,33}|3[a-km-zA-HJ-NP-Z1-9]{26,33}|ltc1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{39,59})
     options: ''
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -403,7 +395,6 @@
     timestamp: 2024-10-24 21:15:09.931152+00:00
     regex: T[A-Za-z1-9]{33}
     options: ''
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -413,7 +404,6 @@
     timestamp: 2025-02-03 09:56:27.365103+00:00
     regex: 4[0-9AB][1-9A-HJ-NP-Za-km-z]{93}
     options: ''
-    catalyst_type: ''
     color: '#bc3541'
     prefix: ''
 - model: entries.entryclass
@@ -423,7 +413,6 @@
     timestamp: 2024-10-24 21:15:25.498814+00:00
     regex: r[1-9A-HJ-NP-Za-km-z]{25,34}
     options: ''
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -433,7 +422,6 @@
     timestamp: 2024-10-16 11:45:20.354324+00:00
     regex: '[a-zA-Z0-9]{4,}(?:[a-zA-Z0-9\-\.]+)?\.(?:abogado|ac|academy|accountant|ad|ae|af|afl|africa|ag|agency|ai|al|am|ao|app|ar|army|art|asia|at|au|audio|autos|aws|ax|az|ba|baby|bar|bargains|bazar|bd|be|beauty|beer|berlin|best|bet|bf|bg|bh|bi|bid|bike|bingo|bio|bit|biz|bj|black|blackfriday|blog|blue|bo|boats|bond|boo|br|broker|business|buzz|bw|by|bz|ca|cab|cafe|cam|camp|capetown|capital|cards|care|careers|casa|cash|casino|cat|cc|cd|center|ceo|cf|cfd|cg|ch|charity|chat|cheap|christmas|church|ci|city|cl|click|clinic|clothing|cloud|club|cm|cn|co|codes|coffee|college|com|com|comm|community|company|computer|construction|contact|contractors|cool|corsica|cr|credit|creditcard|cv|cw|cx|cyou|cz|date|day|de|deals|delivery|desi|design|dev|digital|directory|dk|do|doctor|dog|domains|download|durban|dz|ec|eco|edu|education|ee|eg|email|engineer|enterprises|equip|es|et|eu|eus|events|expert|exposed|express|fail|faith|fan|fans|farm|fi|finance|fish|fit|fitness|fj|flights|flowers|fly|fm|fo|foundation|fr|frl|fun|fund|futbol|fyi|ga|gallery|games|gay|gd|gdn|ge|geek|gg|gh|gift|gives|gl|global|gm|gmbh|gold|golf|google|gq|gr|gratis|green|group|gs|gt|guru|gy|hair|haus|healthcare|help|hk|hn|homes|host|hosting|house|hr|ht|hu|ic|icu|id|ie|il|im|immo|in|inc|industries|indy|inf|info|ink|institute|insure|international|investments|io|iq|ir|is|ist|it|je|jm|jo|jobs|joburg|jp|ke|kg|kh|kim|kitchen|kiwi|kr|krd|kred|kz|la|land|lat|law|lb|lc|lease|legal|lgbt|li|lib|life|limited|link|live|lk|loan|loans|loc|local|lol|london|love|lr|lt|ltd|lu|lv|ly|ma|makeup|market|marketing|markets|md|me|media|melbourne|men|mg|miami|mk|ml|mls|mm|mn|mobi|moe|mom|money|monster|moscow|mr|ms|mu|mv|mw|mx|my|mz|name|ne|net|network|news|nf|ng|ngo|ni|ninja|nl|no|np|nra|nu|nyc|nz|observer|ocm|old|om|one|ong|onion|onl|online|ooo|or|org|organic|ovh|pa|page|parody|partners|parts|party|pe|pet|pg|ph|photo|photography|photos|pics|pictures|pink|pirate|pizza|pk|pl|place|plus|pm|poker|porn|press|pro|productions|ps|pt|pw|py|qa|quebec|quest|racing|re|realtor|realty|red|ren|rent|rentals|repair|report|rest|restaurant|review|reviews|rg|rip|ro|rocks|rs|rsvp|ru|run|rw|sa|sale|salon|sbs|sc|school|science|sd|se|services|sexy|sg|sh|shell|shop|si|singles|site|sk|skin|sl|sn|so|soccer|social|software|solutions|space|spae|srl|st|store|stream|studio|su|supplies|support|surf|sv|sx|systems|tattoo|tax|taxi|tc|team|tech|technology|tel|tf|tg|th|tips|tj|tk|tn|to|today|tokyo|tools|top|tours|town|toys|tr|trade|travel|turkey|tv|tw|tz|ua|ug|uk|uno|us|uy|uz|vacations|ve|vegas|ventures|vessel|vet|video|vin|vip|vision|vn|vote|voto|voyage|vru|vu|wang|watch|webcam|website|wf|wiki|win|work|works|world|wow|ws|wtf|xin|xn--6frz82g|xn--j6w193g|xn--p1ai|xxx|xy|xyz|yachts|ye|yoga|yt|za|zero|zip|zm|zone|zw)'
     options: ''
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -443,7 +431,6 @@
     timestamp: 2024-10-16 11:45:20.354324+00:00
     regex: ^(?:[a-zA-Z0-9_\-\.]+)@(?:(?:\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(?:(?:[a-zA-Z0-9\-]+\.)+))(?:[a-zA-Z]{2,4}|[0-9]{1,3})(?:\]?)$
     options: ''
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -453,7 +440,6 @@
     timestamp: 2024-10-16 11:45:20.354324+00:00
     regex: '[a-fA-F0-9]{32}'
     options: ''
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -463,7 +449,6 @@
     timestamp: 2024-10-16 11:45:20.354324+00:00
     regex: '[a-fA-F0-9]{40}'
     options: ''
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -473,7 +458,6 @@
     timestamp: 2024-10-16 11:45:20.354324+00:00
     regex: '[a-fA-F0-9]{64}'
     options: ''
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -483,7 +467,6 @@
     timestamp: 2024-12-17 11:05:25.771989+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#67f757'
     prefix: ''
 - model: entries.entryclass
@@ -493,7 +476,6 @@
     timestamp: 2024-12-17 11:05:30.789340+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#17bbb5'
     prefix: ''
 - model: entries.entryclass
@@ -503,7 +485,6 @@
     timestamp: 2024-12-17 11:06:22.896131+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#171bfa'
     prefix: ''
 - model: entries.entryclass
@@ -513,7 +494,6 @@
     timestamp: 2024-12-17 11:05:41.390544+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#067841'
     prefix: ''
 - model: entries.entryclass
@@ -523,7 +503,6 @@
     timestamp: 2024-12-17 11:05:36.020425+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#ffd330'
     prefix: ''
 - model: entries.entryclass
@@ -533,7 +512,6 @@
     timestamp: 2024-11-14 12:12:08.804612+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#f17a62'
     prefix: ''
 - model: entries.entryclass
@@ -543,7 +521,6 @@
     timestamp: 2024-12-17 11:05:55.582046+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#bcd297'
     prefix: ''
 - model: entries.entryclass
@@ -553,7 +530,6 @@
     timestamp: 2024-11-14 12:13:15.092449+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#7aa594'
     prefix: ''
 - model: entries.entryclass
@@ -563,7 +539,6 @@
     timestamp: 2024-11-14 12:13:14.538362+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#7aa594'
     prefix: ''
 - model: entries.entryclass
@@ -573,7 +548,6 @@
     timestamp: 2024-11-05 12:16:09.856559+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#536ea1'
     prefix: ''
 - model: entries.entryclass
@@ -583,7 +557,6 @@
     timestamp: 2024-11-05 12:15:48.526846+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#b229a7'
     prefix: ''
 - model: entries.entryclass
@@ -593,7 +566,6 @@
     timestamp: 2024-11-14 12:13:14.779496+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#7aa594'
     prefix: ''
 - model: entries.entryclass
@@ -603,7 +575,6 @@
     timestamp: 2024-11-14 12:12:32.698446+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#7aa594'
     prefix: ''
 - model: entries.entryclass
@@ -613,7 +584,6 @@
     timestamp: 2024-10-16 11:45:20.354324+00:00
     regex: (?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])
     options: ''
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -623,7 +593,6 @@
     timestamp: 2024-10-16 11:45:20.354324+00:00
     regex: (?:(?:[0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,7}:|(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,5}(?::[0-9a-fA-F]{1,4}){1,2}|(?:[0-9a-fA-F]{1,4}:){1,4}(?::[0-9a-fA-F]{1,4}){1,3}|(?:[0-9a-fA-F]{1,4}:){1,3}(?::[0-9a-fA-F]{1,4}){1,4}|(?:[0-9a-fA-F]{1,4}:){1,2}(?::[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(?:(?::[0-9a-fA-F]{1,4}){1,6})|:(?:(?::[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(?::[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(?:ffff(?::0{1,4}){0,1}:){0,1}(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])|(?:[0-9a-fA-F]{1,4}:){1,4}:(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9]))
     options: ''
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -633,7 +602,6 @@
     timestamp: 2025-01-17 13:38:40.537881+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#f38972'
     prefix: ''
 - model: entries.entryclass
@@ -643,7 +611,6 @@
     timestamp: 2025-01-17 13:38:44.628560+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#a21293'
     prefix: ''
 - model: entries.entryclass
@@ -653,7 +620,6 @@
     timestamp: 2025-02-03 13:46:27.761711+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -983,7 +949,6 @@
       Zambia
 
       Zimbabwe'
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -993,7 +958,6 @@
     timestamp: 2024-10-16 11:45:07.251442+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -1003,7 +967,6 @@
     timestamp: 2025-01-17 13:19:30.416186+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#6ec3a0'
     prefix: ''
 - model: entries.entryclass
@@ -1013,7 +976,6 @@
     timestamp: 2024-11-05 12:15:35.880107+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#664f7b'
     prefix: ''
 - model: entries.entryclass
@@ -1023,7 +985,6 @@
     timestamp: 2024-11-05 12:15:44.506325+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#d72ce5'
     prefix: ''
 - model: entries.entryclass
@@ -1033,7 +994,6 @@
     timestamp: 2024-10-03 08:57:56.088545+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -1043,7 +1003,6 @@
     timestamp: 2024-10-16 11:45:31.065195+00:00
     regex: (\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}
     options: ''
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -1053,7 +1012,6 @@
     timestamp: 2025-01-02 08:08:58.126154+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#a26831'
     prefix: ''
 - model: entries.entryclass
@@ -1063,7 +1021,6 @@
     timestamp: 2024-10-16 11:45:20.354324+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#744abf'
     prefix: PTI-
 - model: entries.entryclass
@@ -1073,7 +1030,6 @@
     timestamp: 2024-11-22 13:26:10.171988+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#f4870f'
     prefix: ''
 - model: entries.entryclass
@@ -2139,7 +2095,6 @@
       T1614
 
       T1614.001'
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -2149,7 +2104,6 @@
     timestamp: 2024-10-16 11:45:20.354324+00:00
     regex: https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9(?:)]{1,6}\b(?:[-a-zA-Z0-9(?:)!@:%_\+.~#?&\/\/=]*)
     options: ''
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -2159,7 +2113,6 @@
     timestamp: 2025-01-02 08:08:41.251184+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#a08168'
     prefix: ''
 - model: entries.entryclass
@@ -2169,7 +2122,6 @@
     timestamp: 2024-12-17 11:06:40.741908+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#c1cb3c'
     prefix: ''
 - model: entries.entryclass
@@ -2179,7 +2131,6 @@
     timestamp: 2024-12-17 11:06:46.311917+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#52508c'
     prefix: ''
 - model: entries.entryclass
@@ -2189,7 +2140,6 @@
     timestamp: 2025-02-03 13:18:01.611361+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#aa68eb'
     prefix: ''
 - model: entries.entryclass
@@ -2199,7 +2149,6 @@
     timestamp: 2025-02-03 13:18:07.984827+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#43f02e'
     prefix: ''
 - model: entries.entryclass
@@ -2209,7 +2158,6 @@
     timestamp: 2024-12-17 11:07:08.732384+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#fddaad'
     prefix: ''
 - model: entries.entryclass
@@ -2219,7 +2167,6 @@
     timestamp: 2024-12-17 11:06:57.631608+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#205836'
     prefix: ''
 - model: entries.entryclass
@@ -2229,7 +2176,6 @@
     timestamp: 2024-12-17 11:06:51.593810+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#06f82d'
     prefix: ''
 - model: entries.entryclass
@@ -2239,7 +2185,6 @@
     timestamp: 2024-11-14 12:15:23.995145+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#c88686'
     prefix: ''
 - model: entries.entryclass
@@ -2249,7 +2194,6 @@
     timestamp: 2024-12-17 11:07:03.051996+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#557813'
     prefix: ''
 - model: entries.entryclass
@@ -2259,7 +2203,6 @@
     timestamp: 2025-02-17 08:19:58.597566+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#a3f455'
     prefix: ''
 - model: entries.entryclass
@@ -2269,7 +2212,6 @@
     timestamp: 2025-02-07 16:09:30.292001+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#796485'
     prefix: ''
 - model: entries.entryclass
@@ -2279,7 +2221,6 @@
     timestamp: 2024-11-14 12:15:23.802293+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#c88686'
     prefix: ''
 - model: entries.entryclass
@@ -2289,7 +2230,6 @@
     timestamp: 2024-11-14 12:15:23.419850+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#c88686'
     prefix: ''
 - model: entries.entryclass
@@ -2299,7 +2239,6 @@
     timestamp: 2024-12-17 11:07:18.146244+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#ca3bb8'
     prefix: ''
 - model: entries.entryclass
@@ -2309,7 +2248,6 @@
     timestamp: 2025-01-17 13:19:36.787191+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#ed284a'
     prefix: ''
 - model: entries.entryclass
@@ -2319,7 +2257,6 @@
     timestamp: 2024-11-05 12:15:30.503754+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#fbbb9e'
     prefix: ''
 - model: entries.entryclass
@@ -2329,7 +2266,6 @@
     timestamp: 2025-02-03 16:49:38.637718+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#e66100'
     prefix: ''
 - model: entries.entryclass
@@ -2339,7 +2275,6 @@
     timestamp: 2024-11-14 12:15:23.612016+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#c88686'
     prefix: ''
 - model: entries.entryclass
@@ -2349,7 +2284,6 @@
     timestamp: 2024-11-14 12:15:24.205798+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#c88686'
     prefix: ''
 - model: entries.entryclass
@@ -2359,6 +2293,5 @@
     timestamp: 2025-02-03 16:44:50.335334+00:00
     regex: ''
     options: ''
-    catalyst_type: ''
     color: '#2444d6'
     prefix: ''

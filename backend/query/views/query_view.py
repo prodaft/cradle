@@ -35,8 +35,8 @@ class EntryListQuery(APIView):
                 type=str,
             ),
             OpenApiParameter(
-                name="type",
-                description="Filter by entry type",
+                name="subtype",
+                description="Filter by entry subtype",
                 required=False,
                 type=str,
             ),

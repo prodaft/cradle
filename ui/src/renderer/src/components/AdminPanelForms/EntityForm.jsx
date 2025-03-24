@@ -142,7 +142,7 @@ export default function EntityForm({ id = null, isEdit = false }) {
         if (!isEdit && watchSubtype) {
             getNextEntityName(watchSubtype)
                 .then((name) => {
-                    if (name) reset((prev) => ({ ...prev, name }));
+                    reset((prev) => ({ ...prev, name }));
                 })
                 .catch((err) => displayError(setAlert, navigate)(err));
         }

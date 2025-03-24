@@ -173,7 +173,7 @@ export default function AdminPanel() {
                     initialSplitPosition={30} // matches the original 2/5 width
                     leftClassName='m-3'
                     leftContent={
-                        <Tabs defaultTab={0}>
+                        <Tabs defaultTab={0} queryParam={'tab'}>
                             <Tab title='Entities'>
                                 <AdminPanelSection
                                     addEnabled={auth?.isAdmin()}
