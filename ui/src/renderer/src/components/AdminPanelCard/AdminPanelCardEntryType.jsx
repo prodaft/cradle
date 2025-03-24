@@ -8,7 +8,13 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 import useAuth from '../../hooks/useAuth/useAuth';
 import EntryTypeForm from '../AdminPanelForms/EntryTypeForm.jsx';
 
-export default function AdminPanelCardEntryType({ name, id, onDelete, setRightPane }) {
+export default function AdminPanelCardEntryType({
+    name,
+    id,
+    count,
+    onDelete,
+    setRightPane,
+}) {
     const [dialog, setDialog] = useState(false);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
@@ -43,7 +49,9 @@ export default function AdminPanelCardEntryType({ name, id, onDelete, setRightPa
             />
             <div className='h-fit w-full bg-cradle3 p-3 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl'>
                 <Link onClick={handleEditClick}>
-                  <h2 className='card-header w-full mx-2 px-1 break-all'>{name}</h2>
+                    <h2 className='card-header w-full mx-2 px-1 break-all'>
+                        ({count == 100 ? '99+' : count}) {name}
+                    </h2>
                 </Link>
                 <div className='w-full flex flex-row justify-end'>
                     {auth?.isAdmin() && (

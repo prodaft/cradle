@@ -130,6 +130,31 @@ class EntryClassSerializer(serializers.ModelSerializer):
         return EntryClassSerializerNoChildren(obj.children.all(), many=True).data
 
 
+class EntryClassSerializerCount(EntryClassSerializer):
+    count = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = EntryClass
+        fields = [
+            "type",
+            "subtype",
+            "description",
+            "generative_regex",
+            "regex",
+            "options",
+            "prefix",
+            "color",
+            "children",
+            "children_detail",
+            "count",
+        ]
+
+    def get_count(self, obj):
+        entry_count = Entry.objects.filter(entry_class=obj).values("id")[:101].count()
+        entry_count = min(entry_count, 100)
+        return entry_count
+
+
 class EntryResponseSerializer(serializers.ModelSerializer):
     description = serializers.CharField(required=False, allow_blank=True)
     entry_class = EntryClassSerializer(read_only=True)

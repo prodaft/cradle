@@ -1,4 +1,5 @@
 from django.conf import settings
+from django_lifecycle.mixins import transaction
 from rest_framework.parsers import MultiPartParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -75,13 +76,11 @@ class DigestAPIView(APIView):
         if not file:
             return Response({"detail": "Missing 'file' in request."}, status=400)
 
-        user_id = request.user.id
-
         with open(digest.path, "wb+") as destination:
             for chunk in file.chunks():
                 destination.write(chunk)
 
-        start_digest.delay(digest.id)
+        transaction.on_commit(lambda: start_digest.delay(digest.id))
         return Response(BaseDigestSerializer(digest).data, status=201)
 
     def delete(self, request):

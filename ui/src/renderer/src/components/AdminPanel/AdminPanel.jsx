@@ -74,7 +74,7 @@ export default function AdminPanel() {
     };
 
     const displayEntryTypes = async () => {
-        getEntryClasses(true)
+        getEntryClasses(true, true)
             .then((response) => {
                 if (response.status === 200) {
                     const fetchedEntryTypes = response.data;
@@ -84,6 +84,7 @@ export default function AdminPanel() {
                                 searchKey={c.subtype}
                                 id={c.subtype}
                                 name={c.subtype}
+                                count={c.count}
                                 onDelete={displayEntryTypes}
                                 setRightPane={setRightPane}
                             />

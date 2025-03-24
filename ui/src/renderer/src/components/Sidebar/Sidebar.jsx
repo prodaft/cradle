@@ -12,6 +12,7 @@ import {
     HelpCircle,
     StatsReport,
     CloudUpload,
+    DataTransferBoth,
 } from 'iconoir-react';
 import { Graph, QuestionMark } from '@phosphor-icons/react';
 import SidebarItem from '../SidebarItem/SidebarItem';
@@ -93,19 +94,14 @@ export default function Sidebar({
         navigate(graphViewLocation);
     }, [navigate]);
 
-    const reportsLocation = '/reports';
-    const handleReports = useCallback(() => {
-        navigate(reportsLocation);
+    const connectivityLocation = '/connectivity';
+    const handleConnectivity = useCallback(() => {
+        navigate(connectivityLocation);
     }, [navigate]);
 
     const accountSettingsLocation = '/account';
     const handleAccountSettings = useCallback(() => {
         navigate(accountSettingsLocation);
-    }, [navigate]);
-
-    const uploadsLocation = '/upload';
-    const handleUploads = useCallback(() => {
-        navigate(uploadsLocation);
     }, [navigate]);
 
     const adminLocation = '/admin';
@@ -160,17 +156,10 @@ export default function Sidebar({
                                 highlightedLocation={graphViewLocation}
                             />
                             <SidebarItem
-                                handleClick={handleReports}
-                                icon={<StatsReport />}
-                                text='Reports'
-                                highlightedLocation={reportsLocation}
-                            />
-
-                            <SidebarItem
-                                handleClick={handleUploads}
-                                icon={<CloudUpload />}
-                                text='Upload Data'
-                                highlightedLocation={uploadsLocation}
+                                handleClick={handleConnectivity}
+                                icon={<DataTransferBoth />}
+                                text='Connectivity'
+                                highlightedLocation={connectivityLocation}
                             />
 
                             <SidebarItem

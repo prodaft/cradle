@@ -117,7 +117,7 @@ export default function Publish() {
         } else {
             queryParams.delete('notes');
         }
-        setSearchParams(queryParams);
+        setSearchParams(queryParams, { replace: true });
     }, [selectedNotes, setSearchParams, searchParams]);
 
     const handleDragStart = (event) => {

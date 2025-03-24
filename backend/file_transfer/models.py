@@ -36,6 +36,14 @@ class FileReference(models.Model):
         blank=True,
     )
 
+    digest: models.ForeignKey = models.ForeignKey(
+        "intelio.BaseDigest",
+        related_name="files",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+
     def to_dict(self) -> dict[str, str]:
         """Provides a dictionary representation of the FileReference
         entry.

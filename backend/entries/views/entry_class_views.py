@@ -14,6 +14,7 @@ from user.permissions import HasAdminRole, HasEntryManagerRole
 
 from ..serializers import (
     EntryClassSerializer,
+    EntryClassSerializerCount,
 )
 from ..models import Entry, EntryClass
 
@@ -25,6 +26,7 @@ from ..models import Entry, EntryClass
         responses={
             200: EntryClassSerializer(many=True),
             401: "User is not authenticated",
+            403: "User is not authorized to view entry classes' count",
         },
     ),
     post=extend_schema(
@@ -55,7 +57,15 @@ class EntryClassList(APIView):
 
     def get(self, request: Request) -> Response:
         entities = EntryClass.objects.all()
-        serializer = EntryClassSerializer(entities, many=True)
+        if request.query_params.get("show_count"):
+            if not request.user.is_cradle_admin:
+                return Response(
+                    "User must be an admin to see the count of entries in each class.",
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            serializer = EntryClassSerializerCount(entities, many=True)
+        else:
+            serializer = EntryClassSerializer(entities, many=True)
         return Response(serializer.data)
 
     def post(self, request: Request) -> Response:

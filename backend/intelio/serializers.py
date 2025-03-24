@@ -105,6 +105,11 @@ class BaseDigestSerializer(serializers.ModelSerializer):
     )
     user_detail = EssentialUserRetrieveSerializer(source="user", read_only=True)
 
+    num_files = serializers.SerializerMethodField()
+    num_associations = serializers.SerializerMethodField()
+    num_encounters = serializers.SerializerMethodField()
+    num_notes = serializers.SerializerMethodField()
+
     class Meta:
         model = BaseDigest
         fields = [
@@ -119,11 +124,12 @@ class BaseDigestSerializer(serializers.ModelSerializer):
             "display_name",
             "entity",
             "entity_detail",
+            "num_files",
+            "num_associations",
+            "num_encounters",
+            "num_notes",
         ]
         read_only_fields = ["id", "created_at", "enricher_type", "display_name"]
-
-    def get_display_name(self, obj):
-        return getattr(obj.__class__, "display_name", obj.__class__.__name__)
 
     def to_internal_value(self, data):
         self.Meta.model = BaseDigest.get_subclass(data["digest_type"])
@@ -132,3 +138,19 @@ class BaseDigestSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Invalid digest type")
 
         return super().to_internal_value(data)
+
+    def get_display_name(self, obj):
+        return getattr(obj.__class__, "display_name", obj.__class__.__name__)
+
+    def get_num_files(self, obj):
+        return obj.files.count()
+
+    def get_num_associations(self, obj):
+        return obj.associations.count()
+
+    def get_num_encounters(self, obj):
+        return 0
+        return obj.encounters.count()
+
+    def get_num_notes(self, obj):
+        return obj.notes.count()

@@ -162,7 +162,7 @@ export default function GraphQuery({
             Object.entries(values).forEach(([key, value]) => {
                 params.set(key, value);
             });
-            setSearchParams(params);
+            setSearchParams(params, { replace: true });
 
             // Deep-copy query object
             let parsedQuery = {

@@ -142,13 +142,14 @@ export async function getNextEntityName(classname) {
  *
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export async function getEntryClasses(nonCached = false) {
+export async function getEntryClasses(nonCached = false, showCount = false) {
     if (!nonCached && EntryClassesCached) {
         return EntryClassesCached;
     } else {
         EntryClassesCached = authAxios({
             method: 'get',
             url: '/entries/entry_classes/',
+            params: { show_count: showCount },
         })
             .then((response) => {
                 EntryClassesCached = new Promise((callback) =>

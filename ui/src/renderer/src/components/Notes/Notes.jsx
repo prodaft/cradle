@@ -42,7 +42,7 @@ export default function Notes() {
         const newParams = new URLSearchParams(searchParams);
         newParams.set('content', searchFilters.content);
         newParams.set('author__username', searchFilters.author__username);
-        setSearchParams(newParams);
+        setSearchParams(newParams, { replace: true });
 
         setSubmittedFilters(searchFilters);
     };

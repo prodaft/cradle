@@ -27,6 +27,7 @@ import UploadExternal from './components/UploadExternal/UploadExternal.jsx';
 import { useTheme } from './hooks/useTheme/useTheme';
 import { ThemeProvider } from './contexts/ThemeContext/ThemeContext.jsx';
 import ReportList from './components/ReportList/ReportList.jsx';
+import Connectivity from './components/Connectivity/Connectivity.jsx';
 
 /**
  * The App component is the artifact point of the application. It wraps the entire application in the AuthProvider
@@ -78,7 +79,10 @@ function App() {
                                     path='/knowledge-graph'
                                     element={<GraphExplorer />}
                                 />
-                                <Route path='/reports' element={<ReportList />}></Route>
+                                <Route
+                                    path='/connectivity'
+                                    element={<Connectivity />}
+                                ></Route>
                                 <Route
                                     path='/reports/:report_id'
                                     element={<ReportList />}
@@ -91,10 +95,6 @@ function App() {
                                 <Route
                                     path='/account/'
                                     element={<AccountSettings target='me' />}
-                                ></Route>
-                                <Route
-                                    path='/upload'
-                                    element={<UploadExternal />}
                                 ></Route>
                                 <Route
                                     path='/activity'

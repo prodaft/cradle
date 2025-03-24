@@ -110,6 +110,9 @@ class BaseDigest(LifecycleModel):
         fpath = os.path.join(upload_dir, str(self.id))
         return fpath
 
+    def digest(self):
+        raise NotImplementedError
+
     @hook(AFTER_DELETE)
     def delete_file(self):
         self.id = self._initial_state.get_value(self, "id")
@@ -136,7 +139,7 @@ class Association(LifecycleModel):
         Entry, on_delete=models.CASCADE, related_name="associations_as_entry2"
     )
 
-    entities = models.ForeignKey(
+    entity = models.ForeignKey(
         Entry, on_delete=models.CASCADE, related_name="associations", null=True
     )
 
@@ -205,7 +208,9 @@ class Encounter(models.Model):
         Entry, on_delete=models.CASCADE, related_name="encounters"
     )
 
-    entities = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="")
+    entity = models.ForeignKey(
+        Entry, on_delete=models.CASCADE, related_name="encounters"
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 

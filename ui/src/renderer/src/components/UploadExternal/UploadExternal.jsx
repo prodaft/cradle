@@ -112,18 +112,26 @@ function DigestCard({ digest, setAlert, onDelete }) {
                 <p>
                     <strong>Created On:</strong> {formattedDate}
                 </p>
-                <p>
-                    <strong>Associations:</strong> {localDigest.num_associations || 0}
-                </p>
-                <p>
-                    <strong>Encounters:</strong> {localDigest.num_encounters || 0}
-                </p>
-                <p>
-                    <strong>Notes:</strong> {localDigest.num_notes || 0}
-                </p>
-                <p>
-                    <strong>Files:</strong> {localDigest.num_files || 0}
-                </p>
+                {localDigest.num_associations > 0 && (
+                    <p>
+                        <strong>Associations:</strong> {localDigest.num_associations}
+                    </p>
+                )}
+                {localDigest.num_associations > 0 && (
+                    <p>
+                        <strong>Encounters:</strong> {localDigest.num_encounters}
+                    </p>
+                )}
+                {localDigest.num_notes > 0 && (
+                    <p>
+                        <strong>Notes:</strong> {localDigest.num_notes}
+                    </p>
+                )}
+                {localDigest.num_files > 0 && (
+                    <p>
+                        <strong>Files:</strong> {localDigest.num_files}
+                    </p>
+                )}
 
                 {localDigest.errors && localDigest.errors.length > 0 && (
                     <div className='mt-2'>
@@ -151,11 +159,10 @@ function DigestCard({ digest, setAlert, onDelete }) {
     );
 }
 
-export default function UploadExternal() {
+export default function UploadExternal({ setAlert }) {
     const [dataTypeOptions, setDataTypeOptions] = useState([]);
     const [entriesLoading, setEntriesLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
 
     // Manage form state
     const [formValues, setFormValues] = useState({
@@ -260,8 +267,10 @@ export default function UploadExternal() {
         try {
             const body = {
                 digest_type: values.dataType.value,
-                entity: values.associatedEntry?.value,
             };
+
+            if (values.associatedEntry?.value)
+                body.entity = values.associatedEntry?.value;
 
             const response = await saveDigest(body, values.files);
 
@@ -382,7 +391,7 @@ export default function UploadExternal() {
     return (
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
-            <div className='p-8'>
+            <div className=''>
                 <h2 className='text-xl font-semibold mb-4'>Upload External Data</h2>
 
                 <form onSubmit={onSubmit}>
