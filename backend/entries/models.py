@@ -251,10 +251,6 @@ class Entry(LifecycleModel, LoggableModelMixin):
         help_text="Entries that are equivalent to this one",
     )
 
-    related_entries = models.ManyToManyField(
-        "self", through="Relation", symmetrical=False
-    )
-
     def __init__(self, *args, **kwargs):
         if "name" in kwargs:
             kwargs["name"] = kwargs["name"].strip()
