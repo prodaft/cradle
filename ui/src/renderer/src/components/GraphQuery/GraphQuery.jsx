@@ -21,7 +21,7 @@ const GraphQuerySchema = Yup.object().shape({
     max_depth: Yup.number()
         .required('Max depth is required')
         .min(1, 'Max depth must be at least 1')
-        .max(10, 'Max depth cannot exceed 10'),
+        .max(3, 'Max depth cannot exceed 10'),
     startDate: Yup.date().required('Start date is required'),
     endDate: Yup.date()
         .required('End date is required')
@@ -54,7 +54,7 @@ export default function GraphQuery({
         operation: searchParams.get('operation') || 'pathfind',
         src: searchParams.get('src') || '',
         dst: JSON.parse(searchParams.get('dst') || '[]'),
-        max_depth: parseInt(searchParams.get('max_depth') || '4'),
+        max_depth: parseInt(searchParams.get('max_depth') || '2'),
         startDate: searchParams.get('startDate') || '1970-01-01', // Beginning of Unix epoch
         endDate:
             searchParams.get('endDate') || format(addDays(new Date(), 1), 'yyyy-MM-dd'), // Tomorrow
@@ -205,7 +205,7 @@ export default function GraphQuery({
                                         name='max_depth'
                                         className='input py-1 px-2 text-sm'
                                         min='1'
-                                        max='10'
+                                        max='3'
                                     />
                                     {errors.max_depth && touched.max_depth && (
                                         <div className='text-red-500 text-xs mt-1'>

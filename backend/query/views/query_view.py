@@ -146,7 +146,7 @@ class AdvancedQueryView(APIView):
         # Get the query parameter from the request
         query_str = request.query_params.get("query")
 
-        if request.query_params.get("wildcard"):
+        if request.query_params.get("wildcard") == "true":
             query_str = "*" + query_str + "*"
 
         if not query_str:

@@ -76,7 +76,7 @@ class GraphNeighborsView(APIView):
         query_str = request.query_params.get("query")
 
         if query_str:
-            if request.query_params.get("wildcard"):
+            if request.query_params.get("wildcard") == "true":
                 query_str = "*" + query_str + "*"
 
             try:

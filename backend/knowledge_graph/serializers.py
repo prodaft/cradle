@@ -16,7 +16,7 @@ class PathfindQuery(serializers.Serializer):
     dsts = serializers.PrimaryKeyRelatedField(
         queryset=Entry.objects.all(), required=True, many=True
     )
-    max_depth = serializers.IntegerField(required=True, max_value=4)
+    max_depth = serializers.IntegerField(required=True, max_value=3)
     min_date = serializers.DateTimeField(required=True)
     max_date = serializers.DateTimeField(required=True)
 

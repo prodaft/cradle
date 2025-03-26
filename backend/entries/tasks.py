@@ -73,7 +73,9 @@ def scan_for_children(entry_id):
     for k, v in matches.items():
         for i in v:
             e, _ = Entry.objects.get_or_create(name=i, entry_class=k)
-            ass = Association(e1=e, e2=entry, reason=AssociationReason.CONTAINS)
+            ass = Association(
+                e1=e, e2=entry, reason=AssociationReason.CONTAINS, access_vector=1
+            )
             ass.save()
 
 

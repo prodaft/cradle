@@ -57,7 +57,7 @@ class EntryClassList(APIView):
 
     def get(self, request: Request) -> Response:
         entities = EntryClass.objects.all()
-        if request.query_params.get("show_count"):
+        if request.query_params.get("show_count") == "true":
             if not request.user.is_entry_manager:
                 return Response(
                     "User must be an admin to see the count of entries in each class.",
