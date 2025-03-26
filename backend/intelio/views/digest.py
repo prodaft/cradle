@@ -28,7 +28,7 @@ class DigestSubclassesAPIView(APIView):
     """
 
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, HasAdminRole]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         subclasses = BaseDigest.__subclasses__()
