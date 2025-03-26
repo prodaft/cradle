@@ -3,7 +3,7 @@ from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.db.models.fields.related import ForeignKey
 from core.fields import BitStringField
 from entries.enums import EntryType
@@ -30,6 +30,8 @@ class BaseDigest(LifecycleModel):
     An import of multiple external objects and connections, bulk "digested" into the platform
     """
 
+    infer_entities = False
+
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.ForeignKey(
         "user.CradleUser", on_delete=models.CASCADE, related_name="digests"
@@ -50,6 +52,8 @@ class BaseDigest(LifecycleModel):
     entity = models.ForeignKey(
         Entry, on_delete=models.CASCADE, related_name="digests", null=True
     )
+
+    relations = GenericRelation(Relation, related_query_name="digests")
 
     class Meta:
         ordering = ["-created_at"]
@@ -141,6 +145,16 @@ class BaseDigest(LifecycleModel):
         if os.path.exists(self.path):
             os.remove(self.path)
 
+    def _append_error(self, error):
+        with transaction.atomic():
+            self.errors = list(set(self.errors) | {error})
+            self.save()
+
+    def _append_warning(self, error):
+        with transaction.atomic():
+            self.warnings = list(set(self.warnings) | {error})
+            self.save()
+
 
 class Association(LifecycleModel):
     """
@@ -179,6 +193,8 @@ class Association(LifecycleModel):
         max_length=255, null=False, blank=False, choices=AssociationReason.choices
     )
 
+    details: models.JSONField = models.JSONField(default=dict, blank=True)
+
     class Meta:
         ordering = ["-created_at"]
 
@@ -201,6 +217,35 @@ class Association(LifecycleModel):
             access_vector=self.access_vector,
         )
 
+        # if self.entity and self.entity != self.e1 and self.entity != self.e2:
+        #     Relation.objects.create(
+        #         src_entry=self.e1,
+        #         dst_entry=self.entity,
+        #         content_object=self,
+        #         access_vector=self.access_vector,
+        #     )
+
+        #     Relation.objects.create(
+        #         src_entry=self.entity,
+        #         dst_entry=self.e1,
+        #         content_object=self,
+        #         access_vector=self.access_vector,
+        #     )
+
+        #     Relation.objects.create(
+        #         src_entry=self.e2,
+        #         dst_entry=self.entity,
+        #         content_object=self,
+        #         access_vector=self.access_vector,
+        #     )
+
+        #     Relation.objects.create(
+        #         src_entry=self.entity,
+        #         dst_entry=self.e2,
+        #         content_object=self,
+        #         access_vector=self.access_vector,
+        #     )
+
     @hook(AFTER_UPDATE, when="access_vector")
     def update_relation(self, *args, **kwargs):
         relations = self.relations.first()
@@ -209,48 +254,6 @@ class Association(LifecycleModel):
             for r in relations:
                 r.access_vector = self.access_vector
                 r.save()
-
-
-class Encounter(models.Model):
-    """
-    A model representing an observation of an entry from an outside source.
-    """
-
-    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    entry = models.ForeignKey(
-        Entry, on_delete=models.CASCADE, related_name="encounters"
-    )
-
-    entity = models.ForeignKey(
-        Entry, on_delete=models.CASCADE, related_name="encounters"
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    digest = models.ForeignKey(
-        BaseDigest, related_name="encounters", null=True, on_delete=models.CASCADE
-    )
-
-    class Meta:
-        abstract = True
-        ordering = ["-created_at"]
-
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-
-        if cls._meta.abstract:
-            return
-
-        display_name = getattr(cls, "display_name", None)
-        if not isinstance(display_name, str):
-            raise TypeError(
-                f"{cls.__name__} must define a class attribute 'name' as a string"
-            )
-
-    def __str__(self):
-        return f"Encounter[{self.from_source}]({self.entry})"
 
 
 class BaseEnricher:

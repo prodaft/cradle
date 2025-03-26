@@ -67,9 +67,10 @@ more.
 
 | Variable              | Type   | Default Value | Description                                 |
 |-----------------------|--------|---------------|---------------------------------------------|
-| `CELERY_BROKER_URL`   | String | `None`        | URL for the Celery broker.                  |
-| `CELERY_RESULT_BACKEND` | String | `None`      | Backend URL for Celery results *(set via "CELERY_BROKER_BACKEND")*. |
+| `RABBITMQ_URL`           | String | `None`        | URL for RabbitMQ (for elery tasks).         |
 | `REDIS_URL`           | String | `None`        | URL for Redis (if used for caching).        |
+
+> If RABBITMQ_URL is not set, REDIS_URL is used as fallback
 
 ### Email Configuration
 

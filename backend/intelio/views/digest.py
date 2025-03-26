@@ -37,6 +37,7 @@ class DigestSubclassesAPIView(APIView):
             {
                 "class": subclass.__name__,
                 "name": subclass.display_name,
+                "infer_entities": getattr(subclass, "infer_entities", False),
             }
             for subclass in subclasses
             if hasattr(subclass, "display_name")

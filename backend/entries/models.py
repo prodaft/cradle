@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.utils import timezone
 from django_lifecycle import AFTER_CREATE, AFTER_UPDATE, LifecycleModel, hook
 from django_lifecycle.conditions import WhenFieldHasChanged
 from django_lifecycle.mixins import LifecycleModelMixin, transaction
@@ -318,6 +319,13 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
         super().delete(*args, **kwargs)
 
+    def ping(self):
+        """
+        Set the timestamp to current time
+        """
+        self.timestamp = timezone.now()
+        self.save(update_fields=["timestamp"])
+
     def propagate_from(self, log):
         if self.entry_class.type == EntryType.ENTITY:
             super().propagate_from(log)
@@ -343,7 +351,6 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
         for e in self.entry_class.enrichers.filter(
             strategy=EnrichmentStrategy.ON_CREATE,
-            for_eclasses__contains=self.entry_class,
         ):
             transaction.on_commit(lambda: enrich_entry.apply_async((self.id, e.id)))
 

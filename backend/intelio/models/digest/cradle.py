@@ -1,3 +1,4 @@
+from logging import exception
 from rest_framework.fields import logger
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
@@ -15,7 +16,13 @@ class CradleDigest(BaseDigest):
 
     def _digest(self):
         with open(self.path, "r") as report_file:
-            report_data = json.load(report_file)
+            try:
+                report_data = json.load(report_file)
+            except json.JSONDecodeError as e:
+                self.status = DigestStatus.ERROR
+                self.errors = ["Invalid JSON format: " + e.msg]
+                self.save()
+                return
 
         valid_entryclass_fields = set([x.name for x in EntryClass._meta.fields])
 

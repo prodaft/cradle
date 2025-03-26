@@ -9,7 +9,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cradle.settings")
 app = Celery("cradle")
 
 app.config_from_object(settings)
-app.conf.broker_url = settings.REDIS_URL
+app.conf.broker_url = settings.RESULT_BACKEND
 
 app.autodiscover_tasks(lambda: [n.name for n in apps.get_app_configs()])
 
@@ -33,9 +33,10 @@ app.conf.task_routes = {
     "entries.tasks.scan_for_children": {"queue": "enrich"},
     "entries.tasks.enrich_entry": {"queue": "enrich"},
     "entries.tasks.enrich_all": {"queue": "enrich"},
-    "intelio.tasks.enrich_periodic": {"queue": "enrich"},
-    "intelio.tasks.enrich_entry": {"queue": "enrich"},
-    "intelio.tasks.start_digest": {"queue": "digest"},
+    "intelio.tasks.core.enrich_periodic": {"queue": "enrich"},
+    "intelio.tasks.core.enrich_entry": {"queue": "enrich"},
+    "intelio.tasks.core.start_digest": {"queue": "digest"},
+    "intelio.tasks.falcon.digest_chunk": {"queue": "digest"},
 }
 
 app.conf.task_default_priority = 5

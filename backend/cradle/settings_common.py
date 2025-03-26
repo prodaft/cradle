@@ -221,3 +221,6 @@ ADMIN_PATH = "29acee84-15db-481b-b602-2c1a579178d0/"
 CATALYST_HOST = "https://prod.blindspot.prodaft.com"
 CATALYST_PUBLISH_CATEGORY = "RESEARCH"
 CATALYST_PUBLISH_SUBCATEGORY = "4dff0ddf-fc2f-4a8e-b43f-1bc25973537b"
+
+## File Upload max size limit
+FILE_UPLOAD_MAX_MEMORY_SIZE = 200 * 1024 * 1024

@@ -1,4 +1,5 @@
 from environs import Env
+
 from .settings_common import *
 import sentry_sdk
 
@@ -50,9 +51,9 @@ BASE_URL = env.str("BASE_URL", "")
 STATIC_URL = env.str("STATIC_URL", "static/")
 FRONTEND_URL = env.str("FRONTEND_URL", "http://localhost:5173")
 
-CELERY_BROKER_URL = env.str("CELERY_BROKER_URL", None)
-CELERY_RESULT_BACKEND = env.str("CELERY_BROKER_BACKEND", None)
+RABBITMQ_URL = env.str("RABBITMQ_URL", None)
 REDIS_URL = env.str("REDIS_URL", None)
+RESULT_BACKEND = RABBITMQ_URL if RABBITMQ_URL else REDIS_URL
 
 REQUIRE_EMAIL_CONFIRMATION = env.bool("REQUIRE_EMAIL_CONFIRMATION", False)
 REQUIRE_ADMIN_ACTIVATION = env.bool("REQUIRE_ADMIN_ACTIVATION", False)

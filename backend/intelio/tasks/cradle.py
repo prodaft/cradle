@@ -4,29 +4,6 @@ from intelio.models.base import BaseDigest
 
 
 @shared_task
-def enrich_entry(entry_id, enricher_id):
-    pass
-
-
-@shared_task
-def enrich_all(enricher_id):
-    pass
-
-
-@shared_task
-def enrich_periodic():
-    pass
-
-
-@shared_task
-def start_digest(digest_id):
-    digest = BaseDigest.objects.get(id=digest_id)
-    print(digest)
-    print("Starting digest")
-    digest.digest()
-
-
-@shared_task
 def download_file_for_note(note_id, file_identifier, file_url, bucket_name):
     """
     Downloads a file from the given URL, stores it in Minio, and attaches

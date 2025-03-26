@@ -15,6 +15,7 @@ class EnrichmentStrategy(models.TextChoices):
 class AssociationReason(models.TextChoices):
     CONTAINS = "contains", _("Contains")
     ALIAS = "alias", _("Alias")
+    ENCOUNTER = "encounter", _("Encounter")
 
 
 class DigestStatus(models.TextChoices):

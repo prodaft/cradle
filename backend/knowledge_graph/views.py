@@ -144,7 +144,7 @@ class GraphInaccessibleView(APIView):
 
         entities = neighbors_qs.filter(entry_class__type=EntryType.ENTITY)
 
-        inaccessible = Access.objects.get_inaccessible_subset(
+        inaccessible = Access.objects.inaccessible_entries(
             request.user, entities, {AccessType.READ, AccessType.READ_WRITE}
         )
 

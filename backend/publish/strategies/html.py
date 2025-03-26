@@ -1,3 +1,4 @@
+import logging
 import uuid
 import bleach
 from io import BytesIO
@@ -123,6 +124,7 @@ class HTMLPublish(BasePublishStrategy):
                 report=report,
             )
         except Exception as e:
+            logging.exception(e)
             report.error_message = "Failed to upload HTML report."
             report.status = ReportStatus.ERROR
             report.save()

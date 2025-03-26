@@ -24,9 +24,9 @@ class EntryQuerySet(models.QuerySet):
 
     def unreferenced(self) -> models.QuerySet:
         """
-        Get entries that are not referenced by any note
+        Get entries that are not referenced by any relation
         """
-        return self.filter(notes=None)
+        return self.filter(src_relations=None)
 
     def _neighbour_query(self, user: CradleUser | None) -> tuple[str, list[str]]:
         query_parts = []

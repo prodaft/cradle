@@ -107,7 +107,6 @@ class BaseDigestSerializer(serializers.ModelSerializer):
 
     num_files = serializers.SerializerMethodField()
     num_associations = serializers.SerializerMethodField()
-    num_encounters = serializers.SerializerMethodField()
     num_notes = serializers.SerializerMethodField()
 
     class Meta:
@@ -126,7 +125,6 @@ class BaseDigestSerializer(serializers.ModelSerializer):
             "entity_detail",
             "num_files",
             "num_associations",
-            "num_encounters",
             "num_notes",
         ]
         read_only_fields = ["id", "created_at", "enricher_type", "display_name"]
@@ -147,10 +145,6 @@ class BaseDigestSerializer(serializers.ModelSerializer):
 
     def get_num_associations(self, obj):
         return obj.associations.count()
-
-    def get_num_encounters(self, obj):
-        return 0
-        return obj.encounters.count()
 
     def get_num_notes(self, obj):
         return obj.notes.count()

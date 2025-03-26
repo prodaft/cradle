@@ -38,13 +38,11 @@ const UploadSchema = Yup.object().shape({
         .required('File is required'),
 });
 
-/**
- * DigestCard component - Displays details of a digest.
- */
-function DigestCard({ digest, setAlert, onDelete }) {
+function DigestCard({ localDigest, setAlert, onDelete }) {
     const [formattedDate, setFormattedDate] = useState('');
-    const [localDigest, setLocalDigest] = useState(digest);
     const [visible, setVisible] = useState(true);
+    const [showErrors, setShowErrors] = useState(false);
+    const [showWarnings, setShowWarnings] = useState(false);
 
     useEffect(() => {
         setFormattedDate(new Date(localDigest.created_at).toLocaleString());
@@ -117,11 +115,6 @@ function DigestCard({ digest, setAlert, onDelete }) {
                         <strong>Associations:</strong> {localDigest.num_associations}
                     </p>
                 )}
-                {localDigest.num_associations > 0 && (
-                    <p>
-                        <strong>Encounters:</strong> {localDigest.num_encounters}
-                    </p>
-                )}
                 {localDigest.num_notes > 0 && (
                     <p>
                         <strong>Notes:</strong> {localDigest.num_notes}
@@ -135,23 +128,56 @@ function DigestCard({ digest, setAlert, onDelete }) {
 
                 {localDigest.errors && localDigest.errors.length > 0 && (
                     <div className='mt-2'>
-                        <strong className='text-red-300'>Errors:</strong>
-                        <ul className='list-disc pl-5 text-red-300'>
-                            {localDigest.errors.map((error, index) => (
-                                <li key={`error-${index}`}>{error}</li>
-                            ))}
-                        </ul>
+                        <button
+                            className='flex items-center w-full text-left text-red-300 hover:text-red-200 transition-colors'
+                            onClick={() => setShowErrors(!showErrors)}
+                        >
+                            <span
+                                className={`mr-2 transform transition-transform duration-200 ${
+                                    showErrors ? 'rotate-90' : ''
+                                }`}
+                            >
+                                ▶
+                            </span>
+
+                            <strong className='mr-2'>
+                                Errors: {localDigest.errors.length}
+                            </strong>
+                        </button>
+                        {showErrors && (
+                            <ul className='list-disc pl-5 text-red-300 mt-1'>
+                                {localDigest.errors.map((error, index) => (
+                                    <li key={`error-${index}`}>{error}</li>
+                                ))}
+                            </ul>
+                        )}
                     </div>
                 )}
 
                 {localDigest.warnings && localDigest.warnings.length > 0 && (
                     <div className='mt-2'>
-                        <strong className='text-yellow-300'>Warnings:</strong>
-                        <ul className='list-disc pl-5 text-yellow-300'>
-                            {localDigest.warnings.map((warning, index) => (
-                                <li key={`warning-${index}`}>{warning}</li>
-                            ))}
-                        </ul>
+                        <button
+                            onClick={() => setShowWarnings(!showWarnings)}
+                            className='flex items-center text-yellow-300 hover:text-yellow-200 transition-colors'
+                        >
+                            <span
+                                className={`mr-2 transform transition-transform duration-200 ${
+                                    showWarnings ? 'rotate-90' : ''
+                                }`}
+                            >
+                                ▶
+                            </span>
+                            <strong className='mr-2'>
+                                Warnings: {localDigest.warnings.length}
+                            </strong>
+                        </button>
+                        {showWarnings && (
+                            <ul className='list-disc pl-5 text-yellow-300 mt-1'>
+                                {localDigest.warnings.map((warning, index) => (
+                                    <li key={`warning-${index}`}>{warning}</li>
+                                ))}
+                            </ul>
+                        )}
                     </div>
                 )}
             </div>
@@ -511,7 +537,7 @@ export default function UploadExternal({ setAlert }) {
                             {digests.map((digest) => (
                                 <DigestCard
                                     key={digest.id}
-                                    digest={digest}
+                                    localDigest={digest}
                                     setAlert={setAlert}
                                     onDelete={fetchDigests}
                                     onRetry={fetchDigests}

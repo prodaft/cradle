@@ -3,11 +3,11 @@ services:
     image: postgres:16.8
     container_name: cradle_postgres
     environment:
-     - POSTGRES_DB=cradle
-     - POSTGRES_USER=cradle
-     - POSTGRES_PASSWORD=cradle
+      - POSTGRES_DB=cradle
+      - POSTGRES_USER=cradle
+      - POSTGRES_PASSWORD=cradle
     volumes:
-    - pg_data:/var/lib/postgresql/data
+      - pg_data:/var/lib/postgresql/data
     networks:
       default:
         ipv4_address: 192.168.31.40
@@ -59,7 +59,8 @@ services:
         ipv4_address: 192.168.31.41
 
   redis:
-    image: "redis:alpine"
+    image: redis:alpine
+    container_name: cradle_redis
     networks:
       default:
         ipv4_address: 192.168.31.42

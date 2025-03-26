@@ -158,7 +158,7 @@ export default function Sidebar({
                             <SidebarItem
                                 handleClick={handleConnectivity}
                                 icon={<DataTransferBoth />}
-                                text='Connectivity'
+                                text='Import/Export'
                                 highlightedLocation={connectivityLocation}
                             />
 
