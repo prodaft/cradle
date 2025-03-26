@@ -59,6 +59,7 @@ export default function AdminPanel() {
                         fetchedEntities.map((c) => (
                             <AdminPanelCardEntity
                                 id={c.id}
+                                key={`${c.subtype}:${c.name}`}
                                 name={c.name}
                                 searchKey={c.name}
                                 onDelete={displayEntities}
@@ -83,6 +84,7 @@ export default function AdminPanel() {
                             <AdminPanelCardEntryType
                                 searchKey={c.subtype}
                                 id={c.subtype}
+                                key={c.subtype}
                                 name={c.subtype}
                                 count={c.count}
                                 onDelete={displayEntryTypes}
@@ -125,6 +127,7 @@ export default function AdminPanel() {
                         mappingTypes.map((x) => (
                             <AdminPanelCardTypeMapping
                                 id={x.class}
+                                key={x.class}
                                 searchKey={x.name}
                                 name={x.name}
                                 setRightPane={setRightPane}
@@ -145,6 +148,7 @@ export default function AdminPanel() {
                         enrichmentTypes.map((x) => (
                             <AdminPanelCardEnrichment
                                 id={x.class}
+                                key={x.class}
                                 name={x.name}
                                 setRightPane={setRightPane}
                             />

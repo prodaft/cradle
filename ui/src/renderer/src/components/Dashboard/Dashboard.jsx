@@ -27,118 +27,11 @@ import NotesList from '../NotesList/NotesList';
 import { queryEntries } from '../../services/queryService/queryService';
 import DashboardHorizontalSection from '../DashboardHorizontalSection/DashboardHorizontalSection';
 import DashboardCard from '../DashboardCard/DashboardCard';
-import { queryGraph } from '../../services/graphService/graphService';
 import { flattenGraphEntries } from '../../utils/graphUtils/graphUtils';
 import Publishable from '../NoteActions/Publishable';
-
-function DashboardDropDownLeaf({ entry, path, value, depth, inaccessible }) {
-    const [entries, setEntries] = useState(null);
-
-    if (!path && !value) {
-        return null;
-    }
-
-    const fetchEntries = (path) => async (expanded) => {
-        if (!expanded || entries) {
-            return;
-        }
-
-        const response = await queryGraph({
-            operation: 'bfs',
-            result_type: 'vertices',
-            params: {
-                max_depth: depth,
-                min_depth: depth,
-                subtype: path,
-                src: { subtype: entry.subtype, name: entry.name },
-            },
-        });
-
-        setEntries(flattenGraphEntries(response.data.entries));
-    };
-
-    const requestAccess = async () => {
-        const response = await queryGraph({
-            operation: 'inaccessible',
-            result_type: 'vertices',
-            params: {
-                max_depth: depth,
-                min_depth: depth,
-                src: { subtype: entry.subtype, name: entry.name },
-            },
-        });
-
-        const entities = flattenGraphEntries(response.data.entries);
-        for (let e of entities) {
-            requestEntityAccess(e.id, path + value);
-        }
-    };
-
-    return (
-        <>
-            <DashboardHorizontalSection
-                title={value}
-                key={value}
-                onExpand={fetchEntries(path + value)}
-            >
-                {inaccessible && (
-                    <div
-                        key='inaccessible-entries'
-                        className='w-full h-fit mt-1 flex flex-row justify-between items-center text-zinc-400'
-                    >
-                        <p>
-                            There are inaccessible entities of this type you cannot
-                            view.{' '}
-                            <span
-                                className='underline cursor-pointer hover:text-cradle-2'
-                                onClick={requestAccess}
-                            >
-                                Request access to view them.
-                            </span>
-                        </p>
-                    </div>
-                )}
-                {entries &&
-                    entries.map(
-                        (e) =>
-                            e.name && (
-                                <DashboardCard
-                                    key={`${e.subtype}:${e.name}`}
-                                    subtype={e.subtype}
-                                    name={e.name}
-                                    link={createDashboardLink(e)}
-                                />
-                            ),
-                    )}
-            </DashboardHorizontalSection>
-        </>
-    );
-}
-
-function DashboardDropDown(entry, subtypes, depth) {
-    if (!subtypes) {
-        return null;
-    }
-
-    let hierarchy = new SubtypeHierarchy(Object.keys(subtypes));
-
-    return hierarchy.convert(
-        (value, children) => (
-            <DashboardHorizontalSection title={value} key={value}>
-                {children}
-            </DashboardHorizontalSection>
-        ),
-        (value, path) => (
-            <DashboardDropDownLeaf
-                entry={entry}
-                path={path}
-                value={value}
-                depth={depth}
-                inaccessible={!subtypes[value]}
-            ></DashboardDropDownLeaf>
-        ),
-    );
-}
+import { Tabs, Tab } from '../Tabs/Tabs';
+import Notes from './Notes';
+import Relations from './Relations';
 
 /**
  * Dashboard component
@@ -203,26 +96,6 @@ export default function Dashboard() {
         });
     }, [subtype, name, setAlert, setEntryMissing, setContentObject]);
 
-    const getEntryTypesForLevel = (depth) => async (expanded) => {
-        if (!expanded || entryTypesLevel[depth]) {
-            return;
-        }
-        const response = await queryGraph({
-            operation: 'entry_types',
-            result_type: 'vertices',
-            params: {
-                max_depth: depth,
-                min_depth: depth,
-                src: { subtype: contentObject.subtype, name: contentObject.name },
-            },
-        });
-
-        setEntryTypesLevel((prev) => ({
-            ...prev,
-            [depth]: response.data,
-        }));
-    };
-
     const handleDelete = () => {
         deleteEntry(`entries/${pluralize(contentObject.type)}`, contentObject.id)
             .then((response) => {
@@ -278,10 +151,6 @@ export default function Dashboard() {
             .catch(displayError(setAlert, navigate));
     };
 
-    const handleVirusTotalSearch = (name) => {
-        window.open(`https://www.virustotal.com/gui/search/${name}`);
-    };
-
     const handleSearchSubmit = (e) => {
         e.preventDefault();
         setSubmittedFilters(searchFilters);
@@ -311,23 +180,14 @@ export default function Dashboard() {
                 description={'This is permanent'}
                 handleConfirm={handleDelete}
             />
-            <ConfirmationDialog
-                open={virusTotalDialog}
-                setOpen={setVirusTotalDialog}
-                title={'Notice'}
-                description={
-                    'This action will send data about this artifact to VirusTotal. Are you sure you want to proceed?'
-                }
-                handleConfirm={() => handleVirusTotalSearch(contentObject.name)}
-            />
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div
                 className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'
                 ref={dashboard}
             >
-                <div className='w-[95%] h-full flex flex-col p-6 space-y-3'>
+                <div className='w-[95%] h-full flex flex-col p-6 space-y-3 '>
                     {contentObject.name && (
-                        <h1 className='text-5xl font-bold w-full break-all'>
+                        <h1 className='text-5xl font-bold w-full break-all border-b border-gray-700 px-4 pb-3'>
                             {contentObject.type && (
                                 <span className='text-4xl text-zinc-500'>{`${contentObject.subtype ? contentObject.subtype : contentObject.type}: `}</span>
                             )}
@@ -337,99 +197,24 @@ export default function Dashboard() {
                     {contentObject.description && (
                         <p className='text-sm text-zinc-400'>{`Description: ${contentObject.description}`}</p>
                     )}
-                    {contentObject.type && contentObject.type === 'artifact' && (
-                        <div className='flex flex-row space-x-2 flex-wrap'>
-                            <button
-                                className='btn w-fit min-w-[200px] mt-2 gap-2 !pl-4'
-                                onClick={() => setVirusTotalDialog(true)}
-                            >
-                                <Search />
-                                Search on VirusTotal
-                            </button>
-                        </div>
-                    )}
-
-                    <DashboardHorizontalSection
-                        title='Related Entities'
-                        onExpand={getEntryTypesForLevel(1)}
-                    >
-                        {entryTypesLevel[1] &&
-                            DashboardDropDown(
-                                contentObject,
-                                entryTypesLevel[1].entity,
-                                1,
-                            )}
-                    </DashboardHorizontalSection>
-
-                    <DashboardHorizontalSection
-                        title='Related Artifacts'
-                        onExpand={getEntryTypesForLevel(1)}
-                    >
-                        {entryTypesLevel[1] &&
-                            DashboardDropDown(
-                                contentObject,
-                                entryTypesLevel[1].artifact,
-                                1,
-                            )}
-                    </DashboardHorizontalSection>
-
-                    <DashboardHorizontalSection
-                        title='Second Level Entries'
-                        onExpand={getEntryTypesForLevel(2)}
-                    >
-                        {entryTypesLevel[2] &&
-                            DashboardDropDown(
-                                contentObject,
-                                entryTypesLevel[2].entity,
-                                2,
-                            )}
-                        {entryTypesLevel[2] &&
-                            DashboardDropDown(
-                                contentObject,
-                                entryTypesLevel[2].artifact,
-                                2,
-                            )}
-                    </DashboardHorizontalSection>
-
                     {contentObject.id && (
-                        <div className='bg-cradle3 p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col flex-1'>
-                            <h2 className='text-xl font-semibold mb-2'>Notes</h2>
-
-                            <div className=''>
-                                <form
-                                    onSubmit={handleSearchSubmit}
-                                    className='flex space-x-4 px-3 pb-2'
-                                >
-                                    <input
-                                        type='text'
-                                        name='content'
-                                        value={searchFilters.content}
-                                        onChange={handleSearchChange}
-                                        placeholder='Search by content'
-                                        className='input !max-w-full w-full'
-                                    />
-                                    <input
-                                        type='text'
-                                        name='author__username'
-                                        value={searchFilters.author__username}
-                                        onChange={handleSearchChange}
-                                        placeholder='Search by author'
-                                        className='input !max-w-full w-full'
-                                    />
-                                    <button type='submit' className='btn w-1/2'>
-                                        <Search /> Search
-                                    </button>
-                                </form>
-                            </div>
-
-                            <NotesList
-                                query={submittedFilters}
-                                noteActions={[{ Component: Publishable, props: {} }]}
-                            />
-                        </div>
+                        <Tabs
+                            defaultTab={0}
+                            queryParam={'tab'}
+                            tabClasses='tabs-underline w-full'
+                            perTabClass='w-[50%] justify-center'
+                        >
+                            <Tab title='Notes' classes='pt-2'>
+                                <Notes setAlert={setAlert} obj={contentObject} />
+                            </Tab>
+                            <Tab title='Relations' classes='pt-2'>
+                                <Relations obj={contentObject} />
+                            </Tab>
+                        </Tabs>
                     )}
                 </div>
             </div>
+            <div className='w-full h-8' />
         </>
     );
 }

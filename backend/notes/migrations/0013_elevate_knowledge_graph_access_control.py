@@ -22,13 +22,12 @@ class Migration(migrations.Migration):
             CREATE OR REPLACE FUNCTION get_related_entry_paths(
                 target_entry_id UUID,
                 v BIT(2048),
-                max_depth INT,
-                targets UUID[]
-                -- ,timerange_start TIMESTAMP,
-                -- timerange_stop TIMESTAMP
+                max_depth INT
             )
             RETURNS TABLE (
-                path UUID[]
+                path UUID[],
+                depth INT,
+                can_access BOOLEAN
             )
             LANGUAGE plpgsql
             AS
@@ -38,7 +37,9 @@ class Migration(migrations.Migration):
                 WITH RECURSIVE cte (
                     entry_id,
                     path_arr,
-                    is_cycle
+                    is_cycle,
+                    depth_level,
+                    can_access
                 ) AS (
 
                     -- 1) Base case: start with the target entry
@@ -55,22 +56,26 @@ class Migration(migrations.Migration):
                     SELECT
                         nr.dst_entry_id,
                         cte.path_arr || nr.dst_entry_id,
-                        nr.dst_entry_id = ANY(cte.path_arr) AS is_cycle,
+                        nr.dst_entry_id = ANY(cte.path_arr),
+                        cte.depth_level + 1,
+                        cte.can_access
+                        AND ((v | nr.access_vector) = v)
                     FROM cte
                     JOIN notes_relation nr
                         ON nr.src_entry_id = cte.entry_id
                     WHERE
                         -- Only continue recursion if we haven't formed a cycle
-                        NOT is_cycle
-                        AND array_length(cte.path_arr, 1) < max_depth
-                        -- AND nr.created_at BETWEEN timerange_start AND timerange_stop
+                        NOT cte.is_cycle
+                        AND cte.depth_level < max_depth
                         -- Continue only along accessible paths
-                        AND (~v & nr.access_vector) = 0
+                        AND cte.can_access = TRUE
                 )
                 SELECT
-                    cte.path_arr AS path
+                    cte.path_arr AS path,
+                    cte.depth_level AS depth,
+                    cte.can_access
                 FROM cte
-                WHERE cte.entry_id = ANY(targets);
+                WHERE cte.is_cycle = FALSE;
             END;
             $$;
             """
@@ -160,3 +165,4 @@ class Migration(migrations.Migration):
             """
         ),
     ]
+

@@ -48,7 +48,7 @@ export default function AdminPanelCardUser({ name, id, onDelete, setRightPane })
             />
             <div className='h-fit w-full bg-cradle3 p-3 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl'>
                 <h2 className='card-header w-full mx-2 px-1 break-all'>
-                    <Link onClick={handleUserClick}>{name}</Link>
+                    <span className='cursor-pointer' onClick={handleUserClick}>{name}</span>
                 </h2>
                 <div className='w-full flex flex-row justify-end'>
                     {auth?.isAdmin() && (

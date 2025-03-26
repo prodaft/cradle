@@ -37,7 +37,6 @@ export default function SearchDialog({ isOpen, onClose }) {
     const [entrySubtypes, setEntrySubtypes] = useState([]);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [isAdvancedSearch, setIsAdvancedSearch] = useState(false);
 
     const dialogRoot = document.getElementById('portal-root');
     const navigate = useNavigate();
@@ -69,21 +68,13 @@ export default function SearchDialog({ isOpen, onClose }) {
         navigate(link);
     };
 
-    const toggleAdvancedSearch = () => {
-        setIsAdvancedSearch(!isAdvancedSearch);
-        // Hide filters when in advanced mode
-        if (!isAdvancedSearch) {
-            setShowFilters(false);
-        }
-    };
-
     const performSearch = () => {
         setAlert({ ...alert, show: false });
         setIsLoading(true);
 
-        if (isAdvancedSearch) {
+        if (entrySubtypeFilters.length == 0) {
             // Use advanced query method for direct search
-            advancedQuery(searchQuery, page)
+            advancedQuery(searchQuery, true, page)
                 .then((response) => {
                     setTotalPages(response.data.total_pages);
                     setResults(response.data.results);
@@ -149,9 +140,7 @@ export default function SearchDialog({ isOpen, onClose }) {
                             ref={inputRef}
                             type='text'
                             className='form-input input input-block input-ghost-primary focus:ring-0 pr-10 text-white'
-                            placeholder={
-                                isAdvancedSearch ? 'Advanced Search...' : 'Search...'
-                            }
+                            placeholder='Search...'
                             value={searchQuery}
                             onChange={(event) => {
                                 setSearchQuery(event.target.value);
@@ -166,7 +155,7 @@ export default function SearchDialog({ isOpen, onClose }) {
                         </button>
                     </div>
 
-                    <div className='flex items-center'>
+                    {/*<div className='flex items-center'>
                         <label className='flex flex-col items-center cursor-pointer'>
                             <span className='text-xs'>Advanced</span>
                             <input
@@ -176,10 +165,9 @@ export default function SearchDialog({ isOpen, onClose }) {
                                 className='switch switch-ghost-primary'
                             />
                         </label>
-                    </div>
+                    </div>*/}
                 </div>
 
-                {!isAdvancedSearch && (
                     <SearchFilterSection
                         showFilters={showFilters}
                         setShowFilters={setShowFilters}
@@ -187,7 +175,6 @@ export default function SearchDialog({ isOpen, onClose }) {
                         entrySubtypeFilters={entrySubtypeFilters}
                         setEntrySubtypeFilters={setEntrySubtypeFilters}
                     />
-                )}
 
                 <AlertBox alert={alert} />
                 {isLoading ? (

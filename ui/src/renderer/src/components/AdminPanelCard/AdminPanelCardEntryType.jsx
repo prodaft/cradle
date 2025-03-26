@@ -48,11 +48,11 @@ export default function AdminPanelCardEntryType({
                 handleConfirm={handleDelete}
             />
             <div className='h-fit w-full bg-cradle3 p-3 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl'>
-                <Link onClick={handleEditClick}>
+                <span className='cursor-pointer' onClick={handleEditClick}>
                     <h2 className='card-header w-full mx-2 px-1 break-all'>
                         ({count == 100 ? '99+' : count}) {name}
                     </h2>
-                </Link>
+                </span>
                 <div className='w-full flex flex-row justify-end'>
                     {auth?.isAdmin() && (
                         <button

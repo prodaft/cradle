@@ -84,10 +84,48 @@ class AccessManager(models.Manager):
                 user_id=user.pk, entity__in=entities, access_type__in=access_types
             )
 
-        accesses = self.get_queryset().filter(q).values("id")
+        accesses = self.get_queryset().filter(q).distinct().values("id")
         count += accesses.count()
 
         return count == len(entities)
+
+    def get_inaccessible_subset(
+        self, user: CradleUser, entities: Set[Entry], access_types: Set[AccessType]
+    ) -> bool:
+        """Checks whether a user has one of the specified access types
+        to each of the entities in the set of entities. Assumes that AccessType.NONE
+        is not given as an access type in the set. If the user is a superuser,
+        the method returns true.
+
+        Args:
+            user: the user we perform the check on
+            entities: the set of entities we perform the check on
+            access_types: the set of access types
+
+        Returns:
+            True: if the user's access types for all entities are in access_types
+            False: if there is an entity where the user has a different access type
+            than those specified
+        """
+
+        if user.is_cradle_admin:
+            return []
+
+        count = 0
+        if AccessType.READ in access_types:
+            q = models.Q(
+                user_id=user.pk,
+                entity__in=[e for e in entities if not e.is_public],
+                access_type__in=access_types,
+            )
+        else:
+            q = models.Q(
+                user_id=user.pk, entity__in=entities, access_type__in=access_types
+            )
+
+        accessible = set(self.get_queryset().filter(q).distinct().values("id"))
+
+        return [e for e in entities if e.pk not in accessible]
 
     def get_accessible_entity_ids(self, user_id: UUID) -> models.QuerySet:
         """For a given user id, get a list of all entity ids which

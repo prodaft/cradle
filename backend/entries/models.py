@@ -227,6 +227,7 @@ class Entry(LifecycleModel, LoggableModelMixin):
     status: models.JSONField = models.JSONField(default=dict, null=True)
 
     class Meta:
+        ordering = ["-timestamp"]
         constraints = [
             models.UniqueConstraint(
                 fields=["name", "entry_class"], name="unique_name_class"

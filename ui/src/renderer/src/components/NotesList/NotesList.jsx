@@ -6,7 +6,7 @@ import Pagination from '../Pagination/Pagination';
 import { useSearchParams } from 'react-router-dom';
 import { useDroppable } from '@dnd-kit/core';
 
-export default function NotesList({ query, filteredNotes = [], noteActions = []}) {
+export default function NotesList({ query, filteredNotes = [], noteActions = [], references = null }) {
     const [notes, setNotes] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [loading, setLoading] = useState(false);
