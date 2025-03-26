@@ -58,7 +58,7 @@ class EntryClassList(APIView):
     def get(self, request: Request) -> Response:
         entities = EntryClass.objects.all()
         if request.query_params.get("show_count"):
-            if not request.user.is_cradle_admin:
+            if not request.user.is_entry_manager:
                 return Response(
                     "User must be an admin to see the count of entries in each class.",
                     status=status.HTTP_403_FORBIDDEN,

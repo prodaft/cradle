@@ -16,6 +16,7 @@ from core.fields import BitStringField
 
 class UserRoles(models.TextChoices):
     ADMIN = "admin"  # Superuser
+    MANAGER = "manager"  # Manages everything except users
     ENTRY_MANAGER = "entrymanager"  # Manage Entities and EntryTypes
     USER = "author"  # Writer of notes
 
@@ -105,6 +106,14 @@ class CradleUser(AbstractUser, LoggableModelMixin):
     @property
     def is_cradle_admin(self):
         return self.role == UserRoles.ADMIN
+
+    @property
+    def is_cradle_manager(self):
+        return self.role == UserRoles.MANAGER or self.is_cradle_admin
+
+    @property
+    def is_entry_manager(self):
+        return self.role == UserRoles.ENTRY_MANAGER or self.is_cradle_manager
 
     @property
     def access_vector(self):

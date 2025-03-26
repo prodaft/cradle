@@ -162,11 +162,11 @@ export default function AdminPanel() {
     useEffect(() => {
         if (auth?.isAdmin()) {
             displayUsers();
+            displayEnrichmentTypes();
         }
         displayEntities();
         displayEntryTypes();
         displayMappingTypes();
-        displayEnrichmentTypes();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location.state]);
 
@@ -203,6 +203,14 @@ export default function AdminPanel() {
                                     {entryTypes}
                                 </AdminPanelSection>
                             </Tab>
+                            <Tab title='Type Mappings'>
+                                <AdminPanelSection
+                                    addEnabled={false}
+                                    isLoading={mappingTypes === null}
+                                >
+                                    {mappingTypes}
+                                </AdminPanelSection>
+                            </Tab>
                             {auth?.isAdmin() && (
                                 <Tab title='Users'>
                                     <AdminPanelSection
@@ -219,14 +227,7 @@ export default function AdminPanel() {
                                     </AdminPanelSection>
                                 </Tab>
                             )}
-                            <Tab title='Type Mappings'>
-                                <AdminPanelSection
-                                    addEnabled={false}
-                                    isLoading={mappingTypes === null}
-                                >
-                                    {mappingTypes}
-                                </AdminPanelSection>
-                            </Tab>
+                            {auth?.isAdmin() && (
                             <Tab title='Enrichment'>
                                 <AdminPanelSection
                                     addEnabled={false}
@@ -235,6 +236,7 @@ export default function AdminPanel() {
                                     {enrichmentTypes}
                                 </AdminPanelSection>
                             </Tab>
+                            )}
                         </Tabs>
                     }
                     rightContent={<div>{rightPane}</div>}

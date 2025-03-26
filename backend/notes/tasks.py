@@ -199,6 +199,14 @@ def connect_aliases(note_id, user_id=None):
 
 
 @shared_task
+def ping_entries(note_id):
+    note = Note.objects.get(id=note_id)
+
+    for entry in note.entries.all():
+        entry.ping()
+
+
+@shared_task
 @distributed_lock("propagate_acvec_{note_id}", timeout=3600)
 def propagate_acvec(note_id):
     note = Note.objects.get(id=note_id)

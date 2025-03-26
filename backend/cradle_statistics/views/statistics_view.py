@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
+from access.models import Access
+from entries.models import Entry
 from notes.models import Note
 from itertools import islice
 from entries.enums import EntryType
@@ -19,7 +21,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
         responses={
             200: HomePageStatisticsSerializer,
             401: "User is not authenticated",
-        }
+        },
     )
 )
 class StatisticsList(APIView):
@@ -49,14 +51,15 @@ class StatisticsList(APIView):
         response_data = {}
 
         response_data["notes"] = list(accessible_notes[:10])
-        response_data["entities"] = list(
-            islice(
-                Note.objects.note_references_iterator(
-                    accessible_notes, EntryType.ENTITY
-                ),
-                3,
+
+        if request.user.is_cradle_admin:
+            response_data["entities"] = Entry.entities.all()
+        else:
+            response_data["entities"] = Entry.entities.filter(
+                pk__in=Access.objects.get_accessible_entity_ids(request.user.id)
             )
-        )
+
+        response_data["entities"] = list(islice(response_data["entities"], 3))
 
         response_data["artifacts"] = list(
             islice(

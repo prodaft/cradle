@@ -86,7 +86,7 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
                 </div>
                 <span
                     className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                        localDigest.status === 'completed'
+                        localDigest.status === 'done'
                             ? 'bg-green-500 text-white'
                             : localDigest.status === 'failed'
                               ? 'bg-red-500 text-white'

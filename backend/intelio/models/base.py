@@ -217,34 +217,8 @@ class Association(LifecycleModel):
             access_vector=self.access_vector,
         )
 
-        # if self.entity and self.entity != self.e1 and self.entity != self.e2:
-        #     Relation.objects.create(
-        #         src_entry=self.e1,
-        #         dst_entry=self.entity,
-        #         content_object=self,
-        #         access_vector=self.access_vector,
-        #     )
-
-        #     Relation.objects.create(
-        #         src_entry=self.entity,
-        #         dst_entry=self.e1,
-        #         content_object=self,
-        #         access_vector=self.access_vector,
-        #     )
-
-        #     Relation.objects.create(
-        #         src_entry=self.e2,
-        #         dst_entry=self.entity,
-        #         content_object=self,
-        #         access_vector=self.access_vector,
-        #     )
-
-        #     Relation.objects.create(
-        #         src_entry=self.entity,
-        #         dst_entry=self.e2,
-        #         content_object=self,
-        #         access_vector=self.access_vector,
-        #     )
+        self.e1.ping()
+        self.e2.ping()
 
     @hook(AFTER_UPDATE, when="access_vector")
     def update_relation(self, *args, **kwargs):

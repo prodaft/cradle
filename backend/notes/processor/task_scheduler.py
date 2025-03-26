@@ -17,6 +17,7 @@ from .entry_class_creation_task import EntryClassCreationTask
 from .base_task import BaseTask
 from .access_control_task import AccessControlTask
 from .validate_note_task import ValidateNoteTask
+from .ping_entries_task import PingEntriesTask
 from user.models import CradleUser
 
 from django.db import transaction
@@ -35,6 +36,7 @@ class TaskScheduler:
             EntryPopulationTask(user),
             SmartLinkerTask(user),
             AliasConnectionTask(user),
+            PingEntriesTask(user),
         ]
 
     def run_pipeline(self, note: Optional[Note] = None, validate: bool = True):

@@ -1,8 +1,6 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
-    getDashboardData,
-    getSecondHopData,
     requestEntityAccess,
 } from '../../services/dashboardService/dashboardService';
 import useAuth from '../../hooks/useAuth/useAuth';
@@ -16,19 +14,7 @@ import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 import { deleteEntry } from '../../services/adminService/adminService';
 import NotFound from '../NotFound/NotFound';
 import pluralize from 'pluralize';
-import {
-    createDashboardLink,
-    renderDashboardSection,
-    renderDashboardSectionWithInaccessibleEntries,
-    SubtypeHierarchy,
-} from '../../utils/dashboardUtils/dashboardUtils';
-import { Search } from 'iconoir-react';
-import NotesList from '../NotesList/NotesList';
 import { queryEntries } from '../../services/queryService/queryService';
-import DashboardHorizontalSection from '../DashboardHorizontalSection/DashboardHorizontalSection';
-import DashboardCard from '../DashboardCard/DashboardCard';
-import { flattenGraphEntries } from '../../utils/graphUtils/graphUtils';
-import Publishable from '../NoteActions/Publishable';
 import { Tabs, Tab } from '../Tabs/Tabs';
 import Notes from './Notes';
 import Relations from './Relations';
@@ -114,7 +100,7 @@ export default function Dashboard() {
             text='Explore in Graph'
             onClick={() =>
                 navigate(
-                    `/knowledge-graph?operation=bfs&src="${contentObject.subtype}":"${contentObject.name}"&min_depth=1&max_depth=2`,
+                    `/knowledge-graph?operation=bfs&src=${contentObject.id}`,
                 )
             }
             data-testid='view-graph-btn'

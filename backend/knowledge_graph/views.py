@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from access.enums import AccessType
 from access.models import Access
 from core.fields import BitStringField
-from core.pagination import TotalPagesPagination
+from core.pagination import LazyPaginator, TotalPagesPagination
 from entries.enums import EntryType
 from entries.models import Entry, Relation
 from entries.serializers import EntryListCompressedTreeSerializer, EntrySerializer
@@ -49,6 +49,9 @@ class GraphNeighborsView(APIView):
             return Response(
                 {"error": "depth, page and page_size must be integers."}, status=400
             )
+
+        if depth < 1 or depth > 4:
+            return Response({"error": "depth must be between 1 and 4."}, status=400)
 
         # Retrieve the source entry (404 if not found)
         source_entry = Entry.objects.filter(pk=source_id).first()
@@ -95,11 +98,11 @@ class GraphNeighborsView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        paginator = TotalPagesPagination(page_size=page_size)
+        paginator = LazyPaginator(page_size=page_size)
         paginated_entries = paginator.paginate_queryset(neighbors_qs, request)
 
         if paginated_entries is not None:
-            serializer = EntrySerializer(neighbors_qs, many=True)
+            serializer = EntrySerializer(paginated_entries, many=True)
             return paginator.get_paginated_response(serializer.data)
 
         serializer = EntrySerializer(neighbors_qs, many=True)
@@ -119,6 +122,9 @@ class GraphInaccessibleView(APIView):
             depth = int(request.query_params.get("depth", 1))
         except ValueError:
             return Response({"error": "depth must be integer."}, status=400)
+
+        if depth < 1 or depth > 4:
+            return Response({"error": "depth must be between 1 and 4."}, status=400)
 
         # Retrieve the source entry (404 if not found)
         source_entry = Entry.objects.filter(pk=source_id).first()

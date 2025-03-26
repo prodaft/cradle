@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Search } from 'iconoir-react';
+import { Search, Check } from 'iconoir-react';
 import SearchFilterSection from '../SearchFilterSection/SearchFilterSection';
 import { queryEntries, advancedQuery } from '../../services/queryService/queryService';
 import AlertBox from '../AlertBox/AlertBox';
@@ -10,11 +10,18 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 import { getEntryClasses } from '../../services/adminService/adminService';
 import Pagination from '../Pagination/Pagination';
-import { getInaccessibleEntities, searchRelatedEntries } from '../../services/graphService/graphService';
+import {
+    getInaccessibleEntities,
+    searchRelatedEntries
+} from '../../services/graphService/graphService';
+import {
+    requestEntityAccess,
+} from '../../services/dashboardService/dashboardService';
+import LazyPagination from '../Pagination/LazyPagination';
 
 export default function Relations({ obj }) {
     const [searchQuery, setSearchQuery] = useState('');
-    const [depth, setDepth] = useState(1); // renamed from maxDepth to depth
+    const [depth, setDepth] = useState(1);
     const inputRef = useRef(null);
     const [showFilters, setShowFilters] = useState(false);
     const [entrySubtypeFilters, setEntrySubtypeFilters] = useState([]);
@@ -22,7 +29,10 @@ export default function Relations({ obj }) {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [entrySubtypes, setEntrySubtypes] = useState([]);
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
+    const [hasNextPage, setHasNextPage] = useState(false);
+    const [isCopied, setIsCopied] = useState(false);
+    const [inaccessibleEntities, setInaccessibleEntities] = useState([]);
+    const [isRequestingAccess, setIsRequestingAccess] = useState(false);
 
     const dialogRoot = document.getElementById('portal-root');
     const navigate = useNavigate();
@@ -43,8 +53,8 @@ export default function Relations({ obj }) {
     const handleKeyDown = (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
-            performSearch();
             setPage(1);
+            performSearch(depth, 1);
         }
     };
 
@@ -53,9 +63,10 @@ export default function Relations({ obj }) {
         navigate(link);
     };
 
-    const performSearch = (depth) => {
+    const performSearch = (depth, page) => {
         setAlert({ ...alert, show: false });
         setIsLoading(true);
+        setInaccessibleEntities([]);
 
         if (entrySubtypeFilters.length === 0) {
             // Use advanced query method for direct search
@@ -64,7 +75,7 @@ export default function Relations({ obj }) {
                 wildcard: true,
             })
                 .then((response) => {
-                    setTotalPages(response.data.total_pages);
+                    setHasNextPage(response.data.has_next);
                     setResults(response.data.results);
                 })
                 .catch(displayError(setAlert, navigate))
@@ -81,7 +92,7 @@ export default function Relations({ obj }) {
                         : entrySubtypeFilters,
             })
                 .then((response) => {
-                    setTotalPages(response.data.total_pages);
+                    setHasNextPage(response.data.has_next);
                     setResults(response.data.results);
                 })
                 .catch(displayError(setAlert, navigate))
@@ -89,27 +100,57 @@ export default function Relations({ obj }) {
                     setIsLoading(false);
                 });
         }
+
+        setPage(page);
+
+        // Check for inaccessible entities
+        getInaccessibleEntities(obj.id, depth)
+            .then((response) => {
+                if (response.inaccessible && response.inaccessible.length > 0) {
+                    setInaccessibleEntities(response.inaccessible);
+                }
+            })
+            .catch((err) => console.error("Error fetching inaccessible entities:", err));
     };
 
     const handleDepthChange = (event) => {
         const value = parseInt(event.target.value, 10);
-        const newDepth = isNaN(value) ? 1 : Math.max(1, Math.min(value, 10));
+        const newDepth = isNaN(value) ? 1 : Math.max(1, Math.min(value, 4));
         setDepth(newDepth);
 
         if (page === 1) {
-          performSearch(newDepth);
+          performSearch(newDepth, 1);
         } else {
           setPage(1);
         }
+    };
 
-        // Call getInaccessibleEntities and log a warning if needed
-        getInaccessibleEntities(obj.id, newDepth)
-            .then((response) => {
-                if (response.inaccessible && response.inaccessible.length > 0) {
-                    console.warn("Warning: Inaccessible entities found:", response.inaccessible);
-                }
-            })
-            .catch((err) => console.error("Error fetching inaccessible entities:", err));
+    const handleRequestAccess = () => {
+        setIsRequestingAccess(true);
+        // Request access for inaccessible entities
+        Promise.all(
+            inaccessibleEntities.map(entity =>
+                requestEntityAccess(entity.id)
+            )
+        )
+        .then(() => {
+            setAlert({
+                show: true,
+                message: 'Access request submitted successfully',
+                color: 'green'
+            });
+            setInaccessibleEntities([]); // Clear inaccessible entities after request
+        })
+        .catch(error => {
+            setAlert({
+                show: true,
+                message: 'Failed to request access',
+                color: 'red'
+            });
+        })
+        .finally(() => {
+            setIsRequestingAccess(false);
+        });
     };
 
     const copyToCSV = () => {
@@ -125,6 +166,9 @@ export default function Relations({ obj }) {
         navigator.clipboard.writeText(csvContent)
             .then(() => {
                 console.log("CSV copied to clipboard");
+                // Trigger copied animation
+                setIsCopied(true);
+                setTimeout(() => setIsCopied(false), 2000);
             })
             .catch((err) => {
                 console.error("Error copying CSV: ", err);
@@ -132,13 +176,30 @@ export default function Relations({ obj }) {
     };
 
     useEffect(() => {
-        performSearch(depth);
+        performSearch(depth, page);
         populateEntrySubtypes();
     }, [page]);
 
-
     return (
         <div className='bg-cradle3 p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col flex-1'>
+            {/* Inaccessible Entities Warning */}
+            {inaccessibleEntities.length > 0 && (
+                <div className='bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-4 flex items-center justify-between'>
+                    <div className='flex items-center gap-3'>
+                        <span className='text-yellow-800'>
+                            {inaccessibleEntities.length} related {inaccessibleEntities.length === 1 ? 'entity' : 'entities'} are not accessible
+                        </span>
+                    </div>
+                    <button
+                        onClick={handleRequestAccess}
+                        disabled={isRequestingAccess}
+                        className='btn btn-sm btn-warning flex items-center gap-2'
+                    >
+                        {isRequestingAccess ? 'Requesting...' : 'Request Access'}
+                    </button>
+                </div>
+            )}
+
             <div className='mb-4 flex items-center gap-2'>
                 {/* Depth Input with Label */}
                 <div className='flex flex-col'>
@@ -146,7 +207,7 @@ export default function Relations({ obj }) {
                         id="depth-input"
                         type='number'
                         min='1'
-                        max='10'
+                        max='4'
                         className='form-input input input-block input-ghost-primary focus:ring-0 text-white w-20'
                         placeholder='Depth'
                         value={depth}
@@ -168,18 +229,28 @@ export default function Relations({ obj }) {
                         onKeyDown={handleKeyDown}
                     />
                     <button
-                        onClick={() => performSearch()}
+                        onClick={() => {
+                          setPage(1);
+                          performSearch(depth, page);
+                          }}
                         className='absolute right-2 top-1/2 transform -translate-y-1/2 bg-transparent border-none cursor-pointer'
                     >
                         <Search />
                     </button>
                 </div>
-                  <button
-                      onClick={copyToCSV}
-                      className="btn"
-                  >
-                      Copy Results
-                  </button>
+                <button
+                    onClick={copyToCSV}
+                    className={`btn flex items-center gap-2 transition-all duration-300 ${isCopied ? 'bg-green-800 text-white' : ''}`}
+                >
+                    {isCopied ? (
+                        <>
+                            <Check className="w-5 h-5" />
+                            Copied!
+                        </>
+                    ) : (
+                        'Copy CSV'
+                    )}
+                </button>
             </div>
 
             {/* Rest of the component remains the same */}
@@ -202,9 +273,9 @@ export default function Relations({ obj }) {
                 <div className='flex-grow overflow-y-auto no-scrollbar space-y-2'>
                     {results && results.length > 0 ? (
                         <div>
-                            <Pagination
+                            <LazyPagination
                                 currentPage={page}
-                                totalPages={totalPages}
+                                hasNextPage={hasNextPage}
                                 onPageChange={setPage}
                             />
 
@@ -221,9 +292,9 @@ export default function Relations({ obj }) {
                                 );
                             })}
 
-                            <Pagination
+                            <LazyPagination
                                 currentPage={page}
-                                totalPages={totalPages}
+                                hasNextPage={hasNextPage}
                                 onPageChange={setPage}
                             />
                         </div>
