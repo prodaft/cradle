@@ -1,9 +1,11 @@
 from django.core.management.base import BaseCommand
+from django_lifecycle.mixins import transaction
 
 from entries.enums import EntryType
 from entries.models import Entry
 from notes.models import Note
 from notes.utils import calculate_acvec
+from notes.tasks import propagate_acvec
 
 
 class Command(BaseCommand):
@@ -31,3 +33,4 @@ class Command(BaseCommand):
                 note.entries.filter(entry_class__type=EntryType.ENTITY)
             )
             note.save()
+            transaction.on_commit(lambda: propagate_acvec.apply_async((note.id,)))

@@ -5,7 +5,7 @@ from django.utils import timezone
 from django_lifecycle import AFTER_CREATE, AFTER_UPDATE, LifecycleModel, hook
 from django_lifecycle.conditions import WhenFieldHasChanged
 from django_lifecycle.mixins import LifecycleModelMixin, transaction
-from django.db.models import Q
+from django.db.models import F, Q, ExpressionWrapper, Value
 
 from core.fields import BitStringField
 from logs.models import LoggableModelMixin
@@ -24,10 +24,12 @@ from .exceptions import (
     OutOfEntitySlotsException,
 )
 from .enums import EntryType
-from intelio.enums import EnrichmentStrategy
+from intelio.enums import AssociationReason, EnrichmentStrategy
 
 import uuid
 import re
+
+fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
 
 class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
@@ -265,16 +267,11 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
     def __eq__(self, other):
         if isinstance(other, Entry):
-            return (
-                self.id == other.id
-                and self.name == other.name
-                and self.description == other.description
-                and self.entry_class == other.entry_class
-            )
+            return self.id == other.id
         return NotImplemented
 
     def __hash__(self):
-        return hash((self.id, self.name, self.description, self.entry_class))
+        return hash(self.id)
 
     def save(self, *args, **kwargs):
         if not self.entry_class.validate_text(self.name):
@@ -366,12 +363,34 @@ class Entry(LifecycleModel, LoggableModelMixin):
         return 1 | (1 << self.acvec_offset)
 
     def reconnect_aliases(self):
-        from intelio.models import AliasAssociation
+        from intelio.models import Association
 
-        AliasAssociation.objects.filter(e1=self).delete()
+        Association.objects.filter(entity=self, reason=AssociationReason.ALIAS).delete()
 
         for e in self.aliases.all():
-            AliasAssociation.objects.create(e1=self, e2=e)
+            Association.objects.create(
+                e1=self,
+                e2=e,
+                entity=e,
+                reason=AssociationReason.ALIAS,
+                access_vector=e.get_acvec(),
+            )
+
+    def aliasqs(self, user):
+        rels = self.src_relations.annotate(
+            combined_access=ExpressionWrapper(
+                F("access_vector").bitor(Value(user.access_vector)),
+                output_field=fieldtype,
+            )
+        ).filter(combined_access=Value(user.access_vector))
+
+        qs = Entry.objects.filter(
+            Q(dst_relations__in=rels, entry_class_id="alias")
+            | Q(id=self.id)
+            | Q(aliased_by=self.id)
+        ).distinct()
+
+        return qs
 
 
 class Relation(LifecycleModel):

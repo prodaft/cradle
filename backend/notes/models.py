@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
-from django_lifecycle.mixins import LifecycleModelMixin
+from django_lifecycle import AFTER_CREATE, AFTER_UPDATE, hook
+from django_lifecycle.mixins import LifecycleModelMixin, transaction
 
 from intelio.models.base import BaseDigest
 
@@ -62,6 +63,18 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
 
     def delete(self):
         super().delete()
+
+    @hook(AFTER_CREATE)
+    def after_create(self):
+        from .tasks import propagate_acvec
+
+        transaction.on_commit(lambda: propagate_acvec.apply_async((self.id,)))
+
+    @hook(AFTER_UPDATE, when="access_vector", has_changed=True)
+    def after_access_vector_update(self):
+        from .tasks import propagate_acvec
+
+        transaction.on_commit(lambda: propagate_acvec.apply_async((self.id,)))
 
 
 class ArchivedNote(models.Model):

@@ -1,8 +1,9 @@
+from os import access
 from celery import group, shared_task
 from core.fields import BitStringField
 from entries.enums import EntryType
 from core.decorators import distributed_lock
-from entries.models import Entry
+from entries.models import Entry, Relation
 from intelio.models import Association
 from intelio.enums import AssociationReason
 from notes.processor.task_scheduler import TaskScheduler
@@ -36,6 +37,12 @@ def update_accesses(entry_id):
     if update_notes:
         note_model = update_notes[0].__class__
         note_model.objects.bulk_update(update_notes, ["access_vector"])
+
+    # Try and update the associations
+    entry.associations.update(access_vector=newvec)
+    Relation.objects.filter(association__in=entry.associations.all()).update(
+        access_vector=newvec
+    )
 
     # Reset the status field.
     entry.status = None

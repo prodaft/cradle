@@ -31,23 +31,6 @@ class EntityList(APIView):
         serializer = EntryResponseSerializer(entities, many=True)
         return Response(serializer.data)
 
-    def post(self, request: Request) -> Response:
-        if not request.user.is_cradle_admin:
-            return Response(
-                "Only admins can create entities!", status=status.HTTP_403_FORBIDDEN
-            )
-
-        serializer = EntitySerializer(data=dict(request.data))
-
-        if serializer.is_valid():
-            if serializer.exists():
-                raise DuplicateEntryException()
-            serializer.save()
-            serializer.instance.log_create(request.user)
-
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 @extend_schema_view(
     get=extend_schema(

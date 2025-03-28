@@ -222,12 +222,12 @@ class Association(LifecycleModel):
 
     @hook(AFTER_UPDATE, when="access_vector")
     def update_relation(self, *args, **kwargs):
-        relations = self.relations.first()
+        rs = []
+        for r in self.relations:
+            r.access_vector = self.access_vector
+            rs.append(r)
 
-        if relations.exists():
-            for r in relations:
-                r.access_vector = self.access_vector
-                r.save()
+        Relation.objects.bulk_update(rs, ["access_vector"])
 
 
 class BaseEnricher:

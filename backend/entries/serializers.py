@@ -4,6 +4,7 @@ from .enums import EntryType
 
 
 from .exceptions import (
+    CannotAliasToEntityException,
     DuplicateEntryException,
     EntryTypeMismatchException,
     EntryMustHaveASubtype,
@@ -292,6 +293,11 @@ class EntitySerializer(serializers.ModelSerializer):
 
         if not data.get("name"):
             raise serializers.ValidationError("Name is required.")
+
+        # Check if all aliases are artifacts
+        for alias in data.get("aliases", []):
+            if alias.entry_class.type != EntryType.ARTIFACT:
+                raise CannotAliasToEntityException()
 
         return super().validate(data)
 

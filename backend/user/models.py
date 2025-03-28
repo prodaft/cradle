@@ -131,3 +131,24 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         )
 
         return fieldtype.get_prep_value(acvec)
+
+    @property
+    def access_vector_inv(self):
+        if self.is_cradle_admin:
+            return "0" * 2048
+        acvec = 1
+
+        for access in self.accesses.all():
+            if access.access_type == AccessType.NONE:
+                continue
+            acvec |= 1 << access.entity.acvec_offset
+
+        fieldtype = BitStringField(
+            max_length=2048, null=False, default=1, varying=False
+        )
+
+        inverter = 1
+        for i in range(2048):
+            inverter |= 1 << i
+
+        return fieldtype.get_prep_value(acvec ^ inverter)

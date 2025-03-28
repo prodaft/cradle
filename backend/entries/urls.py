@@ -1,4 +1,6 @@
 from django.urls import path
+
+from .views import entry_view
 from .views import entity_views
 from .views import entry_class_views
 
@@ -23,5 +25,9 @@ urlpatterns = [
         "next_name/<path:class_subtype>/",
         entry_class_views.NextName.as_view(),
         name="next_name",
+    ),
+    path("entries/", entry_view.EntryView.as_view(), name="entry-list-create"),
+    path(
+        "entries/<uuid:id>/", entry_view.EntryDetailView.as_view(), name="entry-detail"
     ),
 ]

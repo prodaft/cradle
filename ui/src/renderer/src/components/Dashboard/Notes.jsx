@@ -42,14 +42,15 @@ export default function Notes({setAlert, obj}) {
 
     // On load, fetch the dashboard data for the entry
     useEffect(() => {
+        if (!obj) return
         queryEntries({ subtype, name_exact: name }).then((response) => {
             setSearchFilters((prev) => ({
                 ...prev,
-                ['references']: obj.id,
+                ['linked_to']: obj.id,
             }));
             setSubmittedFilters((prev) => ({
                 ...prev,
-                ['references']: obj.id,
+                ['linked_to']: obj.id,
             }));
         });
     }, [setAlert, obj]);

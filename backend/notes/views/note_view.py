@@ -10,6 +10,8 @@ from rest_framework.permissions import IsAuthenticated
 from core.pagination import TotalPagesPagination
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
+from entries.models import Entry
+
 from ..utils import get_guide_note
 
 from ..filters import NoteFilter
@@ -68,6 +70,16 @@ class NoteList(APIView):
             queryset = queryset.annotate(
                 matching_entries=Count("entries", filter=Q(entries__in=entrylist))
             ).filter(matching_entries=len(entrylist))
+        elif "linked_to" in request.query_params:
+            entryid = request.query_params.get("linked_to")
+            entry = Entry.objects.filter(id=entryid)
+
+            if not entry.exists():
+                return Response("Entry not found.", status=status.HTTP_404_NOT_FOUND)
+
+            entry = entry.first()
+            aliasset = entry.aliasqs(user)
+            queryset = queryset.filter(entries__in=aliasset).distinct()
 
         filterset = NoteFilter(request.query_params, queryset=queryset)
 
