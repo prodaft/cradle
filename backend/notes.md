@@ -22,7 +22,6 @@ rels = Relation.objects.annotate(
             )
 
 
-print(user.access_vector_inv)
 rels = Relation.objects.extra(
     where=["(access_vector & %s) = %s"],
     params=[user.access_vector_inv, fieldtype.get_prep_value(0)],

@@ -377,12 +377,10 @@ class Entry(LifecycleModel, LoggableModelMixin):
             )
 
     def aliasqs(self, user):
-        rels = self.src_relations.annotate(
-            combined_access=ExpressionWrapper(
-                F("access_vector").bitor(Value(user.access_vector)),
-                output_field=fieldtype,
-            )
-        ).filter(combined_access=Value(user.access_vector))
+        rels = self.src_relations.extra(
+            where=["(access_vector & %s) = %s"],
+            params=[user.access_vector_inv, fieldtype.get_prep_value(0)],
+        )
 
         qs = Entry.objects.filter(
             Q(dst_relations__in=rels, entry_class_id="alias")

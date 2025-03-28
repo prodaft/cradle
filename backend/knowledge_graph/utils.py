@@ -19,25 +19,10 @@ def get_neighbors(sourceset, depth, user=None):
     for _ in range(depth):
         rels = Relation.objects.filter(src_entry__in=current_level)
         if user:
-            print(user, len(current_level), rels.count())
-            rels = rels.annotate(
-                combined_access=ExpressionWrapper(
-                    F("access_vector").bitor(Value(user.access_vector)),
-                    output_field=fieldtype,
-                )
-            ).filter(
-                combined_access=Value(user.access_vector)
-            )  # All relations accessible from the current level
-            for i in rels:
-                if i.association.exists():
-                    print(
-                        repr(i.src_entry),
-                        repr(i.dst_entry),
-                        i.association.get().reason
-                        if i.association.exists()
-                        else i.note.get().id,
-                        bin(i.access_vector),
-                    )
+            rels = rels.extra(
+                where=["(access_vector & %s) = %s"],
+                params=[user.access_vector_inv, fieldtype.get_prep_value(0)],
+            )
 
         qs = Entry.objects.filter(
             dst_relations__in=rels,

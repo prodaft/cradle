@@ -106,8 +106,19 @@ export default function Relations({ obj }) {
         // Check for inaccessible entities
         getInaccessibleEntities(obj.id, depth)
             .then((response) => {
-                if (response.inaccessible && response.inaccessible.length > 0) {
-                    setInaccessibleEntities(response.inaccessible);
+                if (response.data.inaccessible && response.data.inaccessible.length > 0) {
+                    setInaccessibleEntities(response.data.inaccessible);
+                    
+                    // Use AlertBox to show inaccessible entities warning
+                    setAlert({
+                        show: true,
+                        message: `${response.data.inaccessible.length} related ${response.data.inaccessible.length === 1 ? 'entity' : 'entities'} are not accessible`,
+                        color: 'yellow',
+                        button: {
+                            text: 'Request Access',
+                            onClick: handleRequestAccess
+                        }
+                    });
                 }
             })
             .catch((err) => console.error("Error fetching inaccessible entities:", err));
@@ -130,7 +141,7 @@ export default function Relations({ obj }) {
         // Request access for inaccessible entities
         Promise.all(
             inaccessibleEntities.map(entity =>
-                requestEntityAccess(entity.id)
+                requestEntityAccess(entity)
             )
         )
         .then(() => {
@@ -182,24 +193,6 @@ export default function Relations({ obj }) {
 
     return (
         <div className='bg-cradle3 p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col flex-1'>
-            {/* Inaccessible Entities Warning */}
-            {inaccessibleEntities.length > 0 && (
-                <div className='bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-4 flex items-center justify-between'>
-                    <div className='flex items-center gap-3'>
-                        <span className='text-yellow-800'>
-                            {inaccessibleEntities.length} related {inaccessibleEntities.length === 1 ? 'entity' : 'entities'} are not accessible
-                        </span>
-                    </div>
-                    <button
-                        onClick={handleRequestAccess}
-                        disabled={isRequestingAccess}
-                        className='btn btn-sm btn-warning flex items-center gap-2'
-                    >
-                        {isRequestingAccess ? 'Requesting...' : 'Request Access'}
-                    </button>
-                </div>
-            )}
-
             <div className='mb-4 flex items-center gap-2'>
                 {/* Depth Input with Label */}
                 <div className='flex flex-col'>
@@ -253,7 +246,6 @@ export default function Relations({ obj }) {
                 </button>
             </div>
 
-            {/* Rest of the component remains the same */}
             <SearchFilterSection
                 showFilters={showFilters}
                 setShowFilters={setShowFilters}
