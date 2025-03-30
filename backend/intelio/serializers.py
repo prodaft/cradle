@@ -114,6 +114,7 @@ class BaseDigestSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "user",
+            "title",
             "user_detail",
             "created_at",
             "status",

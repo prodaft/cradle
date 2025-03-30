@@ -150,7 +150,7 @@ export default function EntityForm({ id = null, isEdit = false }) {
     return (
         <div className='flex items-center justify-center min-h-screen'>
             <div className='w-full max-w-md'>
-                <h1 className='text-center text-xl font-bold text-cradle2 mb-4'>
+                <h1 className='text-center text-xl font-bold text-primary mb-4'>
                     {isEdit ? 'Edit Entity' : 'Add New Entity'}
                 </h1>
                 <div className='p-8 backdrop-blur-sm rounded-md bg-cradle3 bg-opacity-20'>

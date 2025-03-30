@@ -14,6 +14,7 @@ import {
 import Pagination from '../Pagination/Pagination';
 
 const UploadSchema = Yup.object().shape({
+    title: Yup.string().required('Digest title is required'),
     dataType: Yup.object()
         .shape({
             value: Yup.string().required('Data type is required'),
@@ -71,7 +72,7 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
             <div className='flex justify-between items-center mb-2'>
                 <div className='flex items-center space-x-2'>
                     <h2 className='text-lg font-bold text-gray-900 dark:text-white'>
-                        {localDigest.display_name || 'Unnamed Digest'}
+                        {localDigest.title}
                     </h2>
                     <button
                         title='Delete Digest'
@@ -95,6 +96,9 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
                 </span>
             </div>
             <div className='text-gray-700 dark:text-gray-300 text-sm space-y-1'>
+                <p>
+                    <strong>Type:</strong> {localDigest.display_name}
+                </p>
                 {localDigest.entity_detail && (
                     <p>
                         <strong>Entity:</strong> {localDigest.entity_detail.subtype}:
@@ -189,6 +193,7 @@ export default function UploadExternal({ setAlert }) {
 
     // Manage form state
     const [formValues, setFormValues] = useState({
+        title: '',
         dataType: null,
         associatedEntry: [],
         files: [],
@@ -290,6 +295,7 @@ export default function UploadExternal({ setAlert }) {
         try {
             const body = {
                 digest_type: values.dataType.value,
+                title: values.title,
             };
 
             if (values.associatedEntry?.value)
@@ -305,6 +311,7 @@ export default function UploadExternal({ setAlert }) {
                 });
                 // Reset form state on success
                 setFormValues({
+                    title: '',
                     dataType: null,
                     associatedEntry: [],
                     files: [],
@@ -355,6 +362,7 @@ export default function UploadExternal({ setAlert }) {
         e.preventDefault();
         // Mark all fields as touched
         setTouched({
+            title: true,
             dataType: true,
             associatedEntry: true,
             files: true,
@@ -418,7 +426,30 @@ export default function UploadExternal({ setAlert }) {
                 <h2 className='text-xl font-semibold mb-4'>Upload External Data</h2>
 
                 <form onSubmit={onSubmit}>
-                    <div className='grid grid-cols-4 gap-4 mb-4'>
+                    <div className='grid grid-cols-5 gap-4 mb-4'>
+                        {/* Digest Title Field */}
+                        <div className='col-span-1'>
+                            <label className='block text-sm font-medium text-gray-700 mb-1'>
+                                Digest Title
+                            </label>
+                            <input
+                                type='text'
+                                value={formValues.title}
+                                onChange={(e) =>
+                                    setFormValues((prev) => ({
+                                        ...prev,
+                                        title: e.target.value,
+                                    }))
+                                }
+                                className='mt-1 w-full input input-block'
+                            />
+                            {touched.title && errors.title && (
+                                <p className='mt-1 text-xs text-red-600'>
+                                    {errors.title}
+                                </p>
+                            )}
+                        </div>
+
                         {/* Data Type Selector */}
                         <div className='col-span-1'>
                             <label className='block text-sm font-medium text-gray-700 mb-1'>

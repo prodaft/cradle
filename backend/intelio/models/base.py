@@ -33,6 +33,7 @@ class BaseDigest(LifecycleModel):
     infer_entities = False
 
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    title: models.CharField = models.CharField(max_length=255, null=False, blank=False)
     user = models.ForeignKey(
         "user.CradleUser", on_delete=models.CASCADE, related_name="digests"
     )

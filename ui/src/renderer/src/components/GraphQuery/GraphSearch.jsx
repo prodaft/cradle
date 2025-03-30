@@ -74,7 +74,7 @@ const GraphSearch = forwardRef(
                     const has_next = response.data.has_next;
                     const { entries, relations, colors } = response.data.results;
                     const flattenedEntries = LinkTreeFlattener.flatten(entries);
-                    let nodeChanges = [];
+                    let changes = [];
                     // Process each entry; if it's new, add it and update stats.
                     for (let e of flattenedEntries) {
                         if (!graphRef.current.hasElementWithId(e.id)) {
@@ -92,13 +92,12 @@ const GraphSearch = forwardRef(
                                 },
                                 position: { x: e.location[0], y: e.location[1] },
                             };
-                            nodeChanges.push(node);
+                            changes.push(node);
                             processNewNode(e);
                         }
                     }
-                    graphRef.current.add(nodeChanges);
-                    graphRef.current.layout({ name: 'preset' });
-                    let edgeChanges = [];
+                    
+                    let c = 0;
                     for (let relation of relations) {
                         if (!graphRef.current.hasElementWithId(relation.id)) {
                             const link = {
@@ -111,14 +110,16 @@ const GraphSearch = forwardRef(
                                     id: relation.id,
                                 },
                             };
-                            edgeChanges.push(link);
+                            changes.push(link);
+                            c += 1;
                         }
                     }
-                    graphRef.current.add(edgeChanges);
-                    graphRef.current.layout({ name: 'preset', animate: false });
-                    addEdge(edgeChanges.length);
+                    graphRef.current.add(changes);
+                    graphRef.current.layout({ name: 'preset', animate: true });
+                    addEdge(c);
                     hasNext = has_next;
                     page++;
+                    graphRef.current.fit(graphRef.current.elements(), 100);
                     if (fetchingCancelled.current) break;
                 }
             } catch (error) {
