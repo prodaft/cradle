@@ -85,7 +85,7 @@ class EntryListQuery(APIView):
 
         if filterset.is_valid():
             entries = filterset.qs
-            entries = entries.order_by("timestamp")
+            entries = entries.order_by("-last_seen")
             paginator = TotalPagesPagination(page_size=10)
             paginated_entries = paginator.paginate_queryset(entries, request)
 
@@ -186,7 +186,7 @@ class AdvancedQueryView(APIView):
         filtered_entries = accessible_entries.filter(query_filter)
 
         # Order and paginate the results
-        filtered_entries = filtered_entries.order_by("timestamp")
+        filtered_entries = filtered_entries.order_by("-last_seen")
         paginator = TotalPagesPagination()
         paginated_entries = paginator.paginate_queryset(filtered_entries, request)
 

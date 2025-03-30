@@ -1,5 +1,6 @@
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
-from .models import Entry, EntryClass
+from .models import Entry, EntryClass, Relation
 from .enums import EntryType
 
 
@@ -21,7 +22,14 @@ class EntryListCompressedTreeSerializer(serializers.BaseSerializer):
         if len(self.fields) == 1:
             return getattr(entry, self.fields[0])
 
-        return {field: getattr(entry, field) for field in self.fields}
+        return {
+            field: getattr(entry, field)
+            if field != "location"
+            else [entry.location.x, entry.location.y]
+            if entry.location
+            else None
+            for field in self.fields
+        }
 
     def add_to_tree(self, tree, entry):
         if entry.entry_class.type == EntryType.ENTITY:
@@ -36,7 +44,7 @@ class EntryListCompressedTreeSerializer(serializers.BaseSerializer):
     def to_representation(self, data):
         tree = {"entities": {}, "artifacts": {}}
 
-        for entry in data.all():
+        for entry in data:
             self.add_to_tree(tree, entry)
 
         return tree
@@ -51,6 +59,32 @@ class EntryTypesCompressedTreeSerializer(serializers.BaseSerializer):
         unique_subtypes = data.values_list("entry_class__subtype", flat=True).distinct()
 
         return list(unique_subtypes)
+
+
+class EntryClassSerializerMinimal(serializers.ModelSerializer):
+    class Meta:
+        model = EntryClass
+        fields = ["type", "subtype", "color"]
+
+
+class EntrySerializerMinimal(serializers.ModelSerializer):
+    entry_class = EntryClassSerializerMinimal(read_only=True)
+
+    class Meta:
+        model = Entry
+        fields = ["id", "name", "entry_class"]
+
+    def to_representation(self, instance):
+        """Move fields from profile to user representation."""
+        representation = super().to_representation(instance)
+        entry_class_repr = representation.pop("entry_class")
+
+        for key in entry_class_repr:
+            if key in representation:
+                continue
+            representation[key] = entry_class_repr[key]
+
+        return representation
 
 
 class ArtifactClassSerializer(serializers.ModelSerializer):
@@ -182,7 +216,7 @@ class EntryResponseSerializer(serializers.ModelSerializer):
 
 
 class EntrySerializer(serializers.ModelSerializer):
-    entry_class = EntryClassSerializer(read_only=True)
+    entry_class = EntryClassSerializerNoChildren(read_only=True)
 
     class Meta:
         model = Entry
@@ -201,7 +235,7 @@ class EntrySerializer(serializers.ModelSerializer):
         """Move fields related to profile to their own profile dictionary."""
         entry_class_internal = {}
 
-        for key in EntryClassSerializer.Meta.fields:
+        for key in EntryClassSerializerNoChildren.Meta.fields:
             if key in data:
                 entry_class_internal[key] = data.pop(key)
 
@@ -211,7 +245,7 @@ class EntrySerializer(serializers.ModelSerializer):
 
 
 class EntitySerializer(serializers.ModelSerializer):
-    entry_class = EntryClassSerializer(read_only=True)
+    entry_class = EntryClassSerializerNoChildren(read_only=True)
     aliases = serializers.PrimaryKeyRelatedField(
         queryset=Entry.objects.all(), many=True, write_only=True, required=False
     )
@@ -351,7 +385,7 @@ class ArtifactSerializer(serializers.ModelSerializer):
         """Move fields related to profile to their own profile dictionary."""
         data["type"] = EntryType.ARTIFACT
         entry_class_internal = {}
-        for key in EntryClassSerializer.Meta.fields:
+        for key in EntryClassSerializerNoChildren.Meta.fields:
             if key in data:
                 entry_class_internal[key] = data.pop(key)
 
@@ -396,7 +430,7 @@ class ArtifactSerializer(serializers.ModelSerializer):
         Returns:
             The created Entry entry
         """
-        entry_class_serializer = EntryClassSerializer(
+        entry_class_serializer = EntryClassSerializerNoChildren(
             instance=validated_data["entry_class"]
         )
         EntryClass.objects.get_or_create(**entry_class_serializer.data)
@@ -408,3 +442,21 @@ class EntityAccessAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = Entry
         fields = ["id", "name"]
+
+
+class RelationSerializer(serializers.ModelSerializer):
+    e1 = EntrySerializerMinimal(read_only=True)
+    e2 = EntrySerializerMinimal(read_only=True)
+
+    class Meta:
+        model = Relation
+        fields = [
+            "id",
+            "e1",
+            "e2",
+            "created_at",
+            "last_seen",
+            "reason",
+            "details",
+        ]
+        read_only_fields = ["created_at", "last_seen", "id"]

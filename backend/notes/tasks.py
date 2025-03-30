@@ -49,14 +49,13 @@ def smart_linker_task(note_id):
         # Add entity-artifact permutations
         for e, a in itertools.product(entities, artifacts):
             pairs_resolved.add((e, a))
-            pairs_resolved.add((a, e))
 
         # Bulk create relations
         Relation.objects.bulk_create(
             [
                 Relation(
-                    src_entry=src,
-                    dst_entry=dst,
+                    e1=src,
+                    e2=dst,
                     content_object=note,
                     access_vector=note.access_vector,
                 )
@@ -180,16 +179,8 @@ def connect_aliases(note_id, user_id=None):
             e = Entry.objects.get(name=name, entry_class__subtype=subtype)
             relations.append(
                 Relation(
-                    src_entry=alias,
-                    dst_entry=e,
-                    content_object=note,
-                    access_vector=note.access_vector,
-                )
-            )
-            relations.append(
-                Relation(
-                    src_entry=e,
-                    dst_entry=alias,
+                    e1=e,
+                    e2=alias,
                     content_object=note,
                     access_vector=note.access_vector,
                 )

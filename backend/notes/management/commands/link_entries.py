@@ -20,7 +20,7 @@ class Command(BaseCommand):
             **options: Arbitrary keyword arguments.
         """
         Relation.objects.all().delete()
-        Entry.objects.all().delete()
 
         for i in Note.objects.all():
-            SmartLinkerTask(None).run(i, [])
+            task, _ = SmartLinkerTask(None).run(i, [])
+            task.apply_async()

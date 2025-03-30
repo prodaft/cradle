@@ -9,7 +9,8 @@ from intelio.enums import DigestStatus
 from ...tasks.falcon import digest_chunk
 from ..mappings.falcon import FalconMapping
 from notes.processor.task_scheduler import TaskScheduler
-from ..base import Association, BaseDigest
+from ..base import BaseDigest
+from entries.models import Relation
 import json
 
 
@@ -98,7 +99,7 @@ class FalconDigest(BaseDigest):
         else:
             timestamp = timezone.now()
 
-        Association.objects.create(
+        Relation.objects.create(
             digest=self,
             e1=parent_entry,
             e2=entity,
@@ -122,7 +123,7 @@ class FalconDigest(BaseDigest):
                 entry_class=eclass,
                 name=value,
             )
-            Association.objects.create(
+            Relation.objects.create(
                 digest=self,
                 e1=parent_entry,
                 e2=child_entry,

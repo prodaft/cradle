@@ -36,7 +36,6 @@ export default function EntityForm({ id = null, isEdit = false }) {
                 value: alias.id,
                 label: `${alias.subtype}:${alias.name}`,
             }));
-            console.log(a);
             return a;
         } else {
             displayError(setAlert, navigate)(results);
@@ -159,7 +158,7 @@ export default function EntityForm({ id = null, isEdit = false }) {
                         <FormField
                             type='text'
                             labelText='Name'
-                            className='form-input input input-ghost-primary input-block focus:ring-0'
+                            className='form-input input input-block focus:ring-0'
                             {...register('name')}
                             error={errors.name?.message}
                             disabled={isEdit}

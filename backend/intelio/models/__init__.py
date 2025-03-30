@@ -1,5 +1,4 @@
 from .base import ClassMapping as ClassMapping
-from .base import Association as Association
 from .base import EnricherSettings as EnricherSettings
 
 # Digests

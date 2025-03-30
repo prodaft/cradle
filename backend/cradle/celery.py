@@ -3,6 +3,7 @@ import os
 from celery import Celery
 from django.conf import settings
 from django.apps import apps
+from celery.schedules import crontab
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cradle.settings")
 
@@ -23,6 +24,9 @@ app.conf.task_routes = {
     "notes.tasks.entry_class_creation_task": {"queue": "notes"},
     "notes.tasks.entry_population_task": {"queue": "notes"},
     "entries.tasks.remap_notes_task": {"queue": "notes"},
+    "entries.tasks.simulate_graph": {"queue": "graph"},
+    "entries.tasks.estimate_entry_coordinates": {"queue": "graph"},
+    "entries.tasks.refresh_edges_materialized_view": {"queue": "graph"},
     "notes.tasks.connect_aliases": {"queue": "notes"},
     "notes.tasks.ping_entries": {"queue": "notes"},
     "publish.tasks.generate_report": {"queue": "publish"},
@@ -62,4 +66,14 @@ app.conf.task_soft_time_limit = 15 * 60
 app.conf.task_default_retry_delay = 180
 app.conf.task_max_retries = 3
 
-app.conf.beat_schedule = {}
+# Set up periodic tasks
+app.conf.beat_schedule = {
+    "refresh-edges-materialized-view-every-2-hours": {
+        "task": "entries.tasks.refresh_edges_materialized_view",
+        "schedule": crontab(minute=0, hour="*/2"),
+    },
+    "simulate-graph-every-night": {
+        "task": "entries.tasks.simulate_graph",
+        "schedule": crontab(minute=0, hour=2),  # 2:00 AM UTC daily
+    },
+}

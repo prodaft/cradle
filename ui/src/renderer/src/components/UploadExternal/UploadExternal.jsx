@@ -48,9 +48,6 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
         setFormattedDate(new Date(localDigest.created_at).toLocaleString());
     }, [localDigest]);
 
-    /**
-     * Attempt to delete the digest.
-     */
     const handleDelete = async () => {
         try {
             await deleteDigest(localDigest.id);
@@ -70,15 +67,15 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
     if (!visible) return null;
 
     return (
-        <div className='bg-gray-800 bg-opacity-75 p-4 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 m-2'>
+        <div className='bg-white dark:bg-gray-800 dark:bg-opacity-75 p-4 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 m-2'>
             <div className='flex justify-between items-center mb-2'>
                 <div className='flex items-center space-x-2'>
-                    <h2 className='text-lg font-bold text-white'>
+                    <h2 className='text-lg font-bold text-gray-900 dark:text-white'>
                         {localDigest.display_name || 'Unnamed Digest'}
                     </h2>
                     <button
                         title='Delete Digest'
-                        className='text-red-400 hover:text-red-300 transition-colors'
+                        className='text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 transition-colors'
                         onClick={handleDelete}
                     >
                         <Trash className='w-5 h-5' />
@@ -97,7 +94,7 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
                         localDigest.status.slice(1)}
                 </span>
             </div>
-            <div className='text-gray-300 text-sm space-y-1'>
+            <div className='text-gray-700 dark:text-gray-300 text-sm space-y-1'>
                 {localDigest.entity_detail && (
                     <p>
                         <strong>Entity:</strong> {localDigest.entity_detail.subtype}:
@@ -129,7 +126,7 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
                 {localDigest.errors && localDigest.errors.length > 0 && (
                     <div className='mt-2'>
                         <button
-                            className='flex items-center w-full text-left text-red-300 hover:text-red-200 transition-colors'
+                            className='flex items-center w-full text-left text-red-700 dark:text-red-300 hover:text-red-600 dark:hover:text-red-200 transition-colors'
                             onClick={() => setShowErrors(!showErrors)}
                         >
                             <span
@@ -145,7 +142,7 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
                             </strong>
                         </button>
                         {showErrors && (
-                            <ul className='list-disc pl-5 text-red-300 mt-1'>
+                            <ul className='list-disc pl-5 text-red-700 dark:text-red-300 mt-1'>
                                 {localDigest.errors.map((error, index) => (
                                     <li key={`error-${index}`}>{error}</li>
                                 ))}
@@ -158,7 +155,7 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
                     <div className='mt-2'>
                         <button
                             onClick={() => setShowWarnings(!showWarnings)}
-                            className='flex items-center text-yellow-300 hover:text-yellow-200 transition-colors'
+                            className='flex items-center text-yellow-600 dark:text-yellow-300 hover:text-yellow-500 dark:hover:text-yellow-200 transition-colors'
                         >
                             <span
                                 className={`mr-2 transform transition-transform duration-200 ${
@@ -172,7 +169,7 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
                             </strong>
                         </button>
                         {showWarnings && (
-                            <ul className='list-disc pl-5 text-yellow-300 mt-1'>
+                            <ul className='list-disc pl-5 text-yellow-600 dark:text-yellow-300 mt-1'>
                                 {localDigest.warnings.map((warning, index) => (
                                     <li key={`warning-${index}`}>{warning}</li>
                                 ))}

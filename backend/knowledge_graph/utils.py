@@ -1,7 +1,7 @@
 from django.db.models import F, ExpressionWrapper, Value
 
 from core.fields import BitStringField
-from entries.models import Entry, Relation
+from entries.models import Edge, Entry, Relation
 
 
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
@@ -17,19 +17,18 @@ def get_neighbors(sourceset, depth, user=None):
     visited = [current_level]
 
     for _ in range(depth):
-        rels = Relation.objects.filter(src_entry__in=current_level)
+        edges = Edge.objects.filter(src__in=current_level)
         if user:
-            rels = rels.extra(
-                where=["(access_vector & %s) = %s"],
-                params=[user.access_vector_inv, fieldtype.get_prep_value(0)],
-            )
+            edges = edges.accessible(user=user)
+
+        dst_ids = edges.values_list("dst", flat=True).distinct()
 
         qs = Entry.objects.filter(
-            dst_relations__in=rels,
+            id__in=dst_ids,
         )
 
         for v in visited:
-            qs = qs.exclude(pk__in=v)  # Exclude all previously visited nodes
+            qs = qs.exclude(pk__in=v)
 
         qs = qs.distinct()
 

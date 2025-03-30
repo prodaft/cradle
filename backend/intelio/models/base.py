@@ -21,7 +21,7 @@ from django_lifecycle import (
 
 from django.utils.translation import gettext_lazy as _
 
-from ..enums import AssociationReason, EnrichmentStrategy, DigestStatus
+from ..enums import EnrichmentStrategy, DigestStatus
 import uuid
 
 
@@ -49,8 +49,9 @@ class BaseDigest(LifecycleModel):
 
     digest_type = models.CharField(max_length=255, null=False, blank=False)
 
-    entity = models.ForeignKey(
-        Entry, on_delete=models.CASCADE, related_name="digests", null=True
+    entities = models.ManyToManyField(
+        Entry,
+        related_name="owned_relations",
     )
 
     relations = GenericRelation(Relation, related_query_name="digests")
@@ -154,80 +155,6 @@ class BaseDigest(LifecycleModel):
         with transaction.atomic():
             self.warnings = list(set(self.warnings) | {error})
             self.save()
-
-
-class Association(LifecycleModel):
-    """
-    A model representing a generic link between two entries.
-    """
-
-    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
-
-    access_vector: BitStringField = BitStringField(
-        max_length=2048, null=False, default=1 << 2047, varying=False
-    )
-
-    e1 = models.ForeignKey(
-        Entry, on_delete=models.CASCADE, related_name="associations_e1"
-    )
-    e2 = models.ForeignKey(
-        Entry, on_delete=models.CASCADE, related_name="associations_e2"
-    )
-
-    entity = models.ForeignKey(
-        Entry,
-        on_delete=models.CASCADE,
-        related_name="associations",
-        null=True,
-    )
-
-    relations = GenericRelation(Relation, related_query_name="association")
-
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    digest = models.ForeignKey(
-        BaseDigest, related_name="associations", null=True, on_delete=models.CASCADE
-    )
-
-    reason: models.CharField = models.CharField(
-        max_length=255, null=False, blank=False, choices=AssociationReason.choices
-    )
-
-    details: models.JSONField = models.JSONField(default=dict, blank=True)
-
-    class Meta:
-        ordering = ["-created_at"]
-
-    def __str__(self):
-        return f"Association [{self.reason}]({self.entry1}-{self.entry2}) "
-
-    @hook(AFTER_CREATE)
-    def create_relation(self, *args, **kwargs):
-        Relation.objects.create(
-            src_entry=self.e1,
-            dst_entry=self.e2,
-            content_object=self,
-            access_vector=self.access_vector,
-        )
-
-        Relation.objects.create(
-            src_entry=self.e2,
-            dst_entry=self.e1,
-            content_object=self,
-            access_vector=self.access_vector,
-        )
-
-        self.e1.ping()
-        self.e2.ping()
-
-    @hook(AFTER_UPDATE, when="access_vector")
-    def update_relation(self, *args, **kwargs):
-        rs = []
-        for r in self.relations:
-            r.access_vector = self.access_vector
-            rs.append(r)
-
-        Relation.objects.bulk_update(rs, ["access_vector"])
 
 
 class BaseEnricher:

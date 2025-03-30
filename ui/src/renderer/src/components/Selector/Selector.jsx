@@ -15,7 +15,7 @@ const Selector = ({
 }) => {
     const customSelectClassNames = {
         control: (state) =>
-            `input input-block bg-transparent min-h-[2.5rem] px-1.5 ${
+            `input input-block min-h-[2.5rem] px-1.5 ${
                 state.isFocused ? 'ring-2 ring-cradle2' : ''
             }`,
         placeholder: () => 'dark:text-gray-400',

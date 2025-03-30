@@ -29,7 +29,9 @@ class LspTypes(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        queryset = EntryClass.objects.filter(~Q(subtype="alias"))
+        queryset = EntryClass.objects.filter(
+            ~Q(subtype="alias") & ~Q(subtype="connector")
+        )
         serializer = LspEntryClassSerializer(queryset, many=True)
 
         grouped_data = {}

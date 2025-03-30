@@ -5,15 +5,20 @@ import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Pagination from '../Pagination/Pagination';
 import { useSearchParams } from 'react-router-dom';
 import { useDroppable } from '@dnd-kit/core';
+import AlertBox from '../AlertBox/AlertBox';
 
-export default function NotesList({ query, filteredNotes = [], noteActions = [], references = null }) {
+export default function NotesList({
+    query,
+    filteredNotes = [],
+    noteActions = [],
+    references = null,
+}) {
     const [notes, setNotes] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [searchParams, setSearchParams] = useSearchParams();
-
 
     const fetchNotes = useCallback(() => {
         setLoading(true);
@@ -49,8 +54,8 @@ export default function NotesList({ query, filteredNotes = [], noteActions = [],
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='flex flex-col space-y-4'>
+                <AlertBox alert={alert} setAlert={setAlert} />
                 {loading ? (
                     <div className='flex items-center justify-center min-h-screen'>
                         <div className='spinner-dot-pulse'>
@@ -70,13 +75,15 @@ export default function NotesList({ query, filteredNotes = [], noteActions = [],
                                 for (const n of filteredNotes) {
                                     if (n.id === note.id) return null;
                                 }
-                                return <Note
+                                return (
+                                    <Note
                                         id={note.id}
                                         key={index}
                                         note={note}
                                         setAlert={setAlert}
                                         actions={noteActions}
-                                    />;
+                                    />
+                                );
                             })}
                         </div>
 

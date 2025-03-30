@@ -27,7 +27,6 @@ function createDashboardLink({
 
 function createDownloadPath(file: FileData, axiosInstance: Axios): string {
     const baseURL = axiosInstance.defaults.baseURL;
-    console.log('baseURL', baseURL);
     const { minio_file_name, bucket_name } = file;
     const queryParams = QueryString.stringify({
         bucketName: bucket_name,

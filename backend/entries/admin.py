@@ -16,10 +16,10 @@ class EntryClassAdmin(admin.ModelAdmin):
 
 @admin.register(Entry)
 class EntryAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "entry_class", "is_public", "timestamp")
+    list_display = ("id", "name", "entry_class", "is_public")
     search_fields = ("name", "entry_class__subtype")
-    list_filter = ("is_public", "timestamp", "entry_class")
-    readonly_fields = ("id", "timestamp")
+    list_filter = ("is_public", "entry_class")
+    readonly_fields = ("id",)
 
     def save_model(self, request, obj, form, change):
         """Override to handle any additional logic when saving an Entry."""

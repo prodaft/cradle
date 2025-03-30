@@ -67,9 +67,19 @@ class NoteList(APIView):
 
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")
+            try:
+                references_at_least = int(
+                    request.query_params.get("references_at_least", len(entrylist))
+                )
+            except ValueError:
+                return Response(
+                    "Invalid references_at_least value.",
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             queryset = queryset.annotate(
                 matching_entries=Count("entries", filter=Q(entries__in=entrylist))
-            ).filter(matching_entries=len(entrylist))
+            ).filter(matching_entries=references_at_least)
         elif "linked_to" in request.query_params:
             entryid = request.query_params.get("linked_to")
             entry = Entry.objects.filter(id=entryid)

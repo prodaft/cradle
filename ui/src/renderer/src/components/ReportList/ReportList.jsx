@@ -39,9 +39,6 @@ export function ReportCard({ report, setAlert }) {
         setFormattedDate(new Date(localReport.created_at).toLocaleString());
     }, [localReport]);
 
-    /**
-     * Attempt to view the report.
-     */
     const handleView = async (reportId) => {
         try {
             if (localReport.report_url) {
@@ -58,16 +55,10 @@ export function ReportCard({ report, setAlert }) {
         }
     };
 
-    /**
-     * Navigate to the edit page with the report id in query params.
-     */
     const handleEdit = (reportId) => {
         navigate(`/publish?report=${reportId}`);
     };
 
-    /**
-     * Attempt to retry (re-generate) a report.
-     */
     const handleRetry = async (reportId) => {
         try {
             await retryReport(reportId);
@@ -83,9 +74,6 @@ export function ReportCard({ report, setAlert }) {
         }
     };
 
-    /**
-     * Attempt to delete the report.
-     */
     const handleDelete = async (reportId) => {
         try {
             await deleteReport(reportId);
@@ -104,40 +92,36 @@ export function ReportCard({ report, setAlert }) {
     if (!visible) return null;
 
     return (
-        <div className='bg-gray-800 bg-opacity-75 p-4 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 m-2'>
+        <div className='bg-white dark:bg-gray-800 dark:bg-opacity-75 p-4 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 m-2'>
             <div className='flex justify-between items-center mb-2'>
                 <div className='flex items-center space-x-2'>
-                    <h2 className='text-lg font-bold text-white'>
+                    <h2 className='text-lg font-bold text-gray-900 dark:text-white'>
                         {localReport.title}
                     </h2>
                     {localReport.strategy !== 'import' && (
                         <>
                             {localReport.status === 'done' && (
-                                <>
-                                    <button
-                                        title='View Report'
-                                        className='text-blue-400 hover:text-blue-300 transition-colors'
-                                        onClick={() => handleView(localReport.id)}
-                                    >
-                                        <Eye className='w-5 h-5' />
-                                    </button>
-                                </>
+                                <button
+                                    title='View Report'
+                                    className='text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors'
+                                    onClick={() => handleView(localReport.id)}
+                                >
+                                    <Eye className='w-5 h-5' />
+                                </button>
                             )}
                             {localReport.status !== 'working' && (
-                                <>
-                                    <button
-                                        title='Edit Report'
-                                        className='text-green-400 hover:text-green-300 transition-colors'
-                                        onClick={() => handleEdit(localReport.id)}
-                                    >
-                                        <Edit className='w-5 h-5' />
-                                    </button>
-                                </>
+                                <button
+                                    title='Edit Report'
+                                    className='text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 transition-colors'
+                                    onClick={() => handleEdit(localReport.id)}
+                                >
+                                    <Edit className='w-5 h-5' />
+                                </button>
                             )}
                             {localReport.status === 'error' && (
                                 <button
                                     title='Retry Report'
-                                    className='text-yellow-400 hover:text-yellow-300 transition-colors'
+                                    className='text-yellow-600 dark:text-yellow-400 hover:text-yellow-500 dark:hover:text-yellow-300 transition-colors'
                                     onClick={() => handleRetry(localReport.id)}
                                 >
                                     <RefreshCircle className='w-5 h-5' />
@@ -145,10 +129,9 @@ export function ReportCard({ report, setAlert }) {
                             )}
                         </>
                     )}
-
                     <button
                         title='Delete Report'
-                        className='text-red-400 hover:text-red-300 transition-colors'
+                        className='text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 transition-colors'
                         onClick={() => handleDelete(localReport.id)}
                     >
                         <Trash className='w-5 h-5' />
@@ -167,7 +150,7 @@ export function ReportCard({ report, setAlert }) {
                         localReport.status.slice(1)}
                 </span>
             </div>
-            <div className='text-gray-300 text-sm space-y-1'>
+            <div className='text-gray-700 dark:text-gray-300 text-sm space-y-1'>
                 <p>
                     <strong>Strategy:</strong> {localReport.strategy_label}
                 </p>
@@ -180,14 +163,14 @@ export function ReportCard({ report, setAlert }) {
 
                 {localReport.extra_data &&
                     Object.keys(localReport.extra_data).map((key) => (
-                        <p>
+                        <p key={key}>
                             <strong>{capitalizeString(key)}:</strong>{' '}
                             {localReport.extra_data[key]}
                         </p>
                     ))}
 
                 {localReport.status === 'error' && (
-                    <p className='text-red-300'>
+                    <p className='text-red-700 dark:text-red-300'>
                         <strong>Error:</strong> {localReport.error_message}
                     </p>
                 )}

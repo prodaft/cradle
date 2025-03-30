@@ -3,6 +3,7 @@ from django.urls import path
 from .views import entry_view
 from .views import entity_views
 from .views import entry_class_views
+from .views import relation_view
 
 urlpatterns = [
     path(
@@ -29,5 +30,11 @@ urlpatterns = [
     path("entries/", entry_view.EntryView.as_view(), name="entry-list-create"),
     path(
         "entries/<uuid:id>/", entry_view.EntryDetailView.as_view(), name="entry-detail"
+    ),
+    path("relations/", relation_view.RelationListView.as_view(), name="relation-list"),
+    path(
+        "relations/<uuid:relation_id>/",
+        relation_view.RelationDetailView.as_view(),
+        name="relation-detail",
     ),
 ]

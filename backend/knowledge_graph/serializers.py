@@ -4,7 +4,7 @@ from typing import Any
 from access.enums import AccessType
 from access.models import Access
 from entries.enums import EntryType
-from entries.models import Entry, EntryClass
+from entries.models import Entry, Edge
 from entries.serializers import EntryListCompressedTreeSerializer
 from query.utils import parse_query
 
@@ -83,20 +83,18 @@ class PathfindQuery(serializers.Serializer):
             return paths, entries
 
 
-class GraphQueryResponseSerializer(serializers.Serializer):
-    entries = EntryListCompressedTreeSerializer(fields=("name", "id"))
-    paths = serializers.ListField()
+class RelationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Edge
+        fields = ["id", "src", "dst", "created_at", "last_seen"]
 
+
+class SubGraphSerializer(serializers.Serializer):
+    entries = EntryListCompressedTreeSerializer(
+        fields=("name", "id", "location", "degree")
+    )
+    relations = RelationSerializer(many=True)
     colors = serializers.DictField()
 
     class Meta:
         fields = ["entries", "paths", "colors"]
-
-    def validate(self, data):
-        return True
-
-    def to_representation(self, instance) -> dict[str, Any]:
-        data = super().to_representation(instance)
-        colorlist = data["colors"]
-        data["colors"] = {x["subtype"]: x["color"] for x in colorlist}
-        return data

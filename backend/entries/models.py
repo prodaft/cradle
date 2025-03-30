@@ -14,6 +14,8 @@ from .managers import (
     EntityManager,
     ArtifactManager,
     EntryManager,
+    RelationManager,
+    EdgeManager,
 )
 
 from .exceptions import (
@@ -23,13 +25,35 @@ from .exceptions import (
     InvalidRegexException,
     OutOfEntitySlotsException,
 )
-from .enums import EntryType
-from intelio.enums import AssociationReason, EnrichmentStrategy
+from .enums import EntryType, RelationReason
+from intelio.enums import EnrichmentStrategy
 
 import uuid
 import re
 
+from django.contrib.gis.db import models as gis_models
+
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
+
+
+class Edge(LifecycleModel):
+    id = models.UUIDField(primary_key=True)
+    src = models.UUIDField()
+    dst = models.UUIDField()
+
+    objects = EdgeManager()
+
+    access_vector: BitStringField = BitStringField(
+        max_length=2048, null=False, default=1 << 2047, varying=False
+    )
+
+    created_at = models.DateTimeField()
+    last_seen = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = "edges"
+        unique_together = ["src", "dst"]
 
 
 class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
@@ -222,7 +246,8 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
     name: models.CharField = models.CharField(max_length=255)
     description: models.TextField = models.TextField(null=True, blank=True)
-    timestamp: models.DateTimeField = models.DateTimeField(
+    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    last_seen: models.DateTimeField = models.DateTimeField(
         auto_now_add=True, null=False
     )
 
@@ -232,7 +257,7 @@ class Entry(LifecycleModel, LoggableModelMixin):
     status: models.JSONField = models.JSONField(default=dict, null=True)
 
     class Meta:
-        ordering = ["-timestamp"]
+        ordering = ["-last_seen"]
         constraints = [
             models.UniqueConstraint(
                 fields=["name", "entry_class"], name="unique_name_class"
@@ -248,6 +273,11 @@ class Entry(LifecycleModel, LoggableModelMixin):
     objects = EntryManager()
     entities = EntityManager()
     artifacts = ArtifactManager()
+
+    location: gis_models.PointField = gis_models.PointField(
+        null=True, blank=True, srid=0, dim=2
+    )
+    degree: models.IntegerField = models.IntegerField(default=0)
 
     aliases = models.ManyToManyField(
         "self",
@@ -322,8 +352,8 @@ class Entry(LifecycleModel, LoggableModelMixin):
         """
         Set the timestamp to current time
         """
-        self.timestamp = timezone.now()
-        self.save(update_fields=["timestamp"])
+        self.last_seen = timezone.now()
+        self.save(update_fields=["last_seen"])
 
     def propagate_from(self, log):
         if self.entry_class.type == EntryType.ENTITY:
@@ -363,21 +393,23 @@ class Entry(LifecycleModel, LoggableModelMixin):
         return 1 | (1 << self.acvec_offset)
 
     def reconnect_aliases(self):
-        from intelio.models import Association
+        from entries.models import Relation
 
-        Association.objects.filter(entity=self, reason=AssociationReason.ALIAS).delete()
+        Relation.objects.filter(entity=self, reason=RelationReason.ALIAS).delete()
 
         for e in self.aliases.all():
-            Association.objects.create(
+            Relation.objects.create(
                 e1=self,
                 e2=e,
                 entity=e,
-                reason=AssociationReason.ALIAS,
+                reason=RelationReason.ALIAS,
                 access_vector=e.get_acvec(),
             )
 
     def aliasqs(self, user):
-        rels = self.src_relations.extra(
+        return Entry.objects.filter(id=self.id)
+        # TODO
+        rels = a.extra(
             where=["(access_vector & %s) = %s"],
             params=[user.access_vector_inv, fieldtype.get_prep_value(0)],
         )
@@ -392,36 +424,41 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
 
 class Relation(LifecycleModel):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    src_entry = models.ForeignKey(
-        Entry, related_name="src_relations", on_delete=models.CASCADE
-    )
-    dst_entry = models.ForeignKey(
-        Entry, related_name="dst_relations", on_delete=models.CASCADE
-    )
+    """
+    A model representing a generic link between two entries.
+    """
 
-    # Generic foreign key to support different types of objects
-    object_id = models.UUIDField()
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    content_object = GenericForeignKey("content_type", "object_id")
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
     access_vector: BitStringField = BitStringField(
         max_length=2048, null=False, default=1 << 2047, varying=False
     )
 
+    e1 = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="relations_1")
+    e2 = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="relations_2")
+
     created_at = models.DateTimeField(auto_now_add=True)
+    last_seen = models.DateTimeField(auto_now_add=True)
+
+    object_id = models.UUIDField()
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    content_object = GenericForeignKey("content_type", "object_id")
+
+    reason: models.CharField = models.CharField(
+        max_length=255, null=False, blank=False, choices=RelationReason.choices
+    )
+
+    details: models.JSONField = models.JSONField(default=dict, blank=True)
+
+    objects = RelationManager()
+
+    def save(self, *args, **kwargs):
+        if self.e1.id > self.e2.id:
+            self.e1, self.e2 = self.e2, self.e1
+        super().save(*args, **kwargs)
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["src_entry", "dst_entry", "content_type", "object_id"],
-                name="unique_src_dst_object",
-            ),
-        ]
+        ordering = ["-last_seen"]
 
-    indexes = [
-        models.Index(fields=["src_entry"], name="idx_src_entry"),
-        models.Index(fields=["dst_entry"], name="idx_dst_entry"),
-        models.Index(fields=["content_type", "object_id"], name="idx_content_object"),
-        models.Index(fields=["created_at"], name="idx_created_at"),
-    ]
+    def __str__(self):
+        return f"Relation [{self.reason}]({self.entry1}-{self.entry2}) "

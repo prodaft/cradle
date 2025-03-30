@@ -24,24 +24,31 @@ export default function Navbar({
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const navigate = useNavigate();
 
+    useHotkeys(
+        'ctrl+k, cmd+k',
+        (event) => {
+            event.preventDefault();
+            setIsDialogOpen((b) => !b);
+        },
+        {
+            enableOnFormTags: true,
+            preventDefault: true,
+        },
+        [],
+    );
 
-    useHotkeys('ctrl+k, cmd+k', (event) => {
-        event.preventDefault();
-        setIsDialogOpen((b) => !b);
-    }, {
-        enableOnFormTags: true,
-        preventDefault: true
-    }, []);
-
-    useHotkeys('ctrl+l, cmd+l', (event) => {
-        event.preventDefault();
-        navigate('/editor/new');
-    }, {
-        enableOnFormTags: true,
-        preventDefault: true
-    }, []);
-
-
+    useHotkeys(
+        'ctrl+l, cmd+l',
+        (event) => {
+            event.preventDefault();
+            navigate('/editor/new');
+        },
+        {
+            enableOnFormTags: true,
+            preventDefault: true,
+        },
+        [],
+    );
 
     return (
         <div

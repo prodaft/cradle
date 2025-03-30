@@ -73,10 +73,9 @@ export default function Home() {
     return (
         <IconoirProvider
             iconProps={{
-                color: '#f68d2e',
-                strokeWidth: 1,
                 width: '1.7em',
                 height: '1.7em',
+                className: 'text-primary',
             }}
         >
             <div className='flex flex-col w-screen h-full overflow-hidden'>

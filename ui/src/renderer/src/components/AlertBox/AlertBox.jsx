@@ -14,7 +14,13 @@ export default function AlertBox({ alert }) {
     const colorVariants = {
         green: 'alert-success',
         red: 'alert-error',
-        yellow: 'alert-warning'
+        yellow: 'alert-warning',
+    };
+
+    const buttonColorVariants = {
+        green: 'bg-green-200 hover:bg-green-300 dark:bg-green-700 dark:hover:bg-green-600',
+        red: 'bg-red-200 hover:bg-red-300 dark:bg-red-700 dark:hover:bg-red-600',
+        yellow: 'bg-yellow-200 hover:bg-yellow-300 dark:bg-yellow-700 dark:hover:bg-yellow-600',
     };
 
     const renderIcon = () => {
@@ -36,7 +42,9 @@ export default function AlertBox({ alert }) {
                     </svg>
                 );
             case 'red':
-                return <img src={rippleUiAlertIcon} alt='alert icon' className='w-6 h-6' />;
+                return (
+                    <img src={rippleUiAlertIcon} alt='alert icon' className='w-6 h-6' />
+                );
             case 'yellow':
                 return (
                     <svg
@@ -74,7 +82,7 @@ export default function AlertBox({ alert }) {
                 {alert.button && (
                     <button
                         onClick={alert.button.onClick}
-                        className='ml-4 px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors'
+                        className={`ml-4 px-3 py-1 rounded transition-colors ${buttonColorVariants[alert.color]}`}
                     >
                         {alert.button.text}
                     </button>

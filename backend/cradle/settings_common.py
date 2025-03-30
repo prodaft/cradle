@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "django_extensions",
     "drf_spectacular",
     "django_filters",
+    "django.contrib.gis",
 ]
 
 MIDDLEWARE = [

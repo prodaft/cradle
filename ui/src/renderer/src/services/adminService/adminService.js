@@ -40,7 +40,7 @@ export async function activateUser(id) {
 export async function createEntity(data, token) {
     return authAxios({
         method: 'post',
-        url: '/entries/entities/',
+        url: '/entries/entries/',
         data: data,
     });
 }

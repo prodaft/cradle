@@ -45,7 +45,7 @@ export default function AdminPanelSection({
                 <input
                     type='text'
                     placeholder='Search'
-                    className='form-input input input-rounded input-md input-block input-ghost-primary focus:ring-0 w-full'
+                    className='form-input input input-rounded input-md input-block input-primary focus:ring-0 w-full'
                     onChange={(e) => setSearchVal(e.target.value)}
                 />
                 {addEnabled && (

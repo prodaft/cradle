@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16.8
+    image: pgrouting/pgrouting:16-3.5-3.7
     container_name: cradle_postgres
     environment:
       - POSTGRES_DB=cradle

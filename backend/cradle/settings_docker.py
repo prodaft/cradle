@@ -24,7 +24,7 @@ CSRF_TRUSTED_ORIGINS = env.list(
 
 DATABASES = {
     "default": {
-        "ENGINE": env.str("DB_ENGINE", "django.db.backends.postgresql"),
+        "ENGINE": env.str("DB_ENGINE", "django.contrib.gis.db.backends.postgis"),
         "NAME": env.str("DB_NAME", "cradle"),
         "USER": env.str("DB_USER", "postgres"),
         "PASSWORD": env.str("DB_PASSWORD", "postgres"),

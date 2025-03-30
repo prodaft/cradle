@@ -17,7 +17,6 @@ export function graphPathFind(query) {
     });
 }
 
-
 /**
  * Function to query entries up to a certain depth from an entry
  *
@@ -28,17 +27,16 @@ export function searchRelatedEntries(src, depth, page, query) {
         method: 'GET',
         url: '/knowledge-graph/neighbors/',
         params: {
-          src,
-          depth,
-          page,
-          ...query
+            src,
+            depth,
+            page,
+            ...query,
         },
         paramsSerializer: (params) => {
             return qs.stringify(params, { arrayFormat: 'comma' });
         },
     });
 }
-
 
 /**
  * Function to get inaccessible entry ids at depth
@@ -50,8 +48,54 @@ export function getInaccessibleEntities(src, depth) {
         method: 'GET',
         url: '/knowledge-graph/inaccessible/',
         params: {
-          src,
-          depth
-        }
+            src,
+            depth,
+        },
+    });
+}
+
+/**
+ * Function to get incrementally fetch the graph
+ *
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export function fetchGraph(page) {
+    return authAxios({
+        method: 'GET',
+        url: '/knowledge-graph/fetch/',
+        params: {
+            page,
+        },
+    });
+}
+
+/**
+ * Function to get relations connecting two entries
+ *
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export function getRelations(query, page) {
+    return authAxios({
+        method: 'GET',
+        url: '/entries/relations/',
+        params: {
+            page,
+            ...query,
+        },
+        paramsSerializer: (params) => {
+            return qs.stringify(params, { arrayFormat: 'repeat' });
+        },
+    });
+}
+
+/**
+ * Function to delete a relation
+ *
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export function deleteRelation(id) {
+    return authAxios({
+        method: 'DELETE',
+        url: `/entries/relations/${id}`,
     });
 }

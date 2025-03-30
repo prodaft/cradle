@@ -37,7 +37,7 @@ export default function NavbarButton({
                 </div>
             ) : (
                 <button
-                    className={`navbar-item text-cradle2 hover:bg-gray-4 ${text ? 'tooltip tooltip-bottom tooltip-primary' : ''}`}
+                    className={`navbar-item text-primary hover:bg-gray-4 ${text ? 'tooltip tooltip-bottom tooltip-primary' : ''}`}
                     onClick={handleClick}
                     data-tooltip={text}
                     data-testid={testid || ''}

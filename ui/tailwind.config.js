@@ -87,7 +87,7 @@ module.exports = {
                 themeName: 'light',
                 colorScheme: 'light',
                 colors: {
-                    primary: '#f68d2e',
+                    primary: '#253746',
                     backgroundPrimary: '#e8e8e8',
                     secondary: '#ffffff',
                     backgroundSecondary: '#555161',

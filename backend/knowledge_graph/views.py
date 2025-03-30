@@ -11,12 +11,12 @@ from access.models import Access
 from core.fields import BitStringField
 from core.pagination import LazyPaginator, TotalPagesPagination
 from entries.enums import EntryType
-from entries.models import Entry, Relation
+from entries.models import Edge, Entry, Relation
 from entries.serializers import EntryListCompressedTreeSerializer, EntrySerializer
 from knowledge_graph.utils import get_neighbors
 from query.filters import EntryFilter
 from query.utils import parse_query
-from .serializers import PathfindQuery
+from .serializers import PathfindQuery, SubGraphSerializer
 
 
 class GraphPathFindView(APIView):
@@ -29,8 +29,14 @@ class GraphPathFindView(APIView):
 
         paths, entries = query.get_result()
 
-        entry_tree = EntrySerializer(entries, many=True)
-        return Response({"entries": entry_tree.data, "paths": paths})
+        entry_tree = EntryListCompressedTreeSerializer(entries, fields=["id", "name"])
+
+        colors = {}
+
+        for i in entries:
+            colors[i.entry_class_id] = i.entry_class.color
+
+        return Response({"entries": entry_tree.data, "paths": paths, "colors": colors})
 
 
 class GraphNeighborsView(APIView):
@@ -157,3 +163,38 @@ class GraphInaccessibleView(APIView):
         )
 
         return Response({"inaccessible": [entry.id for entry in inaccessible]})
+
+
+class FetchGraphView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        edges = (
+            Edge.objects.accessible(request.user)
+            .remove_mirrors()
+            .order_by("-last_seen")
+        )
+
+        paginator = LazyPaginator(page_size=500)
+        paginated_edges = paginator.paginate_queryset(edges, request)
+
+        entry_ids = set()
+
+        for i in paginated_edges:
+            entry_ids.add(i.src)
+            entry_ids.add(i.dst)
+
+        entries = Entry.objects.filter(id__in=entry_ids)
+
+        colors = {}
+
+        for i in entries.all():
+            if i.entry_class_id not in colors:
+                colors[i.entry_class_id] = i.entry_class.color
+
+        serializer = SubGraphSerializer(
+            {"relations": paginated_edges, "entries": entries, "colors": colors}
+        )
+
+        return paginator.get_paginated_response(serializer.data)

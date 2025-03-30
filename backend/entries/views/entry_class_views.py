@@ -139,7 +139,7 @@ class EntryClassDetail(APIView):
         return Response(serializer.data)
 
     def delete(self, request: Request, class_subtype: str) -> Response:
-        if class_subtype == "alias":
+        if class_subtype == "alias" or class_subtype == "connector":
             return Response(
                 "Cannot delete the alias entry class.", status=status.HTTP_403_FORBIDDEN
             )
@@ -158,7 +158,7 @@ class EntryClassDetail(APIView):
         return Response("Requested entry class was deleted", status=status.HTTP_200_OK)
 
     def post(self, request: Request, class_subtype: str) -> Response:
-        if class_subtype == "alias":
+        if class_subtype == "alias" or class_subtype == "connector":
             return Response(
                 "Cannot edit the alias entry class.", status=status.HTTP_403_FORBIDDEN
             )

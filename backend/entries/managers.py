@@ -1,9 +1,15 @@
 from django.db import models
+from django.db.models.expressions import F
 from django.db.models.query import RawQuerySet
+from django.db.models.query_utils import Q
 
 from user.models import CradleUser
 
 from .enums import EntryType
+
+from core.fields import BitStringField
+
+fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
 
 class EntryQuerySet(models.QuerySet):
@@ -26,7 +32,7 @@ class EntryQuerySet(models.QuerySet):
         """
         Get entries that are not referenced by any relation
         """
-        return self.filter(src_relations=None)
+        return self.filter(Q(relations_1=None) | Q(relations_2=None))
 
     def _neighbour_query(self, user: CradleUser | None) -> tuple[str, list[str]]:
         query_parts = []
@@ -69,6 +75,31 @@ class EntryQuerySet(models.QuerySet):
         """
 
         return self.raw(final_query, query_args)
+
+
+class RelationQuerySet(models.QuerySet):
+    def accessible(self, user: CradleUser) -> models.QuerySet:
+        """
+        Filter all relations accessible to a user
+        """
+        return self.extra(
+            where=["(access_vector & %s) = %s"],
+            params=[user.access_vector_inv, fieldtype.get_prep_value(0)],
+        )
+
+
+class EdgeQuerySet(models.QuerySet):
+    def accessible(self, user: CradleUser) -> models.QuerySet:
+        """
+        Filter all relations accessible to a user
+        """
+        return self.extra(
+            where=["(access_vector & %s) = %s"],
+            params=[user.access_vector_inv, fieldtype.get_prep_value(0)],
+        )
+
+    def remove_mirrors(self) -> models.QuerySet:
+        return self.filter(src__lt=F("dst"))
 
 
 class EntryManager(models.Manager):
@@ -141,3 +172,42 @@ class EntityManager(models.Manager):
 class ArtifactManager(models.Manager):
     def get_queryset(self) -> models.QuerySet:
         return super().get_queryset().filter(entry_class__type=EntryType.ARTIFACT)
+
+
+class RelationManager(models.Manager):
+    def get_queryset(self):
+        """
+        Returns a queryset that uses the custom QuerySet
+        allowing access to its methods for all querysets retrieved by this manager.
+        """
+        return RelationQuerySet(self.model, using=self._db)
+
+    def accessible(self, user: CradleUser) -> models.QuerySet:
+        """
+        Filter all relations accessible to a user
+        """
+        return self.get_queryset().accessible(user)
+
+    def bulk_create(self, objs, **kwargs):
+        for obj in objs:
+            if obj.e1.id > obj.e2.id:
+                obj.e1, obj.e2 = obj.e2, obj.e1
+        return super().bulk_create(objs, **kwargs)
+
+
+class EdgeManager(models.Manager):
+    def get_queryset(self):
+        """
+        Returns a queryset that uses the custom QuerySet
+        allowing access to its methods for all querysets retrieved by this manager.
+        """
+        return EdgeQuerySet(self.model, using=self._db)
+
+    def accessible(self, user: CradleUser) -> models.QuerySet:
+        """
+        Filter all relations accessible to a user
+        """
+        return self.get_queryset().accessible(user)
+
+    def remove_mirrors(self) -> models.QuerySet:
+        return self.get_queryset().remove_mirrors()

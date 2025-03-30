@@ -34,7 +34,7 @@ class ValidateNoteTask(BaseTask):
         unique_subtypes = {r.key for r in links}
 
         # Check if the note tries to link to an alias
-        if "alias" in unique_subtypes:
+        if "alias" in unique_subtypes or "connector" in unique_subtypes:
             raise AliasCannotBeLinked()
 
         # Prefetch all relevant EntryClass objects in one query
