@@ -1,12 +1,13 @@
 import { Trash, EditPencil, ClockRotateRight } from 'iconoir-react/regular';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { deleteArtifactClass } from '../../services/adminService/adminService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import useAuth from '../../hooks/useAuth/useAuth';
 import EntryTypeForm from '../AdminPanelForms/EntryTypeForm.jsx';
+import { useModal } from '../../contexts/ModalContext/ModalContext';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 
 export default function AdminPanelCardEntryType({
     name,
@@ -15,10 +16,10 @@ export default function AdminPanelCardEntryType({
     onDelete,
     setRightPane,
 }) {
-    const [dialog, setDialog] = useState(false);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
     const auth = useAuth();
+    const { setModal } = useModal();
 
     const handleDelete = async () => {
         try {
@@ -40,13 +41,6 @@ export default function AdminPanelCardEntryType({
     return (
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
-            <ConfirmationDialog
-                open={dialog}
-                setOpen={setDialog}
-                title='Confirm Deletion'
-                description='This is permanent'
-                handleConfirm={handleDelete}
-            />
             <div className='h-fit w-full bg-cradle3 p-3 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl'>
                 <span className='cursor-pointer' onClick={handleEditClick}>
                     <h2 className='card-header w-full mx-2 px-1 break-all'>
@@ -71,7 +65,13 @@ export default function AdminPanelCardEntryType({
                     {auth?.isAdmin() && (
                         <button
                             className='btn btn-ghost w-fit h-full p-1'
-                            onClick={() => setDialog((prev) => !prev)}
+                            onClick={() =>
+                                setModal(ConfirmDeletionModal, {
+                                    onConfirm: handleDelete,
+                                    confirmText: name,
+                                    text: 'Are you sure you want to delete this entry type? This action is irreversible.',
+                                })
+                            }
                         >
                             <Trash />
                         </button>

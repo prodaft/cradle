@@ -1,8 +1,6 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
-import {
-    requestEntityAccess,
-} from '../../services/dashboardService/dashboardService';
+import { requestEntityAccess } from '../../services/dashboardService/dashboardService';
 import useAuth from '../../hooks/useAuth/useAuth';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
@@ -18,6 +16,8 @@ import { queryEntries } from '../../services/queryService/queryService';
 import { Tabs, Tab } from '../Tabs/Tabs';
 import Notes from './Notes';
 import Relations from './Relations';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
+import { useModal } from '../../contexts/ModalContext/ModalContext';
 
 /**
  * Dashboard component
@@ -42,8 +42,6 @@ export default function Dashboard() {
     const [contentObject, setContentObject] = useState({});
     const [entryTypesLevel, setEntryTypesLevel] = useState({});
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const [deleteDialog, setDeleteDialog] = useState(false);
-    const [virusTotalDialog, setVirusTotalDialog] = useState(false);
     const [searchFilters, setSearchFilters] = useState({
         content: '',
         author__username: '',
@@ -55,6 +53,8 @@ export default function Dashboard() {
     const navigate = useNavigate();
     const auth = useAuth();
     const dashboard = useRef(null);
+
+    const { setModal } = useModal();
 
     // On load, fetch the dashboard data for the entry
     useEffect(() => {
@@ -99,9 +99,7 @@ export default function Dashboard() {
             icon={<Graph height={24} width={24} />}
             text='Explore in Graph'
             onClick={() =>
-                navigate(
-                    `/knowledge-graph?operation=bfs&src=${contentObject.id}`,
-                )
+                navigate(`/knowledge-graph?operation=bfs&src=${contentObject.id}`)
             }
             data-testid='view-graph-btn'
         />,
@@ -112,7 +110,13 @@ export default function Dashboard() {
                 key='delete-entry-btn'
                 icon={<Trash />}
                 text='Delete'
-                onClick={() => setDeleteDialog(true)}
+                onClick={() =>
+                    setModal(ConfirmDeletionModal, {
+                        text: `Are you sure you want to delete this entity? This action is irreversible.`,
+                        onConfirm: handleDelete,
+                        confirmText: `${contentObject.subtype}:${contentObject.name}`,
+                    })
+                }
                 data-testid='delete-entry-btn'
             />
         ),
@@ -159,13 +163,6 @@ export default function Dashboard() {
 
     return (
         <>
-            <ConfirmationDialog
-                open={deleteDialog}
-                setOpen={setDeleteDialog}
-                title={'Confirm Deletion'}
-                description={'This is permanent'}
-                handleConfirm={handleDelete}
-            />
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div
                 className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'

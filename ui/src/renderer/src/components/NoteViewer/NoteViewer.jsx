@@ -14,11 +14,12 @@ import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { Trash, StatsReport } from 'iconoir-react/regular';
 import NavbarSwitch from '../NavbarSwitch/NavbarSwitch';
-import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 import useAuth from '../../hooks/useAuth/useAuth';
 import ReferenceTree from '../ReferenceTree/ReferenceTree';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-markdown';
+import { useModal } from '../../contexts/ModalContext/ModalContext';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
 
 /**
  * NoteViewer component
@@ -39,8 +40,8 @@ export default function NoteViewer() {
     const [isRaw, setIsRaw] = useState(false);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [parsedContent, setParsedContent] = useState(null);
-    const [dialog, setDialog] = useState(false);
     const [isLoading, setIsLoading] = useState(true); // <-- Add loading state
+    const { setModal } = useModal();
 
     const auth = useAuth();
 
@@ -141,7 +142,12 @@ export default function NoteViewer() {
                   key='delete-btn'
                   text='Delete Note'
                   icon={<Trash />}
-                  onClick={() => setDialog(true)}
+                  onClick={() =>
+                      setModal(ConfirmDeletionModal, {
+                          onConfirm: handleDelete,
+                          text: 'Are you sure you want to delete this note? This action is irreversible.',
+                      })
+                  }
                   tesid='delete-btn'
               />,
           ];
@@ -162,16 +168,14 @@ export default function NoteViewer() {
         isPublishable,
         togglePublishable,
         handleDelete,
-        dialog,
-        setDialog,
         alert,
         setAlert,
     ]);
 
     useEffect(() => {
-      if (isRaw) {
-        Prism.highlightAll();
-      }
+        if (isRaw) {
+            Prism.highlightAll();
+        }
     }, [isRaw, note.content]);
 
     // Conditionally render spinner or component
@@ -185,13 +189,6 @@ export default function NoteViewer() {
 
     return (
         <>
-            <ConfirmationDialog
-                open={dialog}
-                setOpen={setDialog}
-                title={'Confirm Deletion'}
-                description={'This is permanent'}
-                handleConfirm={handleDelete}
-            />
             <AlertDismissible
                 alert={alert}
                 setAlert={setAlert}

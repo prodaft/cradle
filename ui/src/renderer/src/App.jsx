@@ -28,6 +28,7 @@ import { useTheme } from './hooks/useTheme/useTheme';
 import { ThemeProvider } from './contexts/ThemeContext/ThemeContext.jsx';
 import ReportList from './components/ReportList/ReportList.jsx';
 import Connectivity from './components/Connectivity/Connectivity.jsx';
+import { ModalProvider } from './contexts/ModalContext/ModalContext.jsx';
 
 /**
  * The App component is the artifact point of the application. It wraps the entire application in the AuthProvider
@@ -50,94 +51,102 @@ function App() {
         <ThemeProvider>
             <HashRouter>
                 <AuthProvider>
-                    <Routes>
-                        <Route element={<PrivateRoute fallback={'/login'} />}>
-                            {/* Add any routes for components that NEED authentication here */}
-                            <Route path='/' element={<Home />}>
-                                {/* Add any routes for components that keep the sidebar and navbar here */}
-                                <Route index element={<Welcome />} />
-                                <Route
-                                    path='/not-implemented'
-                                    element={<FeatureNotImplemented />}
-                                />
-                                <Route path='/notes' element={<Notes />}></Route>
-                                <Route
-                                    path='/editor/:id'
-                                    element={<FleetingNoteEditor />}
-                                />
-                                <Route
-                                    path='/dashboards/:subtype/:name'
-                                    element={<Dashboard />}
-                                />
-                                <Route path='/notes/:id' element={<NoteViewer />} />
-                                <Route
-                                    path='/notes/:id/edit'
-                                    element={<NoteEditor />}
-                                />
-                                <Route path='/notes' element={<NoteSelector />} />
-                                <Route
-                                    path='/knowledge-graph'
-                                    element={<GraphExplorer />}
-                                />
-                                <Route
-                                    path='/connectivity'
-                                    element={<Connectivity />}
-                                ></Route>
-                                <Route
-                                    path='/reports/:report_id'
-                                    element={<ReportList />}
-                                ></Route>
-                                <Route path='/publish' element={<Publish />}></Route>
-                                <Route
-                                    path='/change-password'
-                                    element={<ChangePassword />}
-                                ></Route>
-                                <Route
-                                    path='/account/'
-                                    element={<AccountSettings target='me' />}
-                                ></Route>
-                                <Route
-                                    path='/activity'
-                                    element={<ActivityList />}
-                                ></Route>
-                                <Route
-                                    path='/activity/:username'
-                                    element={<ActivityList />}
-                                ></Route>
-                                <Route path='/admin' element={<Outlet />}>
-                                    <Route index element={<AdminPanel />}></Route>
+                    <ModalProvider>
+                        <Routes>
+                            <Route element={<PrivateRoute fallback={'/login'} />}>
+                                {/* Add any routes for components that NEED authentication here */}
+                                <Route path='/' element={<Home />}>
+                                    {/* Add any routes for components that keep the sidebar and navbar here */}
+                                    <Route index element={<Welcome />} />
                                     <Route
-                                        path='/admin/add/user'
-                                        element={<AccountSettings isEdit={false} />}
+                                        path='/not-implemented'
+                                        element={<FeatureNotImplemented />}
+                                    />
+                                    <Route path='/notes' element={<Notes />}></Route>
+                                    <Route
+                                        path='/editor/:id'
+                                        element={<FleetingNoteEditor />}
+                                    />
+                                    <Route
+                                        path='/dashboards/:subtype/:name'
+                                        element={<Dashboard />}
+                                    />
+                                    <Route path='/notes/:id' element={<NoteViewer />} />
+                                    <Route
+                                        path='/notes/:id/edit'
+                                        element={<NoteEditor />}
+                                    />
+                                    <Route path='/notes' element={<NoteSelector />} />
+                                    <Route
+                                        path='/knowledge-graph'
+                                        element={<GraphExplorer />}
+                                    />
+                                    <Route
+                                        path='/connectivity'
+                                        element={<Connectivity />}
                                     ></Route>
+                                    <Route
+                                        path='/reports/:report_id'
+                                        element={<ReportList />}
+                                    ></Route>
+                                    <Route
+                                        path='/publish'
+                                        element={<Publish />}
+                                    ></Route>
+                                    <Route
+                                        path='/change-password'
+                                        element={<ChangePassword />}
+                                    ></Route>
+                                    <Route
+                                        path='/account/'
+                                        element={<AccountSettings target='me' />}
+                                    ></Route>
+                                    <Route
+                                        path='/activity'
+                                        element={<ActivityList />}
+                                    ></Route>
+                                    <Route
+                                        path='/activity/:username'
+                                        element={<ActivityList />}
+                                    ></Route>
+                                    <Route path='/admin' element={<Outlet />}>
+                                        <Route index element={<AdminPanel />}></Route>
+                                        <Route
+                                            path='/admin/add/user'
+                                            element={<AccountSettings isEdit={false} />}
+                                        ></Route>
+                                    </Route>
                                 </Route>
+                                {/* Add any routes for components that DO NOT KEEP the sidebar and navbar here */}
                             </Route>
-                            {/* Add any routes for components that DO NOT KEEP the sidebar and navbar here */}
-                        </Route>
-                        {/* Add any routes for components that DO NOT NEED authentication here */}
-                        <Route path='/login' element={<Login />}></Route>
-                        <Route path='/confirm-email' element={<ConfirmEmail />}></Route>
-                        <Route
-                            path='/reset-password'
-                            element={<ResetPassword />}
-                        ></Route>
-                        <Route
-                            path='/forgot-password'
-                            element={<ForgotPassword />}
-                        ></Route>
-                        <Route path='/register' element={<Register />}></Route>
-                        <Route
-                            path='/not-found'
-                            element={
-                                <NotFound
-                                    message={
-                                        "We can't seem to find the page you are looking for."
-                                    }
-                                />
-                            }
-                        />
-                        <Route path='*' element={<NotFound />} />
-                    </Routes>
+                            {/* Add any routes for components that DO NOT NEED authentication here */}
+                            <Route path='/login' element={<Login />}></Route>
+                            <Route
+                                path='/confirm-email'
+                                element={<ConfirmEmail />}
+                            ></Route>
+                            <Route
+                                path='/reset-password'
+                                element={<ResetPassword />}
+                            ></Route>
+                            <Route
+                                path='/forgot-password'
+                                element={<ForgotPassword />}
+                            ></Route>
+                            <Route path='/register' element={<Register />}></Route>
+                            <Route
+                                path='/not-found'
+                                element={
+                                    <NotFound
+                                        message={
+                                            "We can't seem to find the page you are looking for."
+                                        }
+                                    />
+                                }
+                            />
+                            <Route path='*' element={<NotFound />} />
+                        </Routes>
+                    </ModalProvider>
                 </AuthProvider>
             </HashRouter>
         </ThemeProvider>

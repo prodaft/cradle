@@ -5,7 +5,6 @@ import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
-import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 import useAuth from '../../hooks/useAuth/useAuth';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import {
@@ -15,6 +14,8 @@ import {
     createUser,
 } from '../../services/userService/userService';
 import { Tabs, Tab } from '../Tabs/Tabs';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
+import { useModal } from '../../contexts/ModalContext/ModalContext';
 
 const accountSettingsSchema = Yup.object().shape({
     username: Yup.string().required('Username is required'),
@@ -41,6 +42,7 @@ export default function AccountSettings({ target, isEdit = true }) {
     const isAdmin = auth?.isAdmin();
     const isOwnAccount = isEdit ? target === 'me' || auth?.userId === target : false;
     const isAdminAndNotOwn = isAdmin && !isOwnAccount;
+    const { setModal } = useModal();
 
     const defaultValues = isEdit
         ? {
@@ -80,7 +82,6 @@ export default function AccountSettings({ target, isEdit = true }) {
     });
 
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const [dialog, setDialog] = useState(false);
 
     // Prepopulate form in edit mode.
     useEffect(() => {
@@ -173,13 +174,6 @@ export default function AccountSettings({ target, isEdit = true }) {
 
     return (
         <>
-            <ConfirmationDialog
-                open={dialog}
-                setOpen={setDialog}
-                title='Are you sure you want to delete your account?'
-                description='This is permanent'
-                handleConfirm={handleDelete}
-            />
             <div className='flex items-center justify-center min-h-screen'>
                 <div className='w-full max-w-md'>
                     <h1 className='text-center text-xl font-bold text-cradle2 mb-4'>
@@ -314,7 +308,12 @@ export default function AccountSettings({ target, isEdit = true }) {
                                     <button
                                         type='button'
                                         className='btn btn-ghost btn-block hover:bg-red-500'
-                                        onClick={() => setDialog(!dialog)}
+                                        onClick={() =>
+                                            setModal(ConfirmDeletionModal, {
+                                                text: 'Are you sure you want to delete your account? All data related to you will be deleted.',
+                                                onConfirm: handleDelete,
+                                            })
+                                        }
                                     >
                                         Delete Account
                                     </button>
