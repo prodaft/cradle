@@ -126,7 +126,6 @@ export default function Dashboard() {
         location,
         auth.isAdmin(),
         entryMissing,
-        setDeleteDialog,
     ]);
 
     const handleRequestEntityAccess = (entities) => {

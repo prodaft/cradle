@@ -13,7 +13,7 @@ from core.pagination import LazyPaginator, TotalPagesPagination
 from entries.enums import EntryType
 from entries.models import Edge, Entry, Relation
 from entries.serializers import EntryListCompressedTreeSerializer, EntrySerializer
-from knowledge_graph.utils import get_neighbors
+from knowledge_graph.utils import get_edges_for_paths, get_neighbors
 from query.filters import EntryFilter
 from query.utils import parse_query
 from .serializers import PathfindQuery, SubGraphSerializer
@@ -27,16 +27,30 @@ class GraphPathFindView(APIView):
         query = PathfindQuery(data=request.data, user=request.user)
         query.is_valid(raise_exception=True)
 
-        paths, entries = query.get_result()
+        start = query.validated_data["src"]
+        ends = query.validated_data["dsts"]
 
-        entry_tree = EntryListCompressedTreeSerializer(entries, fields=["id", "name"])
+        edges = get_edges_for_paths(start.id, [x.id for x in ends])
+
+        entry_ids = set()
+
+        for i in edges:
+            entry_ids.add(i.src)
+            entry_ids.add(i.dst)
+
+        entries = Entry.objects.filter(id__in=entry_ids)
 
         colors = {}
 
-        for i in entries:
-            colors[i.entry_class_id] = i.entry_class.color
+        for i in entries.all():
+            if i.entry_class_id not in colors:
+                colors[i.entry_class_id] = i.entry_class.color
 
-        return Response({"entries": entry_tree.data, "paths": paths, "colors": colors})
+        serializer = SubGraphSerializer(
+            {"relations": edges, "entries": entries, "colors": colors}
+        )
+
+        return Response(serializer.data)
 
 
 class GraphNeighborsView(APIView):

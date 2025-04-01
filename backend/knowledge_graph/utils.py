@@ -1,3 +1,6 @@
+from typing import List
+import uuid
+from django.db import connection
 from django.db.models import F, ExpressionWrapper, Value
 
 from core.fields import BitStringField
@@ -38,3 +41,44 @@ def get_neighbors(sourceset, depth, user=None):
 
     # Return a queryset for the final level
     return current_level
+
+
+def get_edges_for_paths(
+    start_uuid: uuid.UUID, end_uuids: List[uuid.UUID]
+) -> List[Edge]:
+    """
+    Returns a de-duplicated list of Edge objects used in shortest paths
+    from a single start UUID to multiple end UUIDs.
+    """
+    if not end_uuids:
+        return []
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            WITH
+            start_node AS (
+                SELECT id FROM node_map WHERE uuid = %s
+            ),
+            end_nodes AS (
+                SELECT id FROM node_map WHERE uuid = ANY(%s)
+            ),
+            route AS (
+                SELECT * FROM pgr_dijkstra(
+                    'SELECT edge_id AS id, src_id AS source, dst_id AS target, age AS cost FROM edges_with_ids',
+                    (SELECT id FROM start_node),
+                    ARRAY(SELECT id FROM end_nodes),
+                    directed := true
+                )
+            )
+            SELECT DISTINCT e.id
+            FROM route r
+            JOIN edges_with_ids e ON r.edge = e.edge_id
+            WHERE r.edge != -1;
+        """,
+            [str(start_uuid), [str(u) for u in end_uuids]],
+        )
+
+        edge_uuids = [row[0] for row in cursor.fetchall()]
+
+    return list(Edge.objects.filter(id__in=edge_uuids))

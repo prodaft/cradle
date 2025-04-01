@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
                     BIT_AND(access_vector) AS access_vector,
                     MIN(created_at) AS created_at,
                     MAX(last_seen) AS last_seen,
-                    EXTRACT(EPOCH FROM (now() - MAX(last_seen)))
+                    EXTRACT(EPOCH FROM (now() - MAX(last_seen))) AS age
                 FROM entries_relation
                 GROUP BY e1_id, e2_id
             )
@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
                     BIT_AND(access_vector) AS access_vector,
                     MIN(created_at) AS created_at,
                     MAX(last_seen) AS last_seen,
-                    EXTRACT(EPOCH FROM (now() - MAX(last_seen)))
+                    EXTRACT(EPOCH FROM (now() - MAX(last_seen))) AS age
                 FROM entries_relation
                 GROUP BY e1_id, e2_id
             );

@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "knowledge_graph.apps.KnowledgeGraphConfig",
     "intelio.apps.IntelIOConfig",
+    "management.apps.ManagementConfig",
     "lsp.apps.LspConfig",
     "cradle_statistics.apps.CradleStatisticsConfig",
     "notifications.apps.NotificationsConfig",

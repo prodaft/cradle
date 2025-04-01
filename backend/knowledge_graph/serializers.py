@@ -16,12 +16,11 @@ class PathfindQuery(serializers.Serializer):
     dsts = serializers.PrimaryKeyRelatedField(
         queryset=Entry.objects.all(), required=True, many=True
     )
-    max_depth = serializers.IntegerField(required=True, max_value=3)
     min_date = serializers.DateTimeField(required=True)
     max_date = serializers.DateTimeField(required=True)
 
     class Meta:
-        fields = ["src", "dsts", "max_depth", "min_date", "max_date"]
+        fields = ["src", "dsts", "min_date", "max_date"]
 
     def __init__(self, *args, user=None, **kwargs):
         self.user = user
@@ -46,41 +45,6 @@ class PathfindQuery(serializers.Serializer):
             )
 
         return super().validate(data)
-
-    def get_result(self):
-        with connection.cursor() as cursor:
-            cursor.execute(
-                """
-                SELECT path
-                FROM find_all_paths(
-                    %s::UUID,              -- src
-                    %s::BIT(2048),         -- access_vector
-                    %s::INT,               -- max_depth
-                    %s::UUID[],            -- dsts
-                    %s::TIMESTAMP,         -- min_date
-                    %s::TIMESTAMP          -- max_date
-                ) rp
-                """,
-                [
-                    self.validated_data["src"].id,
-                    self.user.access_vector,
-                    self.validated_data["max_depth"] + 1,
-                    [x.id for x in self.validated_data["dsts"]],
-                    self.validated_data["min_date"],
-                    self.validated_data["max_date"],
-                ],
-            )
-
-            paths = []
-            entry_ids = set()
-
-            for path in cursor.fetchall():
-                paths.append(path[0])
-                entry_ids.update(path[0])
-
-            entries = Entry.objects.filter(id__in=entry_ids)
-
-            return paths, entries
 
 
 class RelationSerializer(serializers.ModelSerializer):
