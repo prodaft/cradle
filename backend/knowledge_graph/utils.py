@@ -65,7 +65,7 @@ def get_edges_for_paths(
             ),
             route AS (
                 SELECT * FROM pgr_dijkstra(
-                    'SELECT edge_id AS id, src_id AS source, dst_id AS target, age AS cost FROM edges_with_ids',
+                    'SELECT edge_id AS id, src AS source, dst AS target, age AS cost FROM edges',
                     (SELECT id FROM start_node),
                     ARRAY(SELECT id FROM end_nodes),
                     directed := true

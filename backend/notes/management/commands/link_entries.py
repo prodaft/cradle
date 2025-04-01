@@ -1,8 +1,10 @@
+from celery import chain, group
 from django.core.management.base import BaseCommand
 
 from entries.models import Entry
 from notes.models import Note
 from entries.models import Relation
+from notes.processor.entry_population_task import EntryPopulationTask
 from notes.processor.smart_linker_task import SmartLinkerTask
 
 
@@ -22,5 +24,6 @@ class Command(BaseCommand):
         Relation.objects.all().delete()
 
         for i in Note.objects.all():
-            task, _ = SmartLinkerTask(None).run(i, [])
-            task.apply_async()
+            creation_task, _ = EntryPopulationTask(None).run(i, [])
+            linker_task, _ = SmartLinkerTask(None).run(i, [])
+            chain(creation_task, linker_task).apply_async()

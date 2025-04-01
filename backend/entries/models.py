@@ -37,9 +37,9 @@ fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False
 
 
 class Edge(LifecycleModel):
-    id = models.UUIDField(primary_key=True)
-    src = models.UUIDField()
-    dst = models.UUIDField()
+    id = models.CharField(primary_key=True)
+    src = models.BigIntegerField()
+    dst = models.BigIntegerField()
 
     objects = EdgeManager()
 
@@ -235,8 +235,9 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
 
 
 class Entry(LifecycleModel, LoggableModelMixin):
-    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    id = models.BigAutoField(primary_key=True)
     is_public: models.BooleanField = models.BooleanField(default=False)
+
     entry_class: models.ForeignKey[uuid.UUID, EntryClass] = models.ForeignKey(
         EntryClass,
         on_delete=models.CASCADE,

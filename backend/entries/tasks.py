@@ -184,8 +184,6 @@ def refresh_edges_materialized_view():
     """
     with connection.cursor() as cursor:
         cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY edges;")
-        cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY node_map;")
-        cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY edges_with_ids;")
 
     entryids = Entry.objects.values_list("id", flat=True)
     degrees = [None for _ in range(len(entryids))]

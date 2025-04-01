@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
             CREATE MATERIALIZED VIEW edges AS
             (
                 SELECT
-                    md5(LEAST(e1_id::text, e2_id::text) || GREATEST(e1_id::text, e2_id::text))::uuid AS id,
+                    CAST(LEAST(e1_id, e2_id) AS TEXT) || '-' || CAST(GREATEST(e2_id, e1_id) AS TEXT)  AS id,
                     e1_id AS src,
                     e2_id AS dst,
                     BIT_AND(access_vector) AS access_vector,
@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
             UNION ALL
             (
                 SELECT
-                    md5(GREATEST(e1_id::text, e2_id::text) || LEAST(e1_id::text, e2_id::text))::uuid AS id,
+                    CAST(GREATEST(e1_id, e2_id) AS TEXT) || '-' || CAST(LEAST(e2_id, e1_id) AS TEXT)  AS id,
                     e2_id AS src,
                     e1_id AS dst,
                     BIT_AND(access_vector) AS access_vector,
