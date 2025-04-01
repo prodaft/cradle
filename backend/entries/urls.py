@@ -18,7 +18,7 @@ urlpatterns = [
     ),
     path("entities/", entity_views.EntityList.as_view(), name="entity_list"),
     path(
-        "entities/<uuid:entity_id>/",
+        "entities/<int:entity_id>/",
         entity_views.EntityDetail.as_view(),
         name="entity_detail",
     ),

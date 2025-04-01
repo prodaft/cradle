@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
             CREATE MATERIALIZED VIEW edges AS
             (
                 SELECT
-                    ((e1_id::bigint << 32) | e2_id::bigint) AS unique_id,
+                    ((e1_id::bigint << 32) | e2_id::bigint) AS id,
                     e1_id AS src,
                     e2_id AS dst,
                     BIT_AND(access_vector) AS access_vector,
@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
             UNION ALL
             (
                 SELECT
-                    ((e2_id::bigint << 32) | e1_id::bigint) AS unique_id,
+                    ((e2_id::bigint << 32) | e1_id::bigint) AS id,
                     e2_id AS src,
                     e1_id AS dst,
                     BIT_AND(access_vector) AS access_vector,

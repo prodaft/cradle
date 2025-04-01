@@ -92,6 +92,7 @@ const PaginatedGraphFetch = forwardRef(
     } finally {
       setLoading(false);
       setIsGraphFetching(false);
+      setCurrentPage(currentPage + 1);
     }
   };
 
@@ -129,28 +130,24 @@ const PaginatedGraphFetch = forwardRef(
   };
 
   return (
-    <div className="p-2 mt-2">
-      <div className="flex items-center space-x-3 w-full">
-        <button
-          type="button"
-          onClick={handleToggleFetching}
-          className="btn btn flex items-center tooltip tooltip-bottom"
-          data-tooltip={isGraphFetching ? 'Stop fetching data' : 'Fetch graph data'}
-          disabled={loading && !isGraphFetching}
-        >
-          {isGraphFetching ? (
-            <>
-              <PauseSolid className="text-primary mr-1 w-4" /> Stop
-            </>
-          ) : (
-            <>
-              <PlaySolid className="text-primary mr-1 w-4" /> Fetch
-            </>
-          )}
-        </button>
+    <div className="p-2 mt-2 w-full">
+      <div className="flex flex-wrap items-center gap-3 w-full mb-2">
+        <div className="flex items-center flex-grow">
+          <span className="text-xs text-gray-500 mr-1">Date:</span>
+          <Datepicker
+            value={{
+              startDate: parseISO(dateRange.startDate),
+              endDate: parseISO(dateRange.endDate),
+            }}
+            onChange={handleDateRangeChange}
+            inputClassName="input input-block py-0 px-2 text-sm flex-grow !max-w-full w-full"
+            toggleClassName="hidden"
+            disabled={isGraphFetching}
+          />
+        </div>
 
         <div className="flex items-center space-x-1">
-          <span className="text-xs text-gray-500">Size:</span>
+          <span className="text-xs text-gray-500">Page Size:</span>
           <select
             value={pageSize}
             onChange={handlePageSizeChange}
@@ -164,28 +161,34 @@ const PaginatedGraphFetch = forwardRef(
           </select>
         </div>
 
-        <div className="flex items-center">
-          <span className="text-xs text-gray-500 mr-1">Date:</span>
-          <Datepicker
-            value={{
-              startDate: parseISO(dateRange.startDate),
-              endDate: parseISO(dateRange.endDate),
-            }}
-            onChange={handleDateRangeChange}
-            inputClassName="input input-block py-0 px-2 text-sm flex-grow !max-w-full w-full"
-            toggleClassName="hidden"
-            disabled={isGraphFetching}
-          />
-        </div>
-      </div>
+        <div className="flex items-center space-x-2">
 
-      {loading && !isGraphFetching && (
+          <div className="px-2 py-1 rounded-md text-sm">
+            Page {currentPage} {hasNextPage ? "" : "(Last)"}
+          </div>
+
+        </div>
+        <button
+          type="button"
+          onClick={handleToggleFetching}
+          className="btn btn flex items-center tooltip tooltip-bottom"
+          data-tooltip='Fetch graph data'
+          disabled={loading && !isGraphFetching && hasNextPage}
+        >
+          {isGraphFetching ? (
         <div className="flex justify-center py-1">
           <div className="spinner-dot-pulse">
             <div className="spinner-pulse-dot"></div>
           </div>
         </div>
-      )}
+          ) : (
+            <>
+              <PlaySolid className="text-primary mr-1 w-4" /> Fetch
+            </>
+          )}
+        </button>
+
+      </div>
 
       <AlertBox alert={alert} />
     </div>

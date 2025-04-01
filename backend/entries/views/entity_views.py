@@ -70,7 +70,7 @@ class EntityDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasEntryManagerRole]
 
-    def get(self, request: Request, entity_id: UUID) -> Response:
+    def get(self, request: Request, entity_id: int) -> Response:
         if not (
             request.user.is_cradle_admin
             or Access.objects.get_accessible_entity_ids(request.user)
