@@ -8,7 +8,6 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from access.enums import AccessType
 from access.models import Access
-from entries.exceptions import DuplicateEntryException
 from user.permissions import HasEntryManagerRole
 
 from ..serializers import EntitySerializer, EntryResponseSerializer

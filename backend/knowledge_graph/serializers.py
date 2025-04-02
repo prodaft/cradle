@@ -1,12 +1,9 @@
-from django.db import connection
 from rest_framework import serializers
-from typing import Any
 from access.enums import AccessType
 from access.models import Access
 from entries.enums import EntryType
 from entries.models import Entry, Edge
 from entries.serializers import EntryListCompressedTreeSerializer
-from query.utils import parse_query
 
 
 class PathfindQuery(serializers.Serializer):

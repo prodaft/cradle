@@ -1,5 +1,3 @@
-from logging import exception
-from rest_framework.fields import logger
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
 from intelio.enums import DigestStatus

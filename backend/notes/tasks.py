@@ -12,6 +12,7 @@ from core.decorators import distributed_lock
 from django.conf import settings
 from notes.exceptions import EntriesDoNotExistException, EntryClassesDoNotExistException
 from entries.models import Entry, EntryClass
+from entries.enums import RelationReason
 
 
 @shared_task
@@ -58,6 +59,7 @@ def smart_linker_task(note_id):
                     e2=dst,
                     content_object=note,
                     access_vector=note.access_vector,
+                    reason=RelationReason.NOTE,
                 )
                 for src, dst in pairs_resolved
             ]
@@ -183,6 +185,7 @@ def connect_aliases(note_id, user_id=None):
                     e2=alias,
                     content_object=note,
                     access_vector=note.access_vector,
+                    reason=RelationReason.NOTE,
                 )
             )
 

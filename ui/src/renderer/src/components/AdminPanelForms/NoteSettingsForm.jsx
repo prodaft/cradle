@@ -126,7 +126,7 @@ export default function NoteSettingsForm() {
                     Note Settings
                 </h1>
                 <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
-                    <form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
+                    <form onSubmit={handleSubmit(onSubmit)} className='space-y-6 mb-3'>
                         <Tabs tabClasses='tabs gap-1' perTabClass='tab-pill'>
                             <Tab title='Settings'>
                                 <div className='flex flex-col gap-3 pt-2'>
@@ -188,8 +188,8 @@ export default function NoteSettingsForm() {
                                 </div>
                             </Tab>
                         </Tabs>
-                        <AlertBox alert={alert} />
                     </form>
+                    <AlertBox alert={alert} />
                 </div>
             </div>
         </div>

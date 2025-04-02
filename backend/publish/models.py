@@ -1,6 +1,5 @@
 import uuid
 from django.db import models
-from file_transfer.models import FileReference
 from logs.models import LoggableModelMixin
 from notes.models import Note
 from user.models import CradleUser

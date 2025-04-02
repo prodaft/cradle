@@ -2,7 +2,6 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -11,7 +10,6 @@ from core.pagination import TotalPagesPagination
 from entries.enums import RelationReason
 from ..models import Relation
 from ..serializers import RelationSerializer
-from uuid import UUID
 
 
 class RelationListView(APIView):

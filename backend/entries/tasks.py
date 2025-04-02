@@ -1,6 +1,4 @@
-from os import access
 from celery import group, shared_task
-from core.fields import BitStringField
 from entries.enums import EntryType
 from core.decorators import distributed_lock
 from entries.models import Edge, Entry, Relation

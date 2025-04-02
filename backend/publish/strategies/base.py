@@ -1,8 +1,7 @@
-from typing import Dict, List, Optional
+from typing import Dict
 from entries.models import Entry, EntryClass
 from notes.markdown.to_markdown import Anonymizer, anonymize_markdown
 from notes.models import Note
-from user.models import CradleUser
 from ..models import PublishedReport
 
 

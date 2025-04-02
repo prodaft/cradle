@@ -27,6 +27,7 @@ import { useSortable } from '@dnd-kit/sortable';
  */
 const Note = forwardRef(function({id, note, setAlert, actions = [], ghost = false, ...props}, ref) {
     const navigate = useNavigate();
+    const [hidden, setHidden] = useState(false);
     const location = useLocation();
     const [parsedContent, setParsedContent] = useState('');
 
@@ -40,6 +41,8 @@ const Note = forwardRef(function({id, note, setAlert, actions = [], ghost = fals
     const style = {
       opacity: ghost ? 0.5 : 1,
     };
+
+    if (hidden) return null;
 
     return (
         <div ref={ref} {...props}>
@@ -79,7 +82,7 @@ const Note = forwardRef(function({id, note, setAlert, actions = [], ghost = fals
                     </div>
                     <div className='flex items-center'>
                         {actions.map(({ Component, props }, index) => (
-                            <Component key={index} {...props} note={note} />
+                            <Component key={index} {...props} note={note} setHidden={setHidden}/>
                         ))}
                     </div>
                 </div>

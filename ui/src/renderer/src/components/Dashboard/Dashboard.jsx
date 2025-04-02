@@ -40,16 +40,7 @@ export default function Dashboard() {
     const { name } = useParams();
     const [entryMissing, setEntryMissing] = useState(false);
     const [contentObject, setContentObject] = useState(null);
-    const [entryTypesLevel, setEntryTypesLevel] = useState({});
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const [searchFilters, setSearchFilters] = useState({
-        content: '',
-        author__username: '',
-    });
-    const [submittedFilters, setSubmittedFilters] = useState({
-        content: '',
-        author__username: '',
-    });
     const navigate = useNavigate();
     const auth = useAuth();
     const dashboard = useRef(null);
@@ -61,21 +52,12 @@ export default function Dashboard() {
         setEntryMissing(false);
         setAlert('');
         setContentObject(null);
-        setEntryTypesLevel({});
         queryEntries({ subtype, name_exact: name }).then((response) => {
             if (response.data.count != 1) {
                 setEntryMissing(true);
                 return;
             }
             let obj = response.data.results[0];
-            setSearchFilters((prev) => ({
-                ...prev,
-                ['references']: obj.id,
-            }));
-            setSubmittedFilters((prev) => ({
-                ...prev,
-                ['references']: obj.id,
-            }));
 
             dashboard.current.scrollTo(0, 0);
             setContentObject(obj);
@@ -138,16 +120,6 @@ export default function Dashboard() {
                 }),
             )
             .catch(displayError(setAlert, navigate));
-    };
-
-    const handleSearchSubmit = (e) => {
-        e.preventDefault();
-        setSubmittedFilters(searchFilters);
-    };
-
-    const handleSearchChange = (e) => {
-        const { name, value } = e.target;
-        setSearchFilters((prev) => ({ ...prev, [name]: value }));
     };
 
     if (entryMissing) {

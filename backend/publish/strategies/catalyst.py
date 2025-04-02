@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Iterable, List
+from typing import Dict, Optional, Iterable
 import requests
 from notes.models import Note
 from publish.models import PublishedReport, ReportStatus

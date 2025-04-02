@@ -5,7 +5,7 @@ from django.utils import timezone
 from django_lifecycle import AFTER_CREATE, AFTER_UPDATE, LifecycleModel, hook
 from django_lifecycle.conditions import WhenFieldHasChanged
 from django_lifecycle.mixins import LifecycleModelMixin, transaction
-from django.db.models import F, Q, ExpressionWrapper, Value
+from django.db.models import Q
 
 from core.fields import BitStringField
 from logs.models import LoggableModelMixin

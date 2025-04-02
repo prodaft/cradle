@@ -1,22 +1,13 @@
 import logging
-from io import BytesIO
 
-import requests
 from celery import shared_task
 
-from entries.enums import EntryType
-from entries.models import Entry, EntryClass
-from file_transfer.models import FileReference
-from file_transfer.utils import MinioClient
-from notes.models import Note
-from notes.processor.task_scheduler import TaskScheduler
 from notifications.models import (
     ReportProcessingErrorNotification,
     ReportRenderNotification,
 )
 from publish.models import PublishedReport, ReportStatus
 from publish.strategies import PUBLISH_STRATEGIES
-from user.models import CradleUser
 
 # Configure logger for this module.
 logger = logging.getLogger(__name__)

@@ -1,6 +1,5 @@
 from django.db import models
 from django.core.cache import cache
-from django.conf import settings as django_settings
 
 
 class Setting(models.Model):

@@ -1,12 +1,29 @@
 # vi: ft=dockerfile
 
-FROM python:3.11
+FROM debian:bookworm
+
+# Set environment variables to avoid prompts during install
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Set the working directory
 WORKDIR /app
 
-# Install pipenv
-RUN pip install pipenv
+# Install required system packages and pipenv
+RUN apt-get update && \
+    apt-get install -y \
+    python3 \
+    python3-venv \
+    python3-dev \
+    python3-pip \
+    gdal-bin \
+    python3-graph-tool \
+    build-essential \
+    git \
+    curl \
+    pipenv \
+    libpq-dev
+
+RUN rm -rf /var/lib/apt/lists/*
 
 # Copy and install Python dependencies
 COPY ./backend/Pipfile .
@@ -14,22 +31,15 @@ RUN pipenv lock
 RUN pipenv sync
 RUN pipenv install gunicorn
 
-RUN apt-get update
-RUN apt-get install python3-graph-tool
-
-RUN rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
+# Copy the application code
 COPY ./backend/ .
 
 # Copy Docker-specific settings
 COPY ./backend/cradle/settings_docker.py ./cradle/settings.py
 
+# Copy and make the entrypoint script executable
 COPY ./docker/entrypoint_backend.sh .
-
-# Make the entrypoint script executable
 RUN chmod +x ./entrypoint_backend.sh
 
-# Start Nginx and the Gunicorn application server
+# Entrypoint
 CMD ./entrypoint_backend.sh

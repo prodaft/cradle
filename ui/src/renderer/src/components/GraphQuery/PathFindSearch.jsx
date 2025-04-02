@@ -23,8 +23,6 @@ const GraphQuerySchema = Yup.object().shape({
 const PathFindSearch = forwardRef(
     ({ initialValues, processNewNode, addEdge }, graphRef) => {
         // Get search params hook from react-router-dom.
-        const [searchParams, setSearchParams] = useSearchParams();
-
         // Form state
         const [formValues, setFormValues] = useState(initialValues);
         const [errors, setErrors] = useState({});
@@ -68,12 +66,6 @@ const PathFindSearch = forwardRef(
             }
         };
 
-        const handleInputChange = (e) => {
-            const { name, value } = e.target;
-            setFormValues((prev) => ({ ...prev, [name]: value }));
-            setTouched((prev) => ({ ...prev, [name]: true }));
-        };
-
         const setFieldValue = (name, value) => {
             setFormValues((prev) => ({ ...prev, [name]: value }));
             setTouched((prev) => ({ ...prev, [name]: true }));
@@ -108,13 +100,9 @@ const PathFindSearch = forwardRef(
             const isValid = await validateForm();
             if (isValid) {
                 // Update query parameters with current form values.
-                setSearchParams({
-                    src: formValues.src,
-                    dst: JSON.stringify(formValues.dst),
-                    startDate: formValues.startDate,
-                    endDate: formValues.endDate,
-                });
                 setIsSubmitting(true);
+
+                console.log(graphRef.current)
                 try {
                     const response = await graphPathFind({
                         src: formValues.src,

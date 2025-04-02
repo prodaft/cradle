@@ -27,32 +27,24 @@ import NotesList from '../NotesList/NotesList';
 import { queryEntries } from '../../services/queryService/queryService';
 import Publishable from '../NoteActions/Publishable';
 import { Tabs, Tab } from '../Tabs/Tabs';
+import DeleteNote from '../NoteActions/DeleteNote';
 
-export default function Notes({setAlert, obj}) {
-    const { subtype } = useParams();
-    const { name } = useParams();
+export default function Notes({ setAlert, obj }) {
     const [searchFilters, setSearchFilters] = useState({
         content: '',
         author__username: '',
     });
-    const [submittedFilters, setSubmittedFilters] = useState({
-        content: '',
-        author__username: '',
-    });
+    const [submittedFilters, setSubmittedFilters] = useState(null);
 
     // On load, fetch the dashboard data for the entry
     useEffect(() => {
-        if (!obj) return
-        queryEntries({ subtype, name_exact: name }).then((response) => {
-            setSearchFilters((prev) => ({
-                ...prev,
-                ['linked_to']: obj.id,
-            }));
-            setSubmittedFilters((prev) => ({
-                ...prev,
-                ['linked_to']: obj.id,
-            }));
-        });
+        if (!obj) return;
+        setSearchFilters((prev) => ({
+            ...prev,
+            ['linked_to']: obj.id,
+        }));
+
+        setSubmittedFilters({ ...searchFilters, ['linked_to']: obj.id });
     }, [setAlert, obj]);
 
     const handleSearchSubmit = (e) => {
@@ -95,10 +87,15 @@ export default function Notes({setAlert, obj}) {
                     </form>
                 </div>
 
-                <NotesList
-                    query={submittedFilters}
-                    noteActions={[{ Component: Publishable, props: {} }]}
-                />
+                {submittedFilters && (
+                    <NotesList
+                        query={submittedFilters}
+                        noteActions={[
+                            { Component: Publishable, props: {} },
+                            { Component: DeleteNote, props: { setAlert } },
+                        ]}
+                    />
+                )}
             </div>
         </>
     );

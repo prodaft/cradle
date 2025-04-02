@@ -8,4 +8,7 @@ class Migration(migrations.Migration):
         ("knowledge_graph", "0001_graph_functions"),
     ]
 
-    operations = [migrations.RunSQL("CREATE EXTENSION pgrouting;")]
+    operations = [
+        migrations.RunSQL("ALTER DATABASE cradle REFRESH COLLATION VERSION"),
+        migrations.RunSQL("CREATE EXTENSION IF NOT EXISTS pgrouting;"),
+    ]

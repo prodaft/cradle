@@ -14,7 +14,6 @@ const PaginatedGraphFetch = forwardRef(
   const [hasNextPage, setHasNextPage] = useState(true);
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-  const fetchingCancelled = useRef(false);
 
   // Add date range state
   const [dateRange, setDateRange] = useState({
@@ -22,16 +21,17 @@ const PaginatedGraphFetch = forwardRef(
     endDate: format(new Date(), 'yyyy-MM-dd') // today
   });
 
-  const fetchGraphPage = async (page) => {
+  const fetchGraphPage = async () => {
     setLoading(true);
     setIsGraphFetching(true);
     let has_next = false;
 
+    console.log(graphRef.current)
+
     try {
-      if (fetchingCancelled.current) return;
 
       // Include date range in the fetch request
-      const response = await fetchGraph(page, pageSize, dateRange.startDate, dateRange.endDate);
+      const response = await fetchGraph(currentPage, pageSize, dateRange.startDate, dateRange.endDate);
       has_next = response.data.has_next;
       const { entries, relations, colors } = response.data.results;
 
@@ -84,6 +84,10 @@ const PaginatedGraphFetch = forwardRef(
       addEdge(edgeCount);
       graphRef.current.fit(graphRef.current.elements(), 100);
 
+      setAlert({
+        show: false,
+      });
+
     } catch (error) {
       setAlert({
         show: true,
@@ -104,16 +108,6 @@ const PaginatedGraphFetch = forwardRef(
     setPageSize(newSize);
     setCurrentPage(1);
     setHasNextPage(true);
-  };
-
-  const handleToggleFetching = () => {
-    if (isGraphFetching) {
-      fetchingCancelled.current = true;
-      setIsGraphFetching(false);
-    } else {
-      fetchingCancelled.current = false;
-      fetchGraphPage(currentPage);
-    }
   };
 
   const handleDateRangeChange = (value) => {
@@ -163,7 +157,7 @@ const PaginatedGraphFetch = forwardRef(
 
         <button
           type="button"
-          onClick={handleToggleFetching}
+          onClick={fetchGraphPage}
           className="btn btn flex items-center tooltip tooltip-bottom"
           data-tooltip='Fetch graph data'
           disabled={loading && !isGraphFetching && hasNextPage}

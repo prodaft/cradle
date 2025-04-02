@@ -4,8 +4,7 @@ import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import NotesList from '../NotesList/NotesList';
 import { useSearchParams } from 'react-router-dom';
 import Publishable from '../NoteActions/Publishable';
-import NavbarButton from '../NavbarButton/NavbarButton';
-import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
+import DeleteNote from '../NoteActions/DeleteNote';
 
 /**
  * Notes component
@@ -93,7 +92,10 @@ export default function Notes() {
 
                 <NotesList
                     query={submittedFilters}
-                    noteActions={[{ Component: Publishable, props: {} }]}
+                    noteActions={[
+                        { Component: Publishable, props: {setAlert} },
+                        { Component: DeleteNote, props: {setAlert} },
+                    ]}
                 />
             </div>
         </div>

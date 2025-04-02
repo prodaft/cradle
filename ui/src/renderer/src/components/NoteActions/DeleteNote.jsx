@@ -1,11 +1,11 @@
-import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
-import { Link, useNavigate } from 'react-router-dom';
-import { useCallback, useEffect, useState } from 'react';
-import Preview from '../Preview/Preview';
-import { setPublishable } from '../../services/notesService/notesService';
+import { useNavigate } from 'react-router-dom';
+import { useCallback } from 'react';
+import { Trash, EditPencil } from 'iconoir-react/regular';
+
+import { deleteNote } from '../../services/notesService/notesService';
+import { useModal } from '../../contexts/ModalContext/ModalContext';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { useLocation } from 'react-router-dom';
-import ReferenceTree from '../ReferenceTree/ReferenceTree';
 
 /**
  * Note component - This component is used to display a note on the dashboard.
@@ -21,42 +21,38 @@ import ReferenceTree from '../ReferenceTree/ReferenceTree';
  * @param {React.ReactNode} props.customControls - Custom controls to display in the header
  * @param {boolean} props.hideDefaultControls - Whether to hide the default controls
  */
-export default function DeleteNote({ note, setAlert }) {
-    const [isPublishable, setIsPublishable] = useState(note.publishable);
+export default function DeleteNote({ note, setAlert, setHidden }) {
     const navigate = useNavigate();
+    const { setModal } = useModal();
 
-    const handleTogglePublishable = useCallback(
-        (noteId) => {
-            setPublishable(noteId, !isPublishable)
+    const handleDelete = () => {
+            deleteNote(note.id)
                 .then((response) => {
+                    console.log(response)
                     if (response.status === 200) {
-                        setIsPublishable(!isPublishable);
+                        setAlert({
+                            show: true,
+                            color: 'green',
+                            message: 'Note deleted successfully',
+                        });
+                        setHidden(true);
                     }
                 })
                 .catch(displayError(setAlert, navigate));
-        },
-        [isPublishable, setIsPublishable, setAlert, navigate],
-    );
-
-    useEffect(() => {
-        note.publishable = isPublishable;
-    }, [isPublishable, note]);
+        }
 
     return (
-        <span className='pb-1 space-x-1 flex flex-row'>
-            <label
-                htmlFor={`publishable-switch-${note.id}`}
-                className='text-xs dark:text-zinc-300 hover:cursor-pointer'
-            >
-                Publishable
-            </label>
-            <input
-                checked={isPublishable}
-                id={`publishable-switch-${note.id}`}
-                type='checkbox'
-                className='switch switch-ghost-primary'
-                onChange={() => handleTogglePublishable(note.id)}
-            />
+        <span className='pb-1 space-x-1 flex flex-row pl-2'>
+            <button className=''>
+                <Trash height={24}
+                    onClick={() =>
+                        setModal(ConfirmDeletionModal, {
+                            onConfirm: handleDelete,
+                            text: 'Are you sure you want to delete this note? This action is irreversible.',
+                        })
+                    }
+                />
+            </button>
         </span>
     );
 }

@@ -441,7 +441,7 @@ export default function UploadExternal({ setAlert }) {
                                         title: e.target.value,
                                     }))
                                 }
-                                className='mt-1 w-full input input-block'
+                                className='w-full input input-block'
                             />
                             {touched.title && errors.title && (
                                 <p className='mt-1 text-xs text-red-600'>
@@ -547,7 +547,7 @@ export default function UploadExternal({ setAlert }) {
                                     </>
                                 ) : (
                                     <>
-                                        <Upload className='mr-2' />
+                                        <Upload className='mr-2 text-cradle2' />
                                         Upload
                                     </>
                                 )}

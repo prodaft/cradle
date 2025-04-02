@@ -1,6 +1,5 @@
 from celery import shared_task
 
-from intelio.models.base import BaseDigest
 
 
 @shared_task

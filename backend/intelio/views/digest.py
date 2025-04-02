@@ -1,4 +1,3 @@
-from django.conf import settings
 from django_lifecycle.mixins import transaction
 from rest_framework.parsers import MultiPartParser
 from rest_framework.views import APIView
@@ -14,11 +13,9 @@ from ..models.base import BaseDigest
 
 from ..serializers import BaseDigestSerializer
 from ..tasks import start_digest
-from user.permissions import HasAdminRole
 
 from django.shortcuts import get_object_or_404
 
-import os
 
 
 class DigestSubclassesAPIView(APIView):

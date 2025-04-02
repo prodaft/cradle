@@ -156,9 +156,6 @@ services:
       RABBITMQ_DEFAULT_USER: cradle
       RABBITMQ_DEFAULT_PASS: cradle
     networks:
-      default:
-        ipv4_address: 192.168.31.44
-    networks:
       cradle_demo_network:
         ipv4_address: 192.168.42.11
 

@@ -18,7 +18,12 @@ from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiResponse
 from rest_framework.permissions import IsAdminUser
 from .settings import cradle_settings
 from .models import Setting
-from entries.tasks import refresh_edges_materialized_view, simulate_graph
+from entries.tasks import (
+    refresh_edges_materialized_view,
+    simulate_graph,
+    update_accesses,
+)
+from entries.models import Entry
 import inspect
 
 
@@ -162,3 +167,11 @@ class ActionView(APIView):
     def action_recalculateNodePositions(self, request, *args, **kwargs):
         simulate_graph.apply_async()
         return Response({"message": "Started simulating graph."})
+
+    def action_propagateAccessVectors(self, request, *args, **kwargs):
+        entities = Entry.entities.all()
+
+        for entity in entities:
+            update_accesses.apply_async(args=(entity.id,))
+
+        return Response({"message": "Propagating the access vectors for all entities"})

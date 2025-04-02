@@ -1,8 +1,6 @@
 import logging
-import uuid
 import bleach
 from io import BytesIO
-from datetime import timedelta
 from typing import List
 
 from django.template.loader import get_template
@@ -12,7 +10,6 @@ from notes.models import Note
 from notes.markdown.to_html import markdown_to_html
 from entries.models import EntryClass
 from publish.models import PublishedReport, ReportStatus
-from user.models import CradleUser
 from file_transfer.utils import MinioClient
 from .base import BasePublishStrategy
 

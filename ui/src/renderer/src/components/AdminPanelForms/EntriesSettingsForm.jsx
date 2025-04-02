@@ -38,7 +38,7 @@ export default function EntriesManagement() {
                   Entry Settings
                 </h1>
                 <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
-                    <div className='flex flex-col gap-4'>
+                    <div className='flex flex-col gap-4 mb-3'>
                         <button
                             type='button'
                             className='btn btn-outline'

@@ -1,4 +1,3 @@
-from django.db.models import F, Q, ExpressionWrapper, Value
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -8,11 +7,10 @@ from rest_framework.permissions import IsAuthenticated
 
 from access.enums import AccessType
 from access.models import Access
-from core.fields import BitStringField
-from core.pagination import LazyPaginator, TotalPagesPagination
+from core.pagination import LazyPaginator
 from entries.enums import EntryType
-from entries.models import Edge, Entry, Relation
-from entries.serializers import EntryListCompressedTreeSerializer, EntrySerializer
+from entries.models import Edge, Entry
+from entries.serializers import EntrySerializer
 from knowledge_graph.utils import get_edges_for_paths, get_neighbors
 from query.filters import EntryFilter
 from query.utils import parse_query

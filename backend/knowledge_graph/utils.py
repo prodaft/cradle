@@ -1,10 +1,8 @@
 from typing import List
-import uuid
 from django.db import connection
-from django.db.models import F, ExpressionWrapper, Value
 
 from core.fields import BitStringField
-from entries.models import Edge, Entry, Relation
+from entries.models import Edge, Entry
 
 
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)

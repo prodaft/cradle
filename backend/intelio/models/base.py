@@ -1,12 +1,9 @@
 from typing import Any
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
-from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
-from django.db.models.fields.related import ForeignKey
 from core.fields import BitStringField
-from entries.enums import EntryType
 from entries.models import EntryClass, Entry
 from entries.models import Relation
 import os
@@ -17,7 +14,6 @@ from django_lifecycle import (
     hook,
 )
 
-from django.utils.translation import gettext_lazy as _
 
 from ..enums import EnrichmentStrategy, DigestStatus
 import uuid

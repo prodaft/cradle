@@ -176,7 +176,7 @@ export default function AccountSettings({ target, isEdit = true }) {
         <>
             <div className='flex items-center justify-center min-h-screen'>
                 <div className='w-full max-w-2xl px-4'>
-                    <h1 className='text-center text-xl font-bold text-cradle2 mb-4'>
+                    <h1 className='text-center text-xl font-bold text-primary mb-4'>
                         {isEdit ? 'Account Settings' : 'Add New User'}
                     </h1>
                     <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>

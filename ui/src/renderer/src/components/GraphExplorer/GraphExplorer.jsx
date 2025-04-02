@@ -1,8 +1,6 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import 'tailwindcss/tailwind.css';
-import { Menu, RefreshDouble, Search } from 'iconoir-react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import { useNavigate } from 'react-router-dom';
 import Graph from '../Graph/Graph';
 import GraphQuery from '../GraphQuery/GraphQuery';
 import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';

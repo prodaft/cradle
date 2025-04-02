@@ -10,9 +10,13 @@ const Graph = forwardRef(function (
     const { isDarkMode } = useTheme();
     const navigate = useNavigate();
     const containerRef = useRef(null);
+    console.log("CCCCCCC")
+    console.log(cyRef)
 
     useEffect(() => {
+        console.log("AAAAA")
         if (!containerRef.current) return;
+        console.log("BBBBB")
 
         const cy = cytoscape({
             container: containerRef.current,
@@ -67,7 +71,7 @@ const Graph = forwardRef(function (
         return () => {
             cy.destroy();
         };
-    }, [navigate, cyRef]);
+    }, [navigate, cyRef, containerRef]);
 
     return (
         <div

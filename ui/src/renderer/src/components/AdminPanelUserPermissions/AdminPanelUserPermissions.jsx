@@ -64,11 +64,12 @@ export default function AdminPanelUserPermissions({ username, id }) {
             .then((response) => {
                 if (response.status === 200) {
                     let permissions = response.data;
+
                     setEntities(
                         permissions.map((c) => {
                             return (
                                 <AdminPanelPermissionCard
-                                    key={c['id']}
+                                    key={`${c['id']}-${id}`}
                                     userId={id}
                                     entityName={c['name']}
                                     entityId={c['id']}

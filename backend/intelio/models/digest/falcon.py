@@ -1,14 +1,11 @@
 from datetime import datetime
 from django.utils import timezone
-from rest_framework.fields import logger
 from access.enums import AccessType
 from access.models import Access
-from entries.enums import EntryType
-from entries.models import Entry, EntryClass
+from entries.models import Entry
 from intelio.enums import DigestStatus
 from ...tasks.falcon import digest_chunk
 from ..mappings.falcon import FalconMapping
-from notes.processor.task_scheduler import TaskScheduler
 from ..base import BaseDigest
 from entries.models import Relation
 import json

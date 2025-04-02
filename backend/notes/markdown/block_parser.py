@@ -1,4 +1,3 @@
-import re
 from mistune.block_parser import BlockParser
 
 
