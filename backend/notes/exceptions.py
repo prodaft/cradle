@@ -21,10 +21,11 @@ class NoteIsEmptyException(APIException):
 class NotEnoughReferencesException(APIException):
     status_code = 400
 
-    default_detail = (
-        f"Note does not reference at least {cradle_settings.notes.min_entities} "
-        + f"entity and at least {cradle_settings.notes.min_entries} entries."
-    )
+    def __init__(self, *args, **kwargs):
+        self.default_detail = (
+            f"Note does not reference at least {cradle_settings.notes.min_entities} "
+            + f"entity and at least {cradle_settings.notes.min_entries} entries."
+        )
 
 
 class NoteDoesNotExistException(APIException):

@@ -396,15 +396,16 @@ class Entry(LifecycleModel, LoggableModelMixin):
     def reconnect_aliases(self):
         from entries.models import Relation
 
-        Relation.objects.filter(entity=self, reason=RelationReason.ALIAS).delete()
+        Relation.objects.filter(e1=self, reason=RelationReason.ALIAS).delete()
 
         for e in self.aliases.all():
             Relation.objects.create(
                 e1=self,
                 e2=e,
-                entity=e,
+                content_object=self,
                 reason=RelationReason.ALIAS,
                 access_vector=e.get_acvec(),
+                virtual=True,
             )
 
     def aliasqs(self, user):
@@ -452,6 +453,8 @@ class Relation(LifecycleModel):
     details: models.JSONField = models.JSONField(default=dict, blank=True)
 
     objects = RelationManager()
+
+    virtual = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         if self.e1.id > self.e2.id:
