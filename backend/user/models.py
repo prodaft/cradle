@@ -9,6 +9,7 @@ from django.db import models
 from access.enums import AccessType
 from logs.models import LoggableModelMixin
 from mail.models import ConfirmationMail, ResetPasswordMail
+from management.settings import cradle_settings
 
 from .managers import CradleUserManager
 from core.fields import BitStringField
@@ -38,17 +39,13 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         null=True, blank=True
     )
 
-    email_confirmed: models.BooleanField = models.BooleanField(
-        default=(not settings.REQUIRE_EMAIL_CONFIRMATION)
-    )
+    email_confirmed: models.BooleanField = models.BooleanField()
     email_confirmation_token: Optional[str] = models.TextField(null=True, blank=True)
     email_confirmation_token_expiry: Optional[models.DateTimeField] = (
         models.DateTimeField(null=True, blank=True)
     )
 
-    is_active: models.BooleanField = models.BooleanField(
-        default=(not settings.REQUIRE_ADMIN_ACTIVATION)
-    )
+    is_active: models.BooleanField = models.BooleanField()
 
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["password", "email"]

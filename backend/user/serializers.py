@@ -13,6 +13,8 @@ from .exceptions import (
 from typing import Dict, List, cast, Any
 from .utils.validators import password_validator
 
+from management.settings import cradle_settings
+
 
 class UserCreateSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
@@ -67,7 +69,11 @@ class UserCreateSerializer(serializers.ModelSerializer):
             The created User entry
         """
 
-        return CradleUser.objects.create_user(**validated_data)
+        return CradleUser.objects.create_user(
+            is_active=not cradle_settings.users.require_admin_confirmation,
+            email_confirmed=not cradle_settings.users.require_email_confirmation,
+            **validated_data,
+        )
 
     def update(self, instance: CradleUser, validated_data: dict[str, Any]):
         if validated_data.get("username", instance.username) != instance.username:

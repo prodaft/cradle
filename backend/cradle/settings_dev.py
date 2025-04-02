@@ -1,3 +1,15 @@
+from .settings_common import *
+
+# Ugly hack to get graph_tool working
+import sys
+import random
+
+global_base = random.__file__.removesuffix("random.py")
+
+global_packages = [global_base + "site-packages/", global_base + "dist-packages/"]
+
+sys.path += global_packages
+
 
 SECRET_KEY = "django-insecure-0in+njnc5mjf3xuh$yjy+$s@78-!9rh$qjzv@aqw+*c$zh&d*&"
 
@@ -24,14 +36,6 @@ MINIO_CONFIG = {
     "secret_key": "minio_admin",
     "secure": False,
 }
-
-ALLOW_REGISTRATION = True
-AUTOREGISTER_ARTIFACT_TYPES = False
-MIN_ENTRY_COUNT_PER_NOTE = 2
-MIN_ENTITY_COUNT_PER_NOTE = 1
-
-REQUIRE_EMAIL_CONFIRMATION = False
-REQUIRE_ADMIN_ACTIVATION = False
 
 RABBITMQ_URL = "amqp://cradle:cradle@192.168.31.44:5672//"
 REDIS_URL = "redis://192.168.31.42:6379/0"

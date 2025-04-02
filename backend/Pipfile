@@ -29,9 +29,9 @@ python-redis-lock = "*"
 diff-match-patch = "*"
 xeger = "*"
 bleach = "*"
-psycopg2 = "*"
 numpy = "*"
-networkx = "*"
+scipy = "*"
+psycopg2-binary = "*"
 
 [dev-packages]
 bump-my-version = "*"

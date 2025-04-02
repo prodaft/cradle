@@ -28,6 +28,7 @@ import AdminPanelCardManagement from '../AdminPanelCard/AdminPanelCardManagement
 import NoteSettingsForm from '../AdminPanelForms/NoteSettingsForm';
 import GraphSettingsForm from '../AdminPanelForms/GraphSettingsForm';
 import EntriesSettingsForm from '../AdminPanelForms/EntriesSettingsForm';
+import UserSettingsForm from '../AdminPanelForms/UserSettingsForm';
 
 /**
  * AdminPanel component - This component is used to display the AdminPanel.
@@ -268,6 +269,13 @@ export default function AdminPanel() {
                                                 setRightPane={setRightPane}
                                                 name='Entry Settings'
                                                 SettingComponent={EntriesSettingsForm}
+                                            />,
+                                            <AdminPanelCardManagement
+                                                id='users'
+                                                key='users'
+                                                setRightPane={setRightPane}
+                                                name='New User Settings'
+                                                SettingComponent={UserSettingsForm}
                                             />,
                                         ]}
                                     </AdminPanelSection>

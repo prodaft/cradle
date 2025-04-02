@@ -3,6 +3,16 @@ from environs import Env
 from .settings_common import *
 import sentry_sdk
 
+# Ugly hack to get graph_tool working
+import sys
+import random
+
+global_base = random.__file__.removesuffix("random.py")
+
+global_packages = [global_base + "site-packages/", global_base + "dist-packages/"]
+
+sys.path += global_packages
+
 # Initialize environs
 env = Env()
 env.read_env()  # Read environment variables from a .env file if present
@@ -42,11 +52,6 @@ MINIO_CONFIG = {
 
 MINIO_BACKEND_URL = env.str("MINIO_BACKEND_URL", MINIO_BACKEND_URL)
 
-ALLOW_REGISTRATION = env.bool("ALLOW_REGISTRATION", True)
-AUTOREGISTER_ARTIFACT_TYPES = env.bool("AUTOREGISTER_ARTIFACT_TYPES", False)
-MIN_ENTRY_COUNT_PER_NOTE = env.int("MIN_ENTRY_COUNT_PER_NOTE", 2)
-MIN_ENTITY_COUNT_PER_NOTE = env.int("MIN_ENTITY_COUNT_PER_NOTE", 1)
-
 BASE_URL = env.str("BASE_URL", "")
 STATIC_URL = env.str("STATIC_URL", "static/")
 FRONTEND_URL = env.str("FRONTEND_URL", "http://localhost:5173")
@@ -54,10 +59,6 @@ FRONTEND_URL = env.str("FRONTEND_URL", "http://localhost:5173")
 RABBITMQ_URL = env.str("RABBITMQ_URL", None)
 REDIS_URL = env.str("REDIS_URL", None)
 RESULT_BACKEND = RABBITMQ_URL if RABBITMQ_URL else REDIS_URL
-
-REQUIRE_EMAIL_CONFIRMATION = env.bool("REQUIRE_EMAIL_CONFIRMATION", False)
-REQUIRE_ADMIN_ACTIVATION = env.bool("REQUIRE_ADMIN_ACTIVATION", False)
-
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 

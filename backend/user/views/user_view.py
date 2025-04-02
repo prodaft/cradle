@@ -19,6 +19,7 @@ from ..serializers import (
     UserRetrieveSerializer,
 )
 from ..models import CradleUser
+from management.settings import cradle_settings
 
 
 @extend_schema_view(
@@ -58,6 +59,11 @@ class UserList(APIView):
         return Response(serializer.data)
 
     def post(self, request):
+        if not cradle_settings.users.allow_registration:
+            return Response(
+                "User registration is disabled.", status=status.HTTP_403_FORBIDDEN
+            )
+
         serializer = UserCreateSerializer(data=request.data)
 
         if serializer.is_valid():
@@ -65,6 +71,14 @@ class UserList(APIView):
                 email=serializer.validated_data["email"]
             ).exists():
                 user = serializer.save()
+                admins = CradleUser.objects.filter(role="admin")
+                with transaction.atomic():
+                    for i in admins:
+                        NewUserNotification.objects.create(
+                            user_id=i.id,
+                            new_user=user,
+                            message=f"A new user has registered: {user.username}",
+                        )
                 user.send_email_confirmation()
 
             return Response(status=status.HTTP_200_OK)
@@ -337,16 +351,6 @@ class EmailConfirm(APIView):
             user.email_confirmed = True
             user.email_confirmation_token = ""
             user.save()
-
-            admins = CradleUser.objects.filter(role="admin")
-
-            with transaction.atomic():
-                for i in admins:
-                    NewUserNotification.objects.create(
-                        user_id=i.id,
-                        new_user=user,
-                        message=f"A new user has registered: {user.username}",
-                    )
 
             return Response("Email confirmed.", status=status.HTTP_200_OK)
 

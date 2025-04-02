@@ -1,3 +1,4 @@
+from .settings_common import *
 
 SECRET_KEY = "django-insecure-0in+njnc5mjf3xuh$yjy+$s@78-!9rh$qjzv@aqw+*c$zh&d*&"
 
@@ -24,14 +25,6 @@ MINIO_CONFIG = {
     "secret_key": "",
     "secure": False,
 }
-
-ALLOW_REGISTRATION = True
-AUTOREGISTER_ARTIFACT_TYPES = False
-MIN_ENTRY_COUNT_PER_NOTE = 2
-MIN_ENTITY_COUNT_PER_NOTE = 1
-
-REQUIRE_EMAIL_CONFIRMATION = False
-REQUIRE_ADMIN_ACTIVATION = False
 
 BASE_URL = ""
 STATIC_URL = "static/"

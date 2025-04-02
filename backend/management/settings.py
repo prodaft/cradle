@@ -9,12 +9,32 @@ class NotesSettings(BaseSettingsSection):
         return self.get("min_entries", 2)
 
     @property
-    def min_entitites(self):
+    def min_entities(self):
         return self.get("min_entities", 1)
 
     @property
     def max_clique_size(self):
         return self.get("max_clique_size", 4)
+
+    @property
+    def allow_dynamic_entry_class_creation(self):
+        return self.get("allow_dynamic_entry_class_creation", False)
+
+
+class UserSettings(BaseSettingsSection):
+    prefix = "users"
+
+    @property
+    def require_admin_confirmation(self):
+        return self.get("require_admin_confirmation", True)
+
+    @property
+    def require_email_confirmation(self):
+        return self.get("require_email_confirmation", False)
+
+    @property
+    def allow_registration(self):
+        return self.get("allow_registration", False)
 
 
 class GraphSettings(BaseSettingsSection):
@@ -53,6 +73,7 @@ class CradleSettings:
     def __init__(self):
         self.notes = NotesSettings()
         self.graph = GraphSettings()
+        self.users = UserSettings()
 
 
 cradle_settings = CradleSettings()

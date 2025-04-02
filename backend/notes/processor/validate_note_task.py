@@ -15,6 +15,9 @@ from collections import defaultdict
 from django.conf import settings
 
 
+from management.settings import cradle_settings
+
+
 class ValidateNoteTask(BaseTask):
     @property
     def is_validator(self) -> bool:
@@ -92,13 +95,13 @@ class ValidateNoteTask(BaseTask):
                 else:
                     entries.append(entries_dict[entry_key])
 
-            elif settings.AUTOREGISTER_ARTIFACT_TYPES:
+            elif cradle_settings.notes.allow_dynamic_entry_class_creation:
                 total_count += 1
 
-        if entity_count < settings.MIN_ENTITY_COUNT_PER_NOTE:
+        if entity_count < cradle_settings.notes.min_entities:
             raise NotEnoughReferencesException()
 
-        if total_count < settings.MIN_ENTRY_COUNT_PER_NOTE:
+        if total_count < cradle_settings.notes.min_entries:
             raise NotEnoughReferencesException()
 
         return None, entries

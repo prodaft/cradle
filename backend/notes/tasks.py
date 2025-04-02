@@ -14,6 +14,8 @@ from notes.exceptions import EntriesDoNotExistException, EntryClassesDoNotExistE
 from entries.models import Entry, EntryClass
 from entries.enums import RelationReason
 
+from management.settings import cradle_settings
+
 
 @shared_task
 @distributed_lock("smartlinker_note_{note_id}", timeout=1800)
@@ -86,7 +88,7 @@ def entry_class_creation_task(note_id, user_id=None):
 
     for r in note.reference_tree.links():
         if not EntryClass.objects.filter(subtype=r.key).exists():
-            if not settings.AUTOREGISTER_ARTIFACT_TYPES:
+            if not cradle_settings.notes.allow_dynamic_entry_class_creation:
                 nonexistent_entries.add(r.key)
             else:
                 entry = EntryClass.objects.create(

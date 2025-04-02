@@ -103,14 +103,6 @@ def enrich_entry(entry_id, enricher_id):
 
 @shared_task
 def simulate_graph():
-    # Ugly hack to get graph_tool working
-    import sys
-    import random
-
-    global_packages = random.__file__.removesuffix("random.py") + "site-packages/"
-
-    sys.path.append(global_packages)
-
     from graph_tool.all import Graph, sfdp_layout
 
     # Assign random coordinates to entries with no location
