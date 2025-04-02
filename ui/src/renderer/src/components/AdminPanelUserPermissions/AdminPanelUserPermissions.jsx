@@ -98,17 +98,6 @@ export default function AdminPanelUserPermissions({ username, id }) {
                         className='w-full h-fit mt-1 flex flex-row justify-start items-center text-zinc-400 pb-2'
                     >
                         <button
-                            id='edit-user'
-                            data-testid='edit-user'
-                            name='edit-user'
-                            type='button'
-                            className='btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 tooltip tooltip-bottom tooltip-primary'
-                            data-tooltip={'Edit this user'}
-                            onClick={() => navigate(`/account/${id}`)}
-                        >
-                            Edit
-                        </button>
-                        <button
                             id='simulate-user'
                             data-testid='simulate-user'
                             name='simulate-user'

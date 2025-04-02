@@ -9,6 +9,7 @@ import AccountSettings from '../AccountSettings/AccountSettings';
 import AdminPanelUserPermissions from '../AdminPanelUserPermissions/AdminPanelUserPermissions';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
+import ActivityList from '../ActivityList/ActivityList';
 
 export default function AdminPanelCardUser({ name, id, onDelete, setRightPane }) {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
@@ -26,7 +27,11 @@ export default function AdminPanelCardUser({ name, id, onDelete, setRightPane })
     };
 
     const handleActivityClick = () => {
-        navigate(`/activity/${name}`);
+        setRightPane(<ActivityList
+          content_type='entryclass'
+          username={name}
+          name={name}
+          />);
     };
 
     const handleEditClick = () => {

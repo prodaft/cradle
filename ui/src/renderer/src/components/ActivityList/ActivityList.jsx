@@ -9,13 +9,7 @@ import Pagination from '../Pagination/Pagination';
 import Datepicker from 'react-tailwindcss-datepicker';
 import { parseISO, format } from 'date-fns';
 
-export default function ActivityList() {
-    const { username } = useParams();
-    const location = useLocation();
-    const queryParams = new URLSearchParams(location.search);
-    const objectId = queryParams.get('object_id');
-    const content_type = queryParams.get('content_type');
-
+export default function ActivityList({name, objectId, content_type, username}) {
     const [searchFilters, setSearchFilters] = useState({
         username: username || '',
         start_date: dayjs(0).format('YYYY-MM-DDTHH:mm'),
@@ -75,14 +69,15 @@ export default function ActivityList() {
             <div className='w-[95%] h-full flex flex-col p-6 space-y-3'>
                 <AlertDismissible alert={alert} setAlert={setAlert} />
 
-                <h1 className='text-5xl font-bold w-full break-all pb-2'>
-                    Search Event Logs
-                </h1>
-
                 <form
                     onSubmit={handleSearchSubmit}
-                    className='flex flex-wrap gap-4 items-end px-3 pb-2'
+                    className='flex flex-wrap gap-4 items-end pb-2'
                 >
+
+                <h1 className='text-xl font-bold w-full break-all text-'>
+                    Event Logs: <span className="text-zinc-500">{name}</span>
+                </h1>
+
                     {/* Username input */}
                     <div className='flex-1 min-w-[180px]'>
                         <input
@@ -146,7 +141,7 @@ export default function ActivityList() {
                     {/* Search button */}
                     <div className='flex-shrink-0'>
                         <button type='submit' className='btn flex items-center w-fit'>
-                            <Search className='mr-2' /> Search
+                            <Search className='mr-2 text-cradle2' /> Search
                         </button>
                     </div>
                 </form>

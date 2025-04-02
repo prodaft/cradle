@@ -1,5 +1,8 @@
+from collections.abc import Iterable
 from django.db import models
 from django import forms
+
+from entries.models import Entry
 from .models.base import EnricherSettings
 from .models.base import BaseEnricher
 

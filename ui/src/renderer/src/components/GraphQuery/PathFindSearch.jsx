@@ -172,6 +172,7 @@ const PathFindSearch = forwardRef(
                     graphRef.current.layout({ name: 'preset', animate: true });
                     addEdge(edgeCount);
                     graphRef.current.fit(graphRef.current.elements(), 100);
+                    setAlert({show:false});
                 } catch (error) {
                     setAlert({
                         show: true,
@@ -216,7 +217,7 @@ const PathFindSearch = forwardRef(
                                 }}
                                 fetchOptions={fetchEntries}
                                 isMulti={false}
-                                placeholder='Entry to start from'
+                                placeholder='Start'
                                 className='text-sm'
                             />
                             {showError('src')}
@@ -236,7 +237,7 @@ const PathFindSearch = forwardRef(
                                 }}
                                 fetchOptions={fetchEntries}
                                 isMulti={true}
-                                placeholder='Multiple destinations'
+                                placeholder='Destinations'
                                 className='text-sm'
                             />
                             {showError('dst')}

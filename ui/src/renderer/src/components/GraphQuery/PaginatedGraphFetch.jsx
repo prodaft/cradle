@@ -10,7 +10,7 @@ const PaginatedGraphFetch = forwardRef(
     ({ initialValues, processNewNode, addEdge }, graphRef) => {
   const [isGraphFetching, setIsGraphFetching] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(250);
   const [hasNextPage, setHasNextPage] = useState(true);
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
@@ -25,13 +25,14 @@ const PaginatedGraphFetch = forwardRef(
   const fetchGraphPage = async (page) => {
     setLoading(true);
     setIsGraphFetching(true);
+    let has_next = false;
 
     try {
       if (fetchingCancelled.current) return;
 
       // Include date range in the fetch request
       const response = await fetchGraph(page, pageSize, dateRange.startDate, dateRange.endDate);
-      const has_next = response.data.has_next;
+      has_next = response.data.has_next;
       const { entries, relations, colors } = response.data.results;
 
       setHasNextPage(has_next);
@@ -92,19 +93,17 @@ const PaginatedGraphFetch = forwardRef(
     } finally {
       setLoading(false);
       setIsGraphFetching(false);
-      setCurrentPage(currentPage + 1);
+      if(has_next) {
+        setCurrentPage(currentPage + 1);
+      }
     }
-  };
-
-  const handleFetchPage = (page) => {
-    if (page < 1) return;
-    setCurrentPage(page);
-    fetchGraphPage(page);
   };
 
   const handlePageSizeChange = (e) => {
     const newSize = parseInt(e.target.value, 10);
     setPageSize(newSize);
+    setCurrentPage(1);
+    setHasNextPage(true);
   };
 
   const handleToggleFetching = () => {
@@ -126,6 +125,7 @@ const PaginatedGraphFetch = forwardRef(
 
       // Reset to first page when date range changes
       setCurrentPage(1);
+      setHasNextPage(true);
     }
   };
 
@@ -154,20 +154,13 @@ const PaginatedGraphFetch = forwardRef(
             className="input w-full py-0 px-1 text-xs"
             disabled={isGraphFetching}
           >
-            <option value={25}>25</option>
             <option value={50}>50</option>
             <option value={100}>100</option>
-            <option value={200}>200</option>
+            <option value={250}>250</option>
+            <option value={500}>500</option>
           </select>
         </div>
 
-        <div className="flex items-center space-x-2">
-
-          <div className="px-2 py-1 rounded-md text-sm">
-            Page {currentPage} {hasNextPage ? "" : "(Last)"}
-          </div>
-
-        </div>
         <button
           type="button"
           onClick={handleToggleFetching}
@@ -183,7 +176,7 @@ const PaginatedGraphFetch = forwardRef(
         </div>
           ) : (
             <>
-              <PlaySolid className="text-primary mr-1 w-4" /> Fetch
+              <PlaySolid className="text-primary mr-1 w-4" /> Fetch ({currentPage})
             </>
           )}
         </button>

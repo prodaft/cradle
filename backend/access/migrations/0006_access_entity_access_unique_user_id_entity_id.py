@@ -16,7 +16,7 @@ def copy_field_data(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         ("access", "0005_remove_access_unique_user_id_entity_id_and_more"),
-        ("entries", "0040_auto_20250401_2354"),
+        ("entries", "0037_auto_20250401_2234"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

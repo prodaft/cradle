@@ -39,7 +39,7 @@ export default function Dashboard() {
     const { subtype } = useParams();
     const { name } = useParams();
     const [entryMissing, setEntryMissing] = useState(false);
-    const [contentObject, setContentObject] = useState({});
+    const [contentObject, setContentObject] = useState(null);
     const [entryTypesLevel, setEntryTypesLevel] = useState({});
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [searchFilters, setSearchFilters] = useState({
@@ -60,7 +60,7 @@ export default function Dashboard() {
     useEffect(() => {
         setEntryMissing(false);
         setAlert('');
-        setContentObject({});
+        setContentObject(null);
         setEntryTypesLevel({});
         queryEntries({ subtype, name_exact: name }).then((response) => {
             if (response.data.count != 1) {
@@ -68,7 +68,6 @@ export default function Dashboard() {
                 return;
             }
             let obj = response.data.results[0];
-            setContentObject(obj);
             setSearchFilters((prev) => ({
                 ...prev,
                 ['references']: obj.id,
@@ -79,6 +78,7 @@ export default function Dashboard() {
             }));
 
             dashboard.current.scrollTo(0, 0);
+            setContentObject(obj);
         });
     }, [subtype, name, setAlert, setEntryMissing, setContentObject]);
 
@@ -92,7 +92,7 @@ export default function Dashboard() {
             .catch(displayError(setAlert, navigate));
     };
 
-    const navbarContents = [
+    const navbarContents = () => [
         // Add graph visualization button
         <NavbarButton
             key='view-graph-btn'
@@ -105,7 +105,7 @@ export default function Dashboard() {
         />,
 
         // If the user is an admin and the dashboard is not for an artifact, add a delete button to the navbar
-        auth.isAdmin() && contentObject.type !== 'artifact' && (
+        auth.isAdmin() && contentObject && contentObject.type !== 'artifact' && (
             <NavbarButton
                 key='delete-entry-btn'
                 icon={<Trash />}
@@ -167,34 +167,42 @@ export default function Dashboard() {
                 className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'
                 ref={dashboard}
             >
-                <div className='w-[95%] h-full flex flex-col p-6 space-y-3 '>
-                    {contentObject.name && (
-                        <h1 className='text-5xl font-bold w-full break-all border-b border-gray-700 px-4 pb-3'>
-                            {contentObject.type && (
-                                <span className='text-4xl text-zinc-500'>{`${contentObject.subtype ? contentObject.subtype : contentObject.type}: `}</span>
-                            )}
-                            {contentObject.name}
-                        </h1>
-                    )}
-                    {contentObject.description && (
-                        <p className='text-sm text-zinc-400'>{`Description: ${contentObject.description}`}</p>
-                    )}
-                    {contentObject.id && (
-                        <Tabs
-                            defaultTab={0}
-                            queryParam={'tab'}
-                            tabClasses='tabs-underline w-full'
-                            perTabClass='w-[50%] justify-center'
-                        >
-                            <Tab title='Notes' classes='pt-2'>
-                                <Notes setAlert={setAlert} obj={contentObject} />
-                            </Tab>
-                            <Tab title='Relations' classes='pt-2'>
-                                <Relations obj={contentObject} />
-                            </Tab>
-                        </Tabs>
-                    )}
-                </div>
+                {contentObject == null ? (
+                    <div className='flex items-center justify-center h-full'>
+                        <div className='spinner-dot-pulse spinner-xl'>
+                            <div className='spinner-pulse-dot'></div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className='w-[95%] h-full flex flex-col p-6 space-y-3 '>
+                        {contentObject.name && (
+                            <h1 className='text-5xl font-bold w-full break-all border-b border-gray-700 px-4 pb-3'>
+                                {contentObject.type && (
+                                    <span className='text-4xl text-zinc-500'>{`${contentObject.subtype ? contentObject.subtype : contentObject.type}: `}</span>
+                                )}
+                                {contentObject.name}
+                            </h1>
+                        )}
+                        {contentObject.description && (
+                            <p className='text-sm text-zinc-400'>{`Description: ${contentObject.description}`}</p>
+                        )}
+                        {contentObject.id && (
+                            <Tabs
+                                defaultTab={0}
+                                queryParam={'tab'}
+                                tabClasses='tabs-underline w-full'
+                                perTabClass='w-[50%] justify-center'
+                            >
+                                <Tab title='Notes' classes='pt-2'>
+                                    <Notes setAlert={setAlert} obj={contentObject} />
+                                </Tab>
+                                <Tab title='Relations' classes='pt-2'>
+                                    <Relations obj={contentObject} />
+                                </Tab>
+                            </Tabs>
+                        )}
+                    </div>
+                )}
             </div>
             <div className='w-full h-8' />
         </>

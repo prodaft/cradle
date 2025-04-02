@@ -8,6 +8,7 @@ from entries.enums import RelationReason
 from notes.processor.task_scheduler import TaskScheduler
 from notes.utils import calculate_acvec
 from notes.tasks import propagate_acvec
+from intelio.tasks import propagate_acvec as propagate_digest_acvec
 from django.db import transaction
 from django.db import connection
 
@@ -15,10 +16,13 @@ from notes.models import Note
 from notes.markdown.to_markdown import remap_links
 
 import numpy as np
-import networkx as nx
+
 from django.contrib.gis.geos import Point
-from pyforceatlas2 import ForceAtlas2
-from networkx.drawing.nx_agraph import to_agraph
+from management.settings import cradle_settings
+
+# import networkx as nx
+# from pyforceatlas2 import ForceAtlas2
+# from networkx.drawing.nx_agraph import to_agraph
 
 
 @shared_task
@@ -28,7 +32,7 @@ def update_accesses(entry_id):
     entry.status = {"status": "warning", "message": "Updating access controls"}
     entry.save()
 
-    notes = list(entry.notes.all())
+    notes = entry.notes.all()
     update_notes = []
 
     for note in notes:
@@ -44,19 +48,21 @@ def update_accesses(entry_id):
         note_model = update_notes[0].__class__
         note_model.objects.bulk_update(update_notes, ["access_vector"])
 
-    # Try and update the associations
-    entry.associations.update(access_vector=newvec)
-    Relation.objects.filter(association__in=entry.associations.all()).update(
-        access_vector=newvec
-    )
+    digest_ids = entry.digests.all().values_list("id", flat=True)
+    digest_tasks = []
+
+    for digest in digest_ids:
+        digest_tasks.append(propagate_digest_acvec.si(digest))
 
     # Reset the status field.
     entry.status = None
     entry.save()
 
-    g = group(*[propagate_acvec.si(n.id) for n in update_notes])
+    g_notes = group(*[propagate_acvec.si(n.id) for n in update_notes])
+    g_digests = group(*[propagate_digest_acvec.si(n.id) for n in update_notes])
 
-    transaction.on_commit(lambda: g.apply_async())
+    transaction.on_commit(lambda: g_notes.apply_async())
+    transaction.on_commit(lambda: g_digests.apply_async())
 
     return f"Updated {len(update_notes)} notes"
 
@@ -99,10 +105,13 @@ def enrich_entry(entry_id, enricher_id):
 
 @shared_task
 def simulate_graph():
-    import sys
-
     # Ugly hack to get graph_tool working
-    sys.path.append("/usr/lib/python3.13/site-packages")
+    import sys
+    import random
+
+    global_packages = random.__file__.removesuffix("random.py") + "site-packages/"
+
+    sys.path.append(global_packages)
 
     from graph_tool.all import Graph, sfdp_layout
 
@@ -136,13 +145,13 @@ def simulate_graph():
 
     pos = sfdp_layout(
         g,
-        K=300,  # Edge length constant
-        p=2,  # Repulsive force strength
-        theta=0.9,  # Tradeoff between speed and precision
-        max_level=10,  # Enable multilevel optimization
-        epsilon=1e-3,  # Convergence precision
-        r=5,
-        max_iter=2000,
+        K=cradle_settings.graph.K,  # Edge length constant
+        p=cradle_settings.graph.p,  # Repulsive force strength
+        theta=cradle_settings.graph.theta,  # Tradeoff between speed and precision
+        max_level=cradle_settings.graph.max_level,  # Enable multilevel optimization
+        epsilon=cradle_settings.graph.epsilon,  # Convergence precision
+        r=cradle_settings.graph.r,
+        max_iter=cradle_settings.graph.max_iter,
     )
 
     coords = np.array([pos[vertex_map[entry.id]] for entry in entries])

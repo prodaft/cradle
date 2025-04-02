@@ -10,30 +10,28 @@ class Setting(models.Model):
     def __str__(self):
         return f"{self.key}: {self.value}"
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        cache.delete(f"setting:{self.key}")
+
 
 class BaseSettingsSection:
     prefix = ""
 
-    def __init__(self):
-        self._cache = {}
-
     def get(self, key, default=None):
         full_key = f"{self.prefix}.{key}"
-        if full_key not in self._cache:
-            setting = cache.get_or_set(
-                f"setting:{full_key}",
-                lambda: Setting.objects.filter(key=full_key)
-                .values_list("value", flat=True)
-                .first(),
-                timeout=300,
-            )
-            self._cache[full_key] = setting if setting is not None else default
-        return self._cache[full_key]
+        from .models import Setting
 
+        value = cache.get_or_set(
+            f"setting:{full_key}",
+            lambda: Setting.objects.filter(key=full_key)
+            .values_list("value", flat=True)
+            .first(),
+            timeout=300,
+        )
 
-class NotesSettings(BaseSettingsSection):
-    prefix = "notes"
+        if value is None:
+            cache.set(f"setting:{full_key}", default, timeout=300)
+            return default
 
-    @property
-    def max_note_wordcount(self):
-        return self.get("max_note_wordcount", 500)
+        return value

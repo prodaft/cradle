@@ -19,10 +19,6 @@ export default function AdminPanelCardEnrichment({
     const navigate = useNavigate();
     const auth = useAuth();
 
-    const handleActivityClick = () => {
-        navigate(`/activity?content_type=entry&object_id=${id}`);
-    };
-
     const handleEditClick = () => {
         setRightPane(<EnrichmentSettingsForm enrichment_class={id} />);
     };
@@ -37,14 +33,6 @@ export default function AdminPanelCardEnrichment({
                     </span>
                 </h2>
                 <div className='w-full flex flex-row justify-end'>
-                    {auth?.isAdmin() && (
-                        <button
-                            className='btn btn-ghost w-fit h-full p-1'
-                            onClick={handleActivityClick}
-                        >
-                            <ClockRotateRight />
-                        </button>
-                    )}
                     <button
                         className='btn btn-ghost w-fit h-full p-1'
                         onClick={handleEditClick}

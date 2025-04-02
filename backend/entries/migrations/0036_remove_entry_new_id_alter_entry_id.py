@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 def copy_field_data(apps, schema_editor):
     Entry = apps.get_model("entries", "Entry")
-    for obj in Entry.objects.entities():
+    for obj in Entry.objects.filter(entry_class__type="entity"):
         obj.id_copy = obj.id
         obj.save(update_fields=["id_copy"])
 

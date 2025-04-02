@@ -22,3 +22,9 @@ def enrich_periodic():
 def start_digest(digest_id):
     digest = BaseDigest.objects.get(id=digest_id)
     digest.digest()
+
+
+@shared_task
+def propagate_acvec(digest_id):
+    digest = BaseDigest.objects.get(id=digest_id)
+    digest.update_access_vector()

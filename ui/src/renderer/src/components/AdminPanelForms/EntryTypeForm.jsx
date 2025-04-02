@@ -189,7 +189,7 @@ export default function EntryTypeForm({ id = null, isEdit = false }) {
 
     return (
         <div className='flex items-center justify-center min-h-screen'>
-            <div className='w-full max-w-md relative'>
+            <div className='w-full max-w-2xl px-4'>
                 <h1 className='text-center text-xl font-bold text-primary mb-4'>
                     {isEdit ? 'Edit Entry Type' : 'Add New Entry Type'}
                 </h1>
@@ -297,7 +297,7 @@ export default function EntryTypeForm({ id = null, isEdit = false }) {
                                             render={({ field }) => (
                                                 <input
                                                     type='text'
-                                                    className='form-input input input-ghost-primary focus:ring-0'
+                                                    className='form-input input input-ghost-primary input-block focus:ring-0'
                                                     {...field}
                                                 />
                                             )}

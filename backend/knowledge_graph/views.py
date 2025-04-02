@@ -30,7 +30,13 @@ class GraphPathFindView(APIView):
         start = query.validated_data["src"]
         ends = query.validated_data["dsts"]
 
-        edges = get_edges_for_paths(start.id, [x.id for x in ends])
+        edges = get_edges_for_paths(
+            start.id,
+            [x.id for x in ends],
+            request.user,
+            query.validated_data["min_date"],
+            query.validated_data["max_date"],
+        )
 
         entry_ids = set()
 
@@ -190,7 +196,12 @@ class FetchGraphView(APIView):
             .order_by("-last_seen")
         )
 
-        paginator = LazyPaginator(page_size=500)
+        try:
+            page_size = int(request.query_params.get("page_size", 200))
+        except ValueError:
+            return Response({"error": "page_size must be integer."}, status=400)
+
+        paginator = LazyPaginator(page_size=page_size)
         paginated_edges = paginator.paginate_queryset(edges, request)
 
         entry_ids = set()

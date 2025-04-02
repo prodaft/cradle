@@ -43,42 +43,46 @@ def get_neighbors(sourceset, depth, user=None):
     return current_level
 
 
-def get_edges_for_paths(
-    start_uuid: uuid.UUID, end_uuids: List[uuid.UUID]
-) -> List[Edge]:
+def get_edges_for_paths(start_id, targets, user, start_time, end_time) -> List[Edge]:
     """
-    Returns a de-duplicated list of Edge objects used in shortest paths
-    from a single start UUID to multiple end UUIDs.
+    Compute Dijkstra shortest paths from a single source to multiple targets with time and access vector filtering.
     """
-    if not end_uuids:
-        return []
+    # Safely format the target array as SQL literal
+    target_array = "ARRAY[%s]" % ",".join(str(int(t)) for t in targets)
+
+    # The dynamic SQL for the filtered edge set
+    inner_sql = f"""
+        SELECT id, src AS source, dst AS target, age AS cost
+        FROM edges
+        WHERE created_at <= %s
+          AND last_seen >= %s
+          AND (%s & access_vector) = '{fieldtype.get_prep_value(0)}'
+    """
+
+    # The full pgr_dijkstra SQL
+    full_sql = f"""
+        SELECT seq, path_seq, node, edge, cost, agg_cost
+        FROM pgr_dijkstra(
+            $$ {inner_sql} $$,
+            %s,
+            {target_array},
+            directed := true
+        );
+    """
+
+    params = [
+        end_time,
+        start_time,
+        user.access_vector_inv,
+        start_id,
+    ]
 
     with connection.cursor() as cursor:
-        cursor.execute(
-            """
-            WITH
-            start_node AS (
-                SELECT id FROM node_map WHERE uuid = %s
-            ),
-            end_nodes AS (
-                SELECT id FROM node_map WHERE uuid = ANY(%s)
-            ),
-            route AS (
-                SELECT * FROM pgr_dijkstra(
-                    'SELECT edge_id AS id, src AS source, dst AS target, age AS cost FROM edges',
-                    (SELECT id FROM start_node),
-                    ARRAY(SELECT id FROM end_nodes),
-                    directed := true
-                )
-            )
-            SELECT DISTINCT e.id
-            FROM route r
-            JOIN edges_with_ids e ON r.edge = e.edge_id
-            WHERE r.edge != -1;
-        """,
-            [str(start_uuid), [str(u) for u in end_uuids]],
-        )
+        cursor.execute(full_sql, params)
+        edge_ids = [row[3] for row in cursor.fetchall()]
 
-        edge_uuids = [row[0] for row in cursor.fetchall()]
+    if not edge_ids:
+        return []
 
-    return list(Edge.objects.filter(id__in=edge_uuids))
+    edges = list(Edge.objects.filter(id__in=edge_ids))
+    return edges

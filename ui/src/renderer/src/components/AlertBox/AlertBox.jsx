@@ -1,16 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import rippleUiAlertIcon from '../../assets/ripple-ui-alert-icon.svg';
 
 /**
- * AlertBox component - a styled in-line alert box with an icon, text, and optional button
+ * AlertBox component - a styled in-line alert box with an icon, text, and optional button.
+ *
+ * Now supports an optional timeout (in milliseconds) to auto-dismiss the alert.
  *
  * @function AlertBox
- * @param {Object} props - The props object
- * @param {Alert} props.alert - The alert object to display
- * @returns {AlertBox}
- * @constructor
+ * @param {Object} props - The props object.
+ * @param {Alert} props.alert - The alert object to display.
+ * @param {number} [props.timeout] - Optional timeout in ms after which the alert should auto-dismiss.
+ * @returns {JSX.Element|null} The AlertBox component.
  */
-export default function AlertBox({ alert }) {
+export default function AlertBox({ alert, timeout }) {
+    // Local state to manage visibility (initially based on alert.show)
+    const [visible, setVisible] = useState(alert.show);
+
+    // Keep local visible state in sync if alert.show changes externally.
+    useEffect(() => {
+        setVisible(alert.show);
+    }, [alert.show]);
+
+    // If a timeout is provided, hide the alert automatically after the specified delay.
+    useEffect(() => {
+        if (timeout && visible) {
+            const timer = setTimeout(() => {
+                setVisible(false);
+            }, timeout);
+            return () => clearTimeout(timer);
+        }
+    }, [timeout, visible]);
+
     const colorVariants = {
         green: 'alert-success',
         red: 'alert-error',
@@ -68,7 +88,7 @@ export default function AlertBox({ alert }) {
     };
 
     return (
-        alert.show && (
+        visible && (
             <div
                 data-testid='auth-err-alert'
                 className={`alert ${colorVariants[alert.color]} flex items-center justify-between`}

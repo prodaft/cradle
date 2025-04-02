@@ -251,7 +251,7 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
 
     return (
         <div className='flex items-center justify-center min-h-screen'>
-            <div className='w-full max-w-md relative'>
+            <div className='w-full max-w-2xl px-4'>
                 <h1 className='text-center text-xl font-bold text-primary mb-4'>
                     {displayName} Settings
                 </h1>

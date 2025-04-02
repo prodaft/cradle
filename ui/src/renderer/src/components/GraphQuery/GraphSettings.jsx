@@ -246,9 +246,9 @@ const GraphSettings = forwardRef(
                     ))}
 
                     <div className='flex items-center'>
-                        <label className='text-sm w-[12%]'>Layout</label>
+                        <label className='text-sm mr-3'>Layout</label>
                         <select
-                            className='select select-sm'
+                            className='select select-sm mr-3'
                             value={config.layout}
                             onChange={(e) =>
                                 setConfig((prev) => ({

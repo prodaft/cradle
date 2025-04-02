@@ -27,10 +27,10 @@ class RelationListView(APIView):
             )
 
         try:
-            entry_ids = [UUID(e) for e in raw_ids]
+            entry_ids = [int(e) for e in raw_ids]
         except ValueError:
             return Response(
-                {"detail": "One or more `relates` values are not valid UUIDs."},
+                {"detail": "One or more `relates` values are not valid integers."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

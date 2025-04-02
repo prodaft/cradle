@@ -94,7 +94,7 @@ export default function RelationCard({ relation, onDelete, setAlert }) {
                     </InfoRow>
                 ))}
             </div>
-            <div className='absolute bottom-1 right-2 text-[10px] text-gray-400 dark:text-gray-600 select-text'>
+            <div className='absolute bottom-1 right-2 text-[10px] text-gray-400 dark:text-gray-600 select-text mt-1'>
                 ID: {relation.id}
             </div>
         </div>

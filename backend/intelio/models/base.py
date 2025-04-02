@@ -12,9 +12,7 @@ from entries.models import Relation
 import os
 
 from django_lifecycle import (
-    AFTER_CREATE,
     AFTER_DELETE,
-    AFTER_UPDATE,
     LifecycleModel,
     hook,
 )
@@ -23,6 +21,8 @@ from django.utils.translation import gettext_lazy as _
 
 from ..enums import EnrichmentStrategy, DigestStatus
 import uuid
+
+fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
 
 class BaseDigest(LifecycleModel):
@@ -52,7 +52,7 @@ class BaseDigest(LifecycleModel):
 
     entities = models.ManyToManyField(
         Entry,
-        related_name="owned_relations",
+        related_name="digests",
     )
 
     relations = GenericRelation(Relation, related_query_name="digests")
@@ -156,6 +156,12 @@ class BaseDigest(LifecycleModel):
         with transaction.atomic():
             self.warnings = list(set(self.warnings) | {error})
             self.save()
+
+    def update_access_vector(self):
+        from notes.utils import calculate_acvec
+
+        access_vector = calculate_acvec(self.entities.all())
+        self.relations.update(access_vector=access_vector)
 
 
 class BaseEnricher:

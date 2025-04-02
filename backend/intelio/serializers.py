@@ -106,7 +106,7 @@ class BaseDigestSerializer(serializers.ModelSerializer):
     user_detail = EssentialUserRetrieveSerializer(source="user", read_only=True)
 
     num_files = serializers.SerializerMethodField()
-    num_associations = serializers.SerializerMethodField()
+    num_relations = serializers.SerializerMethodField()
     num_notes = serializers.SerializerMethodField()
 
     class Meta:
@@ -125,7 +125,7 @@ class BaseDigestSerializer(serializers.ModelSerializer):
             "entity",
             "entity_detail",
             "num_files",
-            "num_associations",
+            "num_relations",
             "num_notes",
         ]
         read_only_fields = ["id", "created_at", "enricher_type", "display_name"]
@@ -144,8 +144,8 @@ class BaseDigestSerializer(serializers.ModelSerializer):
     def get_num_files(self, obj):
         return obj.files.count()
 
-    def get_num_associations(self, obj):
-        return obj.associations.count()
+    def get_num_relations(self, obj):
+        return obj.relations.count()
 
     def get_num_notes(self, obj):
         return obj.notes.count()

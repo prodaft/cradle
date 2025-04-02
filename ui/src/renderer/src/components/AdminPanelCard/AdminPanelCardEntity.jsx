@@ -8,6 +8,7 @@ import useAuth from '../../hooks/useAuth/useAuth';
 import EntityForm from '../AdminPanelForms/EntityForm';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
+import ActivityList from '../ActivityList/ActivityList';
 
 export default function AdminPanelCardEntity({
     name,
@@ -32,7 +33,11 @@ export default function AdminPanelCardEntity({
     };
 
     const handleActivityClick = () => {
-        navigate(`/activity?content_type=entry&object_id=${id}`);
+        setRightPane(<ActivityList
+          content_type='entry'
+          objectId={id}
+          name={name}
+          />);
     };
 
     const handleEditClick = () => {

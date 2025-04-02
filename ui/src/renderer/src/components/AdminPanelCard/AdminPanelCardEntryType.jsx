@@ -8,6 +8,7 @@ import useAuth from '../../hooks/useAuth/useAuth';
 import EntryTypeForm from '../AdminPanelForms/EntryTypeForm.jsx';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
+import ActivityList from '../ActivityList/ActivityList.jsx';
 
 export default function AdminPanelCardEntryType({
     name,
@@ -31,7 +32,11 @@ export default function AdminPanelCardEntryType({
     };
 
     const handleActivityClick = () => {
-        navigate(`/activity?content_type=entryclass&object_id=${id}`);
+        setRightPane(<ActivityList
+          content_type='entryclass'
+          objectId={id}
+          name={name}
+          />);
     };
 
     const handleEditClick = () => {

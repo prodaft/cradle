@@ -24,6 +24,10 @@ import {
     getMappingTypes,
 } from '../../services/intelioService/intelioService';
 import AdminPanelCardEnrichment from '../AdminPanelCard/AdminPanelCardEnrichment';
+import AdminPanelCardManagement from '../AdminPanelCard/AdminPanelCardManagement';
+import NoteSettingsForm from '../AdminPanelForms/NoteSettingsForm';
+import GraphSettingsForm from '../AdminPanelForms/GraphSettingsForm';
+import EntriesSettingsForm from '../AdminPanelForms/EntriesSettingsForm';
 
 /**
  * AdminPanel component - This component is used to display the AdminPanel.
@@ -228,14 +232,46 @@ export default function AdminPanel() {
                                 </Tab>
                             )}
                             {auth?.isAdmin() && (
-                            <Tab title='Enrichment'>
-                                <AdminPanelSection
-                                    addEnabled={false}
-                                    isLoading={enrichmentTypes === null}
-                                >
-                                    {enrichmentTypes}
-                                </AdminPanelSection>
-                            </Tab>
+                                <Tab title='Enrichment'>
+                                    <AdminPanelSection
+                                        addEnabled={false}
+                                        isLoading={enrichmentTypes === null}
+                                    >
+                                        {enrichmentTypes}
+                                    </AdminPanelSection>
+                                </Tab>
+                            )}
+                            {auth?.isAdmin() && (
+                                <Tab title='Management'>
+                                    <AdminPanelSection
+                                        addEnabled={false}
+                                        isLoading={false}
+                                    >
+                                        {[
+                                            <AdminPanelCardManagement
+                                                id='note'
+                                                key='note'
+                                                setRightPane={setRightPane}
+                                                name='Note Settings'
+                                                SettingComponent={NoteSettingsForm}
+                                            />,
+                                            <AdminPanelCardManagement
+                                                id='graph'
+                                                key='graph'
+                                                setRightPane={setRightPane}
+                                                name='Graph Settings'
+                                                SettingComponent={GraphSettingsForm}
+                                            />,
+                                            <AdminPanelCardManagement
+                                                id='entries'
+                                                key='entries'
+                                                setRightPane={setRightPane}
+                                                name='Entry Settings'
+                                                SettingComponent={EntriesSettingsForm}
+                                            />,
+                                        ]}
+                                    </AdminPanelSection>
+                                </Tab>
                             )}
                         </Tabs>
                     }

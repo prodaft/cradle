@@ -175,7 +175,7 @@ export default function AccountSettings({ target, isEdit = true }) {
     return (
         <>
             <div className='flex items-center justify-center min-h-screen'>
-                <div className='w-full max-w-md'>
+                <div className='w-full max-w-2xl px-4'>
                     <h1 className='text-center text-xl font-bold text-cradle2 mb-4'>
                         {isEdit ? 'Account Settings' : 'Add New User'}
                     </h1>

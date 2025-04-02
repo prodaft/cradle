@@ -98,9 +98,8 @@ services:
 
       INSTALL_FIXTURES: true
 
-      CELERY_BROKER_URL: "redis://192.168.42.7:6379/0"
-      CELERY_RESULT_BACKEND: "redis://192.168.42.7:6379/0"
       REDIS_URL: "redis://192.168.42.7:6379/0"
+      RABBITMQ_URL: "amqp://cradle:cradle@192.168.42.11:5672//"
 
     depends_on:
       - postgres
@@ -149,6 +148,19 @@ services:
     networks:
       cradle_demo_network:
         ipv4_address: 192.168.42.10
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: cradle_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: cradle
+      RABBITMQ_DEFAULT_PASS: cradle
+    networks:
+      default:
+        ipv4_address: 192.168.31.44
+    networks:
+      cradle_demo_network:
+        ipv4_address: 192.168.42.11
 
 volumes:
   postgres_data:

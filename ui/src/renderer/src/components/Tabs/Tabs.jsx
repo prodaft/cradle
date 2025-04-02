@@ -57,32 +57,35 @@ const Tabs = ({
 
     return (
         <div className='flex-col'>
-            <div className={`tabs mx-2 ${tabClasses}`}>
-                {tabs.map((tab, index) => {
-                    const tabId = `tab-${index}-${groupId}`;
-                    const groupName = `tab-group-${groupId}`;
-                    return (
-                        <React.Fragment key={tabId}>
-                            <input
-                                type='radio'
-                                id={tabId}
-                                name={groupName}
-                                className='tab-toggle'
-                                checked={activeTab === index}
-                                onChange={() => handleTabChange(index)}
-                            />
-                            <label
-                                htmlFor={tabId}
-                                className={`mb-2 tab px-6 cursor-pointer ${perTabClass}`}
-                                onClick={() => handleTabChange(index)}
-                            >
-                                {tab.props.title}
-                            </label>
-                        </React.Fragment>
-                    );
-                })}
-            </div>
-            <div className=''>
+            {/* Only show tab navigation if there's more than one tab */}
+            {tabs.length > 1 && (
+                <div className={`tabs mx-2 ${tabClasses}`}>
+                    {tabs.map((tab, index) => {
+                        const tabId = `tab-${index}-${groupId}`;
+                        const groupName = `tab-group-${groupId}`;
+                        return (
+                            <React.Fragment key={tabId}>
+                                <input
+                                    type='radio'
+                                    id={tabId}
+                                    name={groupName}
+                                    className='tab-toggle'
+                                    checked={activeTab === index}
+                                    onChange={() => handleTabChange(index)}
+                                />
+                                <label
+                                    htmlFor={tabId}
+                                    className={`mb-2 tab px-6 cursor-pointer ${perTabClass}`}
+                                    onClick={() => handleTabChange(index)}
+                                >
+                                    {tab.props.title}
+                                </label>
+                            </React.Fragment>
+                        );
+                    })}
+                </div>
+            )}
+            <div>
                 {tabs.map((tab, index) => (
                     <div
                         key={`tab-content-${index}`}

@@ -20,6 +20,8 @@ import Prism from 'prismjs';
 import 'prismjs/components/prism-markdown';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
+import { Tab, Tabs } from '../Tabs/Tabs';
+import ActivityList from '../ActivityList/ActivityList';
 
 /**
  * NoteViewer component
@@ -194,49 +196,80 @@ export default function NoteViewer() {
                 setAlert={setAlert}
                 onClose={() => setAlert('')}
             />
-            <div className='w-full h-full overflow-hidden flex flex-col items-center px-4 pb-4 pt-1'>
-                <div className='h-full w-[90%] rounded-md bg-cradle3 bg-opacity-20 backdrop-blur-lg backdrop-filter px-4 pb-4 pt-1 overflow-y-auto'>
-                    <div className='text-sm text-zinc-500 p-2 border-b-2 dark:border-b-zinc-800'>
-                        <span className='text-sm text-zinc-500 p-2'>
-                            <strong>Created on:</strong>{' '}
-                            {new Date(note.timestamp).toLocaleString()}
-                        </span>
-                        <span className='text-sm text-zinc-700'>|</span>
-                        <span className='text-sm text-zinc-500 p-2'>
-                            <strong>Created by:</strong>{' '}
-                            {note?.author ? note.author.username : 'Unknown'}
-                        </span>
-                        {note.editor && (
-                            <span>
-                                <span className='text-sm text-zinc-700'>|</span>
-                                <span className='text-sm text-zinc-500 p-2'>
-                                    <strong>Edited on:</strong>{' '}
-                                    {new Date(note.edit_timestamp).toLocaleString()}
-                                </span>
-                                <span className='text-sm text-zinc-700'>|</span>
-                                <span className='text-sm text-zinc-500 p-2'>
-                                    <strong>Edited by:</strong>{' '}
-                                    {note?.editor ? note.editor.username : 'Unknown'}
-                                </span>
-                            </span>
-                        )}
-                    </div>
-                    <div className='flex-grow'>
-                        {isRaw ? (
-                            <pre
-                                className='h-full w-full p-4 bg-transparent prose-md max-w-none dark:prose-invert break-all
+            <div className='w-[95%] h-full flex flex-col p-2 space-y-3'>
+                <Tabs
+                    defaultTab={0}
+                    queryParam={'tab'}
+                    tabClasses='tabs-underline w-full'
+                    perTabClass='w-[50%] justify-center'
+                >
+                    <Tab title='Content' classes='pt-2'>
+                        <div className='w-full h-full overflow-hidden flex flex-col items-center px-4 pb-4 pt-1'>
+                            <div className='h-full w-[90%] rounded-md bg-cradle3 bg-opacity-20 backdrop-blur-lg backdrop-filter px-4 pb-4 pt-1 overflow-y-auto'>
+                                <div className='text-sm text-zinc-500 p-2 border-b-2 dark:border-b-zinc-800'>
+                                    <span className='text-sm text-zinc-500 p-2'>
+                                        <strong>Created on:</strong>{' '}
+                                        {new Date(note.timestamp).toLocaleString()}
+                                    </span>
+                                    <span className='text-sm text-zinc-700'>|</span>
+                                    <span className='text-sm text-zinc-500 p-2'>
+                                        <strong>Created by:</strong>{' '}
+                                        {note?.author
+                                            ? note.author.username
+                                            : 'Unknown'}
+                                    </span>
+                                    {note.editor && (
+                                        <span>
+                                            <span className='text-sm text-zinc-700'>
+                                                |
+                                            </span>
+                                            <span className='text-sm text-zinc-500 p-2'>
+                                                <strong>Edited on:</strong>{' '}
+                                                {new Date(
+                                                    note.edit_timestamp,
+                                                ).toLocaleString()}
+                                            </span>
+                                            <span className='text-sm text-zinc-700'>
+                                                |
+                                            </span>
+                                            <span className='text-sm text-zinc-500 p-2'>
+                                                <strong>Edited by:</strong>{' '}
+                                                {note?.editor
+                                                    ? note.editor.username
+                                                    : 'Unknown'}
+                                            </span>
+                                        </span>
+                                    )}
+                                </div>
+                                <div className='flex-grow'>
+                                    {isRaw ? (
+                                        <pre
+                                            className='h-full w-full p-4 bg-transparent prose-md max-w-none dark:prose-invert break-all
               overflow-y-auto rounded-lg flex-1 overflow-x-hidden whitespace-pre-wrap'
-                            >
-                                <code className='language-js'>{note.content}</code>
-                            </pre>
-                        ) : (
-                            <div className='mt-2'>
-                                <ReferenceTree note={note} setAlert={setAlert} />
-                                <Preview htmlContent={parsedContent} />
+                                        >
+                                            <code className='language-js'>
+                                                {note.content}
+                                            </code>
+                                        </pre>
+                                    ) : (
+                                        <div className='mt-2'>
+                                            <ReferenceTree
+                                                note={note}
+                                                setAlert={setAlert}
+                                            />
+                                            <Preview htmlContent={parsedContent} />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        )}
-                    </div>
-                </div>
+                        </div>
+                    </Tab>
+                    {auth.isAdmin() && (
+                        <Tab title='History' classes='pt-2'>
+                            <ActivityList content_type='note' object_id={id} />
+                        </Tab>
+                    )}
+                </Tabs>
             </div>
         </>
     );

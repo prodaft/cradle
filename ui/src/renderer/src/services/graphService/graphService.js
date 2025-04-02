@@ -59,12 +59,15 @@ export function getInaccessibleEntities(src, depth) {
  *
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function fetchGraph(page) {
+export function fetchGraph(page, page_size, start_date, end_date) {
     return authAxios({
         method: 'GET',
         url: '/knowledge-graph/fetch/',
         params: {
             page,
+            page_size,
+            start_date,
+            end_date
         },
     });
 }

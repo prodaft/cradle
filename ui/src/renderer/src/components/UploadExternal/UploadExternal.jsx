@@ -111,9 +111,9 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
                 <p>
                     <strong>Created On:</strong> {formattedDate}
                 </p>
-                {localDigest.num_associations > 0 && (
+                {localDigest.num_relations > 0 && (
                     <p>
-                        <strong>Associations:</strong> {localDigest.num_associations}
+                        <strong>Relations:</strong> {localDigest.num_relations}
                     </p>
                 )}
                 {localDigest.num_notes > 0 && (
@@ -511,6 +511,7 @@ export default function UploadExternal({ setAlert }) {
                                 onChange={handleAssociatedEntriesChange}
                                 fetchOptions={fetchRelatedEntries}
                                 isLoading={entriesLoading}
+                                isMulti={true}
                                 placeholder={
                                     'Select entries' +
                                     (formValues.dataType?.inferEntities
@@ -518,7 +519,6 @@ export default function UploadExternal({ setAlert }) {
                                         : '')
                                 }
                                 className='w-full'
-                                isMulti={false}
                                 isDisabled={
                                     !formValues.dataType ||
                                     formValues.dataType.inferEntities

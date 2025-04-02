@@ -26,7 +26,7 @@ export default function GraphExplorer() {
         <div className='w-full h-full overflow-y-hidden relative'>
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <ResizableSplitPane
-                initialSplitPosition={40}
+                initialSplitPosition={30}
                 leftContent={
                     <GraphQuery
                         selectedEntries={selectedEntries}
