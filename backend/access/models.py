@@ -13,6 +13,7 @@ class Access(models.Model):
     user: models.ForeignKey = models.ForeignKey(
         CradleUser, on_delete=models.CASCADE, to_field="id", related_name="accesses"
     )
+    entity_id_back: models.UUIDField = models.UUIDField(null=True)
     entity: models.ForeignKey = models.ForeignKey(
         Entry, on_delete=models.CASCADE, to_field="id", null=True
     )

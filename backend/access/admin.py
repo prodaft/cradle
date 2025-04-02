@@ -4,8 +4,7 @@ from .models import Access
 
 @admin.register(Access)
 class AccessAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "entity", "access_type")
-    search_fields = ("user__username", "entity__name", "access_type")
+    list_display = ("id", "user", "access_type")
     list_filter = ("access_type",)
     readonly_fields = ("id",)
 
