@@ -91,7 +91,11 @@ def scan_for_children(entry_id):
         for i in v:
             e, _ = Entry.objects.get_or_create(name=i, entry_class=k)
             ass = Relation(
-                e1=e, e2=entry, reason=RelationReason.CONTAINS, access_vector=1
+                e1=e,
+                e2=entry,
+                reason=RelationReason.CONTAINS,
+                access_vector=1,
+                content_object=entry,
             )
             ass.save()
 
