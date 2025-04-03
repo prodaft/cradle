@@ -406,10 +406,8 @@ class Entry(LifecycleModel, LoggableModelMixin):
             )
             .values_list("dst", flat=True)
         )
-        print(list(rels))
 
         qs = Entry.objects.filter(Q(id__in=rels) | Q(id=self.id)).distinct()
-        print(qs)
         return qs
 
 
