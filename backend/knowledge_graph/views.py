@@ -74,8 +74,8 @@ class GraphNeighborsView(APIView):
                 {"error": "depth, page and page_size must be integers."}, status=400
             )
 
-        if depth < 1 or depth > 4:
-            return Response({"error": "depth must be between 1 and 4."}, status=400)
+        if depth < 0 or depth > 5:
+            return Response({"error": "depth must be between 0 and 4."}, status=400)
 
         # Retrieve the source entry (404 if not found)
         source_entry = Entry.objects.filter(pk=source_id).first()
@@ -97,7 +97,10 @@ class GraphNeighborsView(APIView):
 
         sourceset = source_entry.aliasqs(request.user)
 
-        neighbors_qs = get_neighbors(sourceset, depth, request.user)
+        if depth == 0:
+            neighbors_qs = sourceset
+        else:
+            neighbors_qs = get_neighbors(sourceset, depth, request.user)
 
         query_str = request.query_params.get("query")
 

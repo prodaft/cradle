@@ -21,7 +21,7 @@ import LazyPagination from '../Pagination/LazyPagination';
 
 export default function Relations({ obj }) {
     const [searchQuery, setSearchQuery] = useState('');
-    const [depth, setDepth] = useState(1);
+    const [depth, setDepth] = useState(0);
     const inputRef = useRef(null);
     const [showFilters, setShowFilters] = useState(false);
     const [entrySubtypeFilters, setEntrySubtypeFilters] = useState([]);
@@ -126,7 +126,7 @@ export default function Relations({ obj }) {
 
     const handleDepthChange = (event) => {
         const value = parseInt(event.target.value, 10);
-        const newDepth = isNaN(value) ? 1 : Math.max(1, Math.min(value, 4));
+        const newDepth = isNaN(value) ? 0 : Math.max(0, Math.min(value, 5));
         setDepth(newDepth);
 
         if (page === 1) {
@@ -199,8 +199,8 @@ export default function Relations({ obj }) {
                     <input
                         id="depth-input"
                         type='number'
-                        min='1'
-                        max='4'
+                        min='0'
+                        max='5'
                         className='form-input input input-block input-ghost-primary focus:ring-0 text-white w-20'
                         placeholder='Depth'
                         value={depth}
