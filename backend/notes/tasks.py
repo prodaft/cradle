@@ -1,8 +1,10 @@
 import itertools
 from celery import shared_task
+from django.contrib.contenttypes.models import ContentType
 from django.db import close_old_connections
 from django_lifecycle.mixins import transaction
 from entries.enums import EntryType
+from intelio.enums import EnrichmentStrategy
 from user.models import CradleUser
 from .markdown.to_links import Link
 from .models import Note
@@ -104,10 +106,12 @@ def entry_class_creation_task(note_id, user_id=None):
 @shared_task(
     autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=300, max_retries=3
 )
-def entry_population_task(note_id, user_id=None):
+def entry_population_task(note_id, user_id=None, force_contains_check=False):
     """
     Celery task to create missing entries for a note.
     """
+    from entries.tasks import scan_for_children, enrich_entry
+
     note = Note.objects.get(id=note_id)
     if user_id:
         user = CradleUser.objects.get(id=user_id)
@@ -116,7 +120,7 @@ def entry_population_task(note_id, user_id=None):
         note.entries.clear()
         for r in note.reference_tree.links():
             entry = Entry.objects.filter(name=r.value, entry_class__subtype=r.key)
-            if len(entry) == 0:
+            if not entry.exists():
                 entry_class = EntryClass.objects.get(subtype=r.key)
 
                 if entry_class.type == EntryType.ARTIFACT:
@@ -129,6 +133,16 @@ def entry_population_task(note_id, user_id=None):
                 entry = entry.first()
 
             note.entries.add(entry)
+
+            content_type = ContentType.objects.get_for_model(note)
+            if entry.entry_class.children.count() > 0:
+                scan_for_children.delay(entry.id, content_type.id, note.id)
+
+            for e in entry.entry_class.enrichers.filter(
+                strategy=EnrichmentStrategy.ON_CREATE,
+            ):
+                enrich_entry.delay(entry.id, content_type.id, note.id)
+
         note.save()
 
 
@@ -187,7 +201,8 @@ def connect_aliases(note_id, user_id=None):
                     e2=alias,
                     content_object=note,
                     access_vector=note.access_vector,
-                    reason=RelationReason.NOTE,
+                    reason=RelationReason.ALIAS,
+                    virtual=True,
                 )
             )
 

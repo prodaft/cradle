@@ -20,7 +20,7 @@ class EntryView(generics.ListCreateAPIView):
     pagination_class = TotalPagesPagination
 
     def get_queryset(self):
-        return Entry.objects.all()
+        return Entry.objects.accessible(self.request.user).all()
 
     def create(self, request: Request) -> Response:
         entry_type = request.data.get("type")
@@ -58,7 +58,7 @@ class EntryDetailView(APIView):
 
     def get(self, request: Request, id: UUID) -> Response:
         try:
-            entry = Entry.objects.get(pk=id)
+            entry = Entry.objects.accessible(request.user).get(pk=id)
         except Entry.DoesNotExist:
             return Response(
                 "There is no entry with specified ID.", status=status.HTTP_404_NOT_FOUND

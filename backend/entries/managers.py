@@ -1,3 +1,4 @@
+from django.apps import apps
 from django.db import models
 from django.db.models.expressions import F
 from django.db.models.query import RawQuerySet
@@ -34,47 +35,15 @@ class EntryQuerySet(models.QuerySet):
         """
         return self.filter(Q(relations_1=None) | Q(relations_2=None))
 
-    def _neighbour_query(self, user: CradleUser | None) -> tuple[str, list[str]]:
-        query_parts = []
-        query_args = []
-        for i in self.all():
-            if user is None or user.is_cradle_admin:
-                query_parts.append(
-                    "SELECT entry_id AS id FROM get_related_entry_ids(%s)"
-                )
-                query_args.append(str(i.id))
-            else:
-                query_parts.append(
-                    "SELECT entry_id AS id FROM get_related_entry_ids_for_user(%s, %s)"
-                )
-                query_args.extend((str(i.id), str(user.id)))
-
-        query = " UNION ".join(query_parts)
-
-        return query, query_args
-
-    def get_neighbours(self, user: CradleUser | None) -> RawQuerySet:
+    def accessible(self, user: CradleUser) -> models.QuerySet:
         """
-        Get the neighbours of an entry
+        Filter all entries accessible to a user
         """
-        query, query_args = self._neighbour_query(user)
-
-        return self.raw(query, query_args)
-
-    def get_neighbour_entities(self, user: CradleUser | None) -> RawQuerySet:
-        """
-        Get the neighbours of an entry
-        """
-        query, query_args = self._neighbour_query(user)
-
-        final_query = f"""
-        SELECT id, type FROM ({query})
-        JOIN entries_entry ee
-        JOIN entries_entry_class eec ON ee.entry_class_id = eec.subtype
-        WHERE type = 'entity'
-        """
-
-        return self.raw(final_query, query_args)
+        Edge = apps.get_model("entries", "Edge")
+        accessible_vertices = Edge.objects.accessible(user).values_list(
+            "src", flat=True
+        )
+        return self.filter(id__in=accessible_vertices)
 
 
 class RelationQuerySet(models.QuerySet):
@@ -109,6 +78,12 @@ class EntryManager(models.Manager):
         allowing access to its methods for all querysets retrieved by this manager.
         """
         return EntryQuerySet(self.model, using=self._db).with_entry_class()
+
+    def accessible(self, user: CradleUser) -> models.QuerySet:
+        """
+        Filter all entities accessible to a user
+        """
+        return self.get_queryset().accessible(user)
 
     def is_artifact(self) -> models.QuerySet:
         """
@@ -164,14 +139,14 @@ class EntryManager(models.Manager):
         return self.get_queryset().get_neighbours(user)
 
 
-class EntityManager(models.Manager):
+class EntityManager(EntryManager):
     def get_queryset(self) -> models.QuerySet:
-        return super().get_queryset().filter(entry_class__type=EntryType.ENTITY)
+        return super().get_queryset().is_entity()
 
 
-class ArtifactManager(models.Manager):
+class ArtifactManager(EntryManager):
     def get_queryset(self) -> models.QuerySet:
-        return super().get_queryset().filter(entry_class__type=EntryType.ARTIFACT)
+        return super().get_queryset().is_artifact()
 
 
 class RelationManager(models.Manager):

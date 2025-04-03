@@ -49,6 +49,7 @@ class Edge(LifecycleModel):
 
     created_at = models.DateTimeField()
     last_seen = models.DateTimeField()
+    virtual = models.BooleanField()
 
     class Meta:
         managed = False
@@ -372,18 +373,6 @@ class Entry(LifecycleModel, LoggableModelMixin):
     def log_fetch(self, user, details=None):
         super().log_fetch(user, details)
 
-    @hook(AFTER_CREATE)
-    def enrich_entry(self):
-        from .tasks import enrich_entry, scan_for_children
-
-        if self.entry_class.children.count() > 0:
-            transaction.on_commit(lambda: scan_for_children.apply_async((self.id,)))
-
-        for e in self.entry_class.enrichers.filter(
-            strategy=EnrichmentStrategy.ON_CREATE,
-        ):
-            transaction.on_commit(lambda: enrich_entry.apply_async((self.id, e.id)))
-
     @hook(AFTER_UPDATE, condition=WhenFieldHasChanged("acvec_offset", True))
     def acvec_offset_updated(self):
         from .tasks import update_accesses
@@ -409,19 +398,18 @@ class Entry(LifecycleModel, LoggableModelMixin):
             )
 
     def aliasqs(self, user):
-        return Entry.objects.filter(id=self.id)
-        # TODO
-        rels = a.extra(
-            where=["(access_vector & %s) = %s"],
-            params=[user.access_vector_inv, fieldtype.get_prep_value(0)],
+        rels = (
+            Edge.objects.accessible(user)
+            .filter(
+                src=self.id,
+                virtual=True,
+            )
+            .values_list("dst", flat=True)
         )
+        print(list(rels))
 
-        qs = Entry.objects.filter(
-            Q(dst_relations__in=rels, entry_class_id="alias")
-            | Q(id=self.id)
-            | Q(aliased_by=self.id)
-        ).distinct()
-
+        qs = Entry.objects.filter(Q(id__in=rels) | Q(id=self.id)).distinct()
+        print(qs)
         return qs
 
 

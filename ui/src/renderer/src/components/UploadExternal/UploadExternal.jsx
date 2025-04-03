@@ -86,7 +86,7 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
                     className={`px-2 py-1 rounded-full text-xs font-semibold ${
                         localDigest.status === 'done'
                             ? 'bg-green-500 text-white'
-                            : localDigest.status === 'failed'
+                            : localDigest.status === 'error'
                               ? 'bg-red-500 text-white'
                               : 'bg-yellow-500 text-white'
                     }`}

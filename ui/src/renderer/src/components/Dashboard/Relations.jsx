@@ -108,11 +108,11 @@ export default function Relations({ obj }) {
             .then((response) => {
                 if (response.data.inaccessible && response.data.inaccessible.length > 0) {
                     setInaccessibleEntities(response.data.inaccessible);
-                    
+
                     // Use AlertBox to show inaccessible entities warning
                     setAlert({
                         show: true,
-                        message: `${response.data.inaccessible.length} related ${response.data.inaccessible.length === 1 ? 'entity' : 'entities'} are not accessible`,
+                        message: `${response.data.inaccessible.length} related ${response.data.inaccessible.length === 1 ? 'entity is' : 'entities are'} not accessible`,
                         color: 'yellow',
                         button: {
                             text: 'Request Access',

@@ -60,7 +60,7 @@ class EntryListQuery(APIView):
         request=None,
     )
     def get(self, request: Request) -> Response:
-        accessible_entries = Entry.objects.all()
+        accessible_entries = Entry.objects.accessible(request.user).all()
         if not request.user.is_cradle_admin:
             accessible_entries = accessible_entries.filter(
                 Q(
@@ -73,11 +73,6 @@ class EntryListQuery(APIView):
                 )
                 | Q(
                     entry_class__type=EntryType.ARTIFACT,
-                    id__in=Subquery(
-                        Note.objects.get_accessible_artifact_ids(
-                            cast(CradleUser, request.user)
-                        )
-                    ),
                 )
             )
 
@@ -161,7 +156,7 @@ class AdvancedQueryView(APIView):
                 )
 
         # Get accessible entries for the user
-        accessible_entries = Entry.objects.all()
+        accessible_entries = Entry.objects.accessible(request.user).all()
         if not request.user.is_cradle_admin:
             accessible_entries = accessible_entries.filter(
                 Q(
@@ -174,11 +169,6 @@ class AdvancedQueryView(APIView):
                 )
                 | Q(
                     entry_class__type=EntryType.ARTIFACT,
-                    id__in=Subquery(
-                        Note.objects.get_accessible_artifact_ids(
-                            cast(CradleUser, request.user)
-                        )
-                    ),
                 )
             )
 

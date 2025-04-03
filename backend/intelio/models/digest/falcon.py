@@ -62,7 +62,7 @@ class FalconDigest(BaseDigest):
         ).first()
 
         if entity is None or not Access.objects.has_access_to_entities(
-            self.user, [entity], AccessType.READ_WRITE
+            self.user, [entity], [AccessType.READ_WRITE]
         ):
             self._append_error(
                 f"Entity {entity_obj.get('type')}:{entity_obj.get('value')} not found or you don't have access."

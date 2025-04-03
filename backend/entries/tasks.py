@@ -1,4 +1,5 @@
 from celery import group, shared_task
+from django.contrib.contenttypes.models import ContentType
 from entries.enums import EntryType
 from core.decorators import distributed_lock
 from entries.models import Edge, Entry, Relation
@@ -80,12 +81,21 @@ def remap_notes_task(note_ids, mapping_eclass, mapping_entry):
 
 
 @shared_task
-def scan_for_children(entry_id):
+def scan_for_children(entry_id, content_type_id, content_id):
+    content_type = ContentType.objects.get(id=content_type_id)
+    content_object = content_type.get_object_for_this_type(id=content_id)
+
     entry = Entry.objects.get(id=entry_id)
 
     matches = {}
     for child in entry.entry_class.children.all():
         matches[child] = child.match(entry.name)
+
+    Relation.objects.filter(
+        reason=RelationReason.CONTAINS,
+        content_type=content_type,
+        object_id=content_id,
+    ).delete()
 
     for k, v in matches.items():
         for i in v:
@@ -94,14 +104,16 @@ def scan_for_children(entry_id):
                 e1=e,
                 e2=entry,
                 reason=RelationReason.CONTAINS,
-                access_vector=1,
-                content_object=entry,
+                access_vector=getattr(content_object, "access_vector")
+                if hasattr(content_object, "access_vector")
+                else 1,
+                content_object=content_object,
             )
             ass.save()
 
 
 @shared_task
-def enrich_entry(entry_id, enricher_id):
+def enrich_entry(entry_id, content_type_id, content_id):
     pass
 
 

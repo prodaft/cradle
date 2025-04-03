@@ -27,6 +27,8 @@ class NotEnoughReferencesException(APIException):
             + f"entity and at least {cradle_settings.notes.min_entries} entries."
         )
 
+        super().__init__(*args, **kwargs)
+
 
 class NoteDoesNotExistException(APIException):
     status_code = 404
