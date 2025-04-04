@@ -1,9 +1,11 @@
 import itertools
+import logging
 from celery import shared_task
 from django.contrib.contenttypes.models import ContentType
 from django.db import close_old_connections
 from django_lifecycle.mixins import transaction
 from entries.enums import EntryType
+from entries.exceptions import InvalidEntryException
 from intelio.enums import EnrichmentStrategy
 from user.models import CradleUser
 from .markdown.to_links import Link
@@ -49,7 +51,12 @@ def smart_linker_task(note_id):
 
         # Resolve pairs from reference tree
         for src, dst in pairs:
-            pairs_resolved.add((entries[src], entries[dst]))
+            if src in entries and dst in entries:
+                pairs_resolved.add((entries[src], entries[dst]))
+            else:
+                logging.warning(
+                    f"Pair ({src}, {dst}) not found in entries. Skipping this pair."
+                )
 
         # Add entity-artifact permutations
         for e, a in itertools.product(entities, artifacts):
@@ -124,9 +131,14 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
                 entry_class = EntryClass.objects.get(subtype=r.key)
 
                 if entry_class.type == EntryType.ARTIFACT:
-                    entry = Entry.objects.create(name=r.value, entry_class=entry_class)
-                    if user_id:
-                        entry.log_create(user)  # Pass user_id for logging
+                    try:
+                        entry = Entry.objects.create(
+                            name=r.value, entry_class=entry_class
+                        )
+                        if user_id:
+                            entry.log_create(user)  # Pass user_id for logging
+                    except InvalidEntryException as e:
+                        logging.warning(e.detail)
                 else:
                     raise EntriesDoNotExistException([r])
             else:
