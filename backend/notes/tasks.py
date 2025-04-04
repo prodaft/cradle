@@ -1,5 +1,4 @@
 import itertools
-import logging
 from celery import shared_task
 from django.contrib.contenttypes.models import ContentType
 from django.db import close_old_connections
@@ -19,6 +18,11 @@ from entries.models import Entry, EntryClass
 from entries.enums import RelationReason
 
 from management.settings import cradle_settings
+
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @shared_task
@@ -54,7 +58,7 @@ def smart_linker_task(note_id):
             if src in entries and dst in entries:
                 pairs_resolved.add((entries[src], entries[dst]))
             else:
-                logging.warning(
+                logger.warning(
                     f"Pair ({src}, {dst}) not found in entries. Skipping this pair."
                 )
 
@@ -138,7 +142,7 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
                         if user_id:
                             entry.log_create(user)  # Pass user_id for logging
                     except InvalidEntryException as e:
-                        logging.warning(e.detail)
+                        logger.warning(e.detail)
                 else:
                     raise EntriesDoNotExistException([r])
             else:
