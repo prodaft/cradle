@@ -48,6 +48,8 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
         BaseDigest, related_name="notes", null=True, on_delete=models.CASCADE
     )
 
+    last_linked = models.DateTimeField(default=None, null=True)
+
     _reference_tree = None
 
     @property

@@ -90,11 +90,11 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
     const watchStrategy = watch('strategy');
 
     // Fetch all entry classes for the for_eclasses selector
-    const fetchEntryClasses = async () => {
+    const fetchEntryClasses = async (q) => {
         try {
             const response = await getEntryClasses();
             if (response.status === 200 && response.data) {
-                return response.data.map((entry) => ({
+                return response.data.filter((x) => x.subtype.startsWith(q)).map((entry) => ({
                     value: entry.subtype,
                     label: `${entry.subtype}`,
                 }));
@@ -144,6 +144,7 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
                             strategy: settings.strategy || 'manual',
                             periodicity: settings.periodicity || '24:00:00',
                             for_eclasses: formattedEclasses,
+                            enabled: settings.enabled || false,
                             settings: initialSettings,
                             id: settings.id,
                         });
@@ -296,6 +297,8 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
                                         />
                                     </div>
                                 )}
+
+                                <div className='mt-4'/>
 
                                 <FormField
                                     type='checkbox'

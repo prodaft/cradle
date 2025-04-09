@@ -9,8 +9,6 @@ export const ModalProvider = ({ children }) => {
 
     // Function to show a modal
     const setModal = (Component, props = {}) => {
-        console.log('AAAAAA');
-        console.log(modalData);
         setModalData({ Component, props });
     };
 

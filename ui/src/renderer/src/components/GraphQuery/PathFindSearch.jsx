@@ -8,9 +8,11 @@ import { format, parseISO } from 'date-fns';
 import { advancedQuery } from '../../services/queryService/queryService';
 import { graphPathFind } from '../../services/graphService/graphService';
 import AlertBox from '../AlertBox/AlertBox';
-import { LinkTreeFlattener, truncateText } from '../../utils/dashboardUtils/dashboardUtils';
+import {
+    LinkTreeFlattener,
+    truncateText,
+} from '../../utils/dashboardUtils/dashboardUtils';
 
-// Validation schema for the search form.
 const GraphQuerySchema = Yup.object().shape({
     src: Yup.string().required('Start node is required'),
     dst: Yup.array().min(1, 'At least one destination is required'),
@@ -21,37 +23,27 @@ const GraphQuerySchema = Yup.object().shape({
 });
 
 const PathFindSearch = forwardRef(
-    ({ initialValues, processNewNode, addEdge }, graphRef) => {
-        // Get search params hook from react-router-dom.
-        // Form state
-        const [formValues, setFormValues] = useState(initialValues);
+    ({ queryValues, setQueryValues, processNewNode, addEdge }, graphRef) => {
+        const [formValues, setFormValues] = useState(queryValues);
         const [errors, setErrors] = useState({});
         const [touched, setTouched] = useState({});
         const [isSubmitting, setIsSubmitting] = useState(false);
 
-        // UI state
-        const [startEntry, setStartEntry] = useState(
-            initialValues.src
-                ? { value: initialValues.src, label: initialValues.src }
-                : null,
-        );
+        const [startEntry, setStartEntry] = useState(queryValues.src || null);
         const [destinationSelectors, setDestinationSelectors] = useState(
-            initialValues.dst.map((d) => ({ value: d, label: d })) || [],
+            queryValues.dst || [],
         );
         const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
 
-        // Reset form when initialValues change
         useEffect(() => {
-            setFormValues(initialValues);
-            setStartEntry(
-                initialValues.src
-                    ? { value: initialValues.src, label: initialValues.src }
-                    : null,
-            );
-            setDestinationSelectors(
-                initialValues.dst.map((d) => ({ value: d, label: d })) || [],
-            );
-        }, [initialValues]);
+            setFormValues({
+                ...queryValues,
+                src: queryValues.src?.value || null,
+                dst: queryValues.dst?.map((d) => d.value) || [],
+            });
+            setStartEntry(queryValues.src || null);
+            setDestinationSelectors(queryValues.dst || null);
+        }, [queryValues]);
 
         const fetchEntries = async (q) => {
             const results = await advancedQuery(q, true);
@@ -81,7 +73,6 @@ const PathFindSearch = forwardRef(
                 validationErrors.inner.forEach((error) => {
                     newErrors[error.path] = error.message;
                 });
-                console.log(newErrors);
                 setErrors(newErrors);
                 return false;
             }
@@ -90,7 +81,6 @@ const PathFindSearch = forwardRef(
         const handleSubmit = async (e) => {
             e.preventDefault();
 
-            // Mark all fields as touched on submit
             const allTouched = Object.keys(formValues).reduce((acc, key) => {
                 acc[key] = true;
                 return acc;
@@ -99,10 +89,14 @@ const PathFindSearch = forwardRef(
 
             const isValid = await validateForm();
             if (isValid) {
-                // Update query parameters with current form values.
-                setIsSubmitting(true);
+                // Set new query values in parent
+                setQueryValues({
+                    ...formValues,
+                    src: startEntry,
+                    dst: destinationSelectors,
+                });
 
-                console.log(graphRef.current)
+                setIsSubmitting(true);
                 try {
                     const response = await graphPathFind({
                         src: formValues.src,
@@ -112,11 +106,17 @@ const PathFindSearch = forwardRef(
                     });
 
                     const { entries, relations, colors } = response.data;
-
                     const flattenedEntries = LinkTreeFlattener.flatten(entries);
-                    let changes = [];
 
-                    // Process each entry; if it's new, add it and update stats
+                    if (flattenedEntries.length === 0) {
+                        setAlert({
+                            show: true,
+                            message: 'No path found!',
+                            color: 'yellow',
+                        });
+                    }
+
+                    let changes = [];
                     for (let e of flattenedEntries) {
                         if (!graphRef.current.hasElementWithId(e.id)) {
                             e.label = truncateText(
@@ -124,6 +124,7 @@ const PathFindSearch = forwardRef(
                                 25,
                             );
                             e.color = colors[e.subtype];
+                            e.location = e.location || [0, 0];
                             const node = {
                                 group: 'nodes',
                                 data: {
@@ -138,9 +139,16 @@ const PathFindSearch = forwardRef(
                         }
                     }
 
+                    graphRef.current.add(changes);
+                    changes = [];
+
                     let edgeCount = 0;
                     for (let relation of relations) {
-                        if (!graphRef.current.hasElementWithId(relation.id)) {
+                        if (
+                            !graphRef.current.hasElementWithId(relation.id) &&
+                            graphRef.current.hasElementWithId(relation.src) &&
+                            graphRef.current.hasElementWithId(relation.dst)
+                        ) {
                             const link = {
                                 group: 'edges',
                                 data: {
@@ -160,7 +168,7 @@ const PathFindSearch = forwardRef(
                     graphRef.current.layout({ name: 'preset', animate: true });
                     addEdge(edgeCount);
                     graphRef.current.fit(graphRef.current.elements(), 100);
-                    setAlert({show:false});
+                    setAlert({ show: false });
                 } catch (error) {
                     setAlert({
                         show: true,
@@ -173,14 +181,11 @@ const PathFindSearch = forwardRef(
             }
         };
 
-        // Field validation helper
-        const showError = (fieldName) => {
-            return errors[fieldName] && touched[fieldName] ? (
+        const showError = (fieldName) =>
+            errors[fieldName] && touched[fieldName] ? (
                 <div className='text-red-500 text-xs mt-1'>{errors[fieldName]}</div>
             ) : null;
-        };
 
-        // Function to display errors from API calls
         const displayError = (setAlert) => (results) => {
             setAlert({
                 show: true,
@@ -245,11 +250,14 @@ const PathFindSearch = forwardRef(
                                     if (value.startDate && value.endDate) {
                                         setFieldValue(
                                             'startDate',
-                                            format(value.startDate, 'yyyy-MM-dd'),
+                                            format(
+                                                value.startDate,
+                                                "yyyy-MM-dd'T'HH:mm",
+                                            ),
                                         );
                                         setFieldValue(
                                             'endDate',
-                                            format(value.endDate, 'yyyy-MM-dd'),
+                                            format(value.endDate, "yyyy-MM-dd'T'HH:mm"),
                                         );
                                     }
                                 }}

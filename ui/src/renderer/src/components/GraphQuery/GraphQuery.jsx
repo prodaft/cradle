@@ -11,21 +11,6 @@ const GraphQuery = forwardRef(function (
     graphRef,
 ) {
     const navigate = useNavigate();
-    const [searchParams, setSearchParams] = useSearchParams();
-
-    const initialValues = {
-        src: searchParams.get('src') || '',
-        dst: JSON.parse(searchParams.get('dst') || '[]'),
-        max_depth: parseInt(searchParams.get('max_depth') || '2'),
-        startDate: searchParams.get('startDate') || '1970-01-01',
-        endDate:
-            searchParams.get('endDate') || format(addDays(new Date(), 1), 'yyyy-MM-dd'),
-    };
-
-    // Prepare props for GraphSearch.
-    const searchProps = {
-        initialValues,
-    };
 
     // Prepare props for GraphSettings.
     const settingsProps = {
@@ -60,7 +45,6 @@ const GraphQuery = forwardRef(function (
                 <Tab title='Search' classes='pt-2'>
                     <div className='mt-3 flex flex-col flex-1 overflow-hidden h-[85vh]'>
                         <GraphControl
-                            searchProps={searchProps}
                             settingsProps={settingsProps}
                             ref={graphRef}
                         />

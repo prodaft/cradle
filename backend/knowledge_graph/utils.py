@@ -84,3 +84,15 @@ def get_edges_for_paths(start_id, targets, user, start_time, end_time) -> List[E
 
     edges = list(Edge.objects.filter(id__in=edge_ids))
     return edges
+
+
+def filter_valid_edges(edges: List[Edge]) -> List[Edge]:
+    srcids = {edge.src for edge in edges}
+    dstids = {edge.dst for edge in edges}
+
+    ids = srcids | dstids
+
+    entries = set(Entry.objects.filter(id__in=ids).values_list("id", flat=True))
+
+    edges = [edge for edge in edges if edge.src in entries and edge.dst in entries]
+    return edges

@@ -42,7 +42,7 @@ const ActionConfirmationModal = ({
                     Cancel
                 </button>
                 <button
-                    className='btn btn-error'
+                    className='btn btn-primary'
                     onClick={handleConfirm}
                     disabled={!isConfirmEnabled}
                 >

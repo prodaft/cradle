@@ -1,9 +1,11 @@
 from celery import group, shared_task
 from django.contrib.contenttypes.models import ContentType
 from entries.enums import EntryType
-from core.decorators import distributed_lock
+from core.decorators import debounce_task, distributed_lock
 from entries.models import Edge, Entry, Relation
 from entries.enums import RelationReason
+from intelio.models.base import EnricherSettings
+from intelio.utils import get_or_default_enricher
 from notes.processor.task_scheduler import TaskScheduler
 from notes.utils import calculate_acvec
 from notes.tasks import propagate_acvec
@@ -81,15 +83,11 @@ def remap_notes_task(note_ids, mapping_eclass, mapping_entry):
 
 
 @shared_task
-def scan_for_children(entry_id, content_type_id, content_id):
+def scan_for_children(entry_ids, content_type_id, content_id):
     content_type = ContentType.objects.get(id=content_type_id)
     content_object = content_type.get_object_for_this_type(id=content_id)
 
-    entry = Entry.objects.get(id=entry_id)
-
-    matches = {}
-    for child in entry.entry_class.children.all():
-        matches[child] = child.match(entry.name)
+    entries = Entry.objects.get(id__in=entry_ids)
 
     Relation.objects.filter(
         reason=RelationReason.CONTAINS,
@@ -97,24 +95,34 @@ def scan_for_children(entry_id, content_type_id, content_id):
         object_id=content_id,
     ).delete()
 
-    for k, v in matches.items():
-        for i in v:
-            e, _ = Entry.objects.get_or_create(name=i, entry_class=k)
-            ass = Relation(
-                e1=e,
-                e2=entry,
-                reason=RelationReason.CONTAINS,
-                access_vector=getattr(content_object, "access_vector")
-                if hasattr(content_object, "access_vector")
-                else 1,
-                content_object=content_object,
-            )
-            ass.save()
+    relations = []
 
+    created = False
 
-@shared_task
-def enrich_entry(entry_id, content_type_id, content_id):
-    pass
+    for entry in entries:
+        matches = {}
+        for child in entry.entry_class.children.all():
+            matches[child] = child.match(entry.name)
+
+        for k, v in matches.items():
+            for i in v:
+                e, new = Entry.objects.get_or_create(name=i, entry_class=k)
+                created = created or new
+                rel = Relation(
+                    e1=e,
+                    e2=entry,
+                    reason=RelationReason.CONTAINS,
+                    access_vector=getattr(content_object, "access_vector")
+                    if hasattr(content_object, "access_vector")
+                    else 1,
+                    content_object=content_object,
+                )
+                relations.append(rel)
+
+    if relations:
+        Relation.objects.bulk_create(relations)
+
+    refresh_edges_materialized_view.apply_async(simulate=created)
 
 
 @shared_task
@@ -180,13 +188,9 @@ def simulate_graph():
     return result
 
 
+@debounce_task(timeout=180)
 @shared_task
-def estimate_entry_coordinates(entry_id):
-    pass
-
-
-@shared_task
-def refresh_edges_materialized_view():
+def refresh_edges_materialized_view(simulate=False):
     """
     Refreshes the 'edges' materialized view concurrently.
 
@@ -210,3 +214,6 @@ def refresh_edges_materialized_view():
         [Entry(id=id, degree=degree) for id, degree in zip(entryids, degrees)],
         ["degree"],
     )
+
+    if simulate:
+        simulate_graph.apply_async()

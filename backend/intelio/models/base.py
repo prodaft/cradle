@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
@@ -167,7 +167,10 @@ class BaseEnricher:
     def __init__(self, settings: dict):
         self.settings = settings
 
-    def enrich(self, entries: list[Entry]):
+    def pre_enrich(self, entries: list[Entry], user) -> Optional[str]:
+        raise NotImplementedError
+
+    def enrich(self, entries: list[Entry], content_object, user) -> None:
         raise NotImplementedError
 
     @classmethod
@@ -235,8 +238,7 @@ class EnricherSettings(models.Model):
     enabled = models.BooleanField(default=False)
 
     def __str__(self):
-        config = self.get_type_config()
-        display = config.display_name if config else self.enricher_type
+        display = self.enricher_type
         return f"{display} ({self.for_eclasses})"
 
     def clean(self):
@@ -252,6 +254,16 @@ class EnricherSettings(models.Model):
         errors = config.validate_settings(self.settings)
         if errors:
             raise ValidationError(errors)
+
+    @property
+    def enricher(self):
+        """
+        Return the enricher class based on the enricher_type.
+        """
+        config = BaseEnricher.get_subclass(self.enricher_type)
+        if config is None:
+            raise ValidationError(f"Unknown enricher type: {self.enricher_type}")
+        return config(settings=self.settings)
 
 
 class ClassMapping(models.Model):

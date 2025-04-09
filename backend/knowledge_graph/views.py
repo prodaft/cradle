@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -11,10 +12,11 @@ from core.pagination import LazyPaginator
 from entries.enums import EntryType
 from entries.models import Edge, Entry
 from entries.serializers import EntrySerializer
-from knowledge_graph.utils import get_edges_for_paths, get_neighbors
+from knowledge_graph.utils import filter_valid_edges, get_edges_for_paths, get_neighbors
 from query.filters import EntryFilter
 from query.utils import parse_query
 from .serializers import PathfindQuery, SubGraphSerializer
+from django.utils.dateparse import parse_datetime
 
 
 class GraphPathFindView(APIView):
@@ -28,12 +30,14 @@ class GraphPathFindView(APIView):
         start = query.validated_data["src"]
         ends = query.validated_data["dsts"]
 
-        edges = get_edges_for_paths(
-            start.id,
-            [x.id for x in ends],
-            request.user,
-            query.validated_data["min_date"],
-            query.validated_data["max_date"],
+        edges = filter_valid_edges(
+            get_edges_for_paths(
+                start.id,
+                [x.id for x in ends],
+                request.user,
+                query.validated_data["min_date"],
+                query.validated_data["max_date"],
+            )
         )
 
         entry_ids = set()
@@ -75,7 +79,7 @@ class GraphNeighborsView(APIView):
             )
 
         if depth < 0 or depth > 5:
-            return Response({"error": "depth must be between 0 and 4."}, status=400)
+            return Response({"error": "depth must be between 0 and 5."}, status=400)
 
         # Retrieve the source entry (404 if not found)
         source_entry = Entry.objects.filter(pk=source_id).first()
@@ -148,12 +152,17 @@ class GraphInaccessibleView(APIView):
             return Response({"error": "Missing src parameter."}, status=400)
 
         try:
-            depth = int(request.query_params.get("depth", 1))
+            depth = int(request.query_params.get("depth", 0))
         except ValueError:
             return Response({"error": "depth must be integer."}, status=400)
 
-        if depth < 1 or depth > 4:
-            return Response({"error": "depth must be between 1 and 4."}, status=400)
+        if depth < 0 or depth > 5:
+            return Response({"error": "depth must be between 0 and 5."}, status=400)
+
+        if depth == 0:
+            return Response(
+                {"inaccessible": []},
+            )
 
         # Retrieve the source entry (404 if not found)
         source_entry = Entry.objects.filter(pk=source_id).first()
@@ -197,27 +206,41 @@ class FetchGraphView(APIView):
             .order_by("-last_seen")
         )
 
+        # Parse optional date filters
+        start_date = parse_datetime(
+            request.query_params.get("start_date")
+        )  # ISO format expected
+        end_date = parse_datetime(request.query_params.get("end_date"))
+
+        if start_date and end_date:
+            edges = edges.filter(
+                Q(created_at__range=(start_date, end_date))
+                | Q(last_seen__range=(start_date, end_date))
+            )
+        elif start_date:
+            edges = edges.filter(
+                Q(created_at__gte=start_date) | Q(last_seen__gte=start_date)
+            )
+        elif end_date:
+            edges = edges.filter(
+                Q(created_at__lte=end_date) | Q(last_seen__lte=end_date)
+            )
+
+        # Page size parsing
         try:
             page_size = int(request.query_params.get("page_size", 200))
         except ValueError:
             return Response({"error": "page_size must be integer."}, status=400)
 
         paginator = LazyPaginator(page_size=page_size)
-        paginated_edges = paginator.paginate_queryset(edges, request)
+        paginated_edges = filter_valid_edges(
+            paginator.paginate_queryset(edges, request)
+        )
 
-        entry_ids = set()
-
-        for i in paginated_edges:
-            entry_ids.add(i.src)
-            entry_ids.add(i.dst)
-
+        entry_ids = {i.src for i in paginated_edges} | {i.dst for i in paginated_edges}
         entries = Entry.objects.filter(id__in=entry_ids)
 
-        colors = {}
-
-        for i in entries.all():
-            if i.entry_class_id not in colors:
-                colors[i.entry_class_id] = i.entry_class.color
+        colors = {i.entry_class_id: i.entry_class.color for i in entries}
 
         serializer = SubGraphSerializer(
             {"relations": paginated_edges, "entries": entries, "colors": colors}

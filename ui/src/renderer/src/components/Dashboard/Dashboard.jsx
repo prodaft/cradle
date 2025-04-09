@@ -1,6 +1,10 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
-import { requestEntityAccess } from '../../services/dashboardService/dashboardService';
+import {
+    enrichEntry,
+    getEnrichmentTechniques,
+    requestEntityAccess,
+} from '../../services/dashboardService/dashboardService';
 import useAuth from '../../hooks/useAuth/useAuth';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
@@ -17,7 +21,10 @@ import { Tabs, Tab } from '../Tabs/Tabs';
 import Notes from './Notes';
 import Relations from './Relations';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
+import ActionConfirmationModal from '../Modals/ActionConfirmationModal.jsx';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
+import { SparksSolid } from 'iconoir-react';
+import NavbarDropdown from '../NavbarDropdown/NavbarDropdown.jsx';
 
 /**
  * Dashboard component
@@ -41,6 +48,7 @@ export default function Dashboard() {
     const [entryMissing, setEntryMissing] = useState(false);
     const [contentObject, setContentObject] = useState(null);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const [enrichers, setEnrichers] = useState([]);
     const navigate = useNavigate();
     const auth = useAuth();
     const dashboard = useRef(null);
@@ -64,6 +72,19 @@ export default function Dashboard() {
         });
     }, [subtype, name, setAlert, setEntryMissing, setContentObject]);
 
+    useEffect(() => {
+        if (contentObject == null) return;
+        getEnrichmentTechniques(contentObject.id)
+            .then((response) => {
+                if (response.status === 200) {
+                    setEnrichers(response.data);
+                }
+            })
+            .catch((error) => {
+                displayError(setAlert, navigate)(error);
+            });
+    }, [contentObject?.id]);
+
     const handleDelete = () => {
         deleteEntry(`entries/${pluralize(contentObject.type)}`, contentObject.id)
             .then((response) => {
@@ -74,14 +95,40 @@ export default function Dashboard() {
             .catch(displayError(setAlert, navigate));
     };
 
+    const handleEnrich = (id, enrichId) => () => {
+        enrichEntry(id, enrichId).then((response) => {
+            if (response.status === 200) {
+                setAlert({
+                    show: true,
+                    message: response.data.message,
+                    color: 'green',
+                });
+            }
+        });
+    };
+
     const navbarContents = () => [
         // Add graph visualization button
+        enrichers.length > 0 && contentObject?.id && (
+            <NavbarDropdown
+                key='-enrich'
+                icon={<SparksSolid />}
+                text={'Enrich'}
+                contents={enrichers.map((option) => ({
+                    label: option.name,
+                    handler: () => setModal(ActionConfirmationModal, {
+                        text: `Are you sure you want to enrich this entry with ${option.name}? Results will be visible to everyone.`,
+                        onConfirm: handleEnrich(contentObject.id, option.id),
+                    })
+                }))}
+            />
+        ),
         <NavbarButton
             key='view-graph-btn'
             icon={<Graph height={24} width={24} />}
             text='Explore in Graph'
             onClick={() =>
-                navigate(`/knowledge-graph?operation=bfs&src=${contentObject.id}`)
+                navigate(`/knowledge-graph?&pf_src={"value": "${contentObject.id}", "label": "${contentObject.name}"}&pgf_src={"value": "${contentObject.id}", "label": "${contentObject.name}"}`)
             }
             data-testid='view-graph-btn'
         />,
@@ -105,22 +152,11 @@ export default function Dashboard() {
     ];
     useNavbarContents(!entryMissing && navbarContents, [
         contentObject,
+        enrichers,
         location,
         auth.isAdmin(),
         entryMissing,
     ]);
-
-    const handleRequestEntityAccess = (entities) => {
-        Promise.all(entities.map((c) => requestEntityAccess(c.id)))
-            .then(() =>
-                setAlert({
-                    show: true,
-                    message: 'Access request sent successfully',
-                    color: 'green',
-                }),
-            )
-            .catch(displayError(setAlert, navigate));
-    };
 
     if (entryMissing) {
         return (

@@ -32,6 +32,7 @@ bleach = "*"
 numpy = "*"
 scipy = "*"
 psycopg2-binary = "*"
+dnspython = "*"
 
 [dev-packages]
 bump-my-version = "*"

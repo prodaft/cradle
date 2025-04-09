@@ -287,7 +287,7 @@ const TypeMappingsEditor = ({ id }) => {
 
         const rowData = {};
         for (const [key, value] of Object.entries(row)) {
-            if (key !== 'id' && key !== 'edited') {
+            if (key !== 'edited') {
                 if (columnDefinitions[key]?.type === 'options') {
                     rowData[key] = value?.value;
                 } else {
@@ -404,15 +404,7 @@ const TypeMappingsEditor = ({ id }) => {
 
     // Get used internal_class values to filter options
     const getAvailableInternalClassOptions = (rowIndex) => {
-        if (!columnDefinitions?.internal_class?.options) return [];
-
-        const usedValues = rows.map((row, idx) =>
-            idx !== rowIndex && row.internal_class ? row.internal_class.value : null
-        ).filter(Boolean);
-
-        return columnDefinitions.internal_class.options.filter(
-            option => !usedValues.includes(option.value)
-        );
+        return columnDefinitions?.internal_class?.options || [];
     };
 
     if (isLoading || !columnDefinitions) {

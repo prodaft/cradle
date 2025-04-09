@@ -43,7 +43,9 @@ class EntryQuerySet(models.QuerySet):
         accessible_vertices = Edge.objects.accessible(user).values_list(
             "src", flat=True
         )
-        return self.filter(id__in=accessible_vertices)
+        return self.filter(
+            Q(id__in=accessible_vertices) | Q(entry_class__type=EntryType.ENTITY)
+        )
 
 
 class RelationQuerySet(models.QuerySet):

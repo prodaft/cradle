@@ -51,7 +51,7 @@ const LINK_REGEX =
 export function cradleLinkRule(state: any, silent: boolean): boolean {
     const match = LINK_REGEX.exec(state.src.slice(state.pos));
     if (!match) return false;
-    if (silent) return true;
+    if (silent) return false;
     const token = state.push('cradle_link', '', 0);
     token.markup = match[0];
     token.cradle_type = match[1];

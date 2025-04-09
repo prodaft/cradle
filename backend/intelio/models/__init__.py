@@ -12,3 +12,4 @@ from .mappings.falcon import FalconMapping as FalconMapping
 
 # Enrichments
 from .base import BaseEnricher as BaseEnricher
+from .enrichments.dns import DNSEnricher as DNSEnricher

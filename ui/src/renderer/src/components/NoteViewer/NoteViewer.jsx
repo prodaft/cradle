@@ -129,17 +129,6 @@ export default function NoteViewer() {
                   onClick={() => navigate(`/notes/${id}/edit`)}
                   tesid='delete-btn'
               />,
-              auth.isAdmin() && (
-                  <NavbarButton
-                      key='history-btn'
-                      text='View History'
-                      icon={<ClockRotateRight />}
-                      onClick={() =>
-                          navigate(`/activity?content_type=note&object_id=${id}`)
-                      }
-                      tesid='delete-btn'
-                  />
-              ),
               <NavbarButton
                   key='delete-btn'
                   text='Delete Note'
@@ -240,6 +229,19 @@ export default function NoteViewer() {
                                             </span>
                                         </span>
                                     )}
+                                    {note.last_linked && (
+                                        <span>
+                                            <span className='text-sm text-zinc-700'>
+                                                |
+                                            </span>
+                                            <span className='text-sm text-zinc-500 p-2'>
+                                                <strong>Linked on:</strong>{' '}
+                                                {new Date(
+                                                    note.last_linked,
+                                                ).toLocaleString()}
+                                            </span>
+                                        </span>
+                                    )}
                                 </div>
                                 <div className='flex-grow'>
                                     {isRaw ? (
@@ -266,7 +268,7 @@ export default function NoteViewer() {
                     </Tab>
                     {auth.isAdmin() && (
                         <Tab title='History' classes='pt-2'>
-                            <ActivityList content_type='note' object_id={id} />
+                            <ActivityList content_type='note' objectId={id} />
                         </Tab>
                     )}
                 </Tabs>

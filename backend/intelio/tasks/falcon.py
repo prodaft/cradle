@@ -24,3 +24,6 @@ def digest_chunk(digest_id, obj, last):
     elif last:
         digest.status = DigestStatus.DONE
         digest.save()
+        from entries.tasks import refresh_edges_materialized_view
+
+        refresh_edges_materialized_view.apply_async(simulate=True)

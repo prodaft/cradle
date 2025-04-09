@@ -28,7 +28,6 @@ export default function DeleteNote({ note, setAlert, setHidden }) {
     const handleDelete = () => {
             deleteNote(note.id)
                 .then((response) => {
-                    console.log(response)
                     if (response.status === 200) {
                         setAlert({
                             show: true,

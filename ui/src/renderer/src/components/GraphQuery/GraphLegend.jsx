@@ -1,4 +1,3 @@
-// components/GraphQuery/GraphLegend.js
 import React from 'react';
 import { SubtypeHierarchy } from '../../utils/dashboardUtils/dashboardUtils';
 import Collapsible from '../Collapsible/Collapsible';
@@ -52,23 +51,24 @@ const GraphLegend = ({
     return (
         <div className='flex flex-col md:flex-row justify-start items-start space-y-4 md:space-y-0 md:space-x-4 pt-2 px-2'>
             <div className='w-full'>
-                <div className='flex items-center justify-between mb-2'>
-                    <Collapsible label='Legend'>
+                <div className='mb-2'>
+                    {/* Use the new parameters on the main Collapsible so it renders the hide/show all button inside its header */}
+                    <Collapsible 
+                        label="Legend"
+                        buttonText={allItemsDisabled ? 'Show All' : 'Hide All'}
+                        onButtonClick={toggleAll}
+                    >
                         <div className='w-auto flex flex-col'>
                             <div className='flex flex-wrap text-zinc-300'>
-                                {new SubtypeHierarchy(
-                                    Object.keys(entryGraphColors),
-                                ).convert(
+                                {new SubtypeHierarchy(Object.keys(entryGraphColors)).convert(
                                     // --- Render for internal nodes (categories that have child categories) ---
                                     (value, children, childValues) => {
                                         // Extract the path for this level
                                         const path =
-                                            childValues.length > 0 &&
-                                            childValues[0].includes('/')
+                                            childValues.length > 0 && childValues[0].includes('/')
                                                 ? childValues[0].substring(
                                                       0,
-                                                      childValues[0].lastIndexOf('/') +
-                                                          1,
+                                                      childValues[0].lastIndexOf('/') + 1,
                                                   )
                                                 : '';
 
@@ -93,33 +93,23 @@ const GraphLegend = ({
                                                 className='mt-1 dark:text-zinc-300 text-xs w-full pt-1'
                                                 key={value}
                                             >
-                                                <div className='flex items-center justify-between'>
-                                                    <Collapsible label={value}>
-                                                        <div className='dark:text-zinc-300 text-xs w-full break-all flex flex-row flex-wrap justify-start items-center'>
-                                                            {children}
-                                                        </div>
-                                                    </Collapsible>
-                                                    {leafNodes.length > 0 && (
-                                                        <button
-                                                            className='ml-2 px-2 py-1 text-xs bg-zinc-700 hover:bg-zinc-600 rounded-md'
-                                                            onClick={() =>
-                                                                toggleAllAtPath(
-                                                                    path,
-                                                                    leafNodes.map(
-                                                                        (ln) =>
-                                                                            ln.substring(
-                                                                                path.length,
-                                                                            ),
-                                                                    ),
-                                                                )
-                                                            }
-                                                        >
-                                                            {allDisabled
-                                                                ? 'Show All'
-                                                                : 'Hide All'}
-                                                        </button>
-                                                    )}
-                                                </div>
+                                                {/* Replace the external button with the new props on Collapsible */}
+                                                <Collapsible 
+                                                    label={value}
+                                                    buttonText={allDisabled ? 'Show All' : 'Hide All'}
+                                                    onButtonClick={() =>
+                                                        toggleAllAtPath(
+                                                            path,
+                                                            leafNodes.map((ln) =>
+                                                                ln.substring(path.length),
+                                                            ),
+                                                        )
+                                                    }
+                                                >
+                                                    <div className='dark:text-zinc-300 text-xs w-full break-all flex flex-row flex-wrap justify-start items-center'>
+                                                        {children}
+                                                    </div>
+                                                </Collapsible>
                                             </div>
                                         );
                                     },
@@ -131,33 +121,19 @@ const GraphLegend = ({
                                         >
                                             <div className='dark:text-zinc-300 text-xs w-full break-all flex flex-row flex-wrap justify-start items-center'>
                                                 <div
-                                                    key={path}
                                                     className={`flex flex-row items-center space-x-2 cursor-pointer ${
-                                                        disabledTypes.has(path + value)
-                                                            ? 'opacity-50'
-                                                            : ''
+                                                        disabledTypes.has(path + value) ? 'opacity-50' : ''
                                                     }`}
-                                                    onClick={() =>
-                                                        toggleDisabledType(path + value)
-                                                    }
+                                                    onClick={() => toggleDisabledType(path + value)}
                                                 >
                                                     <div
                                                         className='w-4 h-4 rounded-full'
                                                         style={{
-                                                            backgroundColor:
-                                                                entryGraphColors[
-                                                                    path + value
-                                                                ],
+                                                            backgroundColor: entryGraphColors[path + value],
                                                         }}
                                                     ></div>
                                                     <span
-                                                        className={
-                                                            disabledTypes.has(
-                                                                path + value,
-                                                            )
-                                                                ? 'line-through'
-                                                                : ''
-                                                        }
+                                                        className={disabledTypes.has(path + value) ? 'line-through' : ''}
                                                     >
                                                         {value}
                                                     </span>
@@ -169,12 +145,6 @@ const GraphLegend = ({
                             </div>
                         </div>
                     </Collapsible>
-                    <button
-                        className='ml-2 px-2 py-1 text-xs bg-zinc-700 hover:bg-zinc-600 rounded-md'
-                        onClick={toggleAll}
-                    >
-                        {allItemsDisabled ? 'Show All' : 'Hide All'}
-                    </button>
                 </div>
             </div>
         </div>

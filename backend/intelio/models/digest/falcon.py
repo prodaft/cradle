@@ -2,12 +2,16 @@ from datetime import datetime
 from django.utils import timezone
 from access.enums import AccessType
 from access.models import Access
+from entries.enums import EntryType
+from entries.exceptions import InvalidEntryException
 from entries.models import Entry
 from intelio.enums import DigestStatus
+from notes.utils import calculate_acvec
 from ...tasks.falcon import digest_chunk
 from ..mappings.falcon import FalconMapping
 from ..base import BaseDigest
 from entries.models import Relation
+from entries.enums import RelationReason
 import json
 
 
@@ -75,6 +79,10 @@ class FalconDigest(BaseDigest):
             self._append_warning(f"Unknown type {obj.get('type')}")
             return
 
+        if eclass.type != EntryType.ARTIFACT:
+            self._append_warning(f"You can't link to an entity ({eclass.subtype})!")
+            return
+
         value = obj.get("value", None)
 
         if value is None:
@@ -96,14 +104,24 @@ class FalconDigest(BaseDigest):
         else:
             timestamp = timezone.now()
 
-        Relation.objects.create(
-            digest=self,
-            e1=parent_entry,
-            e2=entity,
-            entity=entity,
-            created_at=timestamp,
-            details={"tags": obj.get("tags", None)},
+        access_vector = calculate_acvec(
+            [
+                parent_entry,
+                entity,
+            ]
         )
+
+        rels = [
+            Relation(
+                content_object=self,
+                e1=entity,
+                e2=parent_entry,
+                access_vector=access_vector,
+                created_at=timestamp,
+                reason=RelationReason.DIGEST,
+                details={"tags": obj.get("tags", None), "title": self.title},
+            )
+        ]
 
         for link in obj.get("links", []):
             eclass = typemapping.get(link.get("type"), None)
@@ -111,22 +129,37 @@ class FalconDigest(BaseDigest):
                 self._append_warning(f"Unknown type {link.get('type')}")
                 continue
 
+            if eclass.type != EntryType.ARTIFACT:
+                self._append_warning(f"You can't link to an entity ({eclass.subtype})!")
+                continue
+
             value = link.get("value", None)
             if value is None:
                 self._append_warning("Link value missing")
                 continue
 
-            child_entry, created = Entry.objects.get_or_create(
-                entry_class=eclass,
-                name=value,
+            try:
+                child_entry, created = Entry.objects.get_or_create(
+                    entry_class=eclass,
+                    name=value,
+                )
+            except InvalidEntryException as e:
+                self._append_warning(e.detail)
+                continue
+
+            rels.append(
+                Relation(
+                    content_object=self,
+                    e1=parent_entry,
+                    e2=child_entry,
+                    access_vector=access_vector,
+                    created_at=timestamp,
+                    reason=RelationReason.DIGEST,
+                    details={"tags": obj.get("tags", None), "title": self.title},
+                )
             )
-            Relation.objects.create(
-                digest=self,
-                e1=parent_entry,
-                e2=child_entry,
-                entity=entity,
-                created_at=timestamp,
-                details={"reason": link.get("relation", None)},
-            )
+
+        # Save all relations in bulk for performance
+        Relation.objects.bulk_create(rels)
 
         self.save()

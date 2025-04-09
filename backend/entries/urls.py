@@ -1,9 +1,11 @@
 from django.urls import path
 
+
 from .views import entry_view
 from .views import entity_views
 from .views import entry_class_views
 from .views import relation_view
+from .views import enrich_view
 
 urlpatterns = [
     path(
@@ -36,5 +38,10 @@ urlpatterns = [
         "relations/<uuid:relation_id>/",
         relation_view.RelationDetailView.as_view(),
         name="relation-detail",
+    ),
+    path(
+        "entries/<int:entry_id>/enrich/",
+        enrich_view.EntryEnrichersView.as_view(),
+        name="entry-enrichers",
     ),
 ]

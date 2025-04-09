@@ -3,8 +3,7 @@ import GraphSearch from './GraphSearch';
 import GraphSettings from './GraphSettings';
 import GraphLegend from './GraphLegend';
 
-const GraphControl = forwardRef(({ searchProps, settingsProps }, graphRef) => {
-    // Maintain graphStats: total nodes, total edges, counts per category, and a legend.
+const GraphControl = forwardRef(({ settingsProps }, graphRef) => {
     const [graphStats, setGraphStats] = useState({
         nodes: 0,
         edges: 0,
@@ -41,7 +40,6 @@ const GraphControl = forwardRef(({ searchProps, settingsProps }, graphRef) => {
         });
     };
 
-    // Also maintain disabled types for the legend toggling.
     const [disabledTypes, setDisabledTypes] = useState(new Set());
     const toggleDisabledType = (type) => {
         setDisabledTypes((prev) => {
@@ -86,7 +84,6 @@ const GraphControl = forwardRef(({ searchProps, settingsProps }, graphRef) => {
     return (
         <>
             <GraphSearch
-                {...searchProps}
                 ref={graphRef}
                 graphStats={graphStats}
                 processNewNode={processNewNode}

@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -91,19 +92,22 @@ class MappingSchemaView(APIView):
             return Response({"error": "internal_class is required"}, status=400)
 
         mappingf = mapping_class.objects.filter(
-            internal_class_id=values.get("internal_class")
+            id=values.pop("id", None),
         )
 
         values["internal_class_id"] = values.pop("internal_class")
 
         serializer = ClassMappingSerializer.get_serializer(mapping_class)
 
-        if mappingf.exists():
-            mappingf.update(**values)
-            return Response(serializer(mappingf.first()).data)
-        else:
-            mapping = mapping_class.objects.create(**values)
-            return Response(serializer(mapping).data)
+        try:
+            if mappingf.exists():
+                mappingf.update(**values)
+                return Response(serializer(mappingf.first()).data)
+            else:
+                mapping = mapping_class.objects.create(**values)
+                return Response(serializer(mapping).data)
+        except IntegrityError as e:
+            return Response({"error": str(e)}, status=400)
 
     def delete(self, request, class_name):
         try:

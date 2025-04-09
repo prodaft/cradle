@@ -1,7 +1,9 @@
+from collections import defaultdict
 import itertools
 from celery import shared_task
 from django.contrib.contenttypes.models import ContentType
 from django.db import close_old_connections
+from django.utils import timezone
 from django_lifecycle.mixins import transaction
 from entries.enums import EntryType
 from entries.exceptions import InvalidEntryException
@@ -28,12 +30,15 @@ logger = logging.getLogger(__name__)
 @shared_task
 @distributed_lock("smartlinker_note_{note_id}", timeout=1800)
 def smart_linker_task(note_id):
+    from entries.tasks import refresh_edges_materialized_view
+
     """
     Celery task to create links between entries for a given note.
 
     Args:
         note_id: ID of the Note object to process
     """
+
     note = Note.objects.get(id=note_id)
 
     try:
@@ -80,8 +85,12 @@ def smart_linker_task(note_id):
             ]
         )
 
+        note.last_linked = timezone.now()
+        note.save()
+
     finally:
         close_old_connections()
+        refresh_edges_materialized_view.apply_async(simulate=True)
 
     return note_id
 
@@ -121,7 +130,8 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
     """
     Celery task to create missing entries for a note.
     """
-    from entries.tasks import scan_for_children, enrich_entry
+    from entries.tasks import scan_for_children
+    from intelio.tasks import enrich_entries
 
     note = Note.objects.get(id=note_id)
     if user_id:
@@ -151,13 +161,23 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
             note.entries.add(entry)
 
             content_type = ContentType.objects.get_for_model(note)
+
+            childscan = []
+            enrich = defaultdict(list)
             if entry.entry_class.children.count() > 0:
-                scan_for_children.delay(entry.id, content_type.id, note.id)
+                childscan.append(entry.id)
 
             for e in entry.entry_class.enrichers.filter(
-                strategy=EnrichmentStrategy.ON_CREATE,
+                strategy=EnrichmentStrategy.ON_CREATE, enabled=True
             ):
-                enrich_entry.delay(entry.id, content_type.id, note.id)
+                enrich[e.id].append(entry.id)
+
+            if len(childscan):
+                scan_for_children.delay(childscan, content_type.id, note.id)
+
+            if len(enrich):
+                for k, v in enrich:
+                    enrich_entries.delay(k, v, content_type.id, note.id)
 
         note.save()
 
@@ -169,6 +189,8 @@ def connect_aliases(note_id, user_id=None):
     """
     Celery task to connect aliases in a note
     """
+    from entries.tasks import refresh_edges_materialized_view
+
     alias_class = EntryClass.objects.filter(subtype="alias")
 
     if not alias_class.exists():  # If alias type does not exist, create it
@@ -221,6 +243,8 @@ def connect_aliases(note_id, user_id=None):
                     virtual=True,
                 )
             )
+
+        refresh_edges_materialized_view.apply_async()
 
         Relation.objects.bulk_create(relations)
 

@@ -161,7 +161,7 @@ class ActionView(APIView):
         return Response({"message": "Started relinking notes."})
 
     def action_refreshMaterializedGraph(self, request, *args, **kwargs):
-        refresh_edges_materialized_view.apply_async()
+        refresh_edges_materialized_view.apply_async(force=True)
         return Response({"message": "Started graph materialization."})
 
     def action_recalculateNodePositions(self, request, *args, **kwargs):

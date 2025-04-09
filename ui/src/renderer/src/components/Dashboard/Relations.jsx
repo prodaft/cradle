@@ -116,7 +116,7 @@ export default function Relations({ obj }) {
                         color: 'yellow',
                         button: {
                             text: 'Request Access',
-                            onClick: handleRequestAccess
+                            onClick: handleRequestAccess(response.data.inaccessible)
                         }
                     });
                 }
@@ -136,11 +136,10 @@ export default function Relations({ obj }) {
         }
     };
 
-    const handleRequestAccess = () => {
+    const handleRequestAccess = (entities) => () => {
         setIsRequestingAccess(true);
-        // Request access for inaccessible entities
         Promise.all(
-            inaccessibleEntities.map(entity =>
+            entities.map(entity =>
                 requestEntityAccess(entity)
             )
         )
