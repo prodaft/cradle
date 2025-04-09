@@ -5,6 +5,8 @@ from django.conf import settings
 from django.apps import apps
 from celery.schedules import crontab
 
+import json
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cradle.settings")
 
 app = Celery("cradle")
@@ -66,12 +68,14 @@ app.conf.task_max_retries = 3
 
 # Set up periodic tasks
 app.conf.beat_schedule = {
-    "refresh-edges-materialized-view-every-2-hours": {
+    "refresh-edges-materialized-view-every-night": {
         "task": "entries.tasks.refresh_edges_materialized_view",
-        "schedule": crontab(minute=0, hour="*/2"),
-    },
-    "simulate-graph-every-night": {
-        "task": "entries.tasks.simulate_graph",
-        "schedule": crontab(minute=0, hour=2),  # 2:00 AM UTC daily
+        "schedule": crontab(hour=3, minute=0),
+        "kwargs": json.dumps(
+            {
+                "simulate": True,
+                "cleanup": True,
+            }
+        ),
     },
 }

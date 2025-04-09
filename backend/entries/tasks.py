@@ -119,7 +119,7 @@ def scan_for_children(entry_ids, content_type_id, content_id):
                 )
                 relations.append(rel)
 
-    if relations:
+    if len(relations) > 0:
         Relation.objects.bulk_create(relations)
 
     refresh_edges_materialized_view.apply_async(simulate=created)
@@ -190,7 +190,7 @@ def simulate_graph():
 
 @debounce_task(timeout=180)
 @shared_task
-def refresh_edges_materialized_view(simulate=False):
+def refresh_edges_materialized_view(simulate=False, cleanup=False):
     """
     Refreshes the 'edges' materialized view concurrently.
 
@@ -217,3 +217,6 @@ def refresh_edges_materialized_view(simulate=False):
 
     if simulate:
         simulate_graph.apply_async()
+
+    if cleanup:
+        Entry.artifacts.filter(degree=0).delete()

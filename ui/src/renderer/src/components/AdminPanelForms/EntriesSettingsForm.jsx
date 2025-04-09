@@ -22,7 +22,31 @@ export default function EntriesManagement() {
                 });
             }
         } catch (error) {
-            console.error(error);
+            setAlert({
+                show: true,
+                message: 'Error occurred while propagating access vectors.',
+                color: 'red',
+            });
+        }
+    };
+
+    const handleDeleteHangingArtifacts = async () => {
+        try {
+            const response = await performAction('deleteHangingArtifacts');
+            if (response.status === 200) {
+                setAlert({
+                    show: true,
+                    message: response.data.message,
+                    color: 'green',
+                });
+            } else {
+                setAlert({
+                    show: true,
+                    message: 'Failed to trigger Propagate Access Vectors action.',
+                    color: 'red',
+                });
+            }
+        } catch (error) {
             setAlert({
                 show: true,
                 message: 'Error occurred while propagating access vectors.',
@@ -45,6 +69,16 @@ export default function EntriesManagement() {
                             onClick={handlePropagateAccessVectors}
                         >
                             Propagate Access Vectors
+                        </button>
+                    </div>
+
+                    <div className='flex flex-col gap-4 mb-3'>
+                        <button
+                            type='button'
+                            className='btn btn-outline'
+                            onClick={handleDeleteHangingArtifacts}
+                        >
+                            Delete Hanging Artifacts
                         </button>
                     </div>
                     <AlertBox alert={alert} />

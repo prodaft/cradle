@@ -42,7 +42,7 @@ def smart_linker_task(note_id):
     note = Note.objects.get(id=note_id)
 
     try:
-        Relation.objects.filter(note=note).delete()
+        Relation.objects.filter(note=note, reason=RelationReason.NOTE).delete()
 
         pairs = note.reference_tree.relation_pairs()
         pairs_resolved = set()
@@ -137,49 +137,58 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
     if user_id:
         user = CradleUser.objects.get(id=user_id)
 
-    with transaction.atomic():
-        note.entries.clear()
-        for r in note.reference_tree.links():
-            entry = Entry.objects.filter(name=r.value, entry_class__subtype=r.key)
-            if not entry.exists():
-                entry_class = EntryClass.objects.get(subtype=r.key)
+    note.entries.clear()
+    entries = []
+    for r in note.reference_tree.links():
+        entry = Entry.objects.filter(name=r.value, entry_class__subtype=r.key)
+        if not entry.exists():
+            entry_class = EntryClass.objects.get(subtype=r.key)
 
-                if entry_class.type == EntryType.ARTIFACT:
-                    try:
-                        entry = Entry.objects.create(
-                            name=r.value, entry_class=entry_class
-                        )
-                        if user_id:
-                            entry.log_create(user)  # Pass user_id for logging
-                    except InvalidEntryException as e:
-                        logger.warning(e.detail)
-                else:
-                    raise EntriesDoNotExistException([r])
+            if entry_class.type == EntryType.ARTIFACT:
+                try:
+                    entries.append(Entry(name=r.value, entry_class=entry_class))
+                except InvalidEntryException as e:
+                    logger.warning(e.detail)
             else:
-                entry = entry.first()
-
+                raise EntriesDoNotExistException([r])
+        else:
+            entry = entry.first()
             note.entries.add(entry)
 
-            content_type = ContentType.objects.get_for_model(note)
+    objs = Entry.objects.bulk_create(entries, ignore_conflicts=True)
+    for i, e in enumerate(objs):
+        if e.id is None:
+            objs[i], _ = Entry.objects.get_or_create(
+                name=e.name, entry_class__subtype=e.entry_class.subtype
+            )
 
-            childscan = []
-            enrich = defaultdict(list)
-            if entry.entry_class.children.count() > 0:
-                childscan.append(entry.id)
+    note.entries.add(*objs)
 
-            for e in entry.entry_class.enrichers.filter(
-                strategy=EnrichmentStrategy.ON_CREATE, enabled=True
-            ):
-                enrich[e.id].append(entry.id)
+    childscan = []
+    enrich = defaultdict(list)
+    for entry in note.entries.all():
+        content_type = ContentType.objects.get_for_model(note)
 
-            if len(childscan):
-                scan_for_children.delay(childscan, content_type.id, note.id)
+        if entry.entry_class.children.count() > 0:
+            childscan.append(entry.id)
 
-            if len(enrich):
-                for k, v in enrich:
-                    enrich_entries.delay(k, v, content_type.id, note.id)
+    for entry in objs:
+        for e in entry.entry_class.enrichers.filter(
+            strategy=EnrichmentStrategy.ON_CREATE, enabled=True
+        ):
+            enrich[e.id].append(entry.id)
 
-        note.save()
+        if user_id:
+            entry.log_create(user)  # Pass user_id for logging
+
+    if len(childscan):
+        scan_for_children.delay(childscan, content_type.id, note.id)
+
+    if len(enrich):
+        for k, v in enrich:
+            enrich_entries.delay(k, v, content_type.id, note.id)
+
+    note.save()
 
 
 @shared_task(

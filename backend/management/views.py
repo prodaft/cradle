@@ -175,3 +175,9 @@ class ActionView(APIView):
             update_accesses.apply_async(args=(entity.id,))
 
         return Response({"message": "Propagating the access vectors for all entities"})
+
+    def action_deleteHangingArtifacts(self, request, *args, **kwargs):
+        print(Entry.artifacts.unreferenced())
+        count, _ = Entry.artifacts.unreferenced().delete()
+
+        return Response({"message": f"Deleted {count} artifacts."})

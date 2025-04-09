@@ -253,8 +253,10 @@ class NoteDetail(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        with transaction.atomic():
-            note_to_delete.delete()
-            Note.objects.delete_unreferenced_entries()
+        artifact_ids = set(
+            note_to_delete.entries.is_artifact().values_list("id", flat=True)
+        )
+        note_to_delete.delete()
+        Entry.objects.filter(id__in=artifact_ids).unreferenced().delete()
 
         return Response("Note was deleted.", status=status.HTTP_200_OK)
