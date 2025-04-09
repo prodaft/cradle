@@ -69,7 +69,7 @@ const PaginatedGraphFetch = forwardRef(
                     if (!graphRef.current.hasElementWithId(e.id)) {
                         e.label = truncateText(`${e.subtype}: ${e.name || e.id}`, 25);
                         e.color = colors[e.subtype];
-                        e.location = e.location || [0, 0];
+                        e.location = e.location || [Math.floor(Math.random() * 50), Math.floor(Math.random() * 50)];
                         const node = {
                             group: 'nodes',
                             data: {

@@ -87,7 +87,7 @@ def scan_for_children(entry_ids, content_type_id, content_id):
     content_type = ContentType.objects.get(id=content_type_id)
     content_object = content_type.get_object_for_this_type(id=content_id)
 
-    entries = Entry.objects.get(id__in=entry_ids)
+    entries = Entry.objects.filter(id__in=entry_ids)
 
     Relation.objects.filter(
         reason=RelationReason.CONTAINS,
