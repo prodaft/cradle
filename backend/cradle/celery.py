@@ -28,6 +28,7 @@ app.conf.task_routes = {
     "entries.tasks.remap_notes_task": {"queue": "notes"},
     "entries.tasks.simulate_graph": {"queue": "graph"},
     "entries.tasks.refresh_edges_materialized_view": {"queue": "graph"},
+    "entries.tasks.delete_hanging_artifacts": {"queue": "graph"},
     "notes.tasks.connect_aliases": {"queue": "notes"},
     "notes.tasks.ping_entries": {"queue": "notes"},
     "publish.tasks.generate_report": {"queue": "publish"},
@@ -74,8 +75,11 @@ app.conf.beat_schedule = {
         "kwargs": json.dumps(
             {
                 "simulate": True,
-                "cleanup": True,
             }
         ),
+    },
+    "delete-hanging-artifacts-every-night": {
+        "task": "entries.tasks.delete_hanging_artifacts",
+        "schedule": crontab(hour=2, minute=0),
     },
 }

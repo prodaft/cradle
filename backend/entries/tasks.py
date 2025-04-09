@@ -190,7 +190,7 @@ def simulate_graph():
 
 @debounce_task(timeout=180)
 @shared_task
-def refresh_edges_materialized_view(simulate=False, cleanup=False):
+def refresh_edges_materialized_view(simulate=False):
     """
     Refreshes the 'edges' materialized view concurrently.
 
@@ -218,5 +218,7 @@ def refresh_edges_materialized_view(simulate=False, cleanup=False):
     if simulate:
         simulate_graph.apply_async()
 
-    if cleanup:
-        Entry.artifacts.filter(degree=0).delete()
+
+@shared_task
+def delete_hanging_artifacts():
+    return Entry.artifacts.unreferenced().delete()[0]
