@@ -328,9 +328,9 @@ class EntitySerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Name is required.")
 
         # Check if all aliases are artifacts
-        for alias in data.get("aliases", []):
-            if alias.entry_class.type != EntryType.ARTIFACT:
-                raise CannotAliasToEntityException()
+        # for alias in data.get("aliases", []):
+        #     if alias.entry_class.type != EntryType.ARTIFACT:
+        #         raise CannotAliasToEntityException()
 
         return super().validate(data)
 

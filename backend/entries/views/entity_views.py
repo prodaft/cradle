@@ -13,6 +13,7 @@ from user.permissions import HasEntryManagerRole
 from ..serializers import EntitySerializer, EntryResponseSerializer
 from ..models import Entry
 from uuid import UUID
+from entries.tasks import refresh_edges_materialized_view
 
 
 class EntityList(APIView):
@@ -105,6 +106,8 @@ class EntityDetail(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
         entity.delete()
+        refresh_edges_materialized_view.apply_async(simulate=True)
+
         return Response("Requested entity was deleted", status=status.HTTP_200_OK)
 
     def post(self, request: Request, entity_id: UUID) -> Response:
@@ -143,4 +146,7 @@ class EntityDetail(APIView):
 
         serializer.save()
         serializer.instance.log_edit(request.user)
+
+        refresh_edges_materialized_view.apply_async()
+
         return Response(serializer.data)

@@ -53,7 +53,7 @@ export default function AdminPanelSection({
                         className='tooltip tooltip-bottom'
                         data-tooltip={addTooltipText}
                     >
-                        <button className='h-fit mx-2' onClick={handleAdd}>
+                        <button className='h-fit mx-2 pt-1' onClick={handleAdd}>
                             <PlusCircle />
                         </button>
                     </span>

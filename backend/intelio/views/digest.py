@@ -17,7 +17,6 @@ from ..tasks import start_digest
 from django.shortcuts import get_object_or_404
 
 
-
 class DigestSubclassesAPIView(APIView):
     """
     DRF API view that returns a list of all subclasses of Enricment
@@ -85,6 +84,8 @@ class DigestAPIView(APIView):
         Delete a specific digest by ID.
         Requires a query parameter: ?id=<digest_id>
         """
+        from entries.tasks import refresh_edges_materialized_view
+
         digest_id = request.query_params.get("id")
         if not digest_id:
             return Response(
@@ -94,4 +95,6 @@ class DigestAPIView(APIView):
 
         digest = get_object_or_404(BaseDigest, id=digest_id, user=request.user)
         digest.delete()
+
+        refresh_edges_materialized_view.apply_async(simulate=True)
         return Response(status=status.HTTP_204_NO_CONTENT)

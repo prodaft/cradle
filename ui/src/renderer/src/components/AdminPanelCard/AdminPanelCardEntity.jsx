@@ -74,7 +74,7 @@ export default function AdminPanelCardEntity({
                             className='btn btn-ghost w-fit h-full p-1'
                             onClick={() =>
                                 setModal(ConfirmDeletionModal, {
-                                    onDelete: handleDelete,
+                                    onConfirm: handleDelete,
                                     confirmText: `${typename}:${name}`,
                                     text: 'Are you sure you want to delete this entity? This will keep its related notes but remove the links to it.',
                                 })

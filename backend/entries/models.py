@@ -1,4 +1,4 @@
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils import timezone
@@ -252,6 +252,8 @@ class Entry(LifecycleModel, LoggableModelMixin):
     last_seen: models.DateTimeField = models.DateTimeField(
         auto_now_add=True, null=False
     )
+
+    relations = GenericRelation("entries.Relation", related_query_name="entry")
 
     # New field: acvec_offset is an unsigned integer.
     acvec_offset: models.PositiveIntegerField = models.PositiveIntegerField(default=0)

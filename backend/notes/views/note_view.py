@@ -228,6 +228,8 @@ class NoteDetail(APIView):
         return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
 
     def delete(self, request: Request, note_id_s: str) -> Response:
+        from entries.tasks import refresh_edges_materialized_view
+
         if note_id_s.startswith("guide"):
             return Response(
                 "You cannot delete the guide note!", status=status.HTTP_403_FORBIDDEN
@@ -258,5 +260,7 @@ class NoteDetail(APIView):
         )
         note_to_delete.delete()
         Entry.objects.filter(id__in=artifact_ids).unreferenced().delete()
+
+        refresh_edges_materialized_view.apply_async(simulate=True)
 
         return Response("Note was deleted.", status=status.HTTP_200_OK)
