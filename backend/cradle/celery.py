@@ -9,10 +9,9 @@ import json
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cradle.settings")
 
-app = Celery("cradle")
+app = Celery("cradle", broker=settings.BROKER, backend=settings.RESULT_BACKEND)
 
 app.config_from_object(settings)
-app.conf.broker_url = settings.RESULT_BACKEND
 
 app.autodiscover_tasks(lambda: [n.name for n in apps.get_app_configs()])
 

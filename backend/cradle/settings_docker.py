@@ -58,7 +58,8 @@ FRONTEND_URL = env.str("FRONTEND_URL", "http://localhost:5173")
 
 RABBITMQ_URL = env.str("RABBITMQ_URL", None)
 REDIS_URL = env.str("REDIS_URL", None)
-RESULT_BACKEND = RABBITMQ_URL if RABBITMQ_URL else REDIS_URL
+BROKER = RABBITMQ_URL if RABBITMQ_URL else REDIS_URL
+RESULT_BACKEND = REDIS_URL
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
