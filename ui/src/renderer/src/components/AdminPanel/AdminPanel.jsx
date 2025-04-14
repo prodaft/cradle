@@ -188,8 +188,28 @@ export default function AdminPanel() {
                                 <AdminPanelSection
                                     addEnabled={auth?.isAdmin()}
                                     addTooltipText='Add Entity'
-                                    handleAdd={() =>
-                                        setRightPane(<EntityForm isEdit={false} />)
+                                    handleAdd={(onAdd) =>
+                                        setRightPane(
+                                            <EntityForm
+                                                isEdit={false}
+                                                onAdd={(c) =>
+                                                    onAdd(
+                                                        <AdminPanelCardEntity
+                                                            id={c.id}
+                                                            key={`${c.subtype}:${c.name}`}
+                                                            name={c.name}
+                                                            searchKey={c.name}
+                                                            onDelete={displayEntities}
+                                                            link={createDashboardLink(
+                                                                c,
+                                                            )}
+                                                            typename={c.subtype}
+                                                            setRightPane={setRightPane}
+                                                        />,
+                                                    )
+                                                }
+                                            />,
+                                        )
                                     }
                                     isLoading={entities === null}
                                 >
@@ -200,8 +220,25 @@ export default function AdminPanel() {
                                 <AdminPanelSection
                                     addEnabled={auth?.isAdmin()}
                                     addTooltipText='Add Entry Class'
-                                    handleAdd={() =>
-                                        setRightPane(<EntryTypeForm isEdit={false} />)
+                                    handleAdd={(onAdd) =>
+                                        setRightPane(
+                                            <EntryTypeForm
+                                                isEdit={false}
+                                                onAdd={(c) =>
+                                                    onAdd(
+                                                        <AdminPanelCardEntryType
+                                                            searchKey={c.subtype}
+                                                            id={c.subtype}
+                                                            key={c.subtype}
+                                                            name={c.subtype}
+                                                            count={c.count}
+                                                            onDelete={displayEntryTypes}
+                                                            setRightPane={setRightPane}
+                                                        />,
+                                                    )
+                                                }
+                                            />,
+                                        )
                                     }
                                     isLoading={entryTypes === null}
                                 >
@@ -221,9 +258,26 @@ export default function AdminPanel() {
                                     <AdminPanelSection
                                         addEnabled={true}
                                         addTooltipText='Add User'
-                                        handleAdd={() =>
+                                        handleAdd={(onAdd) =>
                                             setRightPane(
-                                                <AccountSettings isEdit={false} />,
+                                                <AccountSettings
+                                                    isEdit={false}
+                                                    onAdd={(user) =>
+                                                        onAdd(
+                                                            <AdminPanelCardUser
+                                                                id={user.id}
+                                                                searchKey={
+                                                                    user.username
+                                                                }
+                                                                name={user.username}
+                                                                onDelete={displayUsers}
+                                                                setRightPane={
+                                                                    setRightPane
+                                                                }
+                                                            />,
+                                                        )
+                                                    }
+                                                />,
                                             )
                                         }
                                         isLoading={users === null}

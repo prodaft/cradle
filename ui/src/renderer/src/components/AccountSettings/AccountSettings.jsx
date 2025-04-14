@@ -36,7 +36,7 @@ const accountSettingsSchema = Yup.object().shape({
     is_active: Yup.boolean(),
 });
 
-export default function AccountSettings({ target, isEdit = true }) {
+export default function AccountSettings({ target, isEdit = true, onAdd }) {
     const navigate = useNavigate();
     const auth = useAuth();
     const isAdmin = auth?.isAdmin();
@@ -147,14 +147,19 @@ export default function AccountSettings({ target, isEdit = true }) {
                 is_active: data.is_active,
             };
             try {
-                await createUser(payload);
-                setAlert({
-                    show: true,
-                    message: 'User created successfully',
-                    color: 'green',
-                });
-                reset();
-                navigate('/admin');
+                let result = await createUser(payload);
+
+                if (result.status === 200) {
+                    setAlert({
+                        show: true,
+                        message: 'User created successfully',
+                        color: 'green',
+                    });
+                    reset();
+                    onAdd(result.data);
+                } else {
+                    displayError(setAlert, navigate)(result.data);
+                }
             } catch (err) {
                 displayError(setAlert, navigate)(err);
             }

@@ -1,6 +1,7 @@
 import { PlusCircle } from 'iconoir-react';
 import useFrontendSearch from '../../hooks/useFrontendSearch/useFrontendSearch';
 import useAuth from '../../hooks/useAuth/useAuth';
+import { useState } from 'react';
 /**
  * AdminPanelSection component - This component is used to display a section in the AdminPanel.
  * The section contains the following elements:
@@ -30,9 +31,10 @@ export default function AdminPanelSection({
     isLoading = false,
 }) {
     const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(children);
+    const [addedItems, setAddedItems] = useState([]);
     // Sort the filtered children based on their key property
     const sortedFilteredChildren = filteredChildren
-        ? [...filteredChildren].sort((a, b) => {
+        ? [...filteredChildren, ...addedItems].sort((a, b) => {
               // Convert keys to strings to ensure proper lexicographical comparison
               const aKey = a.key?.toString() || '';
               const bKey = b.key?.toString() || '';
@@ -53,7 +55,12 @@ export default function AdminPanelSection({
                         className='tooltip tooltip-bottom'
                         data-tooltip={addTooltipText}
                     >
-                        <button className='h-fit mx-2 pt-1' onClick={handleAdd}>
+                        <button
+                            className='h-fit mx-2 pt-1'
+                            onClick={() =>
+                                handleAdd((x) => setAddedItems((prev) => [...prev, x]))
+                            }
+                        >
                             <PlusCircle />
                         </button>
                     </span>

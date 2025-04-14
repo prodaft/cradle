@@ -176,6 +176,13 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
         if EntryClass.objects.filter(subtype__in=possible_parents).exists():
             return EntryClass.objects.filter(subtype__in=possible_parents).first()
 
+        possible_children = EntryClass.objects.filter(
+            subtype__startswith=self.subtype + "/"
+        )
+
+        if possible_children.exists():
+            return possible_children.first()
+
         return False
 
     def save(self, *args, **kwargs):

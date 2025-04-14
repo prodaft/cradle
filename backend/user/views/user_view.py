@@ -80,8 +80,14 @@ class UserList(APIView):
                             message=f"A new user has registered: {user.username}",
                         )
                 user.send_email_confirmation()
+                serializer = UserRetrieveSerializer(user)
 
-            return Response(status=status.HTTP_200_OK)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response(
+                    "User with this email already exists.",
+                    status=status.HTTP_409_CONFLICT,
+                )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

@@ -46,7 +46,7 @@ const entryTypeSchema = Yup.object().shape({
  * @param {Object} props
  * @param {boolean} [props.isEdit=false] - If true, the form will be used for editing.
  */
-export default function EntryTypeForm({ id = null, isEdit = false }) {
+export default function EntryTypeForm({ id = null, isEdit = false, onAdd }) {
     const navigate = useNavigate();
     const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
     const [showColorPicker, setShowColorPicker] = useState(false);
@@ -161,8 +161,10 @@ export default function EntryTypeForm({ id = null, isEdit = false }) {
 
     const onSubmit = async (data) => {
         try {
+            let result = null;
+
             if (isEdit) {
-                await editArtifactClass(
+                result = await editArtifactClass(
                     {
                         generative_regex: data.generativeRegex,
                         ...data,
@@ -171,17 +173,28 @@ export default function EntryTypeForm({ id = null, isEdit = false }) {
                     id,
                 );
             } else {
-                await createArtifactClass({
+                result = await createArtifactClass({
                     generative_regex: data.generativeRegex,
                     ...data,
                     children: data.children.map((child) => child.value),
                 });
             }
-            setAlert({
-                show: true,
-                message: 'Entry Type saved successfully!',
-                color: 'green',
-            });
+
+            if (result.status === 200) {
+              setAlert({
+                  show: true,
+                  message: 'Entry Type saved successfully!',
+                  color: 'green',
+              });
+              if (!isEdit)
+                onAdd(result.data);
+            } else {
+              setAlert({
+                  show: true,
+                  message: 'Failed to save Entry Type.',
+                  color: 'red',
+              });
+            }
         } catch (err) {
             displayError(setAlert, navigate)(err);
         }

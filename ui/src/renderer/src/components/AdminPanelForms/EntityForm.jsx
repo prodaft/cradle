@@ -23,7 +23,7 @@ const entitySchema = Yup.object().shape({
     aliases: Yup.array().notRequired(),
 });
 
-export default function EntityForm({ id = null, isEdit = false }) {
+export default function EntityForm({ id = null, isEdit = false, onAdd }) {
     const navigate = useNavigate();
     const [subclasses, setSubclasses] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
@@ -120,16 +120,23 @@ export default function EntityForm({ id = null, isEdit = false }) {
         };
 
         try {
+            let result = null;
             if (isEdit) {
-                await editEntity(payload, id);
+                result = await editEntity(payload, id);
             } else {
-                await createEntity(payload);
+                result = await createEntity(payload);
             }
-            setAlert({
-                show: true,
-                message: 'Successfully saved entity!',
-                color: 'green',
-            });
+
+            if (result.status !== 200) {
+                displayError(setAlert, navigate)(result.data);
+            } else {
+                if (!isEdit) onAdd(result.data);
+                setAlert({
+                    show: true,
+                    message: 'Successfully saved entity!',
+                    color: 'green',
+                });
+            }
         } catch (err) {
             displayError(setAlert, navigate)(err);
         }

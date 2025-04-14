@@ -16,7 +16,7 @@ const accountSettingsSchema = Yup.object().shape({
     requireAdminConfirmation: Yup.boolean(),
 });
 
-export default function UserSettingsForm() {
+export default function UserSettingsForm({ onAdd }) {
     const {
         register,
         handleSubmit,

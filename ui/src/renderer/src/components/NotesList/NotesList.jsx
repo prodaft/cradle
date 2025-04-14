@@ -13,12 +13,12 @@ export default function NotesList({
     noteActions = [],
     references = null,
 }) {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [notes, setNotes] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [loading, setLoading] = useState(false);
-    const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
 
     const fetchNotes = useCallback(() => {
         setLoading(true);
