@@ -47,7 +47,7 @@ jobs:
         working-directory: ./backend
     services:
       postgres:
-        image: postgres:16.2
+        image: pgrouting/pgrouting:16-3.5-3.7
         env:
           POSTGRES_DB: "cradledb"
           POSTGRES_USER: "postgres"
