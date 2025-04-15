@@ -1,5 +1,4 @@
 import functools
-import json
 import redis
 from inspect import getfullargspec
 from django.conf import settings

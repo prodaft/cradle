@@ -4,8 +4,6 @@ from entries.enums import EntryType
 from core.decorators import debounce_task, distributed_lock
 from entries.models import Edge, Entry, Relation
 from entries.enums import RelationReason
-from intelio.models.base import EnricherSettings
-from intelio.utils import get_or_default_enricher
 from notes.processor.task_scheduler import TaskScheduler
 from notes.utils import calculate_acvec
 from notes.tasks import propagate_acvec

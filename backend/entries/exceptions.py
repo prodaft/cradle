@@ -88,5 +88,8 @@ class ClassBreaksHierarchyException(APIException):
 
 class OutOfEntitySlotsException(APIException):
     status_code = 400
-    default_detail = "You have run out of slots to create entities. Please set some entities to public access or delete them."
+    default_detail = (
+        "You have run out of slots to create entities."
+        + "Please set some entities to public access or delete them."
+    )
     default_code = "unique"

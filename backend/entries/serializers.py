@@ -4,7 +4,6 @@ from .enums import EntryType
 
 
 from .exceptions import (
-    CannotAliasToEntityException,
     DuplicateEntryException,
     EntryTypeMismatchException,
     EntryMustHaveASubtype,

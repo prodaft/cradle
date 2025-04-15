@@ -1,7 +1,6 @@
 from typing import Optional
 
 from django.db import models
-from core.fields import BitStringField
 from entries.enums import RelationReason
 from entries.models import Entry, EntryClass, Relation
 from ..base import BaseEnricher

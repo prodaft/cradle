@@ -58,7 +58,7 @@ class CradleDigest(BaseDigest):
                     )
 
             created_notes = []
-            bucket_name = self.user.id
+            # bucket_name = self.user.id
             files_scheduled = 0
 
             for note_data in report_data.get("notes", []):

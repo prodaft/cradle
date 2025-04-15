@@ -3,7 +3,6 @@ from typing import Iterable
 from entries.models import Entry
 from .markdown.to_links import Link
 from rest_framework.exceptions import APIException
-from django.conf import settings
 
 from management.settings import cradle_settings
 
