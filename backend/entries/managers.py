@@ -13,6 +13,9 @@ from core.fields import BitStringField
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
 
+EntryAccessVectors = apps.get_model("entries", "EntryAccessVectors")
+
+
 class EntryQuerySet(models.QuerySet):
     def with_entry_class(self):
         return self
@@ -33,18 +36,19 @@ class EntryQuerySet(models.QuerySet):
         """
         Get entries that are not referenced by any relation
         """
-        return self.filter(Q(relations_1=None) & Q(relations_2=None))
+        return self.filter(Q(relations_1=None) | Q(relations_2=None))
 
     def accessible(self, user: CradleUser) -> models.QuerySet:
         """
         Filter all entries accessible to a user
         """
-        Edge = apps.get_model("entries", "Edge")
-        accessible_vertices = Edge.objects.accessible(user).values_list(
-            "src", flat=True
-        )
+        accessible_ids = EntryAccessVectors.objects.extra(
+            where=["(access_vector & %s) = %s"],
+            params=[user.access_vector_inv, fieldtype.get_prep_value(0)],
+        ).values_list("id", flat=True)
+
         return self.filter(
-            Q(id__in=accessible_vertices) | Q(entry_class__type=EntryType.ENTITY)
+            Q(id__in=accessible_ids) | Q(entry_class__type=EntryType.ENTITY)
         )
 
 

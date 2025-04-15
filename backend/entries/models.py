@@ -57,6 +57,18 @@ class Edge(LifecycleModel):
         unique_together = ["src", "dst"]
 
 
+class EntryAccessVectors(LifecycleModel):
+    id = models.CharField(primary_key=True)
+
+    access_vector: BitStringField = BitStringField(
+        max_length=2048, null=False, default=1 << 2047, varying=False
+    )
+
+    class Meta:
+        managed = False
+        db_table = "entry_accesses"
+
+
 class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
     type: models.CharField = models.CharField(max_length=20, choices=EntryType.choices)
     subtype: models.CharField = models.CharField(
@@ -388,6 +400,23 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
         transaction.on_commit(lambda: update_accesses.apply_async((self.id,)))
 
+    @hook(AFTER_CREATE)
+    def enrich(self):
+        from intelio.tasks import enrich_entries
+
+        content_type = ContentType.objects.get_for_model(self)
+
+        for e in self.entry_class.enrichers.filter(
+            strategy=EnrichmentStrategy.ON_CREATE, enabled=True
+        ):
+            enrich_entries.apply_async(
+                e.id,
+                [self.id],
+                content_type.id,
+                self.id,
+                None,
+            )
+
     def get_acvec(self):
         return 1 | (1 << self.acvec_offset)
 
@@ -430,6 +459,8 @@ class Relation(LifecycleModel):
     access_vector: BitStringField = BitStringField(
         max_length=2048, null=False, default=1 << 2047, varying=False
     )
+
+    inherit_av = models.BooleanField(default=False)
 
     e1 = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="relations_1")
     e2 = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="relations_2")

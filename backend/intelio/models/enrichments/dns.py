@@ -67,6 +67,7 @@ class DNSEnricher(BaseEnricher):
                     Relation(
                         e1=entry,
                         e2=i,
+                        inherit_av=True,
                         content_object=content_object,
                         access_vector=1,
                         reason=RelationReason.ENRICHMENT,
@@ -81,6 +82,7 @@ class DNSEnricher(BaseEnricher):
                     Relation(
                         e1=entry,
                         e2=i,
+                        inherit_av=True,
                         content_object=content_object,
                         access_vector=1,
                         reason=RelationReason.ENRICHMENT,

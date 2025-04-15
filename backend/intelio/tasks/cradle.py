@@ -1,5 +1,14 @@
+from io import BytesIO
+import logging
+import requests
 from celery import shared_task
 
+from file_transfer.utils import MinioClient
+from file_transfer.models import FileReference
+from notes.models import Note
+
+
+logger = logging.getLogger(__name__)
 
 
 @shared_task
@@ -45,4 +54,3 @@ def download_file_for_note(note_id, file_identifier, file_url, bucket_name):
             file_url,
             e,
         )
-        # Optionally, notify the user or perform retries here.

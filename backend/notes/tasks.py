@@ -155,24 +155,31 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
             entry = entry.first()
             note.entries.add(entry)
 
-    objs = Entry.objects.bulk_create(entries, ignore_conflicts=True)
-    for i, e in enumerate(objs):
+    new_objs = Entry.objects.bulk_create(entries, ignore_conflicts=True)
+
+    objs = [None] * len(new_objs)
+    for i, e in enumerate(new_objs):
         if e.id is None:
             objs[i], _ = Entry.objects.get_or_create(
                 name=e.name, entry_class__subtype=e.entry_class.subtype
             )
+        else:
+            objs[i] = e
 
     note.entries.add(*objs)
 
     childscan = []
     enrich = defaultdict(list)
-    for entry in note.entries.all():
+    for entry in objs:
         content_type = ContentType.objects.get_for_model(note)
 
         if entry.entry_class.children.count() > 0:
             childscan.append(entry.id)
 
-    for entry in objs:
+    for entry in new_objs:
+        if entry is None:
+            continue
+
         for e in entry.entry_class.enrichers.filter(
             strategy=EnrichmentStrategy.ON_CREATE, enabled=True
         ):

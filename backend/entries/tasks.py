@@ -112,6 +112,7 @@ def scan_for_children(entry_ids, content_type_id, content_id):
                     e1=e,
                     e2=entry,
                     reason=RelationReason.CONTAINS,
+                    inherit_av=True,
                     access_vector=getattr(content_object, "access_vector")
                     if hasattr(content_object, "access_vector")
                     else 1,
@@ -202,6 +203,7 @@ def refresh_edges_materialized_view(simulate=False):
     which minimizes downtime for reads.
     """
     with connection.cursor() as cursor:
+        cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY entry_accesses;")
         cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY edges;")
 
     entryids = Entry.objects.values_list("id", flat=True)
