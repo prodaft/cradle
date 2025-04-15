@@ -72,7 +72,7 @@ def edit_report(report_id):
         logger.error("Report with id %s does not exist.", report_id)
         return
 
-    user = report.user
+    # user = report.user
     notes = list(report.notes.all())
     title = report.title
 

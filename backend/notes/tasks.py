@@ -4,7 +4,6 @@ from celery import shared_task
 from django.contrib.contenttypes.models import ContentType
 from django.db import close_old_connections
 from django.utils import timezone
-from django_lifecycle.mixins import transaction
 from entries.enums import EntryType
 from entries.exceptions import InvalidEntryException
 from intelio.enums import EnrichmentStrategy
@@ -14,7 +13,6 @@ from .models import Note
 from entries.models import Relation
 
 from core.decorators import distributed_lock
-from django.conf import settings
 from notes.exceptions import EntriesDoNotExistException, EntryClassesDoNotExistException
 from entries.models import Entry, EntryClass
 from entries.enums import RelationReason

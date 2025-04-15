@@ -150,8 +150,8 @@ class ReportDetailAPIView(generics.RetrieveAPIView):
         publisher = publisher_factory(report.anonymized)
 
         try:
-            result = publisher.delete_report(report)
-        except Exception as e:
+            publisher.delete_report(report)
+        except Exception:
             return Response(
                 {"detail": "Error deleting report."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -12,7 +12,6 @@ from .base_task import BaseTask
 from ..models import Note
 
 from collections import defaultdict
-from django.conf import settings
 
 
 from management.settings import cradle_settings

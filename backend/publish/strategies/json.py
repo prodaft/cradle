@@ -30,7 +30,7 @@ class JSONPublish(BasePublishStrategy):
         client = MinioClient().client
         try:
             client.remove_object(bucket_name, f"{report.id}.json")
-        except Exception as e:
+        except Exception:
             report.error_message = "Failed to delete JSON report."
             report.status = ReportStatus.ERROR
             report.save()
@@ -101,7 +101,7 @@ class JSONPublish(BasePublishStrategy):
                 bucket_name=bucket_name,
                 report=report,
             )
-        except Exception as e:
+        except Exception:
             report.error_message = "Failed to upload JSON report."
             report.status = ReportStatus.ERROR
             report.save()

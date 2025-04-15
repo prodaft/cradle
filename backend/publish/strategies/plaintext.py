@@ -26,7 +26,7 @@ class PlaintextPublish(BasePublishStrategy):
         client = MinioClient().client
         try:
             client.remove_object(bucket_name, f"{report.id}.txt")
-        except Exception as e:
+        except Exception:
             report.error_message = "Failed to delete plaintext report."
             report.status = ReportStatus.ERROR
             report.save()
@@ -62,7 +62,7 @@ class PlaintextPublish(BasePublishStrategy):
                 bucket_name=bucket_name,
                 report=report,
             )
-        except Exception as e:
+        except Exception:
             report.error_message = "Failed to upload plaintext report."
             report.status = ReportStatus.ERROR
             report.save()

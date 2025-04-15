@@ -1,4 +1,4 @@
-from .settings_common import *
+from .settings_common import *  # noqa:F401
 
 # Ugly hack to get graph_tool working
 import sys

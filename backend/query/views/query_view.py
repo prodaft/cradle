@@ -15,8 +15,6 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from entries.serializers import EntryResponseSerializer
 from uuid import UUID
 from entries.enums import EntryType
-from notes.models import Note
-from user.models import CradleUser
 from ..utils import parse_query
 
 

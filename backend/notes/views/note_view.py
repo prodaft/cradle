@@ -1,4 +1,3 @@
-from django.db import transaction
 from django.db.models import Q, Count
 from rest_framework.response import Response
 from rest_framework.request import Request

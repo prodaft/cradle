@@ -147,7 +147,7 @@ class HTMLPublish(BasePublishStrategy):
             client.put_object(
                 bucket_name, report.id, data, size, content_type=content_type
             )
-        except Exception as e:
+        except Exception:
             report.error_message = "Failed to upload HTML report."
             report.status = ReportStatus.ERROR
             report.save()

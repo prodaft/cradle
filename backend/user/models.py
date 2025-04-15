@@ -2,14 +2,12 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Optional
 
-from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 from access.enums import AccessType
 from logs.models import LoggableModelMixin
 from mail.models import ConfirmationMail, ResetPasswordMail
-from management.settings import cradle_settings
 
 from .managers import CradleUserManager
 from core.fields import BitStringField
