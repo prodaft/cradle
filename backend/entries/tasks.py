@@ -201,7 +201,6 @@ def refresh_edges_materialized_view(simulate=False):
     which minimizes downtime for reads.
     """
     with connection.cursor() as cursor:
-        cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY entry_accesses;")
         cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY edges;")
 
     entryids = Entry.objects.values_list("id", flat=True)

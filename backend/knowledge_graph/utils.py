@@ -14,6 +14,9 @@ def get_neighbors(sourceset, depth, user=None):
     Only follows relations where accessible=True, and ensures nodes visited at earlier
     depths are not revisited.
     """
+    if depth == 0:
+        return sourceset
+
     current_level = sourceset
     visited = [current_level]
 

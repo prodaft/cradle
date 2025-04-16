@@ -28,7 +28,7 @@ const FormModal = ({
     };
 
     return (
-        <div className=''>
+        <div className='w-[100%]'>
             <h2 className='text-2xl font-bold mb-4'>{title}</h2>
             <form onSubmit={handleSubmit}>
                 {fields.map((field, index) => (
@@ -53,7 +53,7 @@ const FormModal = ({
                                 id={field.name}
                                 name={field.name}
                                 type={field.type}
-                                className='input input-bordered w-full'
+                                className='input input-block input-bordered w-full'
                                 placeholder={field.placeholder || ''}
                                 value={formData[field.name]}
                                 onChange={handleChange}

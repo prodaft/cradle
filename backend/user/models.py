@@ -29,6 +29,8 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         max_length=32, choices=UserRoles.choices, default=UserRoles.USER
     )
 
+    api_key: Optional[str] = models.TextField(null=True, blank=True)
+
     vt_api_key: Optional[str] = models.TextField(null=True, blank=True)
     catalyst_api_key: Optional[str] = models.TextField(null=True, blank=True)
 
@@ -37,13 +39,13 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         null=True, blank=True
     )
 
-    email_confirmed: models.BooleanField = models.BooleanField()
+    email_confirmed: models.BooleanField = models.BooleanField(default=False)
     email_confirmation_token: Optional[str] = models.TextField(null=True, blank=True)
     email_confirmation_token_expiry: Optional[models.DateTimeField] = (
         models.DateTimeField(null=True, blank=True)
     )
 
-    is_active: models.BooleanField = models.BooleanField()
+    is_active: models.BooleanField = models.BooleanField(default=False)
 
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["password", "email"]

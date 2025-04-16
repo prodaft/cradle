@@ -15,6 +15,7 @@ const PaginatedGraphFetch = forwardRef(
     ({ queryValues, setQueryValues, processNewNode, addEdge }, graphRef) => {
         const [isGraphFetching, setIsGraphFetching] = useState(false);
         const [currentPage, setCurrentPage] = useState(1);
+        const [currentDepth, setCurrentDepth] = useState(0);
         const [pageSize, setPageSize] = useState(250);
         const [hasNextPage, setHasNextPage] = useState(true);
         const [loading, setLoading] = useState(false);
@@ -39,6 +40,7 @@ const PaginatedGraphFetch = forwardRef(
                     endDate: queryValues.endDate || format(new Date(), 'yyyy-MM-dd'),
                 });
                 setPageSize(queryValues.pageSize || 250);
+                setCurrentDepth(queryValues.depth || 0);
             }
         }, [queryValues]);
 
@@ -48,19 +50,22 @@ const PaginatedGraphFetch = forwardRef(
             let has_next = false;
 
             try {
-                // Use dateRange and sourceNode (from state or queryValues) in the request
+                // Include depth parameter in the request
                 const response = await fetchGraph(
                     currentPage,
                     pageSize,
                     dateRange.startDate,
                     dateRange.endDate,
-                    sourceNode?.value // Source node ID
+                    sourceNode?.value, // Source node ID
+                    currentDepth // Adding depth parameter
                 );
 
                 has_next = response.data.has_next;
                 const { entries, relations, colors } = response.data.results;
 
                 setHasNextPage(has_next);
+                if (!has_next && currentDepth < 5)
+                  setCurrentDepth(prevDepth => prevDepth + 1);
                 const flattenedEntries = LinkTreeFlattener.flatten(entries);
                 let changes = [];
 
@@ -116,6 +121,23 @@ const PaginatedGraphFetch = forwardRef(
                 addEdge(edgeCount);
                 graphRef.current.fit(graphRef.current.elements(), 100);
                 setAlert({ show: false });
+
+                // Check if we need to move to the next depth
+                if (!has_next && currentPage > 1) {
+                    setCurrentPage(1);
+                    setCurrentDepth(prevDepth => {
+                        const newDepth = prevDepth + 1;
+                        // Update queryValues with the new depth
+                        setQueryValues(prev => ({
+                            ...prev,
+                            depth: newDepth
+                        }));
+                        return newDepth;
+                    });
+                    setHasNextPage(true); // Reset hasNextPage for the new depth
+                } else if (has_next) {
+                    setCurrentPage(currentPage + 1);
+                }
             } catch (error) {
                 setAlert({
                     show: true,
@@ -125,9 +147,6 @@ const PaginatedGraphFetch = forwardRef(
             } finally {
                 setLoading(false);
                 setIsGraphFetching(false);
-                if (has_next) {
-                    setCurrentPage(currentPage + 1);
-                }
             }
         };
 
@@ -183,6 +202,7 @@ const PaginatedGraphFetch = forwardRef(
                 }));
                 // Reset pagination when date range changes.
                 setCurrentPage(1);
+                setCurrentDepth(0);
                 setHasNextPage(true);
             }
         };
@@ -194,10 +214,25 @@ const PaginatedGraphFetch = forwardRef(
                 ...prev,
                 src: selected,
             }));
+            // Reset pagination and depth when source changes
+            setCurrentPage(1);
+            setCurrentDepth(0);
+            setHasNextPage(true);
         };
 
         const handlePageChange = (newPage) => {
             setCurrentPage(newPage);
+        };
+
+        const handleDepthChange = (e) => {
+            const newDepth = parseInt(e.target.value, 10);
+            setCurrentDepth(newDepth);
+            setQueryValues((prev) => ({
+                ...prev,
+                depth: newDepth,
+            }));
+            setCurrentPage(1);
+            setHasNextPage(true);
         };
 
         return (
@@ -237,7 +272,7 @@ const PaginatedGraphFetch = forwardRef(
                         </div>
                     </div>
 
-                    {/* Second row - Page size, current page indicator and fetch button */}
+                    {/* Second row - Page size, depth control, current page indicator and fetch button */}
                     <div className='flex items-end w-full justify-between'>
                         <div className='flex items-center gap-4'>
                             <div className='flex flex-col'>
@@ -255,6 +290,22 @@ const PaginatedGraphFetch = forwardRef(
                                     <option value={250}>250</option>
                                     <option value={500}>500</option>
                                 </select>
+                            </div>
+
+                            <div className='flex flex-col'>
+                                <label className='text-xs text-gray-400 mb-1'>
+                                    Depth
+                                </label>
+                                <div className='flex items-center'>
+                                    <input
+                                        type='number'
+                                        min='0'
+                                        value={currentDepth}
+                                        onChange={handleDepthChange}
+                                        className='input py-1 px-2 text-sm w-16'
+                                        disabled={isGraphFetching}
+                                    />
+                                </div>
                             </div>
 
                             <div className='flex flex-col h-full'>

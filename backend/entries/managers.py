@@ -1,6 +1,7 @@
 from django.apps import apps
 from django.db import models
 from django.db.models.expressions import F
+from django.db.models.query import RawQuerySet
 from django.db.models.query_utils import Q
 
 from user.models import CradleUser
@@ -10,9 +11,6 @@ from .enums import EntryType
 from core.fields import BitStringField
 
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
-
-
-EntryAccessVectors = apps.get_model("entries", "EntryAccessVectors")
 
 
 class EntryQuerySet(models.QuerySet):
@@ -41,13 +39,12 @@ class EntryQuerySet(models.QuerySet):
         """
         Filter all entries accessible to a user
         """
-        accessible_ids = EntryAccessVectors.objects.extra(
-            where=["(access_vector & %s) = %s"],
-            params=[user.access_vector_inv, fieldtype.get_prep_value(0)],
-        ).values_list("id", flat=True)
-
+        Edge = apps.get_model("entries", "Edge")
+        accessible_vertices = Edge.objects.accessible(user).values_list(
+            "src", flat=True
+        )
         return self.filter(
-            Q(id__in=accessible_ids) | Q(entry_class__type=EntryType.ENTITY)
+            Q(id__in=accessible_vertices) | Q(entry_class__type=EntryType.ENTITY)
         )
 
 

@@ -20,6 +20,7 @@ from ..serializers import (
 )
 from ..models import CradleUser
 from management.settings import cradle_settings
+import secrets
 
 
 @extend_schema_view(
@@ -333,6 +334,35 @@ class ManageUser(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
         return Response(self.get_tokens_for_user(user), status=status.HTTP_200_OK)
+
+
+class APIKey(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id):
+        requesting_user = cast(CradleUser, request.user)
+
+        if user_id == "me":
+            user = requesting_user
+        else:
+            user = CradleUser.objects.get(id=user_id)
+
+        if not (
+            requesting_user.pk == user.pk
+            or (requesting_user.is_cradle_admin and not user.is_cradle_admin)
+        ):
+            return Response(
+                "You are not allowed to generate API key for this user.",
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        key = secrets.token_hex(24)
+        user.api_key = key
+        user.save(update_fields=["api_key"])
+        return Response(
+            {"api_key": key},
+        )
 
 
 class EmailConfirm(APIView):

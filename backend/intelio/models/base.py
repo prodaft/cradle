@@ -227,6 +227,7 @@ class EnricherSettings(models.Model):
         default=EnrichmentStrategy.MANUAL,
     )
     periodicity = models.DurationField(null=True, blank=True)
+    last_run = models.DateTimeField(null=True, blank=True)
 
     for_eclasses = models.ManyToManyField(
         EntryClass, related_name="enrichers", blank=True

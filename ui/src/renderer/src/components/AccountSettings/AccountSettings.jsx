@@ -12,10 +12,12 @@ import {
     updateUser,
     deleteUser,
     createUser,
+    generateApiKey,
 } from '../../services/userService/userService';
 import { Tabs, Tab } from '../Tabs/Tabs';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
+import ActionConfirmationModal from '../Modals/ActionConfirmationModal.jsx';
 
 const accountSettingsSchema = Yup.object().shape({
     username: Yup.string().required('Username is required'),
@@ -99,6 +101,8 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                         email_confirmed: res.data.email_confirmed || false,
                         is_active: res.data.is_active || false,
                     });
+
+                    // Check if user has API key
                 })
                 .catch(displayError(setAlert, navigate));
         } else {
@@ -175,6 +179,26 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
         } catch (err) {
             displayError(setAlert)(err);
         }
+    };
+
+    const handleGenerateApiKey = () => {
+        setModal(ActionConfirmationModal, {
+            text: 'Are you sure you want to generate a new API key? This will invalidate the current key.',
+            onConfirm: async () => {
+                try {
+                    const response = await generateApiKey(getValues('id'));
+                    if (response.status === 200) {
+                        setAlert({
+                            show: true,
+                            message: `API key generated successfully: ${response.data.api_key}`,
+                            color: 'green',
+                        });
+                    }
+                } catch (err) {
+                    displayError(setAlert)(err);
+                }
+            },
+        });
     };
 
     return (
@@ -279,6 +303,13 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                             />
                                         </>
                                     )}
+
+                                    <button
+                                        type='submit'
+                                        className='btn btn-primary btn-block mt-4'
+                                    >
+                                        {isEdit ? 'Save' : 'Add'}
+                                    </button>
                                 </Tab>
                                 <Tab title='API Keys'>
                                     <div className='mt-4' />
@@ -299,38 +330,55 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                         {...register('catalystKey')}
                                         error={errors.catalystKey?.message}
                                     />
+
+                                    <button
+                                        type='submit'
+                                        className='btn btn-primary btn-block mt-4'
+                                    >
+                                        {isEdit ? 'Save' : 'Add'}
+                                    </button>
+                                </Tab>
+                                <Tab title='Security'>
+                                    <div className='mt-4' />
+                                    <div className='space-y-4'>
+                                        {isEdit && isOwnAccount && (
+                                            <div className='flex flex-col space-y-4'>
+                                                <button
+                                                    type='button'
+                                                    className='btn btn-primary btn-block'
+                                                    onClick={() =>
+                                                        navigate('/change-password')
+                                                    }
+                                                >
+                                                    Change Password
+                                                </button>
+
+                                                <button
+                                                    type='button'
+                                                    className='btn btn-primary btn-block'
+                                                    onClick={handleGenerateApiKey}
+                                                >
+                                                    Generate API Key
+                                                </button>
+
+                                                <button
+                                                    type='button'
+                                                    className='btn btn-ghost btn-block bg-red-500'
+                                                    onClick={() =>
+                                                        setModal(ConfirmDeletionModal, {
+                                                            text: 'Are you sure you want to delete your account? All data related to you will be deleted.',
+                                                            onConfirm: handleDelete,
+                                                        })
+                                                    }
+                                                >
+                                                    Delete Account
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </Tab>
                             </Tabs>
                             <AlertBox alert={alert} />
-                            <button
-                                type='submit'
-                                className='btn btn-primary btn-block mt-4'
-                            >
-                                {isEdit ? 'Save' : 'Add'}
-                            </button>
-                            {isEdit && isOwnAccount && (
-                                <div className='flex justify-between'>
-                                    <button
-                                        type='button'
-                                        className='btn btn-ghost btn-block hover:bg-red-500'
-                                        onClick={() =>
-                                            setModal(ConfirmDeletionModal, {
-                                                text: 'Are you sure you want to delete your account? All data related to you will be deleted.',
-                                                onConfirm: handleDelete,
-                                            })
-                                        }
-                                    >
-                                        Delete Account
-                                    </button>
-                                    <button
-                                        type='button'
-                                        className='btn btn-ghost btn-block'
-                                        onClick={() => navigate('/change-password')}
-                                    >
-                                        Change Password
-                                    </button>
-                                </div>
-                            )}
                         </form>
                     </div>
                 </div>

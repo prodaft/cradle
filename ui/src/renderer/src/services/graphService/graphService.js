@@ -59,17 +59,15 @@ export function getInaccessibleEntities(src, depth) {
  *
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function fetchGraph(page, page_size, start_date, end_date, source_id) {
+export function fetchGraph(page, page_size, start_date, end_date, source_id, depth) {
     const params = new URLSearchParams({
         page: page.toString(),
         page_size: page_size,
         start_date: start_date,
         end_date: end_date,
+        src: source_id,
+        depth: depth,
     });
-
-    if (source_id) {
-        params.append('source', source_id);
-    }
     return authAxios({
         method: 'GET',
         url: '/knowledge-graph/fetch/',

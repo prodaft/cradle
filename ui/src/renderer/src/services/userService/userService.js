@@ -62,3 +62,31 @@ export async function changePassword(oldPassword, newPassword) {
         data: { old_password: oldPassword, new_password: newPassword },
     });
 }
+
+
+/**
+ * Sends a POST request to generate an api key for auser
+ *
+ * @param {string} id - The id of the user to be deleted
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export async function generateApiKey(id) {
+    return authAxios({
+        method: 'post',
+        url: `/users/${id}/apikey`,
+    });
+}
+
+
+/**
+ * Sends a DELETE request to DELETE an api key for a user
+ *
+ * @param {string} id - The id of the user to be deleted
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export async function deleteApiKey(id) {
+    return authAxios({
+        method: 'delete',
+        url: `/users/${id}/apikey`,
+    });
+}

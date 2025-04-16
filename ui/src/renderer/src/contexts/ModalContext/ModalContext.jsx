@@ -28,14 +28,14 @@ export const ModalProvider = ({ children }) => {
                 checked={modalData.Component !== null}
                 onChange={() => {}}
             />
-            <div className='modal'>
+            <div className='modal w-screen'>
                 {/* Clicking the overlay will close the modal */}
                 <label
                     htmlFor='global-modal'
                     className='modal-overlay'
                     onClick={closeModal}
                 />
-                <div class='modal-content p-0'>
+                <div class='modal-content p-0 w-[100%]'>
                     {modalData.Component && (
                         <div className='modal-content rounded'>
                             {/* Close button */}

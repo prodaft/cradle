@@ -28,6 +28,11 @@ urlpatterns = [
         name="user_detail",
     ),
     path(
+        "<str:user_id>/apikey",
+        user_view.APIKey.as_view(),
+        name="user_detail",
+    ),
+    path(
         "<uuid:user_id>/manage/<str:action_name>",
         user_view.ManageUser.as_view(),
         name="user_manage",

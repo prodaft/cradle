@@ -57,18 +57,6 @@ class Edge(LifecycleModel):
         unique_together = ["src", "dst"]
 
 
-class EntryAccessVectors(LifecycleModel):
-    id = models.CharField(primary_key=True)
-
-    access_vector: BitStringField = BitStringField(
-        max_length=2048, null=False, default=1 << 2047, varying=False
-    )
-
-    class Meta:
-        managed = False
-        db_table = "entry_accesses"
-
-
 class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
     type: models.CharField = models.CharField(max_length=20, choices=EntryType.choices)
     subtype: models.CharField = models.CharField(

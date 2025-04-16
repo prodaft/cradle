@@ -14,6 +14,7 @@ import NoteSelector from '../NoteSelector/NoteSelector';
 import PublishPreview from '../PublishPreview/PublishPreview';
 import Note from '../Note/Note';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
+import { useModal } from '../../contexts/ModalContext/ModalContext';
 
 import { DndContext, closestCenter, DragOverlay, useSensor } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
@@ -21,6 +22,7 @@ import { NoButtonsSensor } from '../../utils/dndUtils/dndUtils';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { Download, Eye, EyeClosed, FloppyDisk, Upload } from 'iconoir-react';
+import FormModal from '../Modals/FormModal';
 
 import NavbarDropdown from '../NavbarDropdown/NavbarDropdown';
 import NavbarButton from '../NavbarButton/NavbarButton';
@@ -33,9 +35,8 @@ export default function Publish() {
     const selectedNotesRef = useRef([]);
     const [activeNote, setActiveNote] = useState(null);
     const [publishOptions, setPublishOptions] = useState({ upload: [], download: [] });
-    const [showTitlePrompt, setShowTitlePrompt] = useState(false);
-    const [publishStrategy, setPublishStrategy] = useState(null);
     const [anonymize, setAnonymize] = useState(false);
+    const { setModal } = useModal();
 
     const [isEditing, setIsEditing] = useState(false);
     const [reportId, setReportId] = useState(null);
@@ -178,12 +179,22 @@ export default function Publish() {
     }
 
     const publishReportWithStrategy = (strategy) => () => {
-        setPublishStrategy(strategy);
-        setShowTitlePrompt(true);
+        setModal(FormModal, {
+            title: 'Enter Report Title',
+            fields: [
+                {
+                    name: 'title',
+                    label: 'Report Title',
+                    type: 'text',
+                    placeholder: 'Enter report title',
+                },
+            ],
+            onSubmit: (data) => handleTitleSubmit(data.title, strategy),
+        });
     };
 
     // When the title prompt is submitted, if editing then call editReport.
-    const handleTitleSubmit = (enteredTitle) => {
+    const handleTitleSubmit = (enteredTitle, strategy) => {
         const noteIds = selectedNotesRef.current.map((note) => note.id);
         if (isEditing && reportId) {
             editReport(reportId, { note_ids: noteIds, title: enteredTitle })
@@ -192,7 +203,7 @@ export default function Publish() {
                 })
                 .catch(displayError(setAlert));
         } else {
-            publishReport(publishStrategy, noteIds, enteredTitle, anonymize)
+            publishReport(strategy, noteIds, enteredTitle, anonymize)
                 .then(() => {
                     navigate(`/connectivity/`);
                 })
@@ -245,15 +256,6 @@ export default function Publish() {
     return (
         <div className='w-full h-full overflow-y-hidden relative'>
             <AlertDismissible alert={alert} setAlert={setAlert} />
-
-            <FloatingTextInput
-                title='Enter a title for your report'
-                placeholder='Awesome Title'
-                open={showTitlePrompt}
-                setOpen={setShowTitlePrompt}
-                onSubmit={handleTitleSubmit}
-                initialValue={title}
-            />
 
             <DndContext
                 sensors={sensors}

@@ -101,10 +101,7 @@ class GraphNeighborsView(APIView):
 
         sourceset = source_entry.aliasqs(request.user)
 
-        if depth == 0:
-            neighbors_qs = sourceset
-        else:
-            neighbors_qs = get_neighbors(sourceset, depth, request.user)
+        neighbors_qs = get_neighbors(sourceset, depth, request.user)
 
         query_str = request.query_params.get("query")
 
@@ -200,10 +197,66 @@ class FetchGraphView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
+        source_id = request.query_params.get("src")
+        if not source_id:
+            return Response({"error": "Missing src parameter."}, status=400)
+
+        try:
+            depth = int(request.query_params.get("depth", 1))
+            page_size = int(request.query_params.get("page_size", 200))
+        except ValueError:
+            return Response(
+                {"error": "depth, page and page_size must be integers."}, status=400
+            )
+
+        if depth < 0 or depth > 3:
+            return Response({"error": "depth must be between 0 and 3."}, status=400)
+
+        # Retrieve the source entry (404 if not found)
+        source_entry = Entry.objects.filter(pk=source_id).first()
+
+        if not source_entry:
+            return Response(
+                {"error": f"Entry with ID {source_id} not found."}, status=404
+            )
+
+        if (
+            source_entry.entry_class.type == EntryType.ENTITY
+            and not Access.objects.has_access_to_entities(
+                request.user, {source_entry}, {AccessType.READ, AccessType.READ_WRITE}
+            )
+        ):
+            return Response(
+                {"error": f"Entry with ID {source_id} not found."}, status=404
+            )
+
+        sourceset = source_entry.aliasqs(request.user)
+
+        at_depth = get_neighbors(sourceset, depth, request.user).values_list(
+            "id", flat=True
+        )
+
+        if depth == 0:
+            prev_depth = sourceset
+        else:
+            prev_depth = get_neighbors(sourceset, depth - 1, request.user).values_list(
+                "id", flat=True
+            )
+
+        # Page size parsing
+        try:
+            page_size = int(request.query_params.get("page_size", 200))
+        except ValueError:
+            return Response({"error": "page_size must be integer."}, status=400)
+
+        paginator = LazyPaginator(page_size=page_size)
+        paginated_at_depth = paginator.paginate_queryset(at_depth, request)
+
         edges = (
             Edge.objects.accessible(request.user)
-            .remove_mirrors()
+            .filter(Q(src__in=prev_depth) & Q(dst__in=paginated_at_depth))
             .order_by("-last_seen")
+            .remove_mirrors()
         )
 
         # Parse optional date filters
@@ -226,24 +279,16 @@ class FetchGraphView(APIView):
                 Q(created_at__lte=end_date) | Q(last_seen__lte=end_date)
             )
 
-        # Page size parsing
-        try:
-            page_size = int(request.query_params.get("page_size", 200))
-        except ValueError:
-            return Response({"error": "page_size must be integer."}, status=400)
-
-        paginator = LazyPaginator(page_size=page_size)
-        paginated_edges = filter_valid_edges(
-            paginator.paginate_queryset(edges, request)
-        )
-
-        entry_ids = {i.src for i in paginated_edges} | {i.dst for i in paginated_edges}
-        entries = Entry.objects.filter(id__in=entry_ids)
+        if depth == 0:
+            entries = sourceset
+        else:
+            entry_ids = {i.src for i in edges} | {i.dst for i in edges}
+            entries = Entry.objects.filter(id__in=entry_ids)
 
         colors = {i.entry_class_id: i.entry_class.color for i in entries}
 
         serializer = SubGraphSerializer(
-            {"relations": paginated_edges, "entries": entries, "colors": colors}
+            {"relations": edges, "entries": entries, "colors": colors}
         )
 
         return paginator.get_paginated_response(serializer.data)

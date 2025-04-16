@@ -19,7 +19,7 @@ const ActionConfirmationModal = ({
     };
 
     return (
-        <div className='p-6'>
+        <div className=''>
             <h2 className='text-2xl font-bold mb-4'>Confirm Action</h2>
             <p className='mb-4'>{text}</p>
             {confirmText && (
