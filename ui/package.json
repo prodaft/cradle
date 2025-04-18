@@ -1,7 +1,7 @@
 {
     "name": "Cradle",
     "private": true,
-    "version": "0.0.0",
+    "version": "1.5.4",
     "main": "./out/main/main.js",
     "optionalDependencies": {
         "@rollup/rollup-linux-x64-gnu": "4.9.5",

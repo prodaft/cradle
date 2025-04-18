@@ -26,3 +26,6 @@ filename = "docs/content/_index.md"
 
 [[tool.bumpversion.files]]
 filename = "backend/cradle/settings_common.py"
+
+[[tool.bumpversion.files]]
+filename = "ui/package.json"
