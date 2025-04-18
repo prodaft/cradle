@@ -96,7 +96,7 @@ jobs:
       - name: Install dependencies
         run: |
           apt update
-          apt install python3-pip
+          apt install -y python3-pip
       - name: Install dependencies
         run: |
           pip install pipenv
