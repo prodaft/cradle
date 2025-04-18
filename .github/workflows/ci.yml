@@ -89,6 +89,11 @@ jobs:
           python-version: "3.11"
       - name: Install dependencies
         run: |
+          sudo apt-add-repository ppa:ubuntugis/ubuntugis-unstable
+          sudo apt-get update
+          sudo apt-get install gdal-bin libgdal-dev
+      - name: Install dependencies
+        run: |
           pip install pipenv
           pipenv sync -d
       - name: Settings Copy
