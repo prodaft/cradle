@@ -9,6 +9,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL("ALTER DATABASE cradle REFRESH COLLATION VERSION"),
         migrations.RunSQL("CREATE EXTENSION IF NOT EXISTS pgrouting;"),
     ]
