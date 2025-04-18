@@ -27,7 +27,6 @@ app.conf.task_routes = {
     "entries.tasks.remap_notes_task": {"queue": "notes"},
     "entries.tasks.simulate_graph": {"queue": "graph"},
     "entries.tasks.refresh_edges_materialized_view": {"queue": "graph"},
-    "entries.tasks.delete_hanging_artifacts": {"queue": "graph"},
     "notes.tasks.connect_aliases": {"queue": "notes"},
     "notes.tasks.ping_entries": {"queue": "notes"},
     "publish.tasks.generate_report": {"queue": "publish"},
@@ -42,6 +41,8 @@ app.conf.task_routes = {
     "intelio.tasks.core.enrich_entries": {"queue": "enrich"},
     "intelio.tasks.core.start_digest": {"queue": "digest"},
     "intelio.tasks.falcon.digest_chunk": {"queue": "digest"},
+    "entries.tasks.delete_hanging_artifacts": {"queue": "cleanup"},
+    "file_transfer.tasks.delete_hanging_files": {"queue": "cleanup"},
 }
 
 app.conf.task_default_priority = 5
@@ -80,6 +81,10 @@ app.conf.beat_schedule = {
         ),
     },
     "delete-hanging-artifacts-every-night": {
+        "task": "entries.tasks.delete_hanging_artifacts",
+        "schedule": crontab(hour=2, minute=0),
+    },
+    "delete-hanging-files-every-night": {
         "task": "entries.tasks.delete_hanging_artifacts",
         "schedule": crontab(hour=2, minute=0),
     },

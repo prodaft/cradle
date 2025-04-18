@@ -34,7 +34,7 @@ class CreateUserTest(UserTestCase):
         response = self.create_user_request(
             "new_user", "userR1#12123412", email="alabala@example.com"
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 409)
 
         with self.assertRaises(CradleUser.DoesNotExist):
             CradleUser.objects.get(username="new_user")

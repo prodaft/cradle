@@ -30,7 +30,7 @@ class BaseSettingsSection:
             timeout=300,
         )
 
-        default = settings.DEFAULT_SETTINGS.get(self.prefix).get(key, default)
+        default = settings.DEFAULT_SETTINGS.get(self.prefix, {}).get(key, default)
 
         if value is None:
             cache.set(f"setting:{full_key}", default, timeout=300)

@@ -40,7 +40,8 @@ class EntryView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        serializer = serializer_class(data=dict(request.data))
+        print(request.data.dict())
+        serializer = serializer_class(data=request.data.dict())
 
         if serializer.is_valid():
             if hasattr(serializer, "exists") and serializer.exists():

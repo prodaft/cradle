@@ -53,3 +53,11 @@ EMAIL_HOST_USER = "cradle@prodaft.com"
 DEFAULT_FROM_EMAIL = "cradle@prodaft.com"
 EMAIL_HOST_PASSWORD = None
 EMAIL_USE_TLS = True
+
+DEFAULT_SETTINGS = {
+    "users": {
+        "allow_registration": True,
+        "require_admin_confirmation": False,
+        "require_email_confirmation": False,
+    },
+}

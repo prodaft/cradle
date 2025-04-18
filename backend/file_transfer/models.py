@@ -35,7 +35,6 @@ class FileReference(models.Model):
         null=True,
         blank=True,
     )
-
     digest: models.ForeignKey = models.ForeignKey(
         "intelio.BaseDigest",
         related_name="files",
@@ -45,15 +44,16 @@ class FileReference(models.Model):
     )
 
     def to_dict(self) -> dict[str, str]:
-        """Provides a dictionary representation of the FileReference
-        entry.
-
-        Returns:
-            The dictionary representation of the entry.
-        """
-
         return {
             "minio_file_name": self.minio_file_name,
             "file_name": self.file_name,
             "bucket_name": self.bucket_name,
         }
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["minio_file_name", "bucket_name"],
+                name="unique_minio_file_per_bucket",
+            )
+        ]

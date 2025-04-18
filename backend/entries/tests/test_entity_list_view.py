@@ -72,24 +72,27 @@ class PostEntityListTest(EntriesTestCase):
 
     def test_create_entity_admin(self):
         entity_json = {
+            "type": "entity",
             "name": "entity1",
             "subtype": self.entryclass1.subtype,
             "description": "description1",
         }
 
         response_post = self.client.post(
-            reverse("entity_list"), entity_json, **self.headers_admin
+            reverse("entry-list-create"), entity_json, **self.headers_admin
         )
+        print(response_post.content)
+
         self.assertEqual(response_post.status_code, 200)
         self.assertEqual(Entry.entities.count(), 1)
 
         self.assertEqual(Entry.entities.get().name, "entity1")
 
     def test_create_entity_no_description_admin(self):
-        entity_json = {"name": "entity1", "subtype": "case"}
+        entity_json = {"name": "entity1", "subtype": "case", "type": "entity"}
 
         response_post = self.client.post(
-            reverse("entity_list"), entity_json, **self.headers_admin
+            reverse("entry-list-create"), entity_json, **self.headers_admin
         )
         self.assertEqual(response_post.status_code, 200)
 
@@ -98,18 +101,19 @@ class PostEntityListTest(EntriesTestCase):
 
     def test_create_entity_duplicate_admin(self):
         entity_json = {
+            "type": "entity",
             "name": "entity1",
             "subtype": "case",
             "description": "description1",
         }
 
         response_post = self.client.post(
-            reverse("entity_list"), entity_json, **self.headers_admin
+            reverse("entry-list-create"), entity_json, **self.headers_admin
         )
         self.assertEqual(response_post.status_code, 200)
 
         response_post = self.client.post(
-            reverse("entity_list"), entity_json, **self.headers_admin
+            reverse("entry-list-create"), entity_json, **self.headers_admin
         )
         self.assertEqual(response_post.status_code, 409)
 
@@ -117,7 +121,7 @@ class PostEntityListTest(EntriesTestCase):
         entity_json = {"description": "description1"}
 
         response_post = self.client.post(
-            reverse("entity_list"), entity_json, **self.headers_admin
+            reverse("entry-list-create"), entity_json, **self.headers_admin
         )
         self.assertEqual(response_post.status_code, 400)
 
@@ -125,22 +129,24 @@ class PostEntityListTest(EntriesTestCase):
 
     def test_create_entity_authenticated_not_admin(self):
         entity_json = {
+            "type": "entity",
             "name": "entity1",
             "subtype": "case",
             "description": "description1",
         }
 
         response_post = self.client.post(
-            reverse("entity_list"), entity_json, **self.headers_normal
+            reverse("entry-list-create"), entity_json, **self.headers_normal
         )
         self.assertEqual(response_post.status_code, 403)
 
     def test_create_entity_authenticated_not_authenticated(self):
         entity_json = {
+            "type": "entity",
             "name": "entity1",
             "subtype": "case",
             "description": "description1",
         }
 
-        response_post = self.client.post(reverse("entity_list"), entity_json)
-        self.assertEqual(response_post.status_code, 401)
+        response_post = self.client.post(reverse("entry-list-create"), entity_json)
+        self.assertEqual(response_post.status_code, 403)

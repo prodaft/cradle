@@ -13,8 +13,6 @@ from .exceptions import (
 from typing import Dict, List, cast, Any
 from .utils.validators import password_validator
 
-from management.settings import cradle_settings
-
 
 class UserCreateSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
@@ -70,8 +68,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
         """
 
         return CradleUser.objects.create_user(
-            is_active=not cradle_settings.users.require_admin_confirmation,
-            email_confirmed=not cradle_settings.users.require_email_confirmation,
             **validated_data,
         )
 

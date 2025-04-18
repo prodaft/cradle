@@ -33,6 +33,8 @@ FRONTEND_URL = "http://localhost:5173"
 
 RESULT_BACKEND = "redis://127.0.0.1:6379/0"
 REDIS_URL = "redis://127.0.0.1:6379/0"
+BROKER = REDIS_URL
+RESULT_BACKEND = REDIS_URL
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = ""
@@ -41,3 +43,12 @@ EMAIL_HOST_USER = ""
 DEFAULT_FROM_EMAIL = ""
 EMAIL_HOST_PASSWORD = None
 EMAIL_USE_TLS = True
+
+
+DEFAULT_SETTINGS = {
+    "users": {
+        "allow_registration": True,
+        "require_admin_confirmation": False,
+        "require_email_confirmation": False,
+    },
+}

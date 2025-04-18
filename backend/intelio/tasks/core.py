@@ -7,7 +7,6 @@ from intelio.models.base import BaseDigest, EnricherSettings
 from user.models import CradleUser
 
 from django.utils import timezone
-from datetime import timedelta
 
 BATCH_SIZE = 2048
 

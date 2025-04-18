@@ -30,7 +30,7 @@ urlpatterns = [
     path(
         "<str:user_id>/apikey",
         user_view.APIKey.as_view(),
-        name="user_detail",
+        name="user_apikey",
     ),
     path(
         "<uuid:user_id>/manage/<str:action_name>",

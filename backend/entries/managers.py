@@ -1,7 +1,6 @@
 from django.apps import apps
 from django.db import models
 from django.db.models.expressions import F
-from django.db.models.query import RawQuerySet
 from django.db.models.query_utils import Q
 
 from user.models import CradleUser
