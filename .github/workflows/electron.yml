@@ -1,17 +1,17 @@
-name: Build and Publish on GitHub Release
+name: Build and Publish Electron app on GitHub Release
 
 on:
   release:
-    types: [published]  # Trigger when a release is published
+    types: [published]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
-    defaults:
-      run:
-        working-directory: ./ui
-
+    name: Build on ${{ matrix.os }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,7 +21,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '23'
+          node-version: '18'
           cache: 'npm'
 
       - name: Cache node_modules
