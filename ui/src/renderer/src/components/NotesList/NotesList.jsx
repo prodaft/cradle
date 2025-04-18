@@ -56,20 +56,19 @@ export default function NotesList({
         <>
             <div className='flex flex-col space-y-4'>
                 <AlertBox alert={alert} setAlert={setAlert} />
-                {loading ? (
-                    <div className='flex items-center justify-center min-h-screen'>
-                        <div className='spinner-dot-pulse'>
-                            <div className='spinner-pulse-dot'></div>
+                <div>
+                    <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                    />
+                    {loading ? (
+                        <div className='flex items-center justify-center min-h-screen'>
+                            <div className='spinner-dot-pulse'>
+                                <div className='spinner-pulse-dot'></div>
+                            </div>
                         </div>
-                    </div>
-                ) : notes.length > 0 ? (
-                    <div>
-                        <Pagination
-                            currentPage={page}
-                            totalPages={totalPages}
-                            onPageChange={handlePageChange}
-                        />
-
+                    ) : notes.length > 0 ? (
                         <div className='notes-list'>
                             {notes.map((note, index) => {
                                 for (const n of filteredNotes) {
@@ -86,20 +85,20 @@ export default function NotesList({
                                 );
                             })}
                         </div>
+                    ) : (
+                        <div className='container mx-auto flex flex-col items-center'>
+                            <p className='mt-6 !text-sm !font-normal text-zinc-500'>
+                                No notes found!
+                            </p>
+                        </div>
+                    )}
 
-                        <Pagination
-                            currentPage={page}
-                            totalPages={totalPages}
-                            onPageChange={handlePageChange}
-                        />
-                    </div>
-                ) : (
-                    <div className='container mx-auto flex flex-col items-center'>
-                        <p className='mt-6 !text-sm !font-normal text-zinc-500'>
-                            No notes found!
-                        </p>
-                    </div>
-                )}
+                    <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                    />
+                </div>
             </div>
         </>
     );

@@ -23,7 +23,7 @@ def enrich_entries(enricher_id, entry_ids, content_type_id, content_id, user_id=
         user = CradleUser.objects.get(id=user_id)
 
     content_type = ContentType.objects.get(id=content_type_id)
-    content_object = content_type.get_object_for_this_type(id=content_id)
+    content_object = content_type.get_object_for_this_type(pk=content_id)
 
     entries = Entry.objects.filter(id__in=entry_ids)
 
@@ -70,7 +70,7 @@ def enrich_periodic():
                 entry_ids = list(entries.values_list("id", flat=True))
 
                 enrich_entries.apply_async(
-                    args=(enricher.id, entry_ids, content_type.id, eclass.id)
+                    args=(enricher.id, entry_ids, content_type.id, eclass.subtype)
                 )
 
 

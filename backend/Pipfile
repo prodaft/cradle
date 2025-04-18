@@ -33,6 +33,7 @@ numpy = "*"
 scipy = "*"
 psycopg2-binary = "*"
 dnspython = "*"
+django-celery-beat = "*"
 
 [dev-packages]
 bump-my-version = "*"

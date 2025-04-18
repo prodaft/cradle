@@ -5,6 +5,7 @@ NUM_WORKERS=12
 pipenv run python manage.py collectstatic --noinput -c
 chown -R www-data:www-data static
 
+pipenv run python manage.py migrate django_celery_beat
 pipenv run python manage.py migrate
 
 if $INSTALL_FIXTURES; then

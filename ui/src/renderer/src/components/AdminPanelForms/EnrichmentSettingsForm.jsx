@@ -43,7 +43,7 @@ const createEnrichmentSchema = (form_fields) => {
     // Add periodicity validation if it exists
     schemaFields.periodicity = Yup.string().when('strategy', {
         is: (val) => val === 'periodicity',
-        then: () => Yup.string().required('Periodicity is required'),
+        then: () => Yup.string().required('Interval is required'),
         otherwise: () => Yup.string().notRequired(),
     });
 
@@ -290,7 +290,7 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
                                         <FormField
                                             type='string'
                                             name='periodicity'
-                                            labelText='Period'
+                                            labelText='Interval'
                                             className='form-input input input-ghost-primary input-block focus:ring-0'
                                             {...register('periodicity')}
                                             error={errors.periodicity?.message}

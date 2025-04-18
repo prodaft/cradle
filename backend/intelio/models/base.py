@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import Any, Optional
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
@@ -226,7 +227,7 @@ class EnricherSettings(models.Model):
         choices=EnrichmentStrategy.choices,
         default=EnrichmentStrategy.MANUAL,
     )
-    periodicity = models.DurationField(null=True, blank=True)
+    periodicity = models.DurationField(null=False, default=timedelta(days=1))
     last_run = models.DateTimeField(null=True, blank=True)
 
     for_eclasses = models.ManyToManyField(

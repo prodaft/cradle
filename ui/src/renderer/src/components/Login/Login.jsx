@@ -109,6 +109,7 @@ export default function Login() {
                             {showSettings ? (
                                 <>
                                     <FormField
+                                        key='backendUrl'
                                         name='backendUrl'
                                         labelText='Backend URL'
                                         type='text'
@@ -128,6 +129,7 @@ export default function Login() {
                                     <FormField
                                         name='username'
                                         labelText='Username'
+                                        key='username'
                                         type='text'
                                         value={username}
                                         handleInput={setUsername}
@@ -135,7 +137,9 @@ export default function Login() {
                                     />
                                     <FormField
                                         name='password'
+                                        type='text'
                                         labelText='Password'
+                                        key='password'
                                         type='password'
                                         value={password}
                                         handleInput={setPassword}

@@ -66,6 +66,8 @@ app.conf.task_soft_time_limit = 15 * 60
 app.conf.task_default_retry_delay = 180
 app.conf.task_max_retries = 3
 
+app.conf.beat_scheduler = "django_celery_beat.schedulers:DatabaseScheduler"
+
 # Set up periodic tasks
 app.conf.beat_schedule = {
     "refresh-edges-materialized-view-every-night": {
@@ -80,5 +82,9 @@ app.conf.beat_schedule = {
     "delete-hanging-artifacts-every-night": {
         "task": "entries.tasks.delete_hanging_artifacts",
         "schedule": crontab(hour=2, minute=0),
+    },
+    "enrich_periodic-check-minutely": {
+        "task": "intelio.tasks.core.enrich_periodic",
+        "schedule": crontab(minute="*/1"),
     },
 }
