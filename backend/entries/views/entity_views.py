@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
 from access.enums import AccessType
 from access.models import Access
@@ -16,6 +16,24 @@ from uuid import UUID
 from entries.tasks import refresh_edges_materialized_view
 
 
+@extend_schema_view(
+    get=extend_schema(
+        summary="List entities",
+        description="Returns a list of entities. For regular users, returns only entities they have access to. For admin users, returns all entities.",  # noqa: E501
+        responses={200: EntryResponseSerializer(many=True)},
+    ),
+    post=extend_schema(
+        summary="Create entity",
+        description="Creates a new entity. Only available to admin users.",
+        request=EntitySerializer,
+        responses={
+            200: EntitySerializer,
+            400: {"description": "Invalid data provided"},
+            403: {"description": "User is not an admin"},
+            409: {"description": "Entity already exists"},
+        },
+    ),
+)
 class EntityList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasEntryManagerRole]
@@ -34,35 +52,52 @@ class EntityList(APIView):
 
 @extend_schema_view(
     get=extend_schema(
-        summary="Retrieve Entity",
-        description="Get details of a specific entity by ID.",
+        summary="Get entity details",
+        description="Returns details of a specific entity. Regular users can only access entities they have permissions for. Admin users can access any entity.",  # noqa: E501
+        parameters=[
+            OpenApiParameter(
+                name="entity_id",
+                type=UUID,
+                location=OpenApiParameter.PATH,
+                description="UUID of the entity",
+            )
+        ],
         responses={
             200: EntitySerializer,
-            401: "User is not authenticated",
-            403: "User lacks required permissions",
-            404: "Entity not found",
+            404: {"description": "Entity not found or user doesn't have access"},
         },
     ),
     delete=extend_schema(
-        summary="Delete Entity",
-        description="Delete an entity. Requires admin privileges.",
+        summary="Delete entity",
+        description="Deletes an entity. Only available to admin users.",
+        parameters=[
+            OpenApiParameter(
+                name="entity_id",
+                type=UUID,
+                location=OpenApiParameter.PATH,
+                description="UUID of the entity to delete",
+            )
+        ],
         responses={
-            200: "Entity deleted successfully",
-            401: "User is not authenticated",
-            403: "User is not an admin",
-            404: "Entity not found",
+            200: {"description": "Entity successfully deleted"},
+            403: {"description": "User is not an admin"},
+            404: {"description": "Entity not found"},
         },
     ),
     post=extend_schema(
-        summary="Update Entity",
-        description="Update an existing entity.",
+        summary="Update entity",
+        description="Updates an existing entity.",
         request=EntitySerializer,
+        parameters=[
+            OpenApiParameter(
+                name="entity_id",
+                type=UUID,
+                location=OpenApiParameter.PATH,
+                description="UUID of the entity to update",
+            )
+        ],
         responses={
-            200: EntitySerializer,
-            400: "Invalid data provided",
-            401: "User is not authenticated",
-            403: "User lacks required permissions",
-            404: "Entity not found",
+            404: {"description": "Entity not found or user doesn't have access"}
         },
     ),
 )

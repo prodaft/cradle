@@ -10,7 +10,6 @@ global_packages = [global_base + "site-packages/", global_base + "dist-packages/
 
 sys.path += global_packages
 
-
 SECRET_KEY = "django-insecure-0in+njnc5mjf3xuh$yjy+$s@78-!9rh$qjzv@aqw+*c$zh&d*&"
 
 DEBUG = True

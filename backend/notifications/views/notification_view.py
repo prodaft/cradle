@@ -12,14 +12,26 @@ from typing import cast
 from rest_framework import status
 from ..serializers import UpdateNotificationSerializer, UnreadNotificationsSerializer
 
+from drf_spectacular.utils import extend_schema_view
 
+
+@extend_schema_view(
+    get=extend_schema(
+        summary="Get unread notifications count",
+        description="Returns the count of unread notifications for the authenticated user.",  # noqa: E501
+        responses={
+            200: UnreadNotificationsSerializer,
+            401: {"description": "User is not authenticated"},
+        },
+    )
+)
 class NotificationList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
         summary="Fetch Notifications",
-        description="Retrieve all notifications for the authenticated user, sorted from newest to oldest.",
+        description="Retrieve all notifications for the authenticated user, sorted from newest to oldest.",  # noqa: E501
         responses={200: NotificationSerializer(many=True), 401: "Unauthorized"},
     )
     def get(self, request: Request) -> Response:
@@ -34,13 +46,21 @@ class NotificationList(APIView):
         return Response(serializer.data)
 
 
+@extend_schema(
+    summary="Get notifications",
+    description="Returns all notifications belonging to the authenticated user, ordered by timestamp in descending order. Marks all notifications as read.",  # noqa: E501
+    responses={
+        200: NotificationSerializer(many=True),
+        401: {"description": "User is not authenticated"},
+    },
+)
 class NotificationDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
         summary="Update Notification",
-        description="Update a notification's read/unread status by providing its ID.",
+        description="Update a notification's read/unread status by providing its ID.",  # noqa: E501
         request=UpdateNotificationSerializer,
         responses={
             200: "Notification updated successfully",
@@ -69,6 +89,17 @@ class NotificationDetail(APIView):
         return Response("Request body is invalid.", status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema_view(
+    delete=extend_schema(
+        summary="Delete Notification",
+        description="Delete a notification by providing its ID.",
+        responses={
+            204: {"description": "Notification deleted successfully"},
+            404: {"description": "Notification not found"},
+            401: {"description": "Unauthorized"},
+        },
+    )
+)
 class NotificationUnread(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

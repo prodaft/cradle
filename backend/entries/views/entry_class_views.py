@@ -7,7 +7,7 @@ from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
 from user.models import CradleUser
 from user.permissions import HasAdminRole, HasEntryManagerRole
@@ -30,13 +30,13 @@ from ..models import Entry, EntryClass
         },
     ),
     post=extend_schema(
-        summary="Create Entry Class",
-        description="Create a new entry class. Requires admin privileges.",
+        summary="Create entry class",
+        description="Creates a new entry class. Only available to admin users.",
         request=EntryClassSerializer,
         responses={
             200: EntryClassSerializer,
-            400: "Invalid data provided",
-            401: "User is not authenticated",
+            400: {"description": "Invalid data provided"},
+            403: {"description": "User is not an admin"},
         },
     ),
 )
@@ -81,34 +81,111 @@ class EntryClassList(APIView):
 
 @extend_schema_view(
     get=extend_schema(
-        summary="Retrieve Entry Class",
-        description="Get details of a specific entry class by its subtype.",
+        summary="Get entry class details",
+        description="Returns details of a specific entry class.",
+        parameters=[
+            OpenApiParameter(
+                name="class_subtype",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Subtype of the entry class",
+            )
+        ],
         responses={
             200: EntryClassSerializer,
-            401: "User is not authenticated",
-            404: "Entry class not found",
+            404: {"description": "Entry class not found"},
         },
     ),
     delete=extend_schema(
-        summary="Delete Entry Class",
-        description="Delete an entry class. Requires admin privileges.",
+        summary="Delete entry class",
+        description="Deletes an entry class. Only available to admin users. Cannot delete the 'alias' entry class.",
+        parameters=[
+            OpenApiParameter(
+                name="class_subtype",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Subtype of the entry class to delete",
+            )
+        ],
         responses={
-            200: "Entry class deleted successfully",
-            401: "User is not authenticated",
-            403: "User is not an admin",
-            404: "Entry class not found",
+            200: {"description": "Entry class successfully deleted"},
+            403: {
+                "description": "User is not an admin or trying to delete 'alias' class"
+            },
+            404: {"description": "Entry class not found"},
         },
     ),
     post=extend_schema(
-        summary="Update Entry Class",
-        description="Update an existing entry class. Type changes require admin privileges.",
+        summary="Update entry class",
+        description="Updates an existing entry class. Cannot edit the 'alias' entry class.",
         request=EntryClassSerializer,
+        parameters=[
+            OpenApiParameter(
+                name="class_subtype",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Subtype of the entry class to update",
+            )
+        ],
         responses={
             200: EntryClassSerializer,
-            400: "Invalid data provided",
-            401: "User is not authenticated",
-            403: "User is not authorized to change entry class type",
-            404: "Entry class not found",
+            403: {"description": "Trying to edit 'alias' class"},
+            404: {"description": "Entry class not found"},
+        },
+    ),
+)
+@extend_schema_view(
+    get=extend_schema(
+        summary="Get entry class details",
+        description="Returns details of a specific entry class.",
+        parameters=[
+            OpenApiParameter(
+                name="class_subtype",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Subtype of the entry class",
+            )
+        ],
+        responses={
+            200: EntryClassSerializer,
+            404: {"description": "Entry class not found"},
+        },
+    ),
+    delete=extend_schema(
+        summary="Delete entry class",
+        description="Deletes an entry class. Only available to admin users. Cannot delete the 'alias' entry class.",
+        parameters=[
+            OpenApiParameter(
+                name="class_subtype",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Subtype of the entry class to delete",
+            )
+        ],
+        responses={
+            200: {"description": "Entry class successfully deleted"},
+            403: {
+                "description": "User is not an admin or trying to delete 'alias' class"
+            },
+            404: {"description": "Entry class not found"},
+        },
+    ),
+    post=extend_schema(
+        summary="Update entry class",
+        description="Updates an existing entry class. Cannot edit the 'alias' entry class.",
+        request=EntryClassSerializer,
+        parameters=[
+            OpenApiParameter(
+                name="class_subtype",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Subtype of the entry class to update",
+            )
+        ],
+        responses={
+            200: EntryClassSerializer,
+            403: {"description": "Trying to edit 'alias' class"},
+            404: {"description": "Entry class not found"},
         },
     ),
 )
@@ -204,13 +281,28 @@ class EntryClassDetail(APIView):
 
 @extend_schema_view(
     get=extend_schema(
-        summary="Get Next Available Name",
-        description="Generate the next available name for an entry class based on its prefix pattern.",
+        summary="Get next available name",
+        description="Returns the next available name for entries of this class based on the class prefix and existing entries.",  # noqa: E501
+        parameters=[
+            OpenApiParameter(
+                name="class_subtype",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Subtype of the entry class",
+            )
+        ],
         responses={
-            200: {"type": "object", "properties": {"name": {"type": "string"}}},
-            401: "User is not authenticated",
-            403: "User is not an admin",
-            404: "Entry class not found",
+            200: {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "nullable": True,
+                        "description": "Next available name, or null if class has no prefix",
+                    }
+                },
+            },
+            404: {"description": "Entry class not found"},
         },
     )
 )

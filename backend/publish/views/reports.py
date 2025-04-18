@@ -11,13 +11,34 @@ from ..models import PublishedReport, ReportStatus
 from ..tasks import generate_report, edit_report
 from ..serializers import EditReportSerializer, ReportSerializer
 
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
+
+@extend_schema_view(
+    get=extend_schema(
+        summary="Get published reports",
+        description="Returns a paginated list of published reports for the authenticated user, ordered by creation date descending. Can be filtered by search term matching report ID or title.",  # noqa: E501
+        parameters=[
+            OpenApiParameter(
+                name="search",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Search term to filter reports by ID or title",
+            ),
+            OpenApiParameter(
+                name="page",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Page number for pagination",
+            ),
+        ],
+        responses={
+            200: ReportSerializer(many=True),
+            401: {"description": "User is not authenticated"},
+        },
+    )
+)
 class ReportListDeleteAPIView(generics.ListAPIView):
-    """
-    GET /publish/ returns a paginated list of reports.
-    DELETE /publish/ deletes a report (expects {"id": "<report_id>"} in the body).
-    """
-
     def get_queryset(self):
         return PublishedReport.objects.filter(user=self.request.user).order_by(
             "-created_at"
@@ -31,6 +52,31 @@ class ReportListDeleteAPIView(generics.ListAPIView):
     search_fields = ["id", "title"]
 
 
+@extend_schema_view(
+    post=extend_schema(
+        summary="Retry failed report generation",
+        description="Resets the report status, re-queues the generation task, and returns the updated report. Only works for failed reports - cannot retry reports that are currently processing or already completed.",  # noqa: E501
+        responses={
+            200: ReportSerializer,
+            400: {
+                "type": "object",
+                "properties": {
+                    "detail": {
+                        "type": "string",
+                        "example": "Report is already being generated.",
+                    }
+                },
+            },
+            401: {"description": "User is not authenticated"},
+            404: {
+                "type": "object",
+                "properties": {
+                    "detail": {"type": "string", "example": "Report not found."}
+                },
+            },
+        },
+    )
+)
 class ReportRetryAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -69,6 +115,40 @@ class ReportRetryAPIView(APIView):
         return Response(ReportSerializer(report).data, status=status.HTTP_200_OK)
 
 
+@extend_schema_view(
+    get=extend_schema(
+        summary="Get report details",
+        description="Returns the details of a specific report belonging to the authenticated user.",
+        responses={
+            200: ReportSerializer,
+            401: {"description": "User is not authenticated"},
+            404: {"description": "Report not found"},
+        },
+    ),
+    put=extend_schema(
+        summary="Update report",
+        description="Updates an existing report with new notes and title.",
+        request=EditReportSerializer,
+        responses={
+            200: ReportSerializer,
+            400: {
+                "description": "Invalid request data or report is already being generated"
+            },
+            401: {"description": "User is not authenticated"},
+            403: {"description": "Note is not publishable"},
+            404: {"description": "Report or one or more notes not found"},
+        },
+    ),
+    delete=extend_schema(
+        summary="Delete report",
+        description="Deletes a specific report belonging to the authenticated user.",
+        responses={
+            204: {"description": "Report deleted successfully"},
+            401: {"description": "User is not authenticated"},
+            404: {"description": "Report not found"},
+        },
+    ),
+)
 class ReportDetailAPIView(generics.RetrieveAPIView):
     """
     GET /reports/<id>/ returns the details of a specific report.

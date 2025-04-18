@@ -7,7 +7,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 
 from core.pagination import TotalPagesPagination
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
 from entries.models import Entry
 
@@ -33,27 +33,50 @@ from uuid import UUID
 
 @extend_schema_view(
     get=extend_schema(
-        description="Retrieve all notes accessible to the user, with optional pagination.",
+        summary="Get accessible notes",
+        description="Returns paginated list of notes that the user has access to. Can filter by references and other parameters. Results are ordered by timestamp descending.",  # noqa: E501
+        parameters=[
+            OpenApiParameter(
+                name="references",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter notes by referenced entry IDs",
+                many=True,
+            ),
+            OpenApiParameter(
+                name="truncate",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Number of characters to truncate note content to",
+                default=200,
+            ),
+            OpenApiParameter(
+                name="page",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Page number for pagination",
+            ),
+        ],
         responses={
-            200: NoteRetrieveSerializer(many=True),
-            400: "Invalid filterset",
-            401: "User is not authenticated",
+            200: NoteRetrieveSerializer,
+            400: {"description": "Invalid filter parameters"},
+            401: {"description": "User is not authenticated"},
         },
-        summary="Get Accessible Notes",
     ),
     post=extend_schema(
-        description="Create a new note. Requires referencing at least two entries, "
-        "one of which must be an entity, and linking file references to files "
-        "uploaded to MinIO.",
+        summary="Create note",
+        description="Creates a new note. User must have read-write access to all referenced entities.",  # noqa: E501
         request=NoteCreateSerializer,
         responses={
             200: NoteRetrieveSerializer,
-            400: "Invalid request data or minimum references not met",
-            401: "User is not authenticated",
-            403: "User lacks Read-Write access",
-            404: "File reference does not exist",
+            400: {
+                "description": "Invalid request data or insufficient entity references"
+            },
+            401: {"description": "User is not authenticated"},
+            403: {
+                "description": "User does not have required access to referenced entities"
+            },
         },
-        summary="Create New Note",
     ),
 )
 class NoteList(APIView):
@@ -124,34 +147,50 @@ class NoteList(APIView):
 
 @extend_schema_view(
     get=extend_schema(
-        description="Retrieve a specific note by ID if the user has READ access.",
+        summary="Get note details",
+        description="Returns the full details of a specific note. User must have access to view the note. Can optionally include footnotes.",  # noqa: E501
+        parameters=[
+            OpenApiParameter(
+                name="note_id_s",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="ID of the note to retrieve. Can be a UUID or a guide note ID starting with 'guide'",
+            ),
+            OpenApiParameter(
+                name="footnotes",
+                type=bool,
+                location=OpenApiParameter.QUERY,
+                description="Whether to include footnotes in response. Defaults to true",
+                default=True,
+            ),
+        ],
         responses={
             200: NoteRetrieveSerializer,
-            401: "User is not authenticated",
-            404: "Note not found or access denied",
+            400: {"description": "Invalid note ID format"},
+            401: {"description": "User is not authenticated"},
+            404: {"description": "Note not found"},
         },
-        summary="Retrieve Note",
     ),
     post=extend_schema(
-        description="Edit an existing note by ID. Requires READ access for all entities.",
-        request=NoteCreateSerializer,
+        summary="Update note",
+        description="Updates an existing note. User must have read-write access to referenced entities.",  # noqa: E501
+        parameters=[
+            OpenApiParameter(
+                name="note_id_s",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="ID of the note to update. Must be a valid UUID",
+            )
+        ],
         responses={
             200: NoteRetrieveSerializer,
-            401: "User is not authenticated",
-            403: "User cannot edit this note",
-            404: "Note not found",
+            400: {"description": "Invalid note ID format or invalid request data"},
+            401: {"description": "User is not authenticated"},
+            403: {
+                "description": "Cannot edit guide notes or user lacks required permissions"
+            },
+            404: {"description": "Note not found"},
         },
-        summary="Edit Note",
-    ),
-    delete=extend_schema(
-        description="Delete a note by ID if the user has Read-Write access.",
-        responses={
-            200: "Note deleted",
-            401: "User is not authenticated",
-            403: "User lacks permission",
-            404: "Note not found",
-        },
-        summary="Delete Note",
     ),
 )
 class NoteDetail(APIView):

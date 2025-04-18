@@ -16,9 +16,32 @@ from user.models import CradleUser
 
 from uuid import UUID
 
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
 
+@extend_schema_view(
+    get=extend_schema(
+        summary="Get user's fleeting notes",
+        description="Returns all fleeting notes belonging to the authenticated user, ordered by last edited date in descending order. Note content is truncated to 200 characters for preview.",  # noqa: E501
+        responses={
+            200: FleetingNoteTruncatedRetrieveSerializer(many=True),
+            401: {"description": "User is not authenticated"},
+        },
+    ),
+    post=extend_schema(
+        summary="Create fleeting note",
+        description="Creates a new fleeting note for the authenticated user.",
+        request=FleetingNoteSerializer,
+        responses={
+            200: FleetingNoteSerializer,
+            400: {
+                "description": "Invalid request data or file reference bucket name does not match user ID"  # noqa: E501
+            },
+            401: {"description": "User is not authenticated"},
+            404: {"description": "Referenced file does not exist in MinIO storage"},
+        },
+    ),
+)
 class FleetingNotesList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -77,14 +100,58 @@ class FleetingNotesList(APIView):
 
 @extend_schema_view(
     get=extend_schema(
-        summary="Get Fleeting Note",
-        description="Retrieve a specific fleeting note by ID.",
+        summary="Get fleeting note details",
+        description="Returns the full details of a specific fleeting note. Only the owner of the fleeting note can access it.",  # noqa: E501
+        parameters=[
+            OpenApiParameter(
+                name="pk",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the fleeting note to retrieve",
+            )
+        ],
         responses={
-            200: "Fleeting note details",
-            401: "User is not authenticated",
-            404: "Fleeting note not found",
-        }
-    )
+            200: FleetingNoteSerializer,
+            401: {"description": "User is not authenticated"},
+            404: {"description": "Fleeting note not found"},
+        },
+    ),
+    put=extend_schema(
+        summary="Update fleeting note",
+        description="Updates an existing fleeting note. Only the owner of the fleeting note can update it. Content cannot be empty.",  # noqa: E501
+        parameters=[
+            OpenApiParameter(
+                name="pk",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the fleeting note to update",
+            )
+        ],
+        request=FleetingNoteSerializer,
+        responses={
+            200: FleetingNoteSerializer,
+            400: {"description": "Invalid request data or empty content"},
+            401: {"description": "User is not authenticated"},
+            404: {"description": "Fleeting note not found"},
+        },
+    ),
+    delete=extend_schema(
+        summary="Delete fleeting note",
+        description="Deletes a fleeting note. Only the owner of the fleeting note can delete it.",
+        parameters=[
+            OpenApiParameter(
+                name="pk",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the fleeting note to delete",
+            )
+        ],
+        responses={
+            200: {"description": "Fleeting note deleted successfully"},
+            401: {"description": "User is not authenticated"},
+            404: {"description": "Fleeting note not found"},
+        },
+    ),
 )
 class FleetingNotesDetail(APIView):
     authentication_classes = [JWTAuthentication]

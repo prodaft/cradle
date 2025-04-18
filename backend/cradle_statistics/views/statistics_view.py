@@ -16,11 +16,11 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 
 @extend_schema_view(
     get=extend_schema(
-        summary="Get User Statistics",
-        description="Retrieve user statistics including recent notes and most referenced entities/artifacts.",
+        summary="Get user statistics",
+        description="Returns statistics about the user's notes and entries. Includes the 10 most recent notes, 3 most recently referenced entities, and 3 most recently referenced artifacts.",  # noqa: E501
         responses={
             200: HomePageStatisticsSerializer,
-            401: "User is not authenticated",
+            401: {"description": "User is not authenticated"},
         },
     )
 )

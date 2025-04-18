@@ -10,22 +10,34 @@ from typing import cast
 from notes.views.note_view import NoteList
 from django.db import transaction
 from django.http import QueryDict
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
 from uuid import UUID
 
 
 @extend_schema_view(
     put=extend_schema(
-        summary="Convert to Regular Note",
-        description="Convert a fleeting note to a regular note.",
+        summary="Convert fleeting note to note",
+        description="Converts a fleeting note to a regular note. The user must be the owner of the fleeting note. The fleeting note is deleted after conversion. Optionally specify if the note is publishable - defaults to not publishable if unspecified.",  # noqa: E501
+        parameters=[
+            OpenApiParameter(
+                name="pk",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the fleeting note to convert",
+            )
+        ],
         responses={
-            200: "Note created successfully",
-            400: "Invalid note references or file paths",
-            401: "User is not authenticated",
-            403: "Insufficient permissions",
-            404: "Fleeting note not found",
-        }
+            200: {"description": "Note created successfully"},
+            400: {
+                "description": "Note does not meet minimum reference requirements or has invalid file references"  # noqa: E501
+            },
+            401: {"description": "User is not authenticated"},
+            403: {"description": "User does not own the fleeting note"},
+            404: {
+                "description": "Fleeting note not found, referenced entities don't exist, or file references are invalid"  # noqa: E501
+            },
+        },
     )
 )
 class FleetingNotesFinal(APIView):

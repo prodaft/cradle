@@ -1,6 +1,6 @@
 from environs import Env
 
-from .settings_common import *
+from .settings_common import *  # noqa:F401
 import sentry_sdk
 
 # Ugly hack to get graph_tool working

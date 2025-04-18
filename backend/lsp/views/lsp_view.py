@@ -17,10 +17,35 @@ from user.models import CradleUser
 @extend_schema_view(
     get=extend_schema(
         summary="Get LSP Types",
-        description="Retrieve all entry class types for LSP functionality.",
+        description="Returns LSP type definitions grouped by subtype, excluding aliases.",
         responses={
-            200: LspEntryClassSerializer(many=True),
-            401: "User is not authenticated",
+            200: {
+                "description": "Successful retrieval of LSP types",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {"type": "integer"},
+                                    "type": {"type": "string"},
+                                    "subtype": {"type": "string"},
+                                    "regex": {"type": "string"},
+                                    "options": {
+                                        "type": "array",
+                                        "items": {"type": "string"},
+                                    },
+                                    "description": {"type": "string"},
+                                    "icon": {"type": "string"},
+                                    "color": {"type": "string"},
+                                },
+                            },
+                        }
+                    }
+                },
+            },
+            401: {"description": "User is not authenticated"},
         },
     )
 )
@@ -42,6 +67,52 @@ class LspTypes(APIView):
         return Response(grouped_data)
 
 
+@extend_schema_view(
+    get=extend_schema(
+        summary="Get LSP Completion Trie",
+        description="Returns LSP completion trie data for entity types and types without regex/options. "  # noqa: E501
+        "Used for autocomplete suggestions in the LSP interface.",
+        responses={
+            200: {
+                "description": "Successful retrieval of completion trie data",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "trie": {
+                                    "type": "object",
+                                    "description": "Trie structure containing completion data",  # noqa: E501
+                                },
+                                "classes": {
+                                    "type": "object",
+                                    "description": "Entry class definitions",
+                                    "additionalProperties": {
+                                        "type": "object",
+                                        "properties": {
+                                            "id": {"type": "integer"},
+                                            "type": {"type": "string"},
+                                            "subtype": {"type": "string"},
+                                            "regex": {"type": "string"},
+                                            "options": {
+                                                "type": "array",
+                                                "items": {"type": "string"},
+                                            },
+                                            "description": {"type": "string"},
+                                            "icon": {"type": "string"},
+                                            "color": {"type": "string"},
+                                        },
+                                    },
+                                },
+                            },
+                        }
+                    }
+                },
+            },
+            401: {"description": "User is not authenticated"},
+        },
+    )
+)
 class CompletionTrie(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

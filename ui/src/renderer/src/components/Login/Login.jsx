@@ -137,7 +137,6 @@ export default function Login() {
                                     />
                                     <FormField
                                         name='password'
-                                        type='text'
                                         labelText='Password'
                                         key='password'
                                         type='password'
