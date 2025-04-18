@@ -14,7 +14,7 @@ DATABASES = {
         "NAME": "cradledb",
         "USER": "postgres",
         "PASSWORD": "postgres",
-        "HOST": "localhost",
+        "HOST": "postgres",
         "PORT": "5432",
     }
 }
@@ -31,8 +31,8 @@ STATIC_URL = "static/"
 FRONTEND_URL = "http://localhost:5173"
 
 
-RESULT_BACKEND = "redis://127.0.0.1:6379/0"
-REDIS_URL = "redis://127.0.0.1:6379/0"
+RESULT_BACKEND = "redis://redis:6379/0"
+REDIS_URL = "redis://redis:6379/0"
 BROKER = REDIS_URL
 RESULT_BACKEND = REDIS_URL
 
