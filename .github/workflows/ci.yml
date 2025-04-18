@@ -99,7 +99,6 @@ jobs:
           apt install -y pipenv python3-pip
       - name: Install dependencies
         run: |
-          pip install pipenv
           pipenv sync -d
       - name: Settings Copy
         run: cp cradle/settings_test.py cradle/settings.py
