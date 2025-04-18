@@ -63,7 +63,6 @@ export async function changePassword(oldPassword, newPassword) {
     });
 }
 
-
 /**
  * Sends a POST request to generate an api key for auser
  *
@@ -76,7 +75,6 @@ export async function generateApiKey(id) {
         url: `/users/${id}/apikey`,
     });
 }
-
 
 /**
  * Sends a DELETE request to DELETE an api key for a user

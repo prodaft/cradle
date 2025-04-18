@@ -94,10 +94,12 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
         try {
             const response = await getEntryClasses();
             if (response.status === 200 && response.data) {
-                return response.data.filter((x) => x.subtype.startsWith(q)).map((entry) => ({
-                    value: entry.subtype,
-                    label: `${entry.subtype}`,
-                }));
+                return response.data
+                    .filter((x) => x.subtype.startsWith(q))
+                    .map((entry) => ({
+                        value: entry.subtype,
+                        label: `${entry.subtype}`,
+                    }));
             } else {
                 return [];
             }
@@ -298,7 +300,7 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
                                     </div>
                                 )}
 
-                                <div className='mt-4'/>
+                                <div className='mt-4' />
 
                                 <FormField
                                     type='checkbox'

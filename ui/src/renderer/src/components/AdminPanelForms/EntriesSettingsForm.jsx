@@ -59,7 +59,7 @@ export default function EntriesManagement() {
         <div className='flex items-center justify-center min-h-screen'>
             <div className='w-full max-w-xl px-4'>
                 <h1 className='text-center text-xl font-bold text-primary mb-4'>
-                  Entry Settings
+                    Entry Settings
                 </h1>
                 <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
                     <div className='flex flex-col gap-4 mb-3'>

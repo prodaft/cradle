@@ -103,7 +103,10 @@ const TypeMappingsEditor = ({ id }) => {
         if (rowIndex === rows.length - 1 && !rows[rowIndex].edited) return null;
 
         // Required field validation
-        if (colDef.required && (value === null || value === undefined || value === '')) {
+        if (
+            colDef.required &&
+            (value === null || value === undefined || value === '')
+        ) {
             return `${capitalizeString(column)} is required`;
         }
 
@@ -195,7 +198,7 @@ const TypeMappingsEditor = ({ id }) => {
 
         // Validate the changed cell
         const error = validateCell(column, value, rowIndex);
-        setValidationErrors(prev => {
+        setValidationErrors((prev) => {
             const newErrors = { ...prev };
             if (error) {
                 newErrors[`${rowIndex}-${column}`] = error;
@@ -214,9 +217,9 @@ const TypeMappingsEditor = ({ id }) => {
         });
 
         // Clear validation errors for deleted row
-        setValidationErrors(prev => {
+        setValidationErrors((prev) => {
             const newErrors = { ...prev };
-            Object.keys(newErrors).forEach(key => {
+            Object.keys(newErrors).forEach((key) => {
                 if (key.startsWith(`${rowIndex}-`)) {
                     delete newErrors[key];
                 }
@@ -262,14 +265,14 @@ const TypeMappingsEditor = ({ id }) => {
         const newValidationErrors = { ...validationErrors };
 
         // Remove old errors for this row
-        Object.keys(newValidationErrors).forEach(key => {
+        Object.keys(newValidationErrors).forEach((key) => {
             if (key.startsWith(`${rowIndex}-`)) {
                 delete newValidationErrors[key];
             }
         });
 
         // Add new errors
-        Object.keys(rowErrors).forEach(key => {
+        Object.keys(rowErrors).forEach((key) => {
             newValidationErrors[key] = rowErrors[key];
         });
 
@@ -387,7 +390,7 @@ const TypeMappingsEditor = ({ id }) => {
                         // Update all rows to mark them as not edited
                         setRows((prevRows) =>
                             prevRows.map((r) =>
-                                r.edited ? { ...r, edited: false } : r
+                                r.edited ? { ...r, edited: false } : r,
                             ),
                         );
                     } else {
@@ -461,17 +464,27 @@ const TypeMappingsEditor = ({ id }) => {
                         </thead>
                         <tbody>
                             {rows.map((row, index) => (
-                                <tr key={index} className={index < rows.length - 1 && !row.edited ? 'bg-gray-1' : ''}>
+                                <tr
+                                    key={index}
+                                    className={
+                                        index < rows.length - 1 && !row.edited
+                                            ? 'bg-gray-1'
+                                            : ''
+                                    }
+                                >
                                     {/* Actions cell with Delete and Save buttons */}
                                     <td className='px-4 py-2 whitespace-nowrap'>
                                         <div className='flex space-x-2'>
-                                            {index != rows.length - 1 && <button
-                                                onClick={() => handleDeleteRow(index)}
-                                                className='text-red-600 hover:text-red-900'
-                                            >
-                                                Delete
-                                            </button>
-                                            }
+                                            {index != rows.length - 1 && (
+                                                <button
+                                                    onClick={() =>
+                                                        handleDeleteRow(index)
+                                                    }
+                                                    className='text-red-600 hover:text-red-900'
+                                                >
+                                                    Delete
+                                                </button>
+                                            )}
                                             {row.edited && (
                                                 <button
                                                     onClick={() => handleSaveRow(index)}
@@ -494,25 +507,35 @@ const TypeMappingsEditor = ({ id }) => {
                                                     key={`${index}-${column}`}
                                                     className='px-2 py-2'
                                                 >
-                                                        <Selector
-                                                            value={row[column]}
-                                                            onChange={(option) =>
-                                                                handleCellChange(
-                                                                    index,
-                                                                    column,
-                                                                    option,
-                                                                )
-                                                            }
-                                                            staticOptions={
-                                                                column === 'internal_class'
-                                                                    ? getAvailableInternalClassOptions(index)
-                                                                    : colDef.options
-                                                            }
-                                                            placeholder={colDef.required ? 'Required...' : 'Select...'}
-                                                            isClearable={!colDef.required}
-                                                            classNames={{control: hasError ? 'border-red-500' : ''}}
-                                                            menuPosition='fixed'
-                                                        />
+                                                    <Selector
+                                                        value={row[column]}
+                                                        onChange={(option) =>
+                                                            handleCellChange(
+                                                                index,
+                                                                column,
+                                                                option,
+                                                            )
+                                                        }
+                                                        staticOptions={
+                                                            column === 'internal_class'
+                                                                ? getAvailableInternalClassOptions(
+                                                                      index,
+                                                                  )
+                                                                : colDef.options
+                                                        }
+                                                        placeholder={
+                                                            colDef.required
+                                                                ? 'Required...'
+                                                                : 'Select...'
+                                                        }
+                                                        isClearable={!colDef.required}
+                                                        classNames={{
+                                                            control: hasError
+                                                                ? 'border-red-500'
+                                                                : '',
+                                                        }}
+                                                        menuPosition='fixed'
+                                                    />
                                                     {/*hasError && (
                                                         <p className='text-red-500 text-xs mt-1'>{validationErrors[errorKey]}</p>
                                                     )*/}
@@ -537,7 +560,11 @@ const TypeMappingsEditor = ({ id }) => {
                                                         className={`form-input input input-block ${hasError ? 'border-red-500' : 'input-ghost-primary'} focus:ring-0 w-full`}
                                                         min={colDef.min}
                                                         max={colDef.max}
-                                                        placeholder={colDef.required ? 'Required' : ''}
+                                                        placeholder={
+                                                            colDef.required
+                                                                ? 'Required'
+                                                                : ''
+                                                        }
                                                     />
                                                     {/*hasError && (
                                                         <p className='text-red-500 text-xs mt-1'>{validationErrors[errorKey]}</p>
@@ -564,7 +591,11 @@ const TypeMappingsEditor = ({ id }) => {
                                                         minLength={colDef.minLength}
                                                         maxLength={colDef.maxLength}
                                                         pattern={colDef.pattern}
-                                                        placeholder={colDef.required ? 'Required' : ''}
+                                                        placeholder={
+                                                            colDef.required
+                                                                ? 'Required'
+                                                                : ''
+                                                        }
                                                     />
                                                     {/*hasError && (
                                                         <p className='text-red-500 text-xs mt-1'>{validationErrors[errorKey]}</p>

@@ -44,7 +44,6 @@ export function requestEntityAccess(id, subtype = null) {
     });
 }
 
-
 /**
  * Function to get available enrichment techniques
  *
@@ -57,7 +56,6 @@ export function getEnrichmentTechniques(id) {
         url: `/entries/entries/${id}/enrich/`,
     });
 }
-
 
 /**
  * Function to get available enrichment techniques

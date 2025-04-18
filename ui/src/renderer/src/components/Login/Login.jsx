@@ -64,25 +64,25 @@ export default function Login() {
         <div className='flex flex-row items-center justify-center h-screen overflow-y-auto'>
             <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 xl:w-1/3 relative'>
                 {showSettings ? (
-                  <>
-                    <button
-                        onClick={() => {
-                            setBackendUrl(getBaseUrl() || '');
-                            setShowSettings(false);
-                        }}
-                        className='absolute top-2 left-2 p-2 hover:opacity-80 text-gray-500'
-                        data-testid='settings-button'
-                    >
-                        <Undo />
-                    </button>
-                    <button
-                        onClick={toggleTheme}
-                        className='absolute top-2 right-2 p-2 hover:opacity-80 text-gray-500'
-                        data-testid='theme-button'
-                    >
-                      {isDarkMode ? <SunLight /> : <HalfMoon />}
-                    </button>
-                  </>
+                    <>
+                        <button
+                            onClick={() => {
+                                setBackendUrl(getBaseUrl() || '');
+                                setShowSettings(false);
+                            }}
+                            className='absolute top-2 left-2 p-2 hover:opacity-80 text-gray-500'
+                            data-testid='settings-button'
+                        >
+                            <Undo />
+                        </button>
+                        <button
+                            onClick={toggleTheme}
+                            className='absolute top-2 right-2 p-2 hover:opacity-80 text-gray-500'
+                            data-testid='theme-button'
+                        >
+                            {isDarkMode ? <SunLight /> : <HalfMoon />}
+                        </button>
+                    </>
                 ) : (
                     <button
                         onClick={() => setShowSettings(!showSettings)}

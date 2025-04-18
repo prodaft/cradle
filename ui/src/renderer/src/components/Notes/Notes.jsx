@@ -93,8 +93,8 @@ export default function Notes() {
                 <NotesList
                     query={submittedFilters}
                     noteActions={[
-                        { Component: Publishable, props: {setAlert} },
-                        { Component: DeleteNote, props: {setAlert} },
+                        { Component: Publishable, props: { setAlert } },
+                        { Component: DeleteNote, props: { setAlert } },
                     ]}
                 />
             </div>

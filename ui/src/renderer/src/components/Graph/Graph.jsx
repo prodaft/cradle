@@ -39,13 +39,13 @@ const Graph = forwardRef(function (
             const edgeData = {
                 id: edge.id(),
                 source: {
-                id: source.id(),
-                label: source.data('label'),
+                    id: source.id(),
+                    label: source.data('label'),
                 },
                 target: {
-                  id: target.id(),
-                  label: target.data('label'),
-                }
+                    id: target.id(),
+                    label: target.data('label'),
+                },
             };
 
             onLinkClick(edgeData);

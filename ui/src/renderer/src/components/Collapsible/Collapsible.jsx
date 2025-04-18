@@ -18,11 +18,11 @@ function Collapsible({
     };
 
     return (
-        <div className="w-full">
+        <div className='w-full'>
             {/* Header with toggle and optional extra button */}
-            <div className="flex justify-between items-center">
+            <div className='flex justify-between items-center'>
                 <button
-                    className="flex items-center text-left dark:text-zinc-300 transition-colors"
+                    className='flex items-center text-left dark:text-zinc-300 transition-colors'
                     onClick={toggle}
                 >
                     {/* Arrow rotation */}
@@ -37,17 +37,17 @@ function Collapsible({
                 </button>
                 {/* Extra button rendered only if both text and callback are provided */}
                 {buttonText && onButtonClick && (
-                    <button onClick={onButtonClick} className="ml-4">
+                    <button onClick={onButtonClick} className='ml-4'>
                         {buttonText}
                     </button>
                 )}
             </div>
 
             {/* Underline */}
-            <div className="border-b border-zinc-700 mx-3" />
+            <div className='border-b border-zinc-700 mx-3' />
 
             {/* Collapsible content */}
-            {isOpen && <div className="pl-3 pt-1">{children}</div>}
+            {isOpen && <div className='pl-3 pt-1'>{children}</div>}
         </div>
     );
 }

@@ -103,10 +103,7 @@ export default function ChangePassword() {
 
                             <AlertBox alert={alert} />
 
-                            <button
-                                type='submit'
-                                className='btn btn-primary btn-block'
-                            >
+                            <button type='submit' className='btn btn-primary btn-block'>
                                 Change Password
                             </button>
                             <button

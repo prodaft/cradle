@@ -9,7 +9,7 @@ import Pagination from '../Pagination/Pagination';
 import Datepicker from 'react-tailwindcss-datepicker';
 import { parseISO, format } from 'date-fns';
 
-export default function ActivityList({name, objectId, content_type, username}) {
+export default function ActivityList({ name, objectId, content_type, username }) {
     const [searchFilters, setSearchFilters] = useState({
         username: username || '',
         start_date: dayjs(0).format('YYYY-MM-DDTHH:mm'),
@@ -73,10 +73,9 @@ export default function ActivityList({name, objectId, content_type, username}) {
                     onSubmit={handleSearchSubmit}
                     className='flex flex-wrap gap-4 items-end pb-2'
                 >
-
-                <h1 className='text-xl font-bold w-full break-all text-'>
-                    Event Logs: <span className="text-zinc-500">{name}</span>
-                </h1>
+                    <h1 className='text-xl font-bold w-full break-all text-'>
+                        Event Logs: <span className='text-zinc-500'>{name}</span>
+                    </h1>
 
                     {/* Username input */}
                     <div className='flex-1 min-w-[180px]'>

@@ -31,7 +31,13 @@ export async function parseMarkdown(
                 },
             });
 
-            return await parseWithExtensions(md, mdContent, fileData, entryColors, authAxios);
+            return await parseWithExtensions(
+                md,
+                mdContent,
+                fileData,
+                entryColors,
+                authAxios,
+            );
         }
     } catch (error: any) {
         // Handle network or authorization errors by returning undefined.
@@ -53,7 +59,7 @@ export function parseWorker() {
 
     worker.postMessage({
         token: localStorage.getItem('access'),
-        apiBaseUrl: getBaseUrl()
+        apiBaseUrl: getBaseUrl(),
     });
 
     return worker;

@@ -32,11 +32,9 @@ export default function AdminPanelCardEntryType({
     };
 
     const handleActivityClick = () => {
-        setRightPane(<ActivityList
-          content_type='entryclass'
-          objectId={id}
-          name={name}
-          />);
+        setRightPane(
+            <ActivityList content_type='entryclass' objectId={id} name={name} />,
+        );
     };
 
     const handleEditClick = () => {
@@ -49,7 +47,7 @@ export default function AdminPanelCardEntryType({
             <div className='h-fit w-full bg-cradle3 p-3 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl'>
                 <span className='cursor-pointer' onClick={handleEditClick}>
                     <h2 className='card-header w-full mx-2 px-1 break-all'>
-                        ({count >= 0 ? count == 100 ? '99+' : count : 0}) {name}
+                        ({count >= 0 ? (count == 100 ? '99+' : count) : 0}) {name}
                     </h2>
                 </span>
                 <div className='w-full flex flex-row justify-end'>

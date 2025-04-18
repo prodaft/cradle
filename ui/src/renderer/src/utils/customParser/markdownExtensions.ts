@@ -35,7 +35,11 @@ function createDownloadPath(file: FileData, axiosInstance: Axios): string {
     return `${baseURL}/file-transfer/download/?${queryParams}`;
 }
 
-export function prependLinks(mdContent: string, fileData: FileData[], axiosInstance: Axios): string {
+export function prependLinks(
+    mdContent: string,
+    fileData: FileData[],
+    axiosInstance: Axios,
+): string {
     const mdLinks = fileData
         .map(
             (file) =>
@@ -93,7 +97,10 @@ export function fetchMinioDownloadLink(
     return DownloadLinkPromiseCache[href];
 }
 
-export async function resolveMinioLinks(token: Token, axiosInstance: Axios): Promise<void> {
+export async function resolveMinioLinks(
+    token: Token,
+    axiosInstance: Axios,
+): Promise<void> {
     if (token.type === 'link_open' || token.type === 'image') {
         let hrefIndex = token.attrIndex('href');
         hrefIndex = hrefIndex < 0 ? token.attrIndex('src') : hrefIndex;
@@ -129,7 +136,10 @@ export async function resolveMinioLinks(token: Token, axiosInstance: Axios): Pro
     }
 }
 
-export async function processTokens(tokens: Token[], axiosInstance: Axios): Promise<void> {
+export async function processTokens(
+    tokens: Token[],
+    axiosInstance: Axios,
+): Promise<void> {
     for (const token of tokens) {
         await resolveMinioLinks(token, axiosInstance);
         if (token.children) {
@@ -149,7 +159,9 @@ export async function parseWithExtensions(
     md.inline.ruler.before('link', 'cradle_link', cradleLinkRule);
     md.renderer.rules.cradle_link = (tokens: Token[], idx: number) =>
         renderCradleLink(entryColors, tokens[idx]);
-    const content = fileData ? prependLinks(mdContent, fileData, axiosInstance) : mdContent;
+    const content = fileData
+        ? prependLinks(mdContent, fileData, axiosInstance)
+        : mdContent;
     const tokens = md.parse(content, {});
     await processTokens(tokens, axiosInstance);
     return md.renderer.render(tokens, md.options);

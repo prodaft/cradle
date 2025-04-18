@@ -30,7 +30,9 @@ export class Trie {
             current_node.data = [...types]; // Store a copy of the types list
         } else {
             // Append new types while avoiding duplicates
-            current_node.data.push(...types.filter(type => !current_node.data.includes(type)));
+            current_node.data.push(
+                ...types.filter((type) => !current_node.data.includes(type)),
+            );
         }
     }
 
@@ -79,7 +81,11 @@ export class Trie {
                     target.data = [...(source.data || [])]; // Copy source data
                 } else {
                     // Append unique types to avoid duplicates
-                    target.data.push(...(source.data || []).filter(type => !target.data.includes(type)));
+                    target.data.push(
+                        ...(source.data || []).filter(
+                            (type) => !target.data.includes(type),
+                        ),
+                    );
                 }
             }
         };
@@ -103,7 +109,11 @@ export class Trie {
             current_node = current_node.children[char];
         }
 
-        const collectWords = (node: TrieNode<string[]>, currentPrefix: string, results: { word: string; types: string[] }[]) => {
+        const collectWords = (
+            node: TrieNode<string[]>,
+            currentPrefix: string,
+            results: { word: string; types: string[] }[],
+        ) => {
             if (node.eow && node.data) {
                 results.push({ word: currentPrefix, types: node.data });
             }
@@ -128,7 +138,9 @@ export class Trie {
 
             if (data.c) {
                 for (const [char, childData] of Object.entries(data.c)) {
-                    node.children[char] = _deserializeNode(childData as { [key: string]: any });
+                    node.children[char] = _deserializeNode(
+                        childData as { [key: string]: any },
+                    );
                 }
             }
 
@@ -144,5 +156,4 @@ export class Trie {
         trie.root = _deserializeNode(serialized);
         return trie;
     }
-
 }

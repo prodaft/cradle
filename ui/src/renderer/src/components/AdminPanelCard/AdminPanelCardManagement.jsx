@@ -10,14 +10,13 @@ export default function AdminPanelCardManagement({
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
 
     const handleClick = () => {
-        setRightPane(<SettingComponent/>);
+        setRightPane(<SettingComponent />);
     };
 
     return (
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='h-fit w-full bg-cradle3 p-3 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl'>
-
                 <h2 className='card-header w-full mx-2 px-1 break-all'>
                     <span className='cursor-pointer' onClick={handleClick}>
                         {name}

@@ -25,7 +25,10 @@ import { useSortable } from '@dnd-kit/sortable';
  * @param {React.ReactNode} props.customControls - Custom controls to display in the header
  * @param {boolean} props.hideDefaultControls - Whether to hide the default controls
  */
-const Note = forwardRef(function({id, note, setAlert, actions = [], ghost = false, ...props}, ref) {
+const Note = forwardRef(function (
+    { id, note, setAlert, actions = [], ghost = false, ...props },
+    ref,
+) {
     const navigate = useNavigate();
     const [hidden, setHidden] = useState(false);
     const location = useLocation();
@@ -37,9 +40,8 @@ const Note = forwardRef(function({id, note, setAlert, actions = [], ghost = fals
             .catch(displayError(setAlert, navigate));
     }, [note.content, note.files, setAlert, navigate]);
 
-
     const style = {
-      opacity: ghost ? 0.5 : 1,
+        opacity: ghost ? 0.5 : 1,
     };
 
     if (hidden) return null;
@@ -47,23 +49,23 @@ const Note = forwardRef(function({id, note, setAlert, actions = [], ghost = fals
     return (
         <div ref={ref} {...props}>
             <div
-                style={style} className='bg-cradle3 bg-opacity-10 z-10 p-4 backdrop-blur-lg rounded-xl m-3 shadow-md'
+                style={style}
+                className='bg-cradle3 bg-opacity-10 z-10 p-4 backdrop-blur-lg rounded-xl m-3 shadow-md'
             >
                 {/* Header row with timestamp and configurable controls */}
                 <div className='flex flex-row justify-between'>
-
                     <div className='text-xs text-zinc-500 border-b-1 dark:border-b-zinc-800'>
                         {!note.editor && (
                             <span>
-                        <span className='text-xs text-zinc-500 px-2'>
-                            <strong>Created on:</strong>{' '}
-                            {new Date(note.timestamp).toLocaleString()}
-                        </span>
-                        <span className='text-xs text-zinc-700'>|</span>
-                        <span className='text-xs text-zinc-500 pl-2'>
-                            <strong>Created by:</strong>{' '}
-                            {note?.author ? note.author.username : 'Unknown'}
-                        </span>
+                                <span className='text-xs text-zinc-500 px-2'>
+                                    <strong>Created on:</strong>{' '}
+                                    {new Date(note.timestamp).toLocaleString()}
+                                </span>
+                                <span className='text-xs text-zinc-700'>|</span>
+                                <span className='text-xs text-zinc-500 pl-2'>
+                                    <strong>Created by:</strong>{' '}
+                                    {note?.author ? note.author.username : 'Unknown'}
+                                </span>
                             </span>
                         )}
                         {note.editor && (
@@ -82,7 +84,12 @@ const Note = forwardRef(function({id, note, setAlert, actions = [], ghost = fals
                     </div>
                     <div className='flex items-center'>
                         {actions.map(({ Component, props }, index) => (
-                            <Component key={index} {...props} note={note} setHidden={setHidden}/>
+                            <Component
+                                key={index}
+                                {...props}
+                                note={note}
+                                setHidden={setHidden}
+                            />
                         ))}
                     </div>
                 </div>
@@ -114,6 +121,6 @@ const Note = forwardRef(function({id, note, setAlert, actions = [], ghost = fals
             </div>
         </div>
     );
-})
+});
 
 export default Note;

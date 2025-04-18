@@ -47,7 +47,13 @@ self.addEventListener('message', async (event) => {
                 },
             });
             md.use(inject_line_numbers_plugin);
-            const html = await parseWithExtensions(md, markdown, fileData, entryColors, axios);
+            const html = await parseWithExtensions(
+                md,
+                markdown,
+                fileData,
+                entryColors,
+                axios,
+            );
             self.postMessage({ success: true, html });
         }
     } catch (error: any) {

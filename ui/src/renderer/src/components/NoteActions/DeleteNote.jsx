@@ -26,24 +26,25 @@ export default function DeleteNote({ note, setAlert, setHidden }) {
     const { setModal } = useModal();
 
     const handleDelete = () => {
-            deleteNote(note.id)
-                .then((response) => {
-                    if (response.status === 200) {
-                        setAlert({
-                            show: true,
-                            color: 'green',
-                            message: 'Note deleted successfully',
-                        });
-                        setHidden(true);
-                    }
-                })
-                .catch(displayError(setAlert, navigate));
-        }
+        deleteNote(note.id)
+            .then((response) => {
+                if (response.status === 200) {
+                    setAlert({
+                        show: true,
+                        color: 'green',
+                        message: 'Note deleted successfully',
+                    });
+                    setHidden(true);
+                }
+            })
+            .catch(displayError(setAlert, navigate));
+    };
 
     return (
         <span className='pb-1 space-x-1 flex flex-row pl-2'>
             <button className=''>
-                <Trash height={24}
+                <Trash
+                    height={24}
                     onClick={() =>
                         setModal(ConfirmDeletionModal, {
                             onConfirm: handleDelete,

@@ -116,10 +116,11 @@ export default function Dashboard() {
                 text={'Enrich'}
                 contents={enrichers.map((option) => ({
                     label: option.name,
-                    handler: () => setModal(ActionConfirmationModal, {
-                        text: `Are you sure you want to enrich this entry with ${option.name}? Results will be visible to everyone.`,
-                        onConfirm: handleEnrich(contentObject.id, option.id),
-                    })
+                    handler: () =>
+                        setModal(ActionConfirmationModal, {
+                            text: `Are you sure you want to enrich this entry with ${option.name}? Results will be visible to everyone.`,
+                            onConfirm: handleEnrich(contentObject.id, option.id),
+                        }),
                 }))}
             />
         ),
@@ -128,7 +129,9 @@ export default function Dashboard() {
             icon={<Graph height={24} width={24} />}
             text='Explore in Graph'
             onClick={() =>
-                navigate(`/knowledge-graph?&pf_src={"value": "${contentObject.id}", "label": "${contentObject.name}"}&pgf_src={"value": "${contentObject.id}", "label": "${contentObject.name}"}`)
+                navigate(
+                    `/knowledge-graph?&pf_src={"value": "${contentObject.id}", "label": "${contentObject.name}"}&pgf_src={"value": "${contentObject.id}", "label": "${contentObject.name}"}`,
+                )
             }
             data-testid='view-graph-btn'
         />,

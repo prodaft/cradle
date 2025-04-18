@@ -53,22 +53,26 @@ const GraphLegend = ({
             <div className='w-full'>
                 <div className='mb-2'>
                     {/* Use the new parameters on the main Collapsible so it renders the hide/show all button inside its header */}
-                    <Collapsible 
-                        label="Legend"
+                    <Collapsible
+                        label='Legend'
                         buttonText={allItemsDisabled ? 'Show All' : 'Hide All'}
                         onButtonClick={toggleAll}
                     >
                         <div className='w-auto flex flex-col'>
                             <div className='flex flex-wrap text-zinc-300'>
-                                {new SubtypeHierarchy(Object.keys(entryGraphColors)).convert(
+                                {new SubtypeHierarchy(
+                                    Object.keys(entryGraphColors),
+                                ).convert(
                                     // --- Render for internal nodes (categories that have child categories) ---
                                     (value, children, childValues) => {
                                         // Extract the path for this level
                                         const path =
-                                            childValues.length > 0 && childValues[0].includes('/')
+                                            childValues.length > 0 &&
+                                            childValues[0].includes('/')
                                                 ? childValues[0].substring(
                                                       0,
-                                                      childValues[0].lastIndexOf('/') + 1,
+                                                      childValues[0].lastIndexOf('/') +
+                                                          1,
                                                   )
                                                 : '';
 
@@ -94,14 +98,20 @@ const GraphLegend = ({
                                                 key={value}
                                             >
                                                 {/* Replace the external button with the new props on Collapsible */}
-                                                <Collapsible 
+                                                <Collapsible
                                                     label={value}
-                                                    buttonText={allDisabled ? 'Show All' : 'Hide All'}
+                                                    buttonText={
+                                                        allDisabled
+                                                            ? 'Show All'
+                                                            : 'Hide All'
+                                                    }
                                                     onButtonClick={() =>
                                                         toggleAllAtPath(
                                                             path,
                                                             leafNodes.map((ln) =>
-                                                                ln.substring(path.length),
+                                                                ln.substring(
+                                                                    path.length,
+                                                                ),
                                                             ),
                                                         )
                                                     }
@@ -122,18 +132,31 @@ const GraphLegend = ({
                                             <div className='dark:text-zinc-300 text-xs w-full break-all flex flex-row flex-wrap justify-start items-center'>
                                                 <div
                                                     className={`flex flex-row items-center space-x-2 cursor-pointer ${
-                                                        disabledTypes.has(path + value) ? 'opacity-50' : ''
+                                                        disabledTypes.has(path + value)
+                                                            ? 'opacity-50'
+                                                            : ''
                                                     }`}
-                                                    onClick={() => toggleDisabledType(path + value)}
+                                                    onClick={() =>
+                                                        toggleDisabledType(path + value)
+                                                    }
                                                 >
                                                     <div
                                                         className='w-4 h-4 rounded-full'
                                                         style={{
-                                                            backgroundColor: entryGraphColors[path + value],
+                                                            backgroundColor:
+                                                                entryGraphColors[
+                                                                    path + value
+                                                                ],
                                                         }}
                                                     ></div>
                                                     <span
-                                                        className={disabledTypes.has(path + value) ? 'line-through' : ''}
+                                                        className={
+                                                            disabledTypes.has(
+                                                                path + value,
+                                                            )
+                                                                ? 'line-through'
+                                                                : ''
+                                                        }
                                                     >
                                                         {value}
                                                     </span>

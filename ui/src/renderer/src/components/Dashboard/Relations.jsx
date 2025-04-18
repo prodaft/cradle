@@ -12,11 +12,9 @@ import { getEntryClasses } from '../../services/adminService/adminService';
 import Pagination from '../Pagination/Pagination';
 import {
     getInaccessibleEntities,
-    searchRelatedEntries
+    searchRelatedEntries,
 } from '../../services/graphService/graphService';
-import {
-    requestEntityAccess,
-} from '../../services/dashboardService/dashboardService';
+import { requestEntityAccess } from '../../services/dashboardService/dashboardService';
 import LazyPagination from '../Pagination/LazyPagination';
 
 export default function Relations({ obj }) {
@@ -106,7 +104,10 @@ export default function Relations({ obj }) {
         // Check for inaccessible entities
         getInaccessibleEntities(obj.id, depth)
             .then((response) => {
-                if (response.data.inaccessible && response.data.inaccessible.length > 0) {
+                if (
+                    response.data.inaccessible &&
+                    response.data.inaccessible.length > 0
+                ) {
                     setInaccessibleEntities(response.data.inaccessible);
 
                     // Use AlertBox to show inaccessible entities warning
@@ -116,12 +117,14 @@ export default function Relations({ obj }) {
                         color: 'yellow',
                         button: {
                             text: 'Request Access',
-                            onClick: handleRequestAccess(response.data.inaccessible)
-                        }
+                            onClick: handleRequestAccess(response.data.inaccessible),
+                        },
                     });
                 }
             })
-            .catch((err) => console.error("Error fetching inaccessible entities:", err));
+            .catch((err) =>
+                console.error('Error fetching inaccessible entities:', err),
+            );
     };
 
     const handleDepthChange = (event) => {
@@ -130,37 +133,33 @@ export default function Relations({ obj }) {
         setDepth(newDepth);
 
         if (page === 1) {
-          performSearch(newDepth, 1);
+            performSearch(newDepth, 1);
         } else {
-          setPage(1);
+            setPage(1);
         }
     };
 
     const handleRequestAccess = (entities) => () => {
         setIsRequestingAccess(true);
-        Promise.all(
-            entities.map(entity =>
-                requestEntityAccess(entity)
-            )
-        )
-        .then(() => {
-            setAlert({
-                show: true,
-                message: 'Access request submitted successfully',
-                color: 'green'
+        Promise.all(entities.map((entity) => requestEntityAccess(entity)))
+            .then(() => {
+                setAlert({
+                    show: true,
+                    message: 'Access request submitted successfully',
+                    color: 'green',
+                });
+                setInaccessibleEntities([]); // Clear inaccessible entities after request
+            })
+            .catch((error) => {
+                setAlert({
+                    show: true,
+                    message: 'Failed to request access',
+                    color: 'red',
+                });
+            })
+            .finally(() => {
+                setIsRequestingAccess(false);
             });
-            setInaccessibleEntities([]); // Clear inaccessible entities after request
-        })
-        .catch(error => {
-            setAlert({
-                show: true,
-                message: 'Failed to request access',
-                color: 'red'
-            });
-        })
-        .finally(() => {
-            setIsRequestingAccess(false);
-        });
     };
 
     const copyToCSV = () => {
@@ -173,15 +172,16 @@ export default function Relations({ obj }) {
                 csvContent += `"${type}","${name}"\n`;
             });
         }
-        navigator.clipboard.writeText(csvContent)
+        navigator.clipboard
+            .writeText(csvContent)
             .then(() => {
-                console.log("CSV copied to clipboard");
+                console.log('CSV copied to clipboard');
                 // Trigger copied animation
                 setIsCopied(true);
                 setTimeout(() => setIsCopied(false), 2000);
             })
             .catch((err) => {
-                console.error("Error copying CSV: ", err);
+                console.error('Error copying CSV: ', err);
             });
     };
 
@@ -196,7 +196,7 @@ export default function Relations({ obj }) {
                 {/* Depth Input with Label */}
                 <div className='flex flex-col'>
                     <input
-                        id="depth-input"
+                        id='depth-input'
                         type='number'
                         min='0'
                         max='5'
@@ -222,9 +222,9 @@ export default function Relations({ obj }) {
                     />
                     <button
                         onClick={() => {
-                          setPage(1);
-                          performSearch(depth, page);
-                          }}
+                            setPage(1);
+                            performSearch(depth, page);
+                        }}
                         className='absolute right-2 top-1/2 transform -translate-y-1/2 bg-transparent border-none cursor-pointer'
                     >
                         <Search />
@@ -236,7 +236,7 @@ export default function Relations({ obj }) {
                 >
                     {isCopied ? (
                         <>
-                            <Check className="w-5 h-5" />
+                            <Check className='w-5 h-5' />
                             Copied!
                         </>
                     ) : (

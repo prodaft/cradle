@@ -181,19 +181,18 @@ export default function EntryTypeForm({ id = null, isEdit = false, onAdd }) {
             }
 
             if (result.status === 200) {
-              setAlert({
-                  show: true,
-                  message: 'Entry Type saved successfully!',
-                  color: 'green',
-              });
-              if (!isEdit)
-                onAdd(result.data);
+                setAlert({
+                    show: true,
+                    message: 'Entry Type saved successfully!',
+                    color: 'green',
+                });
+                if (!isEdit) onAdd(result.data);
             } else {
-              setAlert({
-                  show: true,
-                  message: 'Failed to save Entry Type.',
-                  color: 'red',
-              });
+                setAlert({
+                    show: true,
+                    message: 'Failed to save Entry Type.',
+                    color: 'red',
+                });
             }
         } catch (err) {
             displayError(setAlert, navigate)(err);

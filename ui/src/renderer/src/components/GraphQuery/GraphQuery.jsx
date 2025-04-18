@@ -44,10 +44,7 @@ const GraphQuery = forwardRef(function (
             >
                 <Tab title='Search' classes='pt-2'>
                     <div className='mt-3 flex flex-col flex-1 overflow-hidden h-[85vh]'>
-                        <GraphControl
-                            settingsProps={settingsProps}
-                            ref={graphRef}
-                        />
+                        <GraphControl settingsProps={settingsProps} ref={graphRef} />
                     </div>
                 </Tab>
                 <Tab title='Notes' classes='pt-2'>

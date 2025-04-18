@@ -5,7 +5,7 @@ const CradleLoading = () => {
     return (
         <div className='flex flex-col items-center justify-center h-screen text-center'>
             <div className='mb-8 w-[370px]'>
-                <Logo text={true}/>
+                <Logo text={true} />
             </div>
             <svg
                 class='spinner-ring spinner-primary spinner-xl dark:[--spinner-color:--secondary]'

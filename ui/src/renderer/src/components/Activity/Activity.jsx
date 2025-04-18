@@ -26,9 +26,7 @@ export default function Activity({ log }) {
     }, [log.details]);
 
     return (
-        <div
-            className='bg-white dark:bg-gray-800 dark:bg-opacity-70 p-4 backdrop-blur-lg rounded-lg m-2 shadow-lg hover:shadow-xl transition-shadow duration-300'
-        >
+        <div className='bg-white dark:bg-gray-800 dark:bg-opacity-70 p-4 backdrop-blur-lg rounded-lg m-2 shadow-lg hover:shadow-xl transition-shadow duration-300'>
             <div className='flex justify-between items-center mb-2'>
                 <div className='text-gray-600 dark:text-gray-300 text-xs'>
                     {formattedTimestamp}

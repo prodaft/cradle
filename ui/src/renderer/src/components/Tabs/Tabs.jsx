@@ -30,8 +30,8 @@ const Tabs = ({
         if (tabIndex >= 0) return tabIndex;
 
         const numericIndex = parseInt(tabValue, 10);
-        return !isNaN(numericIndex) && numericIndex >= 0 && numericIndex < tabs.length 
-            ? numericIndex 
+        return !isNaN(numericIndex) && numericIndex >= 0 && numericIndex < tabs.length
+            ? numericIndex
             : defaultTab;
     };
 

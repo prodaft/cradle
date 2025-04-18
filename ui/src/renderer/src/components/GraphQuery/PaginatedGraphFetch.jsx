@@ -26,7 +26,7 @@ const PaginatedGraphFetch = forwardRef(
         const [dateRange, setDateRange] = useState({
             startDate: format(
                 new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-                'yyyy-MM-dd'
+                'yyyy-MM-dd',
             ),
             endDate: format(new Date(), 'yyyy-MM-dd'),
         });
@@ -36,7 +36,12 @@ const PaginatedGraphFetch = forwardRef(
             if (queryValues) {
                 setSourceNode(queryValues.src || null);
                 setDateRange({
-                    startDate: queryValues.startDate || format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
+                    startDate:
+                        queryValues.startDate ||
+                        format(
+                            new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+                            'yyyy-MM-dd',
+                        ),
                     endDate: queryValues.endDate || format(new Date(), 'yyyy-MM-dd'),
                 });
                 setPageSize(queryValues.pageSize || 250);
@@ -57,7 +62,7 @@ const PaginatedGraphFetch = forwardRef(
                     dateRange.startDate,
                     dateRange.endDate,
                     sourceNode?.value, // Source node ID
-                    currentDepth // Adding depth parameter
+                    currentDepth, // Adding depth parameter
                 );
 
                 has_next = response.data.has_next;
@@ -65,7 +70,7 @@ const PaginatedGraphFetch = forwardRef(
 
                 setHasNextPage(has_next);
                 if (!has_next && currentDepth < 5)
-                  setCurrentDepth(prevDepth => prevDepth + 1);
+                    setCurrentDepth((prevDepth) => prevDepth + 1);
                 const flattenedEntries = LinkTreeFlattener.flatten(entries);
                 let changes = [];
 
@@ -74,7 +79,10 @@ const PaginatedGraphFetch = forwardRef(
                     if (!graphRef.current.hasElementWithId(e.id)) {
                         e.label = truncateText(`${e.subtype}: ${e.name || e.id}`, 25);
                         e.color = colors[e.subtype];
-                        e.location = e.location || [Math.floor(Math.random() * 50), Math.floor(Math.random() * 50)];
+                        e.location = e.location || [
+                            Math.floor(Math.random() * 50),
+                            Math.floor(Math.random() * 50),
+                        ];
                         const node = {
                             group: 'nodes',
                             data: {
@@ -125,12 +133,12 @@ const PaginatedGraphFetch = forwardRef(
                 // Check if we need to move to the next depth
                 if (!has_next && currentPage > 1) {
                     setCurrentPage(1);
-                    setCurrentDepth(prevDepth => {
+                    setCurrentDepth((prevDepth) => {
                         const newDepth = prevDepth + 1;
                         // Update queryValues with the new depth
-                        setQueryValues(prev => ({
+                        setQueryValues((prev) => ({
                             ...prev,
-                            depth: newDepth
+                            depth: newDepth,
                         }));
                         return newDepth;
                     });
@@ -316,7 +324,7 @@ const PaginatedGraphFetch = forwardRef(
                                     <button
                                         onClick={() =>
                                             handlePageChange(
-                                                Math.max(1, currentPage - 1)
+                                                Math.max(1, currentPage - 1),
                                             )
                                         }
                                         disabled={currentPage === 1 || isGraphFetching}
@@ -366,7 +374,7 @@ const PaginatedGraphFetch = forwardRef(
                 <AlertBox alert={alert} />
             </div>
         );
-    }
+    },
 );
 
 export default PaginatedGraphFetch;

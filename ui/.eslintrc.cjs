@@ -6,7 +6,7 @@ module.exports = {
         'plugin:react/recommended',
         'plugin:react/jsx-runtime',
         'plugin:react-hooks/recommended',
-        'plugin:prettier/recommended'
+        'plugin:prettier/recommended',
     ],
     ignorePatterns: ['dist', '.eslintrc.cjs'],
     parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },
@@ -15,6 +15,9 @@ module.exports = {
     rules: {
         'react/jsx-no-target-blank': 'off',
         'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
-        "no-unused-vars": ["error", { "vars": "all", "args": "after-used", "ignoreRestSiblings": false }],
+        'no-unused-vars': [
+            'error',
+            { vars: 'all', args: 'after-used', ignoreRestSiblings: false },
+        ],
     },
 };

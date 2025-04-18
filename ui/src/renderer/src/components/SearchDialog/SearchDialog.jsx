@@ -168,13 +168,13 @@ export default function SearchDialog({ isOpen, onClose }) {
                     </div>*/}
                 </div>
 
-                    <SearchFilterSection
-                        showFilters={showFilters}
-                        setShowFilters={setShowFilters}
-                        entrySubtypes={entrySubtypes}
-                        entrySubtypeFilters={entrySubtypeFilters}
-                        setEntrySubtypeFilters={setEntrySubtypeFilters}
-                    />
+                <SearchFilterSection
+                    showFilters={showFilters}
+                    setShowFilters={setShowFilters}
+                    entrySubtypes={entrySubtypes}
+                    entrySubtypeFilters={entrySubtypeFilters}
+                    setEntrySubtypeFilters={setEntrySubtypeFilters}
+                />
 
                 <AlertBox alert={alert} />
                 {isLoading ? (

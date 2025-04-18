@@ -9,11 +9,7 @@ import useAuth from '../../hooks/useAuth/useAuth';
 import EntityForm from '../AdminPanelForms/EntityForm';
 import EnrichmentSettingsForm from '../AdminPanelForms/EnrichmentSettingsForm';
 
-export default function AdminPanelCardEnrichment({
-    name,
-    id,
-    setRightPane,
-}) {
+export default function AdminPanelCardEnrichment({ name, id, setRightPane }) {
     const [dialog, setDialog] = useState(false);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();

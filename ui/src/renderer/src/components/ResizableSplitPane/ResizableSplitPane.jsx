@@ -11,7 +11,7 @@ const ResizableSplitPane = ({
     maxSplitPercentage = 80,
     className = '',
     showRightPane = true,
-    showLeftPane = true,  // New prop to control left pane visibility
+    showLeftPane = true, // New prop to control left pane visibility
     onSplitChange,
 }) => {
     const containerRef = useRef(null);
@@ -119,7 +119,8 @@ const ResizableSplitPane = ({
                             onSplitChange?.(0);
                         } else {
                             // Expand left side
-                            const newPos = lastPosition > 0 ? lastPosition : initialSplitPosition;
+                            const newPos =
+                                lastPosition > 0 ? lastPosition : initialSplitPosition;
                             setSplitPosition(newPos);
                             onSplitChange?.(newPos);
                         }
@@ -141,14 +142,14 @@ const ResizableSplitPane = ({
                 <div
                     className={`rounded-md transition-[width,height] duration-200 ease-out ${rightClassName}`}
                     style={{
-                        width: !isVertical 
-                            ? showLeftPane 
-                                ? `${100 - splitPosition}%` 
+                        width: !isVertical
+                            ? showLeftPane
+                                ? `${100 - splitPosition}%`
                                 : '100%'
                             : '100%',
-                        height: isVertical 
-                            ? showLeftPane 
-                                ? `${100 - splitPosition}%` 
+                        height: isVertical
+                            ? showLeftPane
+                                ? `${100 - splitPosition}%`
                                 : '100%'
                             : '100%',
                     }}

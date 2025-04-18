@@ -97,8 +97,6 @@ export default function NoteSelector({
                     setAlert={setAlert}
                 />
 
-
-
                 <form
                     onSubmit={handleSearchSubmit}
                     className='flex space-x-4 px-3 pb-2'
@@ -123,7 +121,6 @@ export default function NoteSelector({
                         <Search /> Search
                     </button>
                 </form>
-
 
                 <Pagination
                     currentPage={page}

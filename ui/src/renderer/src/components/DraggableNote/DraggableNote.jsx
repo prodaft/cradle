@@ -18,12 +18,9 @@ import { NoButtonsSensor } from '../../utils/dndUtils/dndUtils';
  * Wrapper component to make a Note draggable
  */
 export default function DraggableNote(props) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: props.id,
-  });
+    const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+        id: props.id,
+    });
 
-  return (
-    <Note ref={setNodeRef} {...attributes} {...listeners} {...props}>
-    </Note>
-  );
+    return <Note ref={setNodeRef} {...attributes} {...listeners} {...props}></Note>;
 }
