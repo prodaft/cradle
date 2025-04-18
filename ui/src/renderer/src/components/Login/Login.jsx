@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings, Undo, SunLight, HalfMoon } from 'iconoir-react';
 import FormField from '../FormField/FormField';
 import { Link, useLocation } from 'react-router-dom';
@@ -28,8 +28,8 @@ export default function Login() {
     const windowSize = useWindowSize();
     const location = useLocation();
 
-    const [showSettings, setShowSettings] = useState(false);
-    const [backendUrl, setBackendUrl] = useState(getBaseUrl());
+    const [showSettings, setShowSettings] = useState(!getBaseUrl());
+    const [backendUrl, setBackendUrl] = useState(getBaseUrl() || '');
 
     const { isDarkMode, toggleTheme } = useTheme();
 
@@ -38,6 +38,13 @@ export default function Login() {
     const auth = useAuth();
 
     const navigate = useNavigate();
+
+    useEffect(() => {
+        // If backend URL is not set, force settings to be shown
+        if (!getBaseUrl()) {
+            setShowSettings(true);
+        }
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -56,6 +63,10 @@ export default function Login() {
 
     const handleSaveSettings = (e) => {
         e.preventDefault();
+        if (!backendUrl) {
+            setAlert({ show: true, message: 'Backend URL is required', color: 'red' });
+            return;
+        }
         localStorage.setItem('backendUrl', backendUrl);
         setShowSettings(false);
     };
@@ -65,16 +76,18 @@ export default function Login() {
             <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 xl:w-1/3 relative'>
                 {showSettings ? (
                     <>
-                        <button
-                            onClick={() => {
-                                setBackendUrl(getBaseUrl() || '');
-                                setShowSettings(false);
-                            }}
-                            className='absolute top-2 left-2 p-2 hover:opacity-80 text-gray-500'
-                            data-testid='settings-button'
-                        >
-                            <Undo />
-                        </button>
+                        {getBaseUrl() && (
+                            <button
+                                onClick={() => {
+                                    setBackendUrl(getBaseUrl());
+                                    setShowSettings(false);
+                                }}
+                                className='absolute top-2 left-2 p-2 hover:opacity-80 text-gray-500'
+                                data-testid='settings-button'
+                            >
+                                <Undo />
+                            </button>
+                        )}
                         <button
                             onClick={toggleTheme}
                             className='absolute top-2 right-2 p-2 hover:opacity-80 text-gray-500'
@@ -116,7 +129,9 @@ export default function Login() {
                                         value={backendUrl}
                                         handleInput={setBackendUrl}
                                         autofocus={true}
+                                        required={true}
                                     />
+                                    <AlertBox alert={alert} />
                                     <button
                                         type='submit'
                                         className='btn btn-primary btn-block'
@@ -155,8 +170,8 @@ export default function Login() {
                             )}
                         </form>
 
-                        {/* Hide links when in settings mode */}
-                        {!showSettings && (
+                        {/* Hide links when in settings mode or when backend URL is not set */}
+                        {!showSettings && getBaseUrl() && (
                             <p className='mt-10 text-center text-sm text-gray-500'>
                                 <p className='mt-10 flex justify-between text-sm text-gray-500'>
                                     <Link
