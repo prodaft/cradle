@@ -84,11 +84,19 @@ jobs:
           key: ${{ runner.os }}-pipenv-${{ hashFiles('backend/Pipfile.lock') }}
           restore-keys: |
             ${{ runner.os }}-pipenv-
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Cache APT packages
+        uses: actions/cache@v3
         with:
-          python-version: "3.11"
+          path: |
+            /var/cache/apt
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
+      - name: Install dependencies
+        run: |
+          apt update
+          apt install python3-pip
       - name: Install dependencies
         run: |
           pip install pipenv
