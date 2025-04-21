@@ -1,6 +1,6 @@
 #!/bin/sh
 
-NUM_WORKERS=12
+: "${NUM_WORKERS:=12}"
 
 pipenv run python manage.py collectstatic --noinput -c
 chown -R www-data:www-data static

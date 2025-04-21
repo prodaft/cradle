@@ -103,6 +103,7 @@ services:
 
       CELERY_QUEUES: "email,notes,graph,publish,import,access,enrich,digest"
       CELERY_CONCURRENCY: 4
+      NUM_WORKERS: 4
 
     depends_on:
       - postgres

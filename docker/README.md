@@ -85,3 +85,12 @@ more.
 | `DEFAULT_FROM_EMAIL`         | String  | `None`        | Default sender email address.                         |
 | `EMAIL_HOST_PASSWORD`        | String  | `None`        | SMTP server password.                                 |
 | `EMAIL_USE_TLS`              | Boolean | `False`       | Use TLS for SMTP connection.                          |
+
+
+### Worker & Celery Settings
+
+| Variable              | Type    | Default Value                                  | Description                                                           |
+|-----------------------|---------|------------------------------------------------|-----------------------------------------------------------------------|
+| `CELERY_QUEUES`       | String  | `"email,notes,graph,publish,import,access,enrich,digest"` | Comma-separated list of Celery task queues.                           |
+| `CELERY_CONCURRENCY`  | Integer | `4`                                            | Number of concurrent Celery worker threads per process.               |
+| `NUM_WORKERS`         | Integer | `12`                                           | Number of Gunicorn worker processes.                                  |
