@@ -197,16 +197,18 @@ class FetchGraphView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
-        source_id = request.query_params.get("src")
-        if not source_id:
-            return Response({"error": "Missing src parameter."}, status=400)
-
         try:
             depth = int(request.query_params.get("depth", 1))
             page_size = int(request.query_params.get("page_size", 200))
+
+            source_id_s = request.query_params.get("src")
+            source_id = int(source_id_s) if source_id_s else None
+
+            if not source_id:
+                return Response({"error": "Missing src parameter."}, status=400)
         except ValueError:
             return Response(
-                {"error": "depth, page and page_size must be integers."}, status=400
+                {"error": "depth, src and page_size must be integers."}, status=400
             )
 
         if depth < 0 or depth > 3:
