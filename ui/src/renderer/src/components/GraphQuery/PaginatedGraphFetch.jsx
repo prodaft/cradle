@@ -50,6 +50,14 @@ const PaginatedGraphFetch = forwardRef(
         }, [queryValues]);
 
         const fetchGraphPage = async () => {
+            if (!sourceNode) {
+                setAlert({
+                    show: true,
+                    message: 'Please select a source node before fetching.',
+                    color: 'red',
+                });
+                return;
+            }
             setLoading(true);
             setIsGraphFetching(true);
             let has_next = false;
@@ -245,7 +253,7 @@ const PaginatedGraphFetch = forwardRef(
 
         return (
             <div className='p-2 mt-2 w-full'>
-                <div className='flex flex-col w-full gap-2'>
+                <div className='flex flex-col w-full gap-2 mb-2'>
                     {/* First row - Date picker and Source node selector */}
                     <div className='flex items-start w-full gap-4'>
                         <div className='flex flex-col flex-grow'>
@@ -351,7 +359,7 @@ const PaginatedGraphFetch = forwardRef(
                         <button
                             type='button'
                             onClick={fetchGraphPage}
-                            className='btn btn flex items-center tooltip tooltip-bottom'
+                            className='btn btn flex items-center tooltip tooltip-top'
                             data-tooltip='Fetch graph data'
                             disabled={loading && !isGraphFetching && hasNextPage}
                         >
