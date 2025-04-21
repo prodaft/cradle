@@ -1,2 +1,4 @@
 *.html linguist-vendored
+*.ttf binary
+*.png binary
 * text eol=lf
