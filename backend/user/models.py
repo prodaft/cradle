@@ -29,7 +29,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         max_length=32, choices=UserRoles.choices, default=UserRoles.USER
     )
 
-    api_key: Optional[str] = models.TextField(null=True, blank=True)
+    api_key: Optional[str] = models.CharField(max_length=128, blank=True, null=True)
 
     vt_api_key: Optional[str] = models.TextField(null=True, blank=True)
     catalyst_api_key: Optional[str] = models.TextField(null=True, blank=True)

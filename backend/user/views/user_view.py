@@ -21,6 +21,7 @@ from ..serializers import (
 from ..models import CradleUser
 from management.settings import cradle_settings
 import secrets
+import bcrypt
 
 
 @extend_schema_view(
@@ -446,7 +447,8 @@ class APIKey(APIView):
             )
 
         key = secrets.token_hex(24)
-        user.api_key = key
+        hashed_key = bcrypt.hashpw(key.encode(), bcrypt.gensalt()).decode()
+        user.api_key = hashed_key
         user.save(update_fields=["api_key"])
         return Response(
             {"api_key": key},

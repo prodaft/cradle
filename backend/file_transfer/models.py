@@ -49,11 +49,3 @@ class FileReference(models.Model):
             "file_name": self.file_name,
             "bucket_name": self.bucket_name,
         }
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["minio_file_name", "bucket_name"],
-                name="unique_minio_file_per_bucket",
-            )
-        ]
