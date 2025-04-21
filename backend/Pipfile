@@ -34,6 +34,7 @@ scipy = "*"
 psycopg2-binary = "*"
 dnspython = "*"
 django-celery-beat = "*"
+bcrypt = "*"
 
 [dev-packages]
 bump-my-version = "*"

@@ -19,8 +19,8 @@
         "url": "https://github.com/prodaft/cradle/issues"
     },
     "optionalDependencies": {
-        "@rollup/rollup-linux-x64-gnu": "4.9.5",
-        "@esbuild/linux-x64": "0.24.0"
+        "@esbuild/linux-x64": "0.24.0",
+        "@rollup/rollup-linux-x64-gnu": "4.9.5"
     },
     "scripts": {
         "dev": "electron-vite dev -w",
@@ -53,7 +53,9 @@
         "@uiw/react-codemirror": "^4.22.0",
         "3d-force-graph": "^1.73.4",
         "axios-cache-interceptor": "^1.6.0",
+        "cytoscape": "^3.31.2",
         "d3": "^7.9.0",
+        "date-fns": "^4.1.0",
         "dayjs": "^1.11.13",
         "diff": "^7.0.0",
         "diff-match-patch": "^1.0.5",
@@ -80,10 +82,13 @@
         "react-color": "^2.19.3",
         "react-colorful": "^5.6.1",
         "react-dom": "^18.2.0",
+        "react-dropzone": "^14.3.8",
         "react-force-graph": "^1.44.6",
         "react-hook-form": "^7.54.2",
         "react-hotkeys-hook": "^4.6.1",
         "react-router-dom": "^6.23.0",
+        "react-select": "^5.10.1",
+        "react-tailwindcss-datepicker": "^2.0.0",
         "rippleui": "^1.12.1",
         "selenium-webdriver": "^4.21.0",
         "tailwind-scrollbar": "^3.1.0",
@@ -131,7 +136,11 @@
     "build": {
         "appId": "com.prodaft.cradle",
         "productName": "Cradle",
-        "files": ["out/**/*", "node_modules/**/*", "package.json"],
+        "files": [
+            "out/**/*",
+            "node_modules/**/*",
+            "package.json"
+        ],
         "directories": {
             "buildResources": "resources",
             "output": "dist"
@@ -140,11 +149,16 @@
             {
                 "from": "assets/",
                 "to": "assets",
-                "filter": ["**/*"]
+                "filter": [
+                    "**/*"
+                ]
             }
         ],
         "mac": {
-            "target": ["dmg", "zip"],
+            "target": [
+                "dmg",
+                "zip"
+            ],
             "category": "public.app-category.productivity",
             "hardenedRuntime": true,
             "entitlements": "resources/entitlements.mac.plist",
@@ -153,7 +167,9 @@
             "identity": null
         },
         "win": {
-            "target": ["nsis"],
+            "target": [
+                "nsis"
+            ],
             "publisherName": "PRODAFT"
         },
         "nsis": {
@@ -164,7 +180,9 @@
             "shortcutName": "Cradle"
         },
         "linux": {
-            "target": ["AppImage"],
+            "target": [
+                "AppImage"
+            ],
             "category": "Utility"
         },
         "publish": [
@@ -177,6 +195,8 @@
         ]
     },
     "msw": {
-        "workerDirectory": ["./public"]
+        "workerDirectory": [
+            "./public"
+        ]
     }
 }
