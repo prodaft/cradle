@@ -27,6 +27,9 @@ RUN rm -rf /www/cradle
 RUN cp -r dist /www/cradle
 RUN chown -R www:www /www
 
+WORKDIR /
+RUN rm -rf /ui
+
 COPY ./docker/entrypoint_ui.sh entrypoint_ui.sh
 RUN chmod +x ./entrypoint_ui.sh
 
