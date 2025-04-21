@@ -88,7 +88,7 @@
         "react-hotkeys-hook": "^4.6.1",
         "react-router-dom": "^6.23.0",
         "react-select": "^5.10.1",
-        "react-tailwindcss-datepicker": "^2.0.0",
+        "react-tailwindcss-datepicker": "^1.7.3",
         "rippleui": "^1.12.1",
         "selenium-webdriver": "^4.21.0",
         "tailwind-scrollbar": "^3.1.0",
