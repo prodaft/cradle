@@ -1,4 +1,9 @@
 *.html linguist-vendored
 *.ttf binary
 *.png binary
-* text eol=lf
+*.py text eol=lf
+*.sh text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.tsx text eol=lf
+*.ts text eol=lf
