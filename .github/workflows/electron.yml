@@ -8,14 +8,13 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-
     defaults:
       run:
         working-directory: ./ui
 
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     name: Build on ${{ matrix.os }}
     steps:
@@ -26,14 +25,12 @@ jobs:
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
-        working-directory: ./ui
         with:
           node-version: '18'
           cache: 'npm'
 
       - name: Cache node_modules
         uses: actions/cache@v3
-        working-directory: ./ui
         with:
           path: |
             node_modules
@@ -43,22 +40,18 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Set VITE_ENV to production
-        working-directory: ./ui
         run: echo "VITE_ENV=production" >> $GITHUB_ENV
 
       - name: Install dependencies
-        working-directory: ./ui
         run: npm ci
 
       - name: Build Electron App
-        working-directory: ./ui
         run: |
           npm run build-electron
           npm run dist-electron
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
-        working-directory: ./ui
         with:
           files: |
             dist/**/*.dmg
