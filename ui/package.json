@@ -122,7 +122,6 @@
         "globals": "^15.1.0",
         "jest-environment-jsdom": "^29.7.0",
         "jest-svg-transformer": "^1.0.0",
-        "jest-transform-stub": "^2.0.0",
         "jsdoc": "^4.0.3",
         "msw": "^2.7.3",
         "prettier": "3.3.1",
