@@ -1,6 +1,7 @@
 name: Build and Publish Electron app on GitHub Release
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
