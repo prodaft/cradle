@@ -74,11 +74,9 @@ app.conf.beat_schedule = {
     "refresh-edges-materialized-view-every-night": {
         "task": "entries.tasks.refresh_edges_materialized_view",
         "schedule": crontab(hour=3, minute=0),
-        "kwargs": json.dumps(
-            {
-                "simulate": True,
-            }
-        ),
+        "kwargs": {
+            "simulate": True,
+        },
     },
     "delete-hanging-artifacts-every-night": {
         "task": "entries.tasks.delete_hanging_artifacts",

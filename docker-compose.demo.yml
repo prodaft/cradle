@@ -53,7 +53,7 @@ services:
       dockerfile: ./docker/Dockerfile.backend
     container_name: celery
     restart: unless-stopped
-    command: pipenv run celery -A cradle worker --beat -Q email,notes,publish,import,access,enrich,digest-l INFO
+    command: /app/entrypoint_celery.sh
     environment: &cradle_env
       INITIALIZE_ENTRYCLASSES: false
       DB_NAME: cradle
@@ -100,6 +100,9 @@ services:
 
       REDIS_URL: "redis://192.168.42.7:6379/0"
       RABBITMQ_URL: "amqp://cradle:cradle@192.168.42.11:5672//"
+
+      CELERY_QUEUES: "email,notes,graph,publish,import,access,enrich,digest"
+      CELERY_CONCURRENCY: 4
 
     depends_on:
       - postgres

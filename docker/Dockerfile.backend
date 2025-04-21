@@ -11,6 +11,7 @@ RUN pacman -Sy --noconfirm && \
 
 # Copy and install Python dependencies
 COPY ./backend/Pipfile .
+COPY ./backend/Pipfile.lock .
 RUN pipenv sync
 RUN pipenv install gunicorn
 
@@ -21,9 +22,11 @@ COPY ./backend/ .
 COPY ./backend/cradle/settings_docker.py ./cradle/settings.py
 
 COPY ./docker/entrypoint_backend.sh .
+COPY ./docker/entrypoint_celery.sh .
 
 # Make the entrypoint script executable
 RUN chmod +x ./entrypoint_backend.sh
+RUN chmod +x ./entrypoint_celery.sh
 
 # Start the application
 CMD ./entrypoint_backend.sh
