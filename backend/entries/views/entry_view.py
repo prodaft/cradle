@@ -40,7 +40,7 @@ class EntryView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        data = request.data
+        data = request.data.copy()
 
         if not isinstance(request.data, dict):
             data = request.data.dict()
