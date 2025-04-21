@@ -1,4 +1,6 @@
 import React, { useState, useRef, forwardRef, useEffect } from 'react';
+import { displayError } from '../../utils/responseUtils/responseUtils';
+import { useNavigate } from 'react-router-dom';
 import { PlaySolid, PauseSolid, ArrowLeft, ArrowRight } from 'iconoir-react';
 import Datepicker from 'react-tailwindcss-datepicker';
 import { format, parseISO } from 'date-fns';
@@ -20,6 +22,8 @@ const PaginatedGraphFetch = forwardRef(
         const [hasNextPage, setHasNextPage] = useState(true);
         const [loading, setLoading] = useState(false);
         const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+        const navigate = useNavigate();
+        const MAX_DEPTH = 3; // Set maximum depth to 3
 
         // Define local states for source node and date range.
         const [sourceNode, setSourceNode] = useState(null);
@@ -45,7 +49,8 @@ const PaginatedGraphFetch = forwardRef(
                     endDate: queryValues.endDate || format(new Date(), 'yyyy-MM-dd'),
                 });
                 setPageSize(queryValues.pageSize || 250);
-                setCurrentDepth(queryValues.depth || 0);
+                // Ensure depth never exceeds MAX_DEPTH
+                setCurrentDepth(Math.min(queryValues.depth || 0, MAX_DEPTH));
             }
         }, [queryValues]);
 
@@ -75,10 +80,33 @@ const PaginatedGraphFetch = forwardRef(
 
                 has_next = response.data.has_next;
                 const { entries, relations, colors } = response.data.results;
+                const hasEntries = entries && entries.length > 0;
+                const hasRelations = relations && relations.length > 0;
 
                 setHasNextPage(has_next);
-                if (!has_next && currentDepth < 5)
+
+                // Only increment depth if we have results and currentDepth < MAX_DEPTH
+                if (
+                    !has_next &&
+                    currentDepth < MAX_DEPTH &&
+                    (hasEntries || hasRelations)
+                ) {
                     setCurrentDepth((prevDepth) => prevDepth + 1);
+                }
+
+                // If no data was returned, don't increment depth
+                if (!hasEntries && !hasRelations) {
+                    setAlert({
+                        show: true,
+                        message: 'No data returned for the current parameters.',
+                        color: 'yellow',
+                    });
+                    setHasNextPage(false);
+                    setLoading(false);
+                    setIsGraphFetching(false);
+                    return;
+                }
+
                 const flattenedEntries = LinkTreeFlattener.flatten(entries);
                 let changes = [];
 
@@ -139,10 +167,10 @@ const PaginatedGraphFetch = forwardRef(
                 setAlert({ show: false });
 
                 // Check if we need to move to the next depth
-                if (!has_next && currentPage > 1) {
+                if (!has_next && currentPage > 1 && currentDepth < MAX_DEPTH) {
                     setCurrentPage(1);
                     setCurrentDepth((prevDepth) => {
-                        const newDepth = prevDepth + 1;
+                        const newDepth = Math.min(prevDepth + 1, MAX_DEPTH);
                         // Update queryValues with the new depth
                         setQueryValues((prev) => ({
                             ...prev,
@@ -155,11 +183,7 @@ const PaginatedGraphFetch = forwardRef(
                     setCurrentPage(currentPage + 1);
                 }
             } catch (error) {
-                setAlert({
-                    show: true,
-                    message: error.message,
-                    color: 'red',
-                });
+                displayError(setAlert, navigate)(error);
             } finally {
                 setLoading(false);
                 setIsGraphFetching(false);
@@ -183,11 +207,7 @@ const PaginatedGraphFetch = forwardRef(
                     return [];
                 }
             } catch (error) {
-                setAlert({
-                    show: true,
-                    message: error.message,
-                    color: 'red',
-                });
+                displayError(setAlert, navigate)(error);
                 return [];
             }
         };
@@ -241,7 +261,7 @@ const PaginatedGraphFetch = forwardRef(
         };
 
         const handleDepthChange = (e) => {
-            const newDepth = parseInt(e.target.value, 10);
+            const newDepth = Math.min(parseInt(e.target.value, 10), MAX_DEPTH);
             setCurrentDepth(newDepth);
             setQueryValues((prev) => ({
                 ...prev,
@@ -310,12 +330,13 @@ const PaginatedGraphFetch = forwardRef(
 
                             <div className='flex flex-col'>
                                 <label className='text-xs text-gray-400 mb-1'>
-                                    Depth
+                                    Depth (Max: {MAX_DEPTH})
                                 </label>
                                 <div className='flex items-center'>
                                     <input
                                         type='number'
                                         min='0'
+                                        max={MAX_DEPTH}
                                         value={currentDepth}
                                         onChange={handleDepthChange}
                                         className='input py-1 px-2 text-sm w-16'
