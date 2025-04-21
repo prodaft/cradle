@@ -6,6 +6,10 @@ on:
 
 jobs:
   build:
+    defaults:
+      run:
+        working-directory: ./ui
+
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
