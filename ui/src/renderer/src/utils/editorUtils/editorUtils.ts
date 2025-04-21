@@ -269,6 +269,11 @@ export class CradleEditor {
 
         // 2. Process instance-based suggestions using a simplified Aho–Corasick search on the bigTrie.
         for (let i = 0; i < text.length; i++) {
+            // Only start a match if this position is a word (or line) boundary.
+            if (i > 0 && /\w/.test(text[i - 1])) {
+                continue; // Not at the beginning of a word.
+            }
+
             let currentNode = this.bigTrie.root;
             let j = i;
             while (j < text.length) {
@@ -276,16 +281,19 @@ export class CradleEditor {
                 if (!currentNode.children[char]) break;
                 currentNode = currentNode.children[char];
                 if (currentNode.eow && currentNode.data) {
-                    const word = text.substring(i, j + 1);
-                    for (const type of currentNode.data) {
-                        const key = `${type}:${word}`;
-                        if (!madeSuggestions.has(key)) {
-                            suggestions.push({
-                                type,
-                                match: word,
-                                from: i,
-                            });
-                            madeSuggestions.add(key);
+                    // Only consider this match if it ends at a word (or line) boundary.
+                    if (j + 1 === text.length || !/\w/.test(text[j + 1])) {
+                        const word = text.substring(i, j + 1);
+                        for (const type of currentNode.data) {
+                            const key = `${type}:${word}`;
+                            if (!madeSuggestions.has(key)) {
+                                suggestions.push({
+                                    type,
+                                    match: word,
+                                    from: i,
+                                });
+                                madeSuggestions.add(key);
+                            }
                         }
                     }
                 }
@@ -422,10 +430,10 @@ export class CradleEditor {
             }
             case 'CradleLinkAlias':
                 if (!this.tries) return { from: context.pos, options: [] };
-                if (!this.tries["alias"]) return { from: context.pos, options: [] };
+                if (!this.tries['alias']) return { from: context.pos, options: [] };
 
                 const v = context.state.doc.sliceString(from, to);
-                options = this.tries["alias"].allWordsWithPrefix(v).map((item) => ({
+                options = this.tries['alias'].allWordsWithPrefix(v).map((item) => ({
                     label: item.word,
                     type: 'keyword',
                 }));
@@ -726,7 +734,6 @@ export class CradleEditor {
     /**
      * Auto-formats plain text into cradle links where applicable.
      */
-
     autoFormatLinks(editor: any, start: number, end: number): string {
         const text: string = editor.state.doc.toString();
         const tree = syntaxTree(editor.state);
@@ -755,8 +762,7 @@ export class CradleEditor {
                     // Get all suggestions for the entire node text.
                     const suggestions = this.getSuggestionsForText(nodeText);
 
-                    // Group suggestions by the trimmed (and lowercased) match.
-                    const grouped: Map<string, Suggestion[]> = new Map();
+                    // Process suggestions: each suggestion results in a change.
                     for (const s of suggestions) {
                         const absoluteStart = node.from + s.from;
                         const absoluteEnd = absoluteStart + s.match.length;
@@ -802,10 +808,21 @@ export class CradleEditor {
             },
         });
 
-        // Apply changes in reverse order to avoid offset issues.
-        changes.sort((a, b) => b.from - a.from);
+        // When there is an overlap, keep the bigger one
+        const filteredChanges = changes.filter(
+            (change) =>
+                !changes.some(
+                    (other) =>
+                        other !== change &&
+                        change.from < other.to &&
+                        change.to > other.from &&
+                        other.to - other.from > change.to - change.from,
+                ),
+        );
+
+        filteredChanges.sort((a, b) => b.from - a.from);
         let formattedText = text;
-        for (const change of changes) {
+        for (const change of filteredChanges) {
             formattedText =
                 formattedText.slice(0, change.from) +
                 change.replacement +
@@ -814,12 +831,11 @@ export class CradleEditor {
         return formattedText;
     }
 
-
     public static clearCache() {
-      CradleEditor.entryClassesPromise = null;
-      CradleEditor.cachedEntryClasses = null;
-      CradleEditor.triesPromise = null;
-      CradleEditor.cachedTries = null;
-      CradleEditor.cachedBigTrie = null;
+        CradleEditor.entryClassesPromise = null;
+        CradleEditor.cachedEntryClasses = null;
+        CradleEditor.triesPromise = null;
+        CradleEditor.cachedTries = null;
+        CradleEditor.cachedBigTrie = null;
     }
 }

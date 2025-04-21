@@ -1,30 +1,46 @@
+from collections import defaultdict
 import itertools
 from celery import shared_task
+from django.contrib.contenttypes.models import ContentType
 from django.db import close_old_connections
-from django_lifecycle.mixins import transaction
+from django.utils import timezone
 from entries.enums import EntryType
+from entries.exceptions import InvalidEntryException
+from intelio.enums import EnrichmentStrategy
 from user.models import CradleUser
 from .markdown.to_links import Link
-from .models import Note, Relation
+from .models import Note
+from entries.models import Relation
+
 from core.decorators import distributed_lock
-from django.conf import settings
 from notes.exceptions import EntriesDoNotExistException, EntryClassesDoNotExistException
 from entries.models import Entry, EntryClass
+from entries.enums import RelationReason
+
+from management.settings import cradle_settings
+
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @shared_task
 @distributed_lock("smartlinker_note_{note_id}", timeout=1800)
 def smart_linker_task(note_id):
+    from entries.tasks import refresh_edges_materialized_view
+
     """
     Celery task to create links between entries for a given note.
 
     Args:
         note_id: ID of the Note object to process
     """
+
     note = Note.objects.get(id=note_id)
 
     try:
-        Relation.objects.filter(note=note).delete()
+        Relation.objects.filter(note=note, reason=RelationReason.NOTE).delete()
 
         pairs = note.reference_tree.relation_pairs()
         pairs_resolved = set()
@@ -42,28 +58,37 @@ def smart_linker_task(note_id):
 
         # Resolve pairs from reference tree
         for src, dst in pairs:
-            pairs_resolved.add((entries[src], entries[dst]))
+            if src in entries and dst in entries:
+                pairs_resolved.add((entries[src], entries[dst]))
+            else:
+                logger.warning(
+                    f"Pair ({src}, {dst}) not found in entries. Skipping this pair."
+                )
 
         # Add entity-artifact permutations
         for e, a in itertools.product(entities, artifacts):
             pairs_resolved.add((e, a))
-            pairs_resolved.add((a, e))
 
         # Bulk create relations
         Relation.objects.bulk_create(
             [
                 Relation(
-                    src_entry=src,
-                    dst_entry=dst,
+                    e1=src,
+                    e2=dst,
                     content_object=note,
                     access_vector=note.access_vector,
+                    reason=RelationReason.NOTE,
                 )
                 for src, dst in pairs_resolved
             ]
         )
 
+        note.last_linked = timezone.now()
+        note.save()
+
     finally:
         close_old_connections()
+        refresh_edges_materialized_view.apply_async(simulate=True)
 
     return note_id
 
@@ -83,7 +108,7 @@ def entry_class_creation_task(note_id, user_id=None):
 
     for r in note.reference_tree.links():
         if not EntryClass.objects.filter(subtype=r.key).exists():
-            if not settings.AUTOREGISTER_ARTIFACT_TYPES:
+            if not cradle_settings.notes.allow_dynamic_entry_class_creation:
                 nonexistent_entries.add(r.key)
             else:
                 entry = EntryClass.objects.create(
@@ -99,32 +124,76 @@ def entry_class_creation_task(note_id, user_id=None):
 @shared_task(
     autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=300, max_retries=3
 )
-def entry_population_task(note_id, user_id=None):
+def entry_population_task(note_id, user_id=None, force_contains_check=False):
     """
     Celery task to create missing entries for a note.
     """
+    from entries.tasks import scan_for_children
+    from intelio.tasks import enrich_entries
+
     note = Note.objects.get(id=note_id)
     if user_id:
         user = CradleUser.objects.get(id=user_id)
 
-    with transaction.atomic():
-        note.entries.clear()
-        for r in note.reference_tree.links():
-            entry = Entry.objects.filter(name=r.value, entry_class__subtype=r.key)
-            if len(entry) == 0:
-                entry_class = EntryClass.objects.get(subtype=r.key)
+    note.entries.clear()
+    entries = []
+    for r in note.reference_tree.links():
+        entry = Entry.objects.filter(name=r.value, entry_class__subtype=r.key)
+        if not entry.exists():
+            entry_class = EntryClass.objects.get(subtype=r.key)
 
-                if entry_class.type == EntryType.ARTIFACT:
-                    entry = Entry.objects.create(name=r.value, entry_class=entry_class)
-                    if user_id:
-                        entry.log_create(user)  # Pass user_id for logging
-                else:
-                    raise EntriesDoNotExistException([r])
+            if entry_class.type == EntryType.ARTIFACT:
+                try:
+                    entries.append(Entry(name=r.value, entry_class=entry_class))
+                except InvalidEntryException as e:
+                    logger.warning(e.detail)
             else:
-                entry = entry.first()
-
+                raise EntriesDoNotExistException([r])
+        else:
+            entry = entry.first()
             note.entries.add(entry)
-        note.save()
+
+    new_objs = Entry.objects.bulk_create(entries, ignore_conflicts=True)
+
+    objs = [None] * len(new_objs)
+    for i, e in enumerate(new_objs):
+        if e.id is None:
+            objs[i], _ = Entry.objects.get_or_create(
+                name=e.name, entry_class__subtype=e.entry_class.subtype
+            )
+        else:
+            objs[i] = e
+
+    note.entries.add(*objs)
+
+    childscan = []
+    enrich = defaultdict(list)
+    for entry in objs:
+        content_type = ContentType.objects.get_for_model(note)
+
+        if entry.entry_class.children.count() > 0:
+            childscan.append(entry.id)
+
+    for entry in new_objs:
+        if entry is None:
+            continue
+
+        for e in entry.entry_class.enrichers.filter(
+            strategy=EnrichmentStrategy.ON_CREATE, enabled=True
+        ):
+            enrich[e.id].append(entry.id)
+
+        if user_id:
+            entry.log_create(user)  # Pass user_id for logging
+
+    if len(childscan):
+        scan_for_children.delay(childscan, content_type.id, note.id)
+
+    if len(enrich):
+        for k, v in enrich:
+            enrich_entries.delay(k, v, content_type.id, note.id)
+
+    note.save()
 
 
 @shared_task(
@@ -134,6 +203,8 @@ def connect_aliases(note_id, user_id=None):
     """
     Celery task to connect aliases in a note
     """
+    from entries.tasks import refresh_edges_materialized_view
+
     alias_class = EntryClass.objects.filter(subtype="alias")
 
     if not alias_class.exists():  # If alias type does not exist, create it
@@ -178,22 +249,26 @@ def connect_aliases(note_id, user_id=None):
             e = Entry.objects.get(name=name, entry_class__subtype=subtype)
             relations.append(
                 Relation(
-                    src_entry=alias,
-                    dst_entry=e,
+                    e1=e,
+                    e2=alias,
                     content_object=note,
                     access_vector=note.access_vector,
-                )
-            )
-            relations.append(
-                Relation(
-                    src_entry=e,
-                    dst_entry=alias,
-                    content_object=note,
-                    access_vector=note.access_vector,
+                    reason=RelationReason.ALIAS,
+                    virtual=True,
                 )
             )
 
+        refresh_edges_materialized_view.apply_async()
+
         Relation.objects.bulk_create(relations)
+
+
+@shared_task
+def ping_entries(note_id):
+    note = Note.objects.get(id=note_id)
+
+    for entry in note.entries.all():
+        entry.ping()
 
 
 @shared_task

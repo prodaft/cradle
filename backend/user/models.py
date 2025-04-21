@@ -2,7 +2,6 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Optional
 
-from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -16,6 +15,7 @@ from core.fields import BitStringField
 
 class UserRoles(models.TextChoices):
     ADMIN = "admin"  # Superuser
+    MANAGER = "manager"  # Manages everything except users
     ENTRY_MANAGER = "entrymanager"  # Manage Entities and EntryTypes
     USER = "author"  # Writer of notes
 
@@ -29,6 +29,8 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         max_length=32, choices=UserRoles.choices, default=UserRoles.USER
     )
 
+    api_key: Optional[str] = models.CharField(max_length=128, blank=True, null=True)
+
     vt_api_key: Optional[str] = models.TextField(null=True, blank=True)
     catalyst_api_key: Optional[str] = models.TextField(null=True, blank=True)
 
@@ -37,17 +39,13 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         null=True, blank=True
     )
 
-    email_confirmed: models.BooleanField = models.BooleanField(
-        default=(not settings.REQUIRE_EMAIL_CONFIRMATION)
-    )
+    email_confirmed: models.BooleanField = models.BooleanField(default=False)
     email_confirmation_token: Optional[str] = models.TextField(null=True, blank=True)
     email_confirmation_token_expiry: Optional[models.DateTimeField] = (
         models.DateTimeField(null=True, blank=True)
     )
 
-    is_active: models.BooleanField = models.BooleanField(
-        default=(not settings.REQUIRE_ADMIN_ACTIVATION)
-    )
+    is_active: models.BooleanField = models.BooleanField(default=False)
 
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["password", "email"]
@@ -107,6 +105,14 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         return self.role == UserRoles.ADMIN
 
     @property
+    def is_cradle_manager(self):
+        return self.role == UserRoles.MANAGER or self.is_cradle_admin
+
+    @property
+    def is_entry_manager(self):
+        return self.role == UserRoles.ENTRY_MANAGER or self.is_cradle_manager
+
+    @property
     def access_vector(self):
         if self.is_cradle_admin:
             return "1" * 2048
@@ -122,3 +128,24 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         )
 
         return fieldtype.get_prep_value(acvec)
+
+    @property
+    def access_vector_inv(self):
+        if self.is_cradle_admin:
+            return "0" * 2048
+        acvec = 1
+
+        for access in self.accesses.all():
+            if access.access_type == AccessType.NONE:
+                continue
+            acvec |= 1 << access.entity.acvec_offset
+
+        fieldtype = BitStringField(
+            max_length=2048, null=False, default=1, varying=False
+        )
+
+        inverter = 1
+        for i in range(2048):
+            inverter |= 1 << i
+
+        return fieldtype.get_prep_value(acvec ^ inverter)

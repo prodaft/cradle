@@ -57,6 +57,8 @@ class AccessListTest(AccessTestCase):
             **self.headers_normal,
         )
 
+        print(response.content)
+
         self.assertEqual(response.status_code, 403)
 
     def test_access_list_admin(self):

@@ -4,8 +4,12 @@ import DashboardHorizontalSection from '../../components/DashboardHorizontalSect
 export class SubtypeHierarchy {
     constructor(paths) {
         this.tree = {};
+        this.pathsMap = {}; // Store all full paths for reference
 
         for (let path of paths) {
+            // Store the original full path
+            this.pathsMap[path] = true;
+
             path.split('/').reduce((acc, cur) => {
                 if (!acc[cur]) {
                     acc[cur] = {};
@@ -25,6 +29,9 @@ export class SubtypeHierarchy {
             // Internal node
             const childResults = [];
 
+            // Collect all child paths for this node
+            const childPaths = this.collectChildPaths(path + value + '/', children);
+
             // Sort children by depth before traversing
             const sortedKeys = Object.keys(children).sort(
                 (a, b) => this.getDepth(children[a]) - this.getDepth(children[b]),
@@ -34,7 +41,7 @@ export class SubtypeHierarchy {
                 childResults.push(traverse(key, children[key], path + value + '/'));
             }
 
-            return node_callback(value, childResults);
+            return node_callback(value, childResults, childPaths);
         };
 
         const sortedKeys = Object.keys(this.tree).sort(
@@ -42,6 +49,28 @@ export class SubtypeHierarchy {
         );
 
         return sortedKeys.map((key) => traverse(key, this.tree[key], ''));
+    }
+
+    // Helper method to collect all child paths for a given node
+    collectChildPaths(currentPath, node) {
+        const paths = [];
+
+        // Helper function to recursively collect paths
+        const collectPaths = (nodePath, subNode) => {
+            // Check if this is a valid path in our original data
+            if (this.pathsMap[nodePath.slice(0, -1)]) {
+                // Remove trailing slash
+                paths.push(nodePath.slice(0, -1)); // Remove trailing slash for consistency
+            }
+
+            // Process children
+            for (const key of Object.keys(subNode)) {
+                collectPaths(nodePath + key + '/', subNode[key]);
+            }
+        };
+
+        collectPaths(currentPath, node);
+        return paths;
     }
 
     // Helper to calculate depth of a subtree
@@ -258,3 +287,13 @@ export const truncateText = (text, maxLength) => {
 
     return text.slice(0, maxLength) + '...';
 };
+
+export function capitalizeString(input) {
+    const words = input.split('_');
+
+    const formattedWords = words.map(
+        (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+    );
+
+    return formattedWords.join(' ');
+}

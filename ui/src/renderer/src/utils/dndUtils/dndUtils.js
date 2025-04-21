@@ -1,8 +1,6 @@
 import 'tailwindcss/tailwind.css';
 
-import {
-    PointerSensor,
-} from '@dnd-kit/core';
+import { PointerSensor } from '@dnd-kit/core';
 
 export class NoButtonsSensor extends PointerSensor {
     static activators = [
@@ -24,8 +22,7 @@ export class NoButtonsSensor extends PointerSensor {
 }
 
 function isInteractiveElement(element, depth) {
-    if (depth == 0 || element == null)
-      return false;
+    if (depth == 0 || element == null) return false;
 
     const interactiveElements = ['button', 'input', 'textarea', 'select', 'option'];
 

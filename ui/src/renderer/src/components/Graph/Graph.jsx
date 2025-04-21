@@ -1,139 +1,84 @@
-import React from 'react';
-import 'tailwindcss/tailwind.css';
-import { ForceGraph2D, ForceGraph3D } from 'react-force-graph';
+import React, { useRef, useEffect, forwardRef } from 'react';
+import cytoscape from 'cytoscape';
 import { useNavigate } from 'react-router-dom';
-import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
-import { useTheme } from '../../contexts/ThemeContext/ThemeContext.jsx';
+import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
 
-/**
- * The component displays a graph visualization using D3.js.
- * The graph is rendered using a canvas element and D3.js force simulation.
- * The component fetches the graph data from the server and preprocesses it before rendering the graph.
- * The component also provides controls to adjust the graph layout and search for nodes.
- *
- * @function Graph
- * @returns {Graph}
- * @constructor
- */
-export default function Graph({
-    data,
-    node_r,
-    is3D,
-    selectedLinks,
-    setSelectedLinks,
-    interestedNodes,
-    setInterestedNodes,
-    onLinkClick,
-    labelSize,
-    fgRef,
-    linkWidth = 2,
-    spacingCoefficient = 0,
-    componentDistanceCoefficient = 0,
-    centerGravity = 0,
-}) {
-    const { useState, useCallback, useEffect } = React;
-
-    const [highlightNodes, setHighlightNodes] = useState(new Set());
-    const [highlightLinks, setHighlightLinks] = useState(new Set());
-    const { isDarkMode, toggleTheme } = useTheme();
+const Graph = forwardRef(function (
+    { onLinkClick, config, entryGraphColors, ...props },
+    cyRef,
+) {
+    const { isDarkMode } = useTheme();
     const navigate = useNavigate();
+    const containerRef = useRef(null);
 
-    const handleNodeHover = (node) => {
-        highlightNodes.clear();
+    useEffect(() => {
+        if (!containerRef.current) return;
 
-        if (node) {
-            highlightNodes.add(node);
-        }
+        const cy = cytoscape({
+            container: containerRef.current,
+            wheelSensitivity: 0.2,
+            renderer: {
+                name: 'canvas',
+                // webgl: true, // turns on WebGL mode
+            },
+        });
 
-        setHighlightNodes(new Set(highlightNodes));
-    };
+        cyRef.current = cy;
 
-    const handleLinkHover = (link) => {
-        highlightLinks.clear();
-        highlightNodes.clear();
+        // Handle edge selection
+        cy.on('tap', 'edge', (e) => {
+            const edge = e.target;
+            const source = edge.source();
+            const target = edge.target();
 
-        if (link) {
-            highlightLinks.add(link);
-            highlightNodes.add(link.source);
-            highlightNodes.add(link.target);
-        }
+            cy.nodes().removeClass('highlighted');
 
-        setHighlightNodes(new Set(highlightNodes));
-        setHighlightLinks(new Set(highlightLinks));
-    };
+            source.addClass('highlighted');
+            target.addClass('highlighted');
 
-    const handleLinkClick = (link) => {
-        selectedLinks.clear();
-        interestedNodes.clear();
+            const edgeData = {
+                id: edge.id(),
+                source: {
+                    id: source.id(),
+                    label: source.data('label'),
+                },
+                target: {
+                    id: target.id(),
+                    label: target.data('label'),
+                },
+            };
 
-        selectedLinks.add(link);
-        setSelectedLinks(new Set(selectedLinks));
-        setInterestedNodes(new Set([link.source.id, link.target.id]));
-        onLinkClick(link);
-    };
+            onLinkClick(edgeData);
+        });
 
-    const paintRing = useCallback(
-        (node, ctx) => {
-            ctx.beginPath();
-            ctx.arc(node.x, node.y, node_r * 1.25, 0, 2 * Math.PI, false);
-            ctx.fillStyle =
-                interestedNodes.has(node.id) && !highlightNodes.has(node)
-                    ? 'red'
-                    : 'orange';
-            ctx.fill();
-            if (!interestedNodes.has(node.id) || highlightNodes.has(node)) return;
-            ctx.font = `${labelSize}px Sans-Serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = isDarkMode ? 'white' : 'black';
-            ctx.fillText(
-                node.label,
-                node.x,
-                node.y - node_r * 1.25 - labelSize / 2 - 1,
-            );
-        },
-        [interestedNodes, node_r],
-    );
+        // Handle node selection
+        cy.on('tap', 'node', () => {
+            cy.nodes().removeClass('highlighted');
+        });
 
-    const GraphComponent = is3D ? ForceGraph3D : ForceGraph2D;
+        // Clear selection when clicking on the background
+        cy.on('tap', (e) => {
+            if (e.target === cy) {
+                cy.elements().unselect();
+                cy.nodes().removeClass('highlighted');
+            }
+        });
+
+        return () => {
+            cy.destroy();
+        };
+    }, [navigate, cyRef, containerRef]);
 
     return (
-        <GraphComponent
-            graphData={data}
-            ref={fgRef}
-            nodeRelSize={node_r}
-            autoPauseRedraw={false}
-            linkWidth={(link) =>
-                highlightLinks.has(link) || selectedLinks.has(link)
-                    ? linkWidth + 1
-                    : linkWidth
-            }
-            linkColor={(link) =>
-                highlightLinks.has(link)
-                    ? 'orange'
-                    : selectedLinks.has(link)
-                      ? 'red'
-                      : isDarkMode
-                        ? '#3A3A3A'
-                        : '#8A8A8A'
-            }
-            linkDirectionalParticles={(link) =>
-                highlightLinks.has(link) || selectedLinks.has(link)
-            } // Disable particles
-            nodeCanvasObjectMode={(node) =>
-                highlightNodes.has(node) || interestedNodes.has(node.id)
-                    ? 'before'
-                    : undefined
-            }
-            nodeLabel={(n) => n.label}
-            backgroundColor={isDarkMode ? '#151515' : '#f9f9f9'}
-            nodeCanvasObject={paintRing}
-            onLinkHover={handleLinkHover}
-            onNodeHover={handleNodeHover}
-            onNodeClick={(node) => {
-                navigate(createDashboardLink(node));
+        <div
+            ref={containerRef}
+            style={{
+                width: '100%',
+                height: '100vh',
+                backgroundColor: isDarkMode ? '#151515' : '#f9f9f9',
             }}
-            onLinkClick={handleLinkClick}
         />
     );
-}
+});
+
+export default Graph;

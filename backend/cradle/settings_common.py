@@ -6,10 +6,12 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-VERSION = "1.5.4"
+VERSION = "2.0.4"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+MEDIA_ROOT = os.path.join(BASE_DIR, "../media")
 
 # CORS_ALLOW_HEADERS = ["*"]
 CORS_ALLOW_ALL_ORIGINS = True
@@ -20,6 +22,9 @@ CORS_ORIGIN_ALLOW_ALL = True
 # Application definition
 INSTALLED_APPS = [
     "corsheaders",
+    "knowledge_graph.apps.KnowledgeGraphConfig",
+    "intelio.apps.IntelIOConfig",
+    "management.apps.ManagementConfig",
     "lsp.apps.LspConfig",
     "cradle_statistics.apps.CradleStatisticsConfig",
     "notifications.apps.NotificationsConfig",
@@ -40,11 +45,13 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_celery_beat",
     "rest_framework",
     "rest_framework_simplejwt",
     "django_extensions",
     "drf_spectacular",
     "django_filters",
+    "django.contrib.gis",
 ]
 
 MIDDLEWARE = [
@@ -123,6 +130,7 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 10,
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_AUTHENTICATION_CLASSES": (
+        "user.authentication.APIKeyAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -219,3 +227,9 @@ ADMIN_PATH = "29acee84-15db-481b-b602-2c1a579178d0/"
 CATALYST_HOST = "https://prod.blindspot.prodaft.com"
 CATALYST_PUBLISH_CATEGORY = "RESEARCH"
 CATALYST_PUBLISH_SUBCATEGORY = "4dff0ddf-fc2f-4a8e-b43f-1bc25973537b"
+
+## File Upload max size limit
+FILE_UPLOAD_MAX_MEMORY_SIZE = 200 * 1024 * 1024
+
+## Default settings dict
+DEFAULT_SETTINGS = {}

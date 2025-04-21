@@ -11,6 +11,8 @@ import {
     HalfMoon,
     HelpCircle,
     StatsReport,
+    CloudUpload,
+    DataTransferBoth,
 } from 'iconoir-react';
 import { Graph, QuestionMark } from '@phosphor-icons/react';
 import SidebarItem from '../SidebarItem/SidebarItem';
@@ -92,12 +94,12 @@ export default function Sidebar({
         navigate(graphViewLocation);
     }, [navigate]);
 
-    const reportsLocation = '/reports';
-    const handleReports = useCallback(() => {
-        navigate(reportsLocation);
+    const connectivityLocation = '/connectivity';
+    const handleConnectivity = useCallback(() => {
+        navigate(connectivityLocation);
     }, [navigate]);
 
-    const accountSettingsLocation = '/account/me';
+    const accountSettingsLocation = '/account';
     const handleAccountSettings = useCallback(() => {
         navigate(accountSettingsLocation);
     }, [navigate]);
@@ -154,10 +156,10 @@ export default function Sidebar({
                                 highlightedLocation={graphViewLocation}
                             />
                             <SidebarItem
-                                handleClick={handleReports}
-                                icon={<StatsReport />}
-                                text='Reports'
-                                highlightedLocation={reportsLocation}
+                                handleClick={handleConnectivity}
+                                icon={<DataTransferBoth />}
+                                text='Import/Export'
+                                highlightedLocation={connectivityLocation}
                             />
 
                             <SidebarItem

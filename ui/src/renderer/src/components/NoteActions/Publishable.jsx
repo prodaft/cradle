@@ -21,10 +21,7 @@ import ReferenceTree from '../ReferenceTree/ReferenceTree';
  * @param {React.ReactNode} props.customControls - Custom controls to display in the header
  * @param {boolean} props.hideDefaultControls - Whether to hide the default controls
  */
-export default function Publishable({
-    note,
-    setAlert,
-}) {
+export default function Publishable({ note, setAlert }) {
     const [isPublishable, setIsPublishable] = useState(note.publishable);
     const navigate = useNavigate();
 
@@ -45,22 +42,21 @@ export default function Publishable({
         note.publishable = isPublishable;
     }, [isPublishable, note]);
 
-
     return (
-          <span className='pb-1 space-x-1 flex flex-row'>
-              <label
-                  htmlFor={`publishable-switch-${note.id}`}
-                  className='text-xs dark:text-zinc-300 hover:cursor-pointer'
-              >
-                  Publishable
-              </label>
-              <input
-                  checked={isPublishable}
-                  id={`publishable-switch-${note.id}`}
-                  type='checkbox'
-                  className='switch switch-ghost-primary'
-                  onChange={() => handleTogglePublishable(note.id)}
-              />
-          </span>
+        <span className='pb-1 space-x-1 flex flex-row'>
+            <label
+                htmlFor={`publishable-switch-${note.id}`}
+                className='text-xs dark:text-zinc-300 hover:cursor-pointer'
+            >
+                Publishable
+            </label>
+            <input
+                checked={isPublishable}
+                id={`publishable-switch-${note.id}`}
+                type='checkbox'
+                className='switch switch-ghost-primary'
+                onChange={() => handleTogglePublishable(note.id)}
+            />
+        </span>
     );
 }

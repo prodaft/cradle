@@ -43,3 +43,32 @@ export function requestEntityAccess(id, subtype = null) {
         params: subtype && { subtype },
     });
 }
+
+/**
+ * Function to get available enrichment techniques
+ *
+ * @param {string} id - The entry's id
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export function getEnrichmentTechniques(id) {
+    return authAxios({
+        method: 'GET',
+        url: `/entries/entries/${id}/enrich/`,
+    });
+}
+
+/**
+ * Function to get available enrichment techniques
+ *
+ * @param {string} id - The entry's id
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export function enrichEntry(id, technique) {
+    return authAxios({
+        method: 'POST',
+        url: `/entries/entries/${id}/enrich/`,
+        data: {
+            enricher: technique,
+        },
+    });
+}

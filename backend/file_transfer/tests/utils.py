@@ -107,3 +107,4 @@ class FileTransferTestCase(TestCase):
         self.patcher_get.stop()
         self.patcher_bucket.stop()
         self.patcher_stat_object.stop()
+        self.patcher_uuid.stop()

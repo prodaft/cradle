@@ -24,8 +24,11 @@ ENV VITE_API_BASE_URL="http://localhost:8000/api"
 RUN npm run build-web
 
 RUN rm -rf /www/cradle
-RUN cp -r dist /www/cradle
+RUN cp -r dist /cradle
 RUN chown -R www:www /www
+
+WORKDIR /
+RUN rm -rf /ui
 
 COPY ./docker/entrypoint_ui.sh entrypoint_ui.sh
 RUN chmod +x ./entrypoint_ui.sh

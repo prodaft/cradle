@@ -1,7 +1,12 @@
 // eslint-disable-next-line no-undef
 module.exports = {
     darkMode: ['selector', '[data-theme="dark"]'],
-    content: ['./src/**/*.{html,js,jsx,ts,tsx}', './src/index.html'],
+    content: [
+        './src/**/*.{html,js,jsx,ts,tsx}',
+        './src/index.html',
+        './node_modules/react-tailwindcss-datepicker/dist/index.esm.js',
+    ],
+    plugins: [],
     theme: {
         extend: {
             colors: {
@@ -14,34 +19,34 @@ module.exports = {
                     css: {
                         lineHeight: '24px',
                         li: {
-                          marginTop: '4px',
+                            marginTop: '4px',
                         },
                         h1: {
-                          marginTop: '16px',
-                          marginBottom: '16px',
-                          borderBottomWidth: '1px',
-                          borderBottomColor: 'rgba(61, 68, 77, 0.7)',
-                          borderBottomStyle: 'solid',
-                          paddingBottom: '8px',
+                            marginTop: '16px',
+                            marginBottom: '16px',
+                            borderBottomWidth: '1px',
+                            borderBottomColor: 'rgba(61, 68, 77, 0.7)',
+                            borderBottomStyle: 'solid',
+                            paddingBottom: '8px',
                         },
                         h2: {
-                          marginTop: '16px',
-                          marginBottom: '16px',
-                          borderBottomWidth: '1px',
-                          borderBottomColor: 'rgba(61, 68, 77, 0.7)',
-                          borderBottomStyle: 'solid',
-                          paddingBottom: '8px',
+                            marginTop: '16px',
+                            marginBottom: '16px',
+                            borderBottomWidth: '1px',
+                            borderBottomColor: 'rgba(61, 68, 77, 0.7)',
+                            borderBottomStyle: 'solid',
+                            paddingBottom: '8px',
                         },
                         h3: {
-                          marginTop: '16px',
-                          marginBottom: '16px',
-                          borderBottomWidth: '1px',
-                          borderBottomColor: 'rgba(61, 68, 77, 0.7)',
-                          borderBottomStyle: 'solid',
-                          paddingBottom: '8px',
+                            marginTop: '16px',
+                            marginBottom: '16px',
+                            borderBottomWidth: '1px',
+                            borderBottomColor: 'rgba(61, 68, 77, 0.7)',
+                            borderBottomStyle: 'solid',
+                            paddingBottom: '8px',
                         },
                         hr: {
-                          borderTopWidth: '3px',
+                            borderTopWidth: '3px',
                         },
                         pre: {
                             padding: theme('padding.4'),
@@ -82,7 +87,7 @@ module.exports = {
                 themeName: 'light',
                 colorScheme: 'light',
                 colors: {
-                    primary: '#f68d2e',
+                    primary: '#253746',
                     backgroundPrimary: '#e8e8e8',
                     secondary: '#ffffff',
                     backgroundSecondary: '#555161',

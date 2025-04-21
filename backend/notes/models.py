@@ -1,50 +1,18 @@
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
-from django_lifecycle.mixins import LifecycleModelMixin
+from django_lifecycle import AFTER_CREATE, AFTER_UPDATE, hook
+from django_lifecycle.mixins import LifecycleModelMixin, transaction
+
+from intelio.models.base import BaseDigest
 
 from .markdown.to_links import LinkTreeNode, cradle_connections, heading_hierarchy
-from entries.models import Entry
+from entries.models import Entry, Relation
 from logs.models import LoggableModelMixin
 from .managers import NoteManager
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
-from django.contrib.contenttypes.models import ContentType
-from django_lifecycle import LifecycleModel
 
 import uuid
 from user.models import CradleUser
 from core.fields import BitStringField
-
-
-class Relation(LifecycleModel):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    src_entry = models.ForeignKey(
-        Entry, related_name="src_relations", on_delete=models.CASCADE
-    )
-    dst_entry = models.ForeignKey(
-        Entry, related_name="dst_relations", on_delete=models.CASCADE
-    )
-
-    # Generic foreign key to support different types of objects
-    object_id = models.UUIDField()
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    content_object = GenericForeignKey("content_type", "object_id")
-
-    access_vector: BitStringField = BitStringField(
-        max_length=2048, null=False, default=1 << 2047, varying=False
-    )
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["src_entry", "dst_entry", "content_type", "object_id"],
-                name="unique_src_dst_object",
-            )
-        ]
-
-    indexes = [
-        models.Index(fields=["src_entry"], name="idx_src_entry"),
-        models.Index(fields=["dst_entry"], name="idx_dst_entry"),
-        models.Index(fields=["content_type", "object_id"], name="idx_content_object"),
-    ]
 
 
 class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
@@ -76,6 +44,12 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
 
     relations = GenericRelation(Relation, related_query_name="note")
 
+    digest = models.ForeignKey(
+        BaseDigest, related_name="notes", null=True, on_delete=models.CASCADE
+    )
+
+    last_linked = models.DateTimeField(default=None, null=True)
+
     _reference_tree = None
 
     @property
@@ -91,6 +65,18 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
 
     def delete(self):
         super().delete()
+
+    @hook(AFTER_CREATE)
+    def after_create(self):
+        from .tasks import propagate_acvec
+
+        transaction.on_commit(lambda: propagate_acvec.apply_async((self.id,)))
+
+    @hook(AFTER_UPDATE, when="access_vector", has_changed=True)
+    def after_access_vector_update(self):
+        from .tasks import propagate_acvec
+
+        transaction.on_commit(lambda: propagate_acvec.apply_async((self.id,)))
 
 
 class ArchivedNote(models.Model):

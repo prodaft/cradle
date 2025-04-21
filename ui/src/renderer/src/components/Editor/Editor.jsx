@@ -246,7 +246,7 @@ export default function Editor({
                             id='note-outline-toggle'
                             name='note-outline-toggle'
                             type='button'
-                            className='flex flex-row items-center hover:bg-gray-4 tooltip tooltip-right tooltip-primary text-cradle2'
+                            className='flex flex-row items-center hover:bg-gray-4 tooltip tooltip-right tooltip-primary text-primary'
                             data-tooltip={'Toggle Outline'}
                             onClick={() => setShowOutline(!showOutline)}
                         >

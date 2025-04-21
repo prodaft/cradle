@@ -133,3 +133,57 @@ class MinioClient:
             return self.client.get_object(bucket_name, object_name=path)
         except Exception:
             return None
+
+    def list_files(self, bucket_name: str, prefix: str = "") -> list[str]:
+        """Lists all files in the specified bucket, optionally filtered by prefix.
+
+        Args:
+            bucket_name: The name of the bucket to list files from.
+            prefix: Only include objects with keys starting with this prefix.
+
+        Returns:
+            A list of object names (file paths) in the bucket.
+        """
+        assert self.client is not None
+
+        try:
+            objects = self.client.list_objects(
+                bucket_name, prefix=prefix, recursive=True
+            )
+            return [obj.object_name for obj in objects]
+        except Exception:
+            return []
+
+    def delete_files(self, bucket_name: str, file_names: list[str]) -> None:
+        """Deletes multiple files from the specified bucket.
+
+        Args:
+            bucket_name: The name of the bucket where files will be deleted
+            file_names: List of file paths (object names) to delete from the bucket
+
+        Raises:
+            MinioObjectNotFound: If any of the specified files don't exist in the bucket
+            Exception: For other MinIO-related errors
+        """
+        assert self.client is not None  # required by mypy
+
+        # First verify all files exist
+        for file_name in file_names:
+            if not self.file_exists_at_path(bucket_name, file_name):
+                raise MinioObjectNotFound(
+                    f"File {file_name} not found in bucket {bucket_name}"
+                )
+
+        # If all files exist, proceed with deletion
+        try:
+            # Minio's remove_objects method is more efficient for multiple deletions
+            errors = self.client.remove_objects(bucket_name, file_names)
+            for error in errors:
+                # This should theoretically never happen since we checked existence first,
+                # but we handle it just in case
+                raise Exception(
+                    f"Error deleting object: {error.object_name}, error: {error}"
+                )
+        except Exception as e:
+            # Catch any other MinIO errors
+            raise Exception(f"Error deleting files: {str(e)}")

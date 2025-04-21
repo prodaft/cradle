@@ -3,13 +3,15 @@ import os
 from celery import Celery
 from django.conf import settings
 from django.apps import apps
+from celery.schedules import crontab
+
+import json
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cradle.settings")
 
-app = Celery("cradle")
+app = Celery("cradle", broker=settings.BROKER, backend=settings.RESULT_BACKEND)
 
 app.config_from_object(settings)
-app.conf.broker_url = settings.REDIS_URL
 
 app.autodiscover_tasks(lambda: [n.name for n in apps.get_app_configs()])
 
@@ -23,13 +25,24 @@ app.conf.task_routes = {
     "notes.tasks.entry_class_creation_task": {"queue": "notes"},
     "notes.tasks.entry_population_task": {"queue": "notes"},
     "entries.tasks.remap_notes_task": {"queue": "notes"},
+    "entries.tasks.simulate_graph": {"queue": "graph"},
+    "entries.tasks.refresh_edges_materialized_view": {"queue": "graph"},
     "notes.tasks.connect_aliases": {"queue": "notes"},
+    "notes.tasks.ping_entries": {"queue": "notes"},
     "publish.tasks.generate_report": {"queue": "publish"},
     "publish.tasks.edit_report": {"queue": "publish"},
     "publish.tasks.import_json_report": {"queue": "import"},
     "publish.tasks.download_file_for_note": {"queue": "import"},
     "notes.tasks.propagate_acvec": {"queue": "access"},
+    "intelio.tasks.core.propagate_acvec": {"queue": "access"},
     "entries.tasks.update_accesses": {"queue": "access"},
+    "entries.tasks.scan_for_children": {"queue": "enrich"},
+    "intelio.tasks.core.enrich_periodic": {"queue": "enrich"},
+    "intelio.tasks.core.enrich_entries": {"queue": "enrich"},
+    "intelio.tasks.core.start_digest": {"queue": "digest"},
+    "intelio.tasks.falcon.digest_chunk": {"queue": "digest"},
+    "entries.tasks.delete_hanging_artifacts": {"queue": "cleanup"},
+    "file_transfer.tasks.delete_hanging_files": {"queue": "cleanup"},
 }
 
 app.conf.task_default_priority = 5
@@ -54,4 +67,27 @@ app.conf.task_soft_time_limit = 15 * 60
 app.conf.task_default_retry_delay = 180
 app.conf.task_max_retries = 3
 
-app.conf.beat_schedule = {}
+app.conf.beat_scheduler = "django_celery_beat.schedulers:DatabaseScheduler"
+
+# Set up periodic tasks
+app.conf.beat_schedule = {
+    "refresh-edges-materialized-view-every-night": {
+        "task": "entries.tasks.refresh_edges_materialized_view",
+        "schedule": crontab(hour=3, minute=0),
+        "kwargs": {
+            "simulate": True,
+        },
+    },
+    "delete-hanging-artifacts-every-night": {
+        "task": "entries.tasks.delete_hanging_artifacts",
+        "schedule": crontab(hour=2, minute=0),
+    },
+    "delete-hanging-files-every-night": {
+        "task": "entries.tasks.delete_hanging_artifacts",
+        "schedule": crontab(hour=2, minute=0),
+    },
+    "enrich_periodic-check-minutely": {
+        "task": "intelio.tasks.core.enrich_periodic",
+        "schedule": crontab(minute="*/1"),
+    },
+}

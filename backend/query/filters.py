@@ -7,6 +7,9 @@ class BaseStringFilter(django_filters.BaseInFilter, django_filters.CharFilter):
 
 
 class EntryFilter(django_filters.FilterSet):
+    type = django_filters.CharFilter(
+        field_name="entry_class__type", lookup_expr="exact"
+    )
     subtype = BaseStringFilter(field_name="entry_class__subtype", lookup_expr="in")
     name = django_filters.CharFilter(lookup_expr="icontains")
     name_exact = django_filters.CharFilter(method="filter_name_exact")
@@ -16,7 +19,7 @@ class EntryFilter(django_filters.FilterSet):
 
     class Meta:
         model = Entry
-        fields = ["subtype", "name", "referenced_in"]
+        fields = ["type", "subtype", "name", "referenced_in"]
 
     def filter_name_exact(self, queryset, name, value):
         if value:

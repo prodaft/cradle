@@ -58,7 +58,7 @@ class DeleteUserTest(UserTestCase):
 
     def test_delete_user_authorized(self):
         response = self.client.delete(
-            reverse("user_detail", kwargs={"user_id": self.user.id}),
+            reverse("user_detail", kwargs={"user_id": str(self.user.id)}),
             **self.headers_normal,
         )
 

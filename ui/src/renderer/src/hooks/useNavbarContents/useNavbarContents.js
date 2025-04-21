@@ -18,7 +18,7 @@ const useNavbarContents = (contents, dependencies) => {
         if (contents instanceof Function) {
             setNavbarContents(contents());
         } else {
-          setNavbarContents([contents]);
+            setNavbarContents([contents]);
         }
 
         return () => {

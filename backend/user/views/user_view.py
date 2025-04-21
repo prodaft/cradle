@@ -19,6 +19,9 @@ from ..serializers import (
     UserRetrieveSerializer,
 )
 from ..models import CradleUser
+from management.settings import cradle_settings
+import secrets
+import bcrypt
 
 
 @extend_schema_view(
@@ -57,6 +60,11 @@ class UserList(APIView):
         return Response(serializer.data)
 
     def post(self, request):
+        if not cradle_settings.users.allow_registration:
+            return Response(
+                "User registration is disabled.", status=status.HTTP_403_FORBIDDEN
+            )
+
         serializer = UserCreateSerializer(data=request.data)
 
         if serializer.is_valid():
@@ -64,9 +72,23 @@ class UserList(APIView):
                 email=serializer.validated_data["email"]
             ).exists():
                 user = serializer.save()
+                admins = CradleUser.objects.filter(role="admin")
+                with transaction.atomic():
+                    for i in admins:
+                        NewUserNotification.objects.create(
+                            user_id=i.id,
+                            new_user=user,
+                            message=f"A new user has registered: {user.username}",
+                        )
                 user.send_email_confirmation()
+                serializer = UserRetrieveSerializer(user)
 
-            return Response(status=status.HTTP_200_OK)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response(
+                    "User with this email already exists.",
+                    status=status.HTTP_409_CONFLICT,
+                )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -162,6 +184,12 @@ class UserDetail(APIView):
                 "You are not allowed to edit this user.",
                 status=status.HTTP_403_FORBIDDEN,
             )
+
+        if request.data.get("username", None) == edited.username:
+            request.data.pop("username")
+
+        if request.data.get("email", None) == edited.email:
+            request.data.pop("email")
 
         if editor.is_cradle_admin and editor.pk != edited.pk:
             serializer = UserCreateSerializerAdmin(
@@ -397,6 +425,36 @@ class ManageUser(APIView):
         return Response(self.get_tokens_for_user(user), status=status.HTTP_200_OK)
 
 
+class APIKey(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id):
+        requesting_user = cast(CradleUser, request.user)
+
+        if user_id == "me":
+            user = requesting_user
+        else:
+            user = CradleUser.objects.get(id=user_id)
+
+        if not (
+            requesting_user.pk == user.pk
+            or (requesting_user.is_cradle_admin and not user.is_cradle_admin)
+        ):
+            return Response(
+                "You are not allowed to generate API key for this user.",
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        key = secrets.token_hex(24)
+        hashed_key = bcrypt.hashpw(key.encode(), bcrypt.gensalt()).decode()
+        user.api_key = hashed_key
+        user.save(update_fields=["api_key"])
+        return Response(
+            {"api_key": key},
+        )
+
+
 @extend_schema_view(
     get_tokens_for_user=extend_schema(exclude=True),
     send_password_reset=extend_schema(
@@ -478,16 +536,6 @@ class EmailConfirm(APIView):
             user.email_confirmed = True
             user.email_confirmation_token = ""
             user.save()
-
-            admins = CradleUser.objects.filter(role="admin")
-
-            with transaction.atomic():
-                for i in admins:
-                    NewUserNotification.objects.create(
-                        user_id=i.id,
-                        new_user=user,
-                        message=f"A new user has registered: {user.username}",
-                    )
 
             return Response("Email confirmed.", status=status.HTTP_200_OK)
 

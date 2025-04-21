@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../Sidebar/Sidebar';
 import Navbar from '../Navbar/Navbar';
-import { useCallback, useMemo, useState } from 'react';
+import { Suspense, useCallback, useMemo, useState } from 'react';
 import { IconoirProvider } from 'iconoir-react';
 import FleetingNotesPanel from '../FleetingNotesPanel/FleetingNotesPanel';
 import NotificationsPanel from '../NotificationsPanel/NotificationsPanel';
@@ -73,10 +73,9 @@ export default function Home() {
     return (
         <IconoirProvider
             iconProps={{
-                color: '#f68d2e',
-                strokeWidth: 1,
                 width: '1.7em',
                 height: '1.7em',
+                className: 'text-primary',
             }}
         >
             <div className='flex flex-col w-screen h-full overflow-hidden'>
@@ -107,12 +106,14 @@ export default function Home() {
                         )}
                     </div>
                     <div className='flex-grow overflow-y-auto w-full'>
-                        <Outlet
-                            context={{
-                                setNavbarContents,
-                                refreshFleetingNotes,
-                            }}
-                        />
+                        <Suspense fallback={null}>
+                            <Outlet
+                                context={{
+                                    setNavbarContents,
+                                    refreshFleetingNotes,
+                                }}
+                            />
+                        </Suspense>
                     </div>
                     <div
                         className={`transition-all duration-150 ${showFleetingNotes ? 'w-[40rem]' : 'w-0'} overflow-hidden`}

@@ -1,4 +1,3 @@
-from django.db import transaction
 from django.db.models import Q, Count
 from rest_framework.response import Response
 from rest_framework.request import Request
@@ -9,6 +8,8 @@ from rest_framework.permissions import IsAuthenticated
 
 from core.pagination import TotalPagesPagination
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+
+from entries.models import Entry
 
 from ..utils import get_guide_note
 
@@ -88,9 +89,29 @@ class NoteList(APIView):
 
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")
+            try:
+                references_at_least = int(
+                    request.query_params.get("references_at_least", len(entrylist))
+                )
+            except ValueError:
+                return Response(
+                    "Invalid references_at_least value.",
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             queryset = queryset.annotate(
                 matching_entries=Count("entries", filter=Q(entries__in=entrylist))
-            ).filter(matching_entries=len(entrylist))
+            ).filter(matching_entries=references_at_least)
+        elif "linked_to" in request.query_params:
+            entryid = request.query_params.get("linked_to")
+            entry = Entry.objects.filter(id=entryid)
+
+            if not entry.exists():
+                return Response("Entry not found.", status=status.HTTP_404_NOT_FOUND)
+
+            entry = entry.first()
+            aliasset = entry.aliasqs(user)
+            queryset = queryset.filter(entries__in=aliasset).distinct()
 
         filterset = NoteFilter(request.query_params, queryset=queryset)
 
@@ -245,6 +266,8 @@ class NoteDetail(APIView):
         return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
 
     def delete(self, request: Request, note_id_s: str) -> Response:
+        from entries.tasks import refresh_edges_materialized_view
+
         if note_id_s.startswith("guide"):
             return Response(
                 "You cannot delete the guide note!", status=status.HTTP_403_FORBIDDEN
@@ -270,8 +293,12 @@ class NoteDetail(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        with transaction.atomic():
-            note_to_delete.delete()
-            Note.objects.delete_unreferenced_entries()
+        artifact_ids = set(
+            note_to_delete.entries.is_artifact().values_list("id", flat=True)
+        )
+        note_to_delete.delete()
+        Entry.objects.filter(id__in=artifact_ids).unreferenced().delete()
+
+        refresh_edges_materialized_view.apply_async(simulate=True)
 
         return Response("Note was deleted.", status=status.HTTP_200_OK)

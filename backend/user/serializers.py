@@ -67,7 +67,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
             The created User entry
         """
 
-        return CradleUser.objects.create_user(**validated_data)
+        return CradleUser.objects.create_user(
+            **validated_data,
+        )
 
     def update(self, instance: CradleUser, validated_data: dict[str, Any]):
         if validated_data.get("username", instance.username) != instance.username:

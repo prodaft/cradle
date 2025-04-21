@@ -3,3 +3,4 @@
 .envrc
 inventory.yml
 docker-compose.yml
+media

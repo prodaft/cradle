@@ -1,16 +1,45 @@
 services:
   postgres:
-    image: postgres:16.8
+    image: pgrouting/pgrouting:16-3.5-3.7
     container_name: cradle_postgres
+    command: postgres -c log_statement=all
     environment:
-     - POSTGRES_DB=cradle
-     - POSTGRES_USER=cradle
-     - POSTGRES_PASSWORD=cradle
+      - POSTGRES_DB=cradle
+      - POSTGRES_USER=cradle
+      - POSTGRES_PASSWORD=cradle
     volumes:
-    - pg_data:/var/lib/postgresql/data
+      - pg_data:/var/lib/postgresql/data
     networks:
       default:
         ipv4_address: 192.168.31.40
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: cradle_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@cradle.sh
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_LISTEN_PORT: 80
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      default:
+        ipv4_address: 192.168.31.43
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: cradle_rabbitmq
+    ports:
+      - "5672:5672"     # AMQP port
+      - "15672:15672"   # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: cradle
+      RABBITMQ_DEFAULT_PASS: cradle
+    networks:
+      default:
+        ipv4_address: 192.168.31.44
 
   minio:
     image: quay.io/minio/minio:RELEASE.2024-05-28T17-19-04Z
@@ -31,7 +60,8 @@ services:
         ipv4_address: 192.168.31.41
 
   redis:
-    image: "redis:alpine"
+    image: redis:alpine
+    container_name: cradle_redis
     networks:
       default:
         ipv4_address: 192.168.31.42

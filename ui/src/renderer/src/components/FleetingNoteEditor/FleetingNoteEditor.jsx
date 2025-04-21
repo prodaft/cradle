@@ -14,15 +14,18 @@ import {
     updateFleetingNote,
 } from '../../services/fleetingNotesService/fleetingNotesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 
 import TextEditor from '../TextEditor/TextEditor';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { keymap } from '@codemirror/view';
+import NavbarSwitch from '../NavbarSwitch/NavbarSwitch';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
+import { useModal } from '../../contexts/ModalContext/ModalContext';
 
 export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
     const [markdownContent, setMarkdownContent] = useState('');
     const [fileData, setFileData] = useState([]);
+    const [publishable, setPublishable] = useState(false);
     const [saving, setSaving] = useState(false);
     const savingRef = useRef(saving);
 
@@ -34,11 +37,11 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
     const { refreshFleetingNotes } = useOutletContext();
-    const [dialog, setDialog] = useState(false);
     const { id } = useParams();
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(true);
     const [editorExtensions, setEditorExtensions] = useState([]);
     const prevIdRef = useRef(null);
+    const { setModal } = useModal();
 
     // Ensure the ref to the markdown content is correct
     useEffect(() => {
@@ -158,7 +161,7 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
     };
 
     // Function to make final note
-    const handleMakeFinal = (publishable) => () => {
+    const handleMakeFinal = () => {
         if (!validateContent()) return;
         if (id) {
             saveFleetingNoteAsFinal(id, publishable)
@@ -235,46 +238,35 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
 
     useNavbarContents(
         id !== NEW_NOTE_PLACEHOLDER_ID && [
-            <NavbarButton
-                key='editor-delete-btn'
-                icon={<Trash />}
-                text={'Delete'}
-                onClick={() => setDialog(true)}
-            />,
-            <NavbarDropdown
-                key='editor-save-final-btn'
-                icon={<FloppyDisk />}
-                text={'Save As Final'}
-                contents={[
-                    {
-                        label: 'Publishable',
-                        handler: handleMakeFinal(true),
-                    },
-                    {
-                        label: 'Not Publishable',
-                        handler: handleMakeFinal(false),
-                    },
-                ]}
+            <NavbarSwitch
+                key='editor-publishable-switch'
+                text={'Publishable'}
+                checked={publishable}
+                onChange={(e) => setPublishable(e.target.checked)}
             />,
             <NavbarButton
                 key='editor-save-btn'
                 icon={<FloppyDisk />}
-                text={'Save'}
-                onClick={() => handleSaveNote('Changes saved successfully.')}
+                text={'Save As Final'}
+                onClick={handleMakeFinal}
+            />,
+            <NavbarButton
+                key='editor-delete-btn'
+                icon={<Trash />}
+                text={'Delete'}
+                onClick={() =>
+                    setModal(ConfirmDeletionModal, {
+                        text: `Are you sure you want to delete this fleeting note?`,
+                        onConfirm: handleDeleteNote,
+                    })
+                }
             />,
         ],
-        [auth, id],
+        [auth, id, publishable],
     );
 
     return (
         <>
-            <ConfirmationDialog
-                open={dialog}
-                setOpen={setDialog}
-                title={'Confirm Deletion'}
-                description={'This is permanent'}
-                handleConfirm={handleDeleteNote}
-            />
             <div className='w-full h-full p-1.5 relative' ref={textEditorRef}>
                 <TextEditor
                     noteid={id}

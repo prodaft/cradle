@@ -41,7 +41,6 @@ export default function TextEditor({
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-
     useEffect(() => {
         const workerInstance = parseWorker();
 

@@ -1,14 +1,21 @@
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django_lifecycle import AFTER_UPDATE, LifecycleModel, hook
+from django.utils import timezone
+from django_lifecycle import AFTER_CREATE, AFTER_UPDATE, LifecycleModel, hook
+from django_lifecycle.conditions import WhenFieldHasChanged
 from django_lifecycle.mixins import LifecycleModelMixin, transaction
 from django.db.models import Q
 
+from core.fields import BitStringField
 from logs.models import LoggableModelMixin
 
 from .managers import (
     EntityManager,
     ArtifactManager,
     EntryManager,
+    RelationManager,
+    EdgeManager,
 )
 
 from .exceptions import (
@@ -16,11 +23,38 @@ from .exceptions import (
     InvalidClassFormatException,
     InvalidEntryException,
     InvalidRegexException,
+    OutOfEntitySlotsException,
 )
-from .enums import EntryType
+from .enums import EntryType, RelationReason
+from intelio.enums import EnrichmentStrategy
 
 import uuid
 import re
+
+from django.contrib.gis.db import models as gis_models
+
+fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
+
+
+class Edge(LifecycleModel):
+    id = models.CharField(primary_key=True)
+    src = models.BigIntegerField()
+    dst = models.BigIntegerField()
+
+    objects = EdgeManager()
+
+    access_vector: BitStringField = BitStringField(
+        max_length=2048, null=False, default=1 << 2047, varying=False
+    )
+
+    created_at = models.DateTimeField()
+    last_seen = models.DateTimeField()
+    virtual = models.BooleanField()
+
+    class Meta:
+        managed = False
+        db_table = "edges"
+        unique_together = ["src", "dst"]
 
 
 class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
@@ -38,12 +72,17 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
         max_length=65536, blank=True, default=""
     )
 
-    catalyst_type: models.CharField = models.CharField(
-        max_length=64, blank=True, default=""
-    )
     color: models.CharField = models.CharField(max_length=7, default="#e66100")
 
     prefix: models.CharField = models.CharField(max_length=64, blank=True)
+
+    children = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        blank=True,
+        related_name="parents",
+        help_text="Possible children of this entry class",
+    )
 
     @classmethod
     def get_default_pk(cls):
@@ -137,6 +176,13 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
         if EntryClass.objects.filter(subtype__in=possible_parents).exists():
             return EntryClass.objects.filter(subtype__in=possible_parents).first()
 
+        possible_children = EntryClass.objects.filter(
+            subtype__startswith=self.subtype + "/"
+        )
+
+        if possible_children.exists():
+            return possible_children.first()
+
         return False
 
     def save(self, *args, **kwargs):
@@ -176,6 +222,20 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
     def __repr__(self):
         return self.subtype
 
+    def match(self, s):
+        """
+        Find all matches of regex or options in a string
+        """
+        if self.type == EntryType.ENTITY:
+            return []
+
+        if self.regex:
+            return re.findall(self.regex, s)
+        elif self.options:
+            return [o for o in self.options.split("\n") if o.lower() in s.lower()]
+
+        return []
+
     @hook(AFTER_UPDATE, when="type", has_changed=True)
     def update_access_level_of_children(self):
         for i in self.entries.all():
@@ -183,8 +243,9 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
 
 
 class Entry(LifecycleModel, LoggableModelMixin):
-    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    id = models.BigAutoField(primary_key=True)
     is_public: models.BooleanField = models.BooleanField(default=False)
+
     entry_class: models.ForeignKey[uuid.UUID, EntryClass] = models.ForeignKey(
         EntryClass,
         on_delete=models.CASCADE,
@@ -194,7 +255,12 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
     name: models.CharField = models.CharField(max_length=255)
     description: models.TextField = models.TextField(null=True, blank=True)
-    timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    last_seen: models.DateTimeField = models.DateTimeField(
+        auto_now_add=True, null=False
+    )
+
+    relations = GenericRelation("entries.Relation", related_query_name="entry")
 
     # New field: acvec_offset is an unsigned integer.
     acvec_offset: models.PositiveIntegerField = models.PositiveIntegerField(default=0)
@@ -202,6 +268,7 @@ class Entry(LifecycleModel, LoggableModelMixin):
     status: models.JSONField = models.JSONField(default=dict, null=True)
 
     class Meta:
+        ordering = ["-last_seen"]
         constraints = [
             models.UniqueConstraint(
                 fields=["name", "entry_class"], name="unique_name_class"
@@ -218,6 +285,19 @@ class Entry(LifecycleModel, LoggableModelMixin):
     entities = EntityManager()
     artifacts = ArtifactManager()
 
+    location: gis_models.PointField = gis_models.PointField(
+        null=True, blank=True, srid=0, dim=2
+    )
+    degree: models.IntegerField = models.IntegerField(default=0)
+
+    aliases = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        blank=True,
+        related_name="aliased_by",
+        help_text="Entries that are equivalent to this one",
+    )
+
     def __init__(self, *args, **kwargs):
         if "name" in kwargs:
             kwargs["name"] = kwargs["name"].strip()
@@ -228,16 +308,11 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
     def __eq__(self, other):
         if isinstance(other, Entry):
-            return (
-                self.id == other.id
-                and self.name == other.name
-                and self.description == other.description
-                and self.entry_class == other.entry_class
-            )
+            return self.id == other.id
         return NotImplemented
 
     def __hash__(self):
-        return hash((self.id, self.name, self.description, self.entry_class))
+        return hash(self.id)
 
     def save(self, *args, **kwargs):
         if not self.entry_class.validate_text(self.name):
@@ -264,6 +339,9 @@ class Entry(LifecycleModel, LoggableModelMixin):
                     offset += 1
                 self.acvec_offset = offset
 
+        if self.acvec_offset > 2047:
+            raise OutOfEntitySlotsException()
+
     def delete(self, *args, **kwargs):
         from entries.tasks import remap_notes_task
 
@@ -281,6 +359,13 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
         super().delete(*args, **kwargs)
 
+    def ping(self):
+        """
+        Set the timestamp to current time
+        """
+        self.last_seen = timezone.now()
+        self.save(update_fields=["last_seen"])
+
     def propagate_from(self, log):
         if self.entry_class.type == EntryType.ENTITY:
             super().propagate_from(log)
@@ -297,8 +382,101 @@ class Entry(LifecycleModel, LoggableModelMixin):
     def log_fetch(self, user, details=None):
         super().log_fetch(user, details)
 
-    @hook(AFTER_UPDATE, when="acvec_offset", has_changed=True)
+    @hook(AFTER_UPDATE, condition=WhenFieldHasChanged("acvec_offset", True))
     def acvec_offset_updated(self):
         from .tasks import update_accesses
 
         transaction.on_commit(lambda: update_accesses.apply_async((self.id,)))
+
+    @hook(AFTER_CREATE)
+    def enrich(self):
+        from intelio.tasks import enrich_entries
+
+        content_type = ContentType.objects.get_for_model(self)
+
+        for e in self.entry_class.enrichers.filter(
+            strategy=EnrichmentStrategy.ON_CREATE, enabled=True
+        ):
+            enrich_entries.apply_async(
+                e.id,
+                [self.id],
+                content_type.id,
+                self.id,
+                None,
+            )
+
+    def get_acvec(self):
+        return 1 | (1 << self.acvec_offset)
+
+    def reconnect_aliases(self):
+        from entries.models import Relation
+
+        Relation.objects.filter(e1=self, reason=RelationReason.ALIAS).delete()
+
+        for e in self.aliases.all():
+            Relation.objects.create(
+                e1=self,
+                e2=e,
+                content_object=self,
+                reason=RelationReason.ALIAS,
+                access_vector=e.get_acvec(),
+                virtual=True,
+            )
+
+    def aliasqs(self, user):
+        rels = (
+            Edge.objects.accessible(user)
+            .filter(
+                src=self.id,
+                virtual=True,
+            )
+            .values_list("dst", flat=True)
+        )
+
+        qs = Entry.objects.filter(Q(id__in=rels) | Q(id=self.id)).distinct()
+        return qs
+
+
+class Relation(LifecycleModel):
+    """
+    A model representing a generic link between two entries.
+    """
+
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
+
+    access_vector: BitStringField = BitStringField(
+        max_length=2048, null=False, default=1 << 2047, varying=False
+    )
+
+    inherit_av = models.BooleanField(default=False)
+
+    e1 = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="relations_1")
+    e2 = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="relations_2")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_seen = models.DateTimeField(auto_now_add=True)
+
+    object_id = models.UUIDField()
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    content_object = GenericForeignKey("content_type", "object_id")
+
+    reason: models.CharField = models.CharField(
+        max_length=255, null=False, blank=False, choices=RelationReason.choices
+    )
+
+    details: models.JSONField = models.JSONField(default=dict, blank=True)
+
+    objects = RelationManager()
+
+    virtual = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        if self.e1.id > self.e2.id:
+            self.e1, self.e2 = self.e2, self.e1
+        super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ["-last_seen"]
+
+    def __str__(self):
+        return f"Relation [{self.reason}]({self.e1}-{self.e2}) "

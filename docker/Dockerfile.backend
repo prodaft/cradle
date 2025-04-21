@@ -1,33 +1,32 @@
 # vi: ft=dockerfile
 
-FROM python:3.11
+FROM tiagopeixoto/graph-tool
 
 # Set the working directory
 WORKDIR /app
 
-# Install pipenv
-RUN pip install pipenv
+# Update system and install dependencies
+RUN pacman -Sy --noconfirm && \
+    pacman -S --noconfirm python python-pip python-pipenv gdal
 
 # Copy and install Python dependencies
 COPY ./backend/Pipfile .
-RUN pipenv lock
+COPY ./backend/Pipfile.lock .
 RUN pipenv sync
 RUN pipenv install gunicorn
 
-RUN apt-get update
-RUN rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
+# Copy application code
 COPY ./backend/ .
 
 # Copy Docker-specific settings
 COPY ./backend/cradle/settings_docker.py ./cradle/settings.py
 
 COPY ./docker/entrypoint_backend.sh .
+COPY ./docker/entrypoint_celery.sh .
 
 # Make the entrypoint script executable
 RUN chmod +x ./entrypoint_backend.sh
+RUN chmod +x ./entrypoint_celery.sh
 
-# Start Nginx and the Gunicorn application server
+# Start the application
 CMD ./entrypoint_backend.sh

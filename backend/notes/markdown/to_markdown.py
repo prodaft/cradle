@@ -8,6 +8,7 @@ from xeger import Xeger
 
 from .common import cradle_link_plugin
 from .table import table
+from .block_parser import NewlineAwareBlockParser
 
 if TYPE_CHECKING:
     from entries.models import EntryClass
@@ -63,6 +64,10 @@ class MarkdownRenderer(BaseMarkdownRenderer):
         self.entry_remap = entry_remap
         super(MarkdownRenderer, self).__init__()
 
+    def paragraph(self, token: Dict[str, Any], state: BlockState) -> str:
+        text = self.render_children(token, state)
+        return text + "\n"
+
     def cradle_link(self, token: Dict[str, any], state: BlockState) -> str:
         key, value, alias = (
             token["attrs"].get("key"),
@@ -88,6 +93,9 @@ class MarkdownRenderer(BaseMarkdownRenderer):
             return f"[[{key}:{value}|{alias}]]"
 
         return f"[[{key}:{value}]]"
+
+    def blank_line(self, token: Dict[str, Any], state: BlockState) -> str:
+        return token.get("content", "")
 
     def table(self, token: Dict[str, any], state: BlockState) -> str:
         return self.render_children(token, state)
@@ -147,7 +155,8 @@ def anonymize_markdown(
     markdown = mistune.create_markdown(
         renderer=renderer, plugins=[cradle_link_plugin, table]
     )
-    return markdown(md)
+    markdown.block = NewlineAwareBlockParser(markdown)
+    return markdown(md).strip()
 
 
 def remap_links(
@@ -160,9 +169,40 @@ def remap_links(
     )
 
     markdown = mistune.create_markdown(
-        renderer=renderer, plugins=[table, cradle_link_plugin]
+        renderer=renderer, plugins=[table, cradle_link_plugin], hard_wrap=True
     )
+
+    markdown.block = NewlineAwareBlockParser(markdown)
 
     result, state = markdown.parse(md)
 
-    return result
+    return result.strip()
+
+
+if __name__ == "__main__":
+    print(
+        remap_links(
+            """
+# h1
+- **l1**
+- l2
+
+
+
+
+- l3 [[asd:132|asd]]
+
+aaaaaaa
+aaaaaaaaa
+
+o
+
+
+
+aaaaaaa
+aaaaaaa
+""",
+            {},
+            {},
+        )
+    )

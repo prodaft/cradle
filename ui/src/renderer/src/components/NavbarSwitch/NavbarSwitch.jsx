@@ -18,7 +18,7 @@ export default function NavbarSwitch({ text, checked, onChange, testid }) {
     return (
         <button className='navbar-item hover:bg-gray-4'>
             <div className='flex flex-row items-center w-fit h-fit'>
-                <label htmlFor={id} className='mr-2 text-cradle2 hover:cursor-pointer'>
+                <label htmlFor={id} className='mr-2 text-primary hover:cursor-pointer'>
                     {text}
                 </label>
                 <input

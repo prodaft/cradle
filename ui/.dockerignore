@@ -1,4 +1,4 @@
 .git
 *Dockerfile*
 *docker-compose*
-node_modules
+ui/node_modules

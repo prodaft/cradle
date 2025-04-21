@@ -28,15 +28,22 @@ class FileReference(models.Model):
         null=True,
         blank=True,
     )
+    report: models.ForeignKey = models.OneToOneField(
+        "publish.PublishedReport",
+        related_name="file",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    digest: models.ForeignKey = models.ForeignKey(
+        "intelio.BaseDigest",
+        related_name="files",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
 
     def to_dict(self) -> dict[str, str]:
-        """Provides a dictionary representation of the FileReference
-        entry.
-
-        Returns:
-            The dictionary representation of the entry.
-        """
-
         return {
             "minio_file_name": self.minio_file_name,
             "file_name": self.file_name,

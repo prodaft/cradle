@@ -194,6 +194,7 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
             "entries",
             "edit_timestamp",
             "editor",
+            "last_linked",
             "files",
         ]
 

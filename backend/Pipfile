@@ -29,7 +29,12 @@ python-redis-lock = "*"
 diff-match-patch = "*"
 xeger = "*"
 bleach = "*"
-psycopg2 = "*"
+numpy = "*"
+scipy = "*"
+psycopg2-binary = "*"
+dnspython = "*"
+bcrypt = "*"
+django-celery-beat = "*"
 
 [dev-packages]
 bump-my-version = "*"

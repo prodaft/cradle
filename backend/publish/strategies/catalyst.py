@@ -1,12 +1,13 @@
-from typing import Dict, Optional, Iterable, List
+from typing import Dict, Optional, Iterable
 import requests
 from notes.models import Note
+from publish.models import PublishedReport, ReportStatus
 from user.models import CradleUser
 from django.conf import settings
 from notes.markdown.to_platejs import markdown_to_pjs
 from file_transfer.utils import MinioClient
 from entries.models import Entry
-from .base import BasePublishStrategy, PublishResult
+from .base import BasePublishStrategy
 
 
 class CatalystPublish(BasePublishStrategy):
@@ -95,44 +96,43 @@ class CatalystPublish(BasePublishStrategy):
                 f"Failed to create references: {response.status_code} {response.text}"
             )
 
-    def generate_access_link(self, report_location: str, user: CradleUser) -> str:
-        return f"https://catalyst.prodaft.com/publications/review/{report_location}"
+    def generate_access_link(self, remote_url: str, user: CradleUser) -> str:
+        return f"https://catalyst.prodaft.com/publications/review/{remote_url}"
 
-    def edit_report(
-        self, title: str, report_location: str, notes: List[Note], user: CradleUser
-    ) -> PublishResult:
-        result = self.delete_report(report_location, user)
+    def edit_report(self, report: PublishedReport) -> bool:
+        result = self.delete_report(report)
         if not result.success:
             return result
 
-        return self.create_report(title, notes, user)
+        return self.create_report(report)
 
-    def create_report(
-        self, title: str, notes: List[Note], user: CradleUser
-    ) -> PublishResult:
-        if not user.catalyst_api_key:
-            return PublishResult(
-                success=False, error="User does not have a Catalyst API key"
-            )
+    def create_report(self, report: PublishedReport) -> bool:
+        if not report.user.catalyst_api_key:
+            report.error_message = "User has no Catalyst API key"
+            report.status = ReportStatus.FAILED
+            report.save()
+            return False
 
         # Use anonymized note content if enabled.
         joint_md = "\n-----\n".join(
-            self._anonymize_note(note).content for note in notes
+            self._anonymize_note(note).content for note in report.notes.all()
         )
-        entries: Iterable[Entry] = Note.objects.get_entries_from_notes(notes)
+        entries: Iterable[Entry] = Note.objects.get_entries_from_notes(
+            report.notes.all()
+        )
         entry_map = {}
         for i in entries:
             # Anonymize the entry before processing.
             anonymized_entry = self._anonymize_entry(i)
             key = (i.entry_class.subtype, anonymized_entry.name)
             entity = self.get_entity(
-                i.entry_class.catalyst_type, anonymized_entry.name, user
+                i.entry_class.catalyst_type, anonymized_entry.name, report.user
             )
             if entity:
                 entry_map[key] = entity
 
         footnotes = {}
-        for note in notes:
+        for note in report.notes.all():
             for f in note.files.all():
                 footnotes[f.minio_file_name] = (f.bucket_name, f.minio_file_name)
 
@@ -141,8 +141,8 @@ class CatalystPublish(BasePublishStrategy):
         )
 
         payload = {
-            "title": title,
-            "summary": title,
+            "title": report.title,
+            "summary": report.title,
             "tlp": self.tlp,
             "category": "RESEARCH",
             "sub_category": "732c67b9-2a1b-44de-b99f-f7f580a5fbb7",
@@ -154,37 +154,38 @@ class CatalystPublish(BasePublishStrategy):
 
         response = requests.post(
             settings.CATALYST_HOST + "/api/posts/editor-contents/",
-            headers={"Authorization": "Token " + user.catalyst_api_key},
+            headers={"Authorization": "Token " + report.user.catalyst_api_key},
             json=payload,
         )
         if response.status_code == 201:
             published_post_id = response.json()["id"]
-            err = self.create_references(published_post_id, entry_map, user)
+            err = self.create_references(published_post_id, entry_map, report.user)
             if err:
-                return PublishResult(success=False, error=err)
-            return PublishResult(
-                success=True,
-                data=published_post_id,
-            )
-        else:
-            return PublishResult(
-                success=False,
-                error=f"Failed to create publication: {response.status_code} {response.json()}",
-            )
+                report.error_message = err
+                report.status = ReportStatus.FAILED
+                report.save()
+                return False
 
-    def delete_report(self, report_location: str, user: CradleUser) -> PublishResult:
+            return True
+        else:
+            report.error_message = response.text
+            report.status = ReportStatus.FAILED
+            report.save()
+            return False
+
+    def delete_report(self, report: PublishedReport) -> bool:
         response = requests.delete(
-            f"{settings.CATALYST_HOST}/api/posts/editor-contents/{report_location}/",
-            headers={"Authorization": "Token " + user.catalyst_api_key},
+            f"{settings.CATALYST_HOST}/api/posts/editor-contents/{report.remote_url}/",
+            headers={"Authorization": "Token " + report.user.catalyst_api_key},
         )
 
         if response.status_code == 404:
-            return PublishResult(success=True, data="Report not found")
+            return True
 
         if response.status_code != 204:
-            return PublishResult(
-                success=False,
-                error=f"Failed to delete publication: {response.status_code} {response.text}",
-            )
+            report.error_message = response.text
+            report.status = ReportStatus.FAILED
+            report.save()
+            return False
 
-        return PublishResult(success=True, data=f"Deleted: {report_location}")
+        return True

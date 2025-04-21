@@ -79,7 +79,7 @@ class UpdateAccessTest(AccessTestCase):
         response = self.client.put(
             reverse(
                 "update_access",
-                kwargs={"user_id": self.users[2].id, "entity_id": uuid.uuid4()},
+                kwargs={"user_id": self.users[2].id, "entity_id": 10000},
             ),
             {"access_type": "none"},
             content_type="application/json",

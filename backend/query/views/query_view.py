@@ -15,8 +15,6 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from entries.serializers import EntryResponseSerializer
 from uuid import UUID
 from entries.enums import EntryType
-from notes.models import Note
-from user.models import CradleUser
 from ..utils import parse_query
 
 
@@ -35,8 +33,8 @@ class EntryListQuery(APIView):
                 type=str,
             ),
             OpenApiParameter(
-                name="type",
-                description="Filter by entry type",
+                name="subtype",
+                description="Filter by entry subtype",
                 required=False,
                 type=str,
             ),
@@ -60,7 +58,7 @@ class EntryListQuery(APIView):
         request=None,
     )
     def get(self, request: Request) -> Response:
-        accessible_entries = Entry.objects.all()
+        accessible_entries = Entry.objects.accessible(request.user).all()
         if not request.user.is_cradle_admin:
             accessible_entries = accessible_entries.filter(
                 Q(
@@ -73,11 +71,6 @@ class EntryListQuery(APIView):
                 )
                 | Q(
                     entry_class__type=EntryType.ARTIFACT,
-                    id__in=Subquery(
-                        Note.objects.get_accessible_artifact_ids(
-                            cast(CradleUser, request.user)
-                        )
-                    ),
                 )
             )
 
@@ -85,7 +78,7 @@ class EntryListQuery(APIView):
 
         if filterset.is_valid():
             entries = filterset.qs
-            entries = entries.order_by("timestamp")
+            entries = entries.order_by("-last_seen")
             paginator = TotalPagesPagination(page_size=10)
             paginated_entries = paginator.paginate_queryset(entries, request)
 
@@ -116,6 +109,13 @@ class AdvancedQueryView(APIView):
                 type=str,
             ),
             OpenApiParameter(
+                name="wildcard",
+                description="Run the query as if there is a * at the end of it.",
+                required=False,
+                default=False,
+                type=bool,
+            ),
+            OpenApiParameter(
                 name="page",
                 description="Pagination page number",
                 required=False,
@@ -138,6 +138,10 @@ class AdvancedQueryView(APIView):
     def get(self, request: Request) -> Response:
         # Get the query parameter from the request
         query_str = request.query_params.get("query")
+
+        if request.query_params.get("wildcard") == "true":
+            query_str = "*" + query_str + "*"
+
         if not query_str:
             query_filter = Q()
         else:
@@ -150,7 +154,7 @@ class AdvancedQueryView(APIView):
                 )
 
         # Get accessible entries for the user
-        accessible_entries = Entry.objects.all()
+        accessible_entries = Entry.objects.accessible(request.user).all()
         if not request.user.is_cradle_admin:
             accessible_entries = accessible_entries.filter(
                 Q(
@@ -163,11 +167,6 @@ class AdvancedQueryView(APIView):
                 )
                 | Q(
                     entry_class__type=EntryType.ARTIFACT,
-                    id__in=Subquery(
-                        Note.objects.get_accessible_artifact_ids(
-                            cast(CradleUser, request.user)
-                        )
-                    ),
                 )
             )
 
@@ -175,7 +174,7 @@ class AdvancedQueryView(APIView):
         filtered_entries = accessible_entries.filter(query_filter)
 
         # Order and paginate the results
-        filtered_entries = filtered_entries.order_by("timestamp")
+        filtered_entries = filtered_entries.order_by("-last_seen")
         paginator = TotalPagesPagination()
         paginated_entries = paginator.paginate_queryset(filtered_entries, request)
 

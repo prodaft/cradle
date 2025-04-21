@@ -1,4 +1,14 @@
-from .settings_common import *  # NOQA
+from .settings_common import *  # noqa:F401
+
+# Ugly hack to get graph_tool working
+import sys
+import random
+
+global_base = random.__file__.removesuffix("random.py")
+
+global_packages = [global_base + "site-packages/", global_base + "dist-packages/"]
+
+sys.path += global_packages
 
 SECRET_KEY = "django-insecure-0in+njnc5mjf3xuh$yjy+$s@78-!9rh$qjzv@aqw+*c$zh&d*&"
 
@@ -10,7 +20,7 @@ CSRF_TRUSTED_ORIGINS = ["http://localhost", "http://127.0.0.1"]
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
         "NAME": "cradle",
         "USER": "cradle",
         "PASSWORD": "cradle",
@@ -26,16 +36,10 @@ MINIO_CONFIG = {
     "secure": False,
 }
 
-ALLOW_REGISTRATION = True
-AUTOREGISTER_ARTIFACT_TYPES = False
-MIN_ENTRY_COUNT_PER_NOTE = 2
-MIN_ENTITY_COUNT_PER_NOTE = 1
-
-REQUIRE_EMAIL_CONFIRMATION = False
-REQUIRE_ADMIN_ACTIVATION = False
-
-RESULT_BACKEND = "redis://192.168.31.42:6379/0"
+RABBITMQ_URL = "amqp://cradle:cradle@192.168.31.44:5672//"
 REDIS_URL = "redis://192.168.31.42:6379/0"
+BROKER = RABBITMQ_URL
+RESULT_BACKEND = REDIS_URL
 
 BASE_URL = ""
 STATIC_URL = "static/"
@@ -48,3 +52,11 @@ EMAIL_HOST_USER = "cradle@prodaft.com"
 DEFAULT_FROM_EMAIL = "cradle@prodaft.com"
 EMAIL_HOST_PASSWORD = None
 EMAIL_USE_TLS = True
+
+DEFAULT_SETTINGS = {
+    "users": {
+        "allow_registration": True,
+        "require_admin_confirmation": False,
+        "require_email_confirmation": False,
+    },
+}

@@ -1,17 +1,17 @@
-import uuid
+import logging
 import bleach
 from io import BytesIO
-from datetime import timedelta
 from typing import List
 
 from django.template.loader import get_template
 
+from file_transfer.models import FileReference
 from notes.models import Note
 from notes.markdown.to_html import markdown_to_html
 from entries.models import EntryClass
-from user.models import CradleUser
+from publish.models import PublishedReport, ReportStatus
 from file_transfer.utils import MinioClient
-from .base import BasePublishStrategy, PublishResult
+from .base import BasePublishStrategy
 
 
 class HTMLPublish(BasePublishStrategy):
@@ -19,9 +19,6 @@ class HTMLPublish(BasePublishStrategy):
     HTML publishing strategy that renders a report using a Django template
     and sanitizes user content to prevent harmful HTML from being introduced.
     """
-
-    def _get_bucket_name(self, user: CradleUser) -> str:
-        return str(user.id) if user else "default_bucket"
 
     def _sanitize_html(self, html: str) -> str:
         allowed_tags = [
@@ -96,26 +93,17 @@ class HTMLPublish(BasePublishStrategy):
         }
         return template.render(context)
 
-    def generate_access_link(self, report_location: str, user: CradleUser) -> str:
-        bucket_name = self._get_bucket_name(user)
-        client = MinioClient().client
-        url = client.presigned_get_object(
-            bucket_name,
-            report_location,
-            expires=timedelta(hours=1),
-        )
-        return url
-
-    def create_report(
-        self, title: str, notes: List[Note], user: CradleUser
-    ) -> PublishResult:
-        full_html = self._build_html(title, notes, user=user)
-        file_name = f"{uuid.uuid4()}.html"
-        bucket_name = self._get_bucket_name(user)
+    def create_report(self, report: PublishedReport) -> bool:
+        full_html = self._build_html(report.title, report.notes.all(), user=report.user)
+        bucket_name = str(report.user.id)
+        file_name = f"{report.id}.html"
 
         client = MinioClient().client
         if client is None:
-            return PublishResult(success=False, error="Minio client is not configured")
+            report.error_message = "Minio client is not configured."
+            report.status = ReportStatus.ERROR
+            report.save()
+            return False
 
         data = BytesIO(full_html.encode("utf-8"))
         size = len(full_html.encode("utf-8"))
@@ -125,41 +113,56 @@ class HTMLPublish(BasePublishStrategy):
             client.put_object(
                 bucket_name, file_name, data, size, content_type=content_type
             )
-        except Exception as e:
-            return PublishResult(
-                success=False, error=f"Failed to upload HTML report: {e}"
+            FileReference.objects.filter(report=report).delete()
+            FileReference.objects.create(
+                minio_file_name=file_name,
+                file_name=file_name,
+                bucket_name=bucket_name,
+                report=report,
             )
+        except Exception as e:
+            logging.exception(e)
+            report.error_message = "Failed to upload HTML report."
+            report.status = ReportStatus.ERROR
+            report.save()
+            return False
 
-        return PublishResult(success=True, data=file_name)
+        return True
 
-    def edit_report(
-        self, title: str, report_location: str, notes: List[Note], user: CradleUser
-    ) -> PublishResult:
-        bucket_name = self._get_bucket_name(user)
+    def edit_report(self, report: PublishedReport) -> bool:
+        bucket_name = str(report.user.id)
         client = MinioClient().client
         if client is None:
-            return PublishResult(success=False, error="Minio client is not configured")
+            report.error_message = "Minio client is not configured."
+            report.status = ReportStatus.ERROR
+            report.save()
+            return False
 
-        full_html = self._build_html(title, notes, user=user)
+        full_html = self._build_html(report.title, report.notes.all(), user=report.user)
         data = BytesIO(full_html.encode("utf-8"))
         size = len(full_html.encode("utf-8"))
         content_type = "text/html"
 
         try:
             client.put_object(
-                bucket_name, report_location, data, size, content_type=content_type
+                bucket_name, report.id, data, size, content_type=content_type
             )
-        except Exception as e:
-            return PublishResult(success=False, error=f"Failed to update HTML: {e}")
+        except Exception:
+            report.error_message = "Failed to upload HTML report."
+            report.status = ReportStatus.ERROR
+            report.save()
+            return False
 
-        return PublishResult(success=True, data=report_location)
+        return True
 
-    def delete_report(self, report_location: str, user: CradleUser) -> PublishResult:
-        bucket_name = self._get_bucket_name(user)
+    def delete_report(self, report: PublishedReport) -> bool:
         client = MinioClient().client
         try:
-            client.remove_object(bucket_name, report_location)
-        except Exception as e:
-            return PublishResult(success=False, error=f"Failed to delete HTML: {e}")
+            client.remove_object(str(report.user.id), f"{report.id}.html")
+        except Exception:
+            report.error_message = "Failed to delete HTML report."
+            report.status = ReportStatus.ERROR
+            report.save()
+            return False
 
-        return PublishResult(success=True, data=f"Deleted {report_location}")
+        return True

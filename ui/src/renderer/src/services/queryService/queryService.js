@@ -32,13 +32,13 @@ export function queryEntries(filters, page = 1) {
  * @param {number} page - the page number to fetch
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function advancedQuery(query, page = 1) {
+export function advancedQuery(query, wildcard = false, page = 1) {
     const url = `/query/advanced/`;
 
     return authAxios({
         method: 'GET',
         url: url,
-        params: { query, page },
+        params: { query, wildcard, page },
     });
 }
 

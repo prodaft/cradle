@@ -14,15 +14,20 @@ from user.permissions import HasAdminRole, HasEntryManagerRole
 
 from ..serializers import (
     EntryClassSerializer,
+    EntryClassSerializerCount,
 )
 from ..models import Entry, EntryClass
 
 
 @extend_schema_view(
     get=extend_schema(
-        summary="List entry classes",
-        description="Returns a list of all entry classes.",
-        responses={200: EntryClassSerializer(many=True)},
+        summary="List Entry Classes",
+        description="Retrieve a list of all entry classes.",
+        responses={
+            200: EntryClassSerializer(many=True),
+            401: "User is not authenticated",
+            403: "User is not authorized to view entry classes' count",
+        },
     ),
     post=extend_schema(
         summary="Create entry class",
@@ -37,11 +42,30 @@ from ..models import Entry, EntryClass
 )
 class EntryClassList(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+
+    def has_permission(self, request, view):
+        if not IsAuthenticated.has_permission(self, request, view):
+            return False
+
+        if request.method == "GET":
+            return True
+
+        if HasEntryManagerRole.has_permission(self, request, view):
+            return True
+
+        return False
 
     def get(self, request: Request) -> Response:
         entities = EntryClass.objects.all()
-        serializer = EntryClassSerializer(entities, many=True)
+        if request.query_params.get("show_count") == "true":
+            if not request.user.is_entry_manager:
+                return Response(
+                    "User must be an admin to see the count of entries in each class.",
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            serializer = EntryClassSerializerCount(entities, many=True)
+        else:
+            serializer = EntryClassSerializer(entities, many=True)
         return Response(serializer.data)
 
     def post(self, request: Request) -> Response:
@@ -167,7 +191,18 @@ class EntryClassList(APIView):
 )
 class EntryClassDetail(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, HasEntryManagerRole]
+
+    def has_permission(self, request, view):
+        if not IsAuthenticated.has_permission(self, request, view):
+            return False
+
+        if request.method == "GET":
+            return True
+
+        if HasEntryManagerRole.has_permission(self, request, view):
+            return True
+
+        return False
 
     def get(self, request: Request, class_subtype: str) -> Response:
         try:
@@ -181,7 +216,7 @@ class EntryClassDetail(APIView):
         return Response(serializer.data)
 
     def delete(self, request: Request, class_subtype: str) -> Response:
-        if class_subtype == "alias":
+        if class_subtype == "alias" or class_subtype == "connector":
             return Response(
                 "Cannot delete the alias entry class.", status=status.HTTP_403_FORBIDDEN
             )
@@ -200,7 +235,7 @@ class EntryClassDetail(APIView):
         return Response("Requested entry class was deleted", status=status.HTTP_200_OK)
 
     def post(self, request: Request, class_subtype: str) -> Response:
-        if class_subtype == "alias":
+        if class_subtype == "alias" or class_subtype == "connector":
             return Response(
                 "Cannot edit the alias entry class.", status=status.HTTP_403_FORBIDDEN
             )

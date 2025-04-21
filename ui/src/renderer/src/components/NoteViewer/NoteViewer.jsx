@@ -14,11 +14,14 @@ import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { Trash, StatsReport } from 'iconoir-react/regular';
 import NavbarSwitch from '../NavbarSwitch/NavbarSwitch';
-import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 import useAuth from '../../hooks/useAuth/useAuth';
 import ReferenceTree from '../ReferenceTree/ReferenceTree';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-markdown';
+import { useModal } from '../../contexts/ModalContext/ModalContext';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
+import { Tab, Tabs } from '../Tabs/Tabs';
+import ActivityList from '../ActivityList/ActivityList';
 
 /**
  * NoteViewer component
@@ -39,8 +42,8 @@ export default function NoteViewer() {
     const [isRaw, setIsRaw] = useState(false);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [parsedContent, setParsedContent] = useState(null);
-    const [dialog, setDialog] = useState(false);
     const [isLoading, setIsLoading] = useState(true); // <-- Add loading state
+    const { setModal } = useModal();
 
     const auth = useAuth();
 
@@ -126,22 +129,16 @@ export default function NoteViewer() {
                   onClick={() => navigate(`/notes/${id}/edit`)}
                   tesid='delete-btn'
               />,
-              auth.isAdmin() && (
-                  <NavbarButton
-                      key='history-btn'
-                      text='View History'
-                      icon={<ClockRotateRight />}
-                      onClick={() =>
-                          navigate(`/activity?content_type=note&object_id=${id}`)
-                      }
-                      tesid='delete-btn'
-                  />
-              ),
               <NavbarButton
                   key='delete-btn'
                   text='Delete Note'
                   icon={<Trash />}
-                  onClick={() => setDialog(true)}
+                  onClick={() =>
+                      setModal(ConfirmDeletionModal, {
+                          onConfirm: handleDelete,
+                          text: 'Are you sure you want to delete this note? This action is irreversible.',
+                      })
+                  }
                   tesid='delete-btn'
               />,
           ];
@@ -162,16 +159,14 @@ export default function NoteViewer() {
         isPublishable,
         togglePublishable,
         handleDelete,
-        dialog,
-        setDialog,
         alert,
         setAlert,
     ]);
 
     useEffect(() => {
-      if (isRaw) {
-        Prism.highlightAll();
-      }
+        if (isRaw) {
+            Prism.highlightAll();
+        }
     }, [isRaw, note.content]);
 
     // Conditionally render spinner or component
@@ -185,61 +180,98 @@ export default function NoteViewer() {
 
     return (
         <>
-            <ConfirmationDialog
-                open={dialog}
-                setOpen={setDialog}
-                title={'Confirm Deletion'}
-                description={'This is permanent'}
-                handleConfirm={handleDelete}
-            />
             <AlertDismissible
                 alert={alert}
                 setAlert={setAlert}
                 onClose={() => setAlert('')}
             />
-            <div className='w-full h-full overflow-hidden flex flex-col items-center px-4 pb-4 pt-1'>
-                <div className='h-full w-[90%] rounded-md bg-cradle3 bg-opacity-20 backdrop-blur-lg backdrop-filter px-4 pb-4 pt-1 overflow-y-auto'>
-                    <div className='text-sm text-zinc-500 p-2 border-b-2 dark:border-b-zinc-800'>
-                        <span className='text-sm text-zinc-500 p-2'>
-                            <strong>Created on:</strong>{' '}
-                            {new Date(note.timestamp).toLocaleString()}
-                        </span>
-                        <span className='text-sm text-zinc-700'>|</span>
-                        <span className='text-sm text-zinc-500 p-2'>
-                            <strong>Created by:</strong>{' '}
-                            {note?.author ? note.author.username : 'Unknown'}
-                        </span>
-                        {note.editor && (
-                            <span>
-                                <span className='text-sm text-zinc-700'>|</span>
-                                <span className='text-sm text-zinc-500 p-2'>
-                                    <strong>Edited on:</strong>{' '}
-                                    {new Date(note.edit_timestamp).toLocaleString()}
-                                </span>
-                                <span className='text-sm text-zinc-700'>|</span>
-                                <span className='text-sm text-zinc-500 p-2'>
-                                    <strong>Edited by:</strong>{' '}
-                                    {note?.editor ? note.editor.username : 'Unknown'}
-                                </span>
-                            </span>
-                        )}
-                    </div>
-                    <div className='flex-grow'>
-                        {isRaw ? (
-                            <pre
-                                className='h-full w-full p-4 bg-transparent prose-md max-w-none dark:prose-invert break-all
+            <div className='w-[95%] h-full flex flex-col p-2 space-y-3'>
+                <Tabs
+                    defaultTab={0}
+                    queryParam={'tab'}
+                    tabClasses='tabs-underline w-full'
+                    perTabClass='w-[50%] justify-center'
+                >
+                    <Tab title='Content' classes='pt-2'>
+                        <div className='w-full h-full overflow-hidden flex flex-col items-center px-4 pb-4 pt-1'>
+                            <div className='h-full w-[90%] rounded-md bg-cradle3 bg-opacity-20 backdrop-blur-lg backdrop-filter px-4 pb-4 pt-1 overflow-y-auto'>
+                                <div className='text-sm text-zinc-500 p-2 border-b-2 dark:border-b-zinc-800'>
+                                    <span className='text-sm text-zinc-500 p-2'>
+                                        <strong>Created on:</strong>{' '}
+                                        {new Date(note.timestamp).toLocaleString()}
+                                    </span>
+                                    <span className='text-sm text-zinc-700'>|</span>
+                                    <span className='text-sm text-zinc-500 p-2'>
+                                        <strong>Created by:</strong>{' '}
+                                        {note?.author
+                                            ? note.author.username
+                                            : 'Unknown'}
+                                    </span>
+                                    {note.editor && (
+                                        <span>
+                                            <span className='text-sm text-zinc-700'>
+                                                |
+                                            </span>
+                                            <span className='text-sm text-zinc-500 p-2'>
+                                                <strong>Edited on:</strong>{' '}
+                                                {new Date(
+                                                    note.edit_timestamp,
+                                                ).toLocaleString()}
+                                            </span>
+                                            <span className='text-sm text-zinc-700'>
+                                                |
+                                            </span>
+                                            <span className='text-sm text-zinc-500 p-2'>
+                                                <strong>Edited by:</strong>{' '}
+                                                {note?.editor
+                                                    ? note.editor.username
+                                                    : 'Unknown'}
+                                            </span>
+                                        </span>
+                                    )}
+                                    {note.last_linked && (
+                                        <span>
+                                            <span className='text-sm text-zinc-700'>
+                                                |
+                                            </span>
+                                            <span className='text-sm text-zinc-500 p-2'>
+                                                <strong>Linked on:</strong>{' '}
+                                                {new Date(
+                                                    note.last_linked,
+                                                ).toLocaleString()}
+                                            </span>
+                                        </span>
+                                    )}
+                                </div>
+                                <div className='flex-grow'>
+                                    {isRaw ? (
+                                        <pre
+                                            className='h-full w-full p-4 bg-transparent prose-md max-w-none dark:prose-invert break-all
               overflow-y-auto rounded-lg flex-1 overflow-x-hidden whitespace-pre-wrap'
-                            >
-                                <code className='language-js'>{note.content}</code>
-                            </pre>
-                        ) : (
-                            <div className='mt-2'>
-                                <ReferenceTree note={note} setAlert={setAlert} />
-                                <Preview htmlContent={parsedContent} />
+                                        >
+                                            <code className='language-js'>
+                                                {note.content}
+                                            </code>
+                                        </pre>
+                                    ) : (
+                                        <div className='mt-2'>
+                                            <ReferenceTree
+                                                note={note}
+                                                setAlert={setAlert}
+                                            />
+                                            <Preview htmlContent={parsedContent} />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        )}
-                    </div>
-                </div>
+                        </div>
+                    </Tab>
+                    {auth.isAdmin() && (
+                        <Tab title='History' classes='pt-2'>
+                            <ActivityList content_type='note' objectId={id} />
+                        </Tab>
+                    )}
+                </Tabs>
             </div>
         </>
     );

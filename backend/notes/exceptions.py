@@ -3,7 +3,8 @@ from typing import Iterable
 from entries.models import Entry
 from .markdown.to_links import Link
 from rest_framework.exceptions import APIException
-from django.conf import settings
+
+from management.settings import cradle_settings
 
 
 class InvalidRequestException(APIException):
@@ -19,10 +20,13 @@ class NoteIsEmptyException(APIException):
 class NotEnoughReferencesException(APIException):
     status_code = 400
 
-    default_detail = (
-        f"Note does not reference at least {settings.MIN_ENTITY_COUNT_PER_NOTE} "
-        + f"entity and at least {settings.MIN_ENTRY_COUNT_PER_NOTE} entries."
-    )
+    def __init__(self, *args, **kwargs):
+        self.default_detail = (
+            f"Note does not reference at least {cradle_settings.notes.min_entities} "
+            + f"entity and at least {cradle_settings.notes.min_entries} entries."
+        )
+
+        super().__init__(*args, **kwargs)
 
 
 class NoteDoesNotExistException(APIException):

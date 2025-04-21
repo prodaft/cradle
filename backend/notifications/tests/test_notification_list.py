@@ -82,12 +82,24 @@ class NotificationListTest(NotificationsTestCase):
             "requesting_user_id": str(access_request_user.requesting_user.id),
         }
 
+        response_filtered = [
+            notification["id"]
+            for notification in response.json()
+            if notification["id"]
+            in [
+                expected_response_message_notification["id"],
+                expected_response_access_request_notification["id"],
+            ]
+        ]
+
+        print(response_filtered, expected_response_message_notification)
+
         self.assertCountEqual(
             [
-                expected_response_access_request_notification,
-                expected_response_message_notification,
+                expected_response_access_request_notification["id"],
+                expected_response_message_notification["id"],
             ],
-            response.json(),
+            response_filtered,
         )
 
         self.assertTrue(

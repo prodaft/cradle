@@ -28,7 +28,7 @@ export default function SidebarItem({
                 ${isHighlighted ? 'menu-active' : ''}`}
             onClick={handleClick}
         >
-            <div className='icon flex-shrink-0 text-cradle2 hover:bg-gray-4'>
+            <div className='icon flex-shrink-0 text-primary hover:bg-gray-4'>
                 {icon}
             </div>
             <div className='hidden whitespace-nowrap ml-2 group-hover/sidebar:block'>

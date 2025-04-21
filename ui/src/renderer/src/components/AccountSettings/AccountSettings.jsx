@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
-import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 import useAuth from '../../hooks/useAuth/useAuth';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import {
@@ -13,15 +12,13 @@ import {
     updateUser,
     deleteUser,
     createUser,
+    generateApiKey,
 } from '../../services/userService/userService';
+import { Tabs, Tab } from '../Tabs/Tabs';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
+import { useModal } from '../../contexts/ModalContext/ModalContext';
+import ActionConfirmationModal from '../Modals/ActionConfirmationModal.jsx';
 
-/*
-  The Yup schema is context-sensitive:
-  - When adding a user (isEdit=false) the password is required.
-  - When editing (isEdit=true), the default password value "password" means "unchanged".
-  - Admin-only fields (role, email_confirmed, is_active) are only required when the logged in user is an admin
-    editing another account (or adding a user).
-*/
 const accountSettingsSchema = Yup.object().shape({
     username: Yup.string().required('Username is required'),
     email: Yup.string().email('Invalid email').required('Email is required'),
@@ -41,17 +38,14 @@ const accountSettingsSchema = Yup.object().shape({
     is_active: Yup.boolean(),
 });
 
-export default function AccountSettings({ isEdit = true }) {
-    const { target } = useParams();
+export default function AccountSettings({ target, isEdit = true, onAdd }) {
     const navigate = useNavigate();
     const auth = useAuth();
     const isAdmin = auth?.isAdmin();
-
     const isOwnAccount = isEdit ? target === 'me' || auth?.userId === target : false;
     const isAdminAndNotOwn = isAdmin && !isOwnAccount;
+    const { setModal } = useModal();
 
-    // For deletion and update, the form's id is important.
-    // In add mode, there is no existing id.
     const defaultValues = isEdit
         ? {
               id: '',
@@ -90,9 +84,8 @@ export default function AccountSettings({ isEdit = true }) {
     });
 
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const [dialog, setDialog] = useState(false);
 
-    // In edit mode, load the user details to prepopulate the form.
+    // Prepopulate form in edit mode.
     useEffect(() => {
         if (isEdit && target) {
             getUser(target)
@@ -108,14 +101,17 @@ export default function AccountSettings({ isEdit = true }) {
                         email_confirmed: res.data.email_confirmed || false,
                         is_active: res.data.is_active || false,
                     });
+
+                    // Check if user has API key
                 })
                 .catch(displayError(setAlert, navigate));
+        } else {
+            reset(defaultValues);
         }
     }, [isEdit, target, reset, navigate]);
 
     const onSubmit = async (data) => {
         if (isEdit) {
-            // For editing, only update password if it has been changed.
             const payload = {};
             if (data.password !== 'password') {
                 payload.password = data.password;
@@ -127,6 +123,8 @@ export default function AccountSettings({ isEdit = true }) {
                 payload.catalyst_api_key = data.catalystKey;
             }
             if (isAdminAndNotOwn) {
+                payload.username = data.username;
+                payload.email = data.email;
                 payload.email_confirmed = data.email_confirmed;
                 payload.is_active = data.is_active;
                 payload.role = data.role;
@@ -142,7 +140,6 @@ export default function AccountSettings({ isEdit = true }) {
                 displayError(setAlert, navigate)(err);
             }
         } else {
-            // In add mode, all fields (including password) are taken as entered.
             const payload = {
                 username: data.username,
                 email: data.email,
@@ -154,14 +151,19 @@ export default function AccountSettings({ isEdit = true }) {
                 is_active: data.is_active,
             };
             try {
-                await createUser(payload);
-                setAlert({
-                    show: true,
-                    message: 'User created successfully',
-                    color: 'green',
-                });
-                reset();
-                navigate('/admin');
+                let result = await createUser(payload);
+
+                if (result.status === 200) {
+                    setAlert({
+                        show: true,
+                        message: 'User created successfully',
+                        color: 'green',
+                    });
+                    reset();
+                    onAdd(result.data);
+                } else {
+                    displayError(setAlert, navigate)(result.data);
+                }
             } catch (err) {
                 displayError(setAlert, navigate)(err);
             }
@@ -179,154 +181,204 @@ export default function AccountSettings({ isEdit = true }) {
         }
     };
 
+    const handleGenerateApiKey = () => {
+        setModal(ActionConfirmationModal, {
+            text: 'Are you sure you want to generate a new API key? This will invalidate the current key.',
+            onConfirm: async () => {
+                try {
+                    const response = await generateApiKey(getValues('id'));
+                    if (response.status === 200) {
+                        setAlert({
+                            show: true,
+                            message: `API key generated successfully: ${response.data.api_key}`,
+                            color: 'green',
+                        });
+                    }
+                } catch (err) {
+                    displayError(setAlert)(err);
+                }
+            },
+        });
+    };
+
     return (
         <>
-            <ConfirmationDialog
-                open={dialog}
-                setOpen={setDialog}
-                title='Are you sure you want to delete your account?'
-                description='This is permanent'
-                handleConfirm={handleDelete}
-            />
-            <div className='flex flex-row items-center justify-center h-screen'>
-                <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 md:h-fit xl:w-1/3'>
-                    <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8'>
-                        <div className='sm:mx-auto sm:w-full sm:max-w-sm'>
-                            <h1 className='mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-cradle2'>
-                                {isEdit ? 'Account Settings' : 'Add New User'}
-                            </h1>
-                        </div>
-                        <form
-                            onSubmit={handleSubmit(onSubmit)}
-                            className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm space-y-6'
-                        >
-                            <FormField
-                                name='username'
-                                type='text'
-                                labelText='Username'
-                                placeholder='Username'
-                                {...register('username')}
-                                error={errors.username?.message}
-                                disabled={isEdit}
-                            />
-                            <FormField
-                                name='email'
-                                type='text'
-                                labelText='Email'
-                                placeholder='Email'
-                                {...register('email')}
-                                error={errors.email?.message}
-                                disabled={isEdit}
-                            />
-
-                            {isEdit ? (
-                                isAdminAndNotOwn && (
+            <div className='flex items-center justify-center min-h-screen'>
+                <div className='w-full max-w-2xl px-4'>
+                    <h1 className='text-center text-xl font-bold text-primary mb-4'>
+                        {isEdit ? 'Account Settings' : 'Add New User'}
+                    </h1>
+                    <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
+                        <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+                            <Tabs tabClasses='tabs gap-1' perTabClass='tab-pill'>
+                                <Tab title='Settings'>
+                                    <div className='mt-4' />
                                     <FormField
-                                        name='password'
-                                        type='password'
-                                        labelText='Password'
-                                        placeholder='Password'
-                                        {...register('password')}
-                                        error={errors.password?.message}
+                                        name='username'
+                                        type='text'
+                                        labelText='Username'
+                                        placeholder='Username'
+                                        {...register('username')}
+                                        error={errors.username?.message}
+                                        disabled={!isAdminAndNotOwn && isEdit}
                                     />
-                                )
-                            ) : (
-                                // In add mode, always show the password field (and require it).
-                                <FormField
-                                    name='password'
-                                    type='password'
-                                    labelText='Password'
-                                    placeholder='Password'
-                                    {...register('password')}
-                                    error={errors.password?.message}
-                                />
-                            )}
+                                    <div className='mt-4' />
+                                    <FormField
+                                        name='email'
+                                        type='text'
+                                        labelText='Email'
+                                        placeholder='Email'
+                                        {...register('email')}
+                                        error={errors.email?.message}
+                                        disabled={!isAdminAndNotOwn && isEdit}
+                                    />
 
-                            <FormField
-                                name='vtKey'
-                                type='password'
-                                labelText='VirusTotal API Key'
-                                placeholder='VirusTotal API Key'
-                                {...register('vtKey')}
-                                error={errors.vtKey?.message}
-                            />
-                            <FormField
-                                name='catalystKey'
-                                type='password'
-                                labelText='Catalyst API Key'
-                                placeholder='Catalyst API Key'
-                                {...register('catalystKey')}
-                                error={errors.catalystKey?.message}
-                            />
+                                    <div className='mt-4' />
+                                    {isEdit ? (
+                                        isAdminAndNotOwn && (
+                                            <FormField
+                                                name='password'
+                                                type='password'
+                                                labelText='Password'
+                                                placeholder='Password'
+                                                {...register('password')}
+                                                error={errors.password?.message}
+                                            />
+                                        )
+                                    ) : (
+                                        <FormField
+                                            name='password'
+                                            type='password'
+                                            labelText='Password'
+                                            placeholder='Password'
+                                            {...register('password')}
+                                            error={errors.password?.message}
+                                        />
+                                    )}
+                                    {isAdmin && (!isEdit || isAdminAndNotOwn) && (
+                                        <>
+                                            <div className='w-full mt-4'>
+                                                <label className='block text-sm font-medium'>
+                                                    Role
+                                                </label>
+                                                <div className='mt-1'>
+                                                    <select
+                                                        className='form-select select select-ghost-primary select-block focus:ring-0'
+                                                        {...register('role')}
+                                                    >
+                                                        <option value='author'>
+                                                            User
+                                                        </option>
+                                                        <option value='entrymanager'>
+                                                            Entry Manager
+                                                        </option>
+                                                        <option value='admin'>
+                                                            Admin
+                                                        </option>
+                                                    </select>
+                                                </div>
+                                                {errors.role && (
+                                                    <p className='text-red-600 text-sm'>
+                                                        {errors.role.message}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className='mt-4' />
+                                            <FormField
+                                                type='checkbox'
+                                                labelText='Email Confirmed'
+                                                className='switch switch-ghost-primary'
+                                                {...register('email_confirmed')}
+                                                row={true}
+                                                error={errors.email_confirmed?.message}
+                                            />
+                                            <div className='mt-4' />
+                                            <FormField
+                                                type='checkbox'
+                                                labelText='Account Active'
+                                                className='switch switch-ghost-primary'
+                                                {...register('is_active')}
+                                                row={true}
+                                                error={errors.is_active?.message}
+                                            />
+                                        </>
+                                    )}
 
-                            {isAdmin && (!isEdit || isAdminAndNotOwn) && (
-                                <>
-                                    <div className='w-full'>
-                                        <label className='block text-sm font-medium leading-6'>
-                                            Role
-                                        </label>
-                                        <div className='mt-2'>
-                                            <select
-                                                className='form-select select select-ghost-primary select-block focus:ring-0'
-                                                {...register('role')}
-                                            >
-                                                <option value='author'>User</option>
-                                                <option value='entrymanager'>
-                                                    Entry Manager
-                                                </option>
-                                                <option value='admin'>Admin</option>
-                                            </select>
-                                        </div>
-                                        {errors.role && (
-                                            <p className='text-red-600 text-sm'>
-                                                {errors.role.message}
-                                            </p>
+                                    <button
+                                        type='submit'
+                                        className='btn btn-primary btn-block mt-4'
+                                    >
+                                        {isEdit ? 'Save' : 'Add'}
+                                    </button>
+                                </Tab>
+                                <Tab title='API Keys'>
+                                    <div className='mt-4' />
+                                    <FormField
+                                        name='vtKey'
+                                        type='password'
+                                        labelText='VirusTotal API Key'
+                                        placeholder='VirusTotal API Key'
+                                        {...register('vtKey')}
+                                        error={errors.vtKey?.message}
+                                    />
+                                    <div className='mt-4' />
+                                    <FormField
+                                        name='catalystKey'
+                                        type='password'
+                                        labelText='Catalyst API Key'
+                                        placeholder='Catalyst API Key'
+                                        {...register('catalystKey')}
+                                        error={errors.catalystKey?.message}
+                                    />
+
+                                    <button
+                                        type='submit'
+                                        className='btn btn-primary btn-block mt-4'
+                                    >
+                                        {isEdit ? 'Save' : 'Add'}
+                                    </button>
+                                </Tab>
+                                <Tab title='Security'>
+                                    <div className='mt-4' />
+                                    <div className='space-y-4'>
+                                        {isEdit && isOwnAccount && (
+                                            <div className='flex flex-col space-y-4'>
+                                                <button
+                                                    type='button'
+                                                    className='btn btn-primary btn-block'
+                                                    onClick={() =>
+                                                        navigate('/change-password')
+                                                    }
+                                                >
+                                                    Change Password
+                                                </button>
+
+                                                <button
+                                                    type='button'
+                                                    className='btn btn-primary btn-block'
+                                                    onClick={handleGenerateApiKey}
+                                                >
+                                                    Generate API Key
+                                                </button>
+
+                                                <button
+                                                    type='button'
+                                                    className='btn btn-ghost btn-block bg-red-500'
+                                                    onClick={() =>
+                                                        setModal(ConfirmDeletionModal, {
+                                                            text: 'Are you sure you want to delete your account? All data related to you will be deleted.',
+                                                            onConfirm: handleDelete,
+                                                        })
+                                                    }
+                                                >
+                                                    Delete Account
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
-
-                                    <FormField
-                                        type='checkbox'
-                                        labelText='Email Confirmed'
-                                        className='switch switch-ghost-primary'
-                                        {...register('email_confirmed')}
-                                        row={true}
-                                        error={errors.email_confirmed?.message}
-                                    />
-
-                                    <FormField
-                                        type='checkbox'
-                                        labelText='Account Active'
-                                        className='switch switch-ghost-primary'
-                                        {...register('is_active')}
-                                        row={true}
-                                        error={errors.is_active?.message}
-                                    />
-                                </>
-                            )}
-
+                                </Tab>
+                            </Tabs>
                             <AlertBox alert={alert} />
-
-                            <button type='submit' className='btn btn-primary btn-block'>
-                                {isEdit ? 'Save' : 'Add'}
-                            </button>
-                            {isEdit && isOwnAccount && (
-                                <div className='flex justify-between'>
-                                    <button
-                                        type='button'
-                                        className='btn btn-ghost btn-block hover:bg-red-500'
-                                        onClick={() => setDialog(!dialog)}
-                                    >
-                                        Delete Account
-                                    </button>
-                                    <button
-                                        type='button'
-                                        className='btn btn-ghost btn-block'
-                                        onClick={() => navigate('/change-password')}
-                                    >
-                                        Change Password
-                                    </button>
-                                </div>
-                            )}
                         </form>
                     </div>
                 </div>

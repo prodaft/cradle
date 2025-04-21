@@ -59,7 +59,6 @@ export default function NotificationCard({
     const [isMarkedUnread, setIsMarkedUnread] = useState(is_marked_unread);
     const navigate = useNavigate();
 
-
     const handleMarkUnread = (id) => {
         markUnread(id, !isMarkedUnread)
             .then((response) => {
@@ -104,15 +103,17 @@ export default function NotificationCard({
     };
 
     const handleViewReport = () => {
-      getReport(published_report_id).then((response) => {
-        if (response.status === 200) {
-          window.open(response.data.report_url, '_blank');
-        }
-      }).catch(displayError(setAlert, navigate));
+        getReport(published_report_id)
+            .then((response) => {
+                if (response.status === 200) {
+                    window.open(response.data.report_url, '_blank');
+                }
+            })
+            .catch(displayError(setAlert, navigate));
     };
 
     const handleGoToReport = () => {
-      navigate(`/reports/${published_report_id}`);
+        navigate(`/reports/${published_report_id}`);
     };
 
     return (
@@ -180,7 +181,7 @@ export default function NotificationCard({
                         className='btn btn-solid-secondary btn-sm'
                         onClick={handleViewReport}
                     >
-                      View Report
+                        View Report
                     </button>
                 </div>
             )}
@@ -190,7 +191,7 @@ export default function NotificationCard({
                         className='btn btn-solid-secondary btn-sm'
                         onClick={handleGoToReport}
                     >
-                      View Details
+                        View Details
                     </button>
                 </div>
             )}

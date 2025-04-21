@@ -34,20 +34,21 @@ jobs:
       - name: Install dependencies
         run: |
           pip install pipenv
-          pipenv lock -d
-          pipenv sync
+          pipenv sync -d
       - name: Run flake8
         run: pipenv run python3 -m flake8 --verbose .
 
   tests:
     name: Run Django Tests
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/osgeo/gdal:ubuntu-small-latest
     defaults:
       run:
         working-directory: ./backend
     services:
       postgres:
-        image: postgres:16.2
+        image: pgrouting/pgrouting:16-3.5-3.7
         env:
           POSTGRES_DB: "cradledb"
           POSTGRES_USER: "postgres"
@@ -83,16 +84,22 @@ jobs:
           key: ${{ runner.os }}-pipenv-${{ hashFiles('backend/Pipfile.lock') }}
           restore-keys: |
             ${{ runner.os }}-pipenv-
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Cache APT packages
+        uses: actions/cache@v3
         with:
-          python-version: "3.11"
+          path: |
+            /var/cache/apt
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
       - name: Install dependencies
         run: |
-          pip install pipenv
-          pipenv lock -d
-          pipenv sync
+          apt update
+          apt install -y pipenv python3-pip
+      - name: Install dependencies
+        run: |
+          pipenv sync -d
       - name: Settings Copy
         run: cp cradle/settings_test.py cradle/settings.py
       - name: Apply Migrations

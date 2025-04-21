@@ -3,9 +3,13 @@ from rest_framework.exceptions import APIException
 
 class EntryTypeMismatchException(APIException):
     status_code = 409
-    default_detail = (
-        "There already exists an entry" "subtype type with a different type"
-    )
+    default_detail = "There already exists an entry subtype with a different type"
+    default_code = "unique"
+
+
+class CannotAliasToEntityException(APIException):
+    status_code = 409
+    default_detail = "You cannot form an alias from an entity to another entity"
     default_code = "unique"
 
 
@@ -79,4 +83,13 @@ class ClassBreaksHierarchyException(APIException):
         self.default_detail = f"The class conflicts with existing class '{entry_class}'"
         super().__init__(*args, **kwargs)
 
+    default_code = "unique"
+
+
+class OutOfEntitySlotsException(APIException):
+    status_code = 400
+    default_detail = (
+        "You have run out of slots to create entities."
+        + "Please set some entities to public access or delete them."
+    )
     default_code = "unique"

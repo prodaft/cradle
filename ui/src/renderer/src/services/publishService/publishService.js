@@ -17,7 +17,7 @@ export function getPublishOptions() {
  */
 export function publishReport(strategy, noteIds, title, anonymized) {
     const path = `/reports/publish/`;
-    const body = { strategy, note_ids: noteIds, title , anonymized: anonymized};
+    const body = { strategy, note_ids: noteIds, title, anonymized: anonymized };
 
     return authAxios({
         method: 'POST',

@@ -1,9 +1,15 @@
+from django.apps import apps
 from django.db import models
-from django.db.models.query import RawQuerySet
+from django.db.models.expressions import F
+from django.db.models.query_utils import Q
 
 from user.models import CradleUser
 
 from .enums import EntryType
+
+from core.fields import BitStringField
+
+fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
 
 class EntryQuerySet(models.QuerySet):
@@ -24,51 +30,46 @@ class EntryQuerySet(models.QuerySet):
 
     def unreferenced(self) -> models.QuerySet:
         """
-        Get entries that are not referenced by any note
+        Get entries that are not referenced by any relation
         """
-        return self.filter(notes=None)
+        return self.filter(Q(relations_1=None) | Q(relations_2=None))
 
-    def _neighbour_query(self, user: CradleUser | None) -> tuple[str, list[str]]:
-        query_parts = []
-        query_args = []
-        for i in self.all():
-            if user is None or user.is_cradle_admin:
-                query_parts.append(
-                    "SELECT entry_id AS id FROM get_related_entry_ids(%s)"
-                )
-                query_args.append(str(i.id))
-            else:
-                query_parts.append(
-                    "SELECT entry_id AS id FROM get_related_entry_ids_for_user(%s, %s)"
-                )
-                query_args.extend((str(i.id), str(user.id)))
-
-        query = " UNION ".join(query_parts)
-
-        return query, query_args
-
-    def get_neighbours(self, user: CradleUser | None) -> RawQuerySet:
+    def accessible(self, user: CradleUser) -> models.QuerySet:
         """
-        Get the neighbours of an entry
+        Filter all entries accessible to a user
         """
-        query, query_args = self._neighbour_query(user)
+        Edge = apps.get_model("entries", "Edge")
+        accessible_vertices = Edge.objects.accessible(user).values_list(
+            "src", flat=True
+        )
+        return self.filter(
+            Q(id__in=accessible_vertices) | Q(entry_class__type=EntryType.ENTITY)
+        )
 
-        return self.raw(query, query_args)
 
-    def get_neighbour_entities(self, user: CradleUser | None) -> RawQuerySet:
+class RelationQuerySet(models.QuerySet):
+    def accessible(self, user: CradleUser) -> models.QuerySet:
         """
-        Get the neighbours of an entry
+        Filter all relations accessible to a user
         """
-        query, query_args = self._neighbour_query(user)
+        return self.extra(
+            where=["(access_vector & %s) = %s"],
+            params=[user.access_vector_inv, fieldtype.get_prep_value(0)],
+        )
 
-        final_query = f"""
-        SELECT id, type FROM ({query})
-        JOIN entries_entry ee
-        JOIN entries_entry_class eec ON ee.entry_class_id = eec.subtype
-        WHERE type = 'entity'
+
+class EdgeQuerySet(models.QuerySet):
+    def accessible(self, user: CradleUser) -> models.QuerySet:
         """
+        Filter all relations accessible to a user
+        """
+        return self.extra(
+            where=["(access_vector & %s) = %s"],
+            params=[user.access_vector_inv, fieldtype.get_prep_value(0)],
+        )
 
-        return self.raw(final_query, query_args)
+    def remove_mirrors(self) -> models.QuerySet:
+        return self.filter(src__lt=F("dst"))
 
 
 class EntryManager(models.Manager):
@@ -78,6 +79,12 @@ class EntryManager(models.Manager):
         allowing access to its methods for all querysets retrieved by this manager.
         """
         return EntryQuerySet(self.model, using=self._db).with_entry_class()
+
+    def accessible(self, user: CradleUser) -> models.QuerySet:
+        """
+        Filter all entities accessible to a user
+        """
+        return self.get_queryset().accessible(user)
 
     def is_artifact(self) -> models.QuerySet:
         """
@@ -133,11 +140,50 @@ class EntryManager(models.Manager):
         return self.get_queryset().get_neighbours(user)
 
 
-class EntityManager(models.Manager):
+class EntityManager(EntryManager):
     def get_queryset(self) -> models.QuerySet:
-        return super().get_queryset().filter(entry_class__type=EntryType.ENTITY)
+        return super().get_queryset().is_entity()
 
 
-class ArtifactManager(models.Manager):
+class ArtifactManager(EntryManager):
     def get_queryset(self) -> models.QuerySet:
-        return super().get_queryset().filter(entry_class__type=EntryType.ARTIFACT)
+        return super().get_queryset().is_artifact()
+
+
+class RelationManager(models.Manager):
+    def get_queryset(self):
+        """
+        Returns a queryset that uses the custom QuerySet
+        allowing access to its methods for all querysets retrieved by this manager.
+        """
+        return RelationQuerySet(self.model, using=self._db)
+
+    def accessible(self, user: CradleUser) -> models.QuerySet:
+        """
+        Filter all relations accessible to a user
+        """
+        return self.get_queryset().accessible(user)
+
+    def bulk_create(self, objs, **kwargs):
+        for obj in objs:
+            if obj.e1.id > obj.e2.id:
+                obj.e1, obj.e2 = obj.e2, obj.e1
+        return super().bulk_create(objs, **kwargs)
+
+
+class EdgeManager(models.Manager):
+    def get_queryset(self):
+        """
+        Returns a queryset that uses the custom QuerySet
+        allowing access to its methods for all querysets retrieved by this manager.
+        """
+        return EdgeQuerySet(self.model, using=self._db)
+
+    def accessible(self, user: CradleUser) -> models.QuerySet:
+        """
+        Filter all relations accessible to a user
+        """
+        return self.get_queryset().accessible(user)
+
+    def remove_mirrors(self) -> models.QuerySet:
+        return self.get_queryset().remove_mirrors()

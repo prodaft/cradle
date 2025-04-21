@@ -8,12 +8,12 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 
 from access.enums import AccessType
 from access.models import Access
-from entries.exceptions import DuplicateEntryException
 from user.permissions import HasEntryManagerRole
 
 from ..serializers import EntitySerializer, EntryResponseSerializer
 from ..models import Entry
 from uuid import UUID
+from entries.tasks import refresh_edges_materialized_view
 
 
 @extend_schema_view(
@@ -48,23 +48,6 @@ class EntityList(APIView):
 
         serializer = EntryResponseSerializer(entities, many=True)
         return Response(serializer.data)
-
-    def post(self, request: Request) -> Response:
-        if not request.user.is_cradle_admin:
-            return Response(
-                "Only admins can create entities!", status=status.HTTP_403_FORBIDDEN
-            )
-
-        serializer = EntitySerializer(data=dict(request.data))
-
-        if serializer.is_valid():
-            if serializer.exists():
-                raise DuplicateEntryException()
-            serializer.save()
-            serializer.instance.log_create(request.user)
-
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema_view(
@@ -122,7 +105,7 @@ class EntityDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasEntryManagerRole]
 
-    def get(self, request: Request, entity_id: UUID) -> Response:
+    def get(self, request: Request, entity_id: int) -> Response:
         if not (
             request.user.is_cradle_admin
             or Access.objects.get_accessible_entity_ids(request.user)
@@ -158,6 +141,8 @@ class EntityDetail(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
         entity.delete()
+        refresh_edges_materialized_view.apply_async(simulate=True)
+
         return Response("Requested entity was deleted", status=status.HTTP_200_OK)
 
     def post(self, request: Request, entity_id: UUID) -> Response:
@@ -196,4 +181,7 @@ class EntityDetail(APIView):
 
         serializer.save()
         serializer.instance.log_edit(request.user)
+
+        refresh_edges_materialized_view.apply_async()
+
         return Response(serializer.data)

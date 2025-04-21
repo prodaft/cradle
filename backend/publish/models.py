@@ -17,19 +17,10 @@ class DownloadStrategies(models.TextChoices):
     JSON = "json", "JSON"
 
 
-class ReportMode(models.TextChoices):
-    UPLOAD = "upload", "Upload"
-    DOWNLOAD = "download", "Download"
-
-
 class ReportStatus(models.TextChoices):
     WORKING = "working", "Working"
     DONE = "done", "Done"
     ERROR = "error", "Error"
-
-
-class ImportStrategy(models.TextChoices):
-    IMPORT = "import", "Import"
 
 
 class PublishedReport(models.Model, LoggableModelMixin):
@@ -44,13 +35,9 @@ class PublishedReport(models.Model, LoggableModelMixin):
     notes = models.ManyToManyField(Note, related_name="published_reports")
     created_at = models.DateTimeField(auto_now_add=True)
     strategy = models.CharField(
-        max_length=255,
-        choices=UploadStrategies.choices
-        + DownloadStrategies.choices
-        + ImportStrategy.choices,
+        max_length=255, choices=UploadStrategies.choices + DownloadStrategies.choices
     )
     anonymized = models.BooleanField(default=False)
-    report_location = models.CharField(max_length=1024, null=True)
     extra_data = models.JSONField(null=True, blank=True)
 
     status = models.CharField(
@@ -61,21 +48,24 @@ class PublishedReport(models.Model, LoggableModelMixin):
 
     error_message = models.TextField(blank=True, null=True)
 
-    mode = models.CharField(
-        max_length=10,
-        choices=ReportMode.choices,
-        blank=True,
-    )
-
     objects = PublishedReportManager()
 
-    def set_mode(self):
-        upload_values = [choice.value for choice in UploadStrategies]
-        download_values = [choice.value for choice in DownloadStrategies]
-        if self.strategy in upload_values:
-            self.mode = ReportMode.UPLOAD
-        elif self.strategy in download_values:
-            self.mode = ReportMode.DOWNLOAD
+    remote_url = models.CharField(max_length=1024, null=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    #     ## XOR one of remote url or report file can be set
+    #     constraints = [
+    #         models.CheckConstraint(
+    #             check=models.Q(remote_url__isnull=True) | models.Q(file__isnull=True),
+    #             name="remote_url_xor_report_file_1",
+    #         ),
+    #         models.CheckConstraint(
+    #             check=models.Q(remote_url__isnull=False) | models.Q(file__isnull=False),
+    #             name="remote_url_xor_report_file_2",
+    #         ),
+    #     ]
 
     def propagate_from(self, log):
         return

@@ -106,21 +106,26 @@ export default function NoteEditor() {
                 run: () => {
                     handleSaveNote('Changes saved successfully.');
                     return true;
-                }
-            }
+                },
+            },
         ]);
 
         setEditorExtensions([saveKeymap]);
     }, [id]);
 
     // For non-editor parts of the app
-    useHotkeys('ctrl+s, cmd+s', (event) => {
-        event.preventDefault();
-        handleSaveNote('Changes saved successfully.');
-    }, {
-        enableOnFormTags: true,
-        preventDefault: true
-    }, [id]);
+    useHotkeys(
+        'ctrl+s, cmd+s',
+        (event) => {
+            event.preventDefault();
+            handleSaveNote('Changes saved successfully.');
+        },
+        {
+            enableOnFormTags: true,
+            preventDefault: true,
+        },
+        [id],
+    );
 
     useNavbarContents(
         [
@@ -150,7 +155,7 @@ export default function NoteEditor() {
                     setMarkdownContent={setMarkdownContent}
                     fileData={fileData}
                     setFileData={setFileData}
-                    editorExtensions={editorExtensions}  // Pass the extensions to the TextEditor
+                    editorExtensions={editorExtensions} // Pass the extensions to the TextEditor
                 />
             )}
         </div>

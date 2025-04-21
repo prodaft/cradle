@@ -25,22 +25,17 @@ export default function Activity({ log }) {
         Prism.highlightAll();
     }, [log.details]);
 
-    const handleNavigateToObject = () => {
-        navigate(`/${log.content_type}/${log.object_id}`);
-    };
-
     return (
-        <div
-            className='bg-cradle3 bg-opacity-70 p-4 backdrop-blur-lg rounded-lg m-2 shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer'
-            onClick={handleNavigateToObject}
-        >
+        <div className='bg-white dark:bg-gray-800 dark:bg-opacity-70 p-4 backdrop-blur-lg rounded-lg m-2 shadow-lg hover:shadow-xl transition-shadow duration-300'>
             <div className='flex justify-between items-center mb-2'>
-                <div className='dark:text-gray-300 text-xs'>{formattedTimestamp}</div>
-                <div className='text-orange-500 text-xs font-bold uppercase'>
+                <div className='text-gray-600 dark:text-gray-300 text-xs'>
+                    {formattedTimestamp}
+                </div>
+                <div className='text-orange-600 dark:text-orange-500 text-xs font-bold uppercase'>
                     {log.type}
                 </div>
             </div>
-            <div className='dark:text-gray-300 text-sm space-y-1'>
+            <div className='text-gray-700 dark:text-gray-300 text-sm space-y-1'>
                 <div>
                     <strong className='text-cradle2'>User:</strong> {log.user.username}
                 </div>
