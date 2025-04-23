@@ -35,7 +35,7 @@ export const ModalProvider = ({ children }) => {
                     className='modal-overlay'
                     onClick={closeModal}
                 />
-                <div class='modal-content p-0 w-[100%]'>
+                <div className='modal-content p-0 w-[100%]'>
                     {modalData.Component && (
                         <div className='modal-content rounded'>
                             {/* Close button */}

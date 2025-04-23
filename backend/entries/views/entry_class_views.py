@@ -256,25 +256,21 @@ class EntryClassDetail(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        new_subtype = request.data.pop("subtype", None)
-        request.data["subtype"] = class_subtype
+        new_subtype = request.data.get("subtype", None)
 
-        serializer = EntryClassSerializer(entryclass, data=request.data)
+        with transaction.atomic():
+            if new_subtype != class_subtype and new_subtype:
+                entryclass = entryclass.rename(new_subtype)
 
-        if serializer.is_valid():
-            serializer.save()
+            serializer = EntryClassSerializer(entryclass, data=request.data)
 
-            with transaction.atomic():
+            if serializer.is_valid():
                 serializer.save()
+
                 response = dict(serializer.data)
-
-                if new_subtype != class_subtype and new_subtype:
-                    entryclass = entryclass.rename(new_subtype)
-                    response["subtype"] = new_subtype
-
                 entryclass.log_edit(user)
 
-            return Response(response)
+                return Response(response)
 
         return Response(serializer.error_messages, status=status.HTTP_400_BAD_REQUEST)
 

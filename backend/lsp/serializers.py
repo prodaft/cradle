@@ -11,8 +11,8 @@ class LspEntryClassSerializer(serializers.ModelSerializer):
             "type",
             "subtype",
             "description",
-            "regex",
             "options",
+            "regex",
             "color",
         ]
 
@@ -22,16 +22,9 @@ class LspEntryClassSerializer(serializers.ModelSerializer):
         options = representation.get("options", None)
 
         if options:
-            options = options.split("\n")
-            representation["options"] = options
-
-            if len(options) > 0:
-                trie = Trie()
-                for o in options:
-                    trie.insert(o)
-
-                representation["options"] = trie.serialize()
-            else:
-                representation["options"] = None
+            options = options.strip()
+            representation["options"] = len(options) > 0
+        else:
+            representation["options"] = False
 
         return representation

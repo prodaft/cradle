@@ -8,12 +8,13 @@ import DOMPurify from 'dompurify';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Editor from '../Editor/Editor';
 import Preview from '../Preview/Preview';
-import { updateNote, getNote } from '../../services/notesService/notesService';
+import { updateNote, getNote, deleteNote } from '../../services/notesService/notesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import TextEditor from '../TextEditor/TextEditor';
 import { diff_match_patch } from 'diff-match-patch';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { keymap } from '@codemirror/view';
+import { Trash } from 'iconoir-react';
 
 export default function NoteEditor() {
     const [initialMarkdown, setInitialMarkdown] = useState('');
@@ -98,6 +99,24 @@ export default function NoteEditor() {
         }
     };
 
+    const handleDeleteNote = async () => {
+        deleteNote(id)
+            .then((response) => {
+                if (response.status === 200) {
+                    setAlert({
+                        show: true,
+                        color: 'green',
+                        message: 'Note deleted successfully',
+                    });
+                    // Navigate after 2 seconds
+                    setTimeout(() => {
+                        navigate('/');
+                    }, 2000);
+                }
+            })
+            .catch(displayError(setAlert, navigate));
+    };
+
     useEffect(() => {
         const saveKeymap = keymap.of([
             {
@@ -134,6 +153,14 @@ export default function NoteEditor() {
                 icon={<FloppyDisk />}
                 text='Save'
                 onClick={() => handleSaveNote('Changes saved successfully.')}
+                awaitOnClick={true}
+            />,
+
+            <NavbarButton
+                key='delete-note-btn'
+                icon={<Trash />}
+                text='Delete'
+                onClick={() => handleDeleteNote()}
                 awaitOnClick={true}
             />,
         ],

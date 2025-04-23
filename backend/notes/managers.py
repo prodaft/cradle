@@ -136,26 +136,6 @@ class NoteManager(models.Manager):
 
         return qs.inaccessible(user).order_by("-timestamp").distinct()
 
-    def delete_unreferenced_entries(self) -> None:
-        """Deletes entries of type ARTIFACT that
-        are not referenced by any notes.
-
-        This function filters out entries of type ARTIFACT
-        that have no associated notes and deletes them from the database.
-        It performs the following steps:
-
-        1. Filter entries by type (ARTIFACT).
-        2. Annotate each entry with the count of related notes.
-        3. Filter entries to keep only those with no associated notes.
-        4. Delete the filtered unreferenced entries from the database.
-
-        Returns:
-            None: This function does not return any value.
-        """
-        Entry.objects.filter(entry_class__type=EntryType.ARTIFACT).annotate(
-            note_count=Count("notes")
-        ).filter(note_count=0).delete()
-
     def get_in_order(self, note_ids: List) -> models.QuerySet:
         """Gets the notes in the order specified by the given list of note IDs.
 

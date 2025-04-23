@@ -8,9 +8,9 @@ const CradleLoading = () => {
                 <Logo text={true} />
             </div>
             <svg
-                class='spinner-ring spinner-primary spinner-xl dark:[--spinner-color:--secondary]'
+                className='spinner-ring spinner-primary spinner-xl dark:[--spinner-color:--secondary]'
                 viewBox='25 25 50 50'
-                stroke-width='5'
+                strokeWidth='5'
             >
                 <circle cx='50' cy='50' r='20' />
             </svg>

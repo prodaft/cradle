@@ -61,7 +61,9 @@ export default function AdminPanel() {
                 if (response.status === 200) {
                     const fetchedEntities = response.data;
                     setEntities(
-                        fetchedEntities.map((c) => (
+                        fetchedEntities.map((c) => {
+                          console.log(c)
+                          return (
                             <AdminPanelCardEntity
                                 id={c.id}
                                 key={`${c.subtype}:${c.name}`}
@@ -72,7 +74,9 @@ export default function AdminPanel() {
                                 typename={c.subtype}
                                 setRightPane={setRightPane}
                             />
-                        )),
+                        )}
+
+                        ),
                     );
                 }
             })

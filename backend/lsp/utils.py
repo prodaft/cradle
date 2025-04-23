@@ -59,12 +59,17 @@ class Trie:
 
 class LspUtils:
     @staticmethod
-    def get_lsp_entries(user: CradleUser, eclass: EntryClass) -> List[Entry]:
-        accessible_notes = Note.objects.get_accessible_notes(user, None)
-        accessible_entries = Note.objects.get_entries_from_notes(
-            accessible_notes
-        ).filter(entry_class=eclass)
-
+    def get_lsp_entries(
+        user: CradleUser, eclass: EntryClass, initial: str
+    ) -> List[Entry]:
+        accessible_entries = (
+            Entry.objects.accessible(user)
+            .filter(
+                entry_class=eclass,
+                name__istartswith=initial,
+            )
+            .distinct()
+        )
         return accessible_entries
 
     @staticmethod
@@ -77,16 +82,23 @@ class LspUtils:
 
     @staticmethod
     def get_lsp_pack(
-        user: CradleUser,
-        classes: Iterable[EntryClass],
+        user: CradleUser, classes: Iterable[EntryClass], initial=""
     ) -> Dict[str, Dict[str, Any]]:
         tries = {}
 
         for eclass in classes:
             if eclass.type == EntryType.ENTITY:
                 entries = LspUtils.get_entities(user).filter(entry_class=eclass)
+            elif eclass.options:
+                trie = Trie()
+
+                for i in eclass.options.split("\n"):
+                    trie.insert(i.strip())
+
+                tries[eclass.subtype] = trie.serialize()
+                continue
             else:
-                entries = LspUtils.get_lsp_entries(user, eclass)
+                entries = LspUtils.get_lsp_entries(user, eclass, initial)
 
             trie = Trie()
             if entries.count() > 0:

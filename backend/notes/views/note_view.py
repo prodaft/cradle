@@ -292,12 +292,7 @@ class NoteDetail(APIView):
                 "User does not have Read-Write access to all referenced entities",
                 status=status.HTTP_403_FORBIDDEN,
             )
-
-        artifact_ids = set(
-            note_to_delete.entries.is_artifact().values_list("id", flat=True)
-        )
         note_to_delete.delete()
-        Entry.objects.filter(id__in=artifact_ids).unreferenced().delete()
 
         refresh_edges_materialized_view.apply_async(simulate=True)
 
