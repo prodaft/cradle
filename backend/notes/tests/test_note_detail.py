@@ -155,8 +155,6 @@ class DeleteNoteTest(NotesTestCase):
         self.assertEqual(response.status_code, 200)
         with self.assertRaises(Note.DoesNotExist):
             Note.objects.get(id=note_id)
-        with self.assertRaises(Entry.DoesNotExist):
-            Entry.objects.get(id=self.entries[1].id)
 
     def test_delete_note_keeps_entities(self):
         note_id = self.notes[1].id

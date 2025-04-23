@@ -3,7 +3,7 @@ import { vim } from '@replit/codemirror-vim';
 import vimIcon from '../../assets/vim32x32.gif';
 import { languages } from '@codemirror/language-data';
 import { drawSelection } from '@uiw/react-codemirror';
-import { useId, useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useId, useState, useRef, useCallback, useEffect, useMemo, memo } from 'react';
 import { EditorView, keymap } from '@codemirror/view';
 import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import { eclipse } from '@uiw/codemirror-theme-eclipse';
@@ -24,7 +24,7 @@ import { TreeView } from '@phosphor-icons/react';
 import extractHeaderHierarchy from '../../utils/editorUtils/markdownOutliner';
 
 /**
- * This component makes use of a pre-existing code editor component (CodeMirror, see https://github.com/uiwjs/react-codemirror)
+ * This component makes use of a pre-existing code editor component (CodeMirror, see https://github.com/uiw/react-codemirror)
  * The Editor component is expected to be used for typing Markdown. It also has a toggle for enabling Vim mode in the editor.
  *
  * It also allows the user to upload files and view them in a table below the editor. These files have specific tags that can be copied to the clipboard.
@@ -42,7 +42,7 @@ import extractHeaderHierarchy from '../../utils/editorUtils/markdownOutliner';
  * @returns {Editor}
  * @constructor
  */
-export default function Editor({
+function Editor({
     noteid,
     markdownContent,
     setMarkdownContent,
@@ -74,17 +74,32 @@ export default function Editor({
     const autoLinkId = useId();
     const vimModeId = useId();
     const editorRef = useRef(null);
+    const markdownContentRef = useRef(markdownContent);
+    const currentLineRef = useRef(currentLine);
 
+    // Update refs when props change to avoid using stale values in callbacks
+    useEffect(() => {
+        markdownContentRef.current = markdownContent;
+    }, [markdownContent]);
+
+    useEffect(() => {
+        currentLineRef.current = currentLine;
+    }, [currentLine]);
+
+    // Stabilized callback for setCurrentLine to prevent re-rendering
     const debouncedSetCurrentLine = useRef(
-        debounce((f) => {
-            setCurrentLine(f());
-        }, 50),
+        debounce((lineNumber) => {
+            // Only update if the value is actually different
+            if (currentLineRef.current !== lineNumber) {
+                setCurrentLine(lineNumber);
+            }
+        }, 50)
     ).current;
 
     const debouncedSetTop = useRef(
         debounce((val) => {
             setTop(val);
-        }, 50),
+        }, 50)
     ).current;
 
     useEffect(() => {
@@ -97,47 +112,62 @@ export default function Editor({
         return new CradleEditor({}, setLspLoaded, displayError(setAlert));
     }, [setAlert]);
 
-    let extensions = [
-        editorUtils.markdown({ codeLanguages: languages }),
-        drawSelection(),
-        EditorView.lineWrapping,
-        editorUtils.autocomplete(),
-        editorUtils.lint(),
-        Prec.highest(
-            keymap.of([
-                ...completionKeymap,
-                {
-                    key: 'Tab',
-                    run: acceptCompletion,
+    const extensions = useMemo(() => {
+        let exts = [
+            editorUtils.markdown({ codeLanguages: languages }),
+            drawSelection(),
+            EditorView.lineWrapping,
+            editorUtils.autocomplete(),
+            editorUtils.lint(),
+            Prec.highest(
+                keymap.of([
+                    ...completionKeymap,
+                    {
+                        key: 'Tab',
+                        run: acceptCompletion,
+                    },
+                ]),
+            ),
+            events.dom({
+                paste(e) {
+                    if (e.clipboardData.files.length > 0) {
+                        e.preventDefault();
+                        setPendingFiles(e.clipboardData.files);
+                    }
                 },
-            ]),
-        ),
-        events.dom({
-            paste(e) {
-                if (e.clipboardData.files.length > 0) {
-                    e.preventDefault();
-                    setPendingFiles(e.clipboardData.files);
-                }
-            },
-            click() {
-                const state = editorRef.current.view.state;
-                const cursor = state.selection.main.to;
-                const line = state.doc.lineAt(cursor);
-                debouncedSetCurrentLine(() => line.number);
-            },
-        }),
-        events.scroll({
-            scroll(e) {
-                debouncedSetTop(e.target.scrollTop);
-            },
-        }),
-        ...additionalExtensions,
-    ];
+                click() {
+                    if (!editorRef.current) return;
+                    const state = editorRef.current.view.state;
+                    const cursor = state.selection.main.to;
+                    const line = state.doc.lineAt(cursor);
+                    debouncedSetCurrentLine(line.number);
+                },
+            }),
+            events.scroll({
+                scroll(e) {
+                    debouncedSetTop(e.target.scrollTop);
+                },
+            }),
+            ...additionalExtensions,
+        ];
+
+        if (enableVim) {
+            exts = exts.concat(vim());
+        }
+
+        return exts;
+    }, [editorUtils, enableVim, additionalExtensions, debouncedSetCurrentLine]);
 
     useEffect(() => {
         if (!editorRef.current || !editorRef.current.view) {
             return;
         }
+
+        // Skip if current line hasn't actually changed
+        if (currentLineRef.current === currentLine) {
+            return;
+        }
+
         const view = editorRef.current.view;
         const state = view.state;
         const cursor = state.selection.main.to;
@@ -149,47 +179,46 @@ export default function Editor({
 
         const totalLines = state.doc.lines;
         const targetLine = Math.min(Math.max(1, currentLine), totalLines);
+
         const targetLinePos = state.doc.line(targetLine).from;
 
         const selection = { anchor: targetLinePos, head: targetLinePos };
-
         editorRef.current.view.dispatch({
             selection,
             scrollIntoView: true,
         });
     }, [currentLine]);
 
-    if (enableVim) {
-        extensions = extensions.concat(vim());
-    }
-
     useEffect(() => {
         setShowFileList(!showFileList);
     }, []);
 
-    const insertTextToCodeMirror = (text) => {
+    const insertTextToCodeMirror = useCallback((text) => {
         if (editorRef.current) {
             const doc = editorRef.current.view.state;
             editorRef.current.view.dispatch(doc.replaceSelection(text));
         }
-    };
+    }, []);
 
     useEffect(() => {
         setCodeMirrorContent(markdownContent);
     }, [isDarkMode]);
 
-    // Create a debounced function (adjust wait time as needed).
+    // Create a debounced function for setting markdown content
     const debouncedSetMarkdownContent = useRef(
         debounce((text) => {
-            setMarkdownContent(text);
-        }, 100),
+            // Only update if content has actually changed
+            if (markdownContentRef.current !== text) {
+                setMarkdownContent(text);
+            }
+        }, 100)
     ).current;
 
     const onEditorChange = useCallback(
         (text) => {
             debouncedSetMarkdownContent(text);
         },
-        [debouncedSetMarkdownContent],
+        [debouncedSetMarkdownContent]
     );
 
     useEffect(() => {
@@ -206,18 +235,32 @@ export default function Editor({
         }
     }, [markdownContent]);
 
-    const toggleFileList = () => {
-        setShowFileList(!showFileList);
-    };
+    const toggleFileList = useCallback(() => {
+        setShowFileList(prev => !prev);
+    }, []);
 
-    const smartLink = () => {
+    const toggleViewCollapsed = useCallback(() => {
+        setViewCollapsed(prev => !prev);
+    }, [setViewCollapsed]);
+
+    const toggleOutline = useCallback(() => {
+        setShowOutline(prev => !prev);
+    }, []);
+
+    const toggleVim = useCallback(() => {
+        const newValue = !enableVim;
+        localStorage.setItem('editor.vim', newValue);
+        setEnableVim(newValue);
+    }, [enableVim]);
+
+    const smartLink = useCallback(() => {
         if (!editorRef.current) {
             return;
         }
         const doc = editorRef.current.view.state;
         let to = doc.selection.main.to;
         let from = doc.selection.main.from;
-        let content = markdownContent;
+        let content = markdownContentRef.current;
 
         if (to === from) {
             from = 0;
@@ -231,11 +274,13 @@ export default function Editor({
             to: content.length,
             changes: { from: 0, to: content.length, insert: linked },
         });
-    };
+    }, [editorUtils, setMarkdownContent]);
 
+    // Use useMemo for noteOutline to prevent unnecessary recalculations
     useEffect(() => {
-        setNoteOutline(extractHeaderHierarchy(markdownContent, setCurrentLine));
-    }, [markdownContent]);
+        const content = markdownContent || "";
+        setNoteOutline(extractHeaderHierarchy(content, debouncedSetCurrentLine));
+    }, [markdownContent, debouncedSetCurrentLine]);
 
     return (
         <div className='h-full w-full flex flex-col flex-1'>
@@ -248,7 +293,7 @@ export default function Editor({
                             type='button'
                             className='flex flex-row items-center hover:bg-gray-4 tooltip tooltip-right tooltip-primary text-primary'
                             data-tooltip={'Toggle Outline'}
-                            onClick={() => setShowOutline(!showOutline)}
+                            onClick={toggleOutline}
                         >
                             <TreeView size={24} />
                         </button>
@@ -286,13 +331,10 @@ export default function Editor({
                             type='checkbox'
                             className='switch switch-ghost-primary my-1'
                             checked={enableVim}
-                            onChange={() => {
-                                localStorage.setItem('editor.vim', !enableVim);
-                                setEnableVim(!enableVim);
-                            }}
+                            onChange={toggleVim}
                         />
                         <button
-                            id={autoLinkId}
+                            id='toggle-preview'
                             data-testid='toggle-preview'
                             name='toggle-preview'
                             type='button'
@@ -300,7 +342,7 @@ export default function Editor({
                             data-tooltip={
                                 viewCollapsed ? 'Show Preview' : 'Hide Preview'
                             }
-                            onClick={() => setViewCollapsed(!viewCollapsed)}
+                            onClick={toggleViewCollapsed}
                         >
                             {!viewCollapsed ? <NavArrowRight /> : <NavArrowLeft />}
                         </button>
@@ -374,3 +416,14 @@ export default function Editor({
         </div>
     );
 }
+
+// Use memo to prevent unnecessary re-renders when props haven't meaningfully changed
+export default memo(Editor, (prevProps, nextProps) => {
+    // Only re-render if these specific props have changed
+    return (
+        prevProps.noteid === nextProps.noteid &&
+        prevProps.viewCollapsed === nextProps.viewCollapsed &&
+        prevProps.fileData === nextProps.fileData &&
+        prevProps.isDarkMode === nextProps.isDarkMode
+    );
+});

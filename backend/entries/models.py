@@ -137,7 +137,6 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
             )
         )
 
-        # Optionally remove the old entry class if needed.
         EntryClass.objects.get(subtype=old_subtype).delete()
         return self
 

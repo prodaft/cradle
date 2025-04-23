@@ -113,7 +113,6 @@ class NoteEditSerializer(serializers.ModelSerializer):
             new_content, _ = dmp.patch_apply(patch, instance.content)
 
         user = self.context["request"].user
-        artifact_ids = set(instance.entries.is_artifact().values_list("id", flat=True))
 
         files = validated_data.pop("files", None)
 
@@ -136,8 +135,6 @@ class NoteEditSerializer(serializers.ModelSerializer):
 
             # Create the new files
             FileReference.objects.bulk_create(file_reference_models)
-
-        Entry.objects.filter(id__in=artifact_ids).unreferenced().delete()
 
         return note
 

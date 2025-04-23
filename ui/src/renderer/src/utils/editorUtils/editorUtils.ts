@@ -7,7 +7,7 @@ import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { LanguageSupport, LRLanguage, syntaxTree } from '@codemirror/language';
 import { EditorState } from '@uiw/react-codemirror';
 import { tags } from '@codemirror/highlight';
-import { Trie } from './trie';
+import { DynamicTrie } from './trie';
 
 /*==============================================================================
   HELPER FUNCTIONS
@@ -44,7 +44,7 @@ type LspEntryClass = {
     subtype: string;
     description: string;
     regex: string | null;
-    options: string[];
+    options: boolean;
     color: string;
 };
 
@@ -86,16 +86,16 @@ export class CradleEditor {
     private static cachedEntryClasses: { [key: string]: LspEntryClass } | null = null;
 
     private static triesPromise: Promise<any> | null = null;
-    private static cachedTries: { [key: string]: Trie } | null = null;
+    private static cachedTries: { [key: string]: DynamicTrie } | null = null;
 
-    private static cachedBigTrie: Trie | null = null;
+    private static cachedBigTrie: DynamicTrie | null = null;
 
     /*---------------------------------------------------------------------------
     Instance Properties
   ---------------------------------------------------------------------------*/
     private entryClasses: { [key: string]: LspEntryClass } | null;
-    private tries: { [key: string]: Trie } | null;
-    private bigTrie: Trie | null;
+    private tries: { [key: string]: DynamicTrie } | null;
+    private bigTrie: DynamicTrie | null;
     private _ready: Promise<boolean>;
     private _onError: ((error: Error) => void) | null;
     private _onLspLoaded: (bool: boolean) => void;
@@ -172,9 +172,54 @@ export class CradleEditor {
                 if (!CradleEditor.triesPromise) {
                     CradleEditor.triesPromise = fetchCompletionTries().then(
                         (response) => {
-                            const tries: { [key: string]: Trie<null> } = {};
+                            const tries: { [key: string]: DynamicTrie } = {};
                             for (const [type, trie] of Object.entries(response.data)) {
-                                tries[type] = Trie.deserialize(trie, type);
+                                tries[type] = new DynamicTrie(null, type, -1);
+                                tries[type].mergeTrie('', trie);
+                            }
+
+                            for (const entryClass of Object.values(this.entryClasses)) {
+                                if (entryClass.options) continue;
+                                if (entryClass.regex) continue;
+                                if (entryClass.type == 'entity') continue;
+
+                                tries[entryClass.subtype] = new DynamicTrie(
+                                    async (x) => {
+                                        try {
+                                            let result = await fetchCompletionTries(
+                                                entryClass.subtype,
+                                                x,
+                                            );
+                                            if (
+                                                result.data &&
+                                                result.data[entryClass.subtype]
+                                            ) {
+                                                let trie =
+                                                    result.data[entryClass.subtype];
+
+                                                for (const char of x) {
+                                                    if (!trie.c || !trie.c[char]) {
+                                                        return {};
+                                                    }
+                                                    trie = trie.c[char];
+                                                }
+
+                                                return trie;
+                                            }
+                                            return {};
+                                        } catch (error) {
+                                            console.error(
+                                                'Error fetching trie data:',
+                                                error,
+                                            );
+                                            if (this._onError)
+                                                this._onError(error as Error);
+                                            return {};
+                                        }
+                                    },
+                                    entryClass.subtype,
+                                    3,
+                                );
                             }
                             return tries;
                         },
@@ -188,14 +233,13 @@ export class CradleEditor {
             if (CradleEditor.cachedBigTrie) {
                 this.bigTrie = CradleEditor.cachedBigTrie;
             } else {
-                for (const entryClass of Object.values(this.entryClasses)) {
-                    if (!entryClass.options) continue;
-                    if (entryClass.subtype == 'alias') continue;
-                    let trie = Trie.deserialize(entryClass.options, entryClass.subtype);
-                    this.tries[entryClass.subtype] = trie;
-                }
+                const bigTrie = new DynamicTrie(null, '', -1);
 
-                const bigTrie = Trie.merge(Object.values(this.tries));
+                for (const entryClass of Object.values(this.entryClasses)) {
+                    if (!entryClass.options) if (entryClass.type != 'entity') continue;
+                    if (!this.tries) continue;
+                    bigTrie.merge(this.tries[entryClass.subtype]);
+                }
                 this.bigTrie = bigTrie;
                 CradleEditor.cachedBigTrie = bigTrie;
             }
@@ -304,7 +348,7 @@ export class CradleEditor {
         return suggestions;
     }
 
-    private getSuggestionsForWord(word: string): Suggestion[] {
+    private async getSuggestionsForWord(word: string): Promise<Suggestion[]> {
         if (!this.entryClasses) return [];
         const suggestions: Suggestion[] = [];
         const madeSuggestions = new Set<string>();
@@ -328,7 +372,7 @@ export class CradleEditor {
 
         // 2. Process instance-based suggestions using the bigTrie.
         if (this.bigTrie) {
-            const matchingInstances = this.bigTrie.allWordsWithPrefix(word);
+            const matchingInstances = await this.bigTrie.allWordsWithPrefixFetch(word);
             matchingInstances.forEach((matchObj) => {
                 for (const type of matchObj.types) {
                     const key = `${type}:${matchObj.word}`;
@@ -346,12 +390,14 @@ export class CradleEditor {
     /**
      * Provides autocomplete suggestions when the cursor is outside a link.
      */
-    private autocompleteForPlainText(context: AutocompleteContext): AutocompleteResult {
+    private async autocompleteForPlainText(
+        context: AutocompleteContext,
+    ): Promise<AutocompleteResult> {
         const word = context.matchBefore(/\S*/);
         if (word.from === word.to && !context.explicit)
             return { from: context.pos, options: [] };
 
-        const suggestions = this.getSuggestionsForWord(word.text).map((s) => ({
+        const suggestions = (await this.getSuggestionsForWord(word.text)).map((s) => ({
             type: 'keyword',
             label: `[[${s.type}:${s.match}]]`,
         }));
@@ -420,10 +466,12 @@ export class CradleEditor {
                     if (t == 'alias') break;
 
                     const v = context.state.doc.sliceString(from, to);
-                    options = this.tries[t].allWordsWithPrefix(v).map((item) => ({
-                        label: item.word,
-                        type: 'keyword',
-                    }));
+                    options = (await this.tries[t].allWordsWithPrefixFetch(v)).map(
+                        (item) => ({
+                            label: item.word,
+                            type: 'keyword',
+                        }),
+                    );
                     break;
                 }
                 ratchetValue = false;
@@ -433,17 +481,19 @@ export class CradleEditor {
                 if (!this.tries['alias']) return { from: context.pos, options: [] };
 
                 const v = context.state.doc.sliceString(from, to);
-                options = this.tries['alias'].allWordsWithPrefix(v).map((item) => ({
-                    label: item.word,
-                    type: 'keyword',
-                }));
+                options = (await this.tries['alias'].allWordsWithPrefixFetch(v)).map(
+                    (item) => ({
+                        label: item.word,
+                        type: 'keyword',
+                    }),
+                );
                 break;
             default:
                 // For headings, paragraphs, or table cells, use plain text autocomplete.
                 if (!node.name.includes('Heading')) break;
             case 'Paragraph':
             case 'TableCell':
-                return this.autocompleteForPlainText(context);
+                return await this.autocompleteForPlainText(context);
         }
 
         return { from, to, options };

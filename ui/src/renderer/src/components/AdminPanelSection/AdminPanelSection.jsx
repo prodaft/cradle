@@ -2,6 +2,7 @@ import { PlusCircle } from 'iconoir-react';
 import useFrontendSearch from '../../hooks/useFrontendSearch/useFrontendSearch';
 import useAuth from '../../hooks/useAuth/useAuth';
 import { useState } from 'react';
+import { naturalSort } from '../../utils/dashboardUtils/dashboardUtils';
 /**
  * AdminPanelSection component - This component is used to display a section in the AdminPanel.
  * The section contains the following elements:
@@ -38,7 +39,7 @@ export default function AdminPanelSection({
               // Convert keys to strings to ensure proper lexicographical comparison
               const aKey = a.key?.toString() || '';
               const bKey = b.key?.toString() || '';
-              return aKey.localeCompare(bKey);
+              return naturalSort(aKey, bKey);
           })
         : [];
     return (
