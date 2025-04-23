@@ -1,3 +1,4 @@
+from typing import Optional
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -92,38 +93,23 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
         )
         return eclass.pk
 
-    def delete(self, *args, **kwargs):
-        from entries.tasks import remap_notes_task
-
-        notes = []
-        for e in self.entries.all():
-            notes.extend(e.notes.all())
-
-        unique_note_ids = list({note.id for note in notes})
-
-        from django.db import transaction
-
-        transaction.on_commit(
-            lambda: remap_notes_task.delay(unique_note_ids, {self.subtype: None}, {})
-        )
-
-        super().delete(*args, **kwargs)
-
-    def rename(self, new_subtype: str):
-        if new_subtype == self.subtype or not new_subtype:
+    def rename(self, new_subtype: Optional[str], user_id: str = None):
+        if new_subtype == self.subtype:
             return None
 
         from django.db import transaction
         from entries.tasks import remap_notes_task
 
-        entries = self.entries.all()
-        for entry in entries:
-            entry.entry_class_id = new_subtype
-        Entry.objects.bulk_update(entries, ["entry_class_id"])
-
         old_subtype = self.subtype
-        self.subtype = new_subtype
-        self.save()
+
+        if new_subtype is not None:
+            entries = self.entries.all()
+            for entry in entries:
+                entry.entry_class_id = new_subtype
+            Entry.objects.bulk_update(entries, ["entry_class_id"])
+
+            self.subtype = new_subtype
+            self.save()
 
         notes = []
         for e in self.entries.all():
@@ -133,7 +119,7 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
         # Schedule remapping to update notes' content asynchronously.
         transaction.on_commit(
             lambda: remap_notes_task.delay(
-                unique_note_ids, {old_subtype: new_subtype}, {}
+                unique_note_ids, {old_subtype: new_subtype}, {}, user_id
             )
         )
 

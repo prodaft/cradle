@@ -225,13 +225,15 @@ class EntryClassDetail(APIView):
             return Response("User must be an admin to delete entry classes.")
 
         try:
-            entity = EntryClass.objects.get(subtype=class_subtype)
+            entity_class = EntryClass.objects.get(subtype=class_subtype)
         except EntryClass.DoesNotExist:
             return Response(
                 "There is no entry class with specified subtype.",
                 status=status.HTTP_404_NOT_FOUND,
             )
-        entity.delete()
+
+        entity_class.rename(None, request.user.id)
+
         return Response("Requested entry class was deleted", status=status.HTTP_200_OK)
 
     def post(self, request: Request, class_subtype: str) -> Response:
@@ -260,7 +262,7 @@ class EntryClassDetail(APIView):
 
         with transaction.atomic():
             if new_subtype != class_subtype and new_subtype:
-                entryclass = entryclass.rename(new_subtype)
+                entryclass = entryclass.rename(new_subtype, user.id)
 
             serializer = EntryClassSerializer(entryclass, data=request.data)
 

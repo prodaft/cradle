@@ -18,6 +18,7 @@ import numpy as np
 
 from django.contrib.gis.geos import Point
 from management.settings import cradle_settings
+from user.models import CradleUser
 
 # import networkx as nx
 # from pyforceatlas2 import ForceAtlas2
@@ -67,17 +68,18 @@ def update_accesses(entry_id):
 
 
 @shared_task
-def remap_notes_task(note_ids, mapping_eclass, mapping_entry):
+def remap_notes_task(note_ids, mapping_eclass, mapping_entry, user_id=None):
     notes = list(Note.objects.filter(id__in=note_ids))
+    if user_id:
+        user = CradleUser.objects.get(id=user_id)
+    else:
+        user = None
+
     mapping_entry = {tuple(k.split(":", 1)): v for k, v in mapping_entry.items()}
 
     for note in notes:
-        note.content = remap_links(note.content, mapping_eclass, mapping_entry)
-
-    Note.objects.bulk_update(notes, ["content"])
-
-    for n in notes:
-        TaskScheduler(None).run_pipeline(n, validate=False)
+        content = remap_links(note.content, mapping_eclass, mapping_entry)
+        TaskScheduler(user, content=content).run_pipeline(note, validate=False)
 
 
 @shared_task
