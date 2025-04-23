@@ -4,6 +4,7 @@ from entries.models import Entry, EntryClass
 from django.db.models import Q
 from notes.exceptions import (
     EntriesDoNotExistException,
+    EntryClassesDoNotExistException,
     NotEnoughReferencesException,
 )
 from entries.enums import EntryType
@@ -96,6 +97,8 @@ class ValidateNoteTask(BaseTask):
 
             elif cradle_settings.notes.allow_dynamic_entry_class_creation:
                 total_count += 1
+            else:
+                raise EntryClassesDoNotExistException([r.key])
 
         if entity_count < cradle_settings.notes.min_entities:
             raise NotEnoughReferencesException()

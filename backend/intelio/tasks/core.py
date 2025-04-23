@@ -56,7 +56,7 @@ def enrich_periodic():
         enricher.last_run = now
         enricher.save()
 
-        content_type = ContentType.objects.get_for_model(EntryClass)
+        content_type = ContentType.objects.get_for_model(EnricherSettings)
 
         for eclass in enricher.for_eclasses.all():
             entries = Entry.objects.filter(entry_class=eclass).order_by("id")
@@ -69,7 +69,7 @@ def enrich_periodic():
                 entry_ids = list(entries.values_list("id", flat=True))
 
                 enrich_entries.apply_async(
-                    args=(enricher.id, entry_ids, content_type.id, eclass.subtype)
+                    args=(enricher.id, entry_ids, content_type.id, enricher.id)
                 )
 
 
