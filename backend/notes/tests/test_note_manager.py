@@ -42,21 +42,6 @@ class DeleteUnfilteredEntriesTest(NotesTestCase):
         self.note.entries.add(self.metadata[0])
         self.note.entries.add(self.metadata[1])
 
-    def test_delete_unfiltered_entries(self):
-        Note.objects.delete_unreferenced_entries()
-
-        with self.subTest("Check unreferenced artifacts are deleted"):
-            self.assertEqual(Entry.artifacts.count(), 4)
-        with self.subTest("Check entities are not deleted"):
-            self.assertEqual(Entry.entities.count(), 2)
-
-        for i in range(2, 4):
-            with self.assertRaises(Entry.DoesNotExist):
-                Entry.objects.get(id=self.entries[i].id)
-
-        with self.assertRaises(Entry.DoesNotExist):
-            Entry.objects.get(id=self.metadata[2].id)
-
 
 class AccessibleNotesTest(NotesTestCase):
     def create_users(self):

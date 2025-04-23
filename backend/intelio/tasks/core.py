@@ -1,7 +1,7 @@
 from celery import shared_task
 from django.contrib.contenttypes.models import ContentType
 
-from entries.models import Entry, EntryClass
+from entries.models import Entry
 from intelio.enums import EnrichmentStrategy
 from intelio.models.base import BaseDigest, EnricherSettings
 from user.models import CradleUser
