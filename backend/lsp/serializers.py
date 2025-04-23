@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from entries.models import EntryClass
-from lsp.utils import Trie
 
 
 class LspEntryClassSerializer(serializers.ModelSerializer):

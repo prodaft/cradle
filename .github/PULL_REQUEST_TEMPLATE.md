@@ -22,7 +22,6 @@ Please indicate which parts of the application this PR concerns. For example, yo
 - [ ] I have commented my code where necessary.
 - [ ] I have made corresponding changes to the documentation.
 - [ ] My changes do not produce any new warnings.
-- [ ] I have added tests that prove my fix is effective or that my feature works.
 - [ ] Any dependent changes have been merged and published.
 
 ## Additional Notes

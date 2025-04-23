@@ -3,7 +3,6 @@ from typing import Dict, List, Any
 
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
-from notes.models import Note
 from user.models import CradleUser
 from access.models import Access
 
