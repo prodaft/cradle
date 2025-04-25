@@ -1,5 +1,4 @@
 from collections import defaultdict
-import itertools
 from celery import shared_task
 from django.contrib.contenttypes.models import ContentType
 from django.db import close_old_connections
@@ -42,32 +41,23 @@ def smart_linker_task(note_id):
     try:
         Relation.objects.filter(note=note, reason=RelationReason.NOTE).delete()
 
-        pairs = note.reference_tree.relation_pairs()
+        pairs = note.reference_tree.get_relation_tuples()
         pairs_resolved = set()
 
         entries = {}
         for e in note.entries.all():
             entries[Link(e.entry_class.subtype, e.name)] = e
 
-        entities = {
-            x for x in entries.values() if x.entry_class.type == EntryType.ENTITY
-        }
-        artifacts = {
-            x for x in entries.values() if x.entry_class.type == EntryType.ARTIFACT
-        }
-
         # Resolve pairs from reference tree
         for src, dst in pairs:
             if src in entries and dst in entries:
-                pairs_resolved.add((entries[src], entries[dst]))
+                pairs_resolved.add(
+                    (entries[src], entries[dst], src.virtual or dst.virtual)
+                )
             else:
                 logger.warning(
                     f"Pair ({src}, {dst}) not found in entries. Skipping this pair."
                 )
-
-        # Add entity-artifact permutations
-        for e, a in itertools.product(entities, artifacts):
-            pairs_resolved.add((e, a))
 
         # Bulk create relations
         Relation.objects.bulk_create(
@@ -77,9 +67,10 @@ def smart_linker_task(note_id):
                     e2=dst,
                     content_object=note,
                     access_vector=note.access_vector,
+                    virtual=virtual,
                     reason=RelationReason.NOTE,
                 )
-                for src, dst in pairs_resolved
+                for src, dst, virtual in pairs_resolved
             ]
         )
 
@@ -104,9 +95,18 @@ def entry_class_creation_task(note_id, user_id=None):
     if user_id:
         user = CradleUser.objects.get(id=user_id)
 
+    virtual_class = EntryClass.objects.filter(subtype="virtual")
+
+    if not virtual_class.exists():  # If alias type does not exist, create it
+        virtual_class = EntryClass.objects.create(
+            type=EntryType.ARTIFACT,
+            subtype="virtual",
+            color="#7f8389",
+        )
+
     nonexistent_entries = set()
 
-    for r in note.reference_tree.links():
+    for r in note.reference_tree.all_links():
         if not EntryClass.objects.filter(subtype=r.key).exists():
             if not cradle_settings.notes.allow_dynamic_entry_class_creation:
                 nonexistent_entries.add(r.key)
@@ -137,10 +137,16 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
 
     note.entries.clear()
     entries = []
-    for r in note.reference_tree.links():
+    for r in note.reference_tree.all_links():
         entry = Entry.objects.filter(name=r.value, entry_class__subtype=r.key)
         if not entry.exists():
-            entry_class = EntryClass.objects.get(subtype=r.key)
+            try:
+                entry_class = EntryClass.objects.get(subtype=r.key)
+            except EntryClass.DoesNotExist:
+                logging.warning(
+                    f"Entry class {r.key} does not exist. Skipping entry creation."
+                )
+                continue
 
             if entry_class.type == EntryType.ARTIFACT:
                 try:
@@ -184,6 +190,7 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
             enrich[e.id].append(entry.id)
 
         if user_id:
+            entry.save()
             entry.log_create(user)  # Pass user_id for logging
 
     if len(childscan):
@@ -223,7 +230,7 @@ def connect_aliases(note_id, user_id=None):
 
     aliases = {}
 
-    for r in note.reference_tree.links():
+    for r in note.reference_tree.all_links():
         if r.alias is None:
             continue
         if r.alias not in aliases:

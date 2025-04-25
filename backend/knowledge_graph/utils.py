@@ -1,5 +1,6 @@
 from typing import List
 from django.db import connection
+from django.db.models import Q
 
 from core.fields import BitStringField
 from entries.models import Edge, Entry
@@ -8,7 +9,7 @@ from entries.models import Edge, Entry
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
 
-def get_neighbors(sourceset, depth, user=None):
+def get_neighbors(sourceset, depth, user=None, skip_virtual=False):
     """
     Returns a QuerySet of Entry objects that are exactly `depth` hops away from source_entry.
     Only follows relations where accessible=True, and ensures nodes visited at earlier
@@ -21,7 +22,17 @@ def get_neighbors(sourceset, depth, user=None):
     visited = [current_level]
 
     for _ in range(depth):
-        edges = Edge.objects.filter(src__in=current_level)
+        if skip_virtual:
+            virt_edges = Edge.objects.filter(src__in=current_level, virtual=True)
+            virt_ids = virt_edges.values_list("dst", flat=True).distinct()
+
+            edges = Edge.objects.filter(
+                Q(src__in=current_level, virtual=False)
+                | Q(src__in=virt_ids, virtual=True)
+            )
+        else:
+            edges = Edge.objects.filter(src__in=current_level)
+
         if user:
             edges = edges.accessible(user=user)
 
@@ -35,10 +46,12 @@ def get_neighbors(sourceset, depth, user=None):
             qs = qs.exclude(pk__in=v)
 
         qs = qs.distinct()
-
-        # Update the sets
         current_level = qs
+
         visited.append(current_level)
+
+        if skip_virtual:
+            visited.append(virt_ids)
 
     # Return a queryset for the final level
     return current_level

@@ -46,6 +46,12 @@ class EntryQuerySet(models.QuerySet):
             Q(id__in=accessible_vertices) | Q(entry_class__type=EntryType.ENTITY)
         )
 
+    def non_virtual(self) -> models.QuerySet:
+        """
+        Get non virtual entries
+        """
+        return self.exclude(entry_class__subtype="virtual")
+
 
 class RelationQuerySet(models.QuerySet):
     def accessible(self, user: CradleUser) -> models.QuerySet:
@@ -79,6 +85,12 @@ class EntryManager(models.Manager):
         allowing access to its methods for all querysets retrieved by this manager.
         """
         return EntryQuerySet(self.model, using=self._db).with_entry_class()
+
+    def non_virtual(self) -> models.QuerySet:
+        """
+        Get non virtual entries
+        """
+        return self.get_queryset().non_virtual()
 
     def accessible(self, user: CradleUser) -> models.QuerySet:
         """

@@ -22,7 +22,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
         fields = ["username", "email", "password", "catalyst_api_key", "vt_api_key"]
         extra_kwargs: Dict[str, Dict[str, List]] = {"username": {"validators": []}}
 
-    def validate(self, data: Any) -> Any:
+    def validate(self, data: Any, nocheck_pw: bool = False) -> Any:
         """First checks whether there exists another user with the
         same username, in which entity it returns error code 409. Then, the
         password is validated. In entity the password validation fails, error
@@ -46,7 +46,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             if user_exists:
                 raise DuplicateUserException()
 
-        if "password" in data:
+        if "password" in data and not nocheck_pw:
             try:
                 password_validation.validate_password(
                     data["password"], password_validators=password_validator()
@@ -106,15 +106,7 @@ class UserCreateSerializerAdmin(UserCreateSerializer):
         extra_kwargs: Dict[str, Dict[str, List]] = {"username": {"validators": []}}
 
     def validate(self, data: Any) -> Any:
-        if "password" in data:
-            try:
-                password_validation.validate_password(
-                    data["password"], password_validators=password_validator()
-                )
-            except ValidationError as e:
-                raise InvalidPasswordException(e.messages)
-
-        return super().validate(data)
+        return super().validate(data, nocheck_pw=True)
 
     def update(self, instance: CradleUser, validated_data: dict[str, Any]):
         for i in validated_data:

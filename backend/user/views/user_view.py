@@ -67,6 +67,10 @@ class UserList(APIView):
 
         serializer = UserCreateSerializer(data=request.data)
 
+        if request.user and request.user.is_authenticated:
+            if request.user.is_cradle_admin:  # If user is admin allow more controls
+                serializer = UserCreateSerializerAdmin(data=request.data)
+
         if serializer.is_valid():
             if not CradleUser.objects.filter(
                 email=serializer.validated_data["email"]

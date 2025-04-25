@@ -55,7 +55,7 @@ class LspTypes(APIView):
 
     def get(self, request):
         queryset = EntryClass.objects.filter(
-            ~Q(subtype="alias") & ~Q(subtype="connector")
+            ~Q(subtype="alias") & ~Q(subtype="virtual")
         )
         serializer = LspEntryClassSerializer(queryset, many=True)
 
