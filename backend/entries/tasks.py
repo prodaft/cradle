@@ -205,7 +205,9 @@ def refresh_edges_materialized_view(simulate=False):
     with connection.cursor() as cursor:
         cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY edges;")
 
-    entryids = Entry.objects.values_list("id", flat=True)
+    entryids = Entry.objects.exclude(entry_class__subtype="virtual").values_list(
+        "id", flat=True
+    )
     degrees = [None for _ in range(len(entryids))]
 
     for i, entryid in enumerate(entryids):
@@ -215,6 +217,8 @@ def refresh_edges_materialized_view(simulate=False):
         [Entry(id=id, degree=degree) for id, degree in zip(entryids, degrees)],
         ["degree"],
     )
+
+    Entry.objects.filter(entry_class__subtype="virtual").update(degree=0)
 
     if simulate:
         simulate_graph.apply_async()

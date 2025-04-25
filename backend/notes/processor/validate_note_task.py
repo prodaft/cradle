@@ -33,11 +33,11 @@ class ValidateNoteTask(BaseTask):
         Returns:
             The processed note object.
         """
-        links = note.reference_tree.links()
+        links = note.reference_tree.all_links(ignore_connectors=True)
         unique_subtypes = {r.key for r in links}
 
         # Check if the note tries to link to an alias
-        if "alias" in unique_subtypes or "connector" in unique_subtypes:
+        if "alias" in unique_subtypes or "virtual" in unique_subtypes:
             raise AliasCannotBeLinked()
 
         # Prefetch all relevant EntryClass objects in one query

@@ -31,3 +31,6 @@ filename = "backend/cradle/settings_common.py"
 filename = "ui/package.json"
 search = "\"version\": \"{current_version}\""
 replace = "\"version\": \"{new_version}\""
+
+[[tool.bumpversion.files]]
+filename = "ui/src/renderer/src/components/Welcome/Welcome.jsx"

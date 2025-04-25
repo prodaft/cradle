@@ -68,6 +68,7 @@ function Editor({
         return saved === 'true' ? true : false;
     });
     const [top, setTop] = useState(0);
+    const [codeMirrorContent, setCodeMirrorContent] = useState('');
     const [noteOutline, setNoteOutline] = useState([]);
     const { isDarkMode } = useTheme();
     const autoLinkId = useId();
@@ -199,6 +200,10 @@ function Editor({
         }
     }, []);
 
+    useEffect(() => {
+        setCodeMirrorContent(markdownContent);
+    }, [isDarkMode]);
+
     // Create a debounced function for setting markdown content
     const debouncedSetMarkdownContent = useRef(
         debounce((text) => {
@@ -217,11 +222,18 @@ function Editor({
     );
 
     useEffect(() => {
-        if (prevNoteId != null && prevNoteId !== 'new' && noteid !== prevNoteId) {
+        if (prevNoteId != null && prevNoteId !== 'new' && codeMirrorContent !== '') {
             setMarkdownContent('');
+            setCodeMirrorContent('');
         }
         setPrevNoteId(noteid);
-    }, [noteid, prevNoteId, setMarkdownContent]);
+    }, [noteid]);
+
+    useEffect(() => {
+        if (codeMirrorContent === '') {
+            setCodeMirrorContent(markdownContent);
+        }
+    }, [markdownContent]);
 
     const toggleFileList = useCallback(() => {
         setShowFileList(prev => !prev);
@@ -357,7 +369,7 @@ function Editor({
                             name='markdown-input'
                             id='markdown-input'
                             key='markdown-input'
-                            value={markdownContent}
+                            value={codeMirrorContent}
                             data-testid='markdown-input'
                             theme={isDarkMode ? vscodeDark : eclipse}
                             height='100%'
@@ -412,6 +424,6 @@ export default memo(Editor, (prevProps, nextProps) => {
         prevProps.noteid === nextProps.noteid &&
         prevProps.viewCollapsed === nextProps.viewCollapsed &&
         prevProps.fileData === nextProps.fileData &&
-        prevProps.markdownContent === nextProps.markdownContent
+        prevProps.isDarkMode === nextProps.isDarkMode
     );
 });

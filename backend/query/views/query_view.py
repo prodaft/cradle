@@ -58,7 +58,7 @@ class EntryListQuery(APIView):
         request=None,
     )
     def get(self, request: Request) -> Response:
-        accessible_entries = Entry.objects.accessible(request.user).all()
+        accessible_entries = Entry.objects.accessible(request.user).non_virtual()
         if not request.user.is_cradle_admin:
             accessible_entries = accessible_entries.filter(
                 Q(
@@ -154,7 +154,7 @@ class AdvancedQueryView(APIView):
                 )
 
         # Get accessible entries for the user
-        accessible_entries = Entry.objects.accessible(request.user).all()
+        accessible_entries = Entry.objects.accessible(request.user).non_virtual()
         if not request.user.is_cradle_admin:
             accessible_entries = accessible_entries.filter(
                 Q(

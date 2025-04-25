@@ -86,6 +86,7 @@ export function getRelations(query, page) {
         url: '/entries/relations/',
         params: {
             page,
+            wildcard: true,
             ...query,
         },
         paramsSerializer: (params) => {

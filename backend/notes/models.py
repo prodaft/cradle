@@ -5,7 +5,7 @@ from django_lifecycle.mixins import LifecycleModelMixin, transaction
 
 from intelio.models.base import BaseDigest
 
-from .markdown.to_links import LinkTreeNode, cradle_connections, heading_hierarchy
+from .markdown.to_links import Node, cradle_connections, compress_tree
 from entries.models import Entry, Relation
 from logs.models import LoggableModelMixin
 from .managers import NoteManager
@@ -13,6 +13,7 @@ from .managers import NoteManager
 import uuid
 from user.models import CradleUser
 from core.fields import BitStringField
+from management.settings import cradle_settings
 
 
 class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
@@ -53,10 +54,11 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
     _reference_tree = None
 
     @property
-    def reference_tree(self) -> LinkTreeNode:
+    def reference_tree(self) -> Node:
         if self._reference_tree is None:
-            flattree = cradle_connections(self.content)
-            self._reference_tree = heading_hierarchy(flattree)
+            tree = cradle_connections(self.content, str(self.id))
+            compress_tree(tree, cradle_settings.notes.max_clique_size)
+            self._reference_tree = tree
 
         return self._reference_tree
 

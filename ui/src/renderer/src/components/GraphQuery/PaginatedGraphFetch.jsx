@@ -17,13 +17,16 @@ const PaginatedGraphFetch = forwardRef(
     ({ queryValues, setQueryValues, processNewNode, addEdge }, graphRef) => {
         const [isGraphFetching, setIsGraphFetching] = useState(false);
         const [currentPage, setCurrentPage] = useState(1);
-        const [currentDepth, setCurrentDepth] = useState(0);
-        const [pageSize, setPageSize] = useState(250);
+        const [currentDepth, setCurrentDepth] = useState(1);
+        const [pageSize, setPageSize] = useState(500);
         const [hasNextPage, setHasNextPage] = useState(true);
         const [loading, setLoading] = useState(false);
         const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
         const navigate = useNavigate();
         const MAX_DEPTH = 3; // Set maximum depth to 3
+        
+        // Track if we've hit both max depth and end of pagination
+        const [reachedMaxDepthAndEnd, setReachedMaxDepthAndEnd] = useState(false);
 
         // Define local states for source node and date range.
         const [sourceNode, setSourceNode] = useState(null);
@@ -50,7 +53,10 @@ const PaginatedGraphFetch = forwardRef(
                 });
                 setPageSize(queryValues.pageSize || 250);
                 // Ensure depth never exceeds MAX_DEPTH
-                setCurrentDepth(Math.min(queryValues.depth || 0, MAX_DEPTH));
+                setCurrentDepth(Math.min(queryValues.depth || 1, MAX_DEPTH));
+                
+                // Reset reachedMaxDepthAndEnd when queryValues change
+                setReachedMaxDepthAndEnd(false);
             }
         }, [queryValues]);
 
@@ -85,9 +91,17 @@ const PaginatedGraphFetch = forwardRef(
 
                 setHasNextPage(has_next);
 
+                // Check if we've reached max depth and end of pagination
+                if (!has_next && currentDepth >= MAX_DEPTH) {
+                    setReachedMaxDepthAndEnd(true);
+                } else {
+                    setReachedMaxDepthAndEnd(false);
+                }
+
                 // Only increment depth if we have results and currentDepth < MAX_DEPTH
                 if (
                     !has_next &&
+                    currentDepth > 0 &&
                     currentDepth < MAX_DEPTH &&
                     (hasEntries || hasRelations)
                 ) {
@@ -221,6 +235,7 @@ const PaginatedGraphFetch = forwardRef(
             }));
             setCurrentPage(1);
             setHasNextPage(true);
+            setReachedMaxDepthAndEnd(false); // Reset when search params change
         };
 
         const handleDateRangeChange = (value) => {
@@ -238,8 +253,9 @@ const PaginatedGraphFetch = forwardRef(
                 }));
                 // Reset pagination when date range changes.
                 setCurrentPage(1);
-                setCurrentDepth(0);
+                setCurrentDepth(1);
                 setHasNextPage(true);
+                setReachedMaxDepthAndEnd(false); // Reset when search params change
             }
         };
 
@@ -252,12 +268,15 @@ const PaginatedGraphFetch = forwardRef(
             }));
             // Reset pagination and depth when source changes
             setCurrentPage(1);
-            setCurrentDepth(0);
+            setCurrentDepth(1);
             setHasNextPage(true);
+            setReachedMaxDepthAndEnd(false); // Reset when search params change
         };
 
         const handlePageChange = (newPage) => {
             setCurrentPage(newPage);
+            // If page changes, we're definitely not at max depth + end
+            setReachedMaxDepthAndEnd(false);
         };
 
         const handleDepthChange = (e) => {
@@ -269,6 +288,7 @@ const PaginatedGraphFetch = forwardRef(
             }));
             setCurrentPage(1);
             setHasNextPage(true);
+            setReachedMaxDepthAndEnd(false); // Reset when search params change
         };
 
         return (
@@ -382,7 +402,7 @@ const PaginatedGraphFetch = forwardRef(
                             onClick={fetchGraphPage}
                             className='btn btn flex items-center tooltip tooltip-top'
                             data-tooltip='Fetch graph data'
-                            disabled={loading && !isGraphFetching && hasNextPage}
+                            disabled={isGraphFetching || reachedMaxDepthAndEnd || (!sourceNode)}
                         >
                             {isGraphFetching ? (
                                 <div className='flex justify-center py-1'>
