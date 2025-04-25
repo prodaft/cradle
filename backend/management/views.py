@@ -155,10 +155,10 @@ class ActionView(APIView):
         ).delete()
 
         for i in Note.objects.all():
-            creation_task, _ = EntryClassCreationTask(request.user).run(i, [])
+            class_creation_task, _ = EntryClassCreationTask(request.user).run(i, [])
             creation_task, _ = EntryPopulationTask(request.user).run(i, [])
             linker_task, _ = SmartLinkerTask(request.user).run(i, [])
-            chain(creation_task, linker_task).apply_async()
+            chain(class_creation_task, creation_task, linker_task).apply_async()
 
         return Response({"message": "Started relinking notes."})
 
