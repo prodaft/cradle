@@ -80,7 +80,7 @@ export default function NoteEditor() {
 
         try {
             let response = await updateNote(id, {
-                patch: dmp.patch_toText(patch),
+                content: markdownContentRef.current,
                 files: storedFileData,
             });
             if (response.status === 200) {

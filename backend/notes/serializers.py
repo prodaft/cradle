@@ -106,7 +106,7 @@ class NoteEditSerializer(serializers.ModelSerializer):
             return instance
 
         if "content" in validated_data:
-            new_content = validated_data.get("content")
+            new_content = validated_data.pop("content")
         else:
             dmp = diff_match_patch()
             patch = dmp.patch_fromText(validated_data.get("patch"))

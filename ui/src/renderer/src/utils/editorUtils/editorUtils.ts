@@ -238,6 +238,7 @@ export class CradleEditor {
                 for (const entryClass of Object.values(this.entryClasses)) {
                     if (!entryClass.options) if (entryClass.type != 'entity') continue;
                     if (!this.tries) continue;
+                    if (!this.tries[entryClass.subtype]) continue;
                     bigTrie.merge(this.tries[entryClass.subtype]);
                 }
                 this.bigTrie = bigTrie;
