@@ -337,11 +337,43 @@ class LinksRenderer(BaseRenderer):
             else:
                 return src
 
+        if target.type == NodeType.TABLE_CELL:
+            if src.type not in (
+                NodeType.TABLE,
+                NodeType.TABLE_ROW,
+                NodeType.HEADING,
+                NodeType.ROOT,
+            ):
+                return self.traverse_up(src.parent, target)
+            else:
+                return src
+
+        if target.type == NodeType.TABLE_ROW:
+            if src.type not in (
+                NodeType.TABLE,
+                NodeType.HEADING,
+                NodeType.ROOT,
+            ):
+                return self.traverse_up(src.parent, target)
+            else:
+                return src
+
+        if target.type == NodeType.TABLE:
+            if src.type not in (
+                NodeType.HEADING,
+                NodeType.LIST,
+                NodeType.ROOT,
+            ):
+                return self.traverse_up(src.parent, target)
+            else:
+                return src
+
         return src
 
     def render_token(
         self, token: Dict[str, Any], state: BlockState, parent: Node
     ) -> Node:
+        print(token)
         func = self._get_method(token["type"])
         attrs = token.get("attrs", {})
 
@@ -444,10 +476,10 @@ class LinksRenderer(BaseRenderer):
         return self.node_factory.create_node(type=NodeType.TABLE)
 
     def table_head(self) -> List:
-        return self.node_factory.create_node(type=NodeType.OTHER)
+        return self.node_factory.create_node(type=NodeType.TABLE_ROW)
 
     def table_body(self) -> List:
-        return self.node_factory.create_node(type=NodeType.OTHER)
+        return self.node_factory.create_node(type=NodeType.TABLE_ROW)
 
     def table_row(self) -> Node:
         return self.node_factory.create_node(type=NodeType.TABLE_ROW)
