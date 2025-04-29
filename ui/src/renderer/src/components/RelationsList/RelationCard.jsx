@@ -7,6 +7,7 @@ import {
 import { deleteRelation } from '../../services/graphService/graphService';
 import useAuth from '../../hooks/useAuth/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { formatDate } from '../../utils/dateUtils/dateUtils';
 
 export default function RelationCard({ relation, onDelete, setAlert }) {
     const [formattedCreated, setFormattedCreated] = useState('');
@@ -16,8 +17,8 @@ export default function RelationCard({ relation, onDelete, setAlert }) {
     const navigate = useNavigate();
 
     useEffect(() => {
-        setFormattedCreated(new Date(relation.created_at).toLocaleString());
-        setFormattedSeen(new Date(relation.last_seen).toLocaleString());
+        setFormattedCreated(formatDate(new Date(relation.created_at)));
+        setFormattedSeen(formatDate(new Date(relation.last_seen)));
     }, [relation.created_at, relation.last_seen]);
 
     const handleDelete = async () => {

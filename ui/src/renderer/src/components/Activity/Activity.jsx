@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-diff';
 import 'prismjs/themes/prism-tomorrow.css';
+import { formatDate } from '../../utils/dateUtils/dateUtils';
 
 /**
  * Activity component - Displays details of an activity log entry.
@@ -18,7 +19,7 @@ export default function Activity({ log }) {
     const [formattedTimestamp, setFormattedTimestamp] = useState('');
 
     useEffect(() => {
-        setFormattedTimestamp(new Date(log.timestamp).toLocaleString());
+        setFormattedTimestamp(formatDate(new Date(log.timestamp)));
     }, [log.timestamp]);
 
     useEffect(() => {

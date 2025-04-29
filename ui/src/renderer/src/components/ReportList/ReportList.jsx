@@ -19,6 +19,7 @@ import {
     retryReport,
 } from '../../services/publishService/publishService';
 import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
+import { formatDate } from '../../utils/dateUtils/dateUtils';
 
 /**
  * ReportCard component - Displays details of a report.
@@ -36,7 +37,7 @@ export function ReportCard({ report, setAlert }) {
     const navigate = useNavigate();
 
     useEffect(() => {
-        setFormattedDate(new Date(localReport.created_at).toLocaleString());
+        setFormattedDate(formatDate(new Date(localReport.created_at)));
     }, [localReport]);
 
     const handleView = async (reportId) => {
