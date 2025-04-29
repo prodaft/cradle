@@ -3,6 +3,7 @@ import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
 import { useNavigate } from 'react-router-dom';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { useState, useEffect } from 'react';
+import { formatDate } from '../../utils/dateUtils/dateUtils';
 
 /**
  * FleetingNoteCard is a component that displays a single Fleeting Note. It is used in the FleetingNotesPanel component.
@@ -31,7 +32,7 @@ export default function FleetingNoteCard({ note, setAlert }) {
         >
             <div className='flex flex-row justify-left'>
                 <div className='text-zinc-500 text-xs w-full'>
-                    Last edited: {new Date(note['last_edited']).toLocaleString()}
+                    Last edited: {formatDate(new Date(note['last_edited']))}
                 </div>
             </div>
             <div className='bg-transparent h-fit p-2 backdrop-filter mb-4 overflow-hidden flex-grow flex space-y-2 flex-col cursor-pointer'>

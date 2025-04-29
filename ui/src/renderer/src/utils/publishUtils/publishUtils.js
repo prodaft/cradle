@@ -52,7 +52,7 @@ const createMarkdownReportFromJson = (data) => {
     if (notes) {
         markdown += '## Notes\n\n';
         notes.forEach((note) => {
-            markdown += `### ${new Date(note.timestamp).toLocaleString()}\n\n`;
+            markdown += `### ${formatDate(new Date(note.timestamp))}\n\n`;
             markdown += `${note.content}\n\n---\n\n`;
             reportFiles = reportFiles.concat(note.files || []);
         });

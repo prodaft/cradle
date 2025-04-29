@@ -12,6 +12,7 @@ import {
     deleteDigest,
 } from '../../services/intelioService/intelioService';
 import Pagination from '../Pagination/Pagination';
+import { formatDate } from '../../utils/dateUtils/dateUtils';
 
 const UploadSchema = Yup.object().shape({
     title: Yup.string().required('Digest title is required'),
@@ -46,7 +47,7 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
     const [showWarnings, setShowWarnings] = useState(false);
 
     useEffect(() => {
-        setFormattedDate(new Date(localDigest.created_at).toLocaleString());
+        setFormattedDate(formatDate(new Date(localDigest.created_at)));
     }, [localDigest]);
 
     const handleDelete = async () => {

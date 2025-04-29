@@ -2,14 +2,11 @@ import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
 import { Link, useNavigate } from 'react-router-dom';
 import { forwardRef, useCallback, useEffect, useState } from 'react';
 import Preview from '../Preview/Preview';
-import { setPublishable } from '../../services/notesService/notesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { useLocation } from 'react-router-dom';
 import ReferenceTree from '../ReferenceTree/ReferenceTree';
+import { formatDate } from '../../utils/dateUtils/dateUtils';
 
-import { useDraggable } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
-import { useSortable } from '@dnd-kit/sortable';
 
 /**
  * Note component - This component is used to display a note on the dashboard.
@@ -59,7 +56,7 @@ const Note = forwardRef(function (
                             <span>
                                 <span className='text-xs text-zinc-500 px-2'>
                                     <strong>Created on:</strong>{' '}
-                                    {new Date(note.timestamp).toLocaleString()}
+                                    {formatDate(new Date(note.timestamp))}
                                 </span>
                                 <span className='text-xs text-zinc-700'>|</span>
                                 <span className='text-xs text-zinc-500 pl-2'>
@@ -72,7 +69,7 @@ const Note = forwardRef(function (
                             <span>
                                 <span className='text-xs text-zinc-500 px-2'>
                                     <strong>Edited on:</strong>{' '}
-                                    {new Date(note.edit_timestamp).toLocaleString()}
+                                    {formatDate(new Date(note.edit_timestamp))}
                                 </span>
                                 <span className='text-xs text-zinc-700'>|</span>
                                 <span className='text-xs text-zinc-500 pl-2'>

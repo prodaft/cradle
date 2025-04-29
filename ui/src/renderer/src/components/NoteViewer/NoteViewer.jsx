@@ -22,6 +22,7 @@ import { useModal } from '../../contexts/ModalContext/ModalContext';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
 import { Tab, Tabs } from '../Tabs/Tabs';
 import ActivityList from '../ActivityList/ActivityList';
+import { formatDate } from '../../utils/dateUtils/dateUtils';
 
 /**
  * NoteViewer component
@@ -198,7 +199,7 @@ export default function NoteViewer() {
                                 <div className='text-sm text-zinc-500 p-2 border-b-2 dark:border-b-zinc-800'>
                                     <span className='text-sm text-zinc-500 p-2'>
                                         <strong>Created on:</strong>{' '}
-                                        {new Date(note.timestamp).toLocaleString()}
+                                        {formatDate(new Date(note.timestamp))}
                                     </span>
                                     <span className='text-sm text-zinc-700'>|</span>
                                     <span className='text-sm text-zinc-500 p-2'>
@@ -214,9 +215,9 @@ export default function NoteViewer() {
                                             </span>
                                             <span className='text-sm text-zinc-500 p-2'>
                                                 <strong>Edited on:</strong>{' '}
-                                                {new Date(
+                                                {formatDate(new Date(
                                                     note.edit_timestamp,
-                                                ).toLocaleString()}
+                                                ))}
                                             </span>
                                             <span className='text-sm text-zinc-700'>
                                                 |
@@ -236,9 +237,9 @@ export default function NoteViewer() {
                                             </span>
                                             <span className='text-sm text-zinc-500 p-2'>
                                                 <strong>Linked on:</strong>{' '}
-                                                {new Date(
+                                                {formatDate(new Date(
                                                     note.last_linked,
-                                                ).toLocaleString()}
+                                                ))}
                                             </span>
                                         </span>
                                     )}

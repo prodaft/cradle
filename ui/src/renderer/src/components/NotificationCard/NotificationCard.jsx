@@ -5,6 +5,7 @@ import { Mail, MailOpen } from 'iconoir-react';
 import { changeAccess, activateUser } from '../../services/adminService/adminService';
 import { useNavigate } from 'react-router-dom';
 import { getReport } from '../../services/publishService/publishService';
+import { formatDate } from '../../utils/dateUtils/dateUtils';
 
 /**
  * @typedef {Object} Notification
@@ -120,7 +121,7 @@ export default function NotificationCard({
         <div className='bg-cradle3 bg-opacity-20 p-4 backdrop-blur-lg rounded-xl m-3 shadow-md flex flex-col space-y-1'>
             <div className='flex flex-row justify-between'>
                 <div className='text-zinc-500 text-xs w-full'>
-                    {new Date(timestamp).toLocaleString()}
+                    {formatDate(new Date(timestamp))}
                 </div>
                 <span
                     className='pb-1 space-x-1 flex flex-row tooltip tooltip-left'

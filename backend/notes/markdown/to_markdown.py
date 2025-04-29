@@ -155,7 +155,7 @@ def anonymize_markdown(
     markdown = mistune.create_markdown(
         renderer=renderer, plugins=[cradle_link_plugin, table]
     )
-    markdown.block = NewlineAwareBlockParser(markdown)
+    markdown.block = NewlineAwareBlockParser()
     return markdown(md).strip()
 
 
@@ -172,7 +172,7 @@ def remap_links(
         renderer=renderer, plugins=[table, cradle_link_plugin], hard_wrap=True
     )
 
-    markdown.block = NewlineAwareBlockParser(markdown)
+    markdown.block = NewlineAwareBlockParser()
 
     result, state = markdown.parse(md)
 
