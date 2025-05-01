@@ -110,8 +110,19 @@ class NoteList(APIView):
                 return Response("Entry not found.", status=status.HTTP_404_NOT_FOUND)
 
             entry = entry.first()
-            aliasset = entry.aliasqs(user)
-            queryset = queryset.filter(entries__in=aliasset).distinct()
+
+            linked_to_exact_match = (
+                request.query_params.get("linked_to_exact_match", "false") == "true"
+            )
+
+            if linked_to_exact_match:
+                queryset = queryset.annotate(
+                    entity_count=Count('entries', filter=Q(entries__entry_class__type=EntryType.ENTITY))
+                )
+                queryset = queryset.filter(entries=entry).filter(entity_count=1)
+            else:
+                aliasset = entry.aliasqs(user)
+                queryset = queryset.filter(entries__in=aliasset).distinct()
 
         filterset = NoteFilter(request.query_params, queryset=queryset)
 

@@ -373,7 +373,6 @@ class LinksRenderer(BaseRenderer):
     def render_token(
         self, token: Dict[str, Any], state: BlockState, parent: Node
     ) -> Node:
-        print(token)
         func = self._get_method(token["type"])
         attrs = token.get("attrs", {})
 

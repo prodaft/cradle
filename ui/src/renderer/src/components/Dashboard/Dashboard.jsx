@@ -187,12 +187,14 @@ export default function Dashboard() {
                 ) : (
                     <div className='w-[95%] h-full flex flex-col p-6 space-y-3 '>
                         {contentObject.name && (
-                            <h1 className='text-5xl font-bold w-full break-all border-b border-gray-700 px-4 pb-3'>
-                                {contentObject.type && (
-                                    <span className='text-4xl text-zinc-500'>{`${contentObject.subtype ? contentObject.subtype : contentObject.type}: `}</span>
-                                )}
-                                {contentObject.name}
-                            </h1>
+                            <div className="flex justify-between items-center w-full border-b border-gray-700 px-4 pb-3">
+                                <h1 className='text-5xl font-bold break-all'>
+                                    {contentObject.type && (
+                                        <span className='text-4xl text-zinc-500'>{`${contentObject.subtype ? contentObject.subtype : contentObject.type}: `}</span>
+                                    )}
+                                    {contentObject.name}
+                                </h1>
+                            </div>
                         )}
                         {contentObject.description && (
                             <p className='text-sm text-zinc-400'>{`Description: ${contentObject.description}`}</p>
@@ -205,7 +207,10 @@ export default function Dashboard() {
                                 perTabClass='w-[50%] justify-center'
                             >
                                 <Tab title='Notes' classes='pt-2'>
-                                    <Notes setAlert={setAlert} obj={contentObject} />
+                                    <Notes 
+                                        setAlert={setAlert} 
+                                        obj={contentObject}
+                                    />
                                 </Tab>
                                 <Tab title='Relations' classes='pt-2'>
                                     <Relations obj={contentObject} />

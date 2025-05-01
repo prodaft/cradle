@@ -159,16 +159,22 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
             entry = entry.first()
             note.entries.add(entry)
 
+    print("AAAAAAAAAAAAAAA")
+
     new_objs = Entry.objects.bulk_create(entries, ignore_conflicts=True)
+    print("BBBBBBBBBBBBBBB")
+
 
     objs = [None] * len(new_objs)
     for i, e in enumerate(new_objs):
+        print(e.name, e.entry_class.subtype)
         if e.id is None:
             objs[i], _ = Entry.objects.get_or_create(
                 name=e.name, entry_class__subtype=e.entry_class.subtype
             )
         else:
             objs[i] = e
+
 
     note.entries.add(*objs)
 

@@ -34,6 +34,7 @@ export default function Notes({ setAlert, obj }) {
         content: '',
         author__username: '',
     });
+    const [linked_to_exact_match, setLinkedToExactMatch] = useState(false);
     const [submittedFilters, setSubmittedFilters] = useState(null);
 
     // On load, fetch the dashboard data for the entry
@@ -42,10 +43,11 @@ export default function Notes({ setAlert, obj }) {
         setSearchFilters((prev) => ({
             ...prev,
             ['linked_to']: obj.id,
+            linked_to_exact_match
         }));
 
-        setSubmittedFilters({ ...searchFilters, ['linked_to']: obj.id });
-    }, [setAlert, obj]);
+        setSubmittedFilters({ ...searchFilters, ['linked_to']: obj.id, linked_to_exact_match });
+    }, [setAlert, obj, linked_to_exact_match]);
 
     const handleSearchSubmit = (e) => {
         e.preventDefault();
@@ -58,45 +60,59 @@ export default function Notes({ setAlert, obj }) {
     };
 
     return (
-        <>
-            <div className='bg-cradle3 p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col flex-1'>
-                <div className=''>
-                    <form
-                        onSubmit={handleSearchSubmit}
-                        className='flex space-x-4 px-3 pb-2'
-                    >
-                        <input
-                            type='text'
-                            name='content'
-                            value={searchFilters.content}
-                            onChange={handleSearchChange}
-                            placeholder='Search by content'
-                            className='input !max-w-full w-full'
-                        />
-                        <input
-                            type='text'
-                            name='author__username'
-                            value={searchFilters.author__username}
-                            onChange={handleSearchChange}
-                            placeholder='Search by author'
-                            className='input !max-w-full w-full'
-                        />
-                        <button type='submit' className='btn w-1/2'>
+    <>
+        <div className='bg-cradle3 p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col flex-1'>
+            <div className='flex flex-col space-y-4'>
+                <form
+                    onSubmit={handleSearchSubmit}
+                    className='flex space-x-4 px-3 pb-2'
+                >
+                    <input
+                        type='text'
+                        name='content'
+                        value={searchFilters.content}
+                        onChange={handleSearchChange}
+                        placeholder='Search by content'
+                        className='input input-block'
+                    />
+                    <input
+                        type='text'
+                        name='author__username'
+                        value={searchFilters.author__username}
+                        onChange={handleSearchChange}
+                        placeholder='Search by author'
+                        className='input input-block'
+                    />
+                    <div className="flex items-center space-x-2">
+                        <button type='submit' className='btn'>
                             <Search /> Search
                         </button>
-                    </form>
-                </div>
-
-                {submittedFilters && (
-                    <NotesList
-                        query={submittedFilters}
-                        noteActions={[
-                            { Component: Publishable, props: {} },
-                            { Component: DeleteNote, props: { setAlert } },
-                        ]}
-                    />
-                )}
+                        <div className="flex items-center">
+                            <input
+                                type="checkbox"
+                                id="searchOption"
+                                name="searchOption"
+                                className="switch switch-ghost-primary h-5 w-14"
+                                checked={linked_to_exact_match}
+                                onChange={(e) => setLinkedToExactMatch(e.target.checked)}
+                            />
+                            <label htmlFor="searchOption" className="ml-2 text-sm">Exact match</label>
+                        </div>
+                    </div>
+                </form>
             </div>
-        </>
+            {submittedFilters && (
+                <NotesList
+                    query={{
+                        ...submittedFilters,
+                    }}
+                    noteActions={[
+                        { Component: Publishable, props: {} },
+                        { Component: DeleteNote, props: { setAlert } },
+                    ]}
+                />
+            )}
+        </div>
+    </>
     );
 }

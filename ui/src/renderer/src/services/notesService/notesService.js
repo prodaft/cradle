@@ -27,7 +27,9 @@ const searchNote = (query) => {
     return authAxios({
         method: 'get',
         url: `/notes/`,
-        params: query,
+        params: {
+            ...query,
+        },
         paramsSerializer: (params) => {
             return qs.stringify(params, { arrayFormat: 'repeat' });
         },
@@ -59,10 +61,10 @@ const updateNote = (id, data) => {
  * @returns {Promise<AxiosResponse<any, any>>}
  */
 const setPublishable = (noteId, status) => {
-    const path = `/notes/${noteId}/publishable/`;
+    const path = `/notes/${noteId}/`;
 
     return authAxios({
-        method: 'PUT',
+        method: 'POST',
         url: path,
         data: {
             publishable: status,
