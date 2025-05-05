@@ -21,7 +21,7 @@ from ..serializers import (
     NoteEditSerializer,
     NoteRetrieveSerializer,
     NoteRetrieveWithLinksSerializer,
-    FileReferenceWithNoteSerializer
+    FileReferenceWithNoteSerializer,
 )
 from ..models import Note
 from user.models import CradleUser
@@ -120,7 +120,9 @@ class NoteList(APIView):
 
             if linked_to_exact_match:
                 queryset = queryset.annotate(
-                    entity_count=Count('entries', filter=Q(entries__entry_class__type=EntryType.ENTITY))
+                    entity_count=Count(
+                        "entries", filter=Q(entries__entry_class__type=EntryType.ENTITY)
+                    )
                 )
                 queryset = queryset.filter(entries=entry).filter(entity_count=1)
             else:
@@ -312,6 +314,7 @@ class NoteDetail(APIView):
 
         return Response("Note was deleted.", status=status.HTTP_200_OK)
 
+
 @extend_schema_view(
     get=extend_schema(
         summary="Get files from accessible notes",
@@ -367,6 +370,7 @@ class NoteDetail(APIView):
 class NoteFiles(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+
     def get(self, request: Request) -> Response:
         user = cast(CradleUser, request.user)
         queryset = Note.objects.get_accessible_notes(user)
@@ -395,31 +399,36 @@ class NoteFiles(APIView):
             )
             if linked_to_exact_match:
                 queryset = queryset.annotate(
-                    entity_count=Count('entries', filter=Q(entries__entry_class__type=EntryType.ENTITY))
+                    entity_count=Count(
+                        "entries", filter=Q(entries__entry_class__type=EntryType.ENTITY)
+                    )
                 )
                 queryset = queryset.filter(entries=entry).filter(entity_count=1)
             else:
                 aliasset = entry.aliasqs(user)
                 queryset = queryset.filter(entries__in=aliasset).distinct()
         notes = queryset.order_by("-timestamp")
-        
+
         # Get all files from the filtered notes
         files = FileReference.objects.filter(note__in=notes).distinct()
-        
+
         # Filter by keyword (contains match with filename or exact match with hash)
         if "keyword" in request.query_params:
             keyword = request.query_params.get("keyword")
             files = files.filter(
-                Q(file_name__contains=keyword) | Q(md5_hash=keyword) | Q(sha256_hash=keyword) | Q(sha1_hash=keyword)
+                Q(file_name__contains=keyword)
+                | Q(md5_hash=keyword)
+                | Q(sha256_hash=keyword)
+                | Q(sha1_hash=keyword)
             )
-        
+
         # Filter by mimetype (wildcard match)
         if "mimetype" in request.query_params and request.query_params["mimetype"]:
             mimetype = request.query_params.get("mimetype")
             # Convert wildcard pattern to regex pattern
             mimetype_pattern = mimetype.replace("*", ".*")
             files = files.filter(mimetype__regex=mimetype_pattern)
-        
+
         paginator = TotalPagesPagination(page_size=10)
         paginated_files = paginator.paginate_queryset(files, request)
         if paginated_files is not None:

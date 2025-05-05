@@ -159,11 +159,7 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
             entry = entry.first()
             note.entries.add(entry)
 
-    print("AAAAAAAAAAAAAAA")
-
     new_objs = Entry.objects.bulk_create(entries, ignore_conflicts=True)
-    print("BBBBBBBBBBBBBBB")
-
 
     objs = [None] * len(new_objs)
     for i, e in enumerate(new_objs):
@@ -174,7 +170,6 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
             )
         else:
             objs[i] = e
-
 
     note.entries.add(*objs)
 

@@ -20,7 +20,6 @@ from file_transfer.serializers import FileReferenceSerializer
 from file_transfer.models import FileReference
 from user.serializers import UserRetrieveSerializer
 from entries.models import Entry, EntryClass
-from diff_match_patch import diff_match_patch
 
 
 class NoteCreateSerializer(serializers.ModelSerializer):
@@ -218,11 +217,11 @@ class NoteRetrieveWithLinksSerializer(NoteRetrieveSerializer):
         data["content"] += "\n\n"
         for i in obj.files.all():
             try:
-                data[
-                    "content"
-                ] += f"""[{i.minio_file_name}]: {MinioClient().create_presigned_get(
+                data["content"] += f"""[{i.minio_file_name}]: {
+                    MinioClient().create_presigned_get(
                         i.bucket_name, i.minio_file_name, timedelta(minutes=5)
-                    )} "{i.file_name}"\n"""
+                    )
+                } "{i.file_name}"\n"""
             except MinioObjectNotFound:
                 pass
 
@@ -321,7 +320,15 @@ class FileReferenceWithNoteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FileReference
-        fields = ["minio_file_name", "file_name", "bucket_name", "note_id", "md5_hash", "sha1_hash", "sha256_hash"]
+        fields = [
+            "minio_file_name",
+            "file_name",
+            "bucket_name",
+            "note_id",
+            "md5_hash",
+            "sha1_hash",
+            "sha256_hash",
+        ]
 
     def get_note_id(self, obj):
         return obj.note.id if obj.note else None
