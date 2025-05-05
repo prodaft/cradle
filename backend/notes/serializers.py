@@ -314,3 +314,14 @@ class ReportSerializer(serializers.Serializer):
     entities = EntryResponseSerializer(many=True)
     artifacts = EntryResponseSerializer(many=True)
     notes = NoteReportSerializer(many=True)
+
+
+class FileReferenceWithNoteSerializer(serializers.ModelSerializer):
+    note_id = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = FileReference
+        fields = ["minio_file_name", "file_name", "bucket_name", "note_id", "md5_hash", "sha1_hash", "sha256_hash"]
+
+    def get_note_id(self, obj):
+        return obj.note.id if obj.note else None

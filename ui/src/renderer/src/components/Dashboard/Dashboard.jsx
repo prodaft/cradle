@@ -25,6 +25,7 @@ import ActionConfirmationModal from '../Modals/ActionConfirmationModal.jsx';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import { SparksSolid } from 'iconoir-react';
 import NavbarDropdown from '../NavbarDropdown/NavbarDropdown.jsx';
+import Files from './Files.jsx';
 
 /**
  * Dashboard component
@@ -204,7 +205,7 @@ export default function Dashboard() {
                                 defaultTab={0}
                                 queryParam={'tab'}
                                 tabClasses='tabs-underline w-full'
-                                perTabClass='w-[50%] justify-center'
+                                perTabClass='w-[33%] justify-center'
                             >
                                 <Tab title='Notes' classes='pt-2'>
                                     <Notes 
@@ -214,6 +215,9 @@ export default function Dashboard() {
                                 </Tab>
                                 <Tab title='Relations' classes='pt-2'>
                                     <Relations obj={contentObject} />
+                                </Tab>
+                                <Tab title='Files' classes='pt-2'>
+                                    <Files obj={contentObject} setAlert={setAlert}/>
                                 </Tab>
                             </Tabs>
                         )}

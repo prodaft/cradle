@@ -85,4 +85,14 @@ const deleteNote = (id) => {
     });
 };
 
+/**
+ * Get files for a specific entry
+ * @param {string} entryId - The ID of the entry
+ * @param {Object} params - Query parameters for filtering and pagination
+ * @returns {Promise} - Promise resolving to the API response
+ */
+export const getFiles = (params = {}) => {
+    return authAxios.get(`/notes/files/`, { params });
+};
+
 export { getNote, setPublishable, deleteNote, updateNote, searchNote };
