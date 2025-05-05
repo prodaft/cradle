@@ -120,6 +120,7 @@ export default function Files({ obj, setAlert }) {
                         <button type="submit" className="btn">
                             <Search /> Search
                         </button>
+                        {obj.type == 'entity' && 
                         <div className="flex items-center">
                             <input
                                 type="checkbox"
@@ -130,7 +131,7 @@ export default function Files({ obj, setAlert }) {
                                 onChange={(e) => setExactMatch(e.target.checked)}
                             />
                             <label htmlFor="exactMatch" className="ml-2 text-sm">Exact match</label>
-                        </div>
+                        </div>}
                     </div>
                 </form>
             </div>

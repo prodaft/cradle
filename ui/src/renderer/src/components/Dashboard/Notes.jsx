@@ -87,6 +87,7 @@ export default function Notes({ setAlert, obj }) {
                         <button type='submit' className='btn'>
                             <Search /> Search
                         </button>
+                        {obj.type == 'entity' && 
                         <div className="flex items-center">
                             <input
                                 type="checkbox"
@@ -97,7 +98,7 @@ export default function Notes({ setAlert, obj }) {
                                 onChange={(e) => setLinkedToExactMatch(e.target.checked)}
                             />
                             <label htmlFor="searchOption" className="ml-2 text-sm">Exact match</label>
-                        </div>
+                            </div>}
                     </div>
                 </form>
             </div>
