@@ -10,7 +10,6 @@ import { eclipse } from '@uiw/codemirror-theme-eclipse';
 import FileInput from '../FileInput/FileInput';
 import FileTable from '../FileTable/FileTable';
 import { NavArrowDown, NavArrowUp, LightBulb } from 'iconoir-react/regular';
-import { treeView } from '@overleaf/codemirror-tree-view';
 import { completionKeymap, acceptCompletion } from '@codemirror/autocomplete';
 import { Prec } from '@uiw/react-codemirror';
 import * as events from '@uiw/codemirror-extensions-events';
@@ -93,13 +92,13 @@ function Editor({
             if (currentLineRef.current !== lineNumber) {
                 setCurrentLine(lineNumber);
             }
-        }, 50),
+        }, 50)
     ).current;
 
     const debouncedSetTop = useRef(
         debounce((val) => {
             setTop(val);
-        }, 50),
+        }, 50)
     ).current;
 
     useEffect(() => {
@@ -129,6 +128,7 @@ function Editor({
                 ]),
             ),
             events.dom({
+
                 paste(e) {
                     const files = Array.from(e.clipboardData.files);
                     if (files.length > 0) {
@@ -212,14 +212,14 @@ function Editor({
             if (markdownContentRef.current !== text) {
                 setMarkdownContent(text);
             }
-        }, 100),
+        }, 100)
     ).current;
 
     const onEditorChange = useCallback(
         (text) => {
             debouncedSetMarkdownContent(text);
         },
-        [debouncedSetMarkdownContent],
+        [debouncedSetMarkdownContent]
     );
 
     useEffect(() => {
@@ -237,15 +237,15 @@ function Editor({
     }, [markdownContent]);
 
     const toggleFileList = useCallback(() => {
-        setShowFileList((prev) => !prev);
+        setShowFileList(prev => !prev);
     }, []);
 
     const toggleViewCollapsed = useCallback(() => {
-        setViewCollapsed((prev) => !prev);
+        setViewCollapsed(prev => !prev);
     }, [setViewCollapsed]);
 
     const toggleOutline = useCallback(() => {
-        setShowOutline((prev) => !prev);
+        setShowOutline(prev => !prev);
     }, []);
 
     const toggleVim = useCallback(() => {
@@ -261,7 +261,7 @@ function Editor({
         const doc = editorRef.current.view.state;
         let to = doc.selection.main.to;
         let from = doc.selection.main.from;
-        let content = markdownContentRef.current;
+        let content = doc.doc.toString();
 
         if (to === from) {
             from = 0;
@@ -269,17 +269,21 @@ function Editor({
         }
 
         const linked = editorUtils.autoFormatLinks(editorRef.current.view, from, to);
-        setMarkdownContent(linked);
+        
+        // Update the editor content first
         editorRef.current.view.dispatch({
             from: 0,
             to: content.length,
             changes: { from: 0, to: content.length, insert: linked },
         });
+
+        // Then update the state
+        setMarkdownContent(linked);
     }, [editorUtils, setMarkdownContent]);
 
     // Use useMemo for noteOutline to prevent unnecessary recalculations
     useEffect(() => {
-        const content = markdownContent || '';
+        const content = markdownContent || "";
         setNoteOutline(extractHeaderHierarchy(content, debouncedSetCurrentLine));
     }, [markdownContent, debouncedSetCurrentLine]);
 

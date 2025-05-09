@@ -501,6 +501,121 @@ export class CradleEditor {
     }
 
     /*============================================================================
+    SHARED TREE TRAVERSAL LOGIC
+  =============================================================================*/
+
+    private traverseTreeForSuggestions(
+        editor: any,
+        start: number,
+        end: number,
+        processSuggestion: (suggestion: Suggestion, absoluteStart: number, absoluteEnd: number) => void
+    ): void {
+        const text: string = editor.state.doc.toString();
+        const tree = syntaxTree(editor.state);
+        const ignoreTypes = new Set([
+            'Link',
+            'CradleLink',
+            'CodeBlock',
+            'FencedCode',
+            'InlineCode',
+            'LinkLabel',
+            'URL',
+        ]);
+
+        tree.iterate({
+            from: start,
+            to: end,
+            enter: (syntaxNode: any) => {
+                const node = syntaxNode.node;
+                const nodeText = text.slice(node.from, node.to);
+                if (ignoreTypes.has(node.name)) return false;
+                if (!node.firstChild) {
+                    if (!nodeText.trim()) return;
+
+                    // Get all suggestions for the entire node text.
+                    const suggestions = this.getSuggestionsForText(nodeText);
+
+                    // Process suggestions
+                    for (const s of suggestions) {
+                        const absoluteStart = node.from + s.from;
+                        const absoluteEnd = absoluteStart + s.match.length;
+                        processSuggestion(s, absoluteStart, absoluteEnd);
+                    }
+                } else if (node.name === 'Paragraph') {
+                    if (!nodeText.trim()) return;
+
+                    // Get all suggestions for the entire node text.
+                    const suggestions = this.getSuggestionsForText(nodeText);
+
+                    const childRanges: Array<{ from: number; to: number }> = [];
+                    if (node.firstChild) {
+                        let child = node.firstChild;
+                        while (child) {
+                            childRanges.push({ from: child.from, to: child.to });
+                            child = child.nextSibling;
+                        }
+                    }
+                    for (const suggestion of suggestions) {
+                        const absoluteStart = node.from + suggestion.from;
+                        const absoluteEnd = absoluteStart + suggestion.match.length;
+
+                        const liesWithinChild = childRanges.some(
+                            (range) =>
+                                absoluteStart >= range.from && absoluteEnd <= range.to,
+                        );
+                        if (liesWithinChild) continue;
+
+                        processSuggestion(suggestion, absoluteStart, absoluteEnd);
+                    }
+                }
+            },
+        });
+    }
+
+    /*============================================================================
+    AUTO-FORMAT LINK METHODS
+  =============================================================================*/
+
+    /**
+     * Auto-formats plain text into cradle links where applicable.
+     */
+    autoFormatLinks(editor: any, start: number, end: number): string {
+        const text: string = editor.state.doc.toString();
+        const changes: Array<{ from: number; to: number; replacement: string }> = [];
+
+        this.traverseTreeForSuggestions(editor, start, end, (suggestion, absoluteStart, absoluteEnd) => {
+            const replacement = `[[${suggestion.type}:${suggestion.match}]]`;
+            changes.push({
+                from: absoluteStart,
+                to: absoluteEnd,
+                replacement,
+            });
+        });
+
+        // When there is an overlap, keep the bigger one
+        const filteredChanges = changes.filter(
+            (change) =>
+                !changes.some(
+                    (other) =>
+                        other !== change &&
+                        change.from < other.to &&
+                        change.to > other.from &&
+                        other.to - other.from > change.to - change.from,
+                ),
+        );
+
+        filteredChanges.sort((a, b) => b.from - a.from);
+        let formattedText = text;
+        for (const change of filteredChanges) {
+            formattedText =
+                formattedText.slice(0, change.from) +
+                change.replacement +
+                formattedText.slice(change.to);
+        }
+        return formattedText;
+    }
+
+    /*============================================================================
     LINTING METHODS
   =============================================================================*/
 
@@ -516,21 +631,13 @@ export class CradleEditor {
             const diagnostics: Diagnostic[] = [];
             const text = view.state.doc.toString();
             const tree = syntaxTree(view.state);
-            const ignoreTypes = new Set([
-                'CodeBlock',
-                'FencedCode',
-                'InlineCode',
-                'LinkLabel',
-                'URL',
-            ]);
 
+            // First handle link validation
             tree.iterate({
                 from: 0,
                 to: view.state.doc.length,
                 enter: (syntaxNode) => {
                     const node = syntaxNode.node;
-                    if (ignoreTypes.has(node.name)) return false;
-
                     if (node.name === 'CradleLinkType') {
                         if (!this.entryClasses) return false;
 
@@ -562,79 +669,31 @@ export class CradleEditor {
                     } else if (node.name === 'CradleLinkAlias') {
                         return false;
                     }
-
-                    if (!node.firstChild) {
-                        const nodeText = text.slice(node.from, node.to);
-                        const suggestions = this.getSuggestionsForText(nodeText);
-                        suggestions.forEach((suggestion) => {
-                            const idx = suggestion.from;
-                            diagnostics.push({
-                                from: node.from + idx,
-                                to: node.from + idx + suggestion.match.length,
-                                severity: 'warning',
-                                message: `Possible link: [[${suggestion.type}:${suggestion.match}]]`,
-                                actions: [
-                                    {
-                                        name: 'Link',
-                                        apply(view, from, to) {
-                                            view.dispatch({
-                                                changes: {
-                                                    from,
-                                                    to,
-                                                    insert: `[[${suggestion.type}:${suggestion.match}]]`,
-                                                },
-                                            });
-                                        },
-                                    },
-                                ],
-                            });
-                        });
-                    } else if (node.name === 'Paragraph') {
-                        const nodeText = text.slice(node.from, node.to);
-                        if (!nodeText.trim()) return;
-
-                        // Get all suggestions for the entire node text.
-                        const suggestions = this.getSuggestionsForText(nodeText);
-
-                        const childRanges: Array<{ from: number; to: number }> = [];
-                        if (node.firstChild) {
-                            let child = node.firstChild;
-                            while (child) {
-                                childRanges.push({ from: child.from, to: child.to });
-                                child = child.nextSibling;
-                            }
-                        }
-                        for (const suggestion of suggestions) {
-                            const start = node.from + suggestion.from;
-                            const end = start + suggestion.match.length;
-                            const liesWithinChild = childRanges.some(
-                                (range) => start >= range.from && end <= range.to,
-                            );
-                            if (liesWithinChild) continue;
-
-                            diagnostics.push({
-                                from: start,
-                                to: end,
-                                severity: 'warning',
-                                message: `Possible link: [[${suggestion.type}:${suggestion.match}]]`,
-                                actions: [
-                                    {
-                                        name: 'Link',
-                                        apply(view, from, to) {
-                                            view.dispatch({
-                                                changes: {
-                                                    from,
-                                                    to,
-                                                    insert: `[[${suggestion.type}:${suggestion.match}]]`,
-                                                },
-                                            });
-                                        },
-                                    },
-                                ],
-                            });
-                        }
-                    }
                 },
+            });
+
+            // Then handle suggestion diagnostics
+            this.traverseTreeForSuggestions(view, 0, view.state.doc.length, (suggestion, absoluteStart, absoluteEnd) => {
+                diagnostics.push({
+                    from: absoluteStart,
+                    to: absoluteEnd,
+                    severity: 'warning',
+                    message: `Possible link: [[${suggestion.type}:${suggestion.match}]]`,
+                    actions: [
+                        {
+                            name: 'Link',
+                            apply(view, from, to) {
+                                view.dispatch({
+                                    changes: {
+                                        from,
+                                        to,
+                                        insert: `[[${suggestion.type}:${suggestion.match}]]`,
+                                    },
+                                });
+                            },
+                        },
+                    ],
+                });
             });
 
             return diagnostics;
@@ -776,110 +835,6 @@ export class CradleEditor {
             codeLanguages: config.codeLanguages || [],
             extensions: [CradleLinkExtension, ...(config.extensions || [])],
         });
-    }
-
-    /*============================================================================
-    AUTO-FORMAT LINK METHODS
-  =============================================================================*/
-
-    /**
-     * Auto-formats plain text into cradle links where applicable.
-     */
-    autoFormatLinks(editor: any, start: number, end: number): string {
-        const text: string = editor.state.doc.toString();
-        const tree = syntaxTree(editor.state);
-        const changes: Array<{ from: number; to: number; replacement: string }> = [];
-        const ignoreTypes = new Set([
-            'Link',
-            'CradleLink',
-            'CodeBlock',
-            'FencedCode',
-            'InlineCode',
-        ]);
-
-        // Utility to trim punctuation and whitespace from a word.
-        const trimWord = (x: string): string => x.replace(/^[,.:\s]+|[,.:\s]+$/g, '');
-
-        tree.iterate({
-            from: start,
-            to: end,
-            enter: (syntaxNode: any) => {
-                const node = syntaxNode.node;
-                const nodeText = text.slice(node.from, node.to);
-                if (ignoreTypes.has(node.name)) return false;
-                if (!node.firstChild) {
-                    if (!nodeText.trim()) return;
-
-                    // Get all suggestions for the entire node text.
-                    const suggestions = this.getSuggestionsForText(nodeText);
-
-                    // Process suggestions: each suggestion results in a change.
-                    for (const s of suggestions) {
-                        const absoluteStart = node.from + s.from;
-                        const absoluteEnd = absoluteStart + s.match.length;
-                        const replacement = `[[${s.type}:${s.match}]]`;
-                        changes.push({
-                            from: absoluteStart,
-                            to: absoluteEnd,
-                            replacement,
-                        });
-                    }
-                } else if (node.name === 'Paragraph') {
-                    if (!nodeText.trim()) return;
-
-                    // Get all suggestions for the entire node text.
-                    const suggestions = this.getSuggestionsForText(nodeText);
-
-                    const childRanges: Array<{ from: number; to: number }> = [];
-                    if (node.firstChild) {
-                        let child = node.firstChild;
-                        while (child) {
-                            childRanges.push({ from: child.from, to: child.to });
-                            child = child.nextSibling;
-                        }
-                    }
-                    for (const suggestion of suggestions) {
-                        const replacement = `[[${suggestion.type}:${suggestion.match}]]`;
-                        const absoluteStart = node.from + suggestion.from;
-                        const absoluteEnd = absoluteStart + suggestion.match.length;
-
-                        const liesWithinChild = childRanges.some(
-                            (range) =>
-                                absoluteStart >= range.from && absoluteEnd <= range.to,
-                        );
-                        if (liesWithinChild) continue;
-
-                        changes.push({
-                            from: absoluteStart,
-                            to: absoluteEnd,
-                            replacement,
-                        });
-                    }
-                }
-            },
-        });
-
-        // When there is an overlap, keep the bigger one
-        const filteredChanges = changes.filter(
-            (change) =>
-                !changes.some(
-                    (other) =>
-                        other !== change &&
-                        change.from < other.to &&
-                        change.to > other.from &&
-                        other.to - other.from > change.to - change.from,
-                ),
-        );
-
-        filteredChanges.sort((a, b) => b.from - a.from);
-        let formattedText = text;
-        for (const change of filteredChanges) {
-            formattedText =
-                formattedText.slice(0, change.from) +
-                change.replacement +
-                formattedText.slice(change.to);
-        }
-        return formattedText;
     }
 
     public static clearCache() {
