@@ -11,7 +11,7 @@ import { authAxios, noAuthAxios } from '../../services/axiosInstance/axiosInstan
  * Files component
  * Displays files related to an artifact
  * Uses the /notes/files/ endpoint to fetch files
- * 
+ *
  * @param {Object} props
  * @param {Object} props.obj - The artifact object
  * @param {Function} props.setAlert - Function to set alert messages
@@ -56,7 +56,7 @@ export default function Files({ obj, setAlert }) {
     };
 
     useEffect(() => {
-        setPage(Number(searchParams.get('page_files')) || 2);
+        setPage(Number(searchParams.get('page_files')) || 1);
         fetchFiles();
     }, [page, searchFilters, exactMatch, obj?.id]);
 
@@ -84,13 +84,13 @@ export default function Files({ obj, setAlert }) {
                 const { presigned } = response.data;
                 const link = document.createElement('a');
                 link.href = presigned;
-                
+
                 const fileName = minio_file_name.split('/').pop() || minio_file_name;
                 link.download = fileName;
                 document.body.appendChild(link);
-                
+
                 link.click();
-                
+
                 document.body.removeChild(link);
             });
         }
@@ -120,7 +120,7 @@ export default function Files({ obj, setAlert }) {
                         <button type="submit" className="btn">
                             <Search /> Search
                         </button>
-                        {obj.type == 'entity' && 
+                        {obj.type == 'entity' &&
                         <div className="flex items-center">
                             <input
                                 type="checkbox"
@@ -201,4 +201,4 @@ export default function Files({ obj, setAlert }) {
             </div>
         </div>
     );
-} 
+}
