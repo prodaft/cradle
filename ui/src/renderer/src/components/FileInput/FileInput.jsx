@@ -19,6 +19,8 @@ import { useNavigate } from 'react-router-dom';
  * @param {Object} props - The props object
  * @param {Array<FileData>} props.fileData - the files uploaded via this instance of the component. This only contains the tag and the name of the file.
  * @param {StateSetter<Array<FileData>>} props.setFileData - callback used when the files uploaded via this instance of the component change
+ * @param {Array<File>} props.pendingFiles - array of File objects pending upload
+ * @param {StateSetter<Array<File>>} props.setPendingFiles - callback used when the pending files change
  * @returns {FileInput}
  * @constructor
  */
@@ -28,14 +30,22 @@ export default function FileInput({
     pendingFiles,
     setPendingFiles,
 }) {
-    const EMPTY_FILE_LIST = new DataTransfer().files;
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [isUploading, setIsUploading] = useState(false);
     const inputRef = useRef(null);
     const navigate = useNavigate();
 
+    // Update the file input's files when pendingFiles changes
     useEffect(() => {
-        inputRef.current.files = pendingFiles;
+        if (inputRef.current && pendingFiles.length > 0) {
+            // Create a new DataTransfer object to convert the array back to a FileList
+            const dataTransfer = new DataTransfer();
+            pendingFiles.forEach(file => dataTransfer.items.add(file));
+            inputRef.current.files = dataTransfer.files;
+        } else if (inputRef.current) {
+            // Clear the input
+            inputRef.current.value = '';
+        }
     }, [pendingFiles]);
 
     const handleUpload = () => {
@@ -47,8 +57,9 @@ export default function FileInput({
         // Attempt to upload all files and remember which files succeed and which fail
         setIsUploading(true);
         const succeededFileData = [];
-        const failedFiles = new DataTransfer();
-        const fileUploadPromises = Array.from(pendingFiles).map((file) =>
+        const failedFiles = [];
+
+        const fileUploadPromises = pendingFiles.map((file) =>
             getUploadLink(file.name)
                 .then(async (res) => {
                     const uploadUrl = res.data.presigned;
@@ -63,9 +74,10 @@ export default function FileInput({
                     });
                 })
                 .catch((err) => {
-                    failedFiles.items.add(file);
+                    failedFiles.push(file);
                 }),
         );
+
         // Handle all the failures by alerting the user which uploads failed
         Promise.all(fileUploadPromises)
             .then(() => {
@@ -74,16 +86,14 @@ export default function FileInput({
             })
             .then(() => {
                 // All other files are kept in the input fields and the user is alerted
-                if (failedFiles.files.length > 0) {
-                    setPendingFiles(failedFiles.files);
+                if (failedFiles.length > 0) {
+                    setPendingFiles(failedFiles);
                     throw new Error(
                         'Failed to upload files: ' +
-                            Array.from(failedFiles.files)
-                                .map((file) => file.name)
-                                .join(', '),
+                            failedFiles.map((file) => file.name).join(', '),
                     );
                 } else {
-                    setPendingFiles(EMPTY_FILE_LIST);
+                    setPendingFiles([]);
                     setAlert({
                         show: true,
                         message: 'All files uploaded successfully!',
@@ -98,17 +108,27 @@ export default function FileInput({
     };
 
     const handleFileChange = useCallback((event) => {
-        if (event.target && event.target.files) {
-            setPendingFiles(event.target.files);
+        if (event.target && event.target.files && event.target.files.length > 0) {
+            // Convert FileList to Array to ensure consistency across browsers
+            setPendingFiles(Array.from(event.target.files));
         } else {
-            setPendingFiles(EMPTY_FILE_LIST);
+            setPendingFiles([]);
         }
-    }, []);
+    }, [setPendingFiles]);
+
+    // Handle paste events (for the editor component issue)
+    const handlePaste = useCallback((e) => {
+        if (e.clipboardData && e.clipboardData.files.length > 0) {
+            e.preventDefault();
+            // Immediately convert FileList to Array
+            setPendingFiles(Array.from(e.clipboardData.files));
+        }
+    }, [setPendingFiles]);
 
     return (
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
-            <div className='flex flex-row space-x-2'>
+            <div className='flex flex-row space-x-2' onPaste={handlePaste}>
                 <input
                     type='file'
                     className={`input-file input-file-sm ${pendingFiles.length > 0 && 'input-file-primary'} hover:border-cradle2`}

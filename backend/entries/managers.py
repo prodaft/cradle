@@ -32,7 +32,7 @@ class EntryQuerySet(models.QuerySet):
         """
         Get entries that are not referenced by any relation
         """
-        return self.filter(Q(relations_1=None) | Q(relations_2=None))
+        return self.filter(Q(relations_1=None) & Q(relations_2=None))
 
     def accessible(self, user: CradleUser) -> models.QuerySet:
         """

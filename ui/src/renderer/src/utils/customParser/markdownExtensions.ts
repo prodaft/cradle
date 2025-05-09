@@ -1,6 +1,7 @@
 import QueryString from 'qs';
 import type MarkdownIt from 'markdown-it';
 import type { Token } from 'markdown-it';
+import { strip } from '../linkUtils/linkUtils';
 
 export interface FileData {
     minio_file_name: string;
@@ -32,7 +33,7 @@ function createDownloadPath(file: FileData, axiosInstance: Axios): string {
         bucketName: bucket_name,
         minioFileName: minio_file_name,
     });
-    return `${baseURL}/file-transfer/download/?${queryParams}`;
+    return `${strip(baseURL, '/')}/file-transfer/download/?${queryParams}`;
 }
 
 export function prependLinks(

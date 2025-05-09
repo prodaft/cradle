@@ -10,6 +10,8 @@ from core.pagination import TotalPagesPagination
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
 from entries.models import Entry
+from file_transfer.models import FileReference
+from file_transfer.serializers import FileReferenceSerializer
 
 from ..utils import get_guide_note
 
@@ -19,6 +21,7 @@ from ..serializers import (
     NoteEditSerializer,
     NoteRetrieveSerializer,
     NoteRetrieveWithLinksSerializer,
+    FileReferenceWithNoteSerializer,
 )
 from ..models import Note
 from user.models import CradleUser
@@ -110,8 +113,21 @@ class NoteList(APIView):
                 return Response("Entry not found.", status=status.HTTP_404_NOT_FOUND)
 
             entry = entry.first()
-            aliasset = entry.aliasqs(user)
-            queryset = queryset.filter(entries__in=aliasset).distinct()
+
+            linked_to_exact_match = (
+                request.query_params.get("linked_to_exact_match", "false") == "true"
+            )
+
+            if linked_to_exact_match:
+                queryset = queryset.annotate(
+                    entity_count=Count(
+                        "entries", filter=Q(entries__entry_class__type=EntryType.ENTITY)
+                    )
+                )
+                queryset = queryset.filter(entries=entry).filter(entity_count=1)
+            else:
+                aliasset = entry.aliasqs(user)
+                queryset = queryset.filter(entries__in=aliasset).distinct()
 
         filterset = NoteFilter(request.query_params, queryset=queryset)
 
@@ -297,3 +313,126 @@ class NoteDetail(APIView):
         refresh_edges_materialized_view.apply_async(simulate=True)
 
         return Response("Note was deleted.", status=status.HTTP_200_OK)
+
+
+@extend_schema_view(
+    get=extend_schema(
+        summary="Get files from accessible notes",
+        description="Returns paginated list of files that are linked to notes the user has access to. Can filter by references and other parameters. Results are ordered by note timestamp descending.",  # noqa: E501
+        parameters=[
+            OpenApiParameter(
+                name="references",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter notes by referenced entry IDs",
+                many=True,
+            ),
+            OpenApiParameter(
+                name="linked_to",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter notes by being linked to a specific entry",
+            ),
+            OpenApiParameter(
+                name="linked_to_exact_match",
+                type=bool,
+                location=OpenApiParameter.QUERY,
+                description="Whether to require exact match for linked_to filter",
+                default=False,
+            ),
+            OpenApiParameter(
+                name="keyword",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter files by keyword in filename or exact match in hash",
+            ),
+            OpenApiParameter(
+                name="mimetype",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter files by wildcard match with mimetype",
+            ),
+            OpenApiParameter(
+                name="page",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Page number for pagination",
+            ),
+        ],
+        responses={
+            200: FileReferenceSerializer,
+            400: {"description": "Invalid filter parameters"},
+            401: {"description": "User is not authenticated"},
+            404: {"description": "Resource not found"},
+        },
+    ),
+)
+class NoteFiles(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        user = cast(CradleUser, request.user)
+        queryset = Note.objects.get_accessible_notes(user)
+        if "references" in request.query_params:
+            entrylist = request.query_params.getlist("references")
+            try:
+                references_at_least = int(
+                    request.query_params.get("references_at_least", len(entrylist))
+                )
+            except ValueError:
+                return Response(
+                    "Invalid references_at_least value.",
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            queryset = queryset.annotate(
+                matching_entries=Count("entries", filter=Q(entries__in=entrylist))
+            ).filter(matching_entries=references_at_least)
+        elif "linked_to" in request.query_params:
+            entryid = request.query_params.get("linked_to")
+            entry = Entry.objects.filter(id=entryid)
+            if not entry.exists():
+                return Response("Entry not found.", status=status.HTTP_404_NOT_FOUND)
+            entry = entry.first()
+            linked_to_exact_match = (
+                request.query_params.get("linked_to_exact_match", "false") == "true"
+            )
+            if linked_to_exact_match:
+                queryset = queryset.annotate(
+                    entity_count=Count(
+                        "entries", filter=Q(entries__entry_class__type=EntryType.ENTITY)
+                    )
+                )
+                queryset = queryset.filter(entries=entry).filter(entity_count=1)
+            else:
+                aliasset = entry.aliasqs(user)
+                queryset = queryset.filter(entries__in=aliasset).distinct()
+        notes = queryset.order_by("-timestamp")
+
+        # Get all files from the filtered notes
+        files = FileReference.objects.filter(note__in=notes).distinct()
+
+        # Filter by keyword (contains match with filename or exact match with hash)
+        if "keyword" in request.query_params:
+            keyword = request.query_params.get("keyword")
+            files = files.filter(
+                Q(file_name__contains=keyword)
+                | Q(md5_hash=keyword)
+                | Q(sha256_hash=keyword)
+                | Q(sha1_hash=keyword)
+            )
+
+        # Filter by mimetype (wildcard match)
+        if "mimetype" in request.query_params and request.query_params["mimetype"]:
+            mimetype = request.query_params.get("mimetype")
+            # Convert wildcard pattern to regex pattern
+            mimetype_pattern = mimetype.replace("*", ".*")
+            files = files.filter(mimetype__regex=mimetype_pattern)
+
+        paginator = TotalPagesPagination(page_size=10)
+        paginated_files = paginator.paginate_queryset(files, request)
+        if paginated_files is not None:
+            serializer = FileReferenceWithNoteSerializer(paginated_files, many=True)
+            return paginator.get_paginated_response(serializer.data)
+        serializer = FileReferenceWithNoteSerializer(files, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -373,7 +373,6 @@ class LinksRenderer(BaseRenderer):
     def render_token(
         self, token: Dict[str, Any], state: BlockState, parent: Node
     ) -> Node:
-        print(token)
         func = self._get_method(token["type"])
         attrs = token.get("attrs", {})
 
@@ -495,18 +494,14 @@ def cradle_connections(
     md: str,
     base_id: str = "",
 ) -> Node:
-    # Create a renderer instance with the provided base_id
     renderer = LinksRenderer(base_id=base_id)
 
-    # Create a Markdown instance using the renderer
     markdown = mistune.create_markdown(
         renderer=renderer, plugins=[table, cradle_link_plugin, footnote_plugin]
     )
 
-    # Render the sample Markdown string
     result, state = markdown.parse(md)
 
-    # Print or return the result
     return result
 
 

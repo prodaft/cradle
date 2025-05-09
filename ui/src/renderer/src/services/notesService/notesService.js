@@ -27,7 +27,9 @@ const searchNote = (query) => {
     return authAxios({
         method: 'get',
         url: `/notes/`,
-        params: query,
+        params: {
+            ...query,
+        },
         paramsSerializer: (params) => {
             return qs.stringify(params, { arrayFormat: 'repeat' });
         },
@@ -59,10 +61,10 @@ const updateNote = (id, data) => {
  * @returns {Promise<AxiosResponse<any, any>>}
  */
 const setPublishable = (noteId, status) => {
-    const path = `/notes/${noteId}/publishable/`;
+    const path = `/notes/${noteId}/`;
 
     return authAxios({
-        method: 'PUT',
+        method: 'POST',
         url: path,
         data: {
             publishable: status,
@@ -81,6 +83,16 @@ const deleteNote = (id) => {
         method: 'DELETE',
         url: `/notes/${id}/`,
     });
+};
+
+/**
+ * Get files for a specific entry
+ * @param {string} entryId - The ID of the entry
+ * @param {Object} params - Query parameters for filtering and pagination
+ * @returns {Promise} - Promise resolving to the API response
+ */
+export const getFiles = (params = {}) => {
+    return authAxios.get(`/notes/files/`, { params });
 };
 
 export { getNote, setPublishable, deleteNote, updateNote, searchNote };

@@ -43,6 +43,11 @@ class FileReference(models.Model):
         blank=True,
     )
 
+    md5_hash: models.CharField = models.CharField(max_length=32, null=True, blank=True)
+    sha1_hash: models.CharField = models.CharField(max_length=40, null=True, blank=True)
+    sha256_hash: models.CharField = models.CharField(max_length=64, null=True, blank=True)
+    mimetype: models.CharField = models.CharField(max_length=255, null=True, blank=True)
+
     def to_dict(self) -> dict[str, str]:
         return {
             "minio_file_name": self.minio_file_name,

@@ -36,7 +36,7 @@ export default function Notes() {
     const handleSearchSubmit = (e) => {
         e.preventDefault();
 
-        const { content, author__username } = searchFilters;
+        const { content, author__username} = searchFilters;
 
         const newParams = new URLSearchParams(searchParams);
         newParams.set('content', searchFilters.content);
@@ -47,8 +47,8 @@ export default function Notes() {
     };
 
     const handleSearchChange = (e) => {
-        const { name, value } = e.target;
-        setSearchFilters((prev) => ({ ...prev, [name]: value }));
+        const { name, value, type, checked } = e.target;
+        setSearchFilters((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     };
 
     useEffect(() => {
@@ -63,7 +63,9 @@ export default function Notes() {
             <div className='w-[95%] h-full flex flex-col p-6 space-y-3'>
                 <AlertDismissible alert={alert} setAlert={setAlert} />
 
-                <h1 className='text-5xl font-bold w-full break-all'>Search Notes</h1>
+                <div className='flex justify-between items-center'>
+                    <h1 className='text-5xl font-bold w-full break-all'>Search Notes</h1>
+                </div>
 
                 <form
                     onSubmit={handleSearchSubmit}

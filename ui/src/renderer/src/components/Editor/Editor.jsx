@@ -10,7 +10,6 @@ import { eclipse } from '@uiw/codemirror-theme-eclipse';
 import FileInput from '../FileInput/FileInput';
 import FileTable from '../FileTable/FileTable';
 import { NavArrowDown, NavArrowUp, LightBulb } from 'iconoir-react/regular';
-import { treeView } from '@overleaf/codemirror-tree-view';
 import { completionKeymap, acceptCompletion } from '@codemirror/autocomplete';
 import { Prec } from '@uiw/react-codemirror';
 import * as events from '@uiw/codemirror-extensions-events';
@@ -129,10 +128,12 @@ function Editor({
                 ]),
             ),
             events.dom({
+
                 paste(e) {
-                    if (e.clipboardData.files.length > 0) {
+                    const files = Array.from(e.clipboardData.files);
+                    if (files.length > 0) {
                         e.preventDefault();
-                        setPendingFiles(e.clipboardData.files);
+                        setPendingFiles(files);
                     }
                 },
                 click() {
@@ -260,7 +261,7 @@ function Editor({
         const doc = editorRef.current.view.state;
         let to = doc.selection.main.to;
         let from = doc.selection.main.from;
-        let content = markdownContentRef.current;
+        let content = doc.doc.toString();
 
         if (to === from) {
             from = 0;
@@ -268,12 +269,16 @@ function Editor({
         }
 
         const linked = editorUtils.autoFormatLinks(editorRef.current.view, from, to);
-        setMarkdownContent(linked);
+        
+        // Update the editor content first
         editorRef.current.view.dispatch({
             from: 0,
             to: content.length,
             changes: { from: 0, to: content.length, insert: linked },
         });
+
+        // Then update the state
+        setMarkdownContent(linked);
     }, [editorUtils, setMarkdownContent]);
 
     // Use useMemo for noteOutline to prevent unnecessary recalculations
