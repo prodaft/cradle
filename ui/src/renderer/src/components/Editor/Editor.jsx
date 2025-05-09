@@ -93,13 +93,13 @@ function Editor({
             if (currentLineRef.current !== lineNumber) {
                 setCurrentLine(lineNumber);
             }
-        }, 50)
+        }, 50),
     ).current;
 
     const debouncedSetTop = useRef(
         debounce((val) => {
             setTop(val);
-        }, 50)
+        }, 50),
     ).current;
 
     useEffect(() => {
@@ -130,9 +130,10 @@ function Editor({
             ),
             events.dom({
                 paste(e) {
-                    if (e.clipboardData.files.length > 0) {
+                    const files = Array.from(e.clipboardData.files);
+                    if (files.length > 0) {
                         e.preventDefault();
-                        setPendingFiles(e.clipboardData.files);
+                        setPendingFiles(files);
                     }
                 },
                 click() {
@@ -211,14 +212,14 @@ function Editor({
             if (markdownContentRef.current !== text) {
                 setMarkdownContent(text);
             }
-        }, 100)
+        }, 100),
     ).current;
 
     const onEditorChange = useCallback(
         (text) => {
             debouncedSetMarkdownContent(text);
         },
-        [debouncedSetMarkdownContent]
+        [debouncedSetMarkdownContent],
     );
 
     useEffect(() => {
@@ -236,15 +237,15 @@ function Editor({
     }, [markdownContent]);
 
     const toggleFileList = useCallback(() => {
-        setShowFileList(prev => !prev);
+        setShowFileList((prev) => !prev);
     }, []);
 
     const toggleViewCollapsed = useCallback(() => {
-        setViewCollapsed(prev => !prev);
+        setViewCollapsed((prev) => !prev);
     }, [setViewCollapsed]);
 
     const toggleOutline = useCallback(() => {
-        setShowOutline(prev => !prev);
+        setShowOutline((prev) => !prev);
     }, []);
 
     const toggleVim = useCallback(() => {
@@ -278,7 +279,7 @@ function Editor({
 
     // Use useMemo for noteOutline to prevent unnecessary recalculations
     useEffect(() => {
-        const content = markdownContent || "";
+        const content = markdownContent || '';
         setNoteOutline(extractHeaderHierarchy(content, debouncedSetCurrentLine));
     }, [markdownContent, debouncedSetCurrentLine]);
 

@@ -163,7 +163,7 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
 
     objs = [None] * len(new_objs)
     for i, e in enumerate(new_objs):
-        print(e.name, e.entry_class.subtype)
+        # print(e.name, e.entry_class.subtype)
         if e.id is None:
             objs[i], _ = Entry.objects.get_or_create(
                 name=e.name, entry_class__subtype=e.entry_class.subtype
@@ -181,7 +181,7 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
         if entry.entry_class.children.count() > 0:
             childscan.append(entry.id)
 
-    for entry in new_objs:
+    for entry in objs:
         if entry is None:
             continue
 
