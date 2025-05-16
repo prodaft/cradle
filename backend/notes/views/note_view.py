@@ -374,6 +374,7 @@ class NoteFiles(APIView):
     def get(self, request: Request) -> Response:
         user = cast(CradleUser, request.user)
         queryset = Note.objects.get_accessible_notes(user)
+
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")
             try:
@@ -407,6 +408,7 @@ class NoteFiles(APIView):
             else:
                 aliasset = entry.aliasqs(user)
                 queryset = queryset.filter(entries__in=aliasset).distinct()
+
         notes = queryset.order_by("-timestamp")
 
         # Get all files from the filtered notes

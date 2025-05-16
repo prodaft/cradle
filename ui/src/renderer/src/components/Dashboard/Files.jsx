@@ -24,6 +24,7 @@ export default function Files({ obj, setAlert }) {
     const [searchParams, setSearchParams] = useSearchParams();
     const [page, setPage] = useState(Number(searchParams.get('page_files')) || 1);
     const [searchFilters, setSearchFilters] = useState({
+        ['linked_to']: obj.id,
         keyword: '',
         mimetype: '',
     });
@@ -37,7 +38,7 @@ export default function Files({ obj, setAlert }) {
         const params = {
             page,
             ...searchFilters,
-            exact_match: exactMatch,
+            linked_to_exact_match: exactMatch,
         };
 
         getFiles(params)
