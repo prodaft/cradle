@@ -134,61 +134,6 @@ class EntryClassList(APIView):
         },
     ),
 )
-@extend_schema_view(
-    get=extend_schema(
-        summary="Get entry class details",
-        description="Returns details of a specific entry class.",
-        parameters=[
-            OpenApiParameter(
-                name="class_subtype",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="Subtype of the entry class",
-            )
-        ],
-        responses={
-            200: EntryClassSerializer,
-            404: {"description": "Entry class not found"},
-        },
-    ),
-    delete=extend_schema(
-        summary="Delete entry class",
-        description="Deletes an entry class. Only available to admin users. Cannot delete the 'alias' entry class.",
-        parameters=[
-            OpenApiParameter(
-                name="class_subtype",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="Subtype of the entry class to delete",
-            )
-        ],
-        responses={
-            200: {"description": "Entry class successfully deleted"},
-            403: {
-                "description": "User is not an admin or trying to delete 'alias' class"
-            },
-            404: {"description": "Entry class not found"},
-        },
-    ),
-    post=extend_schema(
-        summary="Update entry class",
-        description="Updates an existing entry class. Cannot edit the 'alias' entry class.",
-        request=EntryClassSerializer,
-        parameters=[
-            OpenApiParameter(
-                name="class_subtype",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="Subtype of the entry class to update",
-            )
-        ],
-        responses={
-            200: EntryClassSerializer,
-            403: {"description": "Trying to edit 'alias' class"},
-            404: {"description": "Entry class not found"},
-        },
-    ),
-)
 class EntryClassDetail(APIView):
     authentication_classes = [JWTAuthentication]
 

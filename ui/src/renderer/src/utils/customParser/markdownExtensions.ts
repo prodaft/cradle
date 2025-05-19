@@ -2,6 +2,9 @@ import QueryString from 'qs';
 import type MarkdownIt from 'markdown-it';
 import type { Token } from 'markdown-it';
 import { strip } from '../linkUtils/linkUtils';
+import { Axios } from 'axios';
+import matter from 'gray-matter';
+import jsYaml from 'js-yaml';
 
 export interface FileData {
     minio_file_name: string;
@@ -155,15 +158,40 @@ export async function parseWithExtensions(
     fileData: FileData[] | undefined,
     entryColors: Map<string, string>,
     axiosInstance: Axios,
-): Promise<string> {
+): Promise<{ html: string, metadata: Record<string, any> }> {
     DownloadLinkPromiseCache = {};
     md.inline.ruler.before('link', 'cradle_link', cradleLinkRule);
     md.renderer.rules.cradle_link = (tokens: Token[], idx: number) =>
         renderCradleLink(entryColors, tokens[idx]);
+
+    let metadata = {};
+    try {
+        let note = matter(mdContent, {
+            engines: {
+                yaml: (data) => {
+                    try{
+                        return jsYaml.load(data);
+                    }
+                    catch (e) {
+                        console.log(e)
+                        return null
+                    }
+                }
+            }
+        }
+    );
+        mdContent = note.content;
+        metadata = note.data;
+    } catch (error) {
+        metadata = {}
+    }
+
     const content = fileData
         ? prependLinks(mdContent, fileData, axiosInstance)
         : mdContent;
     const tokens = md.parse(content, {});
     await processTokens(tokens, axiosInstance);
-    return md.renderer.render(tokens, md.options);
+    const html = md.renderer.render(tokens, md.options, metadata);
+    
+    return { html, metadata };
 }

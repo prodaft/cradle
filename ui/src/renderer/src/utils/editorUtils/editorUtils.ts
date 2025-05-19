@@ -4,9 +4,11 @@ import {
     fetchCompletionTries,
 } from '../../services/queryService/queryService';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
+import { yaml, yamlFrontmatter, yamlLanguage } from '@codemirror/lang-yaml';
 import { LanguageSupport, LRLanguage, syntaxTree } from '@codemirror/language';
-import { EditorState } from '@uiw/react-codemirror';
+import { basicSetup, EditorState } from '@uiw/react-codemirror';
 import { tags } from '@codemirror/highlight';
+import jsyaml from 'js-yaml';
 import { DynamicTrie } from './trie';
 
 /*==============================================================================
@@ -46,6 +48,7 @@ type LspEntryClass = {
     regex: string | null;
     options: boolean;
     color: string;
+    format: string|null;
 };
 
 interface Suggestion {
@@ -179,8 +182,7 @@ export class CradleEditor {
                             }
 
                             for (const entryClass of Object.values(this.entryClasses)) {
-                                if (entryClass.options) continue;
-                                if (entryClass.regex) continue;
+                                if (entryClass.format) continue;
                                 if (entryClass.type == 'entity') continue;
 
                                 tries[entryClass.subtype] = new DynamicTrie(
@@ -271,9 +273,11 @@ export class CradleEditor {
      * It registers the autocomplete function with the markdown language.
      */
     autocomplete(): any {
-        return markdownLanguage.data.of({
+        return [markdownLanguage.data.of({
             autocomplete: this.provideAutocompleteSuggestions.bind(this),
-        });
+        }), yamlLanguage.data.of({
+            autocomplete: this.provideAutocompleteSuggestionsForYaml.bind(this),
+        })];
     }
 
     /**
@@ -411,6 +415,98 @@ export class CradleEditor {
     }
 
     /**
+     * Traverses up from a node until it finds a parent node with the specified type.
+     * Returns a list with the path from the parent to that node, or null if no such parent exists.
+     * @param node The starting node to traverse from
+     * @param type The type of parent node to find
+     * @returns Array of nodes from parent to child, or null if no parent found
+     */
+    private getParent(node: any, type: string): any[] | null {
+        const path: any[] = [node];
+        let current = node;
+        let last_seen = 0;
+
+        while (current.parent) {
+            current = current.parent;
+            path.unshift(current);
+            if (current.name === type) {
+                last_seen = -1;
+            }
+            last_seen++;
+        }
+
+        return last_seen == path.length ? null : path.slice(last_seen);
+    }
+
+    private async provideAutocompleteSuggestionsForYaml(
+        context: AutocompleteContext,
+    ): Promise<AutocompleteResult> {
+        await this.ready();
+        if (!this.entryClasses) return { from: context.pos, options: [] };
+
+        const pos = context.pos;
+        const tree = syntaxTree(context.state);
+        let node = tree.resolve(pos, -1);
+
+        let options: Array<{ label: string; type: string }> = [];
+        let from = node.from;
+        let to = node.to;
+
+        let path = this.getParent(node, 'BlockMapping');
+        if (path && path.length >= 2 && path.length <= 7) {
+            let section = path[1]
+            if (section && section.firstChild){
+                let sectxt = context.state.doc.sliceString(section.firstChild.from, section.firstChild.to)
+                let parent = node.parent;
+                if (sectxt == 'entries' && parent != null) {
+                    if (parent.name == 'Key' || (node.name == 'Literal' && path.length == 3)) { // Filling out type
+                        options = Object.keys(this.entryClasses).map((item) => ({
+                            label: item,
+                            info: this.entryClasses[item].description
+                                ? this.entryClasses[item].description
+                                : '',
+                            type: 'keyword',
+                        }));
+                        return { from, to, options: options };
+                    } else if (node.name == 'Literal') { // Filling out value
+                        if (!this.tries) return { from: context.pos, options: [] };
+                        let sibling = parent?.firstChild;
+                        if (parent?.name == 'Item') {
+                            sibling = parent?.parent?.parent?.firstChild;
+                        }
+
+                        if (!sibling) return { from: from, to: to, options: [] };
+                        const t = context.state.doc.sliceString(sibling.from, sibling.to);
+
+                        if (!this.tries[t]) return { from: from, to: to, options: [] };
+
+                        const v = context.state.doc.sliceString(from, to);
+                        options = (await this.tries[t].allWordsWithPrefixFetch(v)).map(
+                            (item) => ({
+                                label: item.word,
+                                type: 'keyword',
+                            }),
+                        );
+                        return { from, to, options: options };
+                    }
+                }
+            }
+        }
+        if (node.name == "Literal") {
+            options = [{
+                label: "title",
+                type: "keyword",
+                info: "A title for the note",},
+            {
+                label: "entries",
+                type: "keyword",
+                info: "A list of entries in this note",}
+            ]
+            return { from, to, options: options };
+        }
+    }
+
+    /**
      * Provides autocomplete suggestions based on the cursor context.
      */
     private async provideAutocompleteSuggestions(
@@ -489,7 +585,6 @@ export class CradleEditor {
                     }),
                 );
                 break;
-            default:
                 // For headings, paragraphs, or table cells, use plain text autocomplete.
                 if (!node.name.includes('Heading')) break;
             case 'Paragraph':
@@ -513,6 +608,8 @@ export class CradleEditor {
         const text: string = editor.state.doc.toString();
         const tree = syntaxTree(editor.state);
         const ignoreTypes = new Set([
+            'Link',
+            'Frontmatter',
             'Link',
             'CradleLink',
             'CodeBlock',
@@ -638,6 +735,66 @@ export class CradleEditor {
                 to: view.state.doc.length,
                 enter: (syntaxNode) => {
                     const node = syntaxNode.node;
+                    if (node.name == "Frontmatter" || node.name == "FrontMatterContent") {
+                        let frontmatter = text.slice(node.from, node.to)
+                        let yml = frontmatter.substring(3, frontmatter.length - 4).trim()
+                        try {
+                            const parsedYaml = jsyaml.load(yml);
+                            
+                            // Handle entries if they exist
+                            if (parsedYaml && parsedYaml.entries && typeof parsedYaml.entries === 'object') {
+                                for (const [type, value] of Object.entries(parsedYaml.entries)) {
+                                    if (!this.entryClasses[type]) {
+                                        diagnostics.push({
+                                            from: node.from + 3,
+                                            to: node.to - 3,
+                                            severity: 'error' as const,
+                                            message: `Invalid entry type: ${type}`,
+                                        })
+                                        if (Array.isArray(value)) {
+                                            // Validate each item in the array
+                                            value.forEach((item, index) => {
+                                                const valueDiagnostics = this.validateLinkValue(type, String(item), node.from);
+                                                if (valueDiagnostics.length > 0) {
+                                                    // Adjust the position for each array item
+                                                    const adjustedDiagnostics = valueDiagnostics.map(d => ({
+                                                        ...d,
+                                                        from: d.from + (index * 2), // Approximate position adjustment
+                                                        to: d.to + (index * 2)
+                                                    }));
+                                                    diagnostics.push(...adjustedDiagnostics);
+                                                }
+                                            });
+                                        } else if (typeof value !== 'object') {
+                                            const valueDiagnostics = this.validateLinkValue(type, String(value), node.from);
+                                            if (valueDiagnostics.length > 0) {
+                                                diagnostics.push(...valueDiagnostics);
+                                            }
+                                        } else {
+                                            diagnostics.push({
+                                                from: node.from + 3,
+                                                to: node.to - 3,
+                                                severity: 'error' as const,
+                                                message: `Invalid value for ${type}`,
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        catch (e) {
+                            var loc = e.mark;
+                            var from = loc ? loc.position : 0;
+                            var to = from;
+                            diagnostics.push({ 
+                                from: from, 
+                                to: to, 
+                                message: e.reason, 
+                                severity: 'error' as const 
+                            });
+                        }
+                        return false;
+                    }
                     if (node.name === 'CradleLinkType') {
                         if (!this.entryClasses) return false;
 
@@ -672,8 +829,9 @@ export class CradleEditor {
                 },
             });
 
-            // Then handle suggestion diagnostics
+
             this.traverseTreeForSuggestions(view, 0, view.state.doc.length, (suggestion, absoluteStart, absoluteEnd) => {
+
                 diagnostics.push({
                     from: absoluteStart,
                     to: absoluteEnd,
@@ -829,11 +987,13 @@ export class CradleEditor {
                 },
             ],
         };
-
-        return markdown({
-            base: markdownLanguage,
-            codeLanguages: config.codeLanguages || [],
-            extensions: [CradleLinkExtension, ...(config.extensions || [])],
+            
+        return yamlFrontmatter({
+            content: markdown({
+                base: markdownLanguage,
+                codeLanguages: config.codeLanguages || [],
+                extensions: [basicSetup, CradleLinkExtension, ...(config.extensions || [])],
+            })
         });
     }
 

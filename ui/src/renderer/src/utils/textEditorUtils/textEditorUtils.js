@@ -11,11 +11,15 @@ import { syntaxTree } from '@codemirror/language';
  * @function parseContent
  * @param {string} content - Markdown syntax
  * @param {Array<FileData>} [fileData] - information about the files that will be linked
- * @returns {string} parsed and sanitized HTML
+ * @returns {Promise<{html: string, metadata: Record<string, any>}>} parsed and sanitized HTML with metadata
  */
 const parseContent = async (content, fileData) =>
-    parseMarkdown(content, fileData).then((html) => {
-        return DOMPurify.sanitize(html);
+    parseMarkdown(content, fileData).then((result) => {
+        if (!result) return { html: '', metadata: {} };
+        return {
+            html: DOMPurify.sanitize(result.html),
+            metadata: result.metadata
+        };
     });
 
 /**

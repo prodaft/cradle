@@ -145,7 +145,7 @@ class CompletionTrie(APIView):
                 # Get entry class with matching subtype
                 entry_class = (
                     EntryClass.objects.filter(subtype=entry_type)
-                    .filter(Q(options="") & Q(regex=""))
+                    .filter(format=None)
                     .first()
                 )
 

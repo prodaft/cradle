@@ -21,7 +21,7 @@ export default function FleetingNoteCard({ note, setAlert }) {
 
     useEffect(() => {
         parseContent(note.content, note.files)
-            .then((parsedContent) => setParsedContent(parsedContent))
+            .then((result) => setParsedContent(result.html))
             .catch(displayError(setAlert, navigate));
     }, [note.content, note.files, setAlert, navigate]);
 

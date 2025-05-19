@@ -10,7 +10,6 @@ class FileReferenceAdmin(admin.ModelAdmin):
         "minio_file_name",
         "bucket_name",
         "note",
-        "fleeting_note",
     )
     search_fields = ("file_name", "minio_file_name", "bucket_name")
     list_filter = ("bucket_name",)

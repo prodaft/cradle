@@ -21,13 +21,6 @@ class FileReference(models.Model):
         null=True,
         blank=True,
     )
-    fleeting_note: models.ForeignKey = models.ForeignKey(
-        "fleeting_notes.FleetingNote",
-        related_name="files",
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-    )
     report: models.ForeignKey = models.OneToOneField(
         "publish.PublishedReport",
         related_name="file",
@@ -45,7 +38,9 @@ class FileReference(models.Model):
 
     md5_hash: models.CharField = models.CharField(max_length=32, null=True, blank=True)
     sha1_hash: models.CharField = models.CharField(max_length=40, null=True, blank=True)
-    sha256_hash: models.CharField = models.CharField(max_length=64, null=True, blank=True)
+    sha256_hash: models.CharField = models.CharField(
+        max_length=64, null=True, blank=True
+    )
     mimetype: models.CharField = models.CharField(max_length=255, null=True, blank=True)
 
     def to_dict(self) -> dict[str, str]:

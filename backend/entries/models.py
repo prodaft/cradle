@@ -26,7 +26,7 @@ from .exceptions import (
     InvalidRegexException,
     OutOfEntitySlotsException,
 )
-from .enums import EntryType, RelationReason
+from .enums import EntryType, RelationReason, EntryTypeFormat
 from intelio.enums import EnrichmentStrategy
 
 import uuid
@@ -65,6 +65,9 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
     )
     description: models.TextField = models.TextField(null=True, blank=True)
     timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    format: models.CharField = models.CharField(
+        max_length=20, choices=EntryTypeFormat.choices, default=None, null=True
+    )
     regex: models.CharField = models.CharField(max_length=65536, blank=True, default="")
     generative_regex: models.CharField = models.CharField(
         max_length=65536, blank=True, default=""

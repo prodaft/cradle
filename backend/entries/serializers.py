@@ -167,10 +167,11 @@ class ArtifactClassSerializer(serializers.ModelSerializer):
     subtype = serializers.CharField(max_length=20)
     regex = serializers.CharField(max_length=65536, default="")
     options = serializers.CharField(max_length=65536, default="")
+    format = serializers.CharField(max_length=20, allow_null=True)
 
     class Meta:
         model = EntryClass
-        fields = ["subtype", "regex", "options"]
+        fields = ["subtype", "regex", "options", "format"]
 
     def validate(self, data):
         data["type"] = EntryType.ARTIFACT
@@ -189,6 +190,8 @@ class ArtifactClassSerializer(serializers.ModelSerializer):
 
 
 class EntryClassSerializerNoChildren(serializers.ModelSerializer):
+    format = serializers.CharField(max_length=20, allow_null=True)
+
     class Meta:
         model = EntryClass
         fields = [
@@ -200,6 +203,7 @@ class EntryClassSerializerNoChildren(serializers.ModelSerializer):
             "options",
             "prefix",
             "color",
+            "format",
         ]
 
 
@@ -208,6 +212,7 @@ class EntryClassSerializer(serializers.ModelSerializer):
         queryset=EntryClass.objects.all(), many=True, write_only=True, required=False
     )
     children_detail = serializers.SerializerMethodField(read_only=True)
+    format = serializers.CharField(max_length=20, allow_null=True)
 
     class Meta:
         model = EntryClass
@@ -221,6 +226,7 @@ class EntryClassSerializer(serializers.ModelSerializer):
             "prefix",
             "color",
             "children",
+            "format",
             "children_detail",
         ]
 
