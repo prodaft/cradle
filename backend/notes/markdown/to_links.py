@@ -251,7 +251,6 @@ class Node:
             self.level == other.level
             and self.type == other.type
             and self.parent == other.parent
-            and set(self.children) == set(other.children)
             and self.links == other.links
         )
 
