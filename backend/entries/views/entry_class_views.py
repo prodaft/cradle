@@ -12,6 +12,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 from user.models import CradleUser
 from user.permissions import HasAdminRole, HasEntryManagerRole
 
+from django.conf import settings
+
 from ..serializers import (
     EntryClassSerializer,
     EntryClassSerializerCount,
@@ -161,7 +163,7 @@ class EntryClassDetail(APIView):
         return Response(serializer.data)
 
     def delete(self, request: Request, class_subtype: str) -> Response:
-        if class_subtype == "alias" or class_subtype == "virtual":
+        if class_subtype in settings.INTERNAL_SUBTYPES:
             return Response(
                 "Cannot delete the alias entry class.", status=status.HTTP_403_FORBIDDEN
             )
@@ -182,7 +184,7 @@ class EntryClassDetail(APIView):
         return Response("Requested entry class was deleted", status=status.HTTP_200_OK)
 
     def post(self, request: Request, class_subtype: str) -> Response:
-        if class_subtype == "alias" or class_subtype == "virtual":
+        if class_subtype in settings.INTERNAL_SUBTYPES:
             return Response(
                 "Cannot edit the alias entry class.", status=status.HTTP_403_FORBIDDEN
             )

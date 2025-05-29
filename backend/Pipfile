@@ -35,6 +35,8 @@ psycopg2-binary = "*"
 dnspython = "*"
 bcrypt = "*"
 django-celery-beat = "*"
+requests = "*"
+python-frontmatter = "*"
 
 [dev-packages]
 bump-my-version = "*"

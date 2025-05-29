@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Entry, EntryClass, Relation
 from .enums import EntryType
+from django.db.models import Q
 
 
 from .exceptions import (
@@ -127,12 +128,17 @@ class EntryListCompressedTreeSerializer(serializers.BaseSerializer):
 
 
 class EntryTypesCompressedTreeSerializer(serializers.BaseSerializer):
-    def __init__(self, *args, fields=("name",), **kwargs):
+    def __init__(self, *args, exclude=[], fields=("name",), **kwargs):
         self.fields = fields
+        self.exclude = exclude
         super().__init__(*args, **kwargs)
 
     def to_representation(self, data):
-        unique_subtypes = data.values_list("entry_class__subtype", flat=True).distinct()
+        unique_subtypes = (
+            data.filter(~Q(entry_class__subtype__in=self.exclude))
+            .values_list("entry_class__subtype", flat=True)
+            .distinct()
+        )
 
         return list(unique_subtypes)
 

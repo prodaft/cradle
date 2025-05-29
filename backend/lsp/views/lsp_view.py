@@ -14,6 +14,8 @@ from lsp.serializers import LspEntryClassSerializer
 from ..utils import LspUtils
 from user.models import CradleUser
 
+from django.conf import settings
+
 
 @extend_schema_view(
     get=extend_schema(
@@ -54,9 +56,7 @@ class LspTypes(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        queryset = EntryClass.objects.filter(
-            ~Q(subtype="alias") & ~Q(subtype="virtual")
-        )
+        queryset = EntryClass.objects.filter(~Q(subtype__in=settings.INTERNAL_SUBTYPES))
         serializer = LspEntryClassSerializer(queryset, many=True)
 
         grouped_data = {}

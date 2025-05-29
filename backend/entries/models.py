@@ -441,8 +441,8 @@ class Relation(LifecycleModel):
     e1 = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="relations_1")
     e2 = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="relations_2")
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    last_seen = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    last_seen = models.DateTimeField(default=timezone.now)
 
     object_id = models.UUIDField()
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)

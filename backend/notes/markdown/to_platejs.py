@@ -4,8 +4,11 @@ from io import BytesIO
 from typing import Any, Dict, List, Optional, Set, Tuple
 import mistune
 from mistune.core import BaseRenderer, BlockState
+import frontmatter
+import datetime
 
-from .common import cradle_link_plugin, footnote_plugin
+
+from .common import cradle_link_plugin, footnote_plugin, ErrorBypassYAMLHandler
 from .table import table
 
 
@@ -104,7 +107,14 @@ class PlateJSRenderer(BaseRenderer):
     def heading(self, text: List, level: int, **attrs: Any) -> Dict[str, Any]:
         return {"type": f"h{min(3, level)}", "children": text}
 
-    def cradle_link(self, key: str, value: str, alias: Optional[str]) -> Dict[str, Any]:
+    def cradle_link(
+        self,
+        key: str,
+        value: str,
+        alias: Optional[str],
+        date: Optional[datetime.datetime],
+        time: Optional[datetime.datetime],
+    ) -> Dict[str, Any]:
         d = self.entries.get((key, value), {})
 
         id = d.get("id")
@@ -262,6 +272,8 @@ def markdown_to_pjs(
     footnotes: Dict[str, str],
     fetch_image: Callable[[str, str], Optional[BytesIO]],
 ) -> str:
+    _, content = frontmatter.parse(md, handler=ErrorBypassYAMLHandler())
+
     renderer = PlateJSRenderer(entries)
 
     markdown = mistune.create_markdown(
@@ -271,7 +283,7 @@ def markdown_to_pjs(
     state = markdown.block.state_cls()
     state.env["ref_footnotes"] = footnotes
 
-    result, state = markdown.parse(md, state)
+    result, state = markdown.parse(content, state)
 
     resolve_footnote_imgs(result, fetch_image, state)
 

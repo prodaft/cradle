@@ -12,6 +12,7 @@ from ..mappings.falcon import FalconMapping
 from ..base import BaseDigest
 from entries.models import Relation
 from entries.enums import RelationReason
+from entries.models import EntryClass
 import json
 
 
@@ -43,10 +44,7 @@ class FalconDigest(BaseDigest):
             digest_chunk.delay(self.id, i, k == len(report_data) - 1)
 
     def digest_chunk(self, obj):
-        typemapping = {}
-
-        for mapping in FalconMapping.objects.all():
-            typemapping[mapping.type] = mapping.internal_class
+        typemapping: dict[EntryClass, FalconMapping] = FalconMapping.get_typemapping()
 
         entity_obj = obj.get("entity", None)
 
@@ -54,7 +52,7 @@ class FalconDigest(BaseDigest):
             self._append_warning("Entity fields missing")
             return
 
-        eclass = typemapping.get(entity_obj.get("type"), None)
+        eclass = typemapping.get(entity_obj.get("type"), None).type
 
         if eclass is None:
             self._append_warning(f"Unknown type {entity_obj.get('type')}")
@@ -73,7 +71,7 @@ class FalconDigest(BaseDigest):
             )
             return
 
-        eclass = typemapping.get(obj.get("type"), None)
+        eclass = typemapping.get(obj.get("type"), None).type
 
         if eclass is None:
             self._append_warning(f"Unknown type {obj.get('type')}")
@@ -124,7 +122,7 @@ class FalconDigest(BaseDigest):
         ]
 
         for link in obj.get("links", []):
-            eclass = typemapping.get(link.get("type"), None)
+            eclass = typemapping.get(link.get("type"), None).type
             if eclass is None:
                 self._append_warning(f"Unknown type {link.get('type')}")
                 continue

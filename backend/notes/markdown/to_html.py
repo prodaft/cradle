@@ -3,8 +3,9 @@ from io import BytesIO
 from typing import Any, Dict, Optional, Tuple, Callable
 import mistune
 from mistune.renderers.html import HTMLRenderer as BaseHTMLRenderer
+import frontmatter
 
-from .common import cradle_link_plugin, footnote_plugin
+from .common import cradle_link_plugin, footnote_plugin, ErrorBypassYAMLHandler
 from .table import table
 
 
@@ -52,6 +53,8 @@ def markdown_to_html(
     :param fetch_image: Function to fetch image data given bucket and path
     :return: HTML string
     """
+    _, content = frontmatter.parse(md, handler=ErrorBypassYAMLHandler())
+
     renderer = HTMLRenderer(fetch_image)
     markdown = mistune.create_markdown(
         renderer=renderer, plugins=[table, cradle_link_plugin, footnote_plugin]
@@ -60,6 +63,6 @@ def markdown_to_html(
     state = markdown.block.state_cls()
     state.env["ref_footnotes"] = footnotes
 
-    result, state = markdown.parse(md, state)
+    result, state = markdown.parse(content, state)
 
     return result

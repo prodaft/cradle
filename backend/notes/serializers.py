@@ -175,6 +175,9 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "publishable",
+            "status",
+            "status_message",
+            "status_timestamp",
             "content",
             "timestamp",
             "author",

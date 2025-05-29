@@ -6,6 +6,7 @@ from diff_match_patch import diff_match_patch
 from entries.enums import EntryType
 
 from ..utils import calculate_acvec
+from ..enums import NoteStatus
 
 from ..models import Note
 from .connect_aliases_task import AliasConnectionTask
@@ -16,8 +17,8 @@ from .entry_class_creation_task import EntryClassCreationTask
 
 from .base_task import BaseTask
 from .access_control_task import AccessControlTask
+from .finalize_note_task import FinalizeNoteTask
 from .validate_note_task import ValidateNoteTask
-from .ping_entries_task import PingEntriesTask
 from user.models import CradleUser
 
 from django.db import transaction
@@ -36,7 +37,7 @@ class TaskScheduler:
             EntryPopulationTask(user),
             SmartLinkerTask(user),
             AliasConnectionTask(user),
-            PingEntriesTask(user),
+            FinalizeNoteTask(user),
         ]
 
     def run_pipeline(self, note: Optional[Note] = None, validate: bool = True):
@@ -86,11 +87,13 @@ class TaskScheduler:
                     tasks.append(async_task)
 
             task_chain = chain(*tasks)
+
             transaction.on_commit(lambda: task_chain.apply_async())
 
             note.access_vector = calculate_acvec(
                 [x for x in entries if x.entry_class.type == EntryType.ENTITY]
             )
+            note.set_status(NoteStatus.HEALTHY)
 
             note.save()
 

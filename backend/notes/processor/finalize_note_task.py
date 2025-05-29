@@ -1,23 +1,19 @@
 from typing import Iterable, Tuple
-
-from celery import Celery
 from entries.models import Entry
 
 from .base_task import BaseTask
 from ..models import Note
-from ..tasks import ping_entries
+from ..tasks import note_finalize_task
 
 
-class PingEntriesTask(BaseTask):
+class FinalizeNoteTask(BaseTask):
     @property
     def is_validator(self) -> bool:
         return False
 
-    def run(
-        self, note: Note, entries: Iterable[Entry]
-    ) -> Tuple[Celery, Iterable[Entry]]:
+    def run(self, note: Note, entries: Iterable[Entry]) -> Tuple[None, Iterable[Entry]]:
         """
-        Create the entries that are missing for a note.
+        Create the entry classes that are missing for a note.
 
         Args:
             note: The note object being processde
@@ -25,5 +21,4 @@ class PingEntriesTask(BaseTask):
         Returns:
             The processed note object.
         """
-
-        return ping_entries.si(note.id), entries
+        return note_finalize_task.si(note.id), entries

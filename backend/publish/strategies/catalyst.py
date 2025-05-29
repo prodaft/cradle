@@ -8,6 +8,8 @@ from notes.markdown.to_platejs import markdown_to_pjs
 from file_transfer.utils import MinioClient
 from entries.models import Entry
 from .base import BasePublishStrategy
+from intelio.models.mappings.catalyst import CatalystMapping
+from entries.models import EntryClass
 
 
 class CatalystPublish(BasePublishStrategy):
@@ -18,24 +20,18 @@ class CatalystPublish(BasePublishStrategy):
         self.category = category
         self.subcategory = subcategory
         self.tlp = tlp
+        self.typemapping: dict[EntryClass, CatalystMapping] = (
+            CatalystMapping.get_typemapping()
+        )
 
     def get_entity(
-        self, catalyst_type: str, name: str, user: CradleUser
+        self, catalyst_type: Optional[CatalystMapping], name: str, user: CradleUser
     ) -> Optional[Dict[str, Optional[str]]]:
         if not catalyst_type:
             return None
 
-        foo = catalyst_type.split("|")
-        catalyst_type = foo[0]
-        model_class = foo[1] if len(foo) > 1 else None
-        level = foo[2] if len(foo) > 2 else "STRATEGIC"
-
-        catalyst_types = catalyst_type.split("/")
-        ctype = catalyst_types[0]
-        csubtype = "/".join(catalyst_types[1:]) if len(catalyst_types) > 1 else None
-
-        url = f"{settings.CATALYST_HOST}/api/{ctype}/"
-        params = {"type": csubtype, "value": name} if csubtype else {"name": name}
+        url = f"{settings.CATALYST_HOST}/api/{catalyst_type.type}/"
+        params = {"type": catalyst_type.subtype, "value": name}
 
         response = requests.get(
             url,
@@ -48,13 +44,15 @@ class CatalystPublish(BasePublishStrategy):
                 data = response.json()["results"][0]
                 res = {
                     "id": data["id"],
-                    "type": model_class or ctype,
-                    "level": level,
-                    "value": data.get("value") if csubtype else data.get("name"),
+                    "type": catalyst_type.model_class or catalyst_type.type,
+                    "level": catalyst_type.level,
+                    "value": data.get("value")
+                    if catalyst_type.subtype
+                    else data.get("name"),
                 }
                 return res
 
-        if response.status_code == 200 and csubtype:
+        if response.status_code == 200 and catalyst_type.subtype:
             response = requests.post(
                 url,
                 json=params,
@@ -64,9 +62,9 @@ class CatalystPublish(BasePublishStrategy):
                 data = response.json()
                 res = {
                     "id": data["id"],
-                    "type": model_class or ctype,
+                    "type": catalyst_type.model_class or catalyst_type.type,
                     "value": data["value"],
-                    "level": level,
+                    "level": catalyst_type.level,
                 }
                 return res
         return None
@@ -109,7 +107,7 @@ class CatalystPublish(BasePublishStrategy):
     def create_report(self, report: PublishedReport) -> bool:
         if not report.user.catalyst_api_key:
             report.error_message = "User has no Catalyst API key"
-            report.status = ReportStatus.FAILED
+            report.status = ReportStatus.ERROR
             report.save()
             return False
 
@@ -126,7 +124,7 @@ class CatalystPublish(BasePublishStrategy):
             anonymized_entry = self._anonymize_entry(i)
             key = (i.entry_class.subtype, anonymized_entry.name)
             entity = self.get_entity(
-                i.entry_class.catalyst_type, anonymized_entry.name, report.user
+                self.typemapping[i.entry_class], anonymized_entry.name, report.user
             )
             if entity:
                 entry_map[key] = entity
@@ -162,14 +160,14 @@ class CatalystPublish(BasePublishStrategy):
             err = self.create_references(published_post_id, entry_map, report.user)
             if err:
                 report.error_message = err
-                report.status = ReportStatus.FAILED
+                report.status = ReportStatus.ERROR
                 report.save()
                 return False
 
             return True
         else:
             report.error_message = response.text
-            report.status = ReportStatus.FAILED
+            report.status = ReportStatus.ERROR
             report.save()
             return False
 
@@ -184,7 +182,7 @@ class CatalystPublish(BasePublishStrategy):
 
         if response.status_code != 204:
             report.error_message = response.text
-            report.status = ReportStatus.FAILED
+            report.status = ReportStatus.ERROR
             report.save()
             return False
 

@@ -15,7 +15,7 @@ from core.decorators import distributed_lock
 from notes.exceptions import EntriesDoNotExistException, EntryClassesDoNotExistException
 from entries.models import Entry, EntryClass
 from entries.enums import RelationReason
-
+from notes.enums import NoteStatus
 from management.settings import cradle_settings
 
 
@@ -51,8 +51,25 @@ def smart_linker_task(note_id):
         # Resolve pairs from reference tree
         for src, dst in pairs:
             if src in entries and dst in entries:
+                if (
+                    src.date and dst.date and src.date != dst.date
+                ):  # If both have dates, and they are different, two relations with both dates are created
+                    pairs_resolved.add(
+                        (
+                            entries[src],
+                            entries[dst],
+                            src.virtual or dst.virtual,
+                            dst.date,
+                        )
+                    )
+
                 pairs_resolved.add(
-                    (entries[src], entries[dst], src.virtual or dst.virtual)
+                    (
+                        entries[src],
+                        entries[dst],
+                        src.virtual or dst.virtual,
+                        src.date or dst.date,
+                    )
                 )
             else:
                 logger.warning(
@@ -69,8 +86,10 @@ def smart_linker_task(note_id):
                     access_vector=note.access_vector,
                     virtual=virtual,
                     reason=RelationReason.NOTE,
+                    created_at=date if date else timezone.now(),
+                    last_seen=date if date else timezone.now(),
                 )
-                for src, dst, virtual in pairs_resolved
+                for src, dst, virtual, date in pairs_resolved
             ]
         )
 
@@ -85,7 +104,7 @@ def smart_linker_task(note_id):
 
 
 @shared_task(
-    autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=300, max_retries=3
+    autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=60, max_retries=1
 )
 def entry_class_creation_task(note_id, user_id=None):
     """
@@ -104,21 +123,36 @@ def entry_class_creation_task(note_id, user_id=None):
             color="#7f8389",
         )
 
-    nonexistent_entries = set()
+    file_class = EntryClass.objects.filter(subtype="file")
 
-    for r in note.reference_tree.all_links():
-        if not EntryClass.objects.filter(subtype=r.key).exists():
-            if not cradle_settings.notes.allow_dynamic_entry_class_creation:
-                nonexistent_entries.add(r.key)
-            else:
-                entry = EntryClass.objects.create(
-                    type=EntryType.ARTIFACT, subtype=r.key
-                )
-                if user_id:
-                    entry.log_create(user)
+    if not file_class.exists():  # If alias type does not exist, create it
+        file_class = EntryClass.objects.create(
+            type=EntryType.ARTIFACT,
+            subtype="file",
+            color="#7f8389",
+        )
 
-    if nonexistent_entries:
-        raise EntryClassesDoNotExistException(nonexistent_entries)
+    try:
+        nonexistent_entries = set()
+
+        for r in note.reference_tree.all_links():
+            if not EntryClass.objects.filter(subtype=r.key).exists():
+                if not cradle_settings.notes.allow_dynamic_entry_class_creation:
+                    nonexistent_entries.add(r.key)
+                else:
+                    entry = EntryClass.objects.create(
+                        type=EntryType.ARTIFACT, subtype=r.key
+                    )
+                    if user_id:
+                        entry.log_create(user)
+
+        if nonexistent_entries:
+            raise EntryClassesDoNotExistException(nonexistent_entries)
+    except EntryClassesDoNotExistException as e:
+        note.set_status(NoteStatus.INVALID, e.detail)
+        note.save()
+
+        raise e
 
 
 @shared_task(
@@ -136,72 +170,85 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
         user = CradleUser.objects.get(id=user_id)
 
     note.entries.clear()
-    entries = []
-    for r in note.reference_tree.all_links():
-        entry = Entry.objects.filter(name=r.value, entry_class__subtype=r.key)
-        if not entry.exists():
-            try:
-                entry_class = EntryClass.objects.get(subtype=r.key)
-            except EntryClass.DoesNotExist:
-                logging.warning(
-                    f"Entry class {r.key} does not exist. Skipping entry creation."
+
+    try:
+        entries = []
+        for r in note.reference_tree.all_links():
+            entry = Entry.objects.filter(name=r.value, entry_class__subtype=r.key)
+            if not entry.exists():
+                try:
+                    entry_class = EntryClass.objects.get(subtype=r.key)
+                except EntryClass.DoesNotExist:
+                    logging.warning(
+                        f"Entry class {r.key} does not exist. Skipping entry creation."
+                    )
+                    continue
+
+                if entry_class.type == EntryType.ARTIFACT:
+                    try:
+                        entries.append(Entry(name=r.value, entry_class=entry_class))
+                    except InvalidEntryException as e:
+                        note.set_status(
+                            NoteStatus.INVALID,
+                            note.status_message + e.detail.strip() + "\n",
+                        )
+                        note.save()
+
+                        logger.warning(e.detail)
+                else:
+                    raise EntriesDoNotExistException([r])
+            else:
+                entry = entry.first()
+                note.entries.add(entry)
+
+        new_objs = Entry.objects.bulk_create(entries, ignore_conflicts=True)
+
+        objs = [None] * len(new_objs)
+        for i, e in enumerate(new_objs):
+            # print(e.name, e.entry_class.subtype)
+            if e.id is None:
+                objs[i], _ = Entry.objects.get_or_create(
+                    name=e.name, entry_class__subtype=e.entry_class.subtype
                 )
+            else:
+                objs[i] = e
+
+        note.entries.add(*objs)
+
+        childscan = []
+        enrich = defaultdict(list)
+        for entry in objs:
+            content_type = ContentType.objects.get_for_model(note)
+
+            if entry.entry_class.children.count() > 0:
+                childscan.append(entry.id)
+
+        for entry in objs:
+            if entry is None:
                 continue
 
-            if entry_class.type == EntryType.ARTIFACT:
-                try:
-                    entries.append(Entry(name=r.value, entry_class=entry_class))
-                except InvalidEntryException as e:
-                    logger.warning(e.detail)
-            else:
-                raise EntriesDoNotExistException([r])
-        else:
-            entry = entry.first()
-            note.entries.add(entry)
+            for e in entry.entry_class.enrichers.filter(
+                strategy=EnrichmentStrategy.ON_CREATE, enabled=True
+            ):
+                enrich[e.id].append(entry.id)
 
-    new_objs = Entry.objects.bulk_create(entries, ignore_conflicts=True)
+            if user_id:
+                entry.save()
+                entry.log_create(user)  # Pass user_id for logging
 
-    objs = [None] * len(new_objs)
-    for i, e in enumerate(new_objs):
-        # print(e.name, e.entry_class.subtype)
-        if e.id is None:
-            objs[i], _ = Entry.objects.get_or_create(
-                name=e.name, entry_class__subtype=e.entry_class.subtype
-            )
-        else:
-            objs[i] = e
+        if len(childscan):
+            scan_for_children.delay(childscan, content_type.id, note.id)
 
-    note.entries.add(*objs)
+        if len(enrich):
+            for k, v in enrich:
+                enrich_entries.delay(k, v, content_type.id, note.id)
 
-    childscan = []
-    enrich = defaultdict(list)
-    for entry in objs:
-        content_type = ContentType.objects.get_for_model(note)
+        note.save()
+    except EntriesDoNotExistException as e:
+        note.set_status(NoteStatus.INVALID, e.detail)
+        note.save()
 
-        if entry.entry_class.children.count() > 0:
-            childscan.append(entry.id)
-
-    for entry in objs:
-        if entry is None:
-            continue
-
-        for e in entry.entry_class.enrichers.filter(
-            strategy=EnrichmentStrategy.ON_CREATE, enabled=True
-        ):
-            enrich[e.id].append(entry.id)
-
-        if user_id:
-            entry.save()
-            entry.log_create(user)  # Pass user_id for logging
-
-    if len(childscan):
-        scan_for_children.delay(childscan, content_type.id, note.id)
-
-    if len(enrich):
-        for k, v in enrich:
-            enrich_entries.delay(k, v, content_type.id, note.id)
-
-    note.save()
+        raise e
 
 
 @shared_task(
@@ -272,16 +319,18 @@ def connect_aliases(note_id, user_id=None):
 
 
 @shared_task
-def ping_entries(note_id):
-    note = Note.objects.get(id=note_id)
-
-    for entry in note.entries.all():
-        entry.ping()
-
-
-@shared_task
 @distributed_lock("propagate_acvec_{note_id}", timeout=3600)
 def propagate_acvec(note_id):
     note = Note.objects.get(id=note_id)
 
     return note.relations.update(access_vector=note.access_vector)
+
+
+@shared_task
+@distributed_lock("finalize_note_{note_id}", timeout=1800)
+def note_finalize_task(note_id):
+    note = Note.objects.get(id=note_id)
+
+    if note.status == NoteStatus.PROCESSING:
+        note.set_status(NoteStatus.HEALTHY)
+        note.save()
