@@ -917,11 +917,13 @@ export class CradleEditor {
                         { name: 'CradleLinkType' },
                         { name: 'CradleLinkValue' },
                         { name: 'CradleLinkAlias' },
+                        { name: 'CradleLinkTimestamp' },
                     ],
                 },
                 { name: 'CradleLinkType', style: [tags.string] },
                 { name: 'CradleLinkValue', style: [tags.strong] },
                 { name: 'CradleLinkAlias', style: [tags.emphasis] },
+                { name: 'CradleLinkTimestamp', style: [tags.emphasis] },
             ],
             parseInline: [
                 {
@@ -932,15 +934,21 @@ export class CradleEditor {
                         if (next !== 91 || cx.char(pos + 1) !== 91) return -1;
                         const start = pos + 2;
                         let end = start;
+                        
+                        // Find the closing "]]"
                         while (end < cx.end) {
                             if (cx.char(end) === 93 && cx.char(end + 1) === 93) break;
                             end++;
                         }
                         if (end >= cx.end) return -1;
+
+                        // Parse the link content
                         let content = '';
                         for (let i = start; i < end; i++) {
                             content += String.fromCharCode(cx.char(i));
                         }
+
+                        // Parse type, value, and alias
                         let linkType = '';
                         let linkValue: string | null = null;
                         let linkAlias: string | null = null;
@@ -950,7 +958,16 @@ export class CradleEditor {
                         } else {
                             linkType = content.slice(0, colonIndex).trim();
                             const remainder = content.slice(colonIndex + 1);
-                            const pipeIndex = remainder.indexOf('|');
+                            
+                            // Find unescaped pipe character
+                            let pipeIndex = -1;
+                            for (let i = 0; i < remainder.length; i++) {
+                                if (remainder[i] === '|' && (i === 0 || remainder[i-1] !== '\\')) {
+                                    pipeIndex = i;
+                                    break;
+                                }
+                            }
+
                             if (pipeIndex === -1) {
                                 linkValue = remainder.trim();
                             } else {
@@ -958,6 +975,8 @@ export class CradleEditor {
                                 linkAlias = remainder.slice(pipeIndex + 1).trim();
                             }
                         }
+
+                        // Create the base node and add type, value, and alias
                         const node = cx.elt('CradleLink', pos, end + 2, []);
                         node.children.push(
                             cx.elt('CradleLinkType', start, start + linkType.length),
@@ -982,6 +1001,36 @@ export class CradleEditor {
                                 );
                             }
                         }
+
+                        // Look for timestamp after ]]
+                        let timestampStart = end + 2;
+                        while (timestampStart < cx.end && cx.char(timestampStart) === 32) timestampStart++; // Skip spaces
+                        
+                        if (cx.char(timestampStart) === 40) { // Found opening parenthesis
+                            let timestampEnd = timestampStart + 1;
+                            while (timestampEnd < cx.end && cx.char(timestampEnd) !== 41) timestampEnd++;
+                            
+                            if (timestampEnd < cx.end) {
+                                let timestamp = '';
+                                for (let i = timestampStart + 1; i < timestampEnd; i++) {
+                                    timestamp += String.fromCharCode(cx.char(i));
+                                }
+                                
+                                // Add timestamp node if valid format
+                                const timeRegex = /^(?:(\d{2}:\d{2}\s+))?\d{2}-\d{2}-\d{4}$/;
+                                if (timeRegex.test(timestamp)) {
+                                    node.children.push(
+                                        cx.elt(
+                                            'CradleLinkTimestamp',
+                                            timestampStart,
+                                            timestampEnd + 1,
+                                        ),
+                                    );
+                                    return cx.append(node, timestampEnd + 1);
+                                }
+                            }
+                        }
+
                         return cx.append(node);
                     },
                 },
