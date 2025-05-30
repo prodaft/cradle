@@ -192,7 +192,8 @@ export async function parseWithExtensions(
                 }
             }
         }
-    );
+        );
+        console.log(note);
         mdContent = note.content;
         metadata = note.data;
     } catch (error) {

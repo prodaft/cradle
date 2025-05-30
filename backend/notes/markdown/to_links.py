@@ -512,6 +512,10 @@ def cradle_connections(
 ) -> Node:
     metadata, content = frontmatter.parse(md, handler=ErrorBypassYAMLHandler())
     root_entries = metadata.get("entries", {})
+
+    if not isinstance(root_entries, dict):
+        root_entries = {}
+
     entries = set()
 
     for subtype, value in root_entries.items():
