@@ -121,7 +121,13 @@ class PlateJSRenderer(BaseRenderer):
         type = d.get("type")
         alias2 = d.get("value")
 
-        value = alias or alias2 or value
+        if alias is None:
+            if alias2 and value != alias2:
+                value = f"{value} - {alias2}"
+            else:
+                value = alias2 or value
+        else:
+            value = alias
 
         if id is None:
             return {"text": value}

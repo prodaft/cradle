@@ -31,7 +31,13 @@ class CatalystPublish(BasePublishStrategy):
             return None
 
         url = f"{settings.CATALYST_HOST}/api/{catalyst_type.type}/"
-        params = {"type": catalyst_type.subtype, "value": name}
+        params = {catalyst_type.field: name}
+
+        if catalyst_type.extras:
+            for extra in catalyst_type.extras.split(","):
+                if extra.strip() and "=" in extra:
+                    key, value = extra.split("=", 1)
+                    params[key.strip()] = value.strip()
 
         response = requests.get(
             url,
@@ -44,15 +50,13 @@ class CatalystPublish(BasePublishStrategy):
                 data = response.json()["results"][0]
                 res = {
                     "id": data["id"],
-                    "type": catalyst_type.model_class or catalyst_type.type,
-                    "level": catalyst_type.level,
-                    "value": data.get("value")
-                    if catalyst_type.subtype
-                    else data.get("name"),
+                    "type": catalyst_type.link_type,
+                    "level": catalyst_type.level.upper(),
+                    "value": data.get("value") or data.get("name"),
                 }
                 return res
 
-        if response.status_code == 200 and catalyst_type.subtype:
+        if response.status_code == 200:
             response = requests.post(
                 url,
                 json=params,
@@ -62,9 +66,9 @@ class CatalystPublish(BasePublishStrategy):
                 data = response.json()
                 res = {
                     "id": data["id"],
-                    "type": catalyst_type.model_class or catalyst_type.type,
+                    "type": catalyst_type.link_type,
                     "value": data["value"],
-                    "level": catalyst_type.level,
+                    "level": catalyst_type.level.upper(),
                 }
                 return res
         return None
@@ -98,11 +102,7 @@ class CatalystPublish(BasePublishStrategy):
         return f"https://catalyst.prodaft.com/publications/review/{remote_url}"
 
     def edit_report(self, report: PublishedReport) -> bool:
-        result = self.delete_report(report)
-        if not result.success:
-            return result
-
-        return self.create_report(report)
+        return self.delete_report(report) and self.create_report(report)
 
     def create_report(self, report: PublishedReport) -> bool:
         if not report.user.catalyst_api_key:

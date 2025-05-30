@@ -218,7 +218,20 @@ export default function Publish() {
                     key='edit-report'
                     icon={<FloppyDisk />}
                     text={'Edit Report'}
-                    onClick={() => setShowTitlePrompt(true)}
+                    onClick={() =>
+                        setModal(FormModal, {
+                            title: 'Enter Report Title',
+                            fields: [
+                                {
+                                    name: 'title',
+                                    label: 'Report Title',
+                                    type: 'text',
+                                    placeholder: 'Enter report title',
+                                },
+                            ],
+                            onSubmit: (data) => handleTitleSubmit(data.title, null),
+                        })
+                    }
                 />,
             ];
         } else {
