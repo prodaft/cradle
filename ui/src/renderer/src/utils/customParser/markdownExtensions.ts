@@ -59,7 +59,7 @@ export function cradleLinkRule(state: any, silent: boolean): boolean {
     const match = LINK_REGEX.exec(state.src.slice(state.pos));
     if (!match) return false;
     if (silent) return false;
-    
+
     const token = state.push('cradle_link', '', 0);
     token.markup = match[0];
     token.cradle_type = match[1];
@@ -67,7 +67,7 @@ export function cradleLinkRule(state: any, silent: boolean): boolean {
     token.cradle_alias = match[3];
     token.cradle_time = match[4] ? match[4].trim() : null;
     token.cradle_date = match[5] || null;
-    
+
     state.pos += match[0].length;
     return true;
 }
@@ -84,12 +84,12 @@ export function renderCradleLink(
     const displayedName = alias || name;
     const url = createDashboardLink({ name, subtype: type });
     const colorClass = entryColors.get(type) || '#000000';
-    
+
     let displayText = displayedName;
     if (date) {
         displayText += ` (${time ? time + ' ' : ''}${date})`;
     }
-    
+
     return `<a style="color: ${colorClass};" href="${url}" data-custom-href="${url}" ${
         date ? `data-timestamp="${date}"` : ''
     } ${time ? `data-time="${time}"` : ''}>${displayText}</a>`;
@@ -193,10 +193,10 @@ export async function parseWithExtensions(
             }
         }
         );
-        console.log(note);
         mdContent = note.content;
         metadata = note.data;
     } catch (error) {
+        console.log(error);
         metadata = {}
     }
 
@@ -206,6 +206,6 @@ export async function parseWithExtensions(
     const tokens = md.parse(content, {});
     await processTokens(tokens, axiosInstance);
     const html = md.renderer.render(tokens, md.options, metadata);
-    
+
     return { html, metadata };
 }

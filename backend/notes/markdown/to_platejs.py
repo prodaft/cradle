@@ -143,7 +143,9 @@ class PlateJSRenderer(BaseRenderer):
     def footnote_ref(self, key: str, value: str) -> Dict[str, Any]:
         return {"type": "p", "children": [{"text": value}]}
 
-    def img_footnote_ref(self, key: str, value: str, ref: str) -> Dict[str, Any]:
+    def img_footnote_ref(
+        self, text: str, key: str, value: str, ref: Any
+    ) -> Dict[str, Any]:
         return {
             "type": "footnote_img_ref",
             "caption": [{"text": value}],

@@ -150,8 +150,6 @@ export class DynamicTrie {
             return false;
         }
 
-        console.log(prefix)
-
         // Otherwise, fetch only if prefix length meets or exceeds the minimum
         return prefix.length >= this.minQueryLength;
     }
