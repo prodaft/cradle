@@ -6,7 +6,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from entries.enums import EntryType
 from entries.models import EntryClass
-from fleeting_notes.models import FleetingNote
+from notes.models import Note
 from user.models import CradleUser
 
 
@@ -40,11 +40,11 @@ class FleetingNotesTestCase(TestCase):
         self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
         self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
 
-        self.note_admin = FleetingNote.objects.create(
-            content="Note1", user=self.admin_user
+        self.note_admin = Note.objects.fleeting().create(
+            content="Note1", author=self.admin_user
         )
-        self.note_user = FleetingNote.objects.create(
-            content="[[actor:actor]] [[case:entity]]", user=self.normal_user
+        self.note_user = Note.objects.fleeting().create(
+            content="[[actor:actor]] [[case:entity]]", author=self.normal_user
         )
 
         self.entryclass_ip = EntryClass.objects.create(
@@ -72,5 +72,5 @@ class FleetingNotesTestCase(TestCase):
         self.patcher.stop()
         self.success_logger_patcher.stop()
         self.error_logger_patcher.stop()
-        FleetingNote.objects.all().delete()
+        Note.objects.fleeting().all().delete()
         CradleUser.objects.all().delete()

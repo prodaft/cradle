@@ -24,12 +24,17 @@ class CatalystPublish(BasePublishStrategy):
             CatalystMapping.get_typemapping()
         )
 
-    def get_entity(
-        self, catalyst_type: Optional[CatalystMapping], name: str, user: CradleUser
-    ) -> Optional[Dict[str, Optional[str]]]:
-        if not catalyst_type:
-            return None
+    def get_remote_url(self, report: PublishedReport) -> str:
+        """
+        Get the remote URL of the published report.
+        """
+        if not report.external_ref:
+            raise ValueError("Report does not have an external reference.")
+        return "https://catalyst.prodaft.com/publications/review/" + report.external_ref
 
+    def get_entity(
+        self, catalyst_type: CatalystMapping, name: str, user: CradleUser
+    ) -> Optional[Dict[str, Optional[str]]]:
         url = f"{settings.CATALYST_HOST}/api/{catalyst_type.type}/"
         params = {catalyst_type.field: name}
 
@@ -76,6 +81,8 @@ class CatalystPublish(BasePublishStrategy):
     def create_references(self, post_id: str, refs, user: CradleUser) -> Optional[str]:
         references = []
         for entity in refs.values():
+            if not entity.get("level"):
+                continue
             references.append(
                 {
                     "entity": entity["id"],
@@ -98,8 +105,8 @@ class CatalystPublish(BasePublishStrategy):
                 f"Failed to create references: {response.status_code} {response.text}"
             )
 
-    def generate_access_link(self, remote_url: str, user: CradleUser) -> str:
-        return f"https://catalyst.prodaft.com/publications/review/{remote_url}"
+    def generate_access_link(self, external_ref: str, user: CradleUser) -> str:
+        return f"https://catalyst.prodaft.com/publications/review/{external_ref}"
 
     def edit_report(self, report: PublishedReport) -> bool:
         return self.delete_report(report) and self.create_report(report)
@@ -122,12 +129,22 @@ class CatalystPublish(BasePublishStrategy):
         for i in entries:
             # Anonymize the entry before processing.
             anonymized_entry = self._anonymize_entry(i)
-            key = (i.entry_class.subtype, anonymized_entry.name)
+            if self.typemapping[i.entry_class] is None:
+                continue
+
             entity = self.get_entity(
                 self.typemapping[i.entry_class], anonymized_entry.name, report.user
             )
+
+            key = (i.entry_class.subtype, anonymized_entry.name)
             if entity:
                 entry_map[key] = entity
+            else:
+                report.extra_data = report.extra_data or {}
+                report.extra_data["warnings"] = report.extra_data.get("warnings", [])
+                report.extra_data["warnings"].append(
+                    f"Failed to link entry {i.entry_class.subtype}:{i.name + (f"({anonymized_entry.name})" if anonymized_entry.name != i.name else "")}"
+                )
 
         footnotes = {}
         for note in report.notes.all():
@@ -164,6 +181,9 @@ class CatalystPublish(BasePublishStrategy):
                 report.save()
                 return False
 
+            report.external_ref = published_post_id
+            report.save()
+
             return True
         else:
             report.error_message = response.text
@@ -173,7 +193,7 @@ class CatalystPublish(BasePublishStrategy):
 
     def delete_report(self, report: PublishedReport) -> bool:
         response = requests.delete(
-            f"{settings.CATALYST_HOST}/api/posts/editor-contents/{report.remote_url}/",
+            f"{settings.CATALYST_HOST}/api/posts/editor-contents/{report.external_ref}/",
             headers={"Authorization": "Token " + report.user.catalyst_api_key},
         )
 

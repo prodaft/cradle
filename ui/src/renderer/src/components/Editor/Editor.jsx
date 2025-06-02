@@ -189,10 +189,6 @@ function Editor({
         });
     }, [currentLine]);
 
-    useEffect(() => {
-        setShowFileList(!showFileList);
-    }, []);
-
     const insertTextToCodeMirror = useCallback((text) => {
         if (editorRef.current) {
             const doc = editorRef.current.view.state;

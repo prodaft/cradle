@@ -7,7 +7,7 @@ from django.apps import apps
 
 from ..models.base import ClassMapping
 from ..serializers import ClassMappingSerializer
-from ..utils import fields_to_form
+from core.utils import fields_to_form
 from user.permissions import HasEntryManagerRole
 
 

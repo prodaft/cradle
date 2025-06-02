@@ -11,6 +11,6 @@ class CatalystMapping(ClassMapping):
 
     type = models.CharField(max_length=255)
     field = models.CharField(max_length=255)
-    level = models.CharField(max_length=255)
+    level = models.CharField(max_length=255, blank=True, null=True)
     link_type = models.CharField(max_length=255)
     extras = models.CharField(max_length=255, blank=True, null=True)

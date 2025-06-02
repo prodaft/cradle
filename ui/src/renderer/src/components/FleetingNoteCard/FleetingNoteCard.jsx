@@ -32,7 +32,7 @@ export default function FleetingNoteCard({ note, setAlert }) {
         >
             <div className='flex flex-row justify-left'>
                 <div className='text-zinc-500 text-xs w-full'>
-                    Last edited: {formatDate(new Date(note['last_edited']))}
+                    Last edited: {formatDate(new Date(note['edit_timestamp']))}
                 </div>
             </div>
             <div className='bg-transparent h-fit p-2 backdrop-filter mb-4 overflow-hidden flex-grow flex space-y-2 flex-col cursor-pointer'>

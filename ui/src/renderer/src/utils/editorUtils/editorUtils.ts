@@ -46,7 +46,7 @@ type LspEntryClass = {
     subtype: string;
     description: string;
     regex: string | null;
-    options: boolean;
+    options: string | null;
     color: string;
     format: string|null;
 };
@@ -238,7 +238,7 @@ export class CradleEditor {
                 const bigTrie = new DynamicTrie(null, '', -1);
 
                 for (const entryClass of Object.values(this.entryClasses)) {
-                    if (!entryClass.options) if (entryClass.type != 'entity') continue;
+                    if (!entryClass.format || entryClass.type != 'entity') continue;
                     if (!this.tries) continue;
                     if (!this.tries[entryClass.subtype]) continue;
                     bigTrie.merge(this.tries[entryClass.subtype]);
@@ -740,7 +740,7 @@ export class CradleEditor {
                         let yml = frontmatter.substring(3, frontmatter.length - 4).trim()
                         try {
                             const parsedYaml = jsyaml.load(yml);
-                            
+
                             // Handle entries if they exist
                             if (parsedYaml && parsedYaml.entries && typeof parsedYaml.entries === 'object') {
                                 for (const [type, value] of Object.entries(parsedYaml.entries)) {
@@ -786,11 +786,11 @@ export class CradleEditor {
                             var loc = e.mark;
                             var from = loc ? loc.position : 0;
                             var to = from;
-                            diagnostics.push({ 
-                                from: from, 
-                                to: to, 
-                                message: e.reason, 
-                                severity: 'error' as const 
+                            diagnostics.push({
+                                from: from,
+                                to: to,
+                                message: e.reason,
+                                severity: 'error' as const
                             });
                         }
                         return false;
@@ -885,7 +885,7 @@ export class CradleEditor {
             }
         }
 
-        if (criteria.options || criteria.type == 'entity') {
+        if (criteria.format == "options" || criteria.type == 'entity') {
             if (!this.tries[linkType].search(value).found) {
                 diagnostics.push({
                     from,
@@ -934,7 +934,7 @@ export class CradleEditor {
                         if (next !== 91 || cx.char(pos + 1) !== 91) return -1;
                         const start = pos + 2;
                         let end = start;
-                        
+
                         // Find the closing "]]"
                         while (end < cx.end) {
                             if (cx.char(end) === 93 && cx.char(end + 1) === 93) break;
@@ -958,7 +958,7 @@ export class CradleEditor {
                         } else {
                             linkType = content.slice(0, colonIndex).trim();
                             const remainder = content.slice(colonIndex + 1);
-                            
+
                             // Find unescaped pipe character
                             let pipeIndex = -1;
                             for (let i = 0; i < remainder.length; i++) {
@@ -1005,17 +1005,17 @@ export class CradleEditor {
                         // Look for timestamp after ]]
                         let timestampStart = end + 2;
                         while (timestampStart < cx.end && cx.char(timestampStart) === 32) timestampStart++; // Skip spaces
-                        
+
                         if (cx.char(timestampStart) === 40) { // Found opening parenthesis
                             let timestampEnd = timestampStart + 1;
                             while (timestampEnd < cx.end && cx.char(timestampEnd) !== 41) timestampEnd++;
-                            
+
                             if (timestampEnd < cx.end) {
                                 let timestamp = '';
                                 for (let i = timestampStart + 1; i < timestampEnd; i++) {
                                     timestamp += String.fromCharCode(cx.char(i));
                                 }
-                                
+
                                 // Add timestamp node if valid format
                                 const timeRegex = /^(?:(\d{2}:\d{2}\s+))?\d{2}-\d{2}-\d{4}$/;
                                 if (timeRegex.test(timestamp)) {
@@ -1036,7 +1036,7 @@ export class CradleEditor {
                 },
             ],
         };
-            
+
         return yamlFrontmatter({
             content: markdown({
                 base: markdownLanguage,

@@ -166,10 +166,10 @@ class EntityDetail(APIView):
 
         serializer = EntitySerializer(entity, data=request.data)
 
-        # Non-Admin cannot change public status of entity
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        # Non-Admin cannot change public status of entity
         if (
             serializer.validated_data.get("is_public") != entity.is_public
             and not request.user.is_cradle_admin

@@ -122,7 +122,7 @@ class PlateJSRenderer(BaseRenderer):
         alias2 = d.get("value")
 
         if alias is None:
-            if alias2 and value != alias2:
+            if alias2 and value.lower().strip() != alias2.lower().strip():
                 value = f"{value} - {alias2}"
             else:
                 value = alias2 or value

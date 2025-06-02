@@ -227,6 +227,7 @@ export default function Publish() {
                                     label: 'Report Title',
                                     type: 'text',
                                     placeholder: 'Enter report title',
+                                    initialValue: title,
                                 },
                             ],
                             onSubmit: (data) => handleTitleSubmit(data.title, null),
@@ -264,7 +265,7 @@ export default function Publish() {
         }
     };
 
-    useNavbarContents(navbarContents, [publishOptions, anonymize, isEditing]);
+    useNavbarContents(navbarContents, [publishOptions, anonymize, isEditing, title]);
 
     return (
         <div className='w-full h-full overflow-y-hidden relative'>

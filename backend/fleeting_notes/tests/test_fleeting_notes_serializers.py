@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
 
 from .utils import FleetingNotesTestCase
-from fleeting_notes.models import FleetingNote
-from fleeting_notes.serializers import (
+from notes.models import Note
+from notes.serializers import (
     FleetingNoteSerializer,
-    FleetingNoteTruncatedRetrieveSerializer,
+    FleetingNoteRetrieveSerializer,
 )
 from django.contrib.auth import get_user_model
 
@@ -17,10 +17,10 @@ class FleetingNoteSerializerTest(FleetingNotesTestCase):
     def setUp(self):
         super().setUp()
         self.fixed_time = datetime(2024, 5, 30, 12, 0, 0, tzinfo=timezone.utc)
-        self.note1 = FleetingNote.objects.create(
+        self.note1 = Note.objects.fleeting().create(
             user=self.normal_user, content="Short note", last_edited=self.fixed_time
         )
-        self.note2 = FleetingNote.objects.create(
+        self.note2 = Note.objects.fleeting().create(
             user=self.normal_user,
             content="he" * 150,
             last_edited=self.fixed_time,
@@ -37,7 +37,7 @@ class FleetingNoteSerializerTest(FleetingNotesTestCase):
         )
 
     def test_fleeting_note_truncated_retrieve_serializer(self):
-        serializer = FleetingNoteTruncatedRetrieveSerializer(instance=self.note2)
+        serializer = FleetingNoteRetrieveSerializer(instance=self.note2, truncate=100)
         data = serializer.data
         self.assertEqual(data["id"], str(self.note2.id))
         expected_content = "he" * 100 + "..."
@@ -73,7 +73,7 @@ class FleetingNoteSerializerTest(FleetingNotesTestCase):
     def test_fleeting_note_update_serializer(self):
         data = {"content": "Updated note content"}
         context = {"request": type("Request", (object,), {"user": self.normal_user})}
-        fleeting_note = FleetingNote.objects.create(
+        fleeting_note = Note.objects.fleeting().create(
             user=self.normal_user, content="Old note content"
         )
         serializer = FleetingNoteSerializer(fleeting_note, data=data, context=context)

@@ -161,15 +161,38 @@ export function ReportCard({ report, setAlert }) {
                 <p>
                     <strong>Anonymized:</strong> {localReport.anonymized ? 'Yes' : 'No'}
                 </p>
-
                 {localReport.extra_data &&
-                    Object.keys(localReport.extra_data).map((key) => (
-                        <p key={key}>
-                            <strong>{capitalizeString(key)}:</strong>{' '}
-                            {localReport.extra_data[key]}
-                        </p>
-                    ))}
-
+                    Object.keys(localReport.extra_data).map((key) => {
+                        if (key === 'warnings') {
+                            return (
+                                <div
+                                    key={key}
+                                    className='text-yellow-700 dark:text-yellow-300'
+                                >
+                                    <p>
+                                        <strong>Warnings:</strong>
+                                    </p>
+                                    <ul className='list-disc list-inside ml-4 space-y-1'>
+                                        {Array.isArray(localReport.extra_data[key]) ? (
+                                            localReport.extra_data[key].map(
+                                                (warning, index) => (
+                                                    <li key={index}>{warning}</li>
+                                                ),
+                                            )
+                                        ) : (
+                                            <li>{localReport.extra_data[key]}</li>
+                                        )}
+                                    </ul>
+                                </div>
+                            );
+                        }
+                        return (
+                            <p key={key}>
+                                <strong>{capitalizeString(key)}:</strong>{' '}
+                                {localReport.extra_data[key]}
+                            </p>
+                        );
+                    })}
                 {localReport.status === 'error' && (
                     <p className='text-red-700 dark:text-red-300'>
                         <strong>Error:</strong> {localReport.error_message}

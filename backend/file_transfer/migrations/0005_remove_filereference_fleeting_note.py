@@ -3,16 +3,46 @@
 from django.db import migrations
 
 
-class Migration(migrations.Migration):
+def move_fleetingnotes_to_notes(apps, schema_editor):
+    FleetingNote = apps.get_model("fleeting_notes", "FleetingNote")
+    Note = apps.get_model("notes", "Note")
 
+    FileReference = apps.get_model("file_transfer", "FileReference")
+    for i in FleetingNote.objects.all():
+        # Create a new Note instance with the same fields as FleetingNote
+        note = Note.objects.create(
+            author=i.user,
+            editor=i.user,
+            timestamp=i.last_edited,
+            edit_timestamp=i.last_edited,
+            content=i.content,
+            fleeting=True,
+        )
+
+        note.save()
+
+        for file_reference in i.files.all():
+            file_reference.fleeting_note = None
+            file_reference.note = note
+            file_reference.save()
+
+
+class Migration(migrations.Migration):
     dependencies = [
         (
             "file_transfer",
             "0004_filereference_md5_hash_filereference_mimetype_and_more",
         ),
+        (
+            "notes",
+            "0020_note_fleeting",
+        ),
     ]
 
     operations = [
+        migrations.RunPython(
+            move_fleetingnotes_to_notes, reverse_code=migrations.RunPython.noop
+        ),
         migrations.RemoveField(
             model_name="filereference",
             name="fleeting_note",
