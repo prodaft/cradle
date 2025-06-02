@@ -4,6 +4,7 @@ from typing import Optional
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django_otp.plugins.otp_totp.models import TOTPDevice
 
 from access.enums import AccessType
 from logs.models import LoggableModelMixin
@@ -46,6 +47,8 @@ class CradleUser(AbstractUser, LoggableModelMixin):
     )
 
     is_active: models.BooleanField = models.BooleanField(default=False)
+
+    two_factor_enabled = models.BooleanField(default=False)
 
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["password", "email"]
@@ -149,3 +152,28 @@ class CradleUser(AbstractUser, LoggableModelMixin):
             inverter |= 1 << i
 
         return fieldtype.get_prep_value(acvec ^ inverter)
+
+    def enable_2fa(self):
+        """Enable 2FA for the user and return the secret key."""
+        if not self.two_factor_enabled:
+            device = TOTPDevice.objects.create(
+                user=self, name=f"Default device for {self.username}", confirmed=False
+            )
+            return device.config_url
+        return None
+
+    def verify_2fa_token(self, token):
+        """Verify a 2FA token."""
+        device = TOTPDevice.objects.filter(user=self).first()
+        if device and device.verify_token(token):
+            if not device.confirmed:
+                device.confirmed = True
+                device.save()
+            return True
+        return False
+
+    def disable_2fa(self):
+        """Disable 2FA for the user."""
+        TOTPDevice.objects.filter(user=self).delete()
+        self.two_factor_enabled = False
+        self.save()

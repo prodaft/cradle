@@ -1,4 +1,5 @@
 from .views.token_view import TokenObtainPairLogView, TokenRefreshLogView
+from .views.two_factor_view import Enable2FAView, Verify2FASetupView, Disable2FAView
 
 from django.urls import path
 from .views import user_view
@@ -37,4 +38,7 @@ urlpatterns = [
         user_view.ManageUser.as_view(),
         name="user_manage",
     ),
+    path("2fa/enable/", Enable2FAView.as_view(), name="enable-2fa"),
+    path("2fa/verify/", Verify2FASetupView.as_view(), name="verify-2fa"),
+    path("2fa/disable/", Disable2FAView.as_view(), name="disable-2fa"),
 ]

@@ -9,6 +9,7 @@ from rest_framework_simplejwt.serializers import (
     TokenRefreshSerializer,
 )
 from drf_spectacular.utils import extend_schema_view
+from ..serializers import Login2FASerializer
 
 
 @extend_schema_view(
@@ -41,19 +42,35 @@ class TokenObtainPairLogView(TokenObtainPairView):
 
         try:
             serializer.is_valid(raise_exception=True)
-
         except TokenError as e:
             raise InvalidToken(e.args[0])
 
-        if not serializer.user.email_confirmed:
+        user = serializer.user
+
+        if not user.email_confirmed:
             return Response(
                 "Your email is not confirmed", status=status.HTTP_401_UNAUTHORIZED
             )
 
-        if not serializer.user.is_active:
+        if not user.is_active:
             return Response(
                 "Your account is not activated", status=status.HTTP_401_UNAUTHORIZED
             )
+
+        # Check if 2FA is enabled
+        if user.two_factor_enabled:
+            # If no 2FA token provided, return a special response
+            if "two_factor_token" not in request.data:
+                return Response(
+                    {"requires_2fa": True, "message": "2FA token required"},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
+
+            # Verify 2FA token
+            if not user.verify_2fa_token(request.data["two_factor_token"]):
+                return Response(
+                    {"error": "Invalid 2FA token"}, status=status.HTTP_401_UNAUTHORIZED
+                )
 
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
