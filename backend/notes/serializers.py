@@ -364,28 +364,31 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
 
         note = Note.objects.create(**validated_data)
 
-        # Handle file references if any
-        if files_data:
-            for file_data in files_data:
-                note.files.add(file_data)
+        if files_data is not None:
+            file_reference_models = [
+                FileReference(note=note, **file_data) for file_data in files_data
+            ]
+            FileReference.objects.bulk_create(file_reference_models)
 
         return note
 
     def update(self, instance, validated_data):
-        files_data = validated_data.pop("files", [])
+        updated_files = validated_data.pop("files", [])
         request = self.context.get("request")
         user = cast(CradleUser, request.user)
 
         # Update basic fields
         instance.content = validated_data.get("content", instance.content)
         instance.editor = user
+        instance.fleeting = True
         instance.save()
 
-        # Handle file references if any
-        if files_data:
-            instance.files.clear()
-            for file_data in files_data:
-                instance.files.add(file_data)
+        if updated_files is not None:
+            instance.files.all().delete()
+            file_reference_models = [
+                FileReference(note=instance, **file_data) for file_data in updated_files
+            ]
+            FileReference.objects.bulk_create(file_reference_models)
 
         return instance
 

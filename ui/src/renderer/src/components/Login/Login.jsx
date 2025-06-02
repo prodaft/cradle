@@ -176,14 +176,14 @@ export default function Login() {
                                 <p className='mt-10 flex justify-between text-sm text-gray-500'>
                                     <Link
                                         to='/forgot-password'
-                                        className='font-semibold leading-6 text-cradle2 hover:opacity-90 hover:shadow-gray-400'
+                                        className='font-semibold leading-6 text-primary hover:opacity-90 hover:shadow-gray-400'
                                         replace={true}
                                     >
                                         Forgot Password
                                     </Link>
                                     <Link
                                         to='/register'
-                                        className='font-semibold leading-6 text-cradle2 hover:opacity-90 hover:shadow-gray-400'
+                                        className='font-semibold leading-6 text-primary hover:opacity-90 hover:shadow-gray-400'
                                         replace={true}
                                         state={location.state}
                                     >
