@@ -24,11 +24,10 @@ class PathfindQuery(serializers.Serializer):
         super().__init__(*args, **kwargs)
 
     def validate(self, data):
-        if (
-            data["src"].entry_class.type == EntryType.ENTITY
-            and not Access.objects.has_access_to_entities(
-                self.user, {data["src"]}, {AccessType.READ, AccessType.READ_WRITE}
-            )
+        if data[
+            "src"
+        ].entry_class.type == EntryType.ENTITY and not Access.objects.has_access_to_entities(
+            self.user, {data["src"]}, {AccessType.READ, AccessType.READ_WRITE}
         ):
             raise serializers.ValidationError("The source entity is not accessible.")
 

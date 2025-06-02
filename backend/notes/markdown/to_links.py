@@ -473,7 +473,7 @@ class LinksRenderer(BaseRenderer):
     def block_quote(self) -> Node:
         return self.node_factory.create_node(type=NodeType.BLOCKQUOTE)
 
-    def block_html(self, html: str) -> None:
+    def block_html(self) -> None:
         return None
 
     def block_error(self) -> Node:

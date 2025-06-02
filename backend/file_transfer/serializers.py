@@ -20,7 +20,7 @@ class FileDownloadSerializer(serializers.Serializer):
 class FileReferenceSerializer(serializers.ModelSerializer):
     class Meta:
         model = FileReference
-        fields = ["id", "minio_file_name", "file_name", "bucket_name"]
+        fields = ["minio_file_name", "file_name", "bucket_name"]
 
     def validate(self, data: Any) -> Any:
         """This method validates the file reference entry. Firstly, it checks

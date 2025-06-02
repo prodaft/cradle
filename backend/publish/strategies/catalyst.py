@@ -118,6 +118,9 @@ class CatalystPublish(BasePublishStrategy):
             report.save()
             return False
 
+        report.extra_data = report.extra_data or {}
+        report.extra_data["warnings"] = []
+
         # Use anonymized note content if enabled.
         joint_md = "\n-----\n".join(
             self._anonymize_note(note).content for note in report.notes.all()
@@ -140,11 +143,14 @@ class CatalystPublish(BasePublishStrategy):
             if entity:
                 entry_map[key] = entity
             else:
-                report.extra_data = report.extra_data or {}
-                report.extra_data["warnings"] = report.extra_data.get("warnings", [])
-                report.extra_data["warnings"].append(
-                    f"Failed to link entry {i.entry_class.subtype}:{i.name + (f"({anonymized_entry.name})" if anonymized_entry.name != i.name else "")}"
-                )
+                if anonymized_entry.name != i.name:
+                    report.extra_data["warnings"].append(
+                        f"Failed to link entry {i.entry_class.subtype}:{i.name + f'({anonymized_entry.name})'}"
+                    )
+                else:
+                    report.extra_data["warnings"].append(
+                        f"Failed to link entry {i.entry_class.subtype}:{i.name}"
+                    )
 
         footnotes = {}
         for note in report.notes.all():

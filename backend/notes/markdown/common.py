@@ -10,7 +10,7 @@ import frontmatter
 LINK_REGEX = (
     r"\[\[(?P<cl_type>[^:\|\]]+?):(?P<cl_value>(?:\\[\[\]\|]|[^\[\]\|])+?)"
     + r"(?:\|(?P<cl_alias>(?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]"
-    + r"(?:\s*\((?:(?P<cl_time>\d{2}:\d{2}\s+)?(?P<cl_date>\d{2}-\d{2}-\d{4}))\))?"
+    + r"(?:\((?:(?P<cl_time>\d{2}:\d{2}\s+)?(?P<cl_date>\d{2}-\d{2}-\d{4}))\))?"
 )
 INLINE_FOOTNOTE = (
     r"\[(?P<footnote_value>"
@@ -53,12 +53,16 @@ def parse_cradle_link(
                 "key": m.group("cl_type").strip(),
                 "value": m.group("cl_value").strip(),
                 "alias": m.group("cl_alias").strip() if m.group("cl_alias") else None,
-                "time": make_aware(datetime.datetime.strptime(time, "%H:%M"))
-                if time
-                else None,
-                "date": make_aware(datetime.datetime.strptime(date, "%d-%m-%Y"))
-                if date
-                else None,
+                "time": (
+                    make_aware(datetime.datetime.strptime(time, "%H:%M"))
+                    if time
+                    else None
+                ),
+                "date": (
+                    make_aware(datetime.datetime.strptime(date, "%d-%m-%Y"))
+                    if date
+                    else None
+                ),
             },
         }
     )

@@ -24,9 +24,9 @@ def fields_to_form(fields):
             "type": field_type,
             "options": options,
             "required": not field.null and not field.blank,
-            "default": field.default
-            if field.default != models.fields.NOT_PROVIDED
-            else None,
+            "default": (
+                field.default if field.default != models.fields.NOT_PROVIDED else None
+            ),
         }
 
     return field_mapping

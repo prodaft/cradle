@@ -222,7 +222,9 @@ class NoteRetrieveWithLinksSerializer(NoteRetrieveSerializer):
         data["content"] += "\n\n"
         for i in obj.files.all():
             try:
-                data["content"] += f"""[{i.minio_file_name}]: {
+                data[
+                    "content"
+                ] += f"""[{i.minio_file_name}]: {
                     MinioClient().create_presigned_get(
                         i.bucket_name, i.minio_file_name, timedelta(minutes=5)
                     )

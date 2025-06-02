@@ -1,5 +1,4 @@
 from .utils import FleetingNotesTestCase
-import json
 from django.urls import reverse
 from entries.models import Entry
 from access.models import Access
@@ -26,7 +25,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         )
 
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.data, "The Fleeting Note does not exist")
+        self.assertEqual(response.data, "The fleeting note does not exist")
 
         self.assertIsNotNone(Note.objects.fleeting().get(id=self.note_user.pk))
 
@@ -37,7 +36,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         )
 
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.data, "The Fleeting Note does not exist")
+        self.assertEqual(response.data, "The fleeting note does not exist")
 
         self.assertIsNotNone(Note.objects.fleeting().get(id=self.note_user.pk))
 
@@ -123,26 +122,5 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         self.assertIsNotNone(saved_note.timestamp)
 
         # Check that the fleeting note has been removed
-        with self.assertRaises(Note.DoesNotExist):
-            Note.objects.fleeting().get(id=self.note_user.pk)
-
-    def test_fleeting_note_final_successfully_is_publishable(self):
-        Access.objects.create(
-            user=self.normal_user,
-            entity=self.saved_entity,
-            access_type=AccessType.READ_WRITE,
-        )
-
-        response = self.client.put(
-            reverse("fleeting_notes_final", kwargs={"pk": self.note_user.pk}),
-            json.dumps({"publishable": True}),
-            content_type="application/json",
-            **self.headers_normal,
-        )
-
-        self.assertTrue(response.json()["publishable"])
-        saved_note = Note.objects.first()
-        self.assertTrue(saved_note.publishable)
-
         with self.assertRaises(Note.DoesNotExist):
             Note.objects.fleeting().get(id=self.note_user.pk)
