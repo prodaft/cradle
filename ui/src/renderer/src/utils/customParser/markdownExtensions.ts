@@ -193,7 +193,8 @@ export async function parseWithExtensions(
             }
         }
         );
-        mdContent = note.content;
+        if(note.content || mdContent.trim().endsWith("---")) // If the content ends with '---' or note is not empty, there exists frontmatter
+          mdContent = note.content;
         metadata = note.data;
     } catch (error) {
         console.log(error);

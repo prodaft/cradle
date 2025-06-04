@@ -44,7 +44,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                     // Render an empty span as a placeholder to reserve space
                     <span className='w-4 mr-2 text-cradle2'>#</span>
                 )}
-                <span className='font-medium text-white'>{nodeData.nodeName}</span>
+                <span className='font-medium dark:text-white'>{nodeData.nodeName}</span>
             </div>
 
             {expanded && hasChildren && (
@@ -81,7 +81,7 @@ const NoteOutline: React.FC<NoteOutlineProps> = ({
     return (
         <div className=''>
             <div className='flex justify-between items-center mb-2 ml-2'>
-                <h2 className='text-lg font-bold text-white'>{title}</h2>
+                <h2 className='text-lg font-bold dark:text-white'>{title}</h2>
                 <div className='border-b border-gray-700 my-2 mx-2 opacity-70'></div>
             </div>
             <div className='text-gray-300 text-sm'>
