@@ -224,18 +224,16 @@ class ReportDetailAPIView(generics.RetrieveAPIView):
             )
 
         publisher_factory = PUBLISH_STRATEGIES.get(report.strategy)
-        if publisher_factory is None:
-            raise ValueError("Strategy not found.")
+        if publisher_factory is not None:
+            publisher = publisher_factory(report.anonymized)
 
-        publisher = publisher_factory(report.anonymized)
-
-        try:
-            publisher.delete_report(report)
-        except Exception:
-            return Response(
-                {"detail": "Error deleting report."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            try:
+                publisher.delete_report(report)
+            except Exception:
+                return Response(
+                    {"detail": "Error deleting report."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
 
         report.delete()
         return Response(

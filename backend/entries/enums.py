@@ -14,3 +14,8 @@ class RelationReason(models.TextChoices):
     ALIAS = "alias", _("Alias")
     ENCOUNTER = "encounter", _("Encounter")
     NOTE = "note", _("Note")
+
+
+class EntryTypeFormat(models.TextChoices):
+    REGEX = "regex", _("Regex")
+    OPTIONS = "options", _("Options")

@@ -10,7 +10,7 @@ import { authAxios } from '../../services/axiosInstance/axiosInstance';
 export async function parseMarkdown(
     mdContent: string,
     fileData?: any[],
-): Promise<string | undefined> {
+): Promise<{ html: string; metadata: Record<string, any> } | undefined> {
     try {
         const response = await getEntryClasses();
         if (response.status === 200) {

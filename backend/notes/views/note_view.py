@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
+from django.http import QueryDict
 
 from core.pagination import TotalPagesPagination
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
@@ -88,7 +89,7 @@ class NoteList(APIView):
 
     def get(self, request: Request) -> Response:
         user = cast(CradleUser, request.user)
-        queryset = Note.objects.get_accessible_notes(user)
+        queryset = Note.objects.get_accessible_notes(user).non_fleeting()
 
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")
@@ -150,6 +151,26 @@ class NoteList(APIView):
             return Response(filterset.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request: Request) -> Response:
+        """
+        Create a new non-fleeting note based on the request data.
+        The user field is set to correspond to the authenticated user.
+
+        Args:
+            request: The request that was sent
+
+        Returns:
+            Response(serializer.data, status=200):
+                The created note entry
+            Response(serializer.errors, status=400):
+                if the request was unsuccessful
+            Response("User is not authenticated.", status=401):
+                if the user is not authenticated
+        """
+        # Ensure note is created as non-fleeting
+        if isinstance(request.data, QueryDict):
+            request.data._mutable = True
+        request.data["fleeting"] = False
+
         serializer = NoteCreateSerializer(
             data=request.data, context={"request": request}
         )
@@ -229,7 +250,11 @@ class NoteDetail(APIView):
             return Response("Invalid note ID.", status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            note: Note = Note.objects.get_accessible_notes(request.user).get(id=note_id)
+            note: Note = (
+                Note.objects.get_accessible_notes(request.user)
+                .non_fleeting()
+                .get(id=note_id)
+            )
         except Note.DoesNotExist:
             return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
 
@@ -252,7 +277,7 @@ class NoteDetail(APIView):
             return Response("Invalid note ID.", status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            note: Note = Note.objects.get(id=note_id)
+            note: Note = Note.objects.non_fleeting().get(id=note_id)
         except Note.DoesNotExist:
             return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
 
@@ -295,7 +320,7 @@ class NoteDetail(APIView):
             return Response("Invalid note ID.", status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            note_to_delete = Note.objects.get(id=note_id)
+            note_to_delete = Note.objects.non_fleeting().get(id=note_id)
         except Note.DoesNotExist:
             return Response("Note not found.", status=status.HTTP_404_NOT_FOUND)
 
@@ -373,7 +398,7 @@ class NoteFiles(APIView):
 
     def get(self, request: Request) -> Response:
         user = cast(CradleUser, request.user)
-        queryset = Note.objects.get_accessible_notes(user)
+        queryset = Note.objects.get_accessible_notes(user).non_fleeting()
 
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")

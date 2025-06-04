@@ -2,6 +2,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django_lifecycle import AFTER_CREATE, AFTER_UPDATE, hook
 from django_lifecycle.mixins import LifecycleModelMixin, transaction
+from django.utils import timezone
 
 from intelio.models.base import BaseDigest
 
@@ -9,6 +10,7 @@ from .markdown.to_links import Node, cradle_connections, compress_tree
 from entries.models import Entry, Relation
 from logs.models import LoggableModelMixin
 from .managers import NoteManager
+from .enums import NoteStatus
 
 import uuid
 from user.models import CradleUser
@@ -23,6 +25,15 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
     content: models.CharField = models.CharField()
     publishable: models.BooleanField = models.BooleanField(default=False)
     timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    fleeting: models.BooleanField = models.BooleanField(default=False)
+
+    status: models.CharField = models.CharField(
+        max_length=20,
+        choices=NoteStatus.choices,
+        default=NoteStatus.HEALTHY,
+    )
+    status_message: models.CharField = models.CharField(default="")
+    status_timestamp: models.DateTimeField = models.DateTimeField(null=True)
 
     entries: models.ManyToManyField = models.ManyToManyField(
         Entry, related_name="notes"
@@ -52,6 +63,11 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
     last_linked = models.DateTimeField(default=None, null=True)
 
     _reference_tree = None
+
+    def set_status(self, status: NoteStatus, message: str = ""):
+        self.status = status
+        self.status_message = message
+        self.status_timestamp = timezone.now()
 
     @property
     def reference_tree(self) -> Node:

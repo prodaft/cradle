@@ -1,4 +1,5 @@
 from datetime import timedelta
+from .strategies import PUBLISH_STRATEGIES
 from rest_framework import serializers
 
 from .models import PublishedReport, ReportStatus
@@ -34,8 +35,10 @@ class ReportSerializer(serializers.ModelSerializer):
         if obj.status != ReportStatus.DONE:
             return None
 
-        if obj.remote_url:
-            return obj.remote_url
+        if obj.external_ref:
+            strategy = PUBLISH_STRATEGIES.get(obj.strategy.lower())
+            if strategy:
+                return strategy(False).get_remote_url(obj)
 
         if FileReference.objects.filter(report=obj).exists():
             client = MinioClient()

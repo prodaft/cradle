@@ -113,9 +113,11 @@ def scan_for_children(entry_ids, content_type_id, content_id):
                     e2=entry,
                     reason=RelationReason.CONTAINS,
                     inherit_av=True,
-                    access_vector=getattr(content_object, "access_vector")
-                    if hasattr(content_object, "access_vector")
-                    else 1,
+                    access_vector=(
+                        getattr(content_object, "access_vector")
+                        if hasattr(content_object, "access_vector")
+                        else 1
+                    ),
                     content_object=content_object,
                 )
                 relations.append(rel)

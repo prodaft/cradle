@@ -20,6 +20,8 @@ from file_transfer.serializers import FileReferenceSerializer
 from file_transfer.models import FileReference
 from user.serializers import UserRetrieveSerializer
 from entries.models import Entry, EntryClass
+from user.models import CradleUser
+from typing import cast
 
 
 class NoteCreateSerializer(serializers.ModelSerializer):
@@ -173,6 +175,9 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "publishable",
+            "status",
+            "status_message",
+            "status_timestamp",
             "content",
             "timestamp",
             "author",
@@ -217,7 +222,9 @@ class NoteRetrieveWithLinksSerializer(NoteRetrieveSerializer):
         data["content"] += "\n\n"
         for i in obj.files.all():
             try:
-                data["content"] += f"""[{i.minio_file_name}]: {
+                data[
+                    "content"
+                ] += f"""[{i.minio_file_name}]: {
                     MinioClient().create_presigned_get(
                         i.bucket_name, i.minio_file_name, timedelta(minutes=5)
                     )
@@ -332,3 +339,81 @@ class FileReferenceWithNoteSerializer(serializers.ModelSerializer):
 
     def get_note_id(self, obj):
         return obj.note.id if obj.note else None
+
+
+class FleetingNoteSerializer(serializers.ModelSerializer):
+    """
+    Serializer for fleeting notes. This bypasses the normal note processing pipeline
+    and is used for quick note taking without entity references.
+    """
+
+    files = FileReferenceSerializer(many=True, required=False)
+
+    class Meta:
+        model = Note
+        fields = ["id", "content", "timestamp", "files"]
+        read_only_fields = ["id", "timestamp"]
+
+    def create(self, validated_data):
+        files_data = validated_data.pop("files", [])
+        request = self.context.get("request")
+        user = cast(CradleUser, request.user)
+
+        # Always create as fleeting note
+        validated_data["fleeting"] = True
+        validated_data["author"] = user
+        validated_data["editor"] = user
+
+        note = Note.objects.create(**validated_data)
+
+        if files_data is not None:
+            file_reference_models = [
+                FileReference(note=note, **file_data) for file_data in files_data
+            ]
+            FileReference.objects.bulk_create(file_reference_models)
+
+        return note
+
+    def update(self, instance, validated_data):
+        updated_files = validated_data.pop("files", [])
+        request = self.context.get("request")
+        user = cast(CradleUser, request.user)
+
+        # Update basic fields
+        instance.content = validated_data.get("content", instance.content)
+        instance.editor = user
+        instance.fleeting = True
+        instance.save()
+
+        if updated_files is not None:
+            instance.files.all().delete()
+            file_reference_models = [
+                FileReference(note=instance, **file_data) for file_data in updated_files
+            ]
+            FileReference.objects.bulk_create(file_reference_models)
+
+        return instance
+
+
+class FleetingNoteRetrieveSerializer(serializers.ModelSerializer):
+    """
+    Serializer for retrieving fleeting notes with optional content truncation.
+    """
+
+    files = FileReferenceSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Note
+        fields = ["id", "content", "timestamp", "files"]
+        read_only_fields = fields
+
+    def __init__(self, *args, **kwargs):
+        # Allow truncation of content for preview
+        self.truncate = kwargs.pop("truncate", None)
+        super().__init__(*args, **kwargs)
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        if self.truncate and len(ret["content"]) > self.truncate:
+            ret["content"] = ret["content"][: self.truncate] + "..."
+        return ret

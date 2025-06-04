@@ -69,11 +69,20 @@ class MarkdownRenderer(BaseMarkdownRenderer):
         return text + "\n"
 
     def cradle_link(self, token: Dict[str, any], state: BlockState) -> str:
-        key, value, alias = (
+        key, value, alias, date, time = (
             token["attrs"].get("key"),
             token["attrs"].get("value"),
             token["attrs"].get("alias"),
+            token["attrs"].get("date"),
+            token["attrs"].get("time"),
         )
+
+        date_str = ""
+
+        if date:
+            date_str = date.strftime("%d-%m-%Y")
+            if time:
+                date_str = f"{time.strftime('%H:%M')} {date_str}"
 
         key = self.entryclass_remap.get(key, key)
 

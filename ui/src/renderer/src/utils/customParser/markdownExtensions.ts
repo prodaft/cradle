@@ -2,6 +2,9 @@ import QueryString from 'qs';
 import type MarkdownIt from 'markdown-it';
 import type { Token } from 'markdown-it';
 import { strip } from '../linkUtils/linkUtils';
+import { Axios } from 'axios';
+import matter from 'gray-matter';
+import jsYaml from 'js-yaml';
 
 export interface FileData {
     minio_file_name: string;
@@ -50,18 +53,21 @@ export function prependLinks(
     return mdLinks + mdContent;
 }
 
-const LINK_REGEX =
-    /^\[\[([^:|]+?):((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\]/;
+const LINK_REGEX = /^\[\[([^:|]+?):((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\](?:\((?:(\d{2}:\d{2}\s+)?(\d{2}-\d{2}-\d{4}))?\)?)?/;
 
 export function cradleLinkRule(state: any, silent: boolean): boolean {
     const match = LINK_REGEX.exec(state.src.slice(state.pos));
     if (!match) return false;
     if (silent) return false;
+
     const token = state.push('cradle_link', '', 0);
     token.markup = match[0];
     token.cradle_type = match[1];
     token.cradle_name = match[2];
     token.cradle_alias = match[3];
+    token.cradle_time = match[4] ? match[4].trim() : null;
+    token.cradle_date = match[5] || null;
+
     state.pos += match[0].length;
     return true;
 }
@@ -73,10 +79,20 @@ export function renderCradleLink(
     const type = (token as any).cradle_type;
     const name = (token as any).cradle_name;
     const alias = (token as any).cradle_alias;
+    const time = (token as any).cradle_time;
+    const date = (token as any).cradle_date;
     const displayedName = alias || name;
     const url = createDashboardLink({ name, subtype: type });
     const colorClass = entryColors.get(type) || '#000000';
-    return `<a style="color: ${colorClass};" href="${url}" data-custom-href="${url}">${displayedName}</a>`;
+
+    let displayText = displayedName;
+    if (date) {
+        displayText += ` (${time ? time + ' ' : ''}${date})`;
+    }
+
+    return `<a style="color: ${colorClass};" href="${url}" data-custom-href="${url}" ${
+        date ? `data-timestamp="${date}"` : ''
+    } ${time ? `data-time="${time}"` : ''}>${displayText}</a>`;
 }
 
 let DownloadLinkPromiseCache: Record<
@@ -155,15 +171,42 @@ export async function parseWithExtensions(
     fileData: FileData[] | undefined,
     entryColors: Map<string, string>,
     axiosInstance: Axios,
-): Promise<string> {
+): Promise<{ html: string, metadata: Record<string, any> }> {
     DownloadLinkPromiseCache = {};
     md.inline.ruler.before('link', 'cradle_link', cradleLinkRule);
     md.renderer.rules.cradle_link = (tokens: Token[], idx: number) =>
         renderCradleLink(entryColors, tokens[idx]);
+
+    let metadata = {};
+    try {
+        let note = matter(mdContent, {
+            engines: {
+                yaml: (data) => {
+                    try{
+                        return jsYaml.load(data);
+                    }
+                    catch (e) {
+                        console.log(e)
+                        return null
+                    }
+                }
+            }
+        }
+        );
+        if(note.content || mdContent.trim().endsWith("---")) // If the content ends with '---' or note is not empty, there exists frontmatter
+          mdContent = note.content;
+        metadata = note.data;
+    } catch (error) {
+        console.log(error);
+        metadata = {}
+    }
+
     const content = fileData
         ? prependLinks(mdContent, fileData, axiosInstance)
         : mdContent;
     const tokens = md.parse(content, {});
     await processTokens(tokens, axiosInstance);
-    return md.renderer.render(tokens, md.options);
+    const html = md.renderer.render(tokens, md.options, metadata);
+
+    return { html, metadata };
 }

@@ -50,7 +50,7 @@ class PublishedReport(models.Model, LoggableModelMixin):
 
     objects = PublishedReportManager()
 
-    remote_url = models.CharField(max_length=1024, null=True)
+    external_ref = models.CharField(max_length=1024, null=True)
 
     class Meta:
         ordering = ["-created_at"]

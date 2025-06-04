@@ -10,20 +10,6 @@ class LspEntryClassSerializer(serializers.ModelSerializer):
             "type",
             "subtype",
             "description",
-            "options",
-            "regex",
+            "format",
             "color",
         ]
-
-    def to_representation(self, instance):
-        """Move fields from profile to user representation."""
-        representation = super().to_representation(instance)
-        options = representation.get("options", None)
-
-        if options:
-            options = options.strip()
-            representation["options"] = len(options) > 0
-        else:
-            representation["options"] = False
-
-        return representation

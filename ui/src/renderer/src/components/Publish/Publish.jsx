@@ -218,7 +218,21 @@ export default function Publish() {
                     key='edit-report'
                     icon={<FloppyDisk />}
                     text={'Edit Report'}
-                    onClick={() => setShowTitlePrompt(true)}
+                    onClick={() =>
+                        setModal(FormModal, {
+                            title: 'Enter Report Title',
+                            fields: [
+                                {
+                                    name: 'title',
+                                    label: 'Report Title',
+                                    type: 'text',
+                                    placeholder: 'Enter report title',
+                                    initialValue: title,
+                                },
+                            ],
+                            onSubmit: (data) => handleTitleSubmit(data.title, null),
+                        })
+                    }
                 />,
             ];
         } else {
@@ -251,7 +265,7 @@ export default function Publish() {
         }
     };
 
-    useNavbarContents(navbarContents, [publishOptions, anonymize, isEditing]);
+    useNavbarContents(navbarContents, [publishOptions, anonymize, isEditing, title]);
 
     return (
         <div className='w-full h-full overflow-y-hidden relative'>

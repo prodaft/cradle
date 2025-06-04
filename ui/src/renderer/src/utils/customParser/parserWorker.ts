@@ -47,14 +47,14 @@ self.addEventListener('message', async (event) => {
                 },
             });
             md.use(inject_line_numbers_plugin);
-            const html = await parseWithExtensions(
+            const result = await parseWithExtensions(
                 md,
                 markdown,
                 fileData,
                 entryColors,
                 axios,
             );
-            self.postMessage({ success: true, html });
+            self.postMessage({ success: true, html: result.html, metadata: result.metadata });
         }
     } catch (error: any) {
         if (error.code === 'ERR_NETWORK') {

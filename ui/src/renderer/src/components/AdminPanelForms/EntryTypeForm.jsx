@@ -123,12 +123,7 @@ export default function EntryTypeForm({ id = null, isEdit = false, onAdd }) {
                             prefix: entrytype.prefix,
                             color: entrytype.color,
                             generativeRegex: entrytype.generative_regex || '',
-                            typeFormat:
-                                entrytype.regex && entrytype.regex.length > 0
-                                    ? 'regex'
-                                    : entrytype.options && entrytype.options.length > 0
-                                      ? 'options'
-                                      : '',
+                            typeFormat: entrytype.format,
                             regex: entrytype.regex,
                             options: entrytype.options,
                             children:
@@ -167,6 +162,7 @@ export default function EntryTypeForm({ id = null, isEdit = false, onAdd }) {
                 result = await editArtifactClass(
                     {
                         generative_regex: data.generativeRegex,
+                        format: data.typeFormat == "" ? null : data.typeFormat,
                         ...data,
                         children: data.children.map((child) => child.value),
                     },
@@ -175,6 +171,7 @@ export default function EntryTypeForm({ id = null, isEdit = false, onAdd }) {
             } else {
                 result = await createArtifactClass({
                     generative_regex: data.generativeRegex,
+                    format: data.typeFormat == "" ? null : data.typeFormat,
                     ...data,
                     children: data.children.map((child) => child.value),
                 });

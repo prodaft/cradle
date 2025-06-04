@@ -25,7 +25,7 @@ export default function NoteListCard({ title = '', notes = [] }) {
     useEffect(() => {
         Promise.all(
             notes.map((note, index) => {
-                return parseContent(note.content, note.files).then((parsedContent) => {
+                return parseContent(note.content, note.files).then((result) => {
                     return (
                         <div
                             key={index}
@@ -33,7 +33,7 @@ export default function NoteListCard({ title = '', notes = [] }) {
                                 card p-2 bg-gray-4 hover:bg-gray-6 active:bg-gray-8 !max-w-none'
                             onClick={() => navigate(`/notes/${note.id}`)}
                         >
-                            <Preview htmlContent={parsedContent} />
+                            <Preview htmlContent={result.html} />
                         </div>
                     );
                 });

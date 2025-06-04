@@ -3,8 +3,10 @@ from io import BytesIO
 from typing import Any, Dict, Optional, Tuple, Callable
 import mistune
 from mistune.renderers.html import HTMLRenderer as BaseHTMLRenderer
+import frontmatter
+import datetime
 
-from .common import cradle_link_plugin, footnote_plugin
+from .common import cradle_link_plugin, footnote_plugin, ErrorBypassYAMLHandler
 from .table import table
 
 
@@ -34,7 +36,14 @@ class HTMLRenderer(BaseHTMLRenderer):
 
         return f'<img src="{img_data}" title="{value}">'
 
-    def cradle_link(self, key: str, value: str, alias: Optional[str] = None) -> str:
+    def cradle_link(
+        self,
+        key: str,
+        value: str,
+        alias: Optional[str] = None,
+        date: Optional[datetime.datetime] = None,
+        time: Optional[datetime.datetime] = None,
+    ) -> str:
         display = alias if alias else value
 
         return f'<span class="entry" entry-type="{key}">{display}</span>'
@@ -52,6 +61,8 @@ def markdown_to_html(
     :param fetch_image: Function to fetch image data given bucket and path
     :return: HTML string
     """
+    _, content = frontmatter.parse(md, handler=ErrorBypassYAMLHandler())
+
     renderer = HTMLRenderer(fetch_image)
     markdown = mistune.create_markdown(
         renderer=renderer, plugins=[table, cradle_link_plugin, footnote_plugin]
@@ -60,6 +71,6 @@ def markdown_to_html(
     state = markdown.block.state_cls()
     state.env["ref_footnotes"] = footnotes
 
-    result, state = markdown.parse(md, state)
+    result, state = markdown.parse(content, state)
 
     return result

@@ -15,6 +15,14 @@ class BasePublishStrategy:
         self.anonymizer = Anonymizer()
         self._eclasses = None
 
+    def get_remote_url(self, report: PublishedReport) -> str:
+        """
+        Get the remote URL of the published report.
+        """
+        if not report.external_ref:
+            raise ValueError("Report does not have an external reference.")
+        return report.external_ref
+
     @property
     def eclasses(self) -> Dict[str, EntryClass]:
         if self._eclasses is None:

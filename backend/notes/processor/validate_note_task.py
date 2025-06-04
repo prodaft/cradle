@@ -8,6 +8,7 @@ from notes.exceptions import (
     NotEnoughReferencesException,
 )
 from entries.enums import EntryType
+from django.conf import settings
 
 from .base_task import BaseTask
 from ..models import Note
@@ -37,7 +38,7 @@ class ValidateNoteTask(BaseTask):
         unique_subtypes = {r.key for r in links}
 
         # Check if the note tries to link to an alias
-        if "alias" in unique_subtypes or "virtual" in unique_subtypes:
+        if len(unique_subtypes & settings.INTERNAL_SUBTYPES) > 0:
             raise AliasCannotBeLinked()
 
         # Prefetch all relevant EntryClass objects in one query

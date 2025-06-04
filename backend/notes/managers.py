@@ -22,6 +22,18 @@ class NoteQuerySet(models.QuerySet):
         """
         return self.filter(entries__id=entry_id)
 
+    def fleeting(self) -> models.QuerySet:
+        """
+        Get only fleeting notes
+        """
+        return self.filter(fleeting=True)
+
+    def non_fleeting(self) -> models.QuerySet:
+        """
+        Get only non-fleeting notes
+        """
+        return self.filter(fleeting=False)
+
     def inaccessible(self, user: CradleUser) -> models.QuerySet:
         """
         Get the notes that are not accessible by the current user
@@ -224,3 +236,15 @@ class NoteManager(models.Manager):
             .values("id")
             .distinct()
         )
+
+    def fleeting(self) -> models.QuerySet:
+        """
+        Get only fleeting notes
+        """
+        return self.get_queryset().fleeting()
+
+    def non_fleeting(self) -> models.QuerySet:
+        """
+        Get only non-fleeting notes
+        """
+        return self.get_queryset().non_fleeting()

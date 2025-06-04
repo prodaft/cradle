@@ -7,6 +7,7 @@ from django.db import models, transaction
 from core.fields import BitStringField
 from entries.models import EntryClass, Entry
 from entries.models import Relation
+from collections import defaultdict
 import os
 
 from django_lifecycle import (
@@ -296,3 +297,12 @@ class ClassMapping(models.Model):
             raise TypeError(
                 f"{cls.__name__} must define a class attribute 'name' as a string"
             )
+
+    @classmethod
+    def get_typemapping(cls):
+        typemapping = defaultdict(lambda: None)
+
+        for mapping in cls.objects.all():
+            typemapping[mapping.internal_class] = mapping
+
+        return typemapping

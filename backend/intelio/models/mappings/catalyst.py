@@ -10,6 +10,7 @@ class CatalystMapping(ClassMapping):
     display_name = "catalyst"
 
     type = models.CharField(max_length=255)
-    subtype = models.CharField(max_length=255)
-    level = models.CharField(max_length=255)
-    model_class = models.CharField(max_length=255)
+    field = models.CharField(max_length=255)
+    level = models.CharField(max_length=255, blank=True, null=True)
+    link_type = models.CharField(max_length=255)
+    extras = models.CharField(max_length=255, blank=True, null=True)

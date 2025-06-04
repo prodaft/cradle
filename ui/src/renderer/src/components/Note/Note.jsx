@@ -33,7 +33,7 @@ const Note = forwardRef(function (
 
     useEffect(() => {
         parseContent(note.content, note.files)
-            .then((parsedContent) => setParsedContent(parsedContent))
+            .then((result) => setParsedContent(result.html))
             .catch(displayError(setAlert, navigate));
     }, [note.content, note.files, setAlert, navigate]);
 

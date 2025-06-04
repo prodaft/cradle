@@ -50,6 +50,7 @@ export default function TextEditor({
             }
 
             setParsedContent(DOMPurify.sanitize(event.data.html));
+            // You can access metadata with event.data.metadata if needed
 
             if (pendingParseRef.current) {
                 pendingParseRef.current = false;

@@ -4,7 +4,7 @@ from rest_framework.fields import SerializerMethodField
 from entries.models import Entry, EntryClass
 from entries.serializers import EntryClassSerializer, EntrySerializer
 from intelio.models.base import BaseDigest
-from intelio.utils import fields_to_form
+from core.utils import fields_to_form
 from user.models import CradleUser
 from user.serializers import EssentialUserRetrieveSerializer
 from .models import EnricherSettings, BaseEnricher

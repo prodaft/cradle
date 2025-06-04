@@ -58,8 +58,8 @@ export default function NoteViewer() {
                 return responseNote;
             })
             .then((note) => {
-                return parseContent(note.content, note.files).then((parsed) =>
-                    setParsedContent(parsed),
+                return parseContent(note.content, note.files).then((result) =>
+                    setParsedContent(result.html),
                 );
             })
             .catch(displayError(setAlert, navigate))

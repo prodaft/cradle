@@ -5,6 +5,7 @@ import AdminPanelPermissionCard from '../AdminPanelPermissionCard/AdminPanelPerm
 import useFrontendSearch from '../../hooks/useFrontendSearch/useFrontendSearch';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
+import { naturalSort } from '../../utils/dashboardUtils/dashboardUtils';
 import useAuth from '../../hooks/useAuth/useAuth';
 
 /**
@@ -69,7 +70,7 @@ export default function AdminPanelUserPermissions({ username, id }) {
                         permissions.map((c) => {
                             return (
                                 <AdminPanelPermissionCard
-                                    key={`${c['id']}-${id}`}
+                                    key={c['name']}
                                     userId={id}
                                     entityName={c['name']}
                                     entityId={c['id']}
@@ -77,7 +78,11 @@ export default function AdminPanelUserPermissions({ username, id }) {
                                     accessLevel={c['access_type']}
                                 />
                             );
-                        }),
+                        }).sort((a, b) => {
+                        const aKey = a.key?.toString() || '';
+                        const bKey = b.key?.toString() || '';
+                        return naturalSort(aKey, bKey);
+                    })
                     );
                 }
             })
@@ -87,8 +92,8 @@ export default function AdminPanelUserPermissions({ username, id }) {
     return (
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
-            <div className='w-full h-full overflow-x-hidden overflow-y-scroll'>
-                <div className='container w-[90%] h-fit mx-auto py-4 center'>
+            <div className='w-full overflow-x-hidden overflow-y-scroll'>
+                <div className='container w-[90%] mx-auto py-4 center'>
                     <h1 className='text-3xl font-bold my-4'>
                         User Settings:
                         <span className='text-3xl text-zinc-500'> {username}</span>
@@ -112,7 +117,7 @@ export default function AdminPanelUserPermissions({ username, id }) {
                             <button
                                 id='email-confirmation'
                                 data-testid='email-confirmation'
-                                name='email-confirmation'
+                                name='email-confirmation'G
                                 type='button'
                                 className='btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 tooltip tooltip-bottom tooltip-primary ml-2'
                                 data-tooltip={'Send email confirmation'}
@@ -141,8 +146,8 @@ export default function AdminPanelUserPermissions({ username, id }) {
                                 onChange={(e) => setSearchVal(e.target.value)}
                             />
                         </div>
-                        <div className='w-full h-fit rounded-lg my-2'>
-                            {filteredChildren}
+                        <div className='w-full rounded-lg my-2 h-[80vh] overflow-y-auto'>
+                            {filteredChildren.sort((a, b) => a.key - b.key)}
                         </div>
                     </div>
                 </div>
