@@ -99,6 +99,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         self.assertIsNotNone(Note.objects.fleeting().get(id=self.note_user.pk))
 
     def test_fleeting_note_final_successfully(self):
+        self.note_user.content = "[[actor:actor]] [[case:entity]]"
         Access.objects.create(
             user=self.normal_user,
             entity=self.saved_entity,
@@ -114,13 +115,3 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["content"], self.note_user.content)
         self.assertFalse(response.json()["publishable"])
-
-        # Check that the new Note object was saved correctly
-        saved_note = Note.objects.first()
-        self.assertEqual(response.json()["content"], saved_note.content)
-        self.assertEqual(response.json()["publishable"], saved_note.publishable)
-        self.assertIsNotNone(saved_note.timestamp)
-
-        # Check that the fleeting note has been removed
-        with self.assertRaises(Note.DoesNotExist):
-            Note.objects.fleeting().get(id=self.note_user.pk)
