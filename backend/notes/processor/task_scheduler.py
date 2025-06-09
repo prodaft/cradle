@@ -95,7 +95,7 @@ class TaskScheduler:
             note.access_vector = calculate_acvec(
                 [x for x in entries if x.entry_class.type == EntryType.ENTITY]
             )
-            note.set_status(NoteStatus.HEALTHY)
+            note.set_status(NoteStatus.PROCESSING)
 
             note.save()
 

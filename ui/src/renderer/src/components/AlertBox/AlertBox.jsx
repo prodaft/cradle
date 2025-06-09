@@ -95,8 +95,10 @@ export default function AlertBox({ alert, timeout }) {
             >
                 <div className='flex items-center space-x-2'>
                     {renderIcon()}
-                    <div className='flex flex-col text-black dark:text-white'>
-                        <span>{alert.message}</span>
+                    <div className='flex flex-col text-black dark:text-white whitespace-pre-line'>
+                        <span>
+                            {alert.message ? alert.message.trim() : alert.message}
+                        </span>
                     </div>
                 </div>
                 {alert.button && (
