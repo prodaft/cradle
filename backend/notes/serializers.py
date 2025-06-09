@@ -22,6 +22,8 @@ from user.serializers import UserRetrieveSerializer
 from entries.models import Entry, EntryClass
 from user.models import CradleUser
 from typing import cast
+import frontmatter
+from .markdown.common import ErrorBypassYAMLHandler
 
 
 class NoteCreateSerializer(serializers.ModelSerializer):
@@ -179,6 +181,9 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
             "status_message",
             "status_timestamp",
             "content",
+            "title",
+            "description",
+            "metadata",
             "timestamp",
             "author",
             "entries",
@@ -209,6 +214,10 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
         if self.truncate == -1:
             return data
 
+        _, data["content"] = frontmatter.parse(
+            data["content"], handler=ErrorBypassYAMLHandler()
+        )
+
         if len(data["content"]) > self.truncate:
             data["content"] = data["content"][: self.truncate] + "..."
 
@@ -222,9 +231,7 @@ class NoteRetrieveWithLinksSerializer(NoteRetrieveSerializer):
         data["content"] += "\n\n"
         for i in obj.files.all():
             try:
-                data[
-                    "content"
-                ] += f"""[{i.minio_file_name}]: {
+                data["content"] += f"""[{i.minio_file_name}]: {
                     MinioClient().create_presigned_get(
                         i.bucket_name, i.minio_file_name, timedelta(minutes=5)
                     )
@@ -331,6 +338,7 @@ class FileReferenceWithNoteSerializer(serializers.ModelSerializer):
             "minio_file_name",
             "file_name",
             "bucket_name",
+            "timestamp",
             "note_id",
             "md5_hash",
             "sha1_hash",

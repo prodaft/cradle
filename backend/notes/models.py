@@ -19,6 +19,12 @@ from management.settings import cradle_settings
 
 
 class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
+    metadata_fields = {  # What fields can be set via the metadata frontmatter
+        "entries": None,
+        "title": "title",
+        "description": "description",
+    }
+
     id: models.UUIDField = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -38,6 +44,11 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
     entries: models.ManyToManyField = models.ManyToManyField(
         Entry, related_name="notes"
     )
+
+    title: models.CharField = models.CharField(max_length=255, default="")
+    description: models.TextField = models.TextField(default="")
+    metadata: models.JSONField = models.JSONField(default=dict)
+
     author = models.ForeignKey[CradleUser](
         CradleUser, related_name="author", on_delete=models.SET_NULL, null=True
     )

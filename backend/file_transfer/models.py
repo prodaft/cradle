@@ -10,6 +10,8 @@ class FileReference(models.Model):
     id: models.UUIDField = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
+    timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+
     minio_file_name: models.CharField = models.CharField()
     file_name: models.CharField = models.CharField()
     bucket_name: models.CharField = models.CharField()

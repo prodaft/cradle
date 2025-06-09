@@ -19,6 +19,7 @@ from .base_task import BaseTask
 from .access_control_task import AccessControlTask
 from .finalize_note_task import FinalizeNoteTask
 from .validate_note_task import ValidateNoteTask
+from .metadata_process_task import MetadataProcessTask
 from user.models import CradleUser
 
 from django.db import transaction
@@ -36,6 +37,7 @@ class TaskScheduler:
             EntryClassCreationTask(user),
             EntryPopulationTask(user),
             SmartLinkerTask(user),
+            MetadataProcessTask(user),
             AliasConnectionTask(user),
             FinalizeNoteTask(user),
         ]
