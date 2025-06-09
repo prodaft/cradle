@@ -159,23 +159,10 @@
                 ]
             }
         ],
-        "mac": {
-            "target": [
-                "dmg",
-                "zip"
-            ],
-            "category": "public.app-category.productivity",
-            "hardenedRuntime": true,
-            "entitlements": "resources/entitlements.mac.plist",
-            "entitlementsInherit": "resources/entitlements.mac.plist",
-            "gatekeeperAssess": false,
-            "identity": null
-        },
         "win": {
             "target": [
                 "nsis"
-            ],
-            "publisherName": "PRODAFT"
+            ]
         },
         "nsis": {
             "oneClick": false,
@@ -187,7 +174,9 @@
         "linux": {
             "target": [
                 "AppImage"
-            ],
+            ]
+        },
+        "appImage": {
             "category": "Utility"
         },
         "publish": [

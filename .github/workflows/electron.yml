@@ -51,6 +51,7 @@ jobs:
       - name: Build Electron App
         run: |
           npm run build-electron
+          mkdir -p ./node_modules/fsevents
           npm run dist-electron
 
       - name: Upload release assets
