@@ -116,7 +116,7 @@ function Editor({
             editorUtils.markdown({ codeLanguages: languages }),
             drawSelection(),
             EditorView.lineWrapping,
-            editorUtils.autocomplete(),
+            ...editorUtils.autocomplete(),
             editorUtils.lint(),
             Prec.highest(
                 keymap.of([
@@ -128,7 +128,6 @@ function Editor({
                 ]),
             ),
             events.dom({
-
                 paste(e) {
                     const files = Array.from(e.clipboardData.files);
                     if (files.length > 0) {
@@ -189,10 +188,6 @@ function Editor({
             scrollIntoView: true,
         });
     }, [currentLine]);
-
-    useEffect(() => {
-        setShowFileList(!showFileList);
-    }, []);
 
     const insertTextToCodeMirror = useCallback((text) => {
         if (editorRef.current) {

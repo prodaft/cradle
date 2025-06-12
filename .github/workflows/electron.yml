@@ -14,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
 
     name: Build on ${{ matrix.os }}
     steps:
@@ -26,7 +26,8 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '23'
+          cache-dependency-path: ui/package-lock.json
           cache: 'npm'
 
       - name: Cache node_modules
@@ -48,6 +49,7 @@ jobs:
       - name: Build Electron App
         run: |
           npm run build-electron
+          mkdir -p ./node_modules/fsevents
           npm run dist-electron
 
       - name: Upload release assets

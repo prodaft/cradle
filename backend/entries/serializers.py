@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Entry, EntryClass, Relation
 from .enums import EntryType
+from django.db.models import Q
 
 
 from .exceptions import (
@@ -99,11 +100,11 @@ class EntryListCompressedTreeSerializer(serializers.BaseSerializer):
             return getattr(entry, self.fields[0])
 
         return {
-            field: getattr(entry, field)
-            if field != "location"
-            else [entry.location.x, entry.location.y]
-            if entry.location
-            else None
+            field: (
+                getattr(entry, field)
+                if field != "location"
+                else [entry.location.x, entry.location.y] if entry.location else None
+            )
             for field in self.fields
         }
 
@@ -127,12 +128,17 @@ class EntryListCompressedTreeSerializer(serializers.BaseSerializer):
 
 
 class EntryTypesCompressedTreeSerializer(serializers.BaseSerializer):
-    def __init__(self, *args, fields=("name",), **kwargs):
+    def __init__(self, *args, exclude=[], fields=("name",), **kwargs):
         self.fields = fields
+        self.exclude = exclude
         super().__init__(*args, **kwargs)
 
     def to_representation(self, data):
-        unique_subtypes = data.values_list("entry_class__subtype", flat=True).distinct()
+        unique_subtypes = (
+            data.filter(~Q(entry_class__subtype__in=self.exclude))
+            .values_list("entry_class__subtype", flat=True)
+            .distinct()
+        )
 
         return list(unique_subtypes)
 
@@ -167,10 +173,11 @@ class ArtifactClassSerializer(serializers.ModelSerializer):
     subtype = serializers.CharField(max_length=20)
     regex = serializers.CharField(max_length=65536, default="")
     options = serializers.CharField(max_length=65536, default="")
+    format = serializers.CharField(max_length=20, allow_null=True)
 
     class Meta:
         model = EntryClass
-        fields = ["subtype", "regex", "options"]
+        fields = ["subtype", "regex", "options", "format"]
 
     def validate(self, data):
         data["type"] = EntryType.ARTIFACT
@@ -189,6 +196,8 @@ class ArtifactClassSerializer(serializers.ModelSerializer):
 
 
 class EntryClassSerializerNoChildren(serializers.ModelSerializer):
+    format = serializers.CharField(max_length=20, allow_null=True)
+
     class Meta:
         model = EntryClass
         fields = [
@@ -200,6 +209,7 @@ class EntryClassSerializerNoChildren(serializers.ModelSerializer):
             "options",
             "prefix",
             "color",
+            "format",
         ]
 
 
@@ -208,6 +218,7 @@ class EntryClassSerializer(serializers.ModelSerializer):
         queryset=EntryClass.objects.all(), many=True, write_only=True, required=False
     )
     children_detail = serializers.SerializerMethodField(read_only=True)
+    format = serializers.CharField(max_length=20, allow_null=True)
 
     class Meta:
         model = EntryClass
@@ -221,6 +232,7 @@ class EntryClassSerializer(serializers.ModelSerializer):
             "prefix",
             "color",
             "children",
+            "format",
             "children_detail",
         ]
 
@@ -529,6 +541,17 @@ class ArtifactSerializer(serializers.ModelSerializer):
         EntryClass.objects.get_or_create(**entry_class_serializer.data)
 
         return super().create(validated_data)
+
+
+class EntryPublishSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Entry
+        fields = ["id", "name", "entry_class", "description"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["subtype"] = instance.entry_class.subtype
+        return data
 
 
 class EntityAccessAdminSerializer(serializers.ModelSerializer):

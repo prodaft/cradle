@@ -1,11 +1,16 @@
 from typing import Match
 from mistune import InlineParser, InlineState, Markdown
 from mistune.helpers import LINK_LABEL
+import datetime
+from django.utils.timezone import make_aware
+import frontmatter
+
 
 # Common regex patterns
 LINK_REGEX = (
     r"\[\[(?P<cl_type>[^:\|\]]+?):(?P<cl_value>(?:\\[\[\]\|]|[^\[\]\|])+?)"
     + r"(?:\|(?P<cl_alias>(?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]"
+    + r"(?:\((?:(?P<cl_time>\d{2}:\d{2}\s+)?(?P<cl_date>\d{2}-\d{2}-\d{4}))\))?"
 )
 INLINE_FOOTNOTE = (
     r"\[(?P<footnote_value>"
@@ -23,11 +28,24 @@ INLINE_FOOTNOTE_IMG = (
 )
 
 
+class ErrorBypassYAMLHandler(frontmatter.YAMLHandler):
+    def load(self, *args, **kwargs):
+        try:
+            return super().load(*args, **kwargs)
+        except Exception:
+            return {}
+
+
 def parse_cradle_link(
     inline: "InlineParser", m: Match[str], state: "InlineState"
 ) -> int:
-    """Parse a cradle link of the form [[type:value|alias]]."""
+    """Parse a cradle link of the form [[type:value|alias]] (HH:MM dd-mm-yyyy)."""
     pos = m.end()
+
+    # Extract timestamp components
+    time = m.group("cl_time").strip() if m.group("cl_time") else None
+    date = m.group("cl_date") if m.group("cl_date") else None
+
     state.append_token(
         {
             "type": "cradle_link",
@@ -35,6 +53,16 @@ def parse_cradle_link(
                 "key": m.group("cl_type").strip(),
                 "value": m.group("cl_value").strip(),
                 "alias": m.group("cl_alias").strip() if m.group("cl_alias") else None,
+                "time": (
+                    make_aware(datetime.datetime.strptime(time, "%H:%M"))
+                    if time
+                    else None
+                ),
+                "date": (
+                    make_aware(datetime.datetime.strptime(date, "%d-%m-%Y"))
+                    if date
+                    else None
+                ),
             },
         }
     )

@@ -3,7 +3,7 @@ import { Outlet, Route, Routes, HashRouter } from 'react-router-dom';
 
 const NoteEditor = React.lazy(() => import('./components/NoteEditor/NoteEditor.jsx'));
 const Login = React.lazy(() => import('./components/Login/Login.jsx'));
-const Notes = React.lazy(() => import('./components/Notes/Notes.jsx'));
+const Documents = React.lazy(() => import('./components/Documents/Documents.jsx'));
 const Register = React.lazy(() => import('./components/Register/Register.jsx'));
 const Home = React.lazy(() => import('./components/Home/Home.jsx'));
 const PrivateRoute = React.lazy(
@@ -81,7 +81,10 @@ function App() {
                                             path='/not-implemented'
                                             element={<FeatureNotImplemented />}
                                         />
-                                        <Route path='/notes' element={<Notes />} />
+                                        <Route
+                                            path='/documents'
+                                            element={<Documents />}
+                                        />
                                         <Route
                                             path='/editor/:id'
                                             element={<FleetingNoteEditor />}

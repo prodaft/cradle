@@ -4,7 +4,7 @@
     <h2>Entity Access Request on CRADLE</h2>
     <p>Hello <strong>{{ recipient.username }}</strong>,</p>
     <p>You have received an access request for the following entity:</p>
-    <p><strong>Entity: {{case.entry_class.subtype}}:{{ case.name }}</strong></p>
+    <p><strong>Entity: {{ entry.entry_class.subtype }}:{{ entry.name }}</strong></p>
     <p><strong>Requested By: {{ requester.username }}</strong></p>
     <p>Please review the request by clicking the button below:</p>
 

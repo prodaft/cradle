@@ -44,8 +44,11 @@ class StatisticsList(APIView):
             request is not authenticated.
         """
 
-        accessible_notes = Note.objects.get_accessible_notes(
-            user=cast(CradleUser, request.user)
+        accessible_notes = (
+            Note.objects.non_fleeting()
+            .accessible(user=cast(CradleUser, request.user))
+            .order_by("-timestamp")
+            .distinct()
         )
 
         response_data = {}

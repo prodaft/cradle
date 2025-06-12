@@ -44,7 +44,7 @@ export default function Register() {
             <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 md:h-fit xl:w-1/3'>
                 <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8'>
                     <div className='sm:mx-auto sm:w-full sm:max-w-sm'>
-                        <h1 className='mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-cradle2'>
+                        <h1 className='mt-10 text-primary text-center text-2xl font-bold leading-9 tracking-tight text-cradle2'>
                             Register
                         </h1>
                     </div>
@@ -94,7 +94,7 @@ export default function Register() {
                         <p className='mt-10 text-center text-sm text-gray-500'>
                             <Link
                                 to='/login'
-                                className='font-semibold leading-6 text-cradle2 hover:opacity-90 hover:shadow-gray-400'
+                                className='text-primary font-semibold leading-6 text-cradle2 hover:opacity-90 hover:shadow-gray-400'
                                 state={location.state}
                                 replace={true}
                             >

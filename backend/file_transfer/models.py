@@ -10,19 +10,14 @@ class FileReference(models.Model):
     id: models.UUIDField = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
+    timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+
     minio_file_name: models.CharField = models.CharField()
     file_name: models.CharField = models.CharField()
     bucket_name: models.CharField = models.CharField()
 
     note: models.ForeignKey = models.ForeignKey(
         "notes.Note",
-        related_name="files",
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-    )
-    fleeting_note: models.ForeignKey = models.ForeignKey(
-        "fleeting_notes.FleetingNote",
         related_name="files",
         on_delete=models.CASCADE,
         null=True,
@@ -45,7 +40,9 @@ class FileReference(models.Model):
 
     md5_hash: models.CharField = models.CharField(max_length=32, null=True, blank=True)
     sha1_hash: models.CharField = models.CharField(max_length=40, null=True, blank=True)
-    sha256_hash: models.CharField = models.CharField(max_length=64, null=True, blank=True)
+    sha256_hash: models.CharField = models.CharField(
+        max_length=64, null=True, blank=True
+    )
     mimetype: models.CharField = models.CharField(max_length=255, null=True, blank=True)
 
     def to_dict(self) -> dict[str, str]:

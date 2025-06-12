@@ -1,10 +1,10 @@
 from django.urls import path
 
-from fleeting_notes.views.fleeting_notes_view import (
+from .views import (
     FleetingNotesList,
     FleetingNotesDetail,
+    FleetingNotesFinal,
 )
-from fleeting_notes.views.fleeting_notes_final_view import FleetingNotesFinal
 
 urlpatterns = [
     path("", FleetingNotesList.as_view(), name="fleeting_notes_list"),

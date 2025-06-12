@@ -6,7 +6,17 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 import { useLocation } from 'react-router-dom';
 import ReferenceTree from '../ReferenceTree/ReferenceTree';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
-
+import {
+    InfoCircle,
+    WarningTriangle,
+    CheckCircle,
+    WarningCircle,
+    CheckCircleSolid,
+    InfoCircleSolid,
+    WarningTriangleSolid,
+    WarningCircleSolid,
+} from 'iconoir-react';
+import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
 
 /**
  * Note component - This component is used to display a note on the dashboard.
@@ -31,9 +41,46 @@ const Note = forwardRef(function (
     const location = useLocation();
     const [parsedContent, setParsedContent] = useState('');
 
+    const getStatusIcon = () => {
+        if (!note.status) return null;
+
+        switch (note.status) {
+            case 'healthy':
+                return (
+                    <CheckCircleSolid
+                        className='text-green-500'
+                        width='18'
+                        height='18'
+                    />
+                );
+            case 'processing':
+                return (
+                    <InfoCircleSolid className='text-blue-500' width='18' height='18' />
+                );
+            case 'warning':
+                return (
+                    <WarningTriangleSolid
+                        className='text-amber-500'
+                        width='18'
+                        height='18'
+                    />
+                );
+            case 'invalid':
+                return (
+                    <WarningCircleSolid
+                        className='text-red-500'
+                        width='18'
+                        height='18'
+                    />
+                );
+            default:
+                return null;
+        }
+    };
+
     useEffect(() => {
         parseContent(note.content, note.files)
-            .then((parsedContent) => setParsedContent(parsedContent))
+            .then((result) => setParsedContent(result.html))
             .catch(displayError(setAlert, navigate));
     }, [note.content, note.files, setAlert, navigate]);
 
@@ -53,7 +100,21 @@ const Note = forwardRef(function (
                 <div className='flex flex-row justify-between'>
                     <div className='text-xs text-zinc-500 border-b-1 dark:border-b-zinc-800'>
                         {!note.editor && (
-                            <span>
+                            <span className='flex items-center'>
+                                {note.status && (
+                                    <span
+                                        className={
+                                            'inline-flex items-center align-middle tooltip-right tooltip tooltip-primary'
+                                        }
+                                        data-tooltip={
+                                            note.status_message ||
+                                            capitalizeString(note.status) ||
+                                            null
+                                        }
+                                    >
+                                        {getStatusIcon()}
+                                    </span>
+                                )}
                                 <span className='text-xs text-zinc-500 px-2'>
                                     <strong>Created on:</strong>{' '}
                                     {formatDate(new Date(note.timestamp))}
@@ -66,7 +127,21 @@ const Note = forwardRef(function (
                             </span>
                         )}
                         {note.editor && (
-                            <span>
+                            <span className='flex items-center'>
+                                {note.status && (
+                                    <span
+                                        className={
+                                            'inline-flex items-center align-middle tooltip-right tooltip tooltip-primary'
+                                        }
+                                        data-tooltip={
+                                            note.status_message ||
+                                            capitalizeString(note.status) ||
+                                            null
+                                        }
+                                    >
+                                        {getStatusIcon()}
+                                    </span>
+                                )}
                                 <span className='text-xs text-zinc-500 px-2'>
                                     <strong>Edited on:</strong>{' '}
                                     {formatDate(new Date(note.edit_timestamp))}

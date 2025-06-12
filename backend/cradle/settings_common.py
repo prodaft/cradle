@@ -6,7 +6,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-VERSION = "2.1.5"
+VERSION = "2.4.1"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -233,3 +233,6 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 200 * 1024 * 1024
 
 ## Default settings dict
 DEFAULT_SETTINGS = {}
+
+## Internal Subtypes
+INTERNAL_SUBTYPES = set(["alias", "virtual", "file"])

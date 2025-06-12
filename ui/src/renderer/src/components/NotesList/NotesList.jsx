@@ -18,7 +18,7 @@ export default function NotesList({
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [loading, setLoading] = useState(false);
     const [totalPages, setTotalPages] = useState(1);
-    const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
+    const [page, setPage] = useState(Number(searchParams.get('notes_page')) || 1);
 
     const fetchNotes = useCallback(() => {
         setLoading(true);
@@ -40,13 +40,13 @@ export default function NotesList({
     }, [page, query]);
 
     useEffect(() => {
-        setPage(Number(searchParams.get('page')) || 1);
+        setPage(Number(searchParams.get('notes_page')) || 1);
         fetchNotes();
     }, [fetchNotes]);
 
     const handlePageChange = (newPage) => {
         const newParams = new URLSearchParams(searchParams);
-        newParams.set('page', newPage);
+        newParams.set('notes_page', newPage);
         setSearchParams(newParams);
 
         setPage(newPage);

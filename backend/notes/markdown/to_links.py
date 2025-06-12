@@ -5,14 +5,15 @@ import mistune
 from mistune.core import BaseRenderer, BlockState
 import uuid
 import hashlib
-
+import datetime
+import frontmatter
 import itertools
 
 if __name__ == "__main__":
-    from common import cradle_link_plugin, footnote_plugin
+    from common import cradle_link_plugin, footnote_plugin, ErrorBypassYAMLHandler
     from table import table
 else:
-    from .common import cradle_link_plugin, footnote_plugin
+    from .common import cradle_link_plugin, footnote_plugin, ErrorBypassYAMLHandler
     from .table import table
 
 
@@ -36,6 +37,7 @@ class Link:
         self,
         key: str,
         value: str,
+        date: datetime.datetime | None = None,
         alias: str | None = None,
         virtual: bool = False,
     ) -> None:
@@ -43,6 +45,7 @@ class Link:
         self.value = value
         self.alias = alias
         self.virtual = virtual
+        self.date = date
 
     def __eq__(self, value: object, /) -> bool:
         if not isinstance(value, Link):
@@ -286,9 +289,11 @@ class LinksRenderer(BaseRenderer):
     def __init__(
         self,
         base_id: str = "",
+        root_links: Set[Link] = None,
     ) -> None:
         super(LinksRenderer, self).__init__()
         self.node_factory = NodeFactory(base_id)
+        self.root_links = root_links
 
     def traverse_up(self, src: Node, target: Node):
         """
@@ -395,7 +400,9 @@ class LinksRenderer(BaseRenderer):
             parent = self.render_token(tok, state, parent)
 
     def __call__(self, tokens: Iterable[Dict[str, Any]], state: BlockState) -> str:
-        root = self.node_factory.create_node(type=NodeType.ROOT, level=0)
+        root = self.node_factory.create_node(
+            type=NodeType.ROOT, level=0, links=self.root_links
+        )
         self.render_tokens(tokens, state, root)
         return root
 
@@ -429,8 +436,18 @@ class LinksRenderer(BaseRenderer):
     def paragraph(self) -> Node | None:
         return self.node_factory.create_node(type=NodeType.PARAGRAPH)
 
-    def cradle_link(self, key: str, value: str, alias: Optional[str]) -> Node:
-        link = Link(key=key, value=value, alias=alias)
+    def cradle_link(
+        self,
+        key: str,
+        value: str,
+        alias: Optional[str],
+        date: Optional[datetime.datetime],
+        time: Optional[datetime.datetime],
+    ) -> Node:
+        if date and time:
+            date = date.replace(hour=time.hour, minute=time.minute)
+
+        link = Link(key=key, value=value, alias=alias, date=date)
         node = self.node_factory.create_node(type=NodeType.CRADLELINK)
         node.links.add(link)
         return node
@@ -456,7 +473,7 @@ class LinksRenderer(BaseRenderer):
     def block_quote(self) -> Node:
         return self.node_factory.create_node(type=NodeType.BLOCKQUOTE)
 
-    def block_html(self, html: str) -> None:
+    def block_html(self) -> None:
         return None
 
     def block_error(self) -> Node:
@@ -493,13 +510,31 @@ def cradle_connections(
     md: str,
     base_id: str = "",
 ) -> Node:
-    renderer = LinksRenderer(base_id=base_id)
+    metadata, content = frontmatter.parse(md, handler=ErrorBypassYAMLHandler())
+    root_entries = metadata.pop("entries", {})
+
+    if not isinstance(root_entries, dict):
+        root_entries = {}
+
+    entries = set()
+
+    for subtype, value in root_entries.items():
+        if isinstance(value, list):
+            for item in value:
+                if isinstance(item, str):
+                    entries.add(Link(key=subtype, value=item))
+        elif isinstance(value, dict):
+            pass
+        elif isinstance(value, str):
+            entries.add(Link(key=subtype, value=value))
+
+    renderer = LinksRenderer(base_id=base_id, root_links=entries)
 
     markdown = mistune.create_markdown(
         renderer=renderer, plugins=[table, cradle_link_plugin, footnote_plugin]
     )
 
-    result, state = markdown.parse(md)
+    result, state = markdown.parse(content)
 
     return result
 

@@ -18,6 +18,13 @@ import useAuth from '../../hooks/useAuth/useAuth';
 import ReferenceTree from '../ReferenceTree/ReferenceTree';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-markdown';
+import {
+    CheckCircleSolid,
+    InfoCircleSolid,
+    WarningTriangleSolid,
+    WarningCircleSolid,
+} from 'iconoir-react';
+import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
 import { Tab, Tabs } from '../Tabs/Tabs';
@@ -48,6 +55,43 @@ export default function NoteViewer() {
 
     const auth = useAuth();
 
+    const getStatusIcon = () => {
+        if (!note.status) return null;
+
+        switch (note.status) {
+            case 'healthy':
+                return (
+                    <CheckCircleSolid
+                        className='text-green-500'
+                        width='18'
+                        height='18'
+                    />
+                );
+            case 'processing':
+                return (
+                    <InfoCircleSolid className='text-blue-500' width='18' height='18' />
+                );
+            case 'warning':
+                return (
+                    <WarningTriangleSolid
+                        className='text-amber-500'
+                        width='18'
+                        height='18'
+                    />
+                );
+            case 'invalid':
+                return (
+                    <WarningCircleSolid
+                        className='text-red-500'
+                        width='18'
+                        height='18'
+                    />
+                );
+            default:
+                return null;
+        }
+    };
+
     useEffect(() => {
         setIsLoading(true);
         getNote(id)
@@ -58,8 +102,8 @@ export default function NoteViewer() {
                 return responseNote;
             })
             .then((note) => {
-                return parseContent(note.content, note.files).then((parsed) =>
-                    setParsedContent(parsed),
+                return parseContent(note.content, note.files).then((result) =>
+                    setParsedContent(result.html),
                 );
             })
             .catch(displayError(setAlert, navigate))
@@ -197,6 +241,20 @@ export default function NoteViewer() {
                         <div className='w-full h-full overflow-hidden flex flex-col items-center px-4 pb-4 pt-1'>
                             <div className='h-full w-[90%] rounded-md bg-cradle3 bg-opacity-20 backdrop-blur-lg backdrop-filter px-4 pb-4 pt-1 overflow-y-auto'>
                                 <div className='text-sm text-zinc-500 p-2 border-b-2 dark:border-b-zinc-800'>
+                                    {note.status && (
+                                        <span
+                                            className={
+                                                'inline-flex items-center align-middle tooltip-right tooltip tooltip-primary'
+                                            }
+                                            data-tooltip={
+                                                note.status_message ||
+                                                capitalizeString(note.status) ||
+                                                null
+                                            }
+                                        >
+                                            {getStatusIcon()}
+                                        </span>
+                                    )}
                                     <span className='text-sm text-zinc-500 p-2'>
                                         <strong>Created on:</strong>{' '}
                                         {formatDate(new Date(note.timestamp))}
@@ -215,9 +273,9 @@ export default function NoteViewer() {
                                             </span>
                                             <span className='text-sm text-zinc-500 p-2'>
                                                 <strong>Edited on:</strong>{' '}
-                                                {formatDate(new Date(
-                                                    note.edit_timestamp,
-                                                ))}
+                                                {formatDate(
+                                                    new Date(note.edit_timestamp),
+                                                )}
                                             </span>
                                             <span className='text-sm text-zinc-700'>
                                                 |
@@ -237,9 +295,7 @@ export default function NoteViewer() {
                                             </span>
                                             <span className='text-sm text-zinc-500 p-2'>
                                                 <strong>Linked on:</strong>{' '}
-                                                {formatDate(new Date(
-                                                    note.last_linked,
-                                                ))}
+                                                {formatDate(new Date(note.last_linked))}
                                             </span>
                                         </span>
                                     )}

@@ -1,4 +1,4 @@
-from fleeting_notes.models import FleetingNote
+from notes.models import Note
 from fleeting_notes.tests.utils import FleetingNotesTestCase
 from django.urls import reverse
 from rest_framework.parsers import JSONParser
@@ -26,8 +26,8 @@ class GetFleetingNoteByIdTest(FleetingNotesTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(bytes_to_json(response.content)["content"], "Note1")
         self.assertEqual(
-            bytes_to_json(response.content)["last_edited"],
-            self.note_admin.last_edited.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            bytes_to_json(response.content)["timestamp"],
+            self.note_admin.timestamp.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         )
         self.assertEqual(bytes_to_json(response.content)["id"], str(self.note_admin.pk))
 
@@ -51,8 +51,8 @@ class GetFleetingNoteByIdTest(FleetingNotesTestCase):
             "[[actor:actor]] [[case:entity]]",
         )
         self.assertEqual(
-            bytes_to_json(response.content)["last_edited"],
-            self.note_user.last_edited.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            bytes_to_json(response.content)["timestamp"],
+            self.note_user.timestamp.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         )
         self.assertEqual(bytes_to_json(response.content)["id"], str(self.note_user.pk))
 
@@ -93,15 +93,15 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
         self.assertEqual(bytes_to_json(response.content)["content"], "New content")
         self.assertEqual(bytes_to_json(response.content)["id"], str(self.note_admin.pk))
 
-        updated_note = FleetingNote.objects.get(pk=self.note_admin.pk)
+        updated_note = Note.objects.fleeting().get(pk=self.note_admin.pk)
 
         self.assertEqual(updated_note.content, "New content")
-        self.assertTrue(updated_note.last_edited >= self.note_admin.last_edited)
-        self.assertEqual(updated_note.user, self.admin_user)
+        self.assertTrue(updated_note.timestamp >= self.note_admin.timestamp)
+        self.assertEqual(updated_note.author, self.admin_user)
 
         self.assertEqual(
-            bytes_to_json(response.content)["last_edited"],
-            updated_note.last_edited.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            bytes_to_json(response.content)["timestamp"],
+            updated_note.timestamp.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         )
 
     def test_put_fleeting_note_by_id_authenticated_admin_empty_db(self):
@@ -125,15 +125,15 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
         self.assertEqual(bytes_to_json(response.content)["content"], "New content")
         self.assertEqual(bytes_to_json(response.content)["id"], str(self.note_user.pk))
 
-        updated_note = FleetingNote.objects.get(pk=self.note_user.pk)
+        updated_note = Note.objects.fleeting().get(pk=self.note_user.pk)
 
         self.assertEqual(updated_note.content, "New content")
-        self.assertTrue(updated_note.last_edited >= self.note_user.last_edited)
-        self.assertEqual(updated_note.user, self.normal_user)
+        self.assertTrue(updated_note.timestamp >= self.note_user.timestamp)
+        self.assertEqual(updated_note.author, self.normal_user)
 
         self.assertEqual(
-            bytes_to_json(response.content)["last_edited"],
-            updated_note.last_edited.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            bytes_to_json(response.content)["timestamp"],
+            updated_note.timestamp.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         )
 
     def test_put_fleeting_note_by_id_authenticated_not_admin_not_own_note(self):
@@ -197,7 +197,7 @@ class DeleteFleetingNotesByIdTest(FleetingNotesTestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertIsNone(FleetingNote.objects.filter(pk=self.note_admin.pk).first())
+        self.assertIsNone(Note.objects.fleeting().filter(pk=self.note_admin.pk).first())
 
     def test_delete_fleeting_note_by_id_authenticated_admin_note_does_not_exist(self):
         response = self.client.delete(

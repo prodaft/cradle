@@ -23,6 +23,9 @@ class SingleNoteGetMocker:
     def get(self, *args, **kwargs):
         return self.note
 
+    def non_fleeting(self, *args, **kwargs):
+        return self
+
 
 class GetNoteTest(NotesTestCase):
     def setUp(self):
