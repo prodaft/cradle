@@ -212,10 +212,11 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                         setTwoFactorEnabled(false);
                         setAlert({
                             show: true,
-                            message: '2FA has been successfully disabled for your account',
+                            message:
+                                '2FA has been successfully disabled for your account',
                             color: 'green',
                         });
-                },
+                    },
                 });
             } else {
                 updateUser(target, {
@@ -224,7 +225,8 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                 setTwoFactorEnabled(false);
                 setAlert({
                     show: true,
-                    message: '2FA has been successfully disabled for the selected account!',
+                    message:
+                        '2FA has been successfully disabled for the selected account!',
                     color: 'green',
                 });
             }
@@ -238,8 +240,8 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                         message: '2FA has been successfully enabled for your account',
                         color: 'green',
                     });
-            },
-          });
+                },
+            });
         }
     };
 
@@ -277,6 +279,18 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
 
                                     {isEdit ? (
                                         isAdminAndNotOwn && (
+                                            <div className='mt-4'>
+                                                <FormField
+                                                    name='password'
+                                                    type='password'
+                                                    labelText='Password'
+                                                    placeholder='Password'
+                                                    {...register('password')}
+                                                    error={errors.password?.message}
+                                                />
+                                            </div>
+                                        )
+                                    ) : (
                                         <div className='mt-4'>
                                             <FormField
                                                 name='password'
@@ -286,18 +300,6 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                                 {...register('password')}
                                                 error={errors.password?.message}
                                             />
-                                            </div>
-                                        )
-                                    ) : (
-                                        <div className='mt-4'>
-                                        <FormField
-                                            name='password'
-                                            type='password'
-                                            labelText='Password'
-                                            placeholder='Password'
-                                            {...register('password')}
-                                            error={errors.password?.message}
-                                        />
                                         </div>
                                     )}
                                     {isAdmin && (!isEdit || isAdminAndNotOwn) && (
@@ -383,57 +385,71 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                         {isEdit ? 'Save' : 'Add'}
                                     </button>
                                 </Tab>
-                                <Tab title='Security'>
-                                    <div className='mt-4' />
-                                    <div className='space-y-4'>
-                                        {isEdit && isOwnAccount && (
+                                {isEdit && (twoFactorEnabled || isOwnAccount) && (
+                                    <Tab title='Security'>
+                                        <div className='space-y-4'>
+                                            <div className='mt-4' />
                                             <div className='flex flex-col space-y-4'>
-                                                <button
-                                                    type='button'
-                                                    className='btn btn-primary btn-block'
-                                                    onClick={() =>
-                                                        navigate('/change-password')
-                                                    }
-                                                >
-                                                    Change Password
-                                                </button>
+                                                {isOwnAccount && (
+                                                    <>
+                                                        <button
+                                                            type='button'
+                                                            className='btn btn-primary btn-block'
+                                                            onClick={() =>
+                                                                navigate(
+                                                                    '/change-password',
+                                                                )
+                                                            }
+                                                        >
+                                                            Change Password
+                                                        </button>
 
-                                                <button
-                                                    type='button'
-                                                    className='btn btn-primary btn-block'
-                                                    onClick={handleGenerateApiKey}
-                                                >
-                                                    Generate API Key
-                                                </button>
-
-                                                {(twoFactorEnabled || isOwnAccount) && (
-                                                <button
-                                                    type='button'
-                                                    className={`btn btn-primary btn-block ${twoFactorEnabled ? 'bg-red-500' : ''}`}
-                                                    onClick={handle2FASetup}
-                                                >
-                                                    {isEdit && twoFactorEnabled
-                                                        ? 'Disable Two-Factor Authentication'
-                                                        : 'Enable Two-Factor Authentication'}
-                                                </button>
+                                                        <button
+                                                            type='button'
+                                                            className='btn btn-primary btn-block'
+                                                            onClick={
+                                                                handleGenerateApiKey
+                                                            }
+                                                        >
+                                                            Generate API Key
+                                                        </button>
+                                                    </>
                                                 )}
 
-                                                <button
-                                                    type='button'
-                                                    className='btn btn-primary btn-block bg-red-500'
-                                                    onClick={() =>
-                                                        setModal(ConfirmDeletionModal, {
-                                                            text: 'Are you sure you want to delete your account? All data related to you will be deleted.',
-                                                            onConfirm: handleDelete,
-                                                        })
-                                                    }
-                                                >
-                                                    Delete Account
-                                                </button>
+                                                {(twoFactorEnabled || isOwnAccount) && (
+                                                    <button
+                                                        type='button'
+                                                        className={`btn btn-primary btn-block ${twoFactorEnabled ? 'bg-red-500' : ''}`}
+                                                        onClick={handle2FASetup}
+                                                    >
+                                                        {isEdit && twoFactorEnabled
+                                                            ? 'Disable Two-Factor Authentication'
+                                                            : 'Enable Two-Factor Authentication'}
+                                                    </button>
+                                                )}
+
+                                                {isOwnAccount && (
+                                                    <button
+                                                        type='button'
+                                                        className='btn btn-primary btn-block bg-red-500'
+                                                        onClick={() =>
+                                                            setModal(
+                                                                ConfirmDeletionModal,
+                                                                {
+                                                                    text: 'Are you sure you want to delete your account? All data related to you will be deleted.',
+                                                                    onConfirm:
+                                                                        handleDelete,
+                                                                },
+                                                            )
+                                                        }
+                                                    >
+                                                        Delete Account
+                                                    </button>
+                                                )}
                                             </div>
-                                        )}
-                                    </div>
-                                </Tab>
+                                        </div>
+                                    </Tab>
+                                )}
                             </Tabs>
                             <AlertBox alert={alert} />
                         </form>

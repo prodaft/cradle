@@ -28,9 +28,7 @@ class Enable2FAView(APIView):
                 {"error": "2FA is already enabled"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Delete existing 2FA tokens
-        TOTPDevice.objects.filter(user=request.user, confirmed=False).delete()
-
+        # The enable_2fa method now handles the transaction and potential race conditions
         config_url = request.user.enable_2fa()
         return Response({"config_url": config_url})
 
@@ -51,20 +49,32 @@ class Verify2FASetupView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        from django.db import transaction
+
         serializer = Enable2FASerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        print(serializer.validated_data)
-
         token = serializer.validated_data["token"]
+
         if not request.user.verify_2fa_token(token):
             return Response(
                 {"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        request.user.two_factor_enabled = True
-        request.user.save()
+        with transaction.atomic():
+            confirmed_devices = TOTPDevice.objects.select_for_update().filter(
+                user=request.user, confirmed=True
+            )
+
+            if confirmed_devices.count() > 1:
+                newest_device = confirmed_devices.order_by("-id").first()
+                confirmed_devices.exclude(id=newest_device.id).delete()
+
+            # Update user
+            request.user.two_factor_enabled = True
+            request.user.save(update_fields=["two_factor_enabled"])
+
         return Response({"message": "2FA enabled successfully"})
 
 
@@ -93,6 +103,7 @@ class Disable2FAView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        # The verify_2fa_token and disable_2fa methods now handle transactions internally
         if request.user.verify_2fa_token(serializer.validated_data["token"]):
             request.user.disable_2fa()
             return Response({"message": "2FA disabled successfully"})
