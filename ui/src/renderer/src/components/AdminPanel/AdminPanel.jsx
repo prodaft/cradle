@@ -62,7 +62,6 @@ export default function AdminPanel() {
                     const fetchedEntities = response.data;
                     setEntities(
                         fetchedEntities.map((c) => {
-                            console.log(c);
                             return (
                                 <AdminPanelCardEntity
                                     id={c.id}

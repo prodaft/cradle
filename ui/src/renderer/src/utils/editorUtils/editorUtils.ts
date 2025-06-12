@@ -48,7 +48,7 @@ type LspEntryClass = {
     regex: string | null;
     options: string | null;
     color: string;
-    format: string|null;
+    format: string | null;
 };
 
 interface Suggestion {
@@ -134,7 +134,7 @@ export class CradleEditor {
         if (!this.entryClasses) return;
         const patterns: string[] = [];
         for (const [type, criteria] of Object.entries(this.entryClasses)) {
-            if (criteria.regex) {
+            if (criteria.format == 'regex') {
                 // Wrap each pattern in a named capturing group using the entry type.
                 patterns.push(
                     `(?<${replaceSlashWithDoubleUnderscore(type)}>(?<=^|\\s)${criteria.regex}(?=$|\\s))`,
@@ -273,11 +273,14 @@ export class CradleEditor {
      * It registers the autocomplete function with the markdown language.
      */
     autocomplete(): any {
-        return [markdownLanguage.data.of({
-            autocomplete: this.provideAutocompleteSuggestions.bind(this),
-        }), yamlLanguage.data.of({
-            autocomplete: this.provideAutocompleteSuggestionsForYaml.bind(this),
-        })];
+        return [
+            markdownLanguage.data.of({
+                autocomplete: this.provideAutocompleteSuggestions.bind(this),
+            }),
+            yamlLanguage.data.of({
+                autocomplete: this.provideAutocompleteSuggestionsForYaml.bind(this),
+            }),
+        ];
     }
 
     /**
@@ -454,12 +457,19 @@ export class CradleEditor {
 
         let path = this.getParent(node, 'BlockMapping');
         if (path && path.length >= 2 && path.length <= 7) {
-            let section = path[1]
-            if (section && section.firstChild){
-                let sectxt = context.state.doc.sliceString(section.firstChild.from, section.firstChild.to)
+            let section = path[1];
+            if (section && section.firstChild) {
+                let sectxt = context.state.doc.sliceString(
+                    section.firstChild.from,
+                    section.firstChild.to,
+                );
                 let parent = node.parent;
                 if (sectxt == 'entries' && parent != null) {
-                    if (parent.name == 'Key' || (node.name == 'Literal' && path.length == 3)) { // Filling out type
+                    if (
+                        parent.name == 'Key' ||
+                        (node.name == 'Literal' && path.length == 3)
+                    ) {
+                        // Filling out type
                         options = Object.keys(this.entryClasses).map((item) => ({
                             label: item,
                             info: this.entryClasses[item].description
@@ -468,7 +478,8 @@ export class CradleEditor {
                             type: 'keyword',
                         }));
                         return { from, to, options: options };
-                    } else if (node.name == 'Literal') { // Filling out value
+                    } else if (node.name == 'Literal') {
+                        // Filling out value
                         if (!this.tries) return { from: context.pos, options: [] };
                         let sibling = parent?.firstChild;
                         if (parent?.name == 'Item') {
@@ -476,7 +487,10 @@ export class CradleEditor {
                         }
 
                         if (!sibling) return { from: from, to: to, options: [] };
-                        const t = context.state.doc.sliceString(sibling.from, sibling.to);
+                        const t = context.state.doc.sliceString(
+                            sibling.from,
+                            sibling.to,
+                        );
 
                         if (!this.tries[t]) return { from: from, to: to, options: [] };
 
@@ -492,16 +506,19 @@ export class CradleEditor {
                 }
             }
         }
-        if (node.name == "Literal") {
-            options = [{
-                label: "title",
-                type: "keyword",
-                info: "A title for the note",},
-            {
-                label: "entries",
-                type: "keyword",
-                info: "A list of entries in this note",}
-            ]
+        if (node.name == 'Literal') {
+            options = [
+                {
+                    label: 'title',
+                    type: 'keyword',
+                    info: 'A title for the note',
+                },
+                {
+                    label: 'entries',
+                    type: 'keyword',
+                    info: 'A list of entries in this note',
+                },
+            ];
             return { from, to, options: options };
         }
     }
@@ -603,7 +620,11 @@ export class CradleEditor {
         editor: any,
         start: number,
         end: number,
-        processSuggestion: (suggestion: Suggestion, absoluteStart: number, absoluteEnd: number) => void
+        processSuggestion: (
+            suggestion: Suggestion,
+            absoluteStart: number,
+            absoluteEnd: number,
+        ) => void,
     ): void {
         const text: string = editor.state.doc.toString();
         const tree = syntaxTree(editor.state);
@@ -680,14 +701,19 @@ export class CradleEditor {
         const text: string = editor.state.doc.toString();
         const changes: Array<{ from: number; to: number; replacement: string }> = [];
 
-        this.traverseTreeForSuggestions(editor, start, end, (suggestion, absoluteStart, absoluteEnd) => {
-            const replacement = `[[${suggestion.type}:${suggestion.match}]]`;
-            changes.push({
-                from: absoluteStart,
-                to: absoluteEnd,
-                replacement,
-            });
-        });
+        this.traverseTreeForSuggestions(
+            editor,
+            start,
+            end,
+            (suggestion, absoluteStart, absoluteEnd) => {
+                const replacement = `[[${suggestion.type}:${suggestion.match}]]`;
+                changes.push({
+                    from: absoluteStart,
+                    to: absoluteEnd,
+                    replacement,
+                });
+            },
+        );
 
         // When there is an overlap, keep the bigger one
         const filteredChanges = changes.filter(
@@ -735,38 +761,62 @@ export class CradleEditor {
                 to: view.state.doc.length,
                 enter: (syntaxNode) => {
                     const node = syntaxNode.node;
-                    if (node.name == "Frontmatter" || node.name == "FrontMatterContent") {
-                        let frontmatter = text.slice(node.from, node.to)
-                        let yml = frontmatter.substring(3, frontmatter.length - 4).trim()
+                    if (
+                        node.name == 'Frontmatter' ||
+                        node.name == 'FrontMatterContent'
+                    ) {
+                        let frontmatter = text.slice(node.from, node.to);
+                        let yml = frontmatter
+                            .substring(3, frontmatter.length - 4)
+                            .trim();
                         try {
                             const parsedYaml = jsyaml.load(yml);
 
                             // Handle entries if they exist
-                            if (parsedYaml && parsedYaml.entries && typeof parsedYaml.entries === 'object') {
-                                for (const [type, value] of Object.entries(parsedYaml.entries)) {
+                            if (
+                                parsedYaml &&
+                                parsedYaml.entries &&
+                                typeof parsedYaml.entries === 'object'
+                            ) {
+                                for (const [type, value] of Object.entries(
+                                    parsedYaml.entries,
+                                )) {
                                     if (!this.entryClasses[type]) {
                                         diagnostics.push({
                                             from: node.from + 3,
                                             to: node.to - 3,
                                             severity: 'error' as const,
                                             message: `Invalid entry type: ${type}`,
-                                        })
+                                        });
                                         if (Array.isArray(value)) {
                                             // Validate each item in the array
                                             value.forEach((item, index) => {
-                                                const valueDiagnostics = this.validateLinkValue(type, String(item), node.from);
+                                                const valueDiagnostics =
+                                                    this.validateLinkValue(
+                                                        type,
+                                                        String(item),
+                                                        node.from,
+                                                    );
                                                 if (valueDiagnostics.length > 0) {
                                                     // Adjust the position for each array item
-                                                    const adjustedDiagnostics = valueDiagnostics.map(d => ({
-                                                        ...d,
-                                                        from: d.from + (index * 2), // Approximate position adjustment
-                                                        to: d.to + (index * 2)
-                                                    }));
-                                                    diagnostics.push(...adjustedDiagnostics);
+                                                    const adjustedDiagnostics =
+                                                        valueDiagnostics.map((d) => ({
+                                                            ...d,
+                                                            from: d.from + index * 2, // Approximate position adjustment
+                                                            to: d.to + index * 2,
+                                                        }));
+                                                    diagnostics.push(
+                                                        ...adjustedDiagnostics,
+                                                    );
                                                 }
                                             });
                                         } else if (typeof value !== 'object') {
-                                            const valueDiagnostics = this.validateLinkValue(type, String(value), node.from);
+                                            const valueDiagnostics =
+                                                this.validateLinkValue(
+                                                    type,
+                                                    String(value),
+                                                    node.from,
+                                                );
                                             if (valueDiagnostics.length > 0) {
                                                 diagnostics.push(...valueDiagnostics);
                                             }
@@ -781,8 +831,7 @@ export class CradleEditor {
                                     }
                                 }
                             }
-                        }
-                        catch (e) {
+                        } catch (e) {
                             var loc = e.mark;
                             var from = loc ? loc.position : 0;
                             var to = from;
@@ -790,7 +839,7 @@ export class CradleEditor {
                                 from: from,
                                 to: to,
                                 message: e.reason,
-                                severity: 'error' as const
+                                severity: 'error' as const,
                             });
                         }
                         return false;
@@ -829,30 +878,33 @@ export class CradleEditor {
                 },
             });
 
-
-            this.traverseTreeForSuggestions(view, 0, view.state.doc.length, (suggestion, absoluteStart, absoluteEnd) => {
-
-                diagnostics.push({
-                    from: absoluteStart,
-                    to: absoluteEnd,
-                    severity: 'warning',
-                    message: `Possible link: [[${suggestion.type}:${suggestion.match}]]`,
-                    actions: [
-                        {
-                            name: 'Link',
-                            apply(view, from, to) {
-                                view.dispatch({
-                                    changes: {
-                                        from,
-                                        to,
-                                        insert: `[[${suggestion.type}:${suggestion.match}]]`,
-                                    },
-                                });
+            this.traverseTreeForSuggestions(
+                view,
+                0,
+                view.state.doc.length,
+                (suggestion, absoluteStart, absoluteEnd) => {
+                    diagnostics.push({
+                        from: absoluteStart,
+                        to: absoluteEnd,
+                        severity: 'warning',
+                        message: `Possible link: [[${suggestion.type}:${suggestion.match}]]`,
+                        actions: [
+                            {
+                                name: 'Link',
+                                apply(view, from, to) {
+                                    view.dispatch({
+                                        changes: {
+                                            from,
+                                            to,
+                                            insert: `[[${suggestion.type}:${suggestion.match}]]`,
+                                        },
+                                    });
+                                },
                             },
-                        },
-                    ],
-                });
-            });
+                        ],
+                    });
+                },
+            );
 
             return diagnostics;
         });
@@ -885,7 +937,7 @@ export class CradleEditor {
             }
         }
 
-        if (criteria.format == "options" || criteria.type == 'entity') {
+        if (criteria.format == 'options' || criteria.type == 'entity') {
             if (!this.tries[linkType].search(value).found) {
                 diagnostics.push({
                     from,
@@ -962,7 +1014,10 @@ export class CradleEditor {
                             // Find unescaped pipe character
                             let pipeIndex = -1;
                             for (let i = 0; i < remainder.length; i++) {
-                                if (remainder[i] === '|' && (i === 0 || remainder[i-1] !== '\\')) {
+                                if (
+                                    remainder[i] === '|' &&
+                                    (i === 0 || remainder[i - 1] !== '\\')
+                                ) {
                                     pipeIndex = i;
                                     break;
                                 }
@@ -1004,20 +1059,34 @@ export class CradleEditor {
 
                         // Look for timestamp after ]]
                         let timestampStart = end + 2;
-                        while (timestampStart < cx.end && cx.char(timestampStart) === 32) timestampStart++; // Skip spaces
+                        while (
+                            timestampStart < cx.end &&
+                            cx.char(timestampStart) === 32
+                        )
+                            timestampStart++; // Skip spaces
 
-                        if (cx.char(timestampStart) === 40) { // Found opening parenthesis
+                        if (cx.char(timestampStart) === 40) {
+                            // Found opening parenthesis
                             let timestampEnd = timestampStart + 1;
-                            while (timestampEnd < cx.end && cx.char(timestampEnd) !== 41) timestampEnd++;
+                            while (
+                                timestampEnd < cx.end &&
+                                cx.char(timestampEnd) !== 41
+                            )
+                                timestampEnd++;
 
                             if (timestampEnd < cx.end) {
                                 let timestamp = '';
-                                for (let i = timestampStart + 1; i < timestampEnd; i++) {
+                                for (
+                                    let i = timestampStart + 1;
+                                    i < timestampEnd;
+                                    i++
+                                ) {
                                     timestamp += String.fromCharCode(cx.char(i));
                                 }
 
                                 // Add timestamp node if valid format
-                                const timeRegex = /^(?:(\d{2}:\d{2}\s+))?\d{2}-\d{2}-\d{4}$/;
+                                const timeRegex =
+                                    /^(?:(\d{2}:\d{2}\s+))?\d{2}-\d{2}-\d{4}$/;
                                 if (timeRegex.test(timestamp)) {
                                     node.children.push(
                                         cx.elt(
@@ -1041,8 +1110,12 @@ export class CradleEditor {
             content: markdown({
                 base: markdownLanguage,
                 codeLanguages: config.codeLanguages || [],
-                extensions: [basicSetup, CradleLinkExtension, ...(config.extensions || [])],
-            })
+                extensions: [
+                    basicSetup,
+                    CradleLinkExtension,
+                    ...(config.extensions || []),
+                ],
+            }),
         });
     }
 
