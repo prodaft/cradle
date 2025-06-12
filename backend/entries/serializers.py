@@ -100,11 +100,11 @@ class EntryListCompressedTreeSerializer(serializers.BaseSerializer):
             return getattr(entry, self.fields[0])
 
         return {
-            field: getattr(entry, field)
-            if field != "location"
-            else [entry.location.x, entry.location.y]
-            if entry.location
-            else None
+            field: (
+                getattr(entry, field)
+                if field != "location"
+                else [entry.location.x, entry.location.y] if entry.location else None
+            )
             for field in self.fields
         }
 
@@ -541,6 +541,17 @@ class ArtifactSerializer(serializers.ModelSerializer):
         EntryClass.objects.get_or_create(**entry_class_serializer.data)
 
         return super().create(validated_data)
+
+
+class EntryPublishSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Entry
+        fields = ["id", "name", "entry_class", "description"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["subtype"] = instance.entry_class.subtype
+        return data
 
 
 class EntityAccessAdminSerializer(serializers.ModelSerializer):

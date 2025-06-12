@@ -26,7 +26,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 @extend_schema_view(
     get=extend_schema(
         summary="Get user's fleeting notes",
-        description="Returns all fleeting notes belonging to the authenticated user, ordered by timestamp in descending order. Note content is truncated to 200 characters for preview.",
+        description="Returns all fleeting notes belonging to the authenticated user, ordered by timestamp "
+        + "in descending order. Note content is truncated to 200 characters for preview.",
         responses={
             200: FleetingNoteRetrieveSerializer(many=True),
             401: {"description": "User is not authenticated"},
@@ -272,7 +273,8 @@ class FleetingNotesDetail(APIView):
 @extend_schema_view(
     put=extend_schema(
         summary="Convert fleeting note to regular note",
-        description="Converts a fleeting note to a regular note. Only the owner can convert it. Optionally specify if the note is publishable - defaults to not publishable if unspecified.",
+        description="Converts a fleeting note to a regular note. Only the owner can convert it. "
+        + "Optionally specify if the note is publishable - defaults to not publishable if unspecified.",
         parameters=[
             OpenApiParameter(
                 name="pk",

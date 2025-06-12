@@ -40,11 +40,13 @@ class FleetingNotesTestCase(TestCase):
         self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
         self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
 
-        self.note_admin = Note.objects.fleeting().create(
-            content="Note1", author=self.admin_user
+        self.note_admin = Note.objects.create(
+            content="Note1", author=self.admin_user, fleeting=True
         )
-        self.note_user = Note.objects.fleeting().create(
-            content="[[actor:actor]] [[case:entity]]", author=self.normal_user
+        self.note_user = Note.objects.create(
+            content="[[actor:actor]] [[case:entity]]",
+            author=self.normal_user,
+            fleeting=True,
         )
 
         self.entryclass_ip = EntryClass.objects.create(

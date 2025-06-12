@@ -93,17 +93,19 @@ def parse_query(query_str):
     """
     Parses a query string which is expected to be in the form:
       <subtype>:<name>
-    However, if no colon is found outside of any quotes, the input is treated as a literal for the name field,
-    and the subtype is set to '*' (i.e. processed as *:<literal>).
+    However, if no colon is found outside of any quotes, the input is treated as:
+    1. A literal for the name field (processed as *:<literal>)
+    2. AND also searches for entries where:
+       - entry_class__type = 'entity'
+       - description contains the query (case-insensitive)
 
-    Returns a Django Q object that filters on:
-      - entry_class__subtype__<lookup> for the subtype field,
-      - name__<lookup> for the name field.
+    Returns a Django Q object that combines all the search conditions.
     """
     # First, scan for a colon that is not inside quotes.
     colon_index = None
     in_quote = False
     i = 0
+
     while i < len(query_str):
         if query_str[i] == '"' and (i == 0 or query_str[i - 1] != "\\"):
             in_quote = not in_quote
@@ -113,32 +115,47 @@ def parse_query(query_str):
         i += 1
 
     if colon_index is None:
-        # No colon found: treat the entire string as the name field.
-        # Use "*" as the subtype.
+        # No colon found: treat the entire string as the name field
+        # and also search in description for entities
         field1 = "*"
         quoted1 = False
         field2, _, quoted2 = parse_field(query_str, 0)
+
+        # Process the fields for wildcards
+        lookup1, pattern1 = process_pattern(field1, quoted1)
+        lookup2, pattern2 = process_pattern(field2, quoted2)
+
+        # Create base query for name field
+        name_q = Q(**{f"name__{lookup2}": pattern2}) if lookup2 else ~Q(pk__in=[])
+
+        # Add entity type and description search
+        entity_description_q = Q(description__icontains=query_str.strip("*")) & Q(
+            entry_class__type="entity"
+        )
+
+        # Combine both conditions with OR
+        q = name_q | entity_description_q
     else:
-        # Colon found: parse normally.
+        # Colon found: parse normally
         field1, i, quoted1 = parse_field(query_str, 0)
         if i >= len(query_str) or query_str[i] != ":":
             raise ValueError("Invalid query format: Missing colon separator")
-        i += 1  # Skip the colon.
+        i += 1  # Skip the colon
         field2, i, quoted2 = parse_field(query_str, i)
 
-    # Process the fields for wildcards.
-    lookup1, pattern1 = process_pattern(field1, quoted1)
-    lookup2, pattern2 = process_pattern(field2, quoted2)
+        # Process the fields for wildcards
+        lookup1, pattern1 = process_pattern(field1, quoted1)
+        lookup2, pattern2 = process_pattern(field2, quoted2)
 
-    if lookup1 and lookup2:
-        q = Q(**{f"entry_class__subtype__{lookup1}": pattern1}) & Q(
-            **{f"name__{lookup2}": pattern2}
-        )
-    elif lookup1:
-        q = Q(**{f"entry_class__subtype__{lookup1}": pattern1})
-    elif lookup2:
-        q = Q(**{f"name__{lookup2}": pattern2})
-    else:
-        q = ~Q(pk__in=[])  # Empty
+        if lookup1 and lookup2:
+            q = Q(**{f"entry_class__subtype__{lookup1}": pattern1}) & Q(
+                **{f"name__{lookup2}": pattern2}
+            )
+        elif lookup1:
+            q = Q(**{f"entry_class__subtype__{lookup1}": pattern1})
+        elif lookup2:
+            q = Q(**{f"name__{lookup2}": pattern2})
+        else:
+            q = ~Q(pk__in=[])  # Empty
 
     return q

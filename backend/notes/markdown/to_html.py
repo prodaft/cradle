@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional, Tuple, Callable
 import mistune
 from mistune.renderers.html import HTMLRenderer as BaseHTMLRenderer
 import frontmatter
+import datetime
 
 from .common import cradle_link_plugin, footnote_plugin, ErrorBypassYAMLHandler
 from .table import table
@@ -35,7 +36,14 @@ class HTMLRenderer(BaseHTMLRenderer):
 
         return f'<img src="{img_data}" title="{value}">'
 
-    def cradle_link(self, key: str, value: str, alias: Optional[str] = None) -> str:
+    def cradle_link(
+        self,
+        key: str,
+        value: str,
+        alias: Optional[str] = None,
+        date: Optional[datetime.datetime] = None,
+        time: Optional[datetime.datetime] = None,
+    ) -> str:
         display = alias if alias else value
 
         return f'<span class="entry" entry-type="{key}">{display}</span>'

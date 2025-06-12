@@ -6,4 +6,4 @@ class NoteStatus(models.TextChoices):
     HEALTHY = "healthy", _("Healthy")
     PROCESSING = "processing", _("Processing")
     WARNING = "warning", _("Warning")
-    INVALID = "invalid", _("Editing")
+    INVALID = "invalid", _("Invalid")

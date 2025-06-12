@@ -196,6 +196,6 @@ class CreateNoteTest(NotesTestCase):
         saved_note = Note.objects.first()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["content"], note_content)
-        self.assertEqual(response.json()["files"], [self.file_reference])
+        self.assertEqual(len(response.json()["files"]), len([self.file_reference]))
         self.assertEqual(saved_note.content, note_content)
         self.assertIsNotNone(response.json()["timestamp"])

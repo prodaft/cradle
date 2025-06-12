@@ -84,9 +84,9 @@ export default function Sidebar({
         navigate(newNoteLocation);
     }, [navigate]);
 
-    const notesLocation = '/notes';
-    const handleNotes = useCallback(() => {
-        navigate(notesLocation);
+    const documentsLocation = '/documents';
+    const handleDocuments = useCallback(() => {
+        navigate(documentsLocation);
     }, [navigate]);
 
     const graphViewLocation = '/knowledge-graph';
@@ -144,10 +144,10 @@ export default function Sidebar({
                                 highlightedLocation={newNoteLocation}
                             />
                             <SidebarItem
-                                handleClick={handleNotes}
+                                handleClick={handleDocuments}
                                 icon={<Notes />}
-                                text='Notes'
-                                highlightedLocation={notesLocation}
+                                text='Documents'
+                                highlightedLocation={documentsLocation}
                             />
                             <SidebarItem
                                 handleClick={handleGraphView}

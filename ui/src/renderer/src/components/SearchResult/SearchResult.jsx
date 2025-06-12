@@ -20,7 +20,7 @@ export default function SearchResult({ name, onClick, type, subtype, actions = [
             onClick={onClick}
         >
             <div className='flex-grow'>
-                <h2 className='card-header w-full mx-2 dark:text-white'>{name}</h2>
+                <h2 className='card-header w-full mx-2 text-white'>{name}</h2>
                 <p className='text-zinc-300 mx-2'>
                     {type}
                     {subtype ? `: ${subtype}` : ''}

@@ -473,7 +473,7 @@ class LinksRenderer(BaseRenderer):
     def block_quote(self) -> Node:
         return self.node_factory.create_node(type=NodeType.BLOCKQUOTE)
 
-    def block_html(self, html: str) -> None:
+    def block_html(self) -> None:
         return None
 
     def block_error(self) -> Node:
@@ -511,7 +511,7 @@ def cradle_connections(
     base_id: str = "",
 ) -> Node:
     metadata, content = frontmatter.parse(md, handler=ErrorBypassYAMLHandler())
-    root_entries = metadata.get("entries", {})
+    root_entries = metadata.pop("entries", {})
 
     if not isinstance(root_entries, dict):
         root_entries = {}

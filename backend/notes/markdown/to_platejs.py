@@ -89,7 +89,6 @@ class PlateJSRenderer(BaseRenderer):
     def image(
         self, text: List, url: str, title: Optional[str] = None
     ) -> Dict[str, Any]:
-        # TODO: Turn img to base64
         return {"type": "img", "url": url, "title": title or "", "alt": text}
 
     def codespan(self, text: List) -> Dict[str, Any]:

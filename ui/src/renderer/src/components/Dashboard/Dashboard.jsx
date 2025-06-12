@@ -188,8 +188,8 @@ export default function Dashboard() {
                 ) : (
                     <div className='w-[95%] h-full flex flex-col p-6 space-y-3 '>
                         {contentObject.name && (
-                            <div className="flex justify-between items-center w-full border-b border-gray-700 px-4 pb-3">
-                                <h1 className='text-5xl font-bold break-all'>
+                            <div className='flex justify-between items-center w-full border-b border-gray-700 px-4 pb-3'>
+                                <h1 className='text-4xl font-bold break-all'>
                                     {contentObject.type && (
                                         <span className='text-4xl text-zinc-500'>{`${contentObject.subtype ? contentObject.subtype : contentObject.type}: `}</span>
                                     )}
@@ -208,16 +208,13 @@ export default function Dashboard() {
                                 perTabClass='w-[33%] justify-center'
                             >
                                 <Tab title='Notes' classes='pt-2'>
-                                    <Notes 
-                                        setAlert={setAlert} 
-                                        obj={contentObject}
-                                    />
+                                    <Notes setAlert={setAlert} obj={contentObject} />
                                 </Tab>
                                 <Tab title='Relations' classes='pt-2'>
                                     <Relations obj={contentObject} />
                                 </Tab>
                                 <Tab title='Files' classes='pt-2'>
-                                    <Files obj={contentObject} setAlert={setAlert}/>
+                                    <Files obj={contentObject} setAlert={setAlert} />
                                 </Tab>
                             </Tabs>
                         )}

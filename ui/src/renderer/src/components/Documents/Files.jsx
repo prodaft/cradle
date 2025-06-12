@@ -5,22 +5,18 @@ import FilesList from '../FilesList/FilesList';
 import { Search } from 'iconoir-react';
 
 /**
- * Files component
- * Displays files related to an artifact
+ * Files component for Documents section
+ * Displays files not linked to any specific artifact
  * Uses the FilesList component to display files
  *
  * @param {Object} props
- * @param {Object} props.obj - The artifact object
  * @param {Function} props.setAlert - Function to set alert messages
  * @returns {JSX.Element}
  */
-export default function Files({ obj, setAlert }) {
+export default function Files({ setAlert }) {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-    const [exactMatch, setExactMatch] = useState(false);
     const [searchFilters, setSearchFilters] = useState({
-        linked_to: obj?.id || '',
-        entity_type: obj?.type || '',
         keyword: '',
         mimetype: '',
     });
@@ -43,14 +39,11 @@ export default function Files({ obj, setAlert }) {
         setSearchParams(newParams);
     };
 
-    // Prepare the query for FilesList
-    const query = {
-        ...searchFilters,
-        linked_to_exact_match: exactMatch,
-    };
-
     return (
-        <div className='w-full h-full flex flex-col'>
+        <div className='w-full h-full flex flex-col space-y-3'>
+            <div className='flex justify-between items-center w-full border-b border-gray-700 px-4 pb-3'>
+                <h1 className='text-4xl font-bold w-full break-all'>All Files</h1>
+            </div>
             <div className='bg-cradle3 bg-opacity-20 p-4 backdrop-filter backdrop-blur-lg rounded-xl mb-4'>
                 <form onSubmit={handleSearchSubmit} className='flex space-x-4'>
                     <input
@@ -73,24 +66,13 @@ export default function Files({ obj, setAlert }) {
                         <button type='submit' className='btn'>
                             <Search /> Search
                         </button>
-                        {obj.type === 'entity' && (
-                            <div className='flex items-center'>
-                                <input
-                                    type='checkbox'
-                                    id='exactMatch'
-                                    name='exactMatch'
-                                    className='switch switch-ghost-primary h-5 w-14'
-                                    checked={exactMatch}
-                                    onChange={(e) => setExactMatch(e.target.checked)}
-                                />
-                                <label htmlFor='exactMatch' className='ml-2 text-sm'>
-                                    Exact match
-                                </label>
-                            </div>
-                        )}
                     </div>
                 </form>
-                <FilesList query={query} setAlert={setAlert} onError={handleError} />
+                <FilesList
+                    query={searchFilters}
+                    setAlert={setAlert}
+                    onError={handleError}
+                />
             </div>
         </div>
     );

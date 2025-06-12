@@ -185,7 +185,7 @@ export default function SearchDialog({ isOpen, onClose }) {
                     </div>
                 ) : (
                     <div className='flex-grow overflow-y-auto no-scrollbar space-y-2'>
-                        {results && results.length > 0 ? (
+                        {(results && results.length > 0) ? (
                             <div>
                                 {results.map((result) => {
                                     const dashboardLink = createDashboardLink(result);
@@ -207,8 +207,8 @@ export default function SearchDialog({ isOpen, onClose }) {
                                 />
                             </div>
                         ) : (
-                            <div className='w-full text-center text-zinc-500'>
-                                No results found
+                            <div className='w-full text-center text-zinc-700 dark:text-zinc-500'>
+                                No results found!
                             </div>
                         )}
                     </div>

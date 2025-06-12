@@ -9,7 +9,7 @@ from publish.models import PublishedReport, ReportStatus
 from publish.strategies.base import BasePublishStrategy
 from file_transfer.utils import MinioClient
 
-from entries.serializers import EntryResponseSerializer, EntryClassSerializer
+from entries.serializers import EntryClassSerializer, EntryPublishSerializer
 
 
 class JSONPublish(BasePublishStrategy):
@@ -72,7 +72,7 @@ class JSONPublish(BasePublishStrategy):
 
             report["notes"].append(note_data)
 
-        entries_data = EntryResponseSerializer(linked_entries_set, many=True).data
+        entries_data = EntryPublishSerializer(linked_entries_set, many=True).data
         report["entries"] = entries_data
 
         linked_entry_classes = {entry.entry_class for entry in linked_entries_set}

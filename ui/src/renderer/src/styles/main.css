@@ -24,3 +24,9 @@ body {
     stroke: #f68d2e !important;
     stroke-width: 4 !important;
 }
+
+.tooltip-hover::before,
+.tooltip-click::before,
+.tooltip::before {
+    white-space: pre-line;
+}
