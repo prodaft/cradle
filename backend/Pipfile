@@ -37,6 +37,8 @@ bcrypt = "*"
 django-celery-beat = "*"
 requests = "*"
 python-frontmatter = "*"
+django-otp = "*"
+qrcode = "*"
 
 [dev-packages]
 bump-my-version = "*"

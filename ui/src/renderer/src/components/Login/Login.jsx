@@ -24,6 +24,8 @@ import { getBaseUrl } from '../../services/configService/configService';
 export default function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [twoFactorToken, setTwoFactorToken] = useState('');
+    const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const windowSize = useWindowSize();
     const location = useLocation();
@@ -49,16 +51,33 @@ export default function Login() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const data = { username: username, password: password };
+        let data = { username: username, password: password };
+
+        // Include 2FA token if it's provided
+        if (requiresTwoFactor && twoFactorToken) {
+            data.two_factor_token = twoFactorToken;
+        }
 
         logInReq(data)
             .then((res) => {
                 if (res.status === 200) {
                     auth.logIn(res.data['access'], res.data['refresh']);
+                    navigate(from, { replace: true, state: state });
                 }
-                navigate(from, { replace: true, state: state });
             })
-            .catch(displayError(setAlert));
+            .catch((error) => {
+                // Check if the error indicates 2FA is required
+                if (
+                    error.response &&
+                    error.response.status === 401 &&
+                    error.response.data &&
+                    error.response.data.requires_2fa
+                ) {
+                    setRequiresTwoFactor(true);
+                } else {
+                    displayError(setAlert)(error);
+                }
+            });
     };
 
     const handleSaveSettings = (e) => {
@@ -97,13 +116,15 @@ export default function Login() {
                         </button>
                     </>
                 ) : (
-                    <button
-                        onClick={() => setShowSettings(!showSettings)}
-                        className='absolute top-2 right-2 p-2 hover:opacity-80 text-gray-500'
-                        data-testid='settings-button'
-                    >
-                        <Settings />
-                    </button>
+                    !requiresTwoFactor && (
+                        <button
+                            onClick={() => setShowSettings(!showSettings)}
+                            className='absolute top-2 right-2 p-2 hover:opacity-80 text-gray-500'
+                            data-testid='settings-button'
+                        >
+                            <Settings />
+                        </button>
+                    )
                 )}
 
                 <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8 text-gray-500'>
@@ -141,43 +162,86 @@ export default function Login() {
                                 </>
                             ) : (
                                 <>
-                                    <FormField
-                                        name='username'
-                                        labelText='Username'
-                                        key='username'
-                                        type='text'
-                                        value={username}
-                                        handleInput={setUsername}
-                                        autofocus={true}
-                                    />
-                                    <FormField
-                                        name='password'
-                                        labelText='Password'
-                                        key='password'
-                                        type='password'
-                                        value={password}
-                                        handleInput={setPassword}
-                                    />
-                                    <AlertBox alert={alert} />
-                                    <button
-                                        type='submit'
-                                        data-testid='login-register-button'
-                                        className='btn btn-primary btn-block'
-                                    >
-                                        Login
-                                    </button>
+                                    {requiresTwoFactor ? (
+                                        <div className='mt-4 space-y-6'>
+                                            <FormField
+                                                name='twoFactorToken'
+                                                labelText='Two-Factor Authentication Code'
+                                                key='twoFactorToken'
+                                                type='text'
+                                                value={twoFactorToken}
+                                                handleInput={setTwoFactorToken}
+                                                autofocus={true}
+                                                pattern='[0-9]*'
+                                                maxLength='6'
+                                                placeholder='Enter the 6-digit code from your authenticator app'
+                                            />
+                                            <AlertBox alert={alert} />
+                                            <button
+                                                type='submit'
+                                                data-testid='login-register-button'
+                                                className='btn btn-primary btn-block'
+                                            >
+                                                Verify
+                                            </button>
+                                            <button
+                                                type='button'
+                                                className='btn btn-ghost btn-block mt-2'
+                                                onClick={() => {
+                                                    setRequiresTwoFactor(false);
+                                                    setTwoFactorToken('');
+                                                    setAlert({
+                                                        show: false,
+                                                        message: '',
+                                                        color: 'red',
+                                                    });
+                                                }}
+                                            >
+                                                Back to Login
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <FormField
+                                                name='username'
+                                                labelText='Username'
+                                                key='username'
+                                                type='text'
+                                                value={username}
+                                                handleInput={setUsername}
+                                                autofocus={true}
+                                            />
+                                            <FormField
+                                                name='password'
+                                                labelText='Password'
+                                                key='password'
+                                                type='password'
+                                                value={password}
+                                                handleInput={setPassword}
+                                            />
+                                            <AlertBox alert={alert} />
+                                            <button
+                                                type='submit'
+                                                data-testid='login-register-button'
+                                                className='btn btn-primary btn-block'
+                                            >
+                                                Login
+                                            </button>
+                                        </>
+                                    )}
                                 </>
                             )}
                         </form>
 
                         {/* Hide links when in settings mode or when backend URL is not set */}
-                        {!showSettings && getBaseUrl() && (
+                        {!requiresTwoFactor && !showSettings && getBaseUrl() && (
                             <p className='mt-10 text-center text-sm text-gray-500'>
                                 <p className='mt-10 flex justify-between text-sm text-gray-500'>
                                     <Link
                                         to='/forgot-password'
                                         className='font-semibold leading-6 text-primary hover:opacity-90 hover:shadow-gray-400'
                                         replace={true}
+                                        onClick={() => setRequiresTwoFactor(false)}
                                     >
                                         Forgot Password
                                     </Link>
@@ -186,6 +250,7 @@ export default function Login() {
                                         className='font-semibold leading-6 text-primary hover:opacity-90 hover:shadow-gray-400'
                                         replace={true}
                                         state={location.state}
+                                        onClick={() => setRequiresTwoFactor(false)}
                                     >
                                         Register
                                     </Link>

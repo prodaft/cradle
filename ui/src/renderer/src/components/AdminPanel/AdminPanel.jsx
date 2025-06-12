@@ -62,21 +62,19 @@ export default function AdminPanel() {
                     const fetchedEntities = response.data;
                     setEntities(
                         fetchedEntities.map((c) => {
-                          console.log(c)
-                          return (
-                            <AdminPanelCardEntity
-                                id={c.id}
-                                key={`${c.subtype}:${c.name}`}
-                                name={c.name}
-                                searchKey={c.name}
-                                onDelete={displayEntities}
-                                link={createDashboardLink(c)}
-                                typename={c.subtype}
-                                setRightPane={setRightPane}
-                            />
-                        )}
-
-                        ),
+                            return (
+                                <AdminPanelCardEntity
+                                    id={c.id}
+                                    key={`${c.subtype}:${c.name}`}
+                                    name={c.name}
+                                    searchKey={c.name}
+                                    onDelete={displayEntities}
+                                    link={createDashboardLink(c)}
+                                    typename={c.subtype}
+                                    setRightPane={setRightPane}
+                                />
+                            );
+                        }),
                     );
                 }
             })
@@ -116,6 +114,7 @@ export default function AdminPanel() {
                             <AdminPanelCardUser
                                 id={user.id}
                                 searchKey={user.username}
+                                key={user.username}
                                 name={user.username}
                                 onDelete={displayUsers}
                                 setRightPane={setRightPane}
@@ -273,6 +272,7 @@ export default function AdminPanel() {
                                                                 searchKey={
                                                                     user.username
                                                                 }
+                                                                key={user.username}
                                                                 name={user.username}
                                                                 onDelete={displayUsers}
                                                                 setRightPane={

@@ -102,6 +102,7 @@ class UserCreateSerializerAdmin(UserCreateSerializer):
             "role",
             "email_confirmed",
             "is_active",
+            "two_factor_enabled",
         ]
         extra_kwargs: Dict[str, Dict[str, List]] = {"username": {"validators": []}}
 
@@ -143,6 +144,7 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
             "username",
             "email",
             "role",
+            "two_factor_enabled",
             "is_active",
             "email_confirmed",
             "catalyst_api_key",
@@ -199,3 +201,15 @@ class EmailConfirmSerializer(serializers.Serializer):
             raise ValidationError("We had trouble confirming with this token.")
 
         return True
+
+
+class Enable2FASerializer(serializers.Serializer):
+    token = serializers.CharField(required=True)
+
+
+class Verify2FASerializer(serializers.Serializer):
+    token = serializers.CharField(required=True)
+
+
+class Login2FASerializer(serializers.Serializer):
+    token = serializers.CharField(required=True)

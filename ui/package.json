@@ -1,7 +1,7 @@
 {
     "name": "Cradle",
     "private": true,
-    "version": "2.4.1",
+    "version": "2.4.3",
     "description": "Batteries included collaborative knowledge management solution for threat intelligence researchers.",
     "author": {
         "name": "PRODAFT",
@@ -80,6 +80,7 @@
         "mime": "^4.0.3",
         "pluralize": "^8.0.0",
         "prismjs": "^1.29.0",
+        "qrcode.react": "^4.2.0",
         "qs": "^6.12.1",
         "react": "^18.2.0",
         "react-color": "^2.19.3",

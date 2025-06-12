@@ -4,6 +4,7 @@ from typing import Optional
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django_otp.plugins.otp_totp.models import TOTPDevice
 
 from access.enums import AccessType
 from logs.models import LoggableModelMixin
@@ -46,6 +47,8 @@ class CradleUser(AbstractUser, LoggableModelMixin):
     )
 
     is_active: models.BooleanField = models.BooleanField(default=False)
+
+    two_factor_enabled = models.BooleanField(default=False)
 
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["password", "email"]
@@ -149,3 +152,68 @@ class CradleUser(AbstractUser, LoggableModelMixin):
             inverter |= 1 << i
 
         return fieldtype.get_prep_value(acvec ^ inverter)
+
+    def enable_2fa(self):
+        """
+        Enable 2FA for the user and return the secret key.
+
+        Uses database transactions and select_for_update to prevent race conditions
+        when multiple requests are sent simultaneously. This ensures only one
+        device is created per user regardless of concurrent requests.
+        """
+        from django.db import transaction
+
+        if not self.two_factor_enabled:
+            with transaction.atomic():
+                devices = TOTPDevice.objects.select_for_update().filter(user=self)
+
+                if devices.exists():
+                    device = devices.order_by("-id").first()
+
+                    if not device.confirmed:
+                        devices.exclude(id=device.id).filter(confirmed=False).delete()
+                        return device.config_url
+                    else:
+                        devices.delete()
+
+                device = TOTPDevice.objects.create(
+                    user=self,
+                    name=f"Default device for {self.username}",
+                    confirmed=False,
+                )
+                return device.config_url
+        return None
+
+    def verify_2fa_token(self, token):
+        """Verify a 2FA token."""
+        from django.db import transaction
+
+        with transaction.atomic():
+            unconfirmed_devices = TOTPDevice.objects.select_for_update().filter(
+                user=self, confirmed=False
+            )
+
+            for device in unconfirmed_devices:
+                if device.verify_token(token):
+                    device.confirmed = True
+                    device.save()
+
+                    unconfirmed_devices.exclude(id=device.id).delete()
+                    return True
+
+            for device in TOTPDevice.objects.filter(user=self, confirmed=True):
+                if device.verify_token(token):
+                    return True
+
+        return False
+
+    def disable_2fa(self):
+        """Disable 2FA for the user."""
+        from django.db import transaction
+
+        # Use a transaction to ensure atomicity
+        with transaction.atomic():
+            # Delete all TOTP devices for this user
+            TOTPDevice.objects.filter(user=self).delete()
+            self.two_factor_enabled = False
+            self.save(update_fields=["two_factor_enabled"])

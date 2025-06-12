@@ -18,6 +18,7 @@ import { Tabs, Tab } from '../Tabs/Tabs';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import ActionConfirmationModal from '../Modals/ActionConfirmationModal.jsx';
+import TwoFactorSetupModal from '../Modals/TwoFactorSetupModal';
 
 const accountSettingsSchema = Yup.object().shape({
     username: Yup.string().required('Username is required'),
@@ -42,6 +43,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
     const navigate = useNavigate();
     const auth = useAuth();
     const isAdmin = auth?.isAdmin();
+    const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
     const isOwnAccount = isEdit ? target === 'me' || auth?.userId === target : false;
     const isAdminAndNotOwn = isAdmin && !isOwnAccount;
     const { setModal } = useModal();
@@ -101,8 +103,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                         email_confirmed: res.data.email_confirmed || false,
                         is_active: res.data.is_active || false,
                     });
-
-                    // Check if user has API key
+                    setTwoFactorEnabled(res.data.two_factor_enabled || false);
                 })
                 .catch(displayError(setAlert, navigate));
         } else {
@@ -190,8 +191,9 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                     if (response.status === 200) {
                         setAlert({
                             show: true,
-                            message: `API key generated successfully: ${response.data.api_key}`,
+                            message: 'API key generated successfully!',
                             color: 'green',
+                            code: response.data.api_key,
                         });
                     }
                 } catch (err) {
@@ -199,6 +201,48 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                 }
             },
         });
+    };
+
+    const handle2FASetup = () => {
+        if (twoFactorEnabled) {
+            if (isOwnAccount) {
+                setModal(TwoFactorSetupModal, {
+                    isDisabling: true,
+                    onSuccess: () => {
+                        setTwoFactorEnabled(false);
+                        setAlert({
+                            show: true,
+                            message:
+                                '2FA has been successfully disabled for your account',
+                            color: 'green',
+                        });
+                    },
+                });
+            } else {
+                updateUser(target, {
+                    two_factor_enabled: false,
+                });
+                setTwoFactorEnabled(false);
+                setAlert({
+                    show: true,
+                    message:
+                        '2FA has been successfully disabled for the selected account!',
+                    color: 'green',
+                });
+            }
+        } else {
+            setModal(TwoFactorSetupModal, {
+                isDisabling: false,
+                onSuccess: () => {
+                    setTwoFactorEnabled(true);
+                    setAlert({
+                        show: true,
+                        message: '2FA has been successfully enabled for your account',
+                        color: 'green',
+                    });
+                },
+            });
+        }
     };
 
     return (
@@ -233,9 +277,21 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                         disabled={!isAdminAndNotOwn && isEdit}
                                     />
 
-                                    <div className='mt-4' />
                                     {isEdit ? (
                                         isAdminAndNotOwn && (
+                                            <div className='mt-4'>
+                                                <FormField
+                                                    name='password'
+                                                    type='password'
+                                                    labelText='Password'
+                                                    placeholder='Password'
+                                                    {...register('password')}
+                                                    error={errors.password?.message}
+                                                />
+                                            </div>
+                                        )
+                                    ) : (
+                                        <div className='mt-4'>
                                             <FormField
                                                 name='password'
                                                 type='password'
@@ -244,16 +300,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                                 {...register('password')}
                                                 error={errors.password?.message}
                                             />
-                                        )
-                                    ) : (
-                                        <FormField
-                                            name='password'
-                                            type='password'
-                                            labelText='Password'
-                                            placeholder='Password'
-                                            {...register('password')}
-                                            error={errors.password?.message}
-                                        />
+                                        </div>
                                     )}
                                     {isAdmin && (!isEdit || isAdminAndNotOwn) && (
                                         <>
@@ -338,45 +385,71 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                         {isEdit ? 'Save' : 'Add'}
                                     </button>
                                 </Tab>
-                                <Tab title='Security'>
-                                    <div className='mt-4' />
-                                    <div className='space-y-4'>
-                                        {isEdit && isOwnAccount && (
+                                {isEdit && (twoFactorEnabled || isOwnAccount) && (
+                                    <Tab title='Security'>
+                                        <div className='space-y-4'>
+                                            <div className='mt-4' />
                                             <div className='flex flex-col space-y-4'>
-                                                <button
-                                                    type='button'
-                                                    className='btn btn-primary btn-block'
-                                                    onClick={() =>
-                                                        navigate('/change-password')
-                                                    }
-                                                >
-                                                    Change Password
-                                                </button>
+                                                {isOwnAccount && (
+                                                    <>
+                                                        <button
+                                                            type='button'
+                                                            className='btn btn-primary btn-block'
+                                                            onClick={() =>
+                                                                navigate(
+                                                                    '/change-password',
+                                                                )
+                                                            }
+                                                        >
+                                                            Change Password
+                                                        </button>
 
-                                                <button
-                                                    type='button'
-                                                    className='btn btn-primary btn-block'
-                                                    onClick={handleGenerateApiKey}
-                                                >
-                                                    Generate API Key
-                                                </button>
+                                                        <button
+                                                            type='button'
+                                                            className='btn btn-primary btn-block'
+                                                            onClick={
+                                                                handleGenerateApiKey
+                                                            }
+                                                        >
+                                                            Generate API Key
+                                                        </button>
+                                                    </>
+                                                )}
 
-                                                <button
-                                                    type='button'
-                                                    className='btn btn-ghost btn-block bg-red-500'
-                                                    onClick={() =>
-                                                        setModal(ConfirmDeletionModal, {
-                                                            text: 'Are you sure you want to delete your account? All data related to you will be deleted.',
-                                                            onConfirm: handleDelete,
-                                                        })
-                                                    }
-                                                >
-                                                    Delete Account
-                                                </button>
+                                                {(twoFactorEnabled || isOwnAccount) && (
+                                                    <button
+                                                        type='button'
+                                                        className={`btn btn-primary btn-block ${twoFactorEnabled ? 'bg-red-500' : ''}`}
+                                                        onClick={handle2FASetup}
+                                                    >
+                                                        {isEdit && twoFactorEnabled
+                                                            ? 'Disable Two-Factor Authentication'
+                                                            : 'Enable Two-Factor Authentication'}
+                                                    </button>
+                                                )}
+
+                                                {isOwnAccount && (
+                                                    <button
+                                                        type='button'
+                                                        className='btn btn-primary btn-block bg-red-500'
+                                                        onClick={() =>
+                                                            setModal(
+                                                                ConfirmDeletionModal,
+                                                                {
+                                                                    text: 'Are you sure you want to delete your account? All data related to you will be deleted.',
+                                                                    onConfirm:
+                                                                        handleDelete,
+                                                                },
+                                                            )
+                                                        }
+                                                    >
+                                                        Delete Account
+                                                    </button>
+                                                )}
                                             </div>
-                                        )}
-                                    </div>
-                                </Tab>
+                                        </div>
+                                    </Tab>
+                                )}
                             </Tabs>
                             <AlertBox alert={alert} />
                         </form>

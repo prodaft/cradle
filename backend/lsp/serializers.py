@@ -11,5 +11,6 @@ class LspEntryClassSerializer(serializers.ModelSerializer):
             "subtype",
             "description",
             "format",
+            "regex",
             "color",
         ]

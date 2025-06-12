@@ -6,7 +6,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-VERSION = "2.4.1"
+VERSION = "2.4.3"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -52,6 +52,8 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "django_filters",
     "django.contrib.gis",
+    "django_otp",
+    "django_otp.plugins.otp_totp",
 ]
 
 MIDDLEWARE = [
@@ -63,6 +65,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django_otp.middleware.OTPMiddleware",
 ]
 
 
