@@ -9,7 +9,6 @@ from rest_framework_simplejwt.serializers import (
     TokenRefreshSerializer,
 )
 from drf_spectacular.utils import extend_schema_view
-from ..serializers import Login2FASerializer
 
 
 @extend_schema_view(
