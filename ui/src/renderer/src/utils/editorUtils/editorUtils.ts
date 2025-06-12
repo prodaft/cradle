@@ -303,14 +303,12 @@ export class CradleEditor {
                         const type = replaceDoubleUnderscoreWithSlash(groupName);
                         const matchText = groupMatch;
                         const key = `${type}:${matchText}`;
-                        if (!madeSuggestions.has(key)) {
-                            suggestions.push({
-                                type,
-                                match: matchText.trimEnd(),
-                                from: match.index, // use regex match index
-                            });
-                            madeSuggestions.add(key);
-                        }
+                        suggestions.push({
+                            type,
+                            match: matchText.trimEnd(),
+                            from: match.index, // use regex match index
+                        });
+                        madeSuggestions.add(key);
                         break;
                     }
                 }

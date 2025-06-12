@@ -175,7 +175,7 @@ def link_files_task(note_id, file_ref_id=None):
                     content_object=note,
                     access_vector=note.access_vector,
                     reason=RelationReason.NOTE,
-                    virtual=False,
+                    virtual=True,
                 )
             )
 
