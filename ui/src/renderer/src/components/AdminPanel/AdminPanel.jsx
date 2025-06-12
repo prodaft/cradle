@@ -29,6 +29,7 @@ import NoteSettingsForm from '../AdminPanelForms/NoteSettingsForm';
 import GraphSettingsForm from '../AdminPanelForms/GraphSettingsForm';
 import EntriesSettingsForm from '../AdminPanelForms/EntriesSettingsForm';
 import UserSettingsForm from '../AdminPanelForms/UserSettingsForm';
+import FileSettingsForm from '../AdminPanelForms/FileSettingsForm';
 
 /**
  * AdminPanel component - This component is used to display the AdminPanel.
@@ -314,6 +315,14 @@ export default function AdminPanel() {
                                                 setRightPane={setRightPane}
                                                 name='Note Settings'
                                                 SettingComponent={NoteSettingsForm}
+                                            />,
+
+                                            <AdminPanelCardManagement
+                                                id='files'
+                                                key='files'
+                                                setRightPane={setRightPane}
+                                                name='File Settings'
+                                                SettingComponent={FileSettingsForm}
                                             />,
                                             <AdminPanelCardManagement
                                                 id='graph'
