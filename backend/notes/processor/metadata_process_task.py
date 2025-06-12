@@ -27,9 +27,10 @@ class MetadataProcessTask(BaseTask):
             if key not in metadata:
                 continue
 
-            value = metadata.pop(key)
+            value = metadata.get(key)
 
             if field is None:
+                metadata.pop(key, None)
                 continue
 
             setattr(note, field, value)

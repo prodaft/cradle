@@ -1,5 +1,6 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState, useCallback } from 'react';
+import React from 'react';
 import {
     deleteNote,
     getNote,
@@ -23,6 +24,8 @@ import {
     InfoCircleSolid,
     WarningTriangleSolid,
     WarningCircleSolid,
+    NavArrowDown,
+    NavArrowUp,
 } from 'iconoir-react';
 import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
@@ -51,6 +54,7 @@ export default function NoteViewer() {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [parsedContent, setParsedContent] = useState(null);
     const [isLoading, setIsLoading] = useState(true); // <-- Add loading state
+    const [metadataExpanded, setMetadataExpanded] = useState(false);
     const { setModal } = useModal();
 
     const auth = useAuth();
@@ -300,26 +304,98 @@ export default function NoteViewer() {
                                         </span>
                                     )}
                                 </div>
-                                <div className='flex-grow'>
-                                    {isRaw ? (
-                                        <pre
-                                            className='h-full w-full p-4 bg-transparent prose-md max-w-none dark:prose-invert break-all
+
+                                {isRaw ? (
+                                    <pre
+                                        className='h-full w-full p-4 bg-transparent prose-md max-w-none dark:prose-invert break-all
               overflow-y-auto rounded-lg flex-1 overflow-x-hidden whitespace-pre-wrap'
-                                        >
-                                            <code className='language-js'>
-                                                {note.content}
-                                            </code>
-                                        </pre>
-                                    ) : (
-                                        <div className='mt-2'>
-                                            <ReferenceTree
-                                                note={note}
-                                                setAlert={setAlert}
-                                            />
-                                            <Preview htmlContent={parsedContent} />
+                                    >
+                                        <code className='language-js'>
+                                            {note.content}
+                                        </code>
+                                    </pre>
+                                ) : (
+                                    <div className='mt-2'>
+                                        <div className='flex-grow'>
+                                            {note.metadata &&
+                                                Object.keys(note.metadata).length >
+                                                    0 && (
+                                                    <div className='mt-2'>
+                                                        <div
+                                                            className='flex items-center cursor-pointer p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded'
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setMetadataExpanded(
+                                                                    !metadataExpanded,
+                                                                );
+                                                            }}
+                                                        >
+                                                            <span className='text-sm font-medium text-zinc-700 dark:text-zinc-300 flex items-center'>
+                                                                {metadataExpanded ? (
+                                                                    <NavArrowUp
+                                                                        className='inline mr-1'
+                                                                        width='16'
+                                                                        height='16'
+                                                                    />
+                                                                ) : (
+                                                                    <NavArrowDown
+                                                                        className='inline mr-1'
+                                                                        width='16'
+                                                                        height='16'
+                                                                    />
+                                                                )}
+                                                                Metadata
+                                                            </span>
+                                                        </div>
+
+                                                        {metadataExpanded && (
+                                                            <div className='bg-gray-50 dark:bg-gray-800 rounded-md p-2 mt-1'>
+                                                                <div className='grid grid-cols-[auto_1fr] gap-x-1 gap-y-2'>
+                                                                    {Object.entries(
+                                                                        note.metadata,
+                                                                    ).map(
+                                                                        ([
+                                                                            key,
+                                                                            value,
+                                                                        ]) => (
+                                                                            <React.Fragment
+                                                                                key={
+                                                                                    key
+                                                                                }
+                                                                            >
+                                                                                <div className='text-sm font-bold text-gray-700 dark:text-gray-300 pr-2'>
+                                                                                    {capitalizeString(
+                                                                                        key,
+                                                                                    )}
+                                                                                    :
+                                                                                </div>
+                                                                                <div className='text-sm text-gray-600 dark:text-gray-400'>
+                                                                                    {typeof value ===
+                                                                                    'object'
+                                                                                        ? JSON.stringify(
+                                                                                              value,
+                                                                                          )
+                                                                                        : String(
+                                                                                              value,
+                                                                                          )}
+                                                                                </div>
+                                                                            </React.Fragment>
+                                                                        ),
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
                                         </div>
-                                    )}
-                                </div>
+                                        <Preview htmlContent={parsedContent} />
+
+                                        <ReferenceTree
+                                            note={note}
+                                            setAlert={setAlert}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </Tab>

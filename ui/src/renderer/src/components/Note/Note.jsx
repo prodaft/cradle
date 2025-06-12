@@ -1,6 +1,6 @@
 import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
 import { Link, useNavigate } from 'react-router-dom';
-import { forwardRef, useCallback, useEffect, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useState } from 'react';
 import Preview from '../Preview/Preview';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { useLocation } from 'react-router-dom';
@@ -15,6 +15,8 @@ import {
     InfoCircleSolid,
     WarningTriangleSolid,
     WarningCircleSolid,
+    NavArrowDown,
+    NavArrowUp,
 } from 'iconoir-react';
 import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
 
@@ -40,6 +42,7 @@ const Note = forwardRef(function (
     const [hidden, setHidden] = useState(false);
     const location = useLocation();
     const [parsedContent, setParsedContent] = useState('');
+    const [metadataExpanded, setMetadataExpanded] = useState(false);
 
     const getStatusIcon = () => {
         if (!note.status) return null;
@@ -173,7 +176,57 @@ const Note = forwardRef(function (
                         </div>
                     </div>
                 )}
-                {/* Main content preview */}
+
+                {note.metadata && Object.keys(note.metadata).length > 0 && (
+                    <div className=''>
+                        <div
+                            className='flex items-center cursor-pointer p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded'
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setMetadataExpanded(!metadataExpanded);
+                            }}
+                        >
+                            <span className='text-sm font-medium text-zinc-700 dark:text-zinc-300 flex items-center'>
+                                {metadataExpanded ? (
+                                    <NavArrowUp
+                                        className='inline mr-1'
+                                        width='16'
+                                        height='16'
+                                    />
+                                ) : (
+                                    <NavArrowDown
+                                        className='inline mr-1'
+                                        width='16'
+                                        height='16'
+                                    />
+                                )}
+                                Metadata
+                            </span>
+                        </div>
+
+                        {metadataExpanded && (
+                            <div className='bg-gray-50 dark:bg-gray-800 rounded-md p-2 mt-1'>
+                                <div className='grid grid-cols-[auto_1fr] gap-x-1 gap-y-2'>
+                                    {Object.entries(note.metadata).map(
+                                        ([key, value]) => (
+                                            <React.Fragment key={key}>
+                                                <div className='text-sm font-bold text-gray-700 dark:text-gray-300 pr-2'>
+                                                    {capitalizeString(key)}:
+                                                </div>
+                                                <div className='text-sm text-gray-600 dark:text-gray-400'>
+                                                    {typeof value === 'object'
+                                                        ? JSON.stringify(value)
+                                                        : String(value)}
+                                                </div>
+                                            </React.Fragment>
+                                        ),
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 <div
                     className='bg-transparent h-fit p-2 backdrop-filter overflow-hidden flex-grow flex flex-col cursor-pointer'
                     onClick={() =>
