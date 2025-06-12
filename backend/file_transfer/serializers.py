@@ -18,9 +18,11 @@ class FileDownloadSerializer(serializers.Serializer):
 
 
 class FileReferenceSerializer(serializers.ModelSerializer):
+    id = serializers.UUIDField(required=False)
+
     class Meta:
         model = FileReference
-        fields = ["minio_file_name", "file_name", "bucket_name", "timestamp"]
+        fields = ["id", "minio_file_name", "file_name", "bucket_name", "timestamp"]
 
     def validate(self, data: Any) -> Any:
         """This method validates the file reference entry. Firstly, it checks
@@ -39,11 +41,13 @@ class FileReferenceSerializer(serializers.ModelSerializer):
                 MinIO path.
 
         """
-        self.context["request"].user
-
         if not MinioClient().file_exists_at_path(
             bucket_name=data["bucket_name"], minio_file_name=data["minio_file_name"]
         ):
             raise MinioObjectNotFound()
 
         return super().validate(data)
+
+
+class FileProcessSerializer(serializers.Serializer):
+    file_id = serializers.UUIDField(required=True)

@@ -27,6 +27,7 @@ app.conf.task_routes = {
     "notes.tasks.connect_aliases": {"queue": "notes"},
     "notes.tasks.ping_entries": {"queue": "notes"},
     "notes.tasks.note_finalize_task": {"queue": "notes"},
+    "notes.tasks.link_files_task": {"queue": "notes"},
     "entries.tasks.remap_notes_task": {"queue": "notes"},
     "entries.tasks.simulate_graph": {"queue": "graph"},
     "entries.tasks.refresh_edges_materialized_view": {"queue": "graph"},
@@ -43,6 +44,8 @@ app.conf.task_routes = {
     "intelio.tasks.core.start_digest": {"queue": "digest"},
     "intelio.tasks.falcon.digest_chunk": {"queue": "digest"},
     "entries.tasks.delete_hanging_artifacts": {"queue": "cleanup"},
+    "file_transfer.tasks.process_file_task": {"queue": "files"},
+    "file_transfer.tasks.reprocess_all_files_task": {"queue": "files"},
     "file_transfer.tasks.delete_hanging_files": {"queue": "cleanup"},
 }
 

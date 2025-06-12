@@ -18,6 +18,7 @@ from .entry_class_creation_task import EntryClassCreationTask
 from .base_task import BaseTask
 from .access_control_task import AccessControlTask
 from .finalize_note_task import FinalizeNoteTask
+from .link_files_task import LinkFilesTask
 from .validate_note_task import ValidateNoteTask
 from .metadata_process_task import MetadataProcessTask
 from user.models import CradleUser
@@ -37,6 +38,7 @@ class TaskScheduler:
             EntryClassCreationTask(user),
             EntryPopulationTask(user),
             SmartLinkerTask(user),
+            LinkFilesTask(user),
             MetadataProcessTask(user),
             AliasConnectionTask(user),
             FinalizeNoteTask(user),

@@ -103,6 +103,121 @@ def smart_linker_task(note_id):
     return note_id
 
 
+@shared_task
+@distributed_lock("link_files_note_{note_id}", timeout=1800)
+def link_files_task(note_id, file_ref_id=None):
+    from entries.tasks import refresh_edges_materialized_view
+
+    """
+    Celery task to create links between entries for a given note.
+
+    Args:
+        note_id: ID of the Note object to process
+    """
+    note = Note.objects.get(id=note_id)
+
+    md5_subclass = cradle_settings.files.md5_subtype
+    sha256_subclass = cradle_settings.files.sha256_subtype
+    sha1_subclass = cradle_settings.files.sha1_subtype
+
+    md5_et, sha256_et, sha1_et = None, None, None
+
+    if (
+        md5_subclass
+        and EntryClass.objects.filter(
+            type=EntryType.ARTIFACT, subtype=md5_subclass
+        ).exists()
+    ):
+        md5_et = EntryClass.objects.get(type=EntryType.ARTIFACT, subtype=md5_subclass)
+
+    if (
+        sha256_subclass
+        and EntryClass.objects.filter(
+            type=EntryType.ARTIFACT, subtype=sha256_subclass
+        ).exists()
+    ):
+        sha256_et = EntryClass.objects.get(
+            type=EntryType.ARTIFACT, subtype=sha256_subclass
+        )
+
+    if (
+        sha1_subclass
+        and EntryClass.objects.filter(
+            type=EntryType.ARTIFACT, subtype=sha1_subclass
+        ).exists()
+    ):
+        sha1_et = EntryClass.objects.get(type=EntryType.ARTIFACT, subtype=sha1_subclass)
+
+    relations = []
+    if file_ref_id is None:
+        files = note.files.all()
+    else:
+        file_ref = note.files.filter(id=file_ref_id).first()
+        if not file_ref:
+            logger.warning(
+                f"File reference with ID {file_ref_id} not found in note {note_id}."
+            )
+            return note_id
+
+        files = [file_ref]
+
+    for f in files:
+        if cradle_settings.files.autoprocess_files:
+            f.process_file()
+
+        note.entries.add(f.entry)
+
+        for e in f.entities:
+            relations.append(
+                Relation(
+                    e1=e,
+                    e2=f.entry,
+                    content_object=note,
+                    access_vector=note.access_vector,
+                    reason=RelationReason.NOTE,
+                    virtual=False,
+                )
+            )
+
+        hashes = []
+        if f.md5_hash and md5_et:
+            entry, _ = Entry.objects.get_or_create(name=f.md5_hash, entry_class=md5_et)
+            note.entries.add(entry)
+            hashes.append(entry)
+
+        if f.sha256_hash and sha256_et:
+            entry, _ = Entry.objects.get_or_create(
+                name=f.sha256_hash, entry_class=sha256_et
+            )
+            note.entries.add(entry)
+            hashes.append(entry)
+
+        if f.sha1_hash and sha1_et:
+            entry, _ = Entry.objects.get_or_create(
+                name=f.sha1_hash, entry_class=sha1_et
+            )
+            note.entries.add(entry)
+            hashes.append(entry)
+
+        for h in hashes:
+            relations.append(
+                Relation(
+                    e1=h,
+                    e2=f.entry,
+                    content_object=note,
+                    access_vector=note.access_vector,
+                    reason=RelationReason.ENRICHMENT,
+                    virtual=True,
+                )
+            )
+
+    if relations:
+        Relation.objects.bulk_create(relations)
+        refresh_edges_materialized_view.apply_async()
+
+    return note_id
+
+
 @shared_task(
     autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=60, max_retries=1
 )

@@ -90,19 +90,19 @@ class FileSettings(BaseSettingsSection):
 
     @property
     def mimetype_patterns(self):
-        default_patterns = """
-application/x-pie-executable
-application/vnd.microsoft.portable-executable
-application/x-dosexec
-application/x-msdownload
-application/x-executable
-application/pdf
-application/msword
-application/msword
-application/vnd.openxmlformats-officedocument.wordprocessingml.document
-application/vnd.openxmlformats-officedocument.wordprocessingml.template
-"""
-        return self.get("mimetype_patterns", default_patterns).strip().splitlines()
+        default_patterns = [
+            "application/x-pie-executable",
+            "application/vnd.microsoft.portable-executable",
+            "application/x-dosexec",
+            "application/x-msdownload",
+            "application/x-executable",
+            "application/pdf",
+            "application/msword",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
+        ]
+        return self.get("mimetype_patterns", default_patterns)
 
 
 class CradleSettings:

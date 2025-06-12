@@ -5,7 +5,11 @@ import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import NavbarButton from '../NavbarButton/NavbarButton';
 import { FloppyDisk } from 'iconoir-react/regular';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import { updateNote, getNote, deleteNote } from '../../services/notesService/notesService';
+import {
+    updateNote,
+    getNote,
+    deleteNote,
+} from '../../services/notesService/notesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import TextEditor from '../TextEditor/TextEditor';
 import { diff_match_patch } from 'diff-match-patch';

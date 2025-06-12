@@ -39,6 +39,7 @@ requests = "*"
 python-frontmatter = "*"
 django-otp = "*"
 qrcode = "*"
+python-magic = "*"
 
 [dev-packages]
 bump-my-version = "*"
