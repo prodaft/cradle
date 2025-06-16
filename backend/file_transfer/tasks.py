@@ -14,7 +14,18 @@ logger = logging.getLogger("django.request")
 
 @shared_task
 def reprocess_all_files_task():
-    pass
+    """
+    Reprocess all files in the system to ensure they have the correct metadata.
+    This task is useful for fixing issues with file metadata that may have been
+    incorrectly set during initial processing.
+    """
+    for file_ref in FileReference.objects.all():
+        try:
+            file_ref.process_file()
+        except Exception as e:
+            logger.error(
+                f"Error reprocessing file {file_ref.minio_file_name}: {str(e)}"
+            )
 
 
 @shared_task
@@ -33,8 +44,6 @@ def process_file_task(file_id):
         return
 
     try:
-        mimetype = None
-
         # Initialize hash objects
         md5_hash = hashlib.md5()
         sha1_hash = hashlib.sha1()
@@ -51,15 +60,12 @@ def process_file_task(file_id):
             if not data:
                 break
 
-            if mimetype is None:
-                if not file_ref.mimetype:
-                    mimetype = magic.from_buffer(data, mime=True)
-                    file_ref.mimetype = mimetype
+            if not file_ref.mimetype:
+                file_ref.mimetype = magic.from_buffer(data, mime=True)
+                file_ref.save(update_fields=["mimetype"])
 
-                if file_ref.mimetype not in cradle_settings.files.mimetype_patterns:
-                    if mimetype:
-                        file_ref.save(update_fields=["mimetype"])
-                    break
+            if file_ref.mimetype not in cradle_settings.files.mimetype_patterns:
+                break
 
             if file_ref.md5_hash and file_ref.sha1_hash and file_ref.sha256_hash:
                 break
@@ -79,9 +85,7 @@ def process_file_task(file_id):
         file_ref.sha256_hash = sha256_hash.hexdigest()
 
         # Save all updated fields
-        file_ref.save(
-            update_fields=["mimetype", "md5_hash", "sha1_hash", "sha256_hash"]
-        )
+        file_ref.save(update_fields=["md5_hash", "sha1_hash", "sha256_hash"])
 
         from notes.tasks import link_files_task
 

@@ -226,7 +226,33 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
         return data
 
 
+class FileReferenceWithNoteSerializer(serializers.ModelSerializer):
+    note_id = serializers.SerializerMethodField(read_only=True)
+    entities = EntryResponseSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = FileReference
+        fields = [
+            "id",
+            "minio_file_name",
+            "mimetype",
+            "entities",
+            "file_name",
+            "bucket_name",
+            "timestamp",
+            "note_id",
+            "md5_hash",
+            "sha1_hash",
+            "sha256_hash",
+        ]
+
+    def get_note_id(self, obj):
+        return obj.note.id if obj.note else None
+
+
 class NoteRetrieveWithLinksSerializer(NoteRetrieveSerializer):
+    files = FileReferenceWithNoteSerializer(many=True)
+
     def to_representation(self, obj: Any) -> Dict[str, Any]:
         data = super().to_representation(obj)
 
@@ -240,8 +266,6 @@ class NoteRetrieveWithLinksSerializer(NoteRetrieveSerializer):
                 } "{i.file_name}"\n"""
             except MinioObjectNotFound:
                 pass
-
-        data.pop("files")
 
         return data
 
@@ -329,30 +353,6 @@ class ReportSerializer(serializers.Serializer):
     entities = EntryResponseSerializer(many=True)
     artifacts = EntryResponseSerializer(many=True)
     notes = NoteReportSerializer(many=True)
-
-
-class FileReferenceWithNoteSerializer(serializers.ModelSerializer):
-    note_id = serializers.SerializerMethodField(read_only=True)
-    entities = EntryResponseSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = FileReference
-        fields = [
-            "id",
-            "minio_file_name",
-            "mimetype",
-            "entities",
-            "file_name",
-            "bucket_name",
-            "timestamp",
-            "note_id",
-            "md5_hash",
-            "sha1_hash",
-            "sha256_hash",
-        ]
-
-    def get_note_id(self, obj):
-        return obj.note.id if obj.note else None
 
 
 class FleetingNoteSerializer(serializers.ModelSerializer):

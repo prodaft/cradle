@@ -33,6 +33,7 @@ import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
 import { Tab, Tabs } from '../Tabs/Tabs';
 import ActivityList from '../ActivityList/ActivityList';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
+import FileItem from '../FileItem/FileItem';
 
 /**
  * NoteViewer component
@@ -106,7 +107,7 @@ export default function NoteViewer() {
                 return responseNote;
             })
             .then((note) => {
-                return parseContent(note.content, note.files).then((result) =>
+                return parseContent(note.content, []).then((result) =>
                     setParsedContent(result.html),
                 );
             })
@@ -239,7 +240,7 @@ export default function NoteViewer() {
                     defaultTab={0}
                     queryParam={'tab'}
                     tabClasses='tabs-underline w-full'
-                    perTabClass='w-[50%] justify-center'
+                    perTabClass={`justify-center ${auth.isAdmin() ? (note.files && note.files.length > 0 ? 'w-[33%]' : 'w-[50%]') : 'w-full'}`}
                 >
                     <Tab title='Content' classes='pt-2'>
                         <div className='w-full h-full overflow-hidden flex flex-col items-center px-4 pb-4 pt-1'>
@@ -399,6 +400,21 @@ export default function NoteViewer() {
                             </div>
                         </div>
                     </Tab>
+                    {note.files && note.files.length > 0 && (
+                        <Tab title='Files' classes='pt-2'>
+                            <div className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'>
+                                <div className='w-[95%] h-full flex flex-col p-6 space-y-3'>
+                                    {note.files.map((file) => (
+                                        <FileItem
+                                            key={file.id}
+                                            file={file}
+                                            setAlert={setAlert}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        </Tab>
+                    )}
                     {auth.isAdmin() && (
                         <Tab title='History' classes='pt-2'>
                             <ActivityList content_type='note' objectId={id} />

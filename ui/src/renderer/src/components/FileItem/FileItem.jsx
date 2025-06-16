@@ -95,12 +95,15 @@ const FileItem = forwardRef(function ({ id, file, setAlert, ...props }, ref) {
             >
                 <div className='flex-grow text-xs'>
                     <div className='flex flex-wrap gap-2 mb-2 ml-1'>
+                        <h2 className='card-header dark:text-white ml-1'>
+                            {file.file_name}
+                        </h2>
                         {file.entities.map((entry) => (
                             <a
                                 key={entry.name}
                                 className='hover:underline badge badge-flat-primary badge-xs px-2 mx-1 my-1 py-1 text-secondary'
-                                href={createDashboardLink(entry)}
-                                data-custom-href={createDashboardLink(entry)}
+                                href={`#${createDashboardLink(entry)}`}
+                                data-custom-href={`#${createDashboardLink(entry)}`}
                                 style={{
                                     backgroundColor: entry.color || '#ccc',
                                 }}
@@ -108,10 +111,6 @@ const FileItem = forwardRef(function ({ id, file, setAlert, ...props }, ref) {
                                 {entry.name}
                             </a>
                         ))}
-
-                        <h2 className='card-header dark:text-white ml-1'>
-                            {file.file_name}
-                        </h2>
                     </div>
                     <div className='mt-1'>
                         <a
