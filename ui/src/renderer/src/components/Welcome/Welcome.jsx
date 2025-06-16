@@ -76,7 +76,7 @@ export default function Welcome() {
                             className='mt-6 !text-sm !font-normal text-zinc-500 hover:cursor-pointer hover:opacity-80'
                             onClick={() => window.open('https://prodaft.com')}
                         >
-                            Copyright &copy; 2025 PRODAFT | v2.5.0
+                            Copyright &copy; 2025 PRODAFT | v2.6.0
                         </p>
                     </div>
                 </footer>
