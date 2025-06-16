@@ -155,7 +155,7 @@ class FileDownload(APIView):
 @extend_schema_view(
     post=extend_schema(
         summary="Process an uploaded file",
-        description="Triggers processing for a file that has been uploaded to MinIO. Processing includes calculating hashes (MD5, SHA1, SHA256) and determining the file mimetype.",
+        description="Triggers processing for a file that has been uploaded to MinIO.",
         request=FileProcessSerializer,
         responses={
             200: {"description": "File processing started successfully"},

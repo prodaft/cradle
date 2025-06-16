@@ -126,7 +126,7 @@ class NoteEditSerializer(serializers.ModelSerializer):
             FileReference.objects.bulk_create(new_files)
 
         if content is not None:
-            note = TaskScheduler(user, content=content, **validated_data).run_pipeline(
+            TaskScheduler(user, content=content, **validated_data).run_pipeline(
                 instance
             )
 

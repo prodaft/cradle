@@ -1,5 +1,4 @@
 import logging
-import magic
 import hashlib
 from celery import shared_task
 
@@ -30,6 +29,8 @@ def reprocess_all_files_task():
 
 @shared_task
 def process_file_task(file_id):
+    import magic
+
     # Get the file reference
     file_ref = FileReference.objects.get(id=file_id)
 

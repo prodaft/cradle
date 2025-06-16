@@ -1,11 +1,10 @@
 from django.db import models
 from typing import TYPE_CHECKING
-from django_lifecycle import AFTER_CREATE, AFTER_DELETE, LifecycleModelMixin, hook
+from django_lifecycle import AFTER_DELETE, LifecycleModelMixin, hook
 import uuid
 from .utils import MinioClient
 from entries.enums import EntryType
-from entries.models import Entry, EntryClass, Relation
-from management.settings import cradle_settings
+from entries.models import Entry, EntryClass
 
 if TYPE_CHECKING:
     pass
