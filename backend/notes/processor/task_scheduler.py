@@ -7,6 +7,9 @@ from entries.enums import EntryType
 
 from ..utils import calculate_acvec
 from ..enums import NoteStatus
+from ..exceptions import (
+    FieldTooLongException,
+)
 
 from ..models import Note
 from .connect_aliases_task import AliasConnectionTask
@@ -98,6 +101,14 @@ class TaskScheduler:
                 [x for x in entries if x.entry_class.type == EntryType.ENTITY]
             )
             note.set_status(NoteStatus.PROCESSING)
+
+            if len(note.description) > Note.description.field.max_length:
+                raise FieldTooLongException(
+                    "description", Note.description.field.max_length
+                )
+
+            if len(note.title) > Note.title.field.max_length:
+                raise FieldTooLongException("title", Note.title.field.max_length)
 
             note.save()
 
