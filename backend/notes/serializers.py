@@ -168,8 +168,32 @@ class LinkedEntrySerializer(serializers.ModelSerializer):
         return internal
 
 
+class FileReferenceWithNoteSerializer(serializers.ModelSerializer):
+    note_id = serializers.SerializerMethodField(read_only=True)
+    entities = EntryResponseSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = FileReference
+        fields = [
+            "id",
+            "minio_file_name",
+            "mimetype",
+            "entities",
+            "file_name",
+            "bucket_name",
+            "timestamp",
+            "note_id",
+            "md5_hash",
+            "sha1_hash",
+            "sha256_hash",
+        ]
+
+    def get_note_id(self, obj):
+        return obj.note.id if obj.note else None
+
+
 class NoteRetrieveSerializer(serializers.ModelSerializer):
-    files = FileReferenceSerializer(many=True)
+    files = FileReferenceWithNoteSerializer(many=True)
     author = UserRetrieveSerializer()
     editor = UserRetrieveSerializer()
     entries = EntryTypesCompressedTreeSerializer()
@@ -224,30 +248,6 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
             data["content"] = data["content"][: self.truncate] + "..."
 
         return data
-
-
-class FileReferenceWithNoteSerializer(serializers.ModelSerializer):
-    note_id = serializers.SerializerMethodField(read_only=True)
-    entities = EntryResponseSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = FileReference
-        fields = [
-            "id",
-            "minio_file_name",
-            "mimetype",
-            "entities",
-            "file_name",
-            "bucket_name",
-            "timestamp",
-            "note_id",
-            "md5_hash",
-            "sha1_hash",
-            "sha256_hash",
-        ]
-
-    def get_note_id(self, obj):
-        return obj.note.id if obj.note else None
 
 
 class NoteRetrieveWithLinksSerializer(NoteRetrieveSerializer):
