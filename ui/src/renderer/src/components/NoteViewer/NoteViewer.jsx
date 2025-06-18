@@ -54,8 +54,8 @@ export default function NoteViewer() {
     const [isRaw, setIsRaw] = useState(false);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [parsedContent, setParsedContent] = useState(null);
-    const [isLoading, setIsLoading] = useState(true); // <-- Add loading state
-    const [metadataExpanded, setMetadataExpanded] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [metadataExpanded, setMetadataExpanded] = useState(true);
     const { setModal } = useModal();
 
     const auth = useAuth();
@@ -99,7 +99,7 @@ export default function NoteViewer() {
 
     useEffect(() => {
         setIsLoading(true);
-        getNote(id)
+        getNote(id, false)
             .then((response) => {
                 const responseNote = response.data;
                 setNote(responseNote);

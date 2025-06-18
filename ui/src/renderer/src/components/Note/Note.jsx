@@ -42,7 +42,7 @@ const Note = forwardRef(function (
     const [hidden, setHidden] = useState(false);
     const location = useLocation();
     const [parsedContent, setParsedContent] = useState('');
-    const [metadataExpanded, setMetadataExpanded] = useState(false);
+    const [metadataExpanded, setMetadataExpanded] = useState(true);
 
     const getStatusIcon = () => {
         if (!note.status) return null;

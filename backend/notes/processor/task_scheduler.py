@@ -100,7 +100,6 @@ class TaskScheduler:
             note.access_vector = calculate_acvec(
                 [x for x in entries if x.entry_class.type == EntryType.ENTITY]
             )
-            note.set_status(NoteStatus.PROCESSING)
 
             if len(note.description) > Note.description.field.max_length:
                 raise FieldTooLongException(
@@ -109,6 +108,11 @@ class TaskScheduler:
 
             if len(note.title) > Note.title.field.max_length:
                 raise FieldTooLongException("title", Note.title.field.max_length)
+
+            if note.title is None or len(note.title.strip()) == 0:
+                note.set_status(NoteStatus.WARNING, "Note title is empty.")
+            else:
+                note.set_status(NoteStatus.PROCESSING)
 
             note.save()
 

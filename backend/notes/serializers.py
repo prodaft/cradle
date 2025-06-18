@@ -267,6 +267,8 @@ class NoteRetrieveWithLinksSerializer(NoteRetrieveSerializer):
             except MinioObjectNotFound:
                 pass
 
+        data.pop("files", None)
+
         return data
 
 
