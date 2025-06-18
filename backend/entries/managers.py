@@ -50,7 +50,9 @@ class EntryQuerySet(models.QuerySet):
         """
         Get non virtual entries
         """
-        return self.exclude(entry_class__subtype="virtual")
+        return self.exclude(
+            Q(entry_class__subtype="virtual") | Q(entry_class__subtype="file")
+        )
 
 
 class RelationQuerySet(models.QuerySet):
@@ -141,7 +143,8 @@ class EntryManager(models.Manager):
             # filter entries by entry type
             query_set.filter(entry_class__subtype__in=entry_subtypes)
             # filter name
-            .filter(name__icontains=name_substr).order_by("name")
+            .filter(name__icontains=name_substr)
+            .order_by("name")
         )
 
     def get_neighbours(self, user: CradleUser | None) -> models.QuerySet:

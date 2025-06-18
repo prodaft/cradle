@@ -6,7 +6,12 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .utils import MinioClient
-from .serializers import FileUploadSerializer, FileDownloadSerializer
+from .serializers import (
+    FileUploadSerializer,
+    FileDownloadSerializer,
+    FileProcessSerializer,
+)
+from .models import FileReference
 import time
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
@@ -78,21 +83,29 @@ class FileUpload(APIView):
 
 @extend_schema_view(
     get=extend_schema(
-        summary="Get file upload URL",
-        description="Generates a presigned URL that allows clients to upload files to Minio without requiring credentials. The URL expires after 5 minutes.",  # noqa: E501
+        summary="Get file download URL",
+        description="Generates a presigned URL that allows clients to download files from Minio without requiring credentials. The URL expires after 7 days.",  # noqa: E501
         parameters=[
             OpenApiParameter(
-                name="fileName",
+                name="bucketName",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Name of the file to be uploaded",
+                description="Name of the bucket where the file is stored",
                 required=True,
-            )
+            ),
+            OpenApiParameter(
+                name="minioFileName",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Name of the file in Minio storage",
+                required=True,
+            ),
         ],
         responses={
-            200: FileUploadSerializer,
+            200: FileDownloadSerializer,
             400: {"description": "Query parameters are invalid"},
             401: {"description": "User is not authenticated"},
+            404: {"description": "The requested file does not exist"},
         },
     )
 )
@@ -137,3 +150,57 @@ class FileDownload(APIView):
         )
 
         return Response(FileDownloadSerializer(response_data).data)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        summary="Process an uploaded file",
+        description="Triggers processing for a file that has been uploaded to MinIO.",
+        request=FileProcessSerializer,
+        responses={
+            200: {"description": "File processing started successfully"},
+            400: {"description": "Request body is invalid"},
+            401: {"description": "User is not authenticated"},
+            404: {"description": "File reference not found"},
+        },
+    )
+)
+class FileProcess(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request) -> Response:
+        """Triggers processing for a file that has been uploaded to MinIO.
+
+        Args:
+            request: The request that was sent. It expects a JSON body with
+            `file_id` containing the UUID of the FileReference to process.
+
+        Returns:
+            Response({"message": "File processing started"}, status=200): if processing was started successfully
+            Response({"error": "Invalid request body"}, status=400): if the request body is invalid
+            Response({"error": "File reference not found"}, status=404): if the file reference doesn't exist
+        """
+        serializer = FileProcessSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(
+                {"error": "Invalid request body", "details": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            file_reference = FileReference.objects.get(
+                id=serializer.validated_data["file_id"]
+            )
+
+            # Call the process_file method on the file reference
+            file_reference.process_file()
+
+            return Response(
+                {"message": "File processing started"}, status=status.HTTP_200_OK
+            )
+        except FileReference.DoesNotExist:
+            return Response(
+                {"error": "File reference not found"}, status=status.HTTP_404_NOT_FOUND
+            )

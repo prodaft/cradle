@@ -138,14 +138,14 @@ class NoteList(APIView):
             paginated_notes = paginator.paginate_queryset(notes, request)
 
             if paginated_notes is not None:
-                serializer = NoteRetrieveSerializer(
+                serializer = NoteRetrieveWithLinksSerializer(
                     paginated_notes,
                     truncate=int(request.query_params.get("truncate", 200)),
                     many=True,
                 )
                 return paginator.get_paginated_response(serializer.data)
 
-            serializer = NoteRetrieveSerializer(notes, truncate=200, many=True)
+            serializer = NoteRetrieveWithLinksSerializer(notes, truncate=200, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response(filterset.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -95,7 +95,10 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 
 class NoteEditSerializer(serializers.ModelSerializer):
     content = serializers.CharField(required=False, allow_blank=True)
-    files = FileReferenceSerializer(required=False, many=True)
+    files = FileReferenceSerializer(
+        required=False,
+        many=True,
+    )
 
     class Meta:
         model = Note
@@ -104,29 +107,28 @@ class NoteEditSerializer(serializers.ModelSerializer):
     def update(self, instance: Note, validated_data: dict[str, Any]):
         user = self.context["request"].user
 
-        files = validated_data.pop("files", None)
+        updated_files = validated_data.pop("files", None)
         content = validated_data.pop("content", None)
-        if content is not None:
-            note = TaskScheduler(user, content=content, **validated_data).run_pipeline(
-                instance
-            )
 
-        if files is not None:
-            existing_files = set([i.id for i in note.files.all()])
-            files_kept = set([i["id"] for i in files if "id" in i])
+        if updated_files is not None:
+            existing_files = set([i.id for i in instance.files.all()])
+            files_kept = set([i["id"] for i in updated_files if "id" in i])
 
             # Remove files that are no longer used
             FileReference.objects.filter(id__in=(existing_files - files_kept)).delete()
 
-            if files is not None:
-                file_reference_models = [
-                    FileReference(note=note, **file_data)
-                    for file_data in files
-                    if "id" not in file_data
-                ]
+            # Create new file references
+            new_files = [
+                FileReference(note=instance, **file_data)
+                for file_data in updated_files
+                if file_data.get("id", None) not in existing_files
+            ]
+            FileReference.objects.bulk_create(new_files)
 
-                # Create the new files
-                FileReference.objects.bulk_create(file_reference_models)
+        if content is not None:
+            TaskScheduler(user, content=content, **validated_data).run_pipeline(
+                instance
+            )
 
         return super().update(instance, validated_data)
 
@@ -224,7 +226,33 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
         return data
 
 
+class FileReferenceWithNoteSerializer(serializers.ModelSerializer):
+    note_id = serializers.SerializerMethodField(read_only=True)
+    entities = EntryResponseSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = FileReference
+        fields = [
+            "id",
+            "minio_file_name",
+            "mimetype",
+            "entities",
+            "file_name",
+            "bucket_name",
+            "timestamp",
+            "note_id",
+            "md5_hash",
+            "sha1_hash",
+            "sha256_hash",
+        ]
+
+    def get_note_id(self, obj):
+        return obj.note.id if obj.note else None
+
+
 class NoteRetrieveWithLinksSerializer(NoteRetrieveSerializer):
+    files = FileReferenceWithNoteSerializer(many=True)
+
     def to_representation(self, obj: Any) -> Dict[str, Any]:
         data = super().to_representation(obj)
 
@@ -239,7 +267,7 @@ class NoteRetrieveWithLinksSerializer(NoteRetrieveSerializer):
             except MinioObjectNotFound:
                 pass
 
-        data.pop("files")
+        data.pop("files", None)
 
         return data
 
@@ -329,26 +357,6 @@ class ReportSerializer(serializers.Serializer):
     notes = NoteReportSerializer(many=True)
 
 
-class FileReferenceWithNoteSerializer(serializers.ModelSerializer):
-    note_id = serializers.SerializerMethodField(read_only=True)
-
-    class Meta:
-        model = FileReference
-        fields = [
-            "minio_file_name",
-            "file_name",
-            "bucket_name",
-            "timestamp",
-            "note_id",
-            "md5_hash",
-            "sha1_hash",
-            "sha256_hash",
-        ]
-
-    def get_note_id(self, obj):
-        return obj.note.id if obj.note else None
-
-
 class FleetingNoteSerializer(serializers.ModelSerializer):
     """
     Serializer for fleeting notes. This bypasses the normal note processing pipeline
@@ -376,7 +384,9 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
 
         if files_data is not None:
             file_reference_models = [
-                FileReference(note=note, **file_data) for file_data in files_data
+                FileReference(note=note, **file_data)
+                for file_data in files_data
+                if "id" not in file_data
             ]
             FileReference.objects.bulk_create(file_reference_models)
 
@@ -394,11 +404,19 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
         instance.save()
 
         if updated_files is not None:
-            instance.files.all().delete()
-            file_reference_models = [
-                FileReference(note=instance, **file_data) for file_data in updated_files
+            existing_files = set([i.id for i in instance.files.all()])
+            files_kept = set([i["id"] for i in updated_files if "id" in i])
+
+            # Remove files that are no longer used
+            FileReference.objects.filter(id__in=(existing_files - files_kept)).delete()
+
+            # Create new file references
+            new_files = [
+                FileReference(note=instance, **file_data)
+                for file_data in updated_files
+                if file_data.get("id", None) not in existing_files
             ]
-            FileReference.objects.bulk_create(file_reference_models)
+            FileReference.objects.bulk_create(new_files)
 
         return instance
 

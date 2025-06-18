@@ -7,6 +7,9 @@ from entries.enums import EntryType
 
 from ..utils import calculate_acvec
 from ..enums import NoteStatus
+from ..exceptions import (
+    FieldTooLongException,
+)
 
 from ..models import Note
 from .connect_aliases_task import AliasConnectionTask
@@ -18,6 +21,7 @@ from .entry_class_creation_task import EntryClassCreationTask
 from .base_task import BaseTask
 from .access_control_task import AccessControlTask
 from .finalize_note_task import FinalizeNoteTask
+from .link_files_task import LinkFilesTask
 from .validate_note_task import ValidateNoteTask
 from .metadata_process_task import MetadataProcessTask
 from user.models import CradleUser
@@ -37,6 +41,7 @@ class TaskScheduler:
             EntryClassCreationTask(user),
             EntryPopulationTask(user),
             SmartLinkerTask(user),
+            LinkFilesTask(user),
             MetadataProcessTask(user),
             AliasConnectionTask(user),
             FinalizeNoteTask(user),
@@ -95,7 +100,19 @@ class TaskScheduler:
             note.access_vector = calculate_acvec(
                 [x for x in entries if x.entry_class.type == EntryType.ENTITY]
             )
-            note.set_status(NoteStatus.PROCESSING)
+
+            if len(note.description) > Note.description.field.max_length:
+                raise FieldTooLongException(
+                    "description", Note.description.field.max_length
+                )
+
+            if len(note.title) > Note.title.field.max_length:
+                raise FieldTooLongException("title", Note.title.field.max_length)
+
+            if note.title is None or len(note.title.strip()) == 0:
+                note.set_status(NoteStatus.WARNING, "Note title is empty.")
+            else:
+                note.set_status(NoteStatus.PROCESSING)
 
             note.save()
 

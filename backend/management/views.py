@@ -24,6 +24,7 @@ from entries.tasks import (
     simulate_graph,
     update_accesses,
 )
+from file_transfer.tasks import reprocess_all_files_task
 from entries.models import Entry
 import inspect
 
@@ -178,8 +179,12 @@ class ActionView(APIView):
 
         return Response({"message": "Propagating the access vectors for all entities"})
 
+    def action_reprocessAllFiles(self, request, *args, **kwargs):
+        reprocess_all_files_task.apply_async()
+
+        return Response({"message": "Started reprocessing all files."})
+
     def action_deleteHangingArtifacts(self, request, *args, **kwargs):
-        print(Entry.artifacts.unreferenced().distinct())
         count, _ = Entry.artifacts.unreferenced().distinct().delete()
 
         return Response({"message": f"Deleted {count} artifacts."})

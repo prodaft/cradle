@@ -1,12 +1,16 @@
 from django.db import models
 from typing import TYPE_CHECKING
+from django_lifecycle import AFTER_DELETE, LifecycleModelMixin, hook
 import uuid
+from .utils import MinioClient
+from entries.enums import EntryType
+from entries.models import Entry, EntryClass
 
 if TYPE_CHECKING:
     pass
 
 
-class FileReference(models.Model):
+class FileReference(models.Model, LifecycleModelMixin):
     id: models.UUIDField = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -51,3 +55,44 @@ class FileReference(models.Model):
             "file_name": self.file_name,
             "bucket_name": self.bucket_name,
         }
+
+    @property
+    def entities(self) -> list[str]:
+        if self.note:
+            return list(
+                self.note.entries.filter(entry_class__type=EntryType.ENTITY).all()
+            )
+        return []
+
+    @property
+    def entry(self):
+        file_class, _ = EntryClass.objects.get_or_create(
+            type=EntryType.ARTIFACT, subtype="file"
+        )
+
+        entry, _ = Entry.objects.get_or_create(
+            entry_class=file_class,
+            name=f"{self.bucket_name}/{self.file_name}_{self.minio_file_name}",
+        )
+
+        return entry
+
+    def process_file(self):
+        """
+        Process the file after it is created.
+        Schedules the file processing task.
+        """
+        if self.note is None:
+            return
+
+        from .tasks import process_file_task
+
+        process_file_task.apply_async(args=(str(self.id),))
+
+    @hook(AFTER_DELETE)
+    def delete_file(self):
+        """
+        Delete the file from MinIO after it is deleted from the database.
+        """
+        minio_client = MinioClient()
+        minio_client.delete_files(self.bucket_name, [self.minio_file_name])

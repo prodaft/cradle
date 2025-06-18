@@ -69,11 +69,48 @@ class GraphSettings(BaseSettingsSection):
         return self.get("max_iter", 2000)
 
 
+class FileSettings(BaseSettingsSection):
+    prefix = "files"
+
+    @property
+    def autoprocess_files(self):
+        return self.get("autoprocess_files", False)
+
+    @property
+    def md5_subtype(self):
+        return self.get("md5_subtype", "hash/md5")
+
+    @property
+    def sha1_subtype(self):
+        return self.get("sha1_subtype", "hash/sha1")
+
+    @property
+    def sha256_subtype(self):
+        return self.get("sha256_subtype", "hash/sha256")
+
+    @property
+    def mimetype_patterns(self):
+        default_patterns = [
+            "application/x-pie-executable",
+            "application/vnd.microsoft.portable-executable",
+            "application/x-dosexec",
+            "application/x-msdownload",
+            "application/x-executable",
+            "application/pdf",
+            "application/msword",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
+        ]
+        return self.get("mimetype_patterns", default_patterns)
+
+
 class CradleSettings:
     def __init__(self):
         self.notes = NotesSettings()
         self.graph = GraphSettings()
         self.users = UserSettings()
+        self.files = FileSettings()
 
 
 cradle_settings = CradleSettings()

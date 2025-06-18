@@ -34,7 +34,7 @@ def infer_metadata(md_text: str) -> dict[str, str]:
     metadata, content = frontmatter.parse(md_text, handler=ErrorBypassYAMLHandler())
     renderer = MetadataGuesser()
     markdown = mistune.create_markdown(renderer=renderer)
-    markdown(md_text)
+    markdown(content)
 
     renderer.metadata.update(metadata)
 

@@ -17,6 +17,14 @@ class NoteIsEmptyException(APIException):
     default_detail = "The note should not be empty."
 
 
+class FieldTooLongException(APIException):
+    status_code = 400
+
+    def __init__(self, field: str, max_length: int, *args, **kwargs) -> None:
+        self.default_detail = f"The field '{field}' exceeds the maximum length of {max_length} characters."
+        super().__init__(*args, **kwargs)
+
+
 class NotEnoughReferencesException(APIException):
     status_code = 400
 

@@ -24,6 +24,8 @@ class MetadataProcessTask(BaseTask):
         metadata = infer_metadata(note.content)
 
         for key, field in Note.metadata_fields.items():
+            if field:
+                setattr(note, field, getattr(Note, field, None).field.default)
             if key not in metadata:
                 continue
 

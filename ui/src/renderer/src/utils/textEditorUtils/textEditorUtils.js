@@ -18,7 +18,7 @@ const parseContent = async (content, fileData) =>
         if (!result) return { html: '', metadata: {} };
         return {
             html: DOMPurify.sanitize(result.html),
-            metadata: result.metadata
+            metadata: result.metadata,
         };
     });
 
@@ -38,6 +38,18 @@ const createDownloadPath = (file) => {
         minioFileName: minio_file_name,
     });
     return `${apiBaseUrl}/file-transfer/download/?${queryParams}`;
+};
+
+/**
+ * Creates a process file path for a file. This path corresponds to the process endpoint in the backend.
+ * The base URL (e.g. `http://localhost:8000`) is the same as the backend API's.
+ *
+ * @function createProcessFilePath
+ * @returns {string} process file endpoint
+ */
+const createProcessFilePath = () => {
+    const apiBaseUrl = getBaseUrl();
+    return `${apiBaseUrl}/file-transfer/process/`;
 };
 
 /**
@@ -184,6 +196,7 @@ export {
     parseContent,
     handleLinkClick,
     createDownloadPath,
+    createProcessFilePath,
     prependLinks,
     getLinkNode,
     parseLink,
