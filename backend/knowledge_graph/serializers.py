@@ -50,6 +50,18 @@ class EdgeRelationSerializer(serializers.ModelSerializer):
         fields = ["id", "src", "dst", "created_at", "last_seen"]
 
 
+class GraphInaccessibleResponseSerializer(serializers.Serializer):
+    """Serializer for graph inaccessible response."""
+
+    inaccessible = serializers.ListField(
+        child=serializers.CharField(),
+        help_text="List of inaccessible entry IDs",
+    )
+
+    class Meta:
+        ref_name = "GraphInaccessibleResponse"
+
+
 class SubGraphSerializer(serializers.Serializer):
     entries = EntryListCompressedTreeSerializer(
         fields=("name", "id", "location", "degree")

@@ -5,7 +5,7 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from core.pagination import TotalPagesPagination
 from entries.enums import RelationReason
@@ -14,10 +14,21 @@ from ..serializers import RelationSerializer
 
 
 @extend_schema(
-    tags=["Relations"],
+    summary="List relations between entries",
+    description="Returns a paginated list of relations between specified entries. Requires 'relates' query parameter with entry IDs.",
+    parameters=[
+        OpenApiParameter(
+            name="relates",
+            location=OpenApiParameter.QUERY,
+            description="List of entry IDs to find relations between",
+            required=True,
+            type={"type": "array", "items": {"type": "integer"}},
+        )
+    ],
     responses={
         200: RelationSerializer(many=True),
         400: {"description": "Bad request - invalid parameters"},
+        401: {"description": "User is not authenticated"},
     },
 )
 class RelationListView(APIView):
@@ -58,10 +69,13 @@ class RelationListView(APIView):
 
 
 @extend_schema(
-    tags=["Relations"],
+    summary="Delete a relation",
+    description="Deletes a specific relation by ID. Only admin users can perform this action.",
     responses={
         204: {"description": "No content - relation deleted successfully"},
         404: {"description": "Relation not found"},
+        401: {"description": "User is not authenticated"},
+        403: {"description": "User is not authorized to delete relations"},
     },
 )
 class RelationDetailView(APIView):

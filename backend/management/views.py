@@ -12,6 +12,7 @@ from notes.processor.entry_class_creation_task import EntryClassCreationTask
 from notes.processor.entry_population_task import EntryPopulationTask
 from notes.processor.smart_linker_task import SmartLinkerTask
 from .models import BaseSettingsSection
+from .serializers import ManagementActionResponseSerializer
 from user.permissions import HasAdminRole
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import (
@@ -161,12 +162,7 @@ class SettingsView(APIView):
         )
     ],
     responses={
-        200: {
-            "type": "object",
-            "properties": {
-                "message": {"type": "string", "description": "Success message"},
-            },
-        },
+        200: ManagementActionResponseSerializer,
         400: {"description": "Unknown action"},
         401: {"description": "User is not authenticated"},
         403: {"description": "User is not an admin"},

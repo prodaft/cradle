@@ -20,6 +20,10 @@ from ..serializers import (
     UserRetrieveSerializer,
     APIKeyRequestSerializer,
     PasswordResetRequestSerializer,
+    APIKeyResponseSerializer,
+    UserManageResponseSerializer,
+    ChangePasswordRequestSerializer,
+    ChangePasswordResponseSerializer,
 )
 from ..models import CradleUser
 from management.settings import cradle_settings
@@ -250,32 +254,9 @@ class UserDetail(APIView):
     post=extend_schema(
         summary="Change Password",
         description="Allows authenticated users to change their password by providing their old password and a new password.",  # noqa: E501
-        request={
-            "application/json": {
-                "type": "object",
-                "properties": {
-                    "old_password": {
-                        "type": "string",
-                        "description": "Current password of the user",
-                    },
-                    "new_password": {
-                        "type": "string",
-                        "description": "New password to set",
-                    },
-                },
-                "required": ["old_password", "new_password"],
-            }
-        },
+        request=ChangePasswordRequestSerializer,
         responses={
-            200: {
-                "type": "object",
-                "properties": {
-                    "detail": {
-                        "type": "string",
-                        "example": "Password changed successfully.",
-                    }
-                },
-            },
+            200: ChangePasswordResponseSerializer,
             400: {
                 "type": "string",
                 "description": "Bad Request: Invalid data or incorrect old password",
@@ -339,69 +320,11 @@ class ChangePasswordView(APIView):
             ),
         ],
         responses={
-            200: {
-                "type": "object",
-                "properties": {
-                    "refresh": {
-                        "type": "string",
-                        "description": "JWT refresh token (only for simulate action)",
-                    },
-                    "access": {
-                        "type": "string",
-                        "description": "JWT access token (only for simulate action)",
-                    },
-                    "message": {
-                        "type": "string",
-                        "description": "Success message for other actions",
-                    },
-                },
-            },
+            200: UserManageResponseSerializer,
             400: {"description": "Bad Request: Unknown action or invalid state"},
             401: {"description": "Unauthorized: User is not authenticated"},
             403: {"description": "Forbidden: User is not an admin"},
             404: {"description": "Not Found: User not found"},
-        },
-    )
-)
-@extend_schema_view(
-    get=extend_schema(
-        summary="Execute user management action",
-        description="Executes various user management actions. Available actions: simulate, send_email_confirmation, password_reset_email.",
-        parameters=[
-            OpenApiParameter(
-                name="user_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the user",
-            ),
-            OpenApiParameter(
-                name="action_name",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="Action to execute: simulate, send_email_confirmation, or password_reset_email",
-            ),
-        ],
-        responses={
-            200: {
-                "type": "object",
-                "properties": {
-                    "refresh": {
-                        "type": "string",
-                        "description": "Refresh token (for simulate action)",
-                    },
-                    "access": {
-                        "type": "string",
-                        "description": "Access token (for simulate action)",
-                    },
-                    "message": {
-                        "type": "string",
-                        "description": "Success message for other actions",
-                    },
-                },
-            },
-            400: {"description": "Unknown action or user's email already confirmed"},
-            403: {"description": "Cannot simulate admin users"},
-            404: {"description": "User not found"},
         },
     )
 )
@@ -491,12 +414,7 @@ class ManageUser(APIView):
         )
     ],
     responses={
-        200: {
-            "type": "object",
-            "properties": {
-                "api_key": {"type": "string", "description": "Generated API key"},
-            },
-        },
+        200: APIKeyResponseSerializer,
         401: {"description": "User is not authenticated"},
         403: {"description": "User is not allowed to generate API key for this user"},
         404: {"description": "User not found"},
@@ -572,16 +490,26 @@ class EmailConfirm(APIView):
 
 @extend_schema_view(
     post=extend_schema(
-        summary="Confirm email address",
-        description="Confirms a user's email address using the confirmation token sent to their email.",
-        request=EmailConfirmSerializer,
+        operation_id="users_reset_password_create",
+        summary="Request password reset",
+        description="Sends a password reset email to the user. Requires either email or username.",
+        request=PasswordResetRequestSerializer,
         responses={
-            200: {"description": "Email confirmed successfully"},
+            200: {"description": "Password reset email sent"},
+            400: {"description": "Email or username must be provided"},
+        },
+    ),
+    put=extend_schema(
+        operation_id="users_reset_password_update",
+        summary="Reset password with token",
+        description="Resets user password using a valid reset token and new password.",
+        responses={
+            200: {"description": "Password reset successfully"},
             400: {
-                "description": "Invalid token provided or token expired. If token expired, a new one will be sent."
+                "description": "Invalid token provided, token expired, or invalid password"
             },
         },
-    )
+    ),
 )
 class PasswordReset(APIView):
     permission_classes = ()

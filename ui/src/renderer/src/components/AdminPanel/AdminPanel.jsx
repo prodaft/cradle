@@ -133,15 +133,18 @@ export default function AdminPanel() {
                 if (response.status === 200) {
                     const mappingTypes = response.data;
                     setMappingTypes(
-                        mappingTypes.map((x) => (
-                            <AdminPanelCardTypeMapping
-                                id={x.class}
-                                key={x.class}
-                                searchKey={x.name}
-                                name={x.name}
-                                setRightPane={setRightPane}
-                            />
-                        )),
+                        mappingTypes.map((x) => {
+                            console.log(x);
+                            return (
+                                <AdminPanelCardTypeMapping
+                                    id={x.class_name}
+                                    key={x.class_name}
+                                    searchKey={x.name}
+                                    name={x.name}
+                                    setRightPane={setRightPane}
+                                />
+                            );
+                        }),
                     );
                 }
             })

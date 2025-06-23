@@ -17,6 +17,7 @@ from django.conf import settings
 from ..serializers import (
     EntryClassSerializer,
     EntryClassSerializerCount,
+    NextNameResponseSerializer,
 )
 from ..models import Entry, EntryClass
 
@@ -242,16 +243,7 @@ class EntryClassDetail(APIView):
             )
         ],
         responses={
-            200: {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "nullable": True,
-                        "description": "Next available name, or null if class has no prefix",
-                    }
-                },
-            },
+            200: NextNameResponseSerializer,
             404: {"description": "Entry class not found"},
         },
     )

@@ -16,7 +16,11 @@ from entries.serializers import EntrySerializer
 from knowledge_graph.utils import filter_valid_edges, get_edges_for_paths, get_neighbors
 from query.filters import EntryFilter
 from query.utils import parse_query
-from .serializers import PathfindQuery, SubGraphSerializer
+from .serializers import (
+    PathfindQuery,
+    SubGraphSerializer,
+    GraphInaccessibleResponseSerializer,
+)
 from django.utils.dateparse import parse_datetime
 
 
@@ -219,16 +223,7 @@ class GraphNeighborsView(APIView):
         ),
     ],
     responses={
-        200: {
-            "type": "object",
-            "properties": {
-                "inaccessible": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "List of inaccessible entry IDs",
-                },
-            },
-        },
+        200: GraphInaccessibleResponseSerializer,
         400: {"description": "Invalid parameters"},
         401: {"description": "User is not authenticated"},
         404: {"description": "Source entry not found"},

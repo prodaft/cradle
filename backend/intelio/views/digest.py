@@ -13,7 +13,7 @@ from core.pagination import TotalPagesPagination
 
 from ..models.base import BaseDigest
 
-from ..serializers import BaseDigestSerializer
+from ..serializers import BaseDigestSerializer, DigestSubclassSerializer
 from ..tasks import start_digest
 
 from django.shortcuts import get_object_or_404
@@ -21,21 +21,10 @@ from user.authentication import APIKeyAuthentication
 
 
 @extend_schema(
-    tags=["Digest"],
     summary="Get digest subclasses",
     description="Returns a list of all subclasses of BaseDigest with their names.",
     responses={
-        200: {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "class": {"type": "string"},
-                    "name": {"type": "string"},
-                    "infer_entities": {"type": "boolean"},
-                },
-            },
-        },
+        200: DigestSubclassSerializer(many=True),
         401: {"description": "User is not authenticated"},
     },
 )
@@ -51,7 +40,7 @@ class DigestSubclassesAPIView(APIView):
     def get(self, request, *args, **kwargs):
         subclasses = BaseDigest.__subclasses__()
 
-        subclass_names = [
+        subclass_data = [
             {
                 "class": subclass.__name__,
                 "name": subclass.display_name,
@@ -60,11 +49,12 @@ class DigestSubclassesAPIView(APIView):
             for subclass in subclasses
             if hasattr(subclass, "display_name")
         ]
-        return Response(subclass_names)
+
+        serializer = DigestSubclassSerializer(subclass_data, many=True)
+        return Response(serializer.data)
 
 
 @extend_schema(
-    tags=["Digest"],
     summary="Manage digests",
     description="Create and retrieve digests for the current user.",
     responses={

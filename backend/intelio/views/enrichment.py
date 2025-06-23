@@ -10,27 +10,17 @@ from ..utils import get_or_default_enricher
 
 from ..models.base import BaseEnricher
 
-from ..serializers import EnrichmentSettingsSerializer
+from ..serializers import EnrichmentSettingsSerializer, EnrichmentSubclassSerializer
 from user.permissions import HasAdminRole
 
 
 @extend_schema_view(
     get=extend_schema(
         operation_id="enrichment_subclasses_list",
-        tags=["Enrichment"],
         summary="Get enrichment subclasses",
         description="Returns a list of all subclasses of BaseEnricher with their names.",
         responses={
-            200: {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "class": {"type": "string"},
-                        "name": {"type": "string"},
-                    },
-                },
-            },
+            200: EnrichmentSubclassSerializer(many=True),
             401: {"description": "User is not authenticated"},
             403: {"description": "User does not have admin role"},
         },
@@ -48,18 +38,19 @@ class EnrichmentSubclassesAPIView(APIView):
     def get(self, request, *args, **kwargs):
         subclasses = BaseEnricher.__subclasses__()
 
-        subclass_names = [
+        subclass_data = [
             {"class": subclass.__name__, "name": subclass.display_name}
             for subclass in subclasses
             if hasattr(subclass, "display_name")
         ]
-        return Response(subclass_names)
+
+        serializer = EnrichmentSubclassSerializer(subclass_data, many=True)
+        return Response(serializer.data)
 
 
 @extend_schema_view(
     get=extend_schema(
         operation_id="enrichment_settings_retrieve",
-        tags=["Enrichment"],
         summary="Get enrichment settings",
         description="Get enrichment settings for a specific enricher type.",
         responses={
@@ -69,7 +60,6 @@ class EnrichmentSubclassesAPIView(APIView):
     ),
     post=extend_schema(
         operation_id="enrichment_settings_update",
-        tags=["Enrichment"],
         summary="Update enrichment settings",
         description="Create or update enrichment settings for a specific enricher type.",
         request=EnrichmentSettingsSerializer,

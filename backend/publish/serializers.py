@@ -88,3 +88,36 @@ class PublishReportSerializer(serializers.Serializer):
         if value not in allowed:
             raise serializers.ValidationError("Invalid strategy.")
         return value
+
+
+class ReportRetryErrorResponseSerializer(serializers.Serializer):
+    """Serializer for report retry error responses."""
+
+    detail = serializers.CharField(help_text="Error detail message")
+
+    class Meta:
+        ref_name = "ReportRetryErrorResponse"
+
+
+class PublishStrategySerializer(serializers.Serializer):
+    """Serializer for individual publish strategy."""
+
+    label = serializers.CharField(help_text="Human-readable label for the strategy")
+    strategy = serializers.CharField(help_text="Strategy identifier")
+
+    class Meta:
+        ref_name = "PublishStrategy"
+
+
+class PublishStrategiesResponseSerializer(serializers.Serializer):
+    """Serializer for publish strategies response."""
+
+    upload = PublishStrategySerializer(
+        many=True, help_text="Available upload strategies"
+    )
+    download = PublishStrategySerializer(
+        many=True, help_text="Available download strategies"
+    )
+
+    class Meta:
+        ref_name = "PublishStrategiesResponse"

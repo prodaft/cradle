@@ -233,6 +233,28 @@ class NoteList(APIView):
             404: {"description": "Note not found"},
         },
     ),
+    delete=extend_schema(
+        operation_id="notes_delete",
+        summary="Delete note",
+        description="Deletes an existing note. User must have read-write access to all referenced entities.",
+        parameters=[
+            OpenApiParameter(
+                name="note_id_s",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="ID of the note to delete. Must be a valid UUID",
+            )
+        ],
+        responses={
+            200: {"description": "Note was deleted successfully"},
+            400: {"description": "Invalid note ID format"},
+            401: {"description": "User is not authenticated"},
+            403: {
+                "description": "Cannot delete guide notes or user lacks required permissions"
+            },
+            404: {"description": "Note not found"},
+        },
+    ),
 )
 class NoteDetail(APIView):
     authentication_classes = [JWTAuthentication]

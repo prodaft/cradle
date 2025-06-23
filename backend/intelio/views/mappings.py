@@ -8,7 +8,7 @@ from django.apps import apps
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from ..models.base import ClassMapping
-from ..serializers import ClassMappingSerializer
+from ..serializers import ClassMappingSerializer, MappingSubclassSerializer
 from core.utils import fields_to_form
 from user.permissions import HasEntryManagerRole
 
@@ -22,20 +22,10 @@ class MappingSchemaRequestSerializer(serializers.Serializer):
 @extend_schema_view(
     get=extend_schema(
         operation_id="mappings_subclasses_list",
-        tags=["Mappings"],
         summary="Get class mapping subclasses",
         description="Returns a list of all subclasses of ClassMapping with their names.",
         responses={
-            200: {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "class": {"type": "string"},
-                        "name": {"type": "string"},
-                    },
-                },
-            },
+            200: MappingSubclassSerializer(many=True),
             401: {"description": "User is not authenticated"},
             403: {"description": "User does not have entry manager role"},
         },
@@ -53,18 +43,19 @@ class ClassMappingSubclassesAPIView(APIView):
     def get(self, request, *args, **kwargs):
         subclasses = ClassMapping.__subclasses__()
 
-        subclass_names = [
+        subclass_data = [
             {"class": subclass.__name__, "name": subclass.display_name}
             for subclass in subclasses
             if hasattr(subclass, "display_name")
         ]
-        return Response(subclass_names)
+
+        serializer = MappingSubclassSerializer(subclass_data, many=True)
+        return Response(serializer.data)
 
 
 @extend_schema_view(
     get=extend_schema(
         operation_id="mappings_keys_schema",
-        tags=["Mappings"],
         summary="Get mapping keys schema",
         description="Given a class name, return the possible field mappings.",
         responses={
@@ -102,7 +93,6 @@ class MappingKeysSchemaView(APIView):
 @extend_schema_view(
     get=extend_schema(
         operation_id="mappings_schema_list",
-        tags=["Mappings"],
         summary="Get mapping instances",
         description="Get all mapping instances for a given class.",
         responses={
@@ -120,7 +110,6 @@ class MappingKeysSchemaView(APIView):
     ),
     post=extend_schema(
         operation_id="mappings_schema_create_or_update",
-        tags=["Mappings"],
         summary="Create or update mapping",
         description="Create a new mapping or update an existing one for a given class.",
         request=MappingSchemaRequestSerializer,
@@ -138,7 +127,6 @@ class MappingKeysSchemaView(APIView):
     ),
     delete=extend_schema(
         operation_id="mappings_schema_destroy",
-        tags=["Mappings"],
         summary="Delete mapping",
         description="Delete a mapping instance for a given class.",
         responses={

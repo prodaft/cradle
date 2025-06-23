@@ -11,6 +11,45 @@ from user.serializers import EssentialUserRetrieveSerializer
 from .models import EnricherSettings, BaseEnricher
 
 
+class DigestSubclassSerializer(serializers.Serializer):
+    """Serializer for digest subclass information."""
+
+    class_name = serializers.CharField(
+        source="class", help_text="The class name of the digest"
+    )
+    name = serializers.CharField(help_text="The display name of the digest")
+    infer_entities = serializers.BooleanField(
+        help_text="Whether this digest type can infer entities"
+    )
+
+    class Meta:
+        ref_name = "DigestSubclass"
+
+
+class EnrichmentSubclassSerializer(serializers.Serializer):
+    """Serializer for enrichment subclass information."""
+
+    class_name = serializers.CharField(
+        source="class", help_text="The class name of the enricher"
+    )
+    name = serializers.CharField(help_text="The display name of the enricher")
+
+    class Meta:
+        ref_name = "EnrichmentSubclass"
+
+
+class MappingSubclassSerializer(serializers.Serializer):
+    """Serializer for mapping subclass information."""
+
+    class_name = serializers.CharField(
+        source="class", help_text="The class name of the mapping"
+    )
+    name = serializers.CharField(help_text="The display name of the mapping")
+
+    class Meta:
+        ref_name = "MappingSubclass"
+
+
 class ClassMappingSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     internal_class = serializers.SerializerMethodField()
