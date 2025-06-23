@@ -92,13 +92,13 @@ function Editor({
             if (currentLineRef.current !== lineNumber) {
                 setCurrentLine(lineNumber);
             }
-        }, 50)
+        }, 50),
     ).current;
 
     const debouncedSetTop = useRef(
         debounce((val) => {
             setTop(val);
-        }, 50)
+        }, 50),
     ).current;
 
     useEffect(() => {
@@ -207,14 +207,14 @@ function Editor({
             if (markdownContentRef.current !== text) {
                 setMarkdownContent(text);
             }
-        }, 100)
+        }, 100),
     ).current;
 
     const onEditorChange = useCallback(
         (text) => {
             debouncedSetMarkdownContent(text);
         },
-        [debouncedSetMarkdownContent]
+        [debouncedSetMarkdownContent],
     );
 
     useEffect(() => {
@@ -232,15 +232,15 @@ function Editor({
     }, [markdownContent]);
 
     const toggleFileList = useCallback(() => {
-        setShowFileList(prev => !prev);
+        setShowFileList((prev) => !prev);
     }, []);
 
     const toggleViewCollapsed = useCallback(() => {
-        setViewCollapsed(prev => !prev);
+        setViewCollapsed((prev) => !prev);
     }, [setViewCollapsed]);
 
     const toggleOutline = useCallback(() => {
-        setShowOutline(prev => !prev);
+        setShowOutline((prev) => !prev);
     }, []);
 
     const toggleVim = useCallback(() => {
@@ -263,8 +263,12 @@ function Editor({
             to = content.length;
         }
 
-        const linked = editorUtils.autoFormatLinks(editorRef.current.view, from, to);
-        
+        const [changes, linked] = editorUtils.autoFormatLinks(
+            editorRef.current.view,
+            from,
+            to,
+        );
+
         // Update the editor content first
         editorRef.current.view.dispatch({
             from: 0,
@@ -274,11 +278,17 @@ function Editor({
 
         // Then update the state
         setMarkdownContent(linked);
+        setAlert({
+            color: changes > 0 ? 'green' : 'gray',
+            show: true,
+            duration: 3000,
+            message: `${changes > 0 ? changes : 'No'} link${changes == 1 ? '' : 's'} found in text.`,
+        });
     }, [editorUtils, setMarkdownContent]);
 
     // Use useMemo for noteOutline to prevent unnecessary recalculations
     useEffect(() => {
-        const content = markdownContent || "";
+        const content = markdownContent || '';
         setNoteOutline(extractHeaderHierarchy(content, debouncedSetCurrentLine));
     }, [markdownContent, debouncedSetCurrentLine]);
 

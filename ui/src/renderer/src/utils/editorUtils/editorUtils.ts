@@ -695,7 +695,7 @@ export class CradleEditor {
     /**
      * Auto-formats plain text into cradle links where applicable.
      */
-    autoFormatLinks(editor: any, start: number, end: number): string {
+    autoFormatLinks(editor: any, start: number, end: number): [number, string] {
         const text: string = editor.state.doc.toString();
         const changes: Array<{ from: number; to: number; replacement: string }> = [];
 
@@ -733,7 +733,7 @@ export class CradleEditor {
                 change.replacement +
                 formattedText.slice(change.to);
         }
-        return formattedText;
+        return [filteredChanges.length, formattedText];
     }
 
     /*============================================================================
