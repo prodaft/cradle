@@ -296,6 +296,23 @@ class FleetingNotesDetail(APIView):
         },
     )
 )
+@extend_schema(
+    tags=["Fleeting Notes"],
+    summary="Convert fleeting note to regular note",
+    description="Converts a fleeting note to a regular note. Only the owner can convert it.",
+    request={
+        "application/json": {
+            "type": "object",
+            "properties": {"publishable": {"type": "boolean"}},
+        }
+    },
+    responses={
+        200: NoteRetrieveSerializer,
+        400: {"description": "Invalid request data"},
+        401: {"description": "User is not authenticated"},
+        404: {"description": "Fleeting note not found"},
+    },
+)
 class FleetingNotesFinal(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

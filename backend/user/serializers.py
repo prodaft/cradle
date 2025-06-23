@@ -213,3 +213,28 @@ class Verify2FASerializer(serializers.Serializer):
 
 class Login2FASerializer(serializers.Serializer):
     token = serializers.CharField(required=True)
+
+
+class APIKeyRequestSerializer(serializers.Serializer):
+    """Serializer for API key generation requests"""
+
+    pass
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """Serializer for password reset requests"""
+
+    email = serializers.EmailField(required=False)
+    username = serializers.CharField(required=False)
+
+    def validate(self, data):
+        if not data.get("email") and not data.get("username"):
+            raise serializers.ValidationError("Email or username must be provided")
+        return data
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """Serializer for password reset confirmation"""
+
+    token = serializers.CharField(required=True)
+    password = serializers.CharField(required=True)

@@ -1,10 +1,12 @@
 from django_lifecycle.mixins import transaction
 from rest_framework.parsers import MultiPartParser
 from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+from drf_spectacular.utils import extend_schema
 
 from core.pagination import TotalPagesPagination
 
@@ -18,6 +20,25 @@ from django.shortcuts import get_object_or_404
 from user.authentication import APIKeyAuthentication
 
 
+@extend_schema(
+    tags=["Digest"],
+    summary="Get digest subclasses",
+    description="Returns a list of all subclasses of BaseDigest with their names.",
+    responses={
+        200: {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "class": {"type": "string"},
+                    "name": {"type": "string"},
+                    "infer_entities": {"type": "boolean"},
+                },
+            },
+        },
+        401: {"description": "User is not authenticated"},
+    },
+)
 class DigestSubclassesAPIView(APIView):
     """
     DRF API view that returns a list of all subclasses of Enricment
@@ -42,10 +63,21 @@ class DigestSubclassesAPIView(APIView):
         return Response(subclass_names)
 
 
-class DigestAPIView(APIView):
+@extend_schema(
+    tags=["Digest"],
+    summary="Manage digests",
+    description="Create and retrieve digests for the current user.",
+    responses={
+        200: BaseDigestSerializer(many=True),
+        401: {"description": "User is not authenticated"},
+    },
+)
+class DigestAPIView(GenericAPIView):
     authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser]
+    serializer_class = BaseDigestSerializer
+    queryset = BaseDigest.objects.all()
 
     def get(self, request):
         """Fetch all digests for the current user."""
@@ -53,7 +85,7 @@ class DigestAPIView(APIView):
         paginator = TotalPagesPagination(page_size=10)
         result_page = paginator.paginate_queryset(digests, request)
 
-        serializer = BaseDigestSerializer(result_page, many=True)
+        serializer = self.get_serializer(result_page, many=True)
         return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
@@ -62,7 +94,7 @@ class DigestAPIView(APIView):
 
         data["user"] = request.user.id
 
-        serializer = BaseDigestSerializer(data=data)
+        serializer = self.get_serializer(data=data)
         if serializer.is_valid():
             digest = serializer.save()
         else:
@@ -78,7 +110,7 @@ class DigestAPIView(APIView):
                 destination.write(chunk)
 
         transaction.on_commit(lambda: start_digest.delay(digest.id))
-        return Response(BaseDigestSerializer(digest).data, status=201)
+        return Response(self.get_serializer(digest).data, status=201)
 
     def delete(self, request):
         """

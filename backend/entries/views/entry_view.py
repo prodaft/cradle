@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 
 from access.models import Access
 from core.pagination import TotalPagesPagination
+from drf_spectacular.utils import extend_schema
 from ..exceptions import DuplicateEntryException
 
 from ..models import Entry
@@ -14,7 +15,7 @@ from ..serializers import ArtifactSerializer, EntitySerializer, EntrySerializer
 from ..enums import EntryType
 
 
-class EntryView(generics.ListCreateAPIView):
+class EntryView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = EntrySerializer
     pagination_class = TotalPagesPagination
@@ -58,6 +59,7 @@ class EntryView(generics.ListCreateAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(responses=EntrySerializer)
 class EntryDetailView(APIView):
     permission_classes = [IsAuthenticated]
 

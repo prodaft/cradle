@@ -18,6 +18,8 @@ from ..serializers import (
     UserCreateSerializer,
     UserCreateSerializerAdmin,
     UserRetrieveSerializer,
+    APIKeyRequestSerializer,
+    PasswordResetRequestSerializer,
 )
 from ..models import CradleUser
 from management.settings import cradle_settings
@@ -27,6 +29,7 @@ import bcrypt
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="users_list",
         summary="List users",
         description="Returns a list of all users. Only available to admin users.",
         responses={
@@ -36,6 +39,7 @@ import bcrypt
         },
     ),
     post=extend_schema(
+        operation_id="users_create",
         summary="Create user",
         description="Creates a new user account. Available to unauthenticated users.",
         request=UserCreateSerializer,
@@ -100,6 +104,7 @@ class UserList(APIView):
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="users_retrieve",
         summary="Get user details",
         description="Returns details of a specific user. Regular users can only access their own details. Admin users can access details of non-admin users.",  # noqa: E501
         parameters=[
@@ -118,6 +123,7 @@ class UserList(APIView):
         },
     ),
     post=extend_schema(
+        operation_id="users_update",
         summary="Update user details",
         description="Updates details of a specific user. Regular users can only update their own details. Admin users can update details of non-admin users.",  # noqa: E501
         parameters=[
@@ -139,6 +145,7 @@ class UserList(APIView):
 class UserDetail(APIView):
     authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
+    serializer_class = UserRetrieveSerializer
 
     def get(self, request, user_id):
         initiator = cast(CradleUser, request.user)
@@ -356,6 +363,48 @@ class ChangePasswordView(APIView):
         },
     )
 )
+@extend_schema_view(
+    get=extend_schema(
+        summary="Execute user management action",
+        description="Executes various user management actions. Available actions: simulate, send_email_confirmation, password_reset_email.",
+        parameters=[
+            OpenApiParameter(
+                name="user_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the user",
+            ),
+            OpenApiParameter(
+                name="action_name",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Action to execute: simulate, send_email_confirmation, or password_reset_email",
+            ),
+        ],
+        responses={
+            200: {
+                "type": "object",
+                "properties": {
+                    "refresh": {
+                        "type": "string",
+                        "description": "Refresh token (for simulate action)",
+                    },
+                    "access": {
+                        "type": "string",
+                        "description": "Access token (for simulate action)",
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "Success message for other actions",
+                    },
+                },
+            },
+            400: {"description": "Unknown action or user's email already confirmed"},
+            403: {"description": "Cannot simulate admin users"},
+            404: {"description": "User not found"},
+        },
+    )
+)
 class ManageUser(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
@@ -430,9 +479,33 @@ class ManageUser(APIView):
         return Response(self.get_tokens_for_user(user), status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    summary="Generate API key",
+    description="Generates a new API key for the specified user. Users can only generate keys for themselves, or admins can generate keys for non-admin users.",
+    parameters=[
+        OpenApiParameter(
+            name="user_id",
+            type=str,
+            location=OpenApiParameter.PATH,
+            description="UUID of the user, or 'me' to generate key for self",
+        )
+    ],
+    responses={
+        200: {
+            "type": "object",
+            "properties": {
+                "api_key": {"type": "string", "description": "Generated API key"},
+            },
+        },
+        401: {"description": "User is not authenticated"},
+        403: {"description": "User is not allowed to generate API key for this user"},
+        404: {"description": "User not found"},
+    },
+)
 class APIKey(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    serializer_class = APIKeyRequestSerializer
 
     def post(self, request, user_id):
         requesting_user = cast(CradleUser, request.user)
@@ -460,64 +533,14 @@ class APIKey(APIView):
         )
 
 
-@extend_schema_view(
-    get_tokens_for_user=extend_schema(exclude=True),
-    send_password_reset=extend_schema(
-        summary="Send password reset email",
-        description="Sends a password reset email to the specified user.",
-        parameters=[
-            OpenApiParameter(
-                name="user_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the user",
-            )
-        ],
-        responses={
-            200: {"description": "Password reset email sent successfully"},
-            404: {"description": "User not found"},
-        },
-    ),
-    send_email_confirmation=extend_schema(
-        summary="Send email confirmation",
-        description="Sends an email confirmation to the specified user.",
-        parameters=[
-            OpenApiParameter(
-                name="user_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the user",
-            )
-        ],
-        responses={
-            200: {"description": "Email confirmation sent successfully"},
-            400: {"description": "User's email is already confirmed"},
-            404: {"description": "User not found"},
-        },
-    ),
-    simulate=extend_schema(
-        summary="Simulate user login",
-        description="Returns JWT tokens for the specified user. Only available for non-admin users.",
-        parameters=[
-            OpenApiParameter(
-                name="user_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the user to simulate",
-            )
-        ],
-        responses={
-            200: {
-                "type": "object",
-                "properties": {
-                    "refresh": {"type": "string"},
-                    "access": {"type": "string"},
-                },
-            },
-            403: {"description": "Cannot simulate admin users"},
-            404: {"description": "User not found"},
-        },
-    ),
+@extend_schema(
+    summary="Email confirmation",
+    description="Confirms a user's email using the token sent to their email address.",
+    request=EmailConfirmSerializer,
+    responses={
+        200: {"description": "Email confirmed successfully"},
+        400: {"description": "Bad request - token expired or invalid"},
+    },
 )
 class EmailConfirm(APIView):
     permission_classes = ()
@@ -563,6 +586,7 @@ class EmailConfirm(APIView):
 class PasswordReset(APIView):
     permission_classes = ()
     authentication_classes = ()
+    serializer_class = PasswordResetRequestSerializer
 
     def post(self, request):
         email = request.data.get("email")

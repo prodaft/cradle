@@ -5,6 +5,7 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from core.pagination import TotalPagesPagination
 from entries.enums import RelationReason
@@ -12,6 +13,13 @@ from ..models import Relation
 from ..serializers import RelationSerializer
 
 
+@extend_schema(
+    tags=["Relations"],
+    responses={
+        200: RelationSerializer(many=True),
+        400: {"description": "Bad request - invalid parameters"},
+    },
+)
 class RelationListView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -49,6 +57,13 @@ class RelationListView(APIView):
         return Response(entry_serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    tags=["Relations"],
+    responses={
+        204: {"description": "No content - relation deleted successfully"},
+        404: {"description": "Relation not found"},
+    },
+)
 class RelationDetailView(APIView):
     """
     Retrieve or delete a relation by ID.

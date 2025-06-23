@@ -21,6 +21,7 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
 class Enable2FAView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    serializer_class = Enable2FASerializer
 
     def post(self, request):
         if request.user.two_factor_enabled:

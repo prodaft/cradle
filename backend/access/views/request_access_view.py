@@ -13,6 +13,7 @@ from notifications.models import AccessRequestNotification
 from django.db import transaction
 from user.models import CradleUser
 from typing import cast
+from ..serializers import RequestAccessSerializer
 
 from uuid import UUID
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
@@ -47,6 +48,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 class RequestAccess(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    serializer_class = RequestAccessSerializer
 
     def post(self, request: Request, entity_id: UUID) -> Response:
         """Allows a user to request access for an Entity. All users with read-write
@@ -67,8 +69,16 @@ class RequestAccess(APIView):
                 if the entity does not exist
         """
 
+        serializer = self.serializer_class(
+            data={
+                "entity_id": entity_id,
+                "subtype": request.query_params.get("subtype", None),
+            }
+        )
+        serializer.is_valid(raise_exception=True)
+
         user: CradleUser = cast(CradleUser, request.user)
-        subtype = request.query_params.get("subtype", None)
+        subtype = serializer.validated_data.get("subtype", None)
 
         try:
             if subtype:

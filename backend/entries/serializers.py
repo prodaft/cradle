@@ -12,6 +12,7 @@ from .exceptions import (
 )
 
 from drf_spectacular.extensions import OpenApiSerializerExtension
+from drf_spectacular.utils import extend_schema_field
 
 
 class EntryListCompressedTreeSerializerExtension(OpenApiSerializerExtension):
@@ -103,7 +104,9 @@ class EntryListCompressedTreeSerializer(serializers.BaseSerializer):
             field: (
                 getattr(entry, field)
                 if field != "location"
-                else [entry.location.x, entry.location.y] if entry.location else None
+                else [entry.location.x, entry.location.y]
+                if entry.location
+                else None
             )
             for field in self.fields
         }
@@ -242,6 +245,7 @@ class EntryClassSerializer(serializers.ModelSerializer):
         eclass.children.set(children_data)
         return eclass
 
+    @extend_schema_field(serializers.ListField(child=serializers.DictField()))
     def get_children_detail(self, obj):
         return EntryClassSerializerNoChildren(obj.children.all(), many=True).data
 
@@ -576,3 +580,23 @@ class RelationSerializer(serializers.ModelSerializer):
             "details",
         ]
         read_only_fields = ["created_at", "last_seen", "id"]
+
+
+class EnricherListSerializer(serializers.Serializer):
+    """Serializer for listing enrichers for an entry."""
+
+    name = serializers.CharField()
+    id = serializers.IntegerField()
+
+
+class EnricherRequestSerializer(serializers.Serializer):
+    """Serializer for requesting enrichment for an entry."""
+
+    enricher = serializers.IntegerField(required=True)
+
+
+class EnricherResponseSerializer(serializers.Serializer):
+    """Serializer for enrichment response."""
+
+    message = serializers.CharField(required=False)
+    error = serializers.CharField(required=False)

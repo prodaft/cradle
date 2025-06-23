@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from access.enums import AccessType
 from access.models import Access
@@ -19,9 +20,20 @@ from .serializers import PathfindQuery, SubGraphSerializer
 from django.utils.dateparse import parse_datetime
 
 
+@extend_schema(
+    summary="Find paths in knowledge graph",
+    description="Find paths between source and destination entries in the knowledge graph.",
+    request=PathfindQuery,
+    responses={
+        200: SubGraphSerializer,
+        400: {"description": "Invalid request data"},
+        401: {"description": "User is not authenticated"},
+    },
+)
 class GraphPathFindView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    serializer_class = SubGraphSerializer
 
     def post(self, request: Request) -> Response:
         query = PathfindQuery(data=request.data, user=request.user)
@@ -61,9 +73,57 @@ class GraphPathFindView(APIView):
         return Response(serializer.data)
 
 
+@extend_schema(
+    summary="Get graph neighbors",
+    description="Get neighboring entries in the knowledge graph for a given source entry.",
+    parameters=[
+        OpenApiParameter(
+            name="src",
+            type=str,
+            location=OpenApiParameter.QUERY,
+            description="Source entry ID",
+            required=True,
+        ),
+        OpenApiParameter(
+            name="depth",
+            type=int,
+            location=OpenApiParameter.QUERY,
+            description="Search depth (0-5)",
+            default=1,
+        ),
+        OpenApiParameter(
+            name="page_size",
+            type=int,
+            location=OpenApiParameter.QUERY,
+            description="Number of results per page",
+            default=200,
+        ),
+        OpenApiParameter(
+            name="query",
+            type=str,
+            location=OpenApiParameter.QUERY,
+            description="Query filter for results",
+            required=False,
+        ),
+        OpenApiParameter(
+            name="wildcard",
+            type=bool,
+            location=OpenApiParameter.QUERY,
+            description="Use wildcard matching for query",
+            default=False,
+        ),
+    ],
+    responses={
+        200: EntrySerializer(many=True),
+        400: {"description": "Invalid parameters or query syntax"},
+        401: {"description": "User is not authenticated"},
+        404: {"description": "Source entry not found"},
+    },
+)
 class GraphNeighborsView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    serializer_class = EntrySerializer
 
     def get(self, request: Request) -> Response:
         source_id = request.query_params.get("src")
@@ -139,6 +199,41 @@ class GraphNeighborsView(APIView):
         return Response(serializer.data)
 
 
+@extend_schema(
+    summary="Get inaccessible graph entries",
+    description="Get entries in the knowledge graph that are inaccessible to the current user.",
+    parameters=[
+        OpenApiParameter(
+            name="src",
+            type=str,
+            location=OpenApiParameter.QUERY,
+            description="Source entry ID",
+            required=True,
+        ),
+        OpenApiParameter(
+            name="depth",
+            type=int,
+            location=OpenApiParameter.QUERY,
+            description="Search depth (0-5)",
+            default=0,
+        ),
+    ],
+    responses={
+        200: {
+            "type": "object",
+            "properties": {
+                "inaccessible": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of inaccessible entry IDs",
+                },
+            },
+        },
+        400: {"description": "Invalid parameters"},
+        401: {"description": "User is not authenticated"},
+        404: {"description": "Source entry not found"},
+    },
+)
 class GraphInaccessibleView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -192,9 +287,43 @@ class GraphInaccessibleView(APIView):
         return Response({"inaccessible": [entry.id for entry in inaccessible]})
 
 
+@extend_schema(
+    summary="Fetch knowledge graph data",
+    description="Fetch graph data with entries and edges for visualization.",
+    parameters=[
+        OpenApiParameter(
+            name="src",
+            type=int,
+            location=OpenApiParameter.QUERY,
+            description="Source entry ID",
+            required=True,
+        ),
+        OpenApiParameter(
+            name="depth",
+            type=int,
+            location=OpenApiParameter.QUERY,
+            description="Search depth",
+            default=1,
+        ),
+        OpenApiParameter(
+            name="page_size",
+            type=int,
+            location=OpenApiParameter.QUERY,
+            description="Number of results per page",
+            default=200,
+        ),
+    ],
+    responses={
+        200: SubGraphSerializer,
+        400: {"description": "Invalid parameters"},
+        401: {"description": "User is not authenticated"},
+        404: {"description": "Source entry not found"},
+    },
+)
 class FetchGraphView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    serializer_class = SubGraphSerializer
 
     def get(self, request: Request) -> Response:
         try:

@@ -1,6 +1,7 @@
 from datetime import timedelta
 from .strategies import PUBLISH_STRATEGIES
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 
 from .models import PublishedReport, ReportStatus
 from file_transfer.utils import MinioClient
@@ -28,9 +29,11 @@ class ReportSerializer(serializers.ModelSerializer):
             "extra_data",
         ]
 
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_note_ids(self, obj):
         return list(obj.notes.values_list("id", flat=True))
 
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_report_url(self, obj):
         if obj.status != ReportStatus.DONE:
             return None
@@ -50,6 +53,7 @@ class ReportSerializer(serializers.ModelSerializer):
 
         return None
 
+    @extend_schema_field(serializers.CharField())
     def get_strategy_label(self, obj):
         return obj.get_strategy_display()
 

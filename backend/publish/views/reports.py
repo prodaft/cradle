@@ -80,6 +80,7 @@ class ReportListDeleteAPIView(generics.ListAPIView):
 class ReportRetryAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    serializer_class = ReportSerializer
 
     def post(self, request, pk):
         """

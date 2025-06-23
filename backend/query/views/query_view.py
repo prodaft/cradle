@@ -53,7 +53,7 @@ class EntryListQuery(APIView):
         ],
         responses={
             200: EntryResponseSerializer(many=True),
-            401: "Unauthorized",
+            401: {"description": "Unauthorized"},
         },
         request=None,
     )
@@ -130,8 +130,8 @@ class AdvancedQueryView(APIView):
         ],
         responses={
             200: EntryResponseSerializer(many=True),
-            400: "Invalid query syntax",
-            401: "Unauthorized",
+            400: {"description": "Invalid query syntax"},
+            401: {"description": "Unauthorized"},
         },
         request=None,
     )

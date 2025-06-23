@@ -37,6 +37,7 @@ from uuid import UUID
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="notes_list",
         summary="Get accessible notes",
         description="Returns paginated list of notes that the user has access to. Can filter by references and other parameters. Results are ordered by timestamp descending.",  # noqa: E501
         parameters=[
@@ -68,6 +69,7 @@ from uuid import UUID
         },
     ),
     post=extend_schema(
+        operation_id="notes_create",
         summary="Create note",
         description="Creates a new note. User must have read-write access to all referenced entities.",  # noqa: E501
         request=NoteCreateSerializer,
@@ -184,6 +186,7 @@ class NoteList(APIView):
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="notes_retrieve",
         summary="Get note details",
         description="Returns the full details of a specific note. User must have access to view the note. Can optionally include footnotes.",  # noqa: E501
         parameters=[
@@ -209,6 +212,7 @@ class NoteList(APIView):
         },
     ),
     post=extend_schema(
+        operation_id="notes_update",
         summary="Update note",
         description="Updates an existing note. User must have read-write access to referenced entities.",  # noqa: E501
         parameters=[
@@ -233,6 +237,7 @@ class NoteList(APIView):
 class NoteDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    serializer_class = NoteRetrieveSerializer
 
     def get(self, request: Request, note_id_s: str) -> Response:
         if note_id_s.startswith("guide"):

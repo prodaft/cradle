@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
+from drf_spectacular.utils import extend_schema_field
 
 from entries.models import Entry, EntryClass
 from entries.serializers import EntryClassSerializer, EntrySerializer
@@ -65,10 +66,12 @@ class EnrichmentSettingsSerializer(serializers.ModelSerializer):
             "form_fields",
         ]
 
+    @extend_schema_field(serializers.CharField())
     def get_display_name(self, obj):
         config = BaseEnricher.get_subclass(obj.enricher_type)
         return config.display_name if config else obj.enricher_type
 
+    @extend_schema_field(serializers.DictField())
     def get_form_fields(self, obj):
         return fields_to_form(
             BaseEnricher.get_subclass(obj.enricher_type).settings_fields
@@ -138,14 +141,18 @@ class BaseDigestSerializer(serializers.ModelSerializer):
 
         return super().to_internal_value(data)
 
+    @extend_schema_field(serializers.CharField())
     def get_display_name(self, obj):
         return getattr(obj.__class__, "display_name", obj.__class__.__name__)
 
+    @extend_schema_field(serializers.IntegerField())
     def get_num_files(self, obj):
         return obj.files.count()
 
+    @extend_schema_field(serializers.IntegerField())
     def get_num_relations(self, obj):
         return obj.relations.count()
 
+    @extend_schema_field(serializers.IntegerField())
     def get_num_notes(self, obj):
         return obj.notes.count()
