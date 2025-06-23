@@ -8,6 +8,6 @@ from .views import (
 
 urlpatterns = [
     path("", FleetingNotesList.as_view(), name="fleeting_notes_list"),
-    path("<uuid:pk>/", FleetingNotesDetail.as_view(), name="fleeting_notes_detail"),
-    path("<uuid:pk>/final/", FleetingNotesFinal.as_view(), name="fleeting_notes_final"),
+    path("<uuid:id>/", FleetingNotesDetail.as_view(), name="fleeting_notes_detail"),
+    path("<uuid:id>/final/", FleetingNotesFinal.as_view(), name="fleeting_notes_final"),
 ]

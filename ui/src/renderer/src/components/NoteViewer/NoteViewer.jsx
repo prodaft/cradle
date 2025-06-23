@@ -107,7 +107,7 @@ export default function NoteViewer() {
                 return responseNote;
             })
             .then((note) => {
-                return parseContent(note.content, []).then((result) =>
+                return parseContent(note.content, note.files).then((result) =>
                     setParsedContent(result.html),
                 );
             })

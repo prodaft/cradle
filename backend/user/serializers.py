@@ -151,10 +151,10 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
             "vt_api_key",
         ]
 
-    def get_catalyst_api_key(self, obj):
+    def get_catalyst_api_key(self, obj) -> bool:
         return True if obj.catalyst_api_key else False
 
-    def get_vt_api_key(self, obj):
+    def get_vt_api_key(self, obj) -> bool:
         return True if obj.vt_api_key else False
 
 

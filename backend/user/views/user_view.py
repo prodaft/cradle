@@ -11,6 +11,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 
 from notifications.models import NewUserNotification
 from user.permissions import HasAdminRole
+from ..authentication import APIKeyAuthentication
 from ..serializers import (
     ChangePasswordSerializer,
     EmailConfirmSerializer,
@@ -136,7 +137,7 @@ class UserList(APIView):
     ),
 )
 class UserDetail(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request, user_id):

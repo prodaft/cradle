@@ -68,7 +68,7 @@ export default function AdminPanel() {
                                     id={c.id}
                                     key={`${c.subtype}:${c.name}`}
                                     name={c.name}
-                                    searchKey={c.name}
+                                    searchKey={`${c.subtype}:${c.name} ${c.description}`}
                                     onDelete={displayEntities}
                                     link={createDashboardLink(c)}
                                     typename={c.subtype}

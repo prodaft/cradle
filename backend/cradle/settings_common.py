@@ -149,6 +149,7 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Threat Intelligence Knowledge Management",
     "VERSION": VERSION,
     "SERVE_INCLUDE_SCHEMA": False,
+    "SCHEMA_PATH_PREFIX": r"/api/v[0-9]",
 }
 
 SIMPLE_JWT = {

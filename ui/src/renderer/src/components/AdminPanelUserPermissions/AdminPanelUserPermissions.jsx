@@ -67,22 +67,24 @@ export default function AdminPanelUserPermissions({ username, id }) {
                     let permissions = response.data;
 
                     setEntities(
-                        permissions.map((c) => {
-                            return (
-                                <AdminPanelPermissionCard
-                                    key={c['name']}
-                                    userId={id}
-                                    entityName={c['name']}
-                                    entityId={c['id']}
-                                    searchKey={c['name']}
-                                    accessLevel={c['access_type']}
-                                />
-                            );
-                        }).sort((a, b) => {
-                        const aKey = a.key?.toString() || '';
-                        const bKey = b.key?.toString() || '';
-                        return naturalSort(aKey, bKey);
-                    })
+                        permissions
+                            .map((c) => {
+                                return (
+                                    <AdminPanelPermissionCard
+                                        key={c['name']}
+                                        userId={id}
+                                        entityName={c['name']}
+                                        entityId={c['id']}
+                                        searchKey={c['name']}
+                                        accessLevel={c['access_type']}
+                                    />
+                                );
+                            })
+                            .sort((a, b) => {
+                                const aKey = a.key?.toString() || '';
+                                const bKey = b.key?.toString() || '';
+                                return naturalSort(aKey, bKey);
+                            }),
                     );
                 }
             })
@@ -117,7 +119,8 @@ export default function AdminPanelUserPermissions({ username, id }) {
                             <button
                                 id='email-confirmation'
                                 data-testid='email-confirmation'
-                                name='email-confirmation'G
+                                name='email-confirmation'
+                                G
                                 type='button'
                                 className='btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 tooltip tooltip-bottom tooltip-primary ml-2'
                                 data-tooltip={'Send email confirmation'}

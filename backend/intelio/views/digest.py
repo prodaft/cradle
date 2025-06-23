@@ -15,6 +15,7 @@ from ..serializers import BaseDigestSerializer
 from ..tasks import start_digest
 
 from django.shortcuts import get_object_or_404
+from user.authentication import APIKeyAuthentication
 
 
 class DigestSubclassesAPIView(APIView):
@@ -23,7 +24,7 @@ class DigestSubclassesAPIView(APIView):
     with their names.
     """
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
@@ -42,7 +43,7 @@ class DigestSubclassesAPIView(APIView):
 
 
 class DigestAPIView(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser]
 
