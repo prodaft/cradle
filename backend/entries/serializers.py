@@ -87,7 +87,8 @@ class EntryListCompressedTreeSerializerExtension(OpenApiSerializerExtension):
                 },
             },
             "required": ["entities", "artifacts"],
-            "description": "A compressed tree representation of entries, organized by type (entities/artifacts) and subtype.",
+            "description": "A compressed tree representation of entries, organized by type"
+            + "(entities/artifacts) and subtype.",
             "title": "EntryListCompressedTree",
         }
 

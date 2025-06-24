@@ -404,7 +404,8 @@ class ManageUser(APIView):
 
 @extend_schema(
     summary="Generate API key",
-    description="Generates a new API key for the specified user. Users can only generate keys for themselves, or admins can generate keys for non-admin users.",
+    description="Generates a new API key for the specified user. Users can only"
+    + "generate keys for themselves, or admins can generate keys for non-admin users.",
     parameters=[
         OpenApiParameter(
             name="user_id",

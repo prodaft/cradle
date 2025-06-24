@@ -15,7 +15,8 @@ from ..serializers import RelationSerializer
 
 @extend_schema(
     summary="List relations between entries",
-    description="Returns a paginated list of relations between specified entries. Requires 'relates' query parameter with entry IDs.",
+    description="Returns a paginated list of relations between specified entries."
+    + "Requires 'relates' query parameter with entry IDs.",
     parameters=[
         OpenApiParameter(
             name="relates",

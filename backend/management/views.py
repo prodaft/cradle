@@ -152,7 +152,17 @@ class SettingsView(APIView):
 
 @extend_schema(
     summary="Execute management actions",
-    description="Executes various management actions for admin users. Available actions: relinkNotes, refreshMaterializedGraph, recalculateNodePositions, propagateAccessVectors, reprocessAllFiles, deleteHangingArtifacts.",
+    description="Executes various management actions for admin users. Available actions:"
+    + ", ".join(
+        [
+            "relinkNotes",
+            "refreshMaterializedGraph",
+            "recalculateNodePositions",
+            "propagateAccessVectors",
+            "reprocessAllFiles",
+            "deleteHangingArtifacts",
+        ]
+    ),
     parameters=[
         OpenApiParameter(
             name="action_name",
@@ -172,8 +182,8 @@ class ActionView(APIView):
     permission_classes = [IsAuthenticated, HasAdminRole]
     serializer_class = ActionSerializer
 
-    def post(self, request, action_name=None, *args, **kwargs):
-        handler = getattr(self, "action_" + action_name, None)
+    def post(self, request, action_name: str | None = None, *args, **kwargs):
+        handler = getattr(self, "action_" + action_name, None) if action_name else None
         if handler and callable(handler):
             return handler(request, *args, **kwargs)
         return Response(
