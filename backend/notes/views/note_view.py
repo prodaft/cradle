@@ -61,6 +61,41 @@ from uuid import UUID
                 location=OpenApiParameter.QUERY,
                 description="Page number for pagination",
             ),
+            OpenApiParameter(
+                name="date",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by note date (YYYY-MM-DD format)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="timestamp_gte",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by timestamp greater than or equal to (ISO datetime format)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="timestamp_lte",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by timestamp less than or equal to (ISO datetime format)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="content",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by note content (case-insensitive partial match)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="author__username",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by author username (case-insensitive partial match)",
+                required=False,
+            ),
         ],
         responses={
             200: NoteRetrieveSerializer,
@@ -405,6 +440,27 @@ class NoteDetail(APIView):
                 description="Filter files by wildcard match with mimetype",
             ),
             OpenApiParameter(
+                name="date",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter notes by date (YYYY-MM-DD format)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="timestamp_gte",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter notes by timestamp greater than or equal to (ISO datetime format)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="timestamp_lte",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter notes by timestamp less than or equal to (ISO datetime format)",
+                required=False,
+            ),
+            OpenApiParameter(
                 name="page",
                 type=int,
                 location=OpenApiParameter.QUERY,
@@ -460,6 +516,11 @@ class NoteFiles(APIView):
             else:
                 aliasset = entry.aliasqs(user)
                 queryset = queryset.filter(entries__in=aliasset).distinct()
+
+        # Apply date filters using NoteFilter
+        filterset = NoteFilter(request.query_params, queryset=queryset)
+        if filterset.is_valid():
+            queryset = filterset.qs
 
         notes = queryset.order_by("-timestamp")
 
