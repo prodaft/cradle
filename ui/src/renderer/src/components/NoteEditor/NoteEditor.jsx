@@ -182,6 +182,7 @@ export default function NoteEditor() {
                     markdownContent={markdownContent}
                     setMarkdownContent={setMarkdownContent}
                     fileData={fileData}
+                    saveNote={() => handleSaveNote('Changes saved successfully.')}
                     setFileData={setFileData}
                     editorExtensions={editorExtensions} // Pass the extensions to the TextEditor
                 />

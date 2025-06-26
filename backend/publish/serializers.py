@@ -44,11 +44,19 @@ class ReportSerializer(serializers.ModelSerializer):
                 return strategy(False).get_remote_url(obj)
 
         if FileReference.objects.filter(report=obj).exists():
+            headers = None
+            strategy = PUBLISH_STRATEGIES.get(obj.strategy.lower())
+            if strategy:
+                headers = {
+                    "Response-Content-Type": strategy(False).content_type,
+                }
+
             client = MinioClient()
             return client.create_presigned_get(
                 obj.file.bucket_name,
                 obj.file.minio_file_name,
                 expiry_time=timedelta(hours=8),
+                response_headers=headers,
             )
 
         return None

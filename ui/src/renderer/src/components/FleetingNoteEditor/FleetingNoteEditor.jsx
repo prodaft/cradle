@@ -285,6 +285,7 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
                     noteid={id}
                     markdownContent={markdownContent}
                     setMarkdownContent={setMarkdownContent}
+                    saveNote={() => handleSaveNote('Changes saved successfully.')}
                     fileData={fileData}
                     setFileData={setFileData}
                     editorExtensions={editorExtensions}

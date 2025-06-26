@@ -1,5 +1,5 @@
 import CodeMirror from '@uiw/react-codemirror';
-import { vim } from '@replit/codemirror-vim';
+import { vim, Vim } from '@replit/codemirror-vim';
 import vimIcon from '../../assets/vim32x32.gif';
 import { languages } from '@codemirror/language-data';
 import { drawSelection } from '@uiw/react-codemirror';
@@ -52,6 +52,7 @@ function Editor({
     currentLine,
     setCurrentLine,
     setAlert,
+    saveNote,
     additionalExtensions = [],
 }) {
     const EMPTY_FILE_LIST = new DataTransfer().files;
@@ -152,11 +153,20 @@ function Editor({
         ];
 
         if (enableVim) {
+            Vim.defineEx('write', 'w', (cm) => {
+                saveNote();
+            });
             exts = exts.concat(vim());
         }
 
         return exts;
-    }, [editorUtils, enableVim, additionalExtensions, debouncedSetCurrentLine]);
+    }, [
+        editorUtils,
+        enableVim,
+        additionalExtensions,
+        debouncedSetCurrentLine,
+        saveNote,
+    ]);
 
     useEffect(() => {
         if (!editorRef.current || !editorRef.current.view) {
@@ -434,6 +444,7 @@ export default memo(Editor, (prevProps, nextProps) => {
         prevProps.noteid === nextProps.noteid &&
         prevProps.viewCollapsed === nextProps.viewCollapsed &&
         prevProps.fileData === nextProps.fileData &&
-        prevProps.isDarkMode === nextProps.isDarkMode
+        prevProps.isDarkMode === nextProps.isDarkMode &&
+        prevProps.saveNote === nextProps.saveNote
     );
 });
