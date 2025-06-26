@@ -1,7 +1,7 @@
 import { PlusCircle } from 'iconoir-react';
 import useFrontendSearch from '../../hooks/useFrontendSearch/useFrontendSearch';
 import useAuth from '../../hooks/useAuth/useAuth';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { naturalSort } from '../../utils/dashboardUtils/dashboardUtils';
 /**
  * AdminPanelSection component - This component is used to display a section in the AdminPanel.
@@ -31,11 +31,16 @@ export default function AdminPanelSection({
     children,
     isLoading = false,
 }) {
-    const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(children);
     const [addedItems, setAddedItems] = useState([]);
+    const combinedItems = useMemo(
+        () => [...(children || []), ...addedItems],
+        [children, addedItems],
+    );
+    const { searchVal, setSearchVal, filteredChildren } =
+        useFrontendSearch(combinedItems);
     // Sort the filtered children based on their key property
     const sortedFilteredChildren = filteredChildren
-        ? [...filteredChildren, ...addedItems].sort((a, b) => {
+        ? filteredChildren.sort((a, b) => {
               // Convert keys to strings to ensure proper lexicographical comparison
               const aKey = a.key?.toString() || '';
               const bKey = b.key?.toString() || '';

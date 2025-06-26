@@ -30,6 +30,7 @@ import GraphSettingsForm from '../AdminPanelForms/GraphSettingsForm';
 import EntriesSettingsForm from '../AdminPanelForms/EntriesSettingsForm';
 import UserSettingsForm from '../AdminPanelForms/UserSettingsForm';
 import FileSettingsForm from '../AdminPanelForms/FileSettingsForm';
+import { uniqueId } from 'lodash';
 
 /**
  * AdminPanel component - This component is used to display the AdminPanel.
@@ -134,7 +135,6 @@ export default function AdminPanel() {
                     const mappingTypes = response.data;
                     setMappingTypes(
                         mappingTypes.map((x) => {
-                            console.log(x);
                             return (
                                 <AdminPanelCardTypeMapping
                                     id={x.class_name}
@@ -157,14 +157,16 @@ export default function AdminPanel() {
                 if (response.status === 200) {
                     const enrichmentTypes = response.data;
                     setEnrichmentTypes(
-                        enrichmentTypes.map((x) => (
-                            <AdminPanelCardEnrichment
-                                id={x.class}
-                                key={x.class}
-                                name={x.name}
-                                setRightPane={setRightPane}
-                            />
-                        )),
+                        enrichmentTypes.map((x) => {
+                            return (
+                                <AdminPanelCardEnrichment
+                                    id={x.class_name}
+                                    key={x.class_name}
+                                    name={x.name}
+                                    setRightPane={setRightPane}
+                                />
+                            );
+                        }),
                     );
                 }
             })
@@ -199,13 +201,15 @@ export default function AdminPanel() {
                                         setRightPane(
                                             <EntityForm
                                                 isEdit={false}
-                                                onAdd={(c) =>
+                                                key={uniqueId('entity-form-')}
+                                                onAdd={(c) => {
+                                                    console.log(c);
                                                     onAdd(
                                                         <AdminPanelCardEntity
                                                             id={c.id}
                                                             key={`${c.subtype}:${c.name}`}
                                                             name={c.name}
-                                                            searchKey={c.name}
+                                                            searchKey={`${c.subtype}:${c.name} ${c.description}`}
                                                             onDelete={displayEntities}
                                                             link={createDashboardLink(
                                                                 c,
@@ -213,8 +217,8 @@ export default function AdminPanel() {
                                                             typename={c.subtype}
                                                             setRightPane={setRightPane}
                                                         />,
-                                                    )
-                                                }
+                                                    );
+                                                }}
                                             />,
                                         )
                                     }
@@ -231,6 +235,7 @@ export default function AdminPanel() {
                                         setRightPane(
                                             <EntryTypeForm
                                                 isEdit={false}
+                                                key={uniqueId('entry-type-form-')}
                                                 onAdd={(c) =>
                                                     onAdd(
                                                         <AdminPanelCardEntryType
@@ -269,6 +274,7 @@ export default function AdminPanel() {
                                             setRightPane(
                                                 <AccountSettings
                                                     isEdit={false}
+                                                    key={uniqueId('user-form-')}
                                                     onAdd={(user) =>
                                                         onAdd(
                                                             <AdminPanelCardUser
