@@ -48,3 +48,10 @@ class AccessEntitySerializer(serializers.Serializer):
                 AccessType.NONE if data["access_type"] is None else data["access_type"]
             )
         return data
+
+
+class RequestAccessSerializer(serializers.Serializer):
+    """Serializer for the RequestAccess view."""
+
+    entity_id = serializers.UUIDField(required=True)
+    subtype = serializers.CharField(required=False, allow_null=True)

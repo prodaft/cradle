@@ -67,7 +67,11 @@ class MinioClient:
         return (minio_file_name, presigned_url)
 
     def create_presigned_get(
-        self, bucket_name: str, minio_file_name: str, expiry_time: timedelta
+        self,
+        bucket_name: str,
+        minio_file_name: str,
+        expiry_time: timedelta,
+        response_headers: Optional[dict] = None,
     ) -> str:
         """Generates a presigned get URL that allows clients to download objects
         from this address. The url expires in the specified amount of time.
@@ -87,9 +91,17 @@ class MinioClient:
         """
         assert self.client is not None  # required by mypy
 
+        response_headers = response_headers or {
+            "Response-Content-Type": "application/octet-stream",
+            "Response-Content-Disposition": f"attachment; filename={minio_file_name}",
+        }
+
         try:
             return self.client.presigned_get_object(
-                bucket_name, minio_file_name, expires=expiry_time
+                bucket_name,
+                minio_file_name,
+                expires=expiry_time,
+                response_headers=response_headers,
             )
         except Exception:
             raise MinioObjectNotFound()

@@ -20,7 +20,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
 
     def test_fleeting_note_final_does_not_exist(self):
         response = self.client.put(
-            reverse("fleeting_notes_final", kwargs={"pk": uuid.uuid4()}),
+            reverse("fleeting_notes_final", kwargs={"id": uuid.uuid4()}),
             **self.headers_normal,
         )
 
@@ -31,7 +31,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
 
     def test_fleeting_note_final_not_users_note(self):
         response = self.client.put(
-            reverse("fleeting_notes_final", kwargs={"pk": self.note_admin.pk}),
+            reverse("fleeting_notes_final", kwargs={"id": self.note_admin.pk}),
             **self.headers_normal,
         )
 
@@ -42,7 +42,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
 
     def test_fleeting_note_final_not_authentication(self):
         response = self.client.put(
-            reverse("fleeting_notes_final", kwargs={"pk": self.note_user.pk})
+            reverse("fleeting_notes_final", kwargs={"id": self.note_user.pk})
         )
 
         self.assertEqual(response.status_code, 401)
@@ -54,7 +54,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         self.note_user.save()
 
         response = self.client.put(
-            reverse("fleeting_notes_final", kwargs={"pk": self.note_user.pk}),
+            reverse("fleeting_notes_final", kwargs={"id": self.note_user.pk}),
             **self.headers_normal,
         )
 
@@ -67,7 +67,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         self.note_user.save()
 
         response = self.client.put(
-            reverse("fleeting_notes_final", kwargs={"pk": self.note_user.pk}),
+            reverse("fleeting_notes_final", kwargs={"id": self.note_user.pk}),
             **self.headers_normal,
         )
 
@@ -85,7 +85,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         self.note_user.save()
 
         response = self.client.put(
-            reverse("fleeting_notes_final", kwargs={"pk": self.note_user.pk}),
+            reverse("fleeting_notes_final", kwargs={"id": self.note_user.pk}),
             **self.headers_normal,
         )
 
@@ -107,7 +107,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         )
 
         response = self.client.put(
-            reverse("fleeting_notes_final", kwargs={"pk": self.note_user.pk}),
+            reverse("fleeting_notes_final", kwargs={"id": self.note_user.pk}),
             **self.headers_normal,
         )
 

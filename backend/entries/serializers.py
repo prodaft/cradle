@@ -12,51 +12,84 @@ from .exceptions import (
 )
 
 from drf_spectacular.extensions import OpenApiSerializerExtension
+from drf_spectacular.utils import extend_schema_field
+
+
+class EntryCompressedTreeValueSerializer(serializers.Serializer):
+    """Serializer for individual entry values in compressed tree structure."""
+
+    # This can be either a string (single field) or an object (multiple fields)
+    name = serializers.CharField(
+        required=False, help_text="Entry name (when using single field)"
+    )
+    id = serializers.UUIDField(required=False, help_text="Entry ID")
+    description = serializers.CharField(required=False, help_text="Entry description")
+    location = serializers.ListField(
+        child=serializers.FloatField(),
+        required=False,
+        help_text="Location coordinates [x, y]",
+    )
+
+    class Meta:
+        ref_name = "EntryCompressedTreeValue"
+
+    def to_representation(self, instance):
+        # Handle both string (single field) and dict (multiple fields) cases
+        if isinstance(instance, str):
+            return instance
+        elif isinstance(instance, dict):
+            return instance
+        else:
+            # Fallback for unexpected types
+            return str(instance)
 
 
 class EntryListCompressedTreeSerializerExtension(OpenApiSerializerExtension):
     target_class = "entries.serializers.EntryListCompressedTreeSerializer"
 
     def map_serializer(self, auto_schema, direction):
-        # Define the schema for the serializer
-        entities_schema = {
-            "type": "object",
-            "additionalProperties": {
-                "type": "array",
-                "items": {
-                    "oneOf": [
-                        {"type": "string"},  # For single field case
-                        {
-                            "type": "object",
-                            "additionalProperties": {"type": "string"},
-                        },  # For multiple fields case
-                    ]
+        # Define inline schema but with explicit title to avoid auto-generation
+        item_schema = {
+            "oneOf": [
+                {
+                    "type": "string",
+                    "description": "Entry name (when using single field)",
+                    "title": "EntryCompressedTreeStringValue",
                 },
-            },
+                {
+                    "type": "object",
+                    "additionalProperties": {
+                        "oneOf": [
+                            {"type": "string"},
+                            {"type": "number"},
+                            {"type": "array", "items": {"type": "number"}},
+                        ]
+                    },
+                    "description": "Entry object with multiple fields",
+                    "title": "EntryCompressedTreeObjectValue",
+                },
+            ],
+            "title": "EntryCompressedTreeValue",
         }
 
-        artifacts_schema = {
-            "type": "object",
-            "additionalProperties": {
-                "type": "array",
-                "items": {
-                    "oneOf": [
-                        {"type": "string"},  # For single field case
-                        {
-                            "type": "object",
-                            "additionalProperties": {"type": "string"},
-                        },  # For multiple fields case
-                    ]
-                },
-            },
-        }
-
-        # Combined schema
         return {
             "type": "object",
-            "properties": {"entities": entities_schema, "artifacts": artifacts_schema},
+            "properties": {
+                "entities": {
+                    "type": "object",
+                    "additionalProperties": {"type": "array", "items": item_schema},
+                    "description": "Entities organized by subtype",
+                },
+                "artifacts": {
+                    "type": "object",
+                    "additionalProperties": {"type": "array", "items": item_schema},
+                    "description": "Artifacts organized by subtype",
+                },
+            },
             "required": ["entities", "artifacts"],
-            "description": "A compressed tree representation of entries, organized by type (entities/artifacts) and subtype.",  # noqa: E501
+            "description": "A compressed tree representation of entries, organized by type"
+            + "(entities/artifacts) and subtype.",
+            "title": "EntryListCompressedTree",
         }
 
     def get_schema_operation_parameters(self, auto_schema, *args, **kwargs):
@@ -103,7 +136,9 @@ class EntryListCompressedTreeSerializer(serializers.BaseSerializer):
             field: (
                 getattr(entry, field)
                 if field != "location"
-                else [entry.location.x, entry.location.y] if entry.location else None
+                else [entry.location.x, entry.location.y]
+                if entry.location
+                else None
             )
             for field in self.fields
         }
@@ -242,6 +277,7 @@ class EntryClassSerializer(serializers.ModelSerializer):
         eclass.children.set(children_data)
         return eclass
 
+    @extend_schema_field(serializers.ListField(child=serializers.DictField()))
     def get_children_detail(self, obj):
         return EntryClassSerializerNoChildren(obj.children.all(), many=True).data
 
@@ -269,6 +305,14 @@ class EntryClassSerializerCount(EntryClassSerializer):
         entry_count = Entry.objects.filter(entry_class=obj).values("id")[:101].count()
         entry_count = min(entry_count, 100)
         return entry_count
+
+
+class NextNameResponseSerializer(serializers.Serializer):
+    """Serializer for the next available name response."""
+
+    name = serializers.CharField(
+        allow_null=True, help_text="Next available name, or null if class has no prefix"
+    )
 
 
 class EntryResponseSerializer(serializers.ModelSerializer):
@@ -576,3 +620,23 @@ class RelationSerializer(serializers.ModelSerializer):
             "details",
         ]
         read_only_fields = ["created_at", "last_seen", "id"]
+
+
+class EnricherListSerializer(serializers.Serializer):
+    """Serializer for listing enrichers for an entry."""
+
+    name = serializers.CharField()
+    id = serializers.IntegerField()
+
+
+class EnricherRequestSerializer(serializers.Serializer):
+    """Serializer for requesting enrichment for an entry."""
+
+    enricher = serializers.IntegerField(required=True)
+
+
+class EnricherResponseSerializer(serializers.Serializer):
+    """Serializer for enrichment response."""
+
+    message = serializers.CharField(required=False)
+    error = serializers.CharField(required=False)

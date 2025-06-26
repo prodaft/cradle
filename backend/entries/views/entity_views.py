@@ -18,11 +18,13 @@ from entries.tasks import refresh_edges_materialized_view
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="entities_list",
         summary="List entities",
         description="Returns a list of entities. For regular users, returns only entities they have access to. For admin users, returns all entities.",  # noqa: E501
         responses={200: EntryResponseSerializer(many=True)},
     ),
     post=extend_schema(
+        operation_id="entities_create",
         summary="Create entity",
         description="Creates a new entity. Only available to admin users.",
         request=EntitySerializer,
@@ -49,9 +51,29 @@ class EntityList(APIView):
         serializer = EntryResponseSerializer(entities, many=True)
         return Response(serializer.data)
 
+    def post(self, request: Request) -> Response:
+        """Creates a new entity. Only available to admin users."""
+        serializer = EntitySerializer(data=request.data)
+        if serializer.is_valid():
+            # Check if entity already exists
+            name = serializer.validated_data.get("name")
+            if Entry.entities.filter(name=name).exists():
+                return Response(
+                    {"error": f"Entity with name '{name}' already exists"},
+                    status=status.HTTP_409_CONFLICT,
+                )  # Create new entity
+            serializer.save()
+
+            # Refresh edges materialized view
+            refresh_edges_materialized_view.delay()
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="entities_retrieve",
         summary="Get entity details",
         description="Returns details of a specific entity. Regular users can only access entities they have permissions for. Admin users can access any entity.",  # noqa: E501
         parameters=[
@@ -68,6 +90,7 @@ class EntityList(APIView):
         },
     ),
     delete=extend_schema(
+        operation_id="entities_destroy",
         summary="Delete entity",
         description="Deletes an entity. Only available to admin users.",
         parameters=[
@@ -85,6 +108,7 @@ class EntityList(APIView):
         },
     ),
     post=extend_schema(
+        operation_id="entities_update",
         summary="Update entity",
         description="Updates an existing entity.",
         request=EntitySerializer,

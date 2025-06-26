@@ -4,17 +4,37 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from user.models import CradleUser
 
-from ..models import Entry  # Replace with your actual app name
+from ..models import Entry
 from rest_framework.permissions import IsAuthenticated
 from intelio.tasks import enrich_entries
+from ..serializers import (
+    EnricherListSerializer,
+    EnricherRequestSerializer,
+    EnricherResponseSerializer,
+)
 
 
 class EntryEnrichersView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = EnricherRequestSerializer
 
+    @extend_schema(
+        description="Get available enrichers for an entry",
+        responses={200: EnricherListSerializer(many=True)},
+        parameters=[
+            OpenApiParameter(
+                name="entry_id",
+                location=OpenApiParameter.PATH,
+                description="UUID of the entry",
+                required=True,
+                type=str,
+            ),
+        ],
+    )
     def get(self, request, entry_id):
         entry = get_object_or_404(Entry, id=entry_id)
         enrichers = entry.entry_class.enrichers.filter(enabled=True)
@@ -23,19 +43,40 @@ class EntryEnrichersView(APIView):
             {"name": e.enricher.display_name, "id": e.id} for e in enrichers
         ]
 
-        return Response(enriched_list, status=status.HTTP_200_OK)
+        serializer = EnricherListSerializer(enriched_list, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        description="Enrich an entry with a specific enricher",
+        request=EnricherRequestSerializer,
+        responses={
+            200: EnricherResponseSerializer,
+            400: EnricherResponseSerializer,
+            404: EnricherResponseSerializer,
+            500: EnricherResponseSerializer,
+        },
+        parameters=[
+            OpenApiParameter(
+                name="entry_id",
+                location=OpenApiParameter.PATH,
+                description="UUID of the entry",
+                required=True,
+                type=str,
+            ),
+        ],
+    )
     def post(self, request, entry_id):
         entry = get_object_or_404(Entry, id=entry_id)
         user = cast(CradleUser, request.user)
 
-        enricher_id = request.data.get("enricher")
-
-        if not enricher_id:
+        serializer = self.serializer_class(data=request.data)
+        if not serializer.is_valid():
             return Response(
-                {"error": "Missing 'enricher' in request body."},
+                {"error": serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        enricher_id = serializer.validated_data.get("enricher")
 
         enricher_qs = entry.entry_class.enrichers.filter(enabled=True, id=enricher_id)
 

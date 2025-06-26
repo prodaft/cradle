@@ -5,12 +5,19 @@ from .models import CradleUser
 
 
 class APIKeyAuthentication(BaseAuthentication):
+    """
+    API Key based authentication.
+
+    Clients should include the API key in the Authorization header.
+    Format: 'Api-Key <api_key>'
+    """
+
     def authenticate(self, request):
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Api-Key "):
+        auth_header = request.headers.get("Api-Key")
+        if auth_header is None:
             return None
 
-        key = auth_header.split(" ", 1)[1].encode()
+        key = auth_header.encode()
 
         # Iterate through all users with an API key set
         for user in CradleUser.objects.exclude(api_key__isnull=True):

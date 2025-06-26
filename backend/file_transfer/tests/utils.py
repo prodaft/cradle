@@ -36,7 +36,9 @@ class FileTransferTestCase(TestCase):
     def mock_minio_client_create(self):
         self.init_minio_constants()
 
-        def mocked_presigned_get_call(bucket_name, minio_file_name, expiry_time):
+        def mocked_presigned_get_call(
+            bucket_name, minio_file_name, expiry_time, **kwargs
+        ):
             if (
                 bucket_name == self.bucket_name
                 and minio_file_name == self.minio_file_name
@@ -84,7 +86,7 @@ class FileTransferTestCase(TestCase):
         self.mocked_presigned_put.return_value = self.presigned_url
         self.mocked_uuid.return_value = self.uuid
 
-        def mocked_presigned_get_call(bucket_name, minio_file_name, expires):
+        def mocked_presigned_get_call(bucket_name, minio_file_name, expires, **kwargs):
             if (
                 bucket_name == self.bucket_name
                 and minio_file_name == self.minio_file_name

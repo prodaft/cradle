@@ -20,6 +20,8 @@ class HTMLPublish(BasePublishStrategy):
     and sanitizes user content to prevent harmful HTML from being introduced.
     """
 
+    content_type = "text/html"
+
     def _sanitize_html(self, html: str) -> str:
         allowed_tags = [
             "a",

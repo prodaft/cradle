@@ -1,196 +1,23 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { useDropzone } from 'react-dropzone';
-import * as Yup from 'yup';
-import { Upload, Eye, RefreshCircle, Trash } from 'iconoir-react';
-import Selector from '../Selector/Selector';
-import { queryEntries } from '../../services/queryService/queryService';
+import React, { useState, useEffect } from 'react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import {
     getDigestTypes,
     saveDigest,
     getDigests,
-    deleteDigest,
 } from '../../services/intelioService/intelioService';
-import Pagination from '../Pagination/Pagination';
-import { formatDate } from '../../utils/dateUtils/dateUtils';
-
-const UploadSchema = Yup.object().shape({
-    title: Yup.string().required('Digest title is required'),
-    dataType: Yup.object()
-        .shape({
-            value: Yup.string().required('Data type is required'),
-            label: Yup.string().required(),
-            inferEntities: Yup.boolean(),
-        })
-        .required('Please select a data type'),
-    associatedEntry: Yup.object().when('dataType', {
-        is: (dataType) => dataType && !dataType.inferEntities,
-        then: () =>
-            Yup.object()
-                .shape({
-                    value: Yup.string().required(),
-                    label: Yup.string().required(),
-                })
-                .notRequired(),
-        otherwise: () => Yup.array(),
-    }),
-    files: Yup.array()
-        .min(1, 'Please upload a file')
-        .max(1, 'Only a single file is allowed')
-        .required('File is required'),
-});
-
-function DigestCard({ localDigest, setAlert, onDelete }) {
-    const [formattedDate, setFormattedDate] = useState('');
-    const [visible, setVisible] = useState(true);
-    const [showErrors, setShowErrors] = useState(false);
-    const [showWarnings, setShowWarnings] = useState(false);
-
-    useEffect(() => {
-        setFormattedDate(formatDate(new Date(localDigest.created_at)));
-    }, [localDigest]);
-
-    const handleDelete = async () => {
-        try {
-            await deleteDigest(localDigest.id);
-            setVisible(false);
-            setAlert({
-                show: true,
-                message: 'Digest deleted successfully',
-                color: 'green',
-            });
-            if (onDelete) onDelete();
-        } catch (error) {
-            console.error('Delete digest failed:', error);
-            setAlert({ show: true, message: 'Failed to delete digest', color: 'red' });
-        }
-    };
-
-    if (!visible) return null;
-
-    return (
-        <div className='bg-white dark:bg-gray-800 dark:bg-opacity-75 p-4 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 m-2'>
-            <div className='flex justify-between items-center mb-2'>
-                <div className='flex items-center space-x-2'>
-                    <h2 className='text-lg font-bold text-gray-900 dark:text-white'>
-                        {localDigest.title}
-                    </h2>
-                    <button
-                        title='Delete Digest'
-                        className='text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 transition-colors'
-                        onClick={handleDelete}
-                    >
-                        <Trash className='w-5 h-5' />
-                    </button>
-                </div>
-                <span
-                    className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                        localDigest.status === 'done'
-                            ? 'bg-green-500 text-white'
-                            : localDigest.status === 'error'
-                              ? 'bg-red-500 text-white'
-                              : 'bg-yellow-500 text-white'
-                    }`}
-                >
-                    {localDigest.status.charAt(0).toUpperCase() +
-                        localDigest.status.slice(1)}
-                </span>
-            </div>
-            <div className='text-gray-700 dark:text-gray-300 text-sm space-y-1'>
-                <p>
-                    <strong>Type:</strong> {localDigest.display_name}
-                </p>
-                {localDigest.entity_detail && (
-                    <p>
-                        <strong>Entity:</strong> {localDigest.entity_detail.subtype}:
-                        {localDigest.entity_detail.name}
-                    </p>
-                )}
-                <p>
-                    <strong>User:</strong> {localDigest.user_detail.username}
-                </p>
-                <p>
-                    <strong>Created On:</strong> {formattedDate}
-                </p>
-                {localDigest.num_relations > 0 && (
-                    <p>
-                        <strong>Relations:</strong> {localDigest.num_relations}
-                    </p>
-                )}
-                {localDigest.num_notes > 0 && (
-                    <p>
-                        <strong>Notes:</strong> {localDigest.num_notes}
-                    </p>
-                )}
-                {localDigest.num_files > 0 && (
-                    <p>
-                        <strong>Files:</strong> {localDigest.num_files}
-                    </p>
-                )}
-
-                {localDigest.errors && localDigest.errors.length > 0 && (
-                    <div className='mt-2'>
-                        <button
-                            className='flex items-center w-full text-left text-red-700 dark:text-red-300 hover:text-red-600 dark:hover:text-red-200 transition-colors'
-                            onClick={() => setShowErrors(!showErrors)}
-                        >
-                            <span
-                                className={`mr-2 transform transition-transform duration-200 ${
-                                    showErrors ? 'rotate-90' : ''
-                                }`}
-                            >
-                                ▶
-                            </span>
-
-                            <strong className='mr-2'>
-                                Errors: {localDigest.errors.length}
-                            </strong>
-                        </button>
-                        {showErrors && (
-                            <ul className='list-disc pl-5 text-red-700 dark:text-red-300 mt-1'>
-                                {localDigest.errors.map((error, index) => (
-                                    <li key={`error-${index}`}>{error}</li>
-                                ))}
-                            </ul>
-                        )}
-                    </div>
-                )}
-
-                {localDigest.warnings && localDigest.warnings.length > 0 && (
-                    <div className='mt-2'>
-                        <button
-                            onClick={() => setShowWarnings(!showWarnings)}
-                            className='flex items-center text-yellow-600 dark:text-yellow-300 hover:text-yellow-500 dark:hover:text-yellow-200 transition-colors'
-                        >
-                            <span
-                                className={`mr-2 transform transition-transform duration-200 ${
-                                    showWarnings ? 'rotate-90' : ''
-                                }`}
-                            >
-                                ▶
-                            </span>
-                            <strong className='mr-2'>
-                                Warnings: {localDigest.warnings.length}
-                            </strong>
-                        </button>
-                        {showWarnings && (
-                            <ul className='list-disc pl-5 text-yellow-600 dark:text-yellow-300 mt-1'>
-                                {localDigest.warnings.map((warning, index) => (
-                                    <li key={`warning-${index}`}>{warning}</li>
-                                ))}
-                            </ul>
-                        )}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
+import UploadSchema from './UploadSchema';
+import UploadForm from './UploadForm';
+import DigestList from './DigestList';
+import { Search, NavArrowDown, NavArrowUp } from 'iconoir-react';
+import { useSearchParams } from 'react-router-dom';
+import Datepicker from 'react-tailwindcss-datepicker';
 
 export default function UploadExternal({ setAlert }) {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [dataTypeOptions, setDataTypeOptions] = useState([]);
-    const [entriesLoading, setEntriesLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [alert, setLocalAlert] = useState({ show: false, message: '', color: '' });
+    const [isUploadFormVisible, setIsUploadFormVisible] = useState(false);
 
     // Manage form state
     const [formValues, setFormValues] = useState({
@@ -208,6 +35,27 @@ export default function UploadExternal({ setAlert }) {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
+    // Search state
+    const [searchFilters, setSearchFilters] = useState({
+        title: searchParams.get('title') || '',
+        author: searchParams.get('author') || '',
+    });
+
+    const [submittedFilters, setSubmittedFilters] = useState({
+        title: searchParams.get('title') || '',
+        author: searchParams.get('author') || '',
+    });
+
+    // Date range state
+    const [dateRange, setDateRange] = useState({
+        startDate: searchParams.get('created_at_gte') || null,
+        endDate: searchParams.get('created_at_lte') || null,
+    });
+
+    const toggleUploadForm = () => {
+        setIsUploadFormVisible(!isUploadFormVisible);
+    };
+
     useEffect(() => {
         getDigestTypes()
             .then((response) => {
@@ -219,7 +67,7 @@ export default function UploadExternal({ setAlert }) {
                     }));
                     setDataTypeOptions(dataTypes);
                 } else {
-                    setAlert({
+                    (setAlert || setLocalAlert)({
                         color: 'red',
                         message: 'Failed to load data types',
                         show: true,
@@ -227,26 +75,146 @@ export default function UploadExternal({ setAlert }) {
                 }
             })
             .catch((error) => {
-                setAlert({
+                (setAlert || setLocalAlert)({
                     color: 'red',
                     message: `Error fetching data types: ${error.message}`,
                     show: true,
                 });
             });
 
-        // Initial fetch of digests
+        // Initial fetch of digests with search params
         fetchDigests();
-    }, [page]);
+    }, [page, submittedFilters]);
+
+    // Add an effect to initialize filters and date range from URL parameters
+    useEffect(() => {
+        const initialFilters = {
+            title: searchParams.get('title') || '',
+            author: searchParams.get('author') || '',
+        };
+
+        const initialDateRange = {
+            startDate: searchParams.get('created_at_gte')
+                ? new Date(searchParams.get('created_at_gte'))
+                      .toISOString()
+                      .split('T')[0]
+                : null,
+            endDate: searchParams.get('created_at_lte')
+                ? new Date(searchParams.get('created_at_lte'))
+                      .toISOString()
+                      .split('T')[0]
+                : null,
+        };
+
+        setSearchFilters(initialFilters);
+        setDateRange(initialDateRange);
+
+        // Set initial submitted filters if URL has parameters
+        if (
+            searchParams.has('title') ||
+            searchParams.has('author') ||
+            searchParams.has('created_at_gte') ||
+            searchParams.has('created_at_lte')
+        ) {
+            setSubmittedFilters({
+                ...initialFilters,
+                created_at_gte: searchParams.get('created_at_gte') || '',
+                created_at_lte: searchParams.get('created_at_lte') || '',
+            });
+        }
+    }, []);
+    const updateSearchParams = (filters, dateRangeValue) => {
+        const newParams = new URLSearchParams(searchParams);
+
+        if (filters.title) {
+            newParams.set('title', filters.title);
+        } else {
+            newParams.delete('title');
+        }
+
+        if (filters.author) {
+            newParams.set('author', filters.author);
+        } else {
+            newParams.delete('author');
+        }
+
+        // Add date range parameters if they exist
+        if (dateRangeValue.startDate) {
+            newParams.set(
+                'created_at_gte',
+                new Date(dateRangeValue.startDate).toISOString(),
+            );
+        } else {
+            newParams.delete('created_at_gte');
+        }
+
+        if (dateRangeValue.endDate) {
+            // Set end date to end of day
+            const endDate = new Date(dateRangeValue.endDate);
+            endDate.setHours(23, 59, 59, 999);
+            newParams.set('created_at_lte', endDate.toISOString());
+        } else {
+            newParams.delete('created_at_lte');
+        }
+
+        setSearchParams(newParams, { replace: true });
+
+        setSubmittedFilters({
+            ...filters,
+            created_at_gte: dateRangeValue.startDate
+                ? new Date(dateRangeValue.startDate).toISOString()
+                : '',
+            created_at_lte: dateRangeValue.endDate
+                ? (() => {
+                      const endDate = new Date(dateRangeValue.endDate);
+                      endDate.setHours(23, 59, 59, 999);
+                      return endDate.toISOString();
+                  })()
+                : '',
+        });
+    };
+
+    // Auto-update search when filters or date range change
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            updateSearchParams(searchFilters, dateRange);
+        }, 500); // Debounce for 500ms
+
+        return () => clearTimeout(timeoutId);
+    }, [searchFilters, dateRange]);
+
+    const handleSearchChange = (e) => {
+        const { name, value } = e.target;
+        setSearchFilters((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    const handleDateRangeChange = (value) => {
+        setDateRange(value);
+    };
+
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        updateSearchParams(searchFilters, dateRange);
+    };
 
     const fetchDigests = async () => {
         setLoading(true);
         try {
-            const response = await getDigests(page);
+            // Add search filters to the API call
+            const searchQueryParams = {
+                page,
+                ...submittedFilters,
+            };
+
+            const response = await getDigests(searchQueryParams);
             setDigests(response.data.results);
             setTotalPages(response.data.total_pages);
         } catch (error) {
             console.error('Failed to fetch digests', error);
-            setAlert({
+            (setAlert || setLocalAlert)({
                 color: 'red',
                 message: `Error fetching digests: ${error.message}`,
                 show: true,
@@ -259,36 +227,6 @@ export default function UploadExternal({ setAlert }) {
 
     const handlePageChange = (newPage) => {
         setPage(newPage);
-    };
-
-    const fetchRelatedEntries = async (query) => {
-        setEntriesLoading(true);
-        try {
-            const response = await queryEntries({ name: `${query}`, type: 'entity' });
-            if (response.status === 200) {
-                const entries = response.data.results.map((entry) => ({
-                    value: entry.id,
-                    label: `${entry.subtype}:${entry.name}`,
-                }));
-                return entries;
-            } else {
-                setAlert({
-                    color: 'red',
-                    message: 'Failed to load associated entries',
-                    show: true,
-                });
-                return [];
-            }
-        } catch (error) {
-            setAlert({
-                color: 'red',
-                message: `Error fetching entries: ${error.message}`,
-                show: true,
-            });
-            return [];
-        } finally {
-            setEntriesLoading(false);
-        }
     };
 
     const handleUpload = async (values) => {
@@ -305,7 +243,7 @@ export default function UploadExternal({ setAlert }) {
             const response = await saveDigest(body, values.files);
 
             if (response.status === 201) {
-                setAlert({
+                (setAlert || setLocalAlert)({
                     color: 'green',
                     message: 'File uploaded successfully',
                     show: true,
@@ -322,14 +260,14 @@ export default function UploadExternal({ setAlert }) {
                 // Refresh the digest list
                 fetchDigests();
             } else {
-                setAlert({
+                (setAlert || setLocalAlert)({
                     color: 'red',
                     message: 'Upload failed',
                     show: true,
                 });
             }
         } catch (error) {
-            setAlert({
+            (setAlert || setLocalAlert)({
                 color: 'red',
                 message: `Upload failed: ${error.message}`,
                 show: true,
@@ -353,7 +291,6 @@ export default function UploadExternal({ setAlert }) {
             } else if (err.path) {
                 formErrors[err.path] = err.message;
             }
-            console.log(errors);
             setErrors(formErrors);
             return false;
         }
@@ -374,213 +311,99 @@ export default function UploadExternal({ setAlert }) {
         }
     };
 
-    const handleDataTypeChange = (value) => {
-        console.log(value);
-        setFormValues((prev) => ({
-            ...prev,
-            dataType: value,
-            // Clear associated entries if inferEntities is true
-            associatedEntry: value && value.inferEntities ? [] : prev.associatedEntry,
-        }));
-        setTouched((prev) => ({ ...prev, dataType: true }));
-    };
-
-    const handleAssociatedEntriesChange = (value) => {
-        setFormValues((prev) => ({
-            ...prev,
-            associatedEntry: value,
-        }));
-        setTouched((prev) => ({ ...prev, associatedEntry: true }));
-    };
-
-    const onDrop = useCallback((acceptedFiles) => {
-        if (acceptedFiles.length > 0) {
-            setFormValues((prev) => ({ ...prev, files: [acceptedFiles[0]] }));
-            setTouched((prev) => ({ ...prev, files: true }));
-        }
-    }, []);
-
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({
-        onDrop,
-        accept: {},
-        maxFiles: 1,
-    });
-
-    const removeFile = () => {
-        setFormValues((prev) => ({ ...prev, files: [] }));
-        setTouched((prev) => ({ ...prev, files: true }));
-    };
-
-    // Determine if the form is valid (used to disable the submit button)
-    let isValid = false;
-    try {
-        UploadSchema.validateSync(formValues, { abortEarly: false });
-        isValid = true;
-    } catch (err) {
-        isValid = false;
-    }
+    // Use the provided setAlert or the local one
+    const alertHandler = setAlert || setLocalAlert;
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
+            <AlertDismissible alert={alert} setAlert={alertHandler} />
             <div className=''>
-                <h2 className='text-xl font-semibold mb-4'>Upload External Data</h2>
-
-                <form onSubmit={onSubmit}>
-                    <div className='grid grid-cols-5 gap-4 mb-4'>
-                        {/* Digest Title Field */}
-                        <div className='col-span-1'>
-                            <label className='block text-sm font-medium text-gray-700 mb-1'>
-                                Digest Title
-                            </label>
-                            <input
-                                type='text'
-                                value={formValues.title}
-                                onChange={(e) =>
-                                    setFormValues((prev) => ({
-                                        ...prev,
-                                        title: e.target.value,
-                                    }))
-                                }
-                                className='w-full input input-block'
-                            />
-                            {touched.title && errors.title && (
-                                <p className='mt-1 text-xs text-red-600'>
-                                    {errors.title}
-                                </p>
+                <div className='flex items-center mb-4'>
+                    <h2 className='text-xl font-semibold flex items-center gap-2 ml-4'>
+                        Upload External Data
+                        <button
+                            className='btn btn-sm btn-ghost p-1'
+                            onClick={toggleUploadForm}
+                            aria-expanded={isUploadFormVisible}
+                            aria-controls='upload-form-section'
+                        >
+                            {isUploadFormVisible ? (
+                                <NavArrowUp size={16} />
+                            ) : (
+                                <NavArrowDown size={16} />
                             )}
-                        </div>
+                        </button>
+                    </h2>
+                </div>
 
-                        {/* Data Type Selector */}
-                        <div className='col-span-1'>
-                            <label className='block text-sm font-medium text-gray-700 mb-1'>
-                                Data Type
-                            </label>
-                            <Selector
-                                value={formValues.dataType}
-                                onChange={handleDataTypeChange}
-                                staticOptions={dataTypeOptions}
-                                placeholder='Select digest type'
-                                className='w-full'
-                                isMulti={false}
-                            />
-                            {touched.dataType && errors.dataType && (
-                                <p className='mt-1 text-xs text-red-600'>
-                                    {errors.dataType}
-                                </p>
-                            )}
-                        </div>
+                <div
+                    id='upload-form-section'
+                    className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                        isUploadFormVisible
+                            ? 'max-h-[1000px] opacity-100 mb-4'
+                            : 'max-h-0 opacity-0'
+                    }`}
+                >
+                    <UploadForm
+                        formValues={formValues}
+                        setFormValues={setFormValues}
+                        errors={errors}
+                        setErrors={setErrors}
+                        touched={touched}
+                        setTouched={setTouched}
+                        onSubmit={onSubmit}
+                        dataTypeOptions={dataTypeOptions}
+                        isUploading={isUploading}
+                        setAlert={alertHandler}
+                    />
+                </div>
 
-                        {/* File Upload Area */}
-                        <div className='col-span-1'>
-                            <label className='block text-sm font-medium text-gray-700 mb-1'>
-                                Upload File
-                            </label>
-                            <div
-                                {...getRootProps()}
-                                className={`border-2 border-dashed rounded-md p-2 text-center cursor-pointer h-10 flex items-center justify-center ${
-                                    isDragActive
-                                        ? 'bg-blue-50 border-blue-300'
-                                        : 'border-gray-300 hover:border-blue-400'
-                                }`}
-                            >
-                                <input {...getInputProps()} />
-                                <p className='text-sm text-gray-500 truncate'>
-                                    {formValues.files.length > 0
-                                        ? `${formValues.files[0].name} (${(
-                                              formValues.files[0].size / 1024
-                                          ).toFixed(1)} KB)`
-                                        : isDragActive
-                                          ? 'Drop file here'
-                                          : 'Drag file or click'}
-                                </p>
-                            </div>
-                            {touched.files && errors.files && (
-                                <p className='mt-1 text-xs text-red-600'>
-                                    {errors.files}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Associated Entries Selector */}
-                        <div className='col-span-1'>
-                            <label className='block text-sm font-medium text-gray-700 mb-1'>
-                                Associated Entries
-                            </label>
-                            <Selector
-                                value={formValues.associatedEntry}
-                                onChange={handleAssociatedEntriesChange}
-                                fetchOptions={fetchRelatedEntries}
-                                isLoading={entriesLoading}
-                                isMulti={true}
-                                placeholder={
-                                    'Select entries' +
-                                    (formValues.dataType?.inferEntities
-                                        ? ' (disabled)'
-                                        : '')
-                                }
-                                className='w-full'
-                                isDisabled={
-                                    !formValues.dataType ||
-                                    formValues.dataType.inferEntities
-                                }
-                            />
-                            {touched.associatedEntry && errors.associatedEntry && (
-                                <p className='mt-1 text-xs text-red-600'>
-                                    {errors.associatedEntry}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Submit Button */}
-                        <div className='col-span-1 flex items-end'>
-                            <button
-                                type='submit'
-                                disabled={isUploading}
-                                className={`w-full btn flex items-center justify-center ${
-                                    isUploading ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
-                            >
-                                {isUploading ? (
-                                    <>
-                                        <div className='mr-2 h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin'></div>
-                                        Uploading...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Upload className='mr-2 text-cradle2' />
-                                        Upload
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                </form>
+                {/* Search Section */}
+                <div>
+                    <form
+                        onSubmit={handleSearchSubmit}
+                        className='flex space-x-4 px-3 pb-2'
+                    >
+                        <Datepicker
+                            value={dateRange}
+                            onChange={handleDateRangeChange}
+                            inputClassName='input input-block py-1 px-2 text-sm flex-grow !max-w-full w-full'
+                            toggleClassName='hidden'
+                            placeholder='Select date range'
+                        />
+                        <input
+                            type='text'
+                            name='title'
+                            value={searchFilters.title}
+                            onChange={handleSearchChange}
+                            placeholder='Search by title'
+                            className='input !max-w-full w-full'
+                        />
+                        <input
+                            type='text'
+                            name='author'
+                            value={searchFilters.author}
+                            onChange={handleSearchChange}
+                            placeholder='Search by user'
+                            className='input !max-w-full w-full'
+                        />
+                        <button type='submit' className='btn'>
+                            <Search /> Search
+                        </button>
+                    </form>
+                </div>
 
                 {/* Digest List Section */}
-                <div className='mt-8'>
-                    {loading ? (
-                        <p className='text-gray-400'>Loading digests...</p>
-                    ) : digests.length > 0 ? (
-                        <>
-                            {digests.map((digest) => (
-                                <DigestCard
-                                    key={digest.id}
-                                    localDigest={digest}
-                                    setAlert={setAlert}
-                                    onDelete={fetchDigests}
-                                    onRetry={fetchDigests}
-                                />
-                            ))}
-                            <Pagination
-                                currentPage={page}
-                                totalPages={totalPages}
-                                onPageChange={handlePageChange}
-                            />
-                        </>
-                    ) : (
-                        <p className='text-gray-400'>No previous uploads found.</p>
-                    )}
+                <div className='mt-4'>
+                    <DigestList
+                        digests={digests}
+                        loading={loading}
+                        page={page}
+                        totalPages={totalPages}
+                        handlePageChange={handlePageChange}
+                        setAlert={alertHandler}
+                        onDigestDelete={fetchDigests}
+                    />
                 </div>
             </div>
         </>

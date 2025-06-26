@@ -1,5 +1,5 @@
 import CodeMirror from '@uiw/react-codemirror';
-import { vim } from '@replit/codemirror-vim';
+import { vim, Vim } from '@replit/codemirror-vim';
 import vimIcon from '../../assets/vim32x32.gif';
 import { languages } from '@codemirror/language-data';
 import { drawSelection } from '@uiw/react-codemirror';
@@ -52,6 +52,7 @@ function Editor({
     currentLine,
     setCurrentLine,
     setAlert,
+    saveNote,
     additionalExtensions = [],
 }) {
     const EMPTY_FILE_LIST = new DataTransfer().files;
@@ -92,13 +93,13 @@ function Editor({
             if (currentLineRef.current !== lineNumber) {
                 setCurrentLine(lineNumber);
             }
-        }, 50)
+        }, 50),
     ).current;
 
     const debouncedSetTop = useRef(
         debounce((val) => {
             setTop(val);
-        }, 50)
+        }, 50),
     ).current;
 
     useEffect(() => {
@@ -152,11 +153,20 @@ function Editor({
         ];
 
         if (enableVim) {
+            Vim.defineEx('write', 'w', (cm) => {
+                saveNote();
+            });
             exts = exts.concat(vim());
         }
 
         return exts;
-    }, [editorUtils, enableVim, additionalExtensions, debouncedSetCurrentLine]);
+    }, [
+        editorUtils,
+        enableVim,
+        additionalExtensions,
+        debouncedSetCurrentLine,
+        saveNote,
+    ]);
 
     useEffect(() => {
         if (!editorRef.current || !editorRef.current.view) {
@@ -207,14 +217,14 @@ function Editor({
             if (markdownContentRef.current !== text) {
                 setMarkdownContent(text);
             }
-        }, 100)
+        }, 100),
     ).current;
 
     const onEditorChange = useCallback(
         (text) => {
             debouncedSetMarkdownContent(text);
         },
-        [debouncedSetMarkdownContent]
+        [debouncedSetMarkdownContent],
     );
 
     useEffect(() => {
@@ -232,15 +242,15 @@ function Editor({
     }, [markdownContent]);
 
     const toggleFileList = useCallback(() => {
-        setShowFileList(prev => !prev);
+        setShowFileList((prev) => !prev);
     }, []);
 
     const toggleViewCollapsed = useCallback(() => {
-        setViewCollapsed(prev => !prev);
+        setViewCollapsed((prev) => !prev);
     }, [setViewCollapsed]);
 
     const toggleOutline = useCallback(() => {
-        setShowOutline(prev => !prev);
+        setShowOutline((prev) => !prev);
     }, []);
 
     const toggleVim = useCallback(() => {
@@ -263,8 +273,12 @@ function Editor({
             to = content.length;
         }
 
-        const linked = editorUtils.autoFormatLinks(editorRef.current.view, from, to);
-        
+        const [changes, linked] = editorUtils.autoFormatLinks(
+            editorRef.current.view,
+            from,
+            to,
+        );
+
         // Update the editor content first
         editorRef.current.view.dispatch({
             from: 0,
@@ -274,11 +288,17 @@ function Editor({
 
         // Then update the state
         setMarkdownContent(linked);
+        setAlert({
+            color: changes > 0 ? 'green' : 'gray',
+            show: true,
+            duration: 3000,
+            message: `${changes > 0 ? changes : 'No'} link${changes == 1 ? '' : 's'} found in text.`,
+        });
     }, [editorUtils, setMarkdownContent]);
 
     // Use useMemo for noteOutline to prevent unnecessary recalculations
     useEffect(() => {
-        const content = markdownContent || "";
+        const content = markdownContent || '';
         setNoteOutline(extractHeaderHierarchy(content, debouncedSetCurrentLine));
     }, [markdownContent, debouncedSetCurrentLine]);
 
@@ -424,6 +444,7 @@ export default memo(Editor, (prevProps, nextProps) => {
         prevProps.noteid === nextProps.noteid &&
         prevProps.viewCollapsed === nextProps.viewCollapsed &&
         prevProps.fileData === nextProps.fileData &&
-        prevProps.isDarkMode === nextProps.isDarkMode
+        prevProps.isDarkMode === nextProps.isDarkMode &&
+        prevProps.saveNote === nextProps.saveNote
     );
 });

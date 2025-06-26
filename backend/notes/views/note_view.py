@@ -37,6 +37,7 @@ from uuid import UUID
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="notes_list",
         summary="Get accessible notes",
         description="Returns paginated list of notes that the user has access to. Can filter by references and other parameters. Results are ordered by timestamp descending.",  # noqa: E501
         parameters=[
@@ -60,6 +61,41 @@ from uuid import UUID
                 location=OpenApiParameter.QUERY,
                 description="Page number for pagination",
             ),
+            OpenApiParameter(
+                name="date",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by note date (YYYY-MM-DD format)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="timestamp_gte",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by timestamp greater than or equal to (ISO datetime format)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="timestamp_lte",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by timestamp less than or equal to (ISO datetime format)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="content",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by note content (case-insensitive partial match)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="author__username",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by author username (case-insensitive partial match)",
+                required=False,
+            ),
         ],
         responses={
             200: NoteRetrieveSerializer,
@@ -68,6 +104,7 @@ from uuid import UUID
         },
     ),
     post=extend_schema(
+        operation_id="notes_create",
         summary="Create note",
         description="Creates a new note. User must have read-write access to all referenced entities.",  # noqa: E501
         request=NoteCreateSerializer,
@@ -184,6 +221,7 @@ class NoteList(APIView):
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="notes_retrieve",
         summary="Get note details",
         description="Returns the full details of a specific note. User must have access to view the note. Can optionally include footnotes.",  # noqa: E501
         parameters=[
@@ -209,6 +247,7 @@ class NoteList(APIView):
         },
     ),
     post=extend_schema(
+        operation_id="notes_update",
         summary="Update note",
         description="Updates an existing note. User must have read-write access to referenced entities.",  # noqa: E501
         parameters=[
@@ -229,10 +268,33 @@ class NoteList(APIView):
             404: {"description": "Note not found"},
         },
     ),
+    delete=extend_schema(
+        operation_id="notes_delete",
+        summary="Delete note",
+        description="Deletes an existing note. User must have read-write access to all referenced entities.",
+        parameters=[
+            OpenApiParameter(
+                name="note_id_s",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="ID of the note to delete. Must be a valid UUID",
+            )
+        ],
+        responses={
+            200: {"description": "Note was deleted successfully"},
+            400: {"description": "Invalid note ID format"},
+            401: {"description": "User is not authenticated"},
+            403: {
+                "description": "Cannot delete guide notes or user lacks required permissions"
+            },
+            404: {"description": "Note not found"},
+        },
+    ),
 )
 class NoteDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    serializer_class = NoteRetrieveSerializer
 
     def get(self, request: Request, note_id_s: str) -> Response:
         if note_id_s.startswith("guide"):
@@ -378,6 +440,27 @@ class NoteDetail(APIView):
                 description="Filter files by wildcard match with mimetype",
             ),
             OpenApiParameter(
+                name="date",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter notes by date (YYYY-MM-DD format)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="timestamp_gte",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter notes by timestamp greater than or equal to (ISO datetime format)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="timestamp_lte",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter notes by timestamp less than or equal to (ISO datetime format)",
+                required=False,
+            ),
+            OpenApiParameter(
                 name="page",
                 type=int,
                 location=OpenApiParameter.QUERY,
@@ -433,6 +516,11 @@ class NoteFiles(APIView):
             else:
                 aliasset = entry.aliasqs(user)
                 queryset = queryset.filter(entries__in=aliasset).distinct()
+
+        # Apply date filters using NoteFilter
+        filterset = NoteFilter(request.query_params, queryset=queryset)
+        if filterset.is_valid():
+            queryset = filterset.qs
 
         notes = queryset.order_by("-timestamp")
 

@@ -116,11 +116,11 @@ export function saveEnrichmentSettings(id, enrichment) {
  *
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function getDigests(page) {
+export function getDigests(filters) {
     return authAxios({
         method: 'GET',
         url: `/intelio/digest/`,
-        params: { page },
+        params: filters,
     });
 }
 

@@ -4,7 +4,11 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from ..serializers import PublishReportSerializer, ReportSerializer
+from ..serializers import (
+    PublishReportSerializer,
+    ReportSerializer,
+    PublishStrategiesResponseSerializer,
+)
 from ..models import PublishedReport
 from notes.models import Note
 from ..strategies import PUBLISH_STRATEGIES
@@ -19,31 +23,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
         summary="Get publish strategies",
         description="Returns available upload and download strategies for publishing reports.",  # noqa: E501
         responses={
-            200: {
-                "type": "object",
-                "properties": {
-                    "upload": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "label": {"type": "string"},
-                                "strategy": {"type": "string"},
-                            },
-                        },
-                    },
-                    "download": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "label": {"type": "string"},
-                                "strategy": {"type": "string"},
-                            },
-                        },
-                    },
-                },
-            },
+            200: PublishStrategiesResponseSerializer,
             401: {"description": "User is not authenticated"},
         },
     ),

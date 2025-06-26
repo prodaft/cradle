@@ -9,7 +9,11 @@ from publish.strategies import PUBLISH_STRATEGIES
 
 from ..models import PublishedReport, ReportStatus
 from ..tasks import generate_report, edit_report
-from ..serializers import EditReportSerializer, ReportSerializer
+from ..serializers import (
+    EditReportSerializer,
+    ReportSerializer,
+    ReportRetryErrorResponseSerializer,
+)
 
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
@@ -58,28 +62,16 @@ class ReportListDeleteAPIView(generics.ListAPIView):
         description="Resets the report status, re-queues the generation task, and returns the updated report. Only works for failed reports - cannot retry reports that are currently processing or already completed.",  # noqa: E501
         responses={
             200: ReportSerializer,
-            400: {
-                "type": "object",
-                "properties": {
-                    "detail": {
-                        "type": "string",
-                        "example": "Report is already being generated.",
-                    }
-                },
-            },
+            400: ReportRetryErrorResponseSerializer,
             401: {"description": "User is not authenticated"},
-            404: {
-                "type": "object",
-                "properties": {
-                    "detail": {"type": "string", "example": "Report not found."}
-                },
-            },
+            404: ReportRetryErrorResponseSerializer,
         },
     )
 )
 class ReportRetryAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    serializer_class = ReportSerializer
 
     def post(self, request, pk):
         """

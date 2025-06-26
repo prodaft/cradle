@@ -19,7 +19,7 @@ class EntryFilter(django_filters.FilterSet):
 
     class Meta:
         model = Entry
-        fields = ["type", "subtype", "name", "referenced_in"]
+        fields = ["type", "subtype", "name", "name_exact", "referenced_in"]
 
     def filter_name_exact(self, queryset, name, value):
         if value:

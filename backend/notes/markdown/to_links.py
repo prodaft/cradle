@@ -502,7 +502,7 @@ class LinksRenderer(BaseRenderer):
     def table_cell(self, align: Optional[str] = None, head: bool = False) -> List:
         return self.node_factory.create_node(type=NodeType.TABLE_CELL)
 
-    def inline_html(self, html: str) -> None:
+    def inline_html(self, *args, **kwargs) -> None:
         return None
 
 

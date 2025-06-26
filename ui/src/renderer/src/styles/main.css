@@ -12,6 +12,11 @@ body {
     font-size: 14px;
 }
 
+[data-theme='light'] .CodeMirror .cm-cursor,
+[data-theme='light'] .CodeMirror .cm-dropCursor {
+    border-left-color: #000000 !important;
+}
+
 /* This class belongs to the reponse message from a vim command in the CodeMirror editor */
 .cm-vim-message {
     overflow: hidden !important;

@@ -1,5 +1,6 @@
 from datetime import timedelta
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 
 from file_transfer.exceptions import MinioObjectNotFound
 from file_transfer.utils import MinioClient
@@ -188,6 +189,7 @@ class FileReferenceWithNoteSerializer(serializers.ModelSerializer):
             "sha256_hash",
         ]
 
+    @extend_schema_field(serializers.UUIDField(allow_null=True))
     def get_note_id(self, obj):
         return obj.note.id if obj.note else None
 

@@ -24,10 +24,11 @@ class PathfindQuery(serializers.Serializer):
         super().__init__(*args, **kwargs)
 
     def validate(self, data):
-        if data[
-            "src"
-        ].entry_class.type == EntryType.ENTITY and not Access.objects.has_access_to_entities(
-            self.user, {data["src"]}, {AccessType.READ, AccessType.READ_WRITE}
+        if (
+            data["src"].entry_class.type == EntryType.ENTITY
+            and not Access.objects.has_access_to_entities(
+                self.user, {data["src"]}, {AccessType.READ, AccessType.READ_WRITE}
+            )
         ):
             raise serializers.ValidationError("The source entity is not accessible.")
 
@@ -43,17 +44,29 @@ class PathfindQuery(serializers.Serializer):
         return super().validate(data)
 
 
-class RelationSerializer(serializers.ModelSerializer):
+class EdgeRelationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Edge
         fields = ["id", "src", "dst", "created_at", "last_seen"]
+
+
+class GraphInaccessibleResponseSerializer(serializers.Serializer):
+    """Serializer for graph inaccessible response."""
+
+    inaccessible = serializers.ListField(
+        child=serializers.CharField(),
+        help_text="List of inaccessible entry IDs",
+    )
+
+    class Meta:
+        ref_name = "GraphInaccessibleResponse"
 
 
 class SubGraphSerializer(serializers.Serializer):
     entries = EntryListCompressedTreeSerializer(
         fields=("name", "id", "location", "degree")
     )
-    relations = RelationSerializer(many=True)
+    relations = EdgeRelationSerializer(many=True)
     colors = serializers.DictField()
 
     class Meta:

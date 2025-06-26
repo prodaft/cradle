@@ -63,10 +63,21 @@ class NotificationDetail(APIView):
         description="Update a notification's read/unread status by providing its ID.",  # noqa: E501
         request=UpdateNotificationSerializer,
         responses={
-            200: "Notification updated successfully",
-            400: "Invalid request body",
-            404: "Notification not found",
-            401: "Unauthorized",
+            200: {
+                "type": "string",
+                "description": "Notification updated successfully",
+            },
+            400: {
+                "type": "string",
+                "description": "Invalid request body",
+            },
+            404: {
+                "type": "string",
+                "description": "Notification not found",
+            },
+            401: {
+                "description": "Unauthorized",
+            },
         },
     )
     def put(self, request: Request, notification_id: int) -> Response:
@@ -90,12 +101,11 @@ class NotificationDetail(APIView):
 
 
 @extend_schema_view(
-    delete=extend_schema(
-        summary="Delete Notification",
-        description="Delete a notification by providing its ID.",
+    get=extend_schema(
+        summary="Unread Notifications Count",
+        description="Retrieve the number of unread notifications for the authenticated user.",
         responses={
-            204: {"description": "Notification deleted successfully"},
-            404: {"description": "Notification not found"},
+            200: UnreadNotificationsSerializer,
             401: {"description": "Unauthorized"},
         },
     )
@@ -104,11 +114,6 @@ class NotificationUnread(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(
-        summary="Unread Notifications Count",
-        description="Retrieve the number of unread notifications for the authenticated user.",
-        responses={200: UnreadNotificationsSerializer, 401: "Unauthorized"},
-    )
     def get(self, request: Request) -> Response:
         response_data = {}
         response_data["count"] = (

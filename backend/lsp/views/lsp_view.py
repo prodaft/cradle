@@ -24,28 +24,6 @@ from django.conf import settings
         responses={
             200: {
                 "description": "Successful retrieval of LSP types",
-                "content": {
-                    "application/json": {
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "object",
-                                "properties": {
-                                    "id": {"type": "integer"},
-                                    "type": {"type": "string"},
-                                    "subtype": {"type": "string"},
-                                    "regex": {"type": "string"},
-                                    "options": {
-                                        "type": "bool",
-                                    },
-                                    "description": {"type": "string"},
-                                    "icon": {"type": "string"},
-                                    "color": {"type": "string"},
-                                },
-                            },
-                        }
-                    }
-                },
             },
             401: {"description": "User is not authenticated"},
         },
@@ -89,35 +67,6 @@ class LspTypes(APIView):
         responses={
             200: {
                 "description": "Successful retrieval of completion trie data",
-                "content": {
-                    "application/json": {
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "trie": {
-                                    "type": "object",
-                                    "description": "Trie structure containing completion data",  # noqa: E501
-                                },
-                                "classes": {
-                                    "type": "object",
-                                    "description": "Entry class definitions",
-                                    "additionalProperties": {
-                                        "type": "object",
-                                        "properties": {
-                                            "id": {"type": "integer"},
-                                            "type": {"type": "string"},
-                                            "subtype": {"type": "string"},
-                                            "regex": {"type": "string"},
-                                            "description": {"type": "string"},
-                                            "icon": {"type": "string"},
-                                            "color": {"type": "string"},
-                                        },
-                                    },
-                                },
-                            },
-                        }
-                    }
-                },
             },
             400: {"description": "Bad request - prefix parameter is too short"},
             401: {"description": "User is not authenticated"},

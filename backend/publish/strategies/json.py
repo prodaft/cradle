@@ -17,6 +17,8 @@ class JSONPublish(BasePublishStrategy):
     A publishing strategy that generates a JSON report from a list of notes.
     """
 
+    content_type = "application/json"
+
     def create_report(self, report: PublishedReport) -> bool:
         content = self._build_report(report.title, report.notes.all())
         return self._upload_report(content, report)
