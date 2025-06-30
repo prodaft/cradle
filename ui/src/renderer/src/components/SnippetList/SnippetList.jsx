@@ -31,7 +31,7 @@ export default function SnippetList({ userId = null }) {
         }
     };
 
-    const handleAddSnippet = () => {
+    const handleAddSnippet = (e) => {
         setModal(MarkdownEditorModal, {
             title: '',
             titleEditable: true,
@@ -54,6 +54,8 @@ export default function SnippetList({ userId = null }) {
                 }
             },
         });
+        e.stopPropagation();
+        e.preventDefault();
     };
 
     const handleEditSnippet = (snippet, event) => {

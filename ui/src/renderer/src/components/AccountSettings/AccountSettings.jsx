@@ -26,6 +26,7 @@ import { useModal } from '../../contexts/ModalContext/ModalContext';
 import ActionConfirmationModal from '../Modals/ActionConfirmationModal.jsx';
 import MarkdownEditorModal from '../Modals/MarkdownEditorModal.jsx';
 import TwoFactorSetupModal from '../Modals/TwoFactorSetupModal';
+import AlertDismissible from '../AlertDismissible/AlertDismissible.jsx';
 
 const accountSettingsSchema = Yup.object().shape({
     username: Yup.string().required('Username is required'),
@@ -96,6 +97,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
     });
 
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const [popup, setPopup] = useState({ show: false, message: '', color: 'red' });
 
     // Prepopulate form in edit mode.
     useEffect(() => {
@@ -238,8 +240,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
         setModal(MarkdownEditorModal, {
             title: 'Edit Default Note Template',
             noteTitle: 'Default Note Template',
-            initialContent: defaultNoteResponse.data.template,
-            userInput: profile.defaultNoteTemplate,
+            initialContent: defaultNoteResponse.data.template || '',
             onConfirm: (content) => {
                 if (isOwnAccount) {
                     setProfile((prevProfile) => ({
@@ -250,7 +251,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
 
                 setDefaultNoteTemplate(target, content).then((response) => {
                     if (response.status === 200) {
-                        setAlert({
+                        setPopup({
                             show: true,
                             message: 'Default note template updated successfully!',
                             color: 'green',
@@ -308,6 +309,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
 
     return (
         <>
+            <AlertDismissible alert={popup} setAlert={setPopup} />
             <div className='flex items-center justify-center min-h-screen'>
                 <div className='w-full max-w-2xl px-4'>
                     <h1 className='text-center text-xl font-bold text-primary mb-4'>

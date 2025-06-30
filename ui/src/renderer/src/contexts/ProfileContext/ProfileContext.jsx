@@ -31,8 +31,6 @@ export function ProfileProvider({ children }) {
             } else {
                 profile.defaultNoteTemplate = '';
             }
-
-            console.log('User profile fetched successfully:', response.data);
         } catch (error) {
             console.error('Error fetching user profile:', error);
         }
