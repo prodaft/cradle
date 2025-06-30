@@ -64,7 +64,6 @@ export default function FleetingNoteCard({ note, setAlert }) {
                 <div
                     className='text-zinc-500 text-xs'
                     onClick={(e) => {
-                        console.log('AAAAAAAAA');
                         setModal(ConfirmDeletionModal, {
                             text: `Are you sure you want to delete this fleeting note?`,
                             onConfirm: handleDeleteNote,

@@ -203,7 +203,6 @@ export default function AdminPanel() {
                                                 isEdit={false}
                                                 key={uniqueId('entity-form-')}
                                                 onAdd={(c) => {
-                                                    console.log(c);
                                                     onAdd(
                                                         <AdminPanelCardEntity
                                                             id={c.id}

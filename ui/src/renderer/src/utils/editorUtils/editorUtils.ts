@@ -12,6 +12,7 @@ import { tags } from '@codemirror/highlight';
 import jsyaml from 'js-yaml';
 import { DynamicTrie } from './trie';
 import { snippetCompletion } from '@codemirror/autocomplete';
+import dayjs from 'dayjs';
 
 /*==============================================================================
   HELPER FUNCTIONS
@@ -370,7 +371,8 @@ export class CradleEditor {
         return filteredSnippets.map((snippet) =>
             snippetCompletion(snippet.content, {
                 label: snippet.name,
-                info: `Snippet: ${snippet.content.substring(0, 100)}${snippet.content.length > 100 ? '...' : ''}`,
+                type: 'text',
+                info: `${snippet.content.substring(0, 100)}${snippet.content.length > 100 ? '...' : ''}`,
             }),
         );
     }
@@ -822,13 +824,39 @@ export class CradleEditor {
     autoFormatLinks(editor: any, start: number, end: number): [number, string] {
         const text: string = editor.state.doc.toString();
         const changes: Array<{ from: number; to: number; replacement: string }> = [];
+        const tree = syntaxTree(editor.state);
 
+        // First, add timestamps to existing cradle links that don't have them
+        tree.iterate({
+            from: start,
+            to: end,
+            enter: (syntaxNode) => {
+                const node = syntaxNode.node;
+                if (node.name === 'CradleLink') {
+                    if (
+                        node.lastChild &&
+                        node.lastChild.name !== 'CradleLinkTimestamp'
+                    ) {
+                        const timestamp = dayjs().format('DD-MM-YYYY');
+                        changes.push({
+                            from: node.to,
+                            to: node.to,
+                            replacement: `(${timestamp})`,
+                        });
+                    }
+                    return true;
+                }
+            },
+        });
+
+        // Then, convert plain text to cradle links with timestamps
         this.traverseTreeForSuggestions(
             editor,
             start,
             end,
             (suggestion, absoluteStart, absoluteEnd) => {
-                const replacement = `[[${suggestion.type}:${suggestion.match}]]`;
+                const timestamp = dayjs().format('DD-MM-YYYY');
+                const replacement = `[[${suggestion.type}:${suggestion.match}]](${timestamp})`;
                 changes.push({
                     from: absoluteStart,
                     to: absoluteEnd,
@@ -993,6 +1021,32 @@ export class CradleEditor {
                         );
                         return false;
                     } else if (node.name === 'CradleLink') {
+                        if (
+                            node.lastChild &&
+                            node.lastChild.name !== 'CradleLinkTimestamp'
+                        ) {
+                            diagnostics.push({
+                                from: node.from,
+                                to: node.to,
+                                severity: 'warning',
+                                message:
+                                    'Add a timestamp to this link for better tracking',
+                                actions: [
+                                    {
+                                        name: 'Add Timestamp',
+                                        apply(view, from, to) {
+                                            view.dispatch({
+                                                changes: {
+                                                    from: node.to,
+                                                    to: node.to,
+                                                    insert: `(${dayjs().format('DD-MM-YYYY')})`,
+                                                },
+                                            });
+                                        },
+                                    },
+                                ],
+                            });
+                        }
                         return true;
                     } else if (node.name === 'CradleLinkAlias') {
                         return false;

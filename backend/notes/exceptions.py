@@ -1,7 +1,6 @@
 from typing import Iterable
 
 from entries.models import Entry
-from .markdown.to_links import Link
 from rest_framework.exceptions import APIException
 
 from management.settings import cradle_settings
@@ -37,6 +36,15 @@ class NotEnoughReferencesException(APIException):
         super().__init__(*args, **kwargs)
 
 
+class InvalidDateFormatException(APIException):
+    status_code = 400
+
+    def __init__(self, date, *args, **kwargs):
+        self.default_detail = f"The date '{date}' is not in (HH:mm)? DD-MM-YYYY format."
+
+        super().__init__(*args, **kwargs)
+
+
 class NoteDoesNotExistException(APIException):
     status_code = 404
     default_detail = "The referenced note does not exist or you do not have access."
@@ -57,7 +65,7 @@ class EntryClassesDoNotExistException(APIException):
 class EntriesDoNotExistException(APIException):
     status_code = 404
 
-    def __init__(self, links: Iterable[Link], *args, **kwargs) -> None:
+    def __init__(self, links: Iterable["Link"], *args, **kwargs) -> None:
         assert len(links) > 0
 
         self.default_detail = (

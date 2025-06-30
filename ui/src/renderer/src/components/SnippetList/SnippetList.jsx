@@ -84,7 +84,6 @@ export default function SnippetList({ userId = null }) {
 
     const handleDeleteSnippet = async (snippet, event) => {
         event.stopPropagation();
-        console.log(snippet);
         setModal(ConfirmDeletionModal, {
             title: 'Delete Snippet',
             text: `Are you sure you want to delete "${snippet.name}"? This action cannot be undone.`,

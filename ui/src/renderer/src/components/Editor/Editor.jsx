@@ -264,12 +264,12 @@ function Editor({
             to = content.length;
         }
 
+        // Call autoFormatLinks as an async function
         const [changes, linked] = editorUtils.autoFormatLinks(
             editorRef.current.view,
             from,
             to,
         );
-
         // Update the editor content first
         editorRef.current.view.dispatch({
             from: 0,
