@@ -58,8 +58,9 @@ export default function SnippetList({ userId = null }) {
         e.preventDefault();
     };
 
-    const handleEditSnippet = (snippet, event) => {
-        event.stopPropagation();
+    const handleEditSnippet = (snippet, e) => {
+        e.stopPropagation();
+        e.preventDefault();
         setModal(MarkdownEditorModal, {
             title: snippet.name,
             titleEditable: true,
@@ -84,8 +85,9 @@ export default function SnippetList({ userId = null }) {
         });
     };
 
-    const handleDeleteSnippet = async (snippet, event) => {
-        event.stopPropagation();
+    const handleDeleteSnippet = async (snippet, e) => {
+        e.stopPropagation();
+        e.preventDefault();
         setModal(ConfirmDeletionModal, {
             title: 'Delete Snippet',
             text: `Are you sure you want to delete "${snippet.name}"? This action cannot be undone.`,
