@@ -54,14 +54,14 @@ export default function Navbar({
 
     return (
         <div
-            className='navbar p-0.5 sticky top-0 bg-gray-2 w-full h-fit z-40 pr-4 pl-4 min-h-12 flex items-center justify-between'
+            className='navbar p-0.5 sticky top-0 bg-gray-2 w-full h-fit z-40 pr-4 pl-4 min-h-12 grid grid-cols-3 items-center'
             data-testid='navbar-test'
         >
-            <div className='flex items-center space-x-2'>
+            <div className='flex items-center space-x-2 justify-start'>
                 <Logo text={false} height='1.5em' onClick={() => navigate('/')} />
             </div>
 
-            <div className='flex items-center justify-center flex-1 mx-8'>
+            <div className='flex items-center justify-center space-x-2'>
                 <NavbarButton
                     icon={
                         <ArrowLeft
@@ -76,7 +76,7 @@ export default function Navbar({
                 <NavbarButton
                     icon={
                         <ArrowRight
-                            className='text-zinc-500 hover:text-cradle2'
+                            className='text-zinc-500 hover:text-cradle2 mr-2'
                             width='1em'
                             height='1.1em'
                             strokeWidth='1.5'
@@ -95,7 +95,7 @@ export default function Navbar({
                 />
             </div>
 
-            <div className='flex items-center space-x-2'>
+            <div className='flex items-center space-x-2 justify-end'>
                 {contents}
                 <NavbarButton
                     key='fleeting-notes-button'

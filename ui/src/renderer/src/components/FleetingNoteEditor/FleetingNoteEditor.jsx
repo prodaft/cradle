@@ -70,7 +70,9 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
 
     const isValidContent = useCallback(() => {
         return (
-            markdownContentRef.current && markdownContentRef.current.trim().length > 0
+            markdownContentRef.current &&
+            markdownContentRef.current.trim().length > 0 &&
+            markdownContentRef.current != profile?.defaultNoteTemplate
         );
     }, []);
 
