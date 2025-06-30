@@ -43,7 +43,7 @@ export default function Publishable({ note, setAlert }) {
     }, [isPublishable, note]);
 
     return (
-        <span className='pb-1 space-x-1 flex flex-row'>
+        <span className='pb-1 space-x-1 flex flex-row items-center'>
             <label
                 htmlFor={`publishable-switch-${note.id}`}
                 className='text-xs dark:text-zinc-300 hover:cursor-pointer'

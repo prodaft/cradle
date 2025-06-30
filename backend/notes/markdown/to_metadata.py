@@ -28,7 +28,7 @@ class SimplifiedRenderer(BaseMarkdownRenderer):
         return text + "\n"
 
     def cradle_link(self, token: Dict[str, any], state: BlockState) -> str:
-        key, value, alias, date, time = (
+        _, value, alias, _, _ = (
             token["attrs"].get("key"),
             token["attrs"].get("value"),
             token["attrs"].get("alias"),

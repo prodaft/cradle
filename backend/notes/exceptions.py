@@ -1,9 +1,12 @@
-from typing import Iterable
+from typing import Iterable, TYPE_CHECKING
 
 from entries.models import Entry
 from rest_framework.exceptions import APIException
 
 from management.settings import cradle_settings
+
+if TYPE_CHECKING:
+    from entries.models import Link
 
 
 class InvalidRequestException(APIException):
