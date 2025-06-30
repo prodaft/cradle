@@ -76,11 +76,6 @@ export default function Sidebar({
         };
     }, []);
 
-    const welcomeLocation = '/';
-    const handleWelcomePage = useCallback(() => {
-        navigate(welcomeLocation);
-    }, [navigate]);
-
     const newNoteLocation = '/editor/new';
     const handleNewNote = useCallback(() => {
         navigate(newNoteLocation);
@@ -133,12 +128,6 @@ export default function Sidebar({
                             height='fit'
                             justify='start'
                         >
-                            <SidebarItem
-                                handleClick={handleWelcomePage}
-                                icon={<HomeAltSlimHoriz />}
-                                text='Home'
-                                highlightedLocation={welcomeLocation}
-                            />
                             <SidebarItem
                                 handleClick={handleNewNote}
                                 icon={<Edit />}
