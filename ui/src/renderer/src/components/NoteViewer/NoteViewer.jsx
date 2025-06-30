@@ -107,7 +107,7 @@ export default function NoteViewer() {
                 return responseNote;
             })
             .then((note) => {
-                return parseContent(note.content, []).then((result) =>
+                return parseContent(note.content, note.files).then((result) =>
                     setParsedContent(result.html),
                 );
             })
@@ -235,16 +235,16 @@ export default function NoteViewer() {
                 setAlert={setAlert}
                 onClose={() => setAlert('')}
             />
-            <div className='w-[95%] h-full flex flex-col p-2 space-y-3'>
+            <div className='w-[100%] h-full flex flex-col p-2 space-y-3'>
                 <Tabs
                     defaultTab={0}
                     queryParam={'tab'}
                     tabClasses='tabs-underline w-full'
-                    perTabClass={`justify-center ${auth.isAdmin() ? (note.files && note.files.length > 0 ? 'w-[33%]' : 'w-[50%]') : 'w-full'}`}
+                    perTabClass={`justify-center ${note.files && note.files.length > 0 ? (auth.isAdmin() ? 'w-[33%]' : 'w-[50%]') : auth.isAdmin() ? 'w-[50%]' : 'w-full'}`}
                 >
                     <Tab title='Content' classes='pt-2'>
                         <div className='w-full h-full overflow-hidden flex flex-col items-center px-4 pb-4 pt-1'>
-                            <div className='h-full w-[90%] rounded-md bg-cradle3 bg-opacity-20 backdrop-blur-lg backdrop-filter px-4 pb-4 pt-1 overflow-y-auto'>
+                            <div className='h-full w-full rounded-md bg-cradle3 bg-opacity-20 backdrop-blur-lg backdrop-filter px-4 pb-4 pt-1 overflow-y-auto'>
                                 <div className='text-sm text-zinc-500 p-2 border-b-2 dark:border-b-zinc-800'>
                                     {note.status && (
                                         <span

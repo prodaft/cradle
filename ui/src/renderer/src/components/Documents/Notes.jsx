@@ -4,6 +4,7 @@ import NotesList from '../NotesList/NotesList';
 import { useSearchParams } from 'react-router-dom';
 import Publishable from '../NoteActions/Publishable';
 import DeleteNote from '../NoteActions/DeleteNote';
+import Datepicker from 'react-tailwindcss-datepicker';
 
 /**
  * Notes component
@@ -28,19 +29,64 @@ export default function Notes({ setAlert }) {
         author__username: searchParams.get('author__username') || '',
     });
 
-    useEffect(() => {}, [submittedFilters]);
+    const [dateRange, setDateRange] = useState({
+        startDate: searchParams.get('timestamp_gte') || null,
+        endDate: searchParams.get('timestamp_lte') || null,
+    });
+
+    const updateSearchParams = (filters, dateRangeValue) => {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('content', filters.content);
+        newParams.set('author__username', filters.author__username);
+
+        // Add date range parameters if they exist
+        if (dateRangeValue.startDate) {
+            newParams.set(
+                'timestamp_gte',
+                new Date(dateRangeValue.startDate).toISOString(),
+            );
+        } else {
+            newParams.delete('timestamp_gte');
+        }
+
+        if (dateRangeValue.endDate) {
+            // Set end date to end of day
+            const endDate = new Date(dateRangeValue.endDate);
+            endDate.setHours(23, 59, 59, 999);
+            newParams.set('timestamp_lte', endDate.toISOString());
+        } else {
+            newParams.delete('timestamp_lte');
+        }
+
+        setSearchParams(newParams, { replace: true });
+
+        setSubmittedFilters({
+            ...filters,
+            timestamp_gte: dateRangeValue.startDate
+                ? new Date(dateRangeValue.startDate).toISOString()
+                : '',
+            timestamp_lte: dateRangeValue.endDate
+                ? (() => {
+                      const endDate = new Date(dateRangeValue.endDate);
+                      endDate.setHours(23, 59, 59, 999);
+                      return endDate.toISOString();
+                  })()
+                : '',
+        });
+    };
+
+    // Auto-update search when filters or date range change
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            updateSearchParams(searchFilters, dateRange);
+        }, 500); // Debounce for 500ms to avoid too many requests
+
+        return () => clearTimeout(timeoutId);
+    }, [searchFilters, dateRange]);
 
     const handleSearchSubmit = (e) => {
         e.preventDefault();
-
-        const { content, author__username } = searchFilters;
-
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('content', searchFilters.content);
-        newParams.set('author__username', searchFilters.author__username);
-        setSearchParams(newParams, { replace: true });
-
-        setSubmittedFilters(searchFilters);
+        updateSearchParams(searchFilters, dateRange);
     };
 
     const handleSearchChange = (e) => {
@@ -51,12 +97,46 @@ export default function Notes({ setAlert }) {
         }));
     };
 
+    const handleDateRangeChange = (value) => {
+        setDateRange(value);
+    };
+
     useEffect(() => {
-        setSearchFilters({
+        const initialFilters = {
             content: searchParams.get('content') || '',
             author__username: searchParams.get('author__username') || '',
-        });
-    }, [searchParams]);
+        };
+
+        const initialDateRange = {
+            startDate: searchParams.get('timestamp_gte')
+                ? new Date(searchParams.get('timestamp_gte'))
+                      .toISOString()
+                      .split('T')[0]
+                : null,
+            endDate: searchParams.get('timestamp_lte')
+                ? new Date(searchParams.get('timestamp_lte'))
+                      .toISOString()
+                      .split('T')[0]
+                : null,
+        };
+
+        setSearchFilters(initialFilters);
+        setDateRange(initialDateRange);
+
+        // Set initial submitted filters if URL has parameters
+        if (
+            searchParams.has('content') ||
+            searchParams.has('author__username') ||
+            searchParams.has('timestamp_gte') ||
+            searchParams.has('timestamp_lte')
+        ) {
+            setSubmittedFilters({
+                ...initialFilters,
+                timestamp_gte: searchParams.get('timestamp_gte') || '',
+                timestamp_lte: searchParams.get('timestamp_lte') || '',
+            });
+        }
+    }, []);
 
     return (
         <div className='w-full h-full flex flex-col space-y-3'>
@@ -64,6 +144,12 @@ export default function Notes({ setAlert }) {
                 <h1 className='text-4xl font-bold w-full break-all'>All Notes</h1>
             </div>
             <form onSubmit={handleSearchSubmit} className='flex space-x-4 px-3 pb-2'>
+                <Datepicker
+                    value={dateRange}
+                    onChange={handleDateRangeChange}
+                    inputClassName='input input-block py-1 px-2 text-sm flex-grow !max-w-full w-full'
+                    toggleClassName='hidden'
+                />
                 <input
                     type='text'
                     name='content'

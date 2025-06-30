@@ -17,21 +17,24 @@ from django.conf import settings
 from ..serializers import (
     EntryClassSerializer,
     EntryClassSerializerCount,
+    NextNameResponseSerializer,
 )
 from ..models import Entry, EntryClass
 
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="entry_classes_list",
         summary="List Entry Classes",
         description="Retrieve a list of all entry classes.",
         responses={
             200: EntryClassSerializer(many=True),
-            401: "User is not authenticated",
-            403: "User is not authorized to view entry classes' count",
+            401: {"description": "User is not authenticated"},
+            403: {"description": "User is not authorized to view entry classes' count"},
         },
     ),
     post=extend_schema(
+        operation_id="entry_classes_create",
         summary="Create entry class",
         description="Creates a new entry class. Only available to admin users.",
         request=EntryClassSerializer,
@@ -83,6 +86,7 @@ class EntryClassList(APIView):
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="entry_classes_retrieve",
         summary="Get entry class details",
         description="Returns details of a specific entry class.",
         parameters=[
@@ -99,6 +103,7 @@ class EntryClassList(APIView):
         },
     ),
     delete=extend_schema(
+        operation_id="entry_classes_destroy",
         summary="Delete entry class",
         description="Deletes an entry class. Only available to admin users. Cannot delete the 'alias' entry class.",
         parameters=[
@@ -118,6 +123,7 @@ class EntryClassList(APIView):
         },
     ),
     post=extend_schema(
+        operation_id="entry_classes_update",
         summary="Update entry class",
         description="Updates an existing entry class. Cannot edit the 'alias' entry class.",
         request=EntryClassSerializer,
@@ -237,16 +243,7 @@ class EntryClassDetail(APIView):
             )
         ],
         responses={
-            200: {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "nullable": True,
-                        "description": "Next available name, or null if class has no prefix",
-                    }
-                },
-            },
+            200: NextNameResponseSerializer,
             404: {"description": "Entry class not found"},
         },
     )

@@ -53,7 +53,7 @@ class BaseDigest(LifecycleModel):
         related_name="digests",
     )
 
-    relations = GenericRelation(Relation, related_query_name="digests")
+    relations = GenericRelation(Relation, related_query_name="digest")
 
     class Meta:
         ordering = ["-created_at"]
@@ -68,7 +68,9 @@ class BaseDigest(LifecycleModel):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.digest_type = self.__class__.__name__
+        self.digest_type = (
+            self.__class__.__name__ if not self.digest_type else self.digest_type
+        )
 
     @classmethod
     def from_db(cls, db, field_names, values):
@@ -117,12 +119,9 @@ class BaseDigest(LifecycleModel):
         """
         Perform the actual digesting of the external data.
         """
-        self.status = DigestStatus.WORKING
-        self.save()
-
         try:
             if self._digest():
-                self.status = DigestStatus.DONE
+                self.status = DigestStatus.WORKING
             else:
                 self.status = DigestStatus.ERROR
         except Exception as e:
@@ -146,14 +145,28 @@ class BaseDigest(LifecycleModel):
             os.remove(self.path)
 
     def _append_error(self, error):
+        if error in self.errors:
+            return
         with transaction.atomic():
-            self.errors = list(set(self.errors) | {error})
-            self.save()
+            # Use select_for_update to lock the row and prevent race conditions
+            instance = BaseDigest.objects.select_for_update().get(pk=self.pk)
+            if error not in instance.errors:
+                instance.errors.append(error)
+                instance.save(update_fields=["errors"])
+            # Update the current instance to reflect the change
+            self.errors = instance.errors
 
-    def _append_warning(self, error):
+    def _append_warning(self, warning):
+        if warning in self.warnings:
+            return
         with transaction.atomic():
-            self.warnings = list(set(self.warnings) | {error})
-            self.save()
+            # Use select_for_update to lock the row and prevent race conditions
+            instance = BaseDigest.objects.select_for_update().get(pk=self.pk)
+            if warning not in instance.warnings:
+                instance.warnings.append(warning)
+                instance.save(update_fields=["warnings"])
+            # Update the current instance to reflect the change
+            self.warnings = instance.warnings
 
     def update_access_vector(self):
         from notes.utils import calculate_acvec

@@ -17,6 +17,7 @@ from notes.serializers import (
     FleetingNoteRetrieveSerializer,
 )
 from user.models import CradleUser
+from .serializers import FleetingNoteFinalRequestSerializer
 
 from uuid import UUID
 
@@ -114,7 +115,7 @@ class FleetingNotesList(APIView):
         description="Returns the full details of a specific fleeting note. Only the owner can access it.",
         parameters=[
             OpenApiParameter(
-                name="pk",
+                name="id",
                 type=str,
                 location=OpenApiParameter.PATH,
                 description="UUID of the fleeting note to retrieve",
@@ -131,7 +132,7 @@ class FleetingNotesList(APIView):
         description="Updates an existing fleeting note. Only the owner can update it. Content cannot be empty.",
         parameters=[
             OpenApiParameter(
-                name="pk",
+                name="id",
                 type=str,
                 location=OpenApiParameter.PATH,
                 description="UUID of the fleeting note to update",
@@ -150,7 +151,7 @@ class FleetingNotesList(APIView):
         description="Deletes a fleeting note. Only the owner can delete it.",
         parameters=[
             OpenApiParameter(
-                name="pk",
+                name="id",
                 type=str,
                 location=OpenApiParameter.PATH,
                 description="UUID of the fleeting note to delete",
@@ -167,14 +168,14 @@ class FleetingNotesDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get(self, request: Request, pk: UUID) -> Response:
+    def get(self, request: Request, id: UUID) -> Response:
         """
         Get a fleeting note entry by its primary key.
         Only the owner can access it.
 
         Args:
             request: The request that was sent
-            pk: The primary key of the fleeting note entry
+            id: The primary key of the fleeting note entry
 
         Returns:
             Response(serializer.data, status=200):
@@ -187,7 +188,7 @@ class FleetingNotesDetail(APIView):
         """
         try:
             note = Note.objects.fleeting().get(
-                pk=pk, author=cast(CradleUser, request.user)
+                pk=id, author=cast(CradleUser, request.user)
             )
         except Note.DoesNotExist:
             return Response(
@@ -197,14 +198,14 @@ class FleetingNotesDetail(APIView):
         serializer = FleetingNoteSerializer(note)
         return Response(serializer.data)
 
-    def put(self, request: Request, pk: UUID) -> Response:
+    def put(self, request: Request, id: UUID) -> Response:
         """
         Update a fleeting note entry by its primary key.
         Only the owner can update it.
 
         Args:
             request: The request that was sent
-            pk: The primary key of the fleeting note entry
+            id: The primary key of the fleeting note entry
 
         Returns:
             Response(serializer.data, status=200):
@@ -224,7 +225,7 @@ class FleetingNotesDetail(APIView):
             )
         try:
             note = Note.objects.fleeting().get(
-                pk=pk, author=cast(CradleUser, request.user)
+                pk=id, author=cast(CradleUser, request.user)
             )
         except Note.DoesNotExist:
             return Response(
@@ -239,14 +240,14 @@ class FleetingNotesDetail(APIView):
             return Response(serializer.data, status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request: Request, pk: UUID) -> Response:
+    def delete(self, request: Request, id: UUID) -> Response:
         """
         Delete a fleeting note entry by its primary key.
         Only the owner can delete it.
 
         Args:
             request: The request that was sent
-            pk: The primary key of the fleeting note entry
+            id: The primary key of the fleeting note entry
 
         Returns:
             Response(status=200):
@@ -259,7 +260,7 @@ class FleetingNotesDetail(APIView):
         """
         try:
             note = Note.objects.fleeting().get(
-                pk=pk, author=cast(CradleUser, request.user)
+                pk=id, author=cast(CradleUser, request.user)
             )
         except Note.DoesNotExist:
             return Response(
@@ -277,7 +278,7 @@ class FleetingNotesDetail(APIView):
         + "Optionally specify if the note is publishable - defaults to not publishable if unspecified.",
         parameters=[
             OpenApiParameter(
-                name="pk",
+                name="id",
                 type=str,
                 location=OpenApiParameter.PATH,
                 description="UUID of the fleeting note to convert",
@@ -296,18 +297,29 @@ class FleetingNotesDetail(APIView):
         },
     )
 )
+@extend_schema(
+    summary="Convert fleeting note to regular note",
+    description="Converts a fleeting note to a regular note. Only the owner can convert it.",
+    request=FleetingNoteFinalRequestSerializer,
+    responses={
+        200: NoteRetrieveSerializer,
+        400: {"description": "Invalid request data"},
+        401: {"description": "User is not authenticated"},
+        404: {"description": "Fleeting note not found"},
+    },
+)
 class FleetingNotesFinal(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def put(self, request: Request, pk: UUID) -> Response:
+    def put(self, request: Request, id: UUID) -> Response:
         """Convert a fleeting note to a regular note. Only the owner can convert it.
         Optionally specify if the note is publishable - defaults to not publishable
         if unspecified.
 
         Args:
             request: The request that was sent
-            pk: The primary key of the fleeting note entry
+            id: The primary key of the fleeting note entry
 
         Returns:
             Response(status=200): The newly created Note entry
@@ -324,7 +336,7 @@ class FleetingNotesFinal(APIView):
         """
         try:
             note = Note.objects.fleeting().get(
-                pk=pk, author=cast(CradleUser, request.user)
+                pk=id, author=cast(CradleUser, request.user)
             )
         except Note.DoesNotExist:
             return Response(

@@ -13,6 +13,8 @@ class PlaintextPublish(BasePublishStrategy):
     A publishing strategy that generates a plaintext report from a list of notes.
     """
 
+    content_type = "text/plain"
+
     def create_report(self, report: PublishedReport) -> bool:
         text_content = self._build_text(report.title, report.notes.all())
         return self._upload_text(text_content, report)

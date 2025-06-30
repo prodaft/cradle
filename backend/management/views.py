@@ -1,7 +1,7 @@
 from celery import chain
 from django.contrib.contenttypes.models import ContentType
 from django_lifecycle.mixins import transaction
-from rest_framework import status
+from rest_framework import status, serializers
 from django.core.cache import cache
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -12,9 +12,15 @@ from notes.processor.entry_class_creation_task import EntryClassCreationTask
 from notes.processor.entry_population_task import EntryPopulationTask
 from notes.processor.smart_linker_task import SmartLinkerTask
 from .models import BaseSettingsSection
+from .serializers import ManagementActionResponseSerializer
 from user.permissions import HasAdminRole
 from rest_framework.permissions import IsAuthenticated
-from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiResponse
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiExample,
+    OpenApiResponse,
+    OpenApiParameter,
+)
 
 from rest_framework.permissions import IsAdminUser
 from .settings import cradle_settings
@@ -27,6 +33,12 @@ from entries.tasks import (
 from file_transfer.tasks import reprocess_all_files_task
 from entries.models import Entry
 import inspect
+
+
+class ActionSerializer(serializers.Serializer):
+    """Basic serializer for action requests"""
+
+    pass
 
 
 class SettingsView(APIView):
@@ -138,11 +150,40 @@ class SettingsView(APIView):
         return nested
 
 
+@extend_schema(
+    summary="Execute management actions",
+    description="Executes various management actions for admin users. Available actions:"
+    + ", ".join(
+        [
+            "relinkNotes",
+            "refreshMaterializedGraph",
+            "recalculateNodePositions",
+            "propagateAccessVectors",
+            "reprocessAllFiles",
+            "deleteHangingArtifacts",
+        ]
+    ),
+    parameters=[
+        OpenApiParameter(
+            name="action_name",
+            type=str,
+            location=OpenApiParameter.PATH,
+            description="Name of the action to execute",
+        )
+    ],
+    responses={
+        200: ManagementActionResponseSerializer,
+        400: {"description": "Unknown action"},
+        401: {"description": "User is not authenticated"},
+        403: {"description": "User is not an admin"},
+    },
+)
 class ActionView(APIView):
     permission_classes = [IsAuthenticated, HasAdminRole]
+    serializer_class = ActionSerializer
 
-    def post(self, request, action_name=None, *args, **kwargs):
-        handler = getattr(self, "action_" + action_name, None)
+    def post(self, request, action_name: str | None = None, *args, **kwargs):
+        handler = getattr(self, "action_" + action_name, None) if action_name else None
         if handler and callable(handler):
             return handler(request, *args, **kwargs)
         return Response(

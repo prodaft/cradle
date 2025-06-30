@@ -5,7 +5,7 @@ from ..models.base import BaseDigest
 
 
 @shared_task
-def digest_chunk(digest_id, obj, last):
+def digest_chunk(digest_id, start, end, last):
     """
     Downloads a file from the given URL, stores it in Minio, and attaches
     the resulting FileReference to the Note with the provided note_id.
@@ -15,10 +15,11 @@ def digest_chunk(digest_id, obj, last):
     if digest.status == DigestStatus.ERROR:
         return
 
-    digest.digest_chunk(obj)
+    digest.digest_chunk(start, end)
 
     if len(digest.errors) > 0:
         digest.status = DigestStatus.ERROR
+        print(digest.errors)
         digest.save()
         return
     elif last:

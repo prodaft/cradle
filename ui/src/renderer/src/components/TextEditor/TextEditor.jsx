@@ -14,6 +14,7 @@ export default function TextEditor({
     setMarkdownContent,
     fileData = [],
     setFileData,
+    saveNote,
     editorExtensions = [],
 }) {
     const markdownContentRef = useRef(markdownContent);
@@ -140,6 +141,7 @@ export default function TextEditor({
                         setViewCollapsed={previewCollapseUpdated}
                         currentLine={currentLine}
                         setAlert={setAlert}
+                        saveNote={saveNote}
                         setCurrentLine={setCurrentLine}
                         additionalExtensions={editorExtensions}
                     />

@@ -151,10 +151,10 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
             "vt_api_key",
         ]
 
-    def get_catalyst_api_key(self, obj):
+    def get_catalyst_api_key(self, obj) -> bool:
         return True if obj.catalyst_api_key else False
 
-    def get_vt_api_key(self, obj):
+    def get_vt_api_key(self, obj) -> bool:
         return True if obj.vt_api_key else False
 
 
@@ -213,3 +213,75 @@ class Verify2FASerializer(serializers.Serializer):
 
 class Login2FASerializer(serializers.Serializer):
     token = serializers.CharField(required=True)
+
+
+class APIKeyRequestSerializer(serializers.Serializer):
+    """Serializer for API key generation requests"""
+
+    pass
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """Serializer for password reset requests"""
+
+    email = serializers.EmailField(required=False)
+    username = serializers.CharField(required=False)
+
+    def validate(self, data):
+        if not data.get("email") and not data.get("username"):
+            raise serializers.ValidationError("Email or username must be provided")
+        return data
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """Serializer for password reset confirmation"""
+
+    token = serializers.CharField(required=True)
+    password = serializers.CharField(required=True)
+
+
+class APIKeyResponseSerializer(serializers.Serializer):
+    """Serializer for API key generation response."""
+
+    api_key = serializers.CharField(help_text="Generated API key")
+
+    class Meta:
+        ref_name = "APIKeyResponse"
+
+
+class UserManageResponseSerializer(serializers.Serializer):
+    """Serializer for user management action response."""
+
+    refresh = serializers.CharField(
+        required=False, help_text="JWT refresh token (only for simulate action)"
+    )
+    access = serializers.CharField(
+        required=False, help_text="JWT access token (only for simulate action)"
+    )
+    message = serializers.CharField(
+        required=False, help_text="Success message for other actions"
+    )
+
+    class Meta:
+        ref_name = "UserManageResponse"
+
+
+class ChangePasswordRequestSerializer(serializers.Serializer):
+    """Serializer for change password request."""
+
+    old_password = serializers.CharField(help_text="Current password of the user")
+    new_password = serializers.CharField(help_text="New password to set")
+
+    class Meta:
+        ref_name = "ChangePasswordRequest"
+
+
+class ChangePasswordResponseSerializer(serializers.Serializer):
+    """Serializer for change password response."""
+
+    detail = serializers.CharField(
+        help_text="Success message", default="Password changed successfully."
+    )
+
+    class Meta:
+        ref_name = "ChangePasswordResponse"

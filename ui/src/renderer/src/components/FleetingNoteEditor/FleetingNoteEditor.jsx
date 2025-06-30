@@ -38,6 +38,7 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
     const navigate = useNavigate();
     const { refreshFleetingNotes } = useOutletContext();
     const { id } = useParams();
+    const idRef = useRef(id);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(true);
     const [editorExtensions, setEditorExtensions] = useState([]);
     const prevIdRef = useRef(null);
@@ -52,6 +53,11 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
     useEffect(() => {
         fileDataRef.current = fileData;
     }, [fileData]);
+
+    // Ensure the ref to the id is correct
+    useEffect(() => {
+        idRef.current = id;
+    }, [id]);
 
     // Ensure the ref to saving is correct
     useEffect(() => {
@@ -76,6 +82,7 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
     }, [isValidContent, setAlert]);
 
     useEffect(() => {
+        const id = idRef.current;
         if (id) {
             if (id === NEW_NOTE_PLACEHOLDER_ID) {
                 setMarkdownContent('');
@@ -95,53 +102,58 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
         }
     }, [id, setMarkdownContent, setFileData, setHasUnsavedChanges, setAlert, navigate]);
 
-    const handleSaveNote = (displayAlert) => {
-        setSaving(true);
-        if (!validateContent()) return;
-        if (savingRef.current) return;
-        if (id) {
-            const storedContent = markdownContentRef.current;
-            const storedFileData = fileDataRef.current;
+    const handleSaveNote = useCallback(
+        (displayAlert) => {
+            const id = idRef.current;
+            setSaving(true);
+            if (!validateContent()) return;
+            if (savingRef.current) return;
+            if (id) {
+                const storedContent = markdownContentRef.current;
+                const storedFileData = fileDataRef.current;
 
-            if (id === NEW_NOTE_PLACEHOLDER_ID) {
-                // Entity for new notes
-                addFleetingNote(storedContent, storedFileData)
-                    .then((res) => {
-                        if (res.status === 200) {
-                            refreshFleetingNotes();
-                            setHasUnsavedChanges(false);
-                            // Set previous id as the one from the response to avoid re-fetching the note
-                            prevIdRef.current = res.data.id;
-                            navigate(`/editor/${res.data.id}`);
-                        }
-                    })
-                    .catch(displayError(setAlert, navigate))
-                    .finally(() => setSaving(false));
-            } else {
-                // Entity for existing fleeting notes
-                updateFleetingNote(id, storedContent, storedFileData)
-                    .then((response) => {
-                        if (response.status === 200) {
-                            setHasUnsavedChanges(false);
-                            if (displayAlert) {
-                                setAlert({
-                                    show: true,
-                                    message: displayAlert,
-                                    color: 'green',
-                                });
+                if (id === NEW_NOTE_PLACEHOLDER_ID) {
+                    // Entity for new notes
+                    addFleetingNote(storedContent, storedFileData)
+                        .then((res) => {
+                            if (res.status === 200) {
+                                refreshFleetingNotes();
+                                setHasUnsavedChanges(false);
+                                // Set previous id as the one from the response to avoid re-fetching the note
+                                prevIdRef.current = res.data.id;
+                                navigate(`/editor/${res.data.id}`);
                             }
-                        }
-                        refreshFleetingNotes();
-                    })
-                    .catch(displayError(setAlert, navigate))
-                    .finally(() => setSaving(false));
-                setSaving(false);
+                        })
+                        .catch(displayError(setAlert, navigate))
+                        .finally(() => setSaving(false));
+                } else {
+                    // Entity for existing fleeting notes
+                    updateFleetingNote(id, storedContent, storedFileData)
+                        .then((response) => {
+                            if (response.status === 200) {
+                                setHasUnsavedChanges(false);
+                                if (displayAlert) {
+                                    setAlert({
+                                        show: true,
+                                        message: displayAlert,
+                                        color: 'green',
+                                    });
+                                }
+                            }
+                            refreshFleetingNotes();
+                        })
+                        .catch(displayError(setAlert, navigate))
+                        .finally(() => setSaving(false));
+                    setSaving(false);
+                }
             }
-        }
-    };
+        },
+        [id],
+    );
 
     // Function to delete a fleeting note you are working on
     const handleDeleteNote = () => {
+        const id = idRef.current;
         if (id) {
             deleteFleetingNote(id)
                 .then((response) => {
@@ -162,6 +174,7 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
 
     // Function to make final note
     const handleMakeFinal = () => {
+        const id = idRef.current;
         if (!validateContent()) return;
         if (id) {
             saveFleetingNoteAsFinal(id, publishable)
@@ -272,6 +285,7 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
                     noteid={id}
                     markdownContent={markdownContent}
                     setMarkdownContent={setMarkdownContent}
+                    saveNote={() => handleSaveNote('Changes saved successfully.')}
                     fileData={fileData}
                     setFileData={setFileData}
                     editorExtensions={editorExtensions}

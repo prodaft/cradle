@@ -6,7 +6,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-VERSION = "2.6.4"
+VERSION = "2.6.10"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -149,6 +149,10 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Threat Intelligence Knowledge Management",
     "VERSION": VERSION,
     "SERVE_INCLUDE_SCHEMA": False,
+    "SCHEMA_PATH_PREFIX": r"/api/v[0-9]",
+    "COMPONENT_SPLIT_REQUEST": True,
+    "COMPONENT_NO_READ_ONLY_REQUIRED": True,
+    "POSTPROCESSING_HOOKS": ["cradle.schema_processors.postprocess_schema_enums"],
 }
 
 SIMPLE_JWT = {

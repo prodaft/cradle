@@ -37,7 +37,7 @@ export default function AdminPanelCardUser({ name, id, onDelete, setRightPane })
     };
 
     const handleUserClick = () => {
-        setRightPane(<AdminPanelUserPermissions username={name} id={id} />);
+        setRightPane(<AdminPanelUserPermissions username={name} id={id} key={id} />);
     };
 
     return (

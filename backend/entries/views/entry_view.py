@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 
 from access.models import Access
 from core.pagination import TotalPagesPagination
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from ..exceptions import DuplicateEntryException
 
 from ..models import Entry
@@ -14,7 +15,20 @@ from ..serializers import ArtifactSerializer, EntitySerializer, EntrySerializer
 from ..enums import EntryType
 
 
-class EntryView(generics.ListCreateAPIView):
+@extend_schema_view(
+    post=extend_schema(
+        summary="Create a new entry",
+        description="Creates a new entry (artifact or entity). Only admins can create entities.",
+        request=EntrySerializer,
+        responses={
+            200: EntrySerializer,
+            400: {"description": "Invalid data or entry type"},
+            403: {"description": "Only admins can create entities"},
+        },
+        tags=["Entries"],
+    ),
+)
+class EntryView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = EntrySerializer
     pagination_class = TotalPagesPagination
@@ -58,6 +72,16 @@ class EntryView(generics.ListCreateAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(
+    summary="Retrieve entry details",
+    description="Returns detailed information about a specific entry by ID. Access control applies for entities.",
+    responses={
+        200: EntrySerializer,
+        404: {"description": "Entry not found or access denied"},
+        401: {"description": "User is not authenticated"},
+    },
+    tags=["Entries"],
+)
 class EntryDetailView(APIView):
     permission_classes = [IsAuthenticated]
 

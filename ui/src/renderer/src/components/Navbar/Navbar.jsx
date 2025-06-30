@@ -25,9 +25,10 @@ export default function Navbar({
     const navigate = useNavigate();
 
     useHotkeys(
-        'ctrl+k, cmd+k',
+        'ctrl+k, cmd+k, /',
         (event) => {
             event.preventDefault();
+            event.stopPropagation();
             setIsDialogOpen((b) => !b);
         },
         {

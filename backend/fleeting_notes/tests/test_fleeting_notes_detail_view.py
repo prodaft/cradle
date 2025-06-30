@@ -19,7 +19,7 @@ class GetFleetingNoteByIdTest(FleetingNotesTestCase):
 
     def test_get_fleeting_note_by_id_authenticated_admin(self):
         response = self.client.get(
-            reverse("fleeting_notes_detail", kwargs={"pk": self.note_admin.pk}),
+            reverse("fleeting_notes_detail", kwargs={"id": self.note_admin.pk}),
             **self.headers_admin,
         )
 
@@ -33,7 +33,7 @@ class GetFleetingNoteByIdTest(FleetingNotesTestCase):
 
     def test_get_fleeting_note_by_id_authenticated_admin_empty_db(self):
         response = self.client.get(
-            reverse("fleeting_notes_detail", kwargs={"pk": uuid.uuid4()}),
+            reverse("fleeting_notes_detail", kwargs={"id": uuid.uuid4()}),
             **self.headers_admin,
         )
 
@@ -41,7 +41,7 @@ class GetFleetingNoteByIdTest(FleetingNotesTestCase):
 
     def test_get_fleeting_note_by_id_authenticated_not_admin(self):
         response = self.client.get(
-            reverse("fleeting_notes_detail", kwargs={"pk": self.note_user.pk}),
+            reverse("fleeting_notes_detail", kwargs={"id": self.note_user.pk}),
             **self.headers_normal,
         )
 
@@ -58,7 +58,7 @@ class GetFleetingNoteByIdTest(FleetingNotesTestCase):
 
     def test_get_fleeting_note_by_id_authenticated_not_admin_not_own_note(self):
         response = self.client.get(
-            reverse("fleeting_notes_detail", kwargs={"pk": self.note_admin.pk}),
+            reverse("fleeting_notes_detail", kwargs={"id": self.note_admin.pk}),
             **self.headers_normal,
         )
 
@@ -66,7 +66,7 @@ class GetFleetingNoteByIdTest(FleetingNotesTestCase):
 
     def test_get_fleeting_note_by_id_authenticated_admin_not_own_note(self):
         response = self.client.get(
-            reverse("fleeting_notes_detail", kwargs={"pk": self.note_user.pk}),
+            reverse("fleeting_notes_detail", kwargs={"id": self.note_user.pk}),
             **self.headers_admin,
         )
 
@@ -76,14 +76,14 @@ class GetFleetingNoteByIdTest(FleetingNotesTestCase):
 class PutFleetingNotesByIdTest(FleetingNotesTestCase):
     def test_put_not_authenticated(self):
         response = self.client.put(
-            reverse("fleeting_notes_detail", kwargs={"pk": uuid.uuid4()})
+            reverse("fleeting_notes_detail", kwargs={"id": uuid.uuid4()})
         )
 
         self.assertEqual(response.status_code, 401)
 
     def test_put_fleeting_note_by_id_authenticated_admin(self):
         response = self.client.put(
-            reverse("fleeting_notes_detail", kwargs={"pk": self.note_admin.pk}),
+            reverse("fleeting_notes_detail", kwargs={"id": self.note_admin.pk}),
             {"content": "New content"},
             **self.headers_admin,
         )
@@ -106,7 +106,7 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
 
     def test_put_fleeting_note_by_id_authenticated_admin_empty_db(self):
         response = self.client.put(
-            reverse("fleeting_notes_detail", kwargs={"pk": uuid.uuid4()}),
+            reverse("fleeting_notes_detail", kwargs={"id": uuid.uuid4()}),
             {"content": "New content"},
             **self.headers_admin,
         )
@@ -115,7 +115,7 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
 
     def test_put_fleeting_note_by_id_authenticated_not_admin(self):
         response = self.client.put(
-            reverse("fleeting_notes_detail", kwargs={"pk": self.note_user.pk}),
+            reverse("fleeting_notes_detail", kwargs={"id": self.note_user.pk}),
             {"content": "New content"},
             **self.headers_normal,
         )
@@ -138,7 +138,7 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
 
     def test_put_fleeting_note_by_id_authenticated_not_admin_not_own_note(self):
         response = self.client.put(
-            reverse("fleeting_notes_detail", kwargs={"pk": self.note_admin.pk}),
+            reverse("fleeting_notes_detail", kwargs={"id": self.note_admin.pk}),
             {"content": "New content"},
             **self.headers_normal,
         )
@@ -147,7 +147,7 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
 
     def test_put_fleeting_note_by_id_authenticated_admin_not_own_note(self):
         response = self.client.put(
-            reverse("fleeting_notes_detail", kwargs={"pk": self.note_user.pk}),
+            reverse("fleeting_notes_detail", kwargs={"id": self.note_user.pk}),
             {"content": "New content"},
             **self.headers_admin,
         )
@@ -156,7 +156,7 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
 
     def test_put_fleeting_note_by_id_invalid_content(self):
         response = self.client.put(
-            reverse("fleeting_notes_detail", kwargs={"pk": self.note_user.pk}),
+            reverse("fleeting_notes_detail", kwargs={"id": self.note_user.pk}),
             {"content": ""},
             **self.headers_admin,
         )
@@ -165,7 +165,7 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
 
     def test_put_fleeting_note_by_id_invalid_content_and_not_own_note(self):
         response = self.client.put(
-            reverse("fleeting_notes_detail", kwargs={"pk": self.note_user.pk}),
+            reverse("fleeting_notes_detail", kwargs={"id": self.note_user.pk}),
             {"content": ""},
             **self.headers_normal,
         )
@@ -174,7 +174,7 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
 
     def test_put_fleeting_note_by_id_invalid_content_and_note_does_not_exist(self):
         response = self.client.put(
-            reverse("fleeting_notes_detail", kwargs={"pk": uuid.uuid4()}),
+            reverse("fleeting_notes_detail", kwargs={"id": uuid.uuid4()}),
             {"content": ""},
             **self.headers_admin,
         )
@@ -185,14 +185,14 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
 class DeleteFleetingNotesByIdTest(FleetingNotesTestCase):
     def test_delete_not_authenticated(self):
         response = self.client.delete(
-            reverse("fleeting_notes_detail", kwargs={"pk": uuid.uuid4()})
+            reverse("fleeting_notes_detail", kwargs={"id": uuid.uuid4()})
         )
 
         self.assertEqual(response.status_code, 401)
 
     def test_delete_fleeting_note_by_id_authenticated_admin(self):
         response = self.client.delete(
-            reverse("fleeting_notes_detail", kwargs={"pk": self.note_admin.pk}),
+            reverse("fleeting_notes_detail", kwargs={"id": self.note_admin.pk}),
             **self.headers_admin,
         )
 
@@ -201,7 +201,7 @@ class DeleteFleetingNotesByIdTest(FleetingNotesTestCase):
 
     def test_delete_fleeting_note_by_id_authenticated_admin_note_does_not_exist(self):
         response = self.client.delete(
-            reverse("fleeting_notes_detail", kwargs={"pk": uuid.uuid4()}),
+            reverse("fleeting_notes_detail", kwargs={"id": uuid.uuid4()}),
             **self.headers_admin,
         )
 
@@ -209,7 +209,7 @@ class DeleteFleetingNotesByIdTest(FleetingNotesTestCase):
 
     def test_delete_fleeting_note_by_id_authenticated_not_admin(self):
         response = self.client.delete(
-            reverse("fleeting_notes_detail", kwargs={"pk": self.note_admin.pk}),
+            reverse("fleeting_notes_detail", kwargs={"id": self.note_admin.pk}),
             **self.headers_normal,
         )
 
@@ -217,7 +217,7 @@ class DeleteFleetingNotesByIdTest(FleetingNotesTestCase):
 
     def test_delete_fleeting_note_by_id_authenticated_not_admin_not_own_note(self):
         response = self.client.delete(
-            reverse("fleeting_notes_detail", kwargs={"pk": self.note_admin.pk}),
+            reverse("fleeting_notes_detail", kwargs={"id": self.note_admin.pk}),
             **self.headers_normal,
         )
 
@@ -225,7 +225,7 @@ class DeleteFleetingNotesByIdTest(FleetingNotesTestCase):
 
     def test_delete_fleeting_note_by_id_authenticated_admin_not_own_note(self):
         response = self.client.delete(
-            reverse("fleeting_notes_detail", kwargs={"pk": self.note_user.pk}),
+            reverse("fleeting_notes_detail", kwargs={"id": self.note_user.pk}),
             **self.headers_admin,
         )
 
