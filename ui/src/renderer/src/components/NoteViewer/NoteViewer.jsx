@@ -15,7 +15,7 @@ import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { Trash, StatsReport } from 'iconoir-react/regular';
 import NavbarSwitch from '../NavbarSwitch/NavbarSwitch';
-import useAuth from '../../hooks/useAuth/useAuth';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import ReferenceTree from '../ReferenceTree/ReferenceTree';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-markdown';
@@ -48,6 +48,7 @@ export default function NoteViewer() {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
+    const { isAdmin } = useProfile();
     const { from, state } = location.state || { from: { pathname: '/' } };
     const [note, setNote] = useState({});
     const [isPublishable, setIsPublishable] = useState(false);
@@ -57,8 +58,6 @@ export default function NoteViewer() {
     const [isLoading, setIsLoading] = useState(true);
     const [metadataExpanded, setMetadataExpanded] = useState(true);
     const { setModal } = useModal();
-
-    const auth = useAuth();
 
     const getStatusIcon = () => {
         if (!note.status) return null;
@@ -240,7 +239,7 @@ export default function NoteViewer() {
                     defaultTab={0}
                     queryParam={'tab'}
                     tabClasses='tabs-underline w-full'
-                    perTabClass={`justify-center ${note.files && note.files.length > 0 ? (auth.isAdmin() ? 'w-[33%]' : 'w-[50%]') : auth.isAdmin() ? 'w-[50%]' : 'w-full'}`}
+                    perTabClass={`justify-center ${note.files && note.files.length > 0 ? (isAdmin() ? 'w-[33%]' : 'w-[50%]') : isAdmin() ? 'w-[50%]' : 'w-full'}`}
                 >
                     <Tab title='Content' classes='pt-2'>
                         <div className='w-full h-full overflow-hidden flex flex-col items-center px-4 pb-4 pt-1'>
@@ -415,7 +414,7 @@ export default function NoteViewer() {
                             </div>
                         </Tab>
                     )}
-                    {auth.isAdmin() && (
+                    {isAdmin() && (
                         <Tab title='History' classes='pt-2'>
                             <ActivityList content_type='note' objectId={id} />
                         </Tab>

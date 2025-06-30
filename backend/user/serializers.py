@@ -19,7 +19,14 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CradleUser
-        fields = ["username", "email", "password", "catalyst_api_key", "vt_api_key"]
+        fields = [
+            "username",
+            "email",
+            "password",
+            "catalyst_api_key",
+            "vt_api_key",
+            "vim_mode",
+        ]
         extra_kwargs: Dict[str, Dict[str, List]] = {"username": {"validators": []}}
 
     def validate(self, data: Any, nocheck_pw: bool = False) -> Any:
@@ -82,7 +89,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
         instance.catalyst_api_key = validated_data.get(
             "catalyst_api_key", instance.catalyst_api_key
         )
-
+        instance.vim_mode = validated_data.get("vim_mode", instance.vim_mode)
         instance.save()
 
         return instance
@@ -98,6 +105,7 @@ class UserCreateSerializerAdmin(UserCreateSerializer):
             "email",
             "password",
             "catalyst_api_key",
+            "vim_mode",
             "vt_api_key",
             "role",
             "email_confirmed",
@@ -146,9 +154,11 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
             "role",
             "two_factor_enabled",
             "is_active",
+            "vim_mode",
             "email_confirmed",
             "catalyst_api_key",
             "vt_api_key",
+            "vim_mode",
         ]
 
     def get_catalyst_api_key(self, obj) -> bool:
@@ -285,3 +295,27 @@ class ChangePasswordResponseSerializer(serializers.Serializer):
 
     class Meta:
         ref_name = "ChangePasswordResponse"
+
+
+class DefaultNoteTemplateSerializer(serializers.Serializer):
+    """Serializer for default note template."""
+
+    template = serializers.CharField(
+        required=True,
+        allow_blank=True,
+        help_text="Default template text for new notes",
+    )
+
+    class Meta:
+        ref_name = "DefaultNoteTemplate"
+
+
+class DefaultNoteTemplateResponseSerializer(serializers.Serializer):
+    """Serializer for default note template response."""
+
+    template = serializers.CharField(
+        help_text="Current default template for new notes", allow_null=True
+    )
+
+    class Meta:
+        ref_name = "DefaultNoteTemplateResponse"

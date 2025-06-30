@@ -1,6 +1,5 @@
 import { PlusCircle } from 'iconoir-react';
 import useFrontendSearch from '../../hooks/useFrontendSearch/useFrontendSearch';
-import useAuth from '../../hooks/useAuth/useAuth';
 import { useState, useMemo } from 'react';
 import { naturalSort } from '../../utils/dashboardUtils/dashboardUtils';
 /**

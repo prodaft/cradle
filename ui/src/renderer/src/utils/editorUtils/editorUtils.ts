@@ -3,6 +3,7 @@ import {
     fetchLspTypes,
     fetchCompletionTries,
 } from '../../services/queryService/queryService';
+import { getSnippets } from '../../services/snippetsService/snippetsService';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { yaml, yamlFrontmatter, yamlLanguage } from '@codemirror/lang-yaml';
 import { LanguageSupport, LRLanguage, syntaxTree } from '@codemirror/language';
@@ -10,6 +11,7 @@ import { basicSetup, EditorState } from '@uiw/react-codemirror';
 import { tags } from '@codemirror/highlight';
 import jsyaml from 'js-yaml';
 import { DynamicTrie } from './trie';
+import { snippetCompletion } from '@codemirror/autocomplete';
 
 /*==============================================================================
   HELPER FUNCTIONS
@@ -39,6 +41,14 @@ interface EnhancerOptions {
     minSuggestionLength?: number;
     maxSuggestions?: number;
     [key: string]: any;
+}
+
+interface Snippet {
+    id: string;
+    owner: any;
+    name: string;
+    content: string;
+    created_on: string;
 }
 
 type LspEntryClass = {
@@ -83,7 +93,7 @@ interface MarkdownLanguageConfig {
 ==============================================================================*/
 export class CradleEditor {
     /*---------------------------------------------------------------------------
-    Static Properties (Cache for EntryClasses and Tries)
+    Static Properties (Cache for EntryClasses, Tries, and Snippets)
   ---------------------------------------------------------------------------*/
     private static entryClassesPromise: Promise<any> | null = null;
     private static cachedEntryClasses: { [key: string]: LspEntryClass } | null = null;
@@ -93,12 +103,16 @@ export class CradleEditor {
 
     private static cachedBigTrie: DynamicTrie | null = null;
 
+    private static snippetsPromise: Promise<any> | null = null;
+    private static cachedSnippets: Snippet[] | null = null;
+
     /*---------------------------------------------------------------------------
     Instance Properties
   ---------------------------------------------------------------------------*/
     private entryClasses: { [key: string]: LspEntryClass } | null;
     private tries: { [key: string]: DynamicTrie } | null;
     private bigTrie: DynamicTrie | null;
+    private snippets: Snippet[] | null;
     private _ready: Promise<boolean>;
     private _onError: ((error: Error) => void) | null;
     private _onLspLoaded: (bool: boolean) => void;
@@ -116,9 +130,10 @@ export class CradleEditor {
     ) {
         this.entryClasses = null;
         this.tries = null;
+        this.snippets = null;
         this._onError = onError;
         this._onLspLoaded = onLspLoaded;
-        this._ready = this.initializeEntryClassesAndTries().then((ready) => {
+        this._ready = this.initializeEntryClassesTriesAndSnippets().then((ready) => {
             this._onLspLoaded(ready);
             return ready;
         });
@@ -149,10 +164,10 @@ export class CradleEditor {
     }
 
     /**
-     * Wait until the entry classes and tries are fetched and cached.
-     * Uses static caching to ensure only one fetch is made.
+     * Wait until the entry classes, tries, and snippets are fetched and cached.
+     * Uses static caching to ensure only one fetch is made for each resource.
      */
-    private async initializeEntryClassesAndTries(): Promise<boolean> {
+    private async initializeEntryClassesTriesAndSnippets(): Promise<boolean> {
         try {
             // Fetch entry classes
             if (CradleEditor.cachedEntryClasses) {
@@ -247,6 +262,20 @@ export class CradleEditor {
                 CradleEditor.cachedBigTrie = bigTrie;
             }
 
+            // Fetch snippets
+            if (CradleEditor.cachedSnippets) {
+                this.snippets = CradleEditor.cachedSnippets;
+            } else {
+                if (!CradleEditor.snippetsPromise) {
+                    CradleEditor.snippetsPromise = getSnippets().then(
+                        (response) => response.data || [],
+                    );
+                }
+                const snippets = await CradleEditor.snippetsPromise;
+                this.snippets = snippets;
+                CradleEditor.cachedSnippets = snippets;
+            }
+
             this.buildCombinedRegex();
             return true;
         } catch (error) {
@@ -264,9 +293,87 @@ export class CradleEditor {
         return this._ready;
     }
 
+    /**
+     * Returns the cached snippets once they are loaded.
+     * Should be called after ensuring the editor is ready.
+     */
+    getSnippets(): Snippet[] | null {
+        return this.snippets;
+    }
+
+    /**
+     * Static method to get cached snippets without needing an instance.
+     * Returns null if snippets haven't been fetched yet.
+     */
+    static getCachedSnippets(): Snippet[] | null {
+        return CradleEditor.cachedSnippets;
+    }
+
+    /**
+     * Static method to invalidate the snippet cache and force a refresh on next access.
+     * Useful when snippets are created, updated, or deleted.
+     */
+    static invalidateSnippetsCache(): void {
+        CradleEditor.cachedSnippets = null;
+        CradleEditor.snippetsPromise = null;
+    }
+
+    /**
+     * Instance method to refresh snippets from the server.
+     * This will update both the instance and static cache.
+     */
+    async refreshSnippets(): Promise<Snippet[]> {
+        try {
+            CradleEditor.invalidateSnippetsCache();
+            const response = await getSnippets();
+            const snippets = response.data || [];
+            this.snippets = snippets;
+            CradleEditor.cachedSnippets = snippets;
+            return snippets;
+        } catch (error) {
+            console.error('Error refreshing snippets:', error);
+            if (this._onError) this._onError(error as Error);
+            throw error;
+        }
+    }
+
+    /**
+     * Public method to get snippet completions for testing or external use.
+     * @param filter Optional filter string to match against snippet names
+     */
+    getSnippetCompletions(filter?: string): Array<any> {
+        return this.createSnippetCompletions(filter);
+    }
+
     /*============================================================================
     AUTOCOMPLETE METHODS
   =============================================================================*/
+
+    /**
+     * Creates snippet completion objects from cached snippets.
+     * Converts snippet content into CodeMirror snippet completions with placeholders.
+     * @param filter Optional filter string to match against snippet names
+     */
+    private createSnippetCompletions(filter?: string): Array<any> {
+        if (!this.snippets) return [];
+
+        let filteredSnippets = this.snippets;
+
+        // Filter snippets by name if filter is provided
+        if (filter && filter.trim().length > 0) {
+            const filterLower = filter.toLowerCase();
+            filteredSnippets = this.snippets.filter((snippet) =>
+                snippet.name.toLowerCase().includes(filterLower),
+            );
+        }
+
+        return filteredSnippets.map((snippet) =>
+            snippetCompletion(snippet.content, {
+                label: snippet.name,
+                info: `Snippet: ${snippet.content.substring(0, 100)}${snippet.content.length > 100 ? '...' : ''}`,
+            }),
+        );
+    }
 
     /**
      * Public method to retrieve the autocomplete extension.
@@ -408,10 +515,13 @@ export class CradleEditor {
             label: `[[${s.type}:${s.match}]]`,
         }));
 
+        // Add snippet completions with filtering based on current word
+        const snippetCompletions = this.createSnippetCompletions(word.text);
+
         return {
             from: word.from,
             to: word.to,
-            options: suggestions,
+            options: [...suggestions, ...snippetCompletions],
         };
     }
 
@@ -517,8 +627,16 @@ export class CradleEditor {
                     info: 'A list of entries in this note',
                 },
             ];
-            return { from, to, options: options };
+
+            // Add snippet completions for YAML context
+            const snippetCompletions = this.createSnippetCompletions();
+
+            return { from, to, options: [...options, ...snippetCompletions] };
         }
+
+        // Default fallback - include snippet completions
+        const snippetCompletions = this.createSnippetCompletions();
+        return { from: context.pos, options: snippetCompletions };
     }
 
     /**
@@ -605,6 +723,12 @@ export class CradleEditor {
             case 'Paragraph':
             case 'TableCell':
                 return await this.autocompleteForPlainText(context);
+        }
+
+        // If no specific options were found, add snippet completions as fallback
+        if (options.length === 0) {
+            const snippetCompletions = this.createSnippetCompletions();
+            options = snippetCompletions;
         }
 
         return { from, to, options };

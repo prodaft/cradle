@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import useAuth from '../../hooks/useAuth/useAuth';
 import { useNavigate, useParams } from 'react-router-dom';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import NavbarButton from '../NavbarButton/NavbarButton';
@@ -27,7 +26,6 @@ export default function NoteEditor() {
     const fileDataRef = useRef(fileData);
     const textEditorRef = useRef(null);
     const [editorExtensions, setEditorExtensions] = useState([]);
-    const auth = useAuth();
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
     const { id } = useParams();
@@ -165,7 +163,7 @@ export default function NoteEditor() {
                 awaitOnClick={true}
             />,
         ],
-        [auth, id],
+        [id],
     );
 
     return (

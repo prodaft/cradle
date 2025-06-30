@@ -10,7 +10,6 @@ import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import NavbarButton from '../NavbarButton/NavbarButton';
 import { PlusCircle, CloudUpload } from 'iconoir-react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import useAuth from '../../hooks/useAuth/useAuth';
 import PropTypes from 'prop-types';
 import { Eye, RefreshCircle, Trash, Edit } from 'iconoir-react';
 
@@ -215,7 +214,6 @@ export default function ReportList({ setAlert = null }) {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const navigate = useNavigate();
-    const auth = useAuth();
 
     let [alert, setAlertState] = useState({ show: false, message: '', color: 'red' });
 

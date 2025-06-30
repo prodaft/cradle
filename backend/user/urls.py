@@ -34,6 +34,11 @@ urlpatterns = [
         name="user_apikey",
     ),
     path(
+        "<str:user_id>/default_note_template/",
+        user_view.DefaultNoteTemplateView.as_view(),
+        name="user_default_note_template",
+    ),
+    path(
         "<uuid:user_id>/manage/<str:action_name>",
         user_view.ManageUser.as_view(),
         name="user_manage",

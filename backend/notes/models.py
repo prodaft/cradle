@@ -115,3 +115,19 @@ class ArchivedNote(models.Model):
     content: models.CharField = models.CharField()
     timestamp: models.DateTimeField = models.DateTimeField()
     publishable: models.BooleanField = models.BooleanField(default=False)
+
+
+class Snippet(models.Model):
+    id: models.UUIDField = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    owner = models.ForeignKey(
+        CradleUser, related_name="snippets", on_delete=models.CASCADE, null=True
+    )
+    default: models.BooleanField = models.BooleanField(default=False)
+    name: models.CharField = models.CharField(max_length=255)
+    content: models.TextField = models.TextField()
+    created_on: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name

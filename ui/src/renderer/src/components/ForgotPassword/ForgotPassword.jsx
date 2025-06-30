@@ -8,7 +8,6 @@ import {
     logInReq,
 } from '../../services/authReqService/authReqService';
 import AlertBox from '../AlertBox/AlertBox';
-import useAuth from '../../hooks/useAuth/useAuth';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { useWindowSize } from '@uidotdev/usehooks';
 
@@ -26,8 +25,6 @@ export default function ForgotPassword() {
     const windowSize = useWindowSize();
     const location = useLocation();
     const { from, state } = location.state || { from: { pathname: '/' } };
-
-    const auth = useAuth();
 
     const navigate = useNavigate();
 

@@ -1,11 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import AlertBox from '../AlertBox/AlertBox';
+import vimIcon from '../../assets/vim32x32.gif';
+import { Edit } from 'iconoir-react';
 import FormField from '../FormField/FormField';
 import useAuth from '../../hooks/useAuth/useAuth';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import SnippetList from '../SnippetList/SnippetList';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import {
     getUser,
@@ -13,11 +17,14 @@ import {
     deleteUser,
     createUser,
     generateApiKey,
+    setDefaultNoteTemplate,
+    getDefaultNoteTemplate,
 } from '../../services/userService/userService';
 import { Tabs, Tab } from '../Tabs/Tabs';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import ActionConfirmationModal from '../Modals/ActionConfirmationModal.jsx';
+import MarkdownEditorModal from '../Modals/MarkdownEditorModal.jsx';
 import TwoFactorSetupModal from '../Modals/TwoFactorSetupModal';
 
 const accountSettingsSchema = Yup.object().shape({
@@ -42,11 +49,12 @@ const accountSettingsSchema = Yup.object().shape({
 export default function AccountSettings({ target, isEdit = true, onAdd }) {
     const navigate = useNavigate();
     const auth = useAuth();
-    const isAdmin = auth?.isAdmin();
+    const { profile, setProfile, isAdmin } = useProfile();
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-    const isOwnAccount = isEdit ? target === 'me' || auth?.userId === target : false;
-    const isAdminAndNotOwn = isAdmin && !isOwnAccount;
+    const isOwnAccount = isEdit ? target === 'me' || profile?.userId === target : false;
+    const isAdminAndNotOwn = isAdmin() && !isOwnAccount;
     const { setModal } = useModal();
+    const vimModeId = useId();
 
     const defaultValues = isEdit
         ? {
@@ -57,6 +65,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
               vtKey: 'apikey',
               catalystKey: 'apikey',
               role: 'user',
+              vim_mode: false,
               email_confirmed: false,
               is_active: false,
           }
@@ -68,6 +77,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
               vtKey: '',
               catalystKey: '',
               role: 'user',
+              vim_mode: false,
               email_confirmed: false,
               is_active: false,
           };
@@ -77,7 +87,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
         handleSubmit,
         reset,
         getValues,
-        formState: { errors },
+        formState: { errors, isDirty },
     } = useForm({
         resolver: yupResolver(accountSettingsSchema, {
             context: { isEdit, isAdminAndNotOwn },
@@ -98,6 +108,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                         email: res.data.email,
                         password: 'password',
                         vtKey: res.data.vt_api_key ? 'apikey' : '',
+                        vimMode: res.data.vim_mode || false,
                         catalystKey: res.data.catalyst_api_key ? 'apikey' : '',
                         role: res.data.role || 'user',
                         email_confirmed: res.data.email_confirmed || false,
@@ -123,6 +134,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
             if (data.catalystKey !== 'apikey') {
                 payload.catalyst_api_key = data.catalystKey;
             }
+            payload.vim_mode = data.vimMode;
             if (isAdminAndNotOwn) {
                 payload.username = data.username;
                 payload.email = data.email;
@@ -131,7 +143,19 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                 payload.role = data.role;
             }
             try {
-                await updateUser(data.id, payload);
+                const response = await updateUser(data.id, payload);
+                if (response.status !== 200) {
+                    displayError(setAlert, navigate)(response.data);
+                    return;
+                }
+
+                if (isOwnAccount) {
+                    setProfile((prevProfile) => ({
+                        ...prevProfile,
+                        ...response.data,
+                    }));
+                }
+
                 setAlert({
                     show: true,
                     message: 'User updated successfully',
@@ -150,6 +174,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                 role: data.role,
                 email_confirmed: data.email_confirmed,
                 is_active: data.is_active,
+                vim_mode: data.vimMode,
             };
             try {
                 let result = await createUser(payload);
@@ -200,6 +225,42 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                     displayError(setAlert)(err);
                 }
             },
+        });
+    };
+
+    const editDefaultNoteTemplate = async () => {
+        const defaultNoteResponse = await getDefaultNoteTemplate(target);
+        if (defaultNoteResponse.status !== 200) {
+            displayError(setAlert)(defaultNoteResponse.data);
+            return;
+        }
+
+        setModal(MarkdownEditorModal, {
+            title: 'Edit Default Note Template',
+            noteTitle: 'Default Note Template',
+            initialContent: defaultNoteResponse.data.template,
+            userInput: profile.defaultNoteTemplate,
+            onConfirm: (content) => {
+                if (isOwnAccount) {
+                    setProfile((prevProfile) => ({
+                        ...prevProfile,
+                        defaultNoteTemplate: content,
+                    }));
+                }
+
+                setDefaultNoteTemplate(target, content).then((response) => {
+                    if (response.status === 200) {
+                        setAlert({
+                            show: true,
+                            message: 'Default note template updated successfully!',
+                            color: 'green',
+                        });
+                    } else {
+                        displayError(setAlert)(response.data);
+                    }
+                });
+            },
+            titleEditable: false,
         });
     };
 
@@ -302,7 +363,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                             />
                                         </div>
                                     )}
-                                    {isAdmin && (!isEdit || isAdminAndNotOwn) && (
+                                    {isAdmin() && (!isEdit || isAdminAndNotOwn) && (
                                         <>
                                             <div className='w-full mt-4'>
                                                 <label className='block text-sm font-medium'>
@@ -354,6 +415,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                     <button
                                         type='submit'
                                         className='btn btn-primary btn-block mt-4'
+                                        disabled={!isDirty}
                                     >
                                         {isEdit ? 'Save' : 'Add'}
                                     </button>
@@ -381,6 +443,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                     <button
                                         type='submit'
                                         className='btn btn-primary btn-block mt-4'
+                                        disabled={!isDirty}
                                     >
                                         {isEdit ? 'Save' : 'Add'}
                                     </button>
@@ -450,6 +513,55 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                         </div>
                                     </Tab>
                                 )}
+                                <Tab title='Editor'>
+                                    <div className='mt-4' />
+                                    <div className='form-control flex flex-column justify-between items-center'>
+                                        <label
+                                            htmlFor={vimModeId}
+                                            className='flex flex-row items-center cursor-pointer w-full'
+                                        >
+                                            <img
+                                                src={vimIcon}
+                                                alt=''
+                                                style={{
+                                                    width: '25px',
+                                                    marginRight: '5px',
+                                                }}
+                                            />
+                                            Vim Mode
+                                            <input
+                                                id={vimModeId}
+                                                data-testid='vim-toggle'
+                                                name='vim-toggle'
+                                                type='checkbox'
+                                                className='switch switch-ghost-primary ml-auto'
+                                                {...register('vimMode')}
+                                            />
+                                        </label>
+                                    </div>
+                                    <div className='mt-4' />
+                                    <SnippetList userId={target} />
+
+                                    <div className='mt-4' />
+
+                                    <button
+                                        type='button'
+                                        className={'btn btn-solid btn-block'}
+                                        onClick={editDefaultNoteTemplate}
+                                    >
+                                        <span className='flex items-center'>
+                                            <Edit className='w-4 h-4 mr-2' />
+                                            Edit Default Note Template
+                                        </span>
+                                    </button>
+                                    <button
+                                        type='submit'
+                                        className='btn btn-primary btn-block mt-4'
+                                        disabled={!isDirty}
+                                    >
+                                        {isEdit ? 'Save' : 'Add'}
+                                    </button>
+                                </Tab>
                             </Tabs>
                             <AlertBox alert={alert} />
                         </form>

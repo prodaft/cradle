@@ -1,6 +1,5 @@
 import CodeMirror from '@uiw/react-codemirror';
 import { vim, Vim } from '@replit/codemirror-vim';
-import vimIcon from '../../assets/vim32x32.gif';
 import { languages } from '@codemirror/language-data';
 import { drawSelection } from '@uiw/react-codemirror';
 import { useId, useState, useRef, useCallback, useEffect, useMemo, memo } from 'react';
@@ -20,6 +19,7 @@ import { CradleEditor } from '../../utils/editorUtils/editorUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import NoteOutline from '../NoteOutline/NoteOutline';
 import { TreeView } from '@phosphor-icons/react';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import extractHeaderHierarchy from '../../utils/editorUtils/markdownOutliner';
 
 /**
@@ -56,10 +56,8 @@ function Editor({
     additionalExtensions = [],
 }) {
     const EMPTY_FILE_LIST = new DataTransfer().files;
-    const [enableVim, setEnableVim] = useState(
-        localStorage.getItem('editor.vim') === 'true',
-    );
     const [showFileList, setShowFileList] = useState(false);
+    const { profile } = useProfile();
     const [prevNoteId, setPrevNoteId] = useState(null);
     const [pendingFiles, setPendingFiles] = useState(EMPTY_FILE_LIST);
     const [lspLoaded, setLspLoaded] = useState(false);
@@ -72,7 +70,6 @@ function Editor({
     const [noteOutline, setNoteOutline] = useState([]);
     const { isDarkMode } = useTheme();
     const autoLinkId = useId();
-    const vimModeId = useId();
     const editorRef = useRef(null);
     const markdownContentRef = useRef(markdownContent);
     const currentLineRef = useRef(currentLine);
@@ -152,7 +149,7 @@ function Editor({
             ...additionalExtensions,
         ];
 
-        if (enableVim) {
+        if (profile?.vim_mode) {
             Vim.defineEx('write', 'w', (cm) => {
                 saveNote();
             });
@@ -162,7 +159,7 @@ function Editor({
         return exts;
     }, [
         editorUtils,
-        enableVim,
+        profile?.vim_mode,
         additionalExtensions,
         debouncedSetCurrentLine,
         saveNote,
@@ -253,12 +250,6 @@ function Editor({
         setShowOutline((prev) => !prev);
     }, []);
 
-    const toggleVim = useCallback(() => {
-        const newValue = !enableVim;
-        localStorage.setItem('editor.vim', newValue);
-        setEnableVim(newValue);
-    }, [enableVim]);
-
     const smartLink = useCallback(() => {
         if (!editorRef.current) {
             return;
@@ -338,21 +329,6 @@ function Editor({
                         )}
                     </span>
                     <span className='flex flex-row space-x-3 items-center'>
-                        <label
-                            htmlFor={vimModeId}
-                            className='flex flex-row items-center cursor-pointer'
-                        >
-                            <img src={vimIcon} alt='' style={{ width: '25px' }} />
-                        </label>
-                        <input
-                            id={vimModeId}
-                            data-testid='vim-toggle'
-                            name='vim-toggle'
-                            type='checkbox'
-                            className='switch switch-ghost-primary my-1'
-                            checked={enableVim}
-                            onChange={toggleVim}
-                        />
                         <button
                             id='toggle-preview'
                             data-testid='toggle-preview'

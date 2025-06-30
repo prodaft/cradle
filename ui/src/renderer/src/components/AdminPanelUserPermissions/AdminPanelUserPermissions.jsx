@@ -120,7 +120,6 @@ export default function AdminPanelUserPermissions({ username, id }) {
                                 id='email-confirmation'
                                 data-testid='email-confirmation'
                                 name='email-confirmation'
-                                G
                                 type='button'
                                 className='btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 tooltip tooltip-bottom tooltip-primary ml-2'
                                 data-tooltip={'Send email confirmation'}

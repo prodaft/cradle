@@ -146,3 +146,30 @@ export async function disable2FA(code) {
         data: { token: code },
     });
 }
+
+/**
+ * Gets the default note template of the user
+ *
+ * @param {string} id - The id of the user to get the default note template for
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export async function getDefaultNoteTemplate(id) {
+    return authAxios({
+        method: 'get',
+        url: `/users/${id}/default_note_template/`,
+    });
+}
+
+/**
+ * Gets the default note template of the user
+ *
+ * @param {string} id - The id of the user to get the default note template for
+ * @returns {Promise<AxiosResponse<any, any>>}
+ */
+export async function setDefaultNoteTemplate(id, template) {
+    return authAxios({
+        method: 'post',
+        url: `/users/${id}/default_note_template/`,
+        data: { template: template },
+    });
+}

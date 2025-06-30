@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FormField from '../FormField/FormField';
 import AlertBox from '../AlertBox/AlertBox';
-import useAuth from '../../hooks/useAuth/useAuth';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { changePassword } from '../../services/userService/userService';
 
