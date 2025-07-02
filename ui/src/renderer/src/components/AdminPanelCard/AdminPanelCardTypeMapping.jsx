@@ -9,14 +9,7 @@ export default function AdminPanelCardTypeMapping({ name, id, setRightPane }) {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
 
     const handleEditClick = () => {
-        setRightPane(
-            <TypeMappingsEditor
-                id={id}
-                onSave={(a) => {
-                    console.log(a);
-                }}
-            />,
-        );
+        setRightPane(<TypeMappingsEditor id={id} onSave={(a) => {}} />);
     };
 
     return (

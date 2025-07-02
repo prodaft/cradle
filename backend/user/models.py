@@ -50,6 +50,13 @@ class CradleUser(AbstractUser, LoggableModelMixin):
 
     two_factor_enabled = models.BooleanField(default=False)
 
+    default_note_template = models.TextField(
+        blank=True, null=True, help_text="Default template for new notes"
+    )
+    vim_mode = models.BooleanField(
+        default=False, help_text="Whether to enable Vim keybindings in the editor"
+    )
+
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["password", "email"]
     EMAIL_FIELD = "email"

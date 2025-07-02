@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
-import useAuth from '../../hooks/useAuth/useAuth';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import { Tabs, Tab } from '../Tabs/Tabs';
 import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
 import EntityForm from '../AdminPanelForms/EntityForm';
@@ -49,10 +49,10 @@ export default function AdminPanel() {
     const [mappingTypes, setMappingTypes] = useState(null);
     const [enrichmentTypes, setEnrichmentTypes] = useState(null);
     const [users, setUsers] = useState(null);
+    const { isAdmin } = useProfile();
     const [entryTypes, setEntryTypes] = useState(null);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [rightPane, setRightPane] = useState(null);
-    const auth = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
     const handleError = displayError(setAlert, navigate);
@@ -174,7 +174,7 @@ export default function AdminPanel() {
     };
 
     useEffect(() => {
-        if (auth?.isAdmin()) {
+        if (isAdmin()) {
             displayUsers();
             displayEnrichmentTypes();
         }
@@ -195,7 +195,7 @@ export default function AdminPanel() {
                         <Tabs defaultTab={0} queryParam={'tab'}>
                             <Tab title='Entities'>
                                 <AdminPanelSection
-                                    addEnabled={auth?.isAdmin()}
+                                    addEnabled={isAdmin()}
                                     addTooltipText='Add Entity'
                                     handleAdd={(onAdd) =>
                                         setRightPane(
@@ -203,7 +203,6 @@ export default function AdminPanel() {
                                                 isEdit={false}
                                                 key={uniqueId('entity-form-')}
                                                 onAdd={(c) => {
-                                                    console.log(c);
                                                     onAdd(
                                                         <AdminPanelCardEntity
                                                             id={c.id}
@@ -229,7 +228,7 @@ export default function AdminPanel() {
                             </Tab>
                             <Tab title='Entry Types'>
                                 <AdminPanelSection
-                                    addEnabled={auth?.isAdmin()}
+                                    addEnabled={isAdmin()}
                                     addTooltipText='Add Entry Class'
                                     handleAdd={(onAdd) =>
                                         setRightPane(
@@ -265,7 +264,7 @@ export default function AdminPanel() {
                                     {mappingTypes}
                                 </AdminPanelSection>
                             </Tab>
-                            {auth?.isAdmin() && (
+                            {isAdmin() && (
                                 <Tab title='Users'>
                                     <AdminPanelSection
                                         addEnabled={true}
@@ -300,7 +299,7 @@ export default function AdminPanel() {
                                     </AdminPanelSection>
                                 </Tab>
                             )}
-                            {auth?.isAdmin() && (
+                            {isAdmin() && (
                                 <Tab title='Enrichment'>
                                     <AdminPanelSection
                                         addEnabled={false}
@@ -310,7 +309,7 @@ export default function AdminPanel() {
                                     </AdminPanelSection>
                                 </Tab>
                             )}
-                            {auth?.isAdmin() && (
+                            {isAdmin() && (
                                 <Tab title='Management'>
                                     <AdminPanelSection
                                         addEnabled={false}

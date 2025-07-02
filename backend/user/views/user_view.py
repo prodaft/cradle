@@ -24,6 +24,8 @@ from ..serializers import (
     UserManageResponseSerializer,
     ChangePasswordRequestSerializer,
     ChangePasswordResponseSerializer,
+    DefaultNoteTemplateSerializer,
+    DefaultNoteTemplateResponseSerializer,
 )
 from ..models import CradleUser
 from management.settings import cradle_settings
@@ -571,3 +573,114 @@ class PasswordReset(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         return Response("Token not found!", status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema_view(
+    get=extend_schema(
+        summary="Get default note template",
+        description="Returns the user's default note template. Users can only retrieve their own template.",
+        parameters=[
+            OpenApiParameter(
+                name="user_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the user, or 'me' to get own template",
+            )
+        ],
+        responses={
+            200: DefaultNoteTemplateResponseSerializer,
+            401: {"description": "User is not authenticated"},
+            403: {"description": "User is not allowed to view this template"},
+            404: {"description": "User not found"},
+        },
+    ),
+    post=extend_schema(
+        summary="Update default note template",
+        description="Updates a user's default note template. Users can only update their own template.",
+        parameters=[
+            OpenApiParameter(
+                name="user_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the user, or 'me' to update own template",
+            )
+        ],
+        request=DefaultNoteTemplateSerializer,
+        responses={
+            200: DefaultNoteTemplateResponseSerializer,
+            400: {"description": "Invalid data provided"},
+            401: {"description": "User is not authenticated"},
+            403: {"description": "User is not allowed to edit this template"},
+            404: {"description": "User not found"},
+        },
+    ),
+)
+class DefaultNoteTemplateView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        initiator = cast(CradleUser, request.user)
+        user = None
+        if user_id == "me":
+            user = initiator
+        else:
+            try:
+                user = CradleUser.objects.get(id=user_id)
+            except CradleUser.DoesNotExist:
+                return Response(
+                    "There is no user with the specified ID.",
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+        # Check permissions - users can only see their own template or admins can see non-admin templates
+        if not (
+            initiator.pk == user.pk
+            or (initiator.is_cradle_admin and not user.is_cradle_admin)
+        ):
+            return Response(
+                "You are not allowed to view this template.",
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        return Response(
+            {"template": user.default_note_template},
+            status=status.HTTP_200_OK,
+        )
+
+    def post(self, request, user_id):
+        editor = cast(CradleUser, request.user)
+        edited = None
+
+        if user_id == "me":
+            edited = editor
+        else:
+            try:
+                edited = CradleUser.objects.get(id=user_id)
+            except CradleUser.DoesNotExist:
+                return Response(
+                    "There is no user with the specified ID.",
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+        # Check permissions - users can only edit their own template or admins can edit non-admin templates
+        if not (
+            editor.pk == edited.pk
+            or (editor.is_cradle_admin and not edited.is_cradle_admin)
+        ):
+            return Response(
+                "You are not allowed to edit this template.",
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = DefaultNoteTemplateSerializer(data=request.data)
+        if serializer.is_valid():
+            edited.default_note_template = serializer.validated_data.get("template")
+            edited.save(update_fields=["default_note_template"])
+
+            return Response(
+                {"template": edited.default_note_template},
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

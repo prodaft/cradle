@@ -17,7 +17,12 @@ import text_logo_light from '../../assets/logos/light.svg';
  * @returns {Logo}
  * @constructor
  */
-export default function Logo({ width = 'auto', height = 'auto', text = false }) {
+export default function Logo({
+    width = 'auto',
+    height = 'auto',
+    text = false,
+    onClick = null,
+}) {
     const { isDarkMode, toggleTheme } = useTheme();
     const [logo, setLogo] = useState(null);
 
@@ -37,5 +42,36 @@ export default function Logo({ width = 'auto', height = 'auto', text = false }) 
         }
     }, [isDarkMode, text]);
 
-    return <img src={logo} alt='CRADLE' style={{ width: width, height: height }} />;
+    return (
+        <img
+            src={logo}
+            alt='CRADLE'
+            onClick={onClick || ((e) => {})}
+            style={{
+                width: width,
+                height: height,
+                cursor: onClick ? 'pointer' : 'default',
+                transition: onClick
+                    ? 'transform 0.2s ease-in-out, opacity 0.2s ease-in-out'
+                    : 'none',
+            }}
+            className={onClick ? 'logo-clickable' : ''}
+            onMouseEnter={
+                onClick
+                    ? (e) => {
+                          e.target.style.transform = 'scale(1.1)';
+                          e.target.style.opacity = '0.8';
+                      }
+                    : undefined
+            }
+            onMouseLeave={
+                onClick
+                    ? (e) => {
+                          e.target.style.transform = 'scale(1)';
+                          e.target.style.opacity = '1';
+                      }
+                    : undefined
+            }
+        />
+    );
 }

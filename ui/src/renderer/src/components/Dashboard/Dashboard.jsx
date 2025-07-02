@@ -26,6 +26,7 @@ import { useModal } from '../../contexts/ModalContext/ModalContext';
 import { SparksSolid } from 'iconoir-react';
 import NavbarDropdown from '../NavbarDropdown/NavbarDropdown.jsx';
 import Files from './Files.jsx';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 
 /**
  * Dashboard component
@@ -51,7 +52,7 @@ export default function Dashboard() {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [enrichers, setEnrichers] = useState([]);
     const navigate = useNavigate();
-    const auth = useAuth();
+    const { profile, isAdmin } = useProfile();
     const dashboard = useRef(null);
 
     const { setModal } = useModal();
@@ -138,7 +139,7 @@ export default function Dashboard() {
         />,
 
         // If the user is an admin and the dashboard is not for an artifact, add a delete button to the navbar
-        auth.isAdmin() && contentObject && contentObject.type !== 'artifact' && (
+        isAdmin() && contentObject && contentObject.type !== 'artifact' && (
             <NavbarButton
                 key='delete-entry-btn'
                 icon={<Trash />}
@@ -158,7 +159,7 @@ export default function Dashboard() {
         contentObject,
         enrichers,
         location,
-        auth.isAdmin(),
+        profile,
         entryMissing,
     ]);
 

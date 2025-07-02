@@ -10,6 +10,7 @@ import {
     setSettings,
     performAction,
 } from '../../services/managementService/managementService';
+import SnippetList from '../SnippetList/SnippetList';
 
 const noteSettingsSchema = Yup.object().shape({
     minEntries: Yup.number()
@@ -174,6 +175,11 @@ export default function NoteSettingsForm() {
                                             Save Settings
                                         </button>
                                     </div>
+                                </div>
+                            </Tab>
+                            <Tab title='Snippets'>
+                                <div className='flex flex-col gap-3 pt-2'>
+                                    <SnippetList userId='null' />
                                 </div>
                             </Tab>
                             <Tab title='Actions'>

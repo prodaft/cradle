@@ -3,6 +3,7 @@ from mistune import InlineParser, InlineState, Markdown
 from mistune.helpers import LINK_LABEL
 import datetime
 from django.utils.timezone import make_aware
+from ..exceptions import InvalidDateFormatException
 import frontmatter
 
 
@@ -46,26 +47,31 @@ def parse_cradle_link(
     time = m.group("cl_time").strip() if m.group("cl_time") else None
     date = m.group("cl_date") if m.group("cl_date") else None
 
-    state.append_token(
-        {
-            "type": "cradle_link",
-            "attrs": {
-                "key": m.group("cl_type").strip(),
-                "value": m.group("cl_value").strip(),
-                "alias": m.group("cl_alias").strip() if m.group("cl_alias") else None,
-                "time": (
-                    make_aware(datetime.datetime.strptime(time, "%H:%M"))
-                    if time
-                    else None
-                ),
-                "date": (
-                    make_aware(datetime.datetime.strptime(date, "%d-%m-%Y"))
-                    if date
-                    else None
-                ),
-            },
-        }
-    )
+    try:
+        state.append_token(
+            {
+                "type": "cradle_link",
+                "attrs": {
+                    "key": m.group("cl_type").strip(),
+                    "value": m.group("cl_value").strip(),
+                    "alias": m.group("cl_alias").strip()
+                    if m.group("cl_alias")
+                    else None,
+                    "time": (
+                        make_aware(datetime.datetime.strptime(time, "%H:%M"))
+                        if time
+                        else None
+                    ),
+                    "date": (
+                        make_aware(datetime.datetime.strptime(date, "%d-%m-%Y"))
+                        if date
+                        else None
+                    ),
+                },
+            }
+        )
+    except ValueError:
+        raise InvalidDateFormatException(f"{time} {date}" if time else date)
     return pos
 
 

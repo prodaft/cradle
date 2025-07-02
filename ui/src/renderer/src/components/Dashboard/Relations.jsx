@@ -175,8 +175,6 @@ export default function Relations({ obj }) {
         navigator.clipboard
             .writeText(csvContent)
             .then(() => {
-                console.log('CSV copied to clipboard');
-                // Trigger copied animation
                 setIsCopied(true);
                 setTimeout(() => setIsCopied(false), 2000);
             })

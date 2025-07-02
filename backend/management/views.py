@@ -22,7 +22,6 @@ from drf_spectacular.utils import (
     OpenApiParameter,
 )
 
-from rest_framework.permissions import IsAdminUser
 from .settings import cradle_settings
 from .models import Setting
 from entries.tasks import (
@@ -42,7 +41,7 @@ class ActionSerializer(serializers.Serializer):
 
 
 class SettingsView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [HasAdminRole, IsAuthenticated]
 
     @extend_schema(
         summary="Get all settings with defaults",

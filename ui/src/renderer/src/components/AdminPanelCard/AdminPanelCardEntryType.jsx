@@ -4,7 +4,7 @@ import { useState } from 'react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { deleteArtifactClass } from '../../services/adminService/adminService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import useAuth from '../../hooks/useAuth/useAuth';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import EntryTypeForm from '../AdminPanelForms/EntryTypeForm.jsx';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
@@ -19,8 +19,8 @@ export default function AdminPanelCardEntryType({
 }) {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
-    const auth = useAuth();
     const { setModal } = useModal();
+    const { isAdmin } = useProfile();
 
     const handleDelete = async () => {
         try {
@@ -51,7 +51,7 @@ export default function AdminPanelCardEntryType({
                     </h2>
                 </span>
                 <div className='w-full flex flex-row justify-end'>
-                    {auth?.isAdmin() && (
+                    {isAdmin() && (
                         <button
                             className='btn btn-ghost w-fit h-full p-1'
                             onClick={handleActivityClick}
@@ -65,7 +65,7 @@ export default function AdminPanelCardEntryType({
                     >
                         <EditPencil />
                     </button>
-                    {auth?.isAdmin() && (
+                    {isAdmin() && (
                         <button
                             className='btn btn-ghost w-fit h-full p-1'
                             onClick={() =>

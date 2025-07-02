@@ -3,6 +3,8 @@ import enum
 from typing import Any, Dict, List, Optional, Set, Tuple
 import mistune
 from mistune.core import BaseRenderer, BlockState
+from django.utils.timezone import make_aware
+from ..exceptions import InvalidDateFormatException
 import uuid
 import hashlib
 import datetime
@@ -524,7 +526,39 @@ def cradle_connections(
                 if isinstance(item, str):
                     entries.add(Link(key=subtype, value=item))
         elif isinstance(value, dict):
-            pass
+            for k, v in value.items():
+                if isinstance(v, str):
+                    date = None
+                    try:
+                        # First try to parse with time component (HH:MM dd-mm-yyyy)
+                        if ":" in v and " " in v:
+                            time_part, date_part = v.split(" ", 1)
+                            if ":" in time_part:
+                                time_format = "%H:%M %d-%m-%Y"
+
+                                try:
+                                    date = make_aware(
+                                        datetime.datetime.strptime(v, time_format)
+                                    )
+                                except ValueError:
+                                    raise InvalidDateFormatException(v)
+
+                        if date is None:
+                            try:
+                                date = make_aware(
+                                    datetime.datetime.strptime(v, "%d-%m-%Y")
+                                )
+                            except ValueError:
+                                raise InvalidDateFormatException(v)
+                    except ValueError:
+                        pass
+
+                    entries.add(Link(key=subtype, value=k, date=date))
+                elif isinstance(v, Iterable):
+                    raise ValueError(
+                        f"Unsupported value type for {subtype}:{k}. Expected str, got {type(v)}."
+                    )
+
         elif isinstance(value, str):
             entries.add(Link(key=subtype, value=value))
 

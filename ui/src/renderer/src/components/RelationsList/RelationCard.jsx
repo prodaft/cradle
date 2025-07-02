@@ -5,15 +5,15 @@ import {
     createDashboardLink,
 } from '../../utils/dashboardUtils/dashboardUtils';
 import { deleteRelation } from '../../services/graphService/graphService';
-import useAuth from '../../hooks/useAuth/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 
 export default function RelationCard({ relation, onDelete, setAlert }) {
     const [formattedCreated, setFormattedCreated] = useState('');
     const [formattedSeen, setFormattedSeen] = useState('');
     const [visible, setVisible] = useState(true);
-    const auth = useAuth();
+    const { isAdmin } = useProfile();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -54,7 +54,7 @@ export default function RelationCard({ relation, onDelete, setAlert }) {
                 <h2 className='text-lg font-bold text-gray-900 dark:text-white'>
                     {capitalizeString(relation.reason || 'Relation')}
                 </h2>
-                {auth.isAdmin() && (
+                {isAdmin() && (
                     <button
                         title='Delete Relation'
                         className='text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 transition-colors'

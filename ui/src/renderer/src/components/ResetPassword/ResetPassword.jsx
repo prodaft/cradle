@@ -8,7 +8,6 @@ import {
     logInReq,
 } from '../../services/authReqService/authReqService';
 import AlertBox from '../AlertBox/AlertBox';
-import useAuth from '../../hooks/useAuth/useAuth';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { useWindowSize } from '@uidotdev/usehooks';
 
@@ -27,8 +26,6 @@ export default function ResetPassword() {
     const location = useLocation();
     const [searchParams, setSearchParams] = useSearchParams();
     const token = searchParams.get('token');
-
-    const auth = useAuth();
 
     const navigate = useNavigate();
 

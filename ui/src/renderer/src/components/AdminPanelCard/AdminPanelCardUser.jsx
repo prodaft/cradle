@@ -4,7 +4,7 @@ import { useState } from 'react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { deleteUser } from '../../services/userService/userService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import useAuth from '../../hooks/useAuth/useAuth';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import AccountSettings from '../AccountSettings/AccountSettings';
 import AdminPanelUserPermissions from '../AdminPanelUserPermissions/AdminPanelUserPermissions';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
@@ -14,7 +14,7 @@ import ActivityList from '../ActivityList/ActivityList';
 export default function AdminPanelCardUser({ name, id, onDelete, setRightPane }) {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
-    const auth = useAuth();
+    const { isAdmin } = useProfile();
     const { setModal } = useModal();
 
     const handleDelete = async () => {
@@ -50,7 +50,7 @@ export default function AdminPanelCardUser({ name, id, onDelete, setRightPane })
                     </span>
                 </h2>
                 <div className='w-full flex flex-row justify-end'>
-                    {auth?.isAdmin() && (
+                    {isAdmin() && (
                         <button
                             className='btn btn-ghost w-fit h-full p-1'
                             onClick={handleActivityClick}
@@ -64,7 +64,7 @@ export default function AdminPanelCardUser({ name, id, onDelete, setRightPane })
                     >
                         <EditPencil />
                     </button>
-                    {auth?.isAdmin() && (
+                    {isAdmin() && (
                         <button
                             className='btn btn-ghost w-fit h-full p-1'
                             onClick={() =>

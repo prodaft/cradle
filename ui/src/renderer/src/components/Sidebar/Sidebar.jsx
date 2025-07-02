@@ -18,6 +18,7 @@ import { Graph, QuestionMark } from '@phosphor-icons/react';
 import SidebarItem from '../SidebarItem/SidebarItem';
 import SidebarSection from '../SidebarSection/SidebarSection';
 import useAuth from '../../hooks/useAuth/useAuth';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import { HomeAltSlimHoriz } from 'iconoir-react/regular';
 import { useNavigate } from 'react-router-dom';
 
@@ -46,6 +47,7 @@ export default function Sidebar({
     const [isHovered, setIsHovered] = useState(false);
     const isHoveredRef = useRef(isHovered);
     const auth = useAuth();
+    const { isEntryManager } = useProfile();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -73,11 +75,6 @@ export default function Sidebar({
             document.removeEventListener('mouseup', handleMouseUp);
         };
     }, []);
-
-    const welcomeLocation = '/';
-    const handleWelcomePage = useCallback(() => {
-        navigate(welcomeLocation);
-    }, [navigate]);
 
     const newNoteLocation = '/editor/new';
     const handleNewNote = useCallback(() => {
@@ -132,12 +129,6 @@ export default function Sidebar({
                             justify='start'
                         >
                             <SidebarItem
-                                handleClick={handleWelcomePage}
-                                icon={<HomeAltSlimHoriz />}
-                                text='Home'
-                                highlightedLocation={welcomeLocation}
-                            />
-                            <SidebarItem
                                 handleClick={handleNewNote}
                                 icon={<Edit />}
                                 text='New Note'
@@ -169,7 +160,7 @@ export default function Sidebar({
                                 highlightedLocation={accountSettingsLocation}
                             />
                         </SidebarSection>
-                        {auth.isEntryManager() && (
+                        {isEntryManager() && (
                             <SidebarSection type='content' height='fit' justify='start'>
                                 <SidebarItem
                                     handleClick={handleAdminPanel}

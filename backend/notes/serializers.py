@@ -4,7 +4,7 @@ from drf_spectacular.utils import extend_schema_field
 
 from file_transfer.exceptions import MinioObjectNotFound
 from file_transfer.utils import MinioClient
-from .models import Note
+from .models import Note, Snippet
 from .processor.task_scheduler import TaskScheduler
 from .exceptions import (
     NoteIsEmptyException,
@@ -25,6 +25,15 @@ from user.models import CradleUser
 from typing import cast
 import frontmatter
 from .markdown.common import ErrorBypassYAMLHandler
+
+
+class SnippetSerializer(serializers.ModelSerializer):
+    owner = UserRetrieveSerializer(read_only=True)
+
+    class Meta:
+        model = Snippet
+        fields = ["id", "owner", "name", "content", "created_on"]
+        read_only_fields = ["id", "created_on"]
 
 
 class NoteCreateSerializer(serializers.ModelSerializer):

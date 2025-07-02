@@ -25,7 +25,6 @@ from ..enums import EntryType
             400: {"description": "Invalid data or entry type"},
             403: {"description": "Only admins can create entities"},
         },
-        tags=["Entries"],
     ),
 )
 class EntryView(generics.CreateAPIView):
@@ -80,7 +79,6 @@ class EntryView(generics.CreateAPIView):
         404: {"description": "Entry not found or access denied"},
         401: {"description": "User is not authenticated"},
     },
-    tags=["Entries"],
 )
 class EntryDetailView(APIView):
     permission_classes = [IsAuthenticated]

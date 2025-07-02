@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import useAuth from '../../hooks/useAuth/useAuth';
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import NavbarButton from '../NavbarButton/NavbarButton';
@@ -21,19 +20,22 @@ import { keymap } from '@codemirror/view';
 import NavbarSwitch from '../NavbarSwitch/NavbarSwitch';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext.jsx';
 
 export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
-    const [markdownContent, setMarkdownContent] = useState('');
+    const { profile } = useProfile();
     const [fileData, setFileData] = useState([]);
     const [publishable, setPublishable] = useState(false);
     const [saving, setSaving] = useState(false);
     const savingRef = useRef(saving);
+    const [markdownContent, setMarkdownContent] = useState(
+        profile?.defaultNoteTemplate || '',
+    );
 
     const markdownContentRef = useRef(markdownContent);
     const fileDataRef = useRef(fileData);
 
     const textEditorRef = useRef(null);
-    const auth = useAuth();
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const navigate = useNavigate();
     const { refreshFleetingNotes } = useOutletContext();
@@ -68,7 +70,9 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
 
     const isValidContent = useCallback(() => {
         return (
-            markdownContentRef.current && markdownContentRef.current.trim().length > 0
+            markdownContentRef.current &&
+            markdownContentRef.current.trim().length > 0 &&
+            markdownContentRef.current != profile?.defaultNoteTemplate
         );
     }, []);
 
@@ -85,7 +89,7 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
         const id = idRef.current;
         if (id) {
             if (id === NEW_NOTE_PLACEHOLDER_ID) {
-                setMarkdownContent('');
+                setMarkdownContent(profile?.defaultNoteTemplate || '');
                 setFileData([]);
                 setHasUnsavedChanges(true);
                 prevIdRef.current = NEW_NOTE_PLACEHOLDER_ID;
@@ -275,7 +279,7 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
                 }
             />,
         ],
-        [auth, id, publishable],
+        [id, publishable],
     );
 
     return (

@@ -522,10 +522,14 @@ class NoteFiles(APIView):
         if filterset.is_valid():
             queryset = filterset.qs
 
-        notes = queryset.order_by("-timestamp")
+        notes = queryset
 
         # Get all files from the filtered notes
-        files = FileReference.objects.filter(note__in=notes).distinct()
+        files = (
+            FileReference.objects.filter(note__in=notes)
+            .distinct()
+            .order_by("-timestamp")
+        )
 
         # Filter by keyword (contains match with filename or exact match with hash)
         if "keyword" in request.query_params:

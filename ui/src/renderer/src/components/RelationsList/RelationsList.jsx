@@ -26,7 +26,6 @@ export default function RelationsList({ query }) {
         try {
             const response = await getRelations(query, page);
             const data = response.data;
-            console.log(data);
             setRelations(data.results);
             setTotalPages(data.total_pages);
             setAlert({
