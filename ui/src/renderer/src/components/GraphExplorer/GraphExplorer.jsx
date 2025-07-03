@@ -15,6 +15,7 @@ export default function GraphExplorer() {
 
         layout: 'preset',
         animateLayout: false,
+        showLabels: false,
     });
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [selectedEntries, setSelectedEntries] = useState(new Set());
@@ -39,6 +40,10 @@ export default function GraphExplorer() {
                         <Graph
                             onLinkClick={(link) => {
                                 setSelectedEntries([link.source, link.target]);
+                            }}
+                            onNodesSelected={(nodes) => {
+                                console.log(nodes);
+                                setSelectedEntries(nodes);
                             }}
                             config={config}
                             ref={cyRef} // pass setter to receive the cytoscape instance

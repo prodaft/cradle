@@ -94,14 +94,22 @@ const GraphSettings = forwardRef(
                     selector: 'node',
                     style: {
                         // Hide labels by default
-                        label: '',
-                        'text-opacity': 0,
+                        label: config.showLabels ? 'data(label)' : '',
+                        'text-opacity': config.showLabels ? 1 : 0,
+                        'font-size': `${config.labelSizeCoefficient}px`,
                         'border-width': 1,
                         'border-color': isDarkMode ? '#333' : '#eee',
                         'background-color': 'data(color)',
                         // Make node size based on its degree (centrality)
                         width: `mapData(degree, 0, 10, ${minSize}, ${maxSize})`,
                         height: `mapData(degree, 0, 10, ${minSize}, ${maxSize})`,
+                        color: isDarkMode ? 'white' : 'black',
+                        'text-valign': 'top',
+                        'text-halign': 'center',
+                        'text-background-color': isDarkMode ? '#333' : '#eee',
+                        'text-background-opacity': 0.8,
+                        'text-background-shape': 'roundrectangle',
+                        'text-background-padding': '3px',
                     },
                 },
                 {
@@ -248,7 +256,7 @@ const GraphSettings = forwardRef(
                     <div className='flex items-center'>
                         <label className='text-sm mr-3'>Layout</label>
                         <select
-                            className='select select-sm mr-3'
+                            className='select select-sm w-40'
                             value={config.layout}
                             onChange={(e) =>
                                 setConfig((prev) => ({
@@ -262,7 +270,19 @@ const GraphSettings = forwardRef(
                             <option value='cose'>Cose</option>
                             <option value='breadthfirst'>Breadthfirst</option>
                         </select>
-                        <label className='text-sm ml-auto mr-3'>Animate</label>
+                        <label className='text-sm ml-auto mr-2'>Labels</label>
+                        <input
+                            type='checkbox'
+                            className='checkbox'
+                            checked={config.showLabels}
+                            onChange={(e) =>
+                                setConfig((prev) => ({
+                                    ...prev,
+                                    showLabels: e.target.checked,
+                                }))
+                            }
+                        />
+                        <label className='text-sm ml-3 mr-2'>Animate</label>
                         <input
                             type='checkbox'
                             className='checkbox'

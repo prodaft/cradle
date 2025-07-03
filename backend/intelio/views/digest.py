@@ -123,7 +123,10 @@ class DigestAPIView(GenericAPIView):
 
     def get(self, request):
         """Fetch all digests for the current user with optional filtering."""
-        queryset = BaseDigest.objects.filter(user=request.user)
+        if request.user.is_cradle_admin:
+            queryset = BaseDigest.objects.all()
+        else:
+            queryset = BaseDigest.objects.filter(user=request.user)
 
         # Apply filters
         filterset = self.filterset_class(request.GET, queryset=queryset)

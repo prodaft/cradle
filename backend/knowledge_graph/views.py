@@ -165,7 +165,9 @@ class GraphNeighborsView(APIView):
 
         sourceset = source_entry.aliasqs(request.user).non_virtual()
 
-        neighbors_qs = get_neighbors(sourceset, depth, request.user, True)
+        neighbors_qs = get_neighbors(
+            sourceset, depth, request.user, True, True
+        ).order_by()
 
         query_str = request.query_params.get("query")
 
@@ -269,8 +271,10 @@ class GraphInaccessibleView(APIView):
                 {"error": f"Entry with ID {source_id} not found."}, status=404
             )
 
+        sourceset = source_entry.aliasqs(request.user).non_virtual()
+
         neighbors_qs = get_neighbors(
-            {source_entry.id}, depth, None, True
+            sourceset, depth, None, True, True
         )  # Queryset of all neighbors
 
         entities = neighbors_qs.filter(entry_class__type=EntryType.ENTITY)

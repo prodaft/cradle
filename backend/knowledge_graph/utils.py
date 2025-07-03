@@ -9,7 +9,7 @@ from entries.models import Edge, Entry
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
 
-def get_neighbors(sourceset, depth, user=None, skip_virtual=False):
+def get_neighbors(sourceset, depth, user=None, skip_virtual=False, cumulative=False):
     """
     Returns a QuerySet of Entry objects that are exactly `depth` hops away from source_entry.
     Only follows relations where accessible=True, and ensures nodes visited at earlier
@@ -20,6 +20,7 @@ def get_neighbors(sourceset, depth, user=None, skip_virtual=False):
 
     current_level = sourceset
     visited = [current_level]
+    result = current_level
 
     for _ in range(depth):
         if skip_virtual:
@@ -45,8 +46,12 @@ def get_neighbors(sourceset, depth, user=None, skip_virtual=False):
         for v in visited:
             qs = qs.exclude(pk__in=v)
 
-        qs = qs.distinct()
+        qs = qs.distinct().order_by("last_seen")
         current_level = qs
+        if cumulative:
+            result = result | current_level
+        else:
+            result = current_level
 
         visited.append(current_level)
 
@@ -54,7 +59,7 @@ def get_neighbors(sourceset, depth, user=None, skip_virtual=False):
             visited.append(virt_ids)
 
     # Return a queryset for the final level
-    return current_level
+    return result
 
 
 def get_edges_for_paths(start_id, targets, user, start_time, end_time) -> List[Edge]:
