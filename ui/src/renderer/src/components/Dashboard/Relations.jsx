@@ -277,6 +277,7 @@ export default function Relations({ obj }) {
                                         type={result.type}
                                         subtype={result.subtype}
                                         onClick={handleResultClick(dashboardLink)}
+                                        depth={result.depth}
                                     />
                                 );
                             })}

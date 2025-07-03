@@ -20,6 +20,7 @@ from .serializers import (
     PathfindQuery,
     SubGraphSerializer,
     GraphInaccessibleResponseSerializer,
+    EntryWithDepthSerializer,
 )
 from django.utils.dateparse import parse_datetime
 
@@ -167,7 +168,7 @@ class GraphNeighborsView(APIView):
 
         neighbors_qs = get_neighbors(
             sourceset, depth, request.user, True, True
-        ).order_by()
+        ).order_by("depth", "-last_seen")
 
         query_str = request.query_params.get("query")
 
@@ -198,10 +199,10 @@ class GraphNeighborsView(APIView):
         paginated_entries = paginator.paginate_queryset(neighbors_qs, request)
 
         if paginated_entries is not None:
-            serializer = EntrySerializer(paginated_entries, many=True)
+            serializer = EntryWithDepthSerializer(paginated_entries, many=True)
             return paginator.get_paginated_response(serializer.data)
 
-        serializer = EntrySerializer(neighbors_qs, many=True)
+        serializer = EntryWithDepthSerializer(neighbors_qs, many=True)
         return Response(serializer.data)
 
 

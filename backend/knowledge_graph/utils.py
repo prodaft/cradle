@@ -4,6 +4,7 @@ from django.db.models import Q
 
 from core.fields import BitStringField
 from entries.models import Edge, Entry
+from django.db.models import Value, IntegerField
 
 
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
@@ -15,14 +16,11 @@ def get_neighbors(sourceset, depth, user=None, skip_virtual=False, cumulative=Fa
     Only follows relations where accessible=True, and ensures nodes visited at earlier
     depths are not revisited.
     """
-    if depth == 0:
-        return sourceset
-
     current_level = sourceset
+    result = current_level.annotate(depth=Value(0, output_field=IntegerField()))
     visited = [current_level]
-    result = current_level
 
-    for _ in range(depth):
+    for current_depth in range(depth):
         if skip_virtual:
             virt_edges = Edge.objects.filter(src__in=current_level, virtual=True)
             virt_ids = virt_edges.values_list("dst", flat=True).distinct()
@@ -42,16 +40,28 @@ def get_neighbors(sourceset, depth, user=None, skip_virtual=False, cumulative=Fa
         qs = Entry.objects.filter(
             id__in=dst_ids,
         )
+        before = qs
 
         for v in visited:
             qs = qs.exclude(pk__in=v)
 
-        qs = qs.distinct().order_by("last_seen")
+        qs = qs.distinct()
+        print(f"before: {before.count()}, after: {qs.count()}")
+
         current_level = qs
         if cumulative:
-            result = result | current_level
+            result = result.union(
+                current_level.annotate(
+                    depth=Value(
+                        current_depth + 1,
+                    )
+                )
+            )
+            print(f"current_depth: {current_depth}, result: {result}")
         else:
-            result = current_level
+            result = current_level.annotate(
+                depth=Value(current_depth + 1, output_field=IntegerField())
+            )
 
         visited.append(current_level)
 
