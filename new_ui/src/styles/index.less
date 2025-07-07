@@ -1,0 +1,60 @@
+/* Main stylesheet that imports all theme components */
+/* NOTE: RSuite styles are now loaded dynamically - see RSUITE_THEMES.md */
+
+/* Base styles (theme-independent) */
+@import './base.less';
+
+/* Component-specific theme overrides */
+@import './components/codemirror.less';
+@import './components/flexlayout.less';
+@import './components/rsuite.less';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Utility classes */
+.theme-transition {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Apply transition to common elements */
+*,
+*::before,
+*::after {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Disable transitions during theme switching to prevent flashing */
+.theme-switching * {
+  transition: none !important;
+}
+
+
+/* Scrollbar theming */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* Dark theme scrollbar */
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--border-secondary);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
