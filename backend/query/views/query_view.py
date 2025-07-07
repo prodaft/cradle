@@ -69,7 +69,9 @@ from ..utils import parse_query
         ),
     ],
     responses={
-        200: EntryResponseSerializer(many=True),
+        200: TotalPagesPagination().get_paginated_response_serializer(
+            EntryResponseSerializer
+        ),
         401: {"description": "Unauthorized"},
     },
 )

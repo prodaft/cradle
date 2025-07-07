@@ -119,7 +119,9 @@ class GraphPathFindView(APIView):
         ),
     ],
     responses={
-        200: EntrySerializer(many=True),
+        200: LazyPaginator().get_paginated_response_serializer(
+            EntryWithDepthSerializer
+        ),
         400: {"description": "Invalid parameters or query syntax"},
         401: {"description": "User is not authenticated"},
         404: {"description": "Source entry not found"},
@@ -166,10 +168,6 @@ class GraphNeighborsView(APIView):
 
         sourceset = source_entry.aliasqs(request.user).non_virtual()
 
-        neighbors_qs = get_neighbors(
-            sourceset, depth, request.user, True, True
-        ).order_by("depth", "-last_seen")
-
         query_str = request.query_params.get("query")
 
         if query_str:
@@ -183,12 +181,27 @@ class GraphNeighborsView(APIView):
                     {"error": f"Invalid query syntax: {str(e)}"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            neighbors_qs = neighbors_qs.filter(query_filter)
+
+            neighbors_qs = get_neighbors(
+                sourceset,
+                depth,
+                request.user,
+                True,
+                True,
+                lambda qs: qs.filter(query_filter),
+            ).order_by("depth", "-last_seen")
         else:
-            filterset = EntryFilter(request.query_params, queryset=neighbors_qs)
+            filterset = EntryFilter(request.query_params)
 
             if filterset.is_valid():
-                neighbors_qs = filterset.qs
+                neighbors_qs = get_neighbors(
+                    sourceset,
+                    depth,
+                    request.user,
+                    True,
+                    True,
+                    lambda qs: EntryFilter(request.query_params, queryset=qs).qs,
+                ).order_by("depth", "-last_seen")
             else:
                 return Response(
                     {"error": f"Invalid query syntax: {filterset.errors}"},
@@ -274,11 +287,14 @@ class GraphInaccessibleView(APIView):
 
         sourceset = source_entry.aliasqs(request.user).non_virtual()
 
-        neighbors_qs = get_neighbors(
-            sourceset, depth, None, True, True
+        entities = get_neighbors(
+            sourceset,
+            depth,
+            None,
+            True,
+            True,
+            lambda qs: qs.filter(entry_class__type=EntryType.ENTITY),
         )  # Queryset of all neighbors
-
-        entities = neighbors_qs.filter(entry_class__type=EntryType.ENTITY)
 
         inaccessible = Access.objects.inaccessible_entries(
             request.user, entities, {AccessType.READ, AccessType.READ_WRITE}

@@ -124,6 +124,12 @@ class FalconDigest(BaseDigest):
                 self._append_warning("Entity value missing")
                 return
 
+            if len(value) > 1024:
+                self._append_warning(
+                    f"Entity value {value} is too long ({len(value)} characters, max 1024)."
+                )
+                continue
+
             try:
                 parent_entry, created = Entry.objects.get_or_create(
                     entry_class=eclass,
@@ -188,6 +194,12 @@ class FalconDigest(BaseDigest):
                 value = link.get("value", None)
                 if value is None:
                     self._append_warning("Link value missing")
+                    continue
+
+                if len(value) > 1024:
+                    self._append_warning(
+                        f"Entity value {value} is too long ({len(value)} characters, max 1024)."
+                    )
                     continue
 
                 try:

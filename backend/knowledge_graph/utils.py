@@ -10,7 +10,9 @@ from django.db.models import Value, IntegerField
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
 
-def get_neighbors(sourceset, depth, user=None, skip_virtual=False, cumulative=False):
+def get_neighbors(
+    sourceset, depth, user=None, skip_virtual=False, cumulative=False, filter=None
+):
     """
     Returns a QuerySet of Entry objects that are exactly `depth` hops away from source_entry.
     Only follows relations where accessible=True, and ensures nodes visited at earlier
@@ -51,7 +53,7 @@ def get_neighbors(sourceset, depth, user=None, skip_virtual=False, cumulative=Fa
         current_level = qs
         if cumulative:
             result = result.union(
-                current_level.annotate(
+                (filter(current_level) if filter else current_level).annotate(
                     depth=Value(
                         current_depth + 1,
                     )
@@ -59,7 +61,7 @@ def get_neighbors(sourceset, depth, user=None, skip_virtual=False, cumulative=Fa
             )
             print(f"current_depth: {current_depth}, result: {result}")
         else:
-            result = current_level.annotate(
+            result = (filter(current_level) if filter else current_level).annotate(
                 depth=Value(current_depth + 1, output_field=IntegerField())
             )
 

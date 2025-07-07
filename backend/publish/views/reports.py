@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from core.pagination import TotalPagesPagination
 from notes.models import Note
 from publish.strategies import PUBLISH_STRATEGIES
 
@@ -37,7 +38,9 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
             ),
         ],
         responses={
-            200: ReportSerializer(many=True),
+            200: TotalPagesPagination().get_paginated_response_serializer(
+                ReportSerializer
+            ),
             401: {"description": "User is not authenticated"},
         },
     )

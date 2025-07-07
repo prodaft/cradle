@@ -262,8 +262,6 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
 
 
 class NoteRetrieveWithLinksSerializer(NoteRetrieveSerializer):
-    files = FileReferenceWithNoteSerializer(many=True)
-
     def to_representation(self, obj: Any) -> Dict[str, Any]:
         data = super().to_representation(obj)
 
@@ -278,7 +276,7 @@ class NoteRetrieveWithLinksSerializer(NoteRetrieveSerializer):
             except MinioObjectNotFound:
                 pass
 
-        data.pop("files", None)
+        data["files"] = []
 
         return data
 

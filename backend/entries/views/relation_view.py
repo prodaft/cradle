@@ -27,7 +27,9 @@ from ..serializers import RelationSerializer
         )
     ],
     responses={
-        200: RelationSerializer(many=True),
+        200: TotalPagesPagination().get_paginated_response_serializer(
+            RelationSerializer
+        ),
         400: {"description": "Bad request - invalid parameters"},
         401: {"description": "User is not authenticated"},
     },
