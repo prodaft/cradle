@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Model, Actions, DockLocation } from 'flexlayout-react';
+import { Model, Actions, DockLocation, TabNode } from 'flexlayout-react';
 import { FlexLayoutManager } from '../components/layout/FlexLayoutManager';
 
 const LAYOUT_STORAGE_KEY = 'flexlayout-state';
@@ -64,8 +64,35 @@ export const useFlexLayout = (initialModel: any) => {
     };
   }, [saveLayout]);
 
+  const getIdenticalTab = (tabType: string, config: any = {}): TabNode | undefined => {
+    const tabConfig = layoutManager.getTabConfig(tabType, config);
+    const initializer = layoutManager.getTabInitializer();
+    const initializerWithConfig = layoutManager.getTabInitializerWithConfig();
+
+    let foundNode: TabNode | undefined;
+    model.visitNodes((node) => {
+      if (node.getType() !== 'tab' || foundNode) return;
+      const tabNode = node as TabNode; 
+
+      if (tabNode.getComponent() !== tabConfig.component) return;
+      const currentTab = initializer(tabNode);
+      const newTab = initializerWithConfig(tabNode, config);
+
+      if (currentTab && newTab && currentTab.equals(newTab)) {
+        foundNode = tabNode;
+      }
+      });
+      return foundNode;
+    };
+
   const addTab = useCallback((tabType: string, config: any = {}, targetTabset?: string) => {
-    const tabConfig = layoutManager.addTab(tabType, config);
+    const tabConfig = layoutManager.getTabConfig(tabType, config);
+    let node = getIdenticalTab(tabType, config);
+    if (node) {
+      model.doAction(Actions.selectTab(node.getId()));
+      return;
+    }
+
     if (tabConfig) {
       model.doAction(Actions.addNode(
         tabConfig,

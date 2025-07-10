@@ -1,3 +1,4 @@
+import { TabNode } from 'flexlayout-react';
 import { BaseTabComponent, TabProps } from '../tabs/core/BaseTabComponent';
 import { TabRegistry } from '../tabs/core/TabRegistry';
 
@@ -8,8 +9,8 @@ export class TabFactory {
     this.registry = TabRegistry.getInstance();
   }
 
-  initTab = (node: any): BaseTabComponent | null => {
-    const tabType = node.getComponent();
+  initTab = (node: TabNode): BaseTabComponent | null => {
+    const tabType = node.getComponent()!;
     const TabClass = this.registry.getTabClass(tabType);
 
     if (!TabClass) {
@@ -19,6 +20,21 @@ export class TabFactory {
 
     const tabInstance = new (TabClass as any)(node, this);
     tabInstance.config = {...tabInstance.defaultConfig, ...(node.getConfig() || {})};
+
+    return tabInstance;
+  }
+
+  initTabWithConfig = (node: TabNode, config: TabProps): BaseTabComponent | null => {
+    const tabType = node.getComponent()!;
+    const TabClass = this.registry.getTabClass(tabType);
+
+    if (!TabClass) {
+      console.error(`Tab type '${tabType}' not found in registry`);
+      return null;
+    }
+
+    const tabInstance = new (TabClass as any)(node, this);
+    tabInstance.config = {...tabInstance.defaultConfig, ...config};
 
     return tabInstance;
   }

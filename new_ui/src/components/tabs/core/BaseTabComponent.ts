@@ -21,6 +21,7 @@ export abstract class BaseTabComponent {
   abstract readonly closable: boolean;
   abstract readonly icon?: string | React.ReactElement;
   abstract readonly defaultConfig?: TabProps;
+  abstract readonly tooltip?: string;
 
   protected eventBus: TabEventBus;
   public tabId: string = '';

@@ -13,7 +13,7 @@ export class FlexLayoutManager {
   }
 
   // Method to add a new tab dynamically
-  addTab(tabType: string, customConfig: any = {}): any {
+  getTabConfig(tabType: string, customConfig: any = {}): any {
     try {
       const tabConfig = this.tabFactory.createTabConfig(tabType, customConfig);
       return tabConfig;
@@ -29,6 +29,10 @@ export class FlexLayoutManager {
 
   getTabInitializer() {
     return this.tabFactory.initTab;
+  }
+
+  getTabInitializerWithConfig() {
+    return this.tabFactory.initTabWithConfig;
   }
 
   getAvailableTabTypes() {

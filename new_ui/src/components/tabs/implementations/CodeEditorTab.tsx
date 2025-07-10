@@ -238,6 +238,10 @@ export class CodeEditorTab extends BaseTabComponent {
         );
   }
 
+  public equals(other: BaseTabComponent): boolean {
+    return this.constructor.componentType() === other.constructor.componentType() && this.config.id === (other as CodeEditorTab).config.id;
+  }
+
 
   public tabsetButtons(): React.ReactElement[] {
     // TODO: Do the toolbar stuff here
