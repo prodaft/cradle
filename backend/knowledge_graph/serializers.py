@@ -3,7 +3,11 @@ from access.enums import AccessType
 from access.models import Access
 from entries.enums import EntryType
 from entries.models import Entry, Edge
-from entries.serializers import EntryListCompressedTreeSerializer
+from entries.serializers import (
+    EntryListCompressedTreeSerializer,
+    EntryClassSerializerNoChildren,
+    EntrySerializer,
+)
 
 
 class PathfindQuery(serializers.Serializer):
@@ -71,3 +75,12 @@ class SubGraphSerializer(serializers.Serializer):
 
     class Meta:
         fields = ["entries", "paths", "colors"]
+
+
+class EntryWithDepthSerializer(EntrySerializer):
+    entry_class = EntryClassSerializerNoChildren(read_only=True)
+    depth = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Entry
+        fields = ["id", "name", "entry_class", "depth"]

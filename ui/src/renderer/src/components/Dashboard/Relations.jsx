@@ -19,7 +19,7 @@ import LazyPagination from '../Pagination/LazyPagination';
 
 export default function Relations({ obj }) {
     const [searchQuery, setSearchQuery] = useState('');
-    const [depth, setDepth] = useState(0);
+    const [depth, setDepth] = useState(2);
     const inputRef = useRef(null);
     const [showFilters, setShowFilters] = useState(false);
     const [entrySubtypeFilters, setEntrySubtypeFilters] = useState([]);
@@ -277,6 +277,7 @@ export default function Relations({ obj }) {
                                         type={result.type}
                                         subtype={result.subtype}
                                         onClick={handleResultClick(dashboardLink)}
+                                        depth={result.depth}
                                     />
                                 );
                             })}

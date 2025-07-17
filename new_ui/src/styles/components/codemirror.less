@@ -1,0 +1,74 @@
+.commented_class{
+  /* CodeMirror Editor Theme Overrides with RSuite */
+  .cm-editor {
+    background-color: var(--rs-gray-0);
+    color: var(--rs-gray-900);
+  }
+
+  .cm-content {
+    color: var(--rs-gray-900);
+  }
+
+  .cm-focused {
+    outline: 2px solid var(--rs-primary-500);
+    outline-offset: 2px;
+  }
+
+  .cm-line {
+    color: var(--rs-gray-900);
+  }
+
+  .cm-cursor {
+    border-left-color: var(--rs-gray-900);
+  }
+
+  .cm-selectionBackground {
+    background-color: var(--rs-primary-100);
+  }
+
+  .cm-gutters {
+    background-color: var(--rs-gray-50);
+    border-right-color: var(--rs-gray-300);
+    color: var(--rs-gray-600);
+  }
+
+  .cm-lineNumbers .cm-gutterElement {
+    color: var(--rs-gray-500);
+  }
+
+  /* Editor toolbar styling */
+  .code-editor-tab .editor-toolbar {
+    background-color: var(--rs-gray-50);
+    border-bottom-color: var(--rs-gray-300);
+  }
+
+  /* Common editor styles */
+  .cm-scroller {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  }
+
+  .cm-editor.cm-focused {
+    outline: none;
+  }
+
+  /* Markdown-specific highlighting */
+  .cm-content .tok-heading {
+    color: var(--rs-primary-500);
+    font-weight: bold;
+  }
+
+  .cm-content .tok-strong {
+    color: var(--rs-gray-900);
+    font-weight: bold;
+  }
+
+  .cm-content .tok-emphasis {
+    color: var(--rs-gray-600);
+    font-style: italic;
+  }
+
+  .cm-content .tok-link {
+    color: var(--rs-primary-500);
+    text-decoration: underline;
+  }
+}

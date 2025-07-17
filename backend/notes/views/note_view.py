@@ -98,7 +98,9 @@ from uuid import UUID
             ),
         ],
         responses={
-            200: NoteRetrieveSerializer,
+            200: TotalPagesPagination().get_paginated_response_serializer(
+                NoteRetrieveWithLinksSerializer
+            ),
             400: {"description": "Invalid filter parameters"},
             401: {"description": "User is not authenticated"},
         },
@@ -123,6 +125,7 @@ from uuid import UUID
 class NoteList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    pagination_class = TotalPagesPagination
 
     def get(self, request: Request) -> Response:
         user = cast(CradleUser, request.user)
@@ -468,7 +471,9 @@ class NoteDetail(APIView):
             ),
         ],
         responses={
-            200: FileReferenceSerializer,
+            200: TotalPagesPagination().get_paginated_response_serializer(
+                FileReferenceWithNoteSerializer
+            ),
             400: {"description": "Invalid filter parameters"},
             401: {"description": "User is not authenticated"},
             404: {"description": "Resource not found"},

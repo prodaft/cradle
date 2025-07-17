@@ -20,6 +20,7 @@ from .serializers import (
     PathfindQuery,
     SubGraphSerializer,
     GraphInaccessibleResponseSerializer,
+    EntryWithDepthSerializer,
 )
 from django.utils.dateparse import parse_datetime
 
@@ -118,7 +119,9 @@ class GraphPathFindView(APIView):
         ),
     ],
     responses={
-        200: EntrySerializer(many=True),
+        200: LazyPaginator().get_paginated_response_serializer(
+            EntryWithDepthSerializer
+        ),
         400: {"description": "Invalid parameters or query syntax"},
         401: {"description": "User is not authenticated"},
         404: {"description": "Source entry not found"},
@@ -165,8 +168,6 @@ class GraphNeighborsView(APIView):
 
         sourceset = source_entry.aliasqs(request.user).non_virtual()
 
-        neighbors_qs = get_neighbors(sourceset, depth, request.user, True)
-
         query_str = request.query_params.get("query")
 
         if query_str:
@@ -180,12 +181,27 @@ class GraphNeighborsView(APIView):
                     {"error": f"Invalid query syntax: {str(e)}"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            neighbors_qs = neighbors_qs.filter(query_filter)
+
+            neighbors_qs = get_neighbors(
+                sourceset,
+                depth,
+                request.user,
+                True,
+                True,
+                lambda qs: qs.filter(query_filter),
+            ).order_by("depth", "-last_seen")
         else:
-            filterset = EntryFilter(request.query_params, queryset=neighbors_qs)
+            filterset = EntryFilter(request.query_params)
 
             if filterset.is_valid():
-                neighbors_qs = filterset.qs
+                neighbors_qs = get_neighbors(
+                    sourceset,
+                    depth,
+                    request.user,
+                    True,
+                    True,
+                    lambda qs: EntryFilter(request.query_params, queryset=qs).qs,
+                ).order_by("depth", "-last_seen")
             else:
                 return Response(
                     {"error": f"Invalid query syntax: {filterset.errors}"},
@@ -196,10 +212,10 @@ class GraphNeighborsView(APIView):
         paginated_entries = paginator.paginate_queryset(neighbors_qs, request)
 
         if paginated_entries is not None:
-            serializer = EntrySerializer(paginated_entries, many=True)
+            serializer = EntryWithDepthSerializer(paginated_entries, many=True)
             return paginator.get_paginated_response(serializer.data)
 
-        serializer = EntrySerializer(neighbors_qs, many=True)
+        serializer = EntryWithDepthSerializer(neighbors_qs, many=True)
         return Response(serializer.data)
 
 
@@ -269,11 +285,16 @@ class GraphInaccessibleView(APIView):
                 {"error": f"Entry with ID {source_id} not found."}, status=404
             )
 
-        neighbors_qs = get_neighbors(
-            {source_entry.id}, depth, None, True
-        )  # Queryset of all neighbors
+        sourceset = source_entry.aliasqs(request.user).non_virtual()
 
-        entities = neighbors_qs.filter(entry_class__type=EntryType.ENTITY)
+        entities = get_neighbors(
+            sourceset,
+            depth,
+            None,
+            True,
+            True,
+            lambda qs: qs.filter(entry_class__type=EntryType.ENTITY),
+        )  # Queryset of all neighbors
 
         inaccessible = Access.objects.inaccessible_entries(
             request.user, entities, {AccessType.READ, AccessType.READ_WRITE}

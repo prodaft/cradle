@@ -241,7 +241,7 @@ class Entry(LifecycleModel, LoggableModelMixin):
         related_name="entries",
     )
 
-    name: models.CharField = models.CharField(max_length=255)
+    name: models.CharField = models.CharField(max_length=1024)
     description: models.TextField = models.TextField(null=True, blank=True)
     created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
     last_seen: models.DateTimeField = models.DateTimeField(

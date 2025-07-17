@@ -96,7 +96,9 @@ class DigestSubclassesAPIView(APIView):
         ),
     ],
     responses={
-        200: BaseDigestSerializer(many=True),
+        200: TotalPagesPagination().get_paginated_response_serializer(
+            BaseDigestSerializer
+        ),
         401: {"description": "User is not authenticated"},
     },
     methods=["GET"],
@@ -123,7 +125,10 @@ class DigestAPIView(GenericAPIView):
 
     def get(self, request):
         """Fetch all digests for the current user with optional filtering."""
-        queryset = BaseDigest.objects.filter(user=request.user)
+        if request.user.is_cradle_admin:
+            queryset = BaseDigest.objects.all()
+        else:
+            queryset = BaseDigest.objects.filter(user=request.user)
 
         # Apply filters
         filterset = self.filterset_class(request.GET, queryset=queryset)
@@ -132,6 +137,7 @@ class DigestAPIView(GenericAPIView):
 
         # Apply pagination
         paginator = TotalPagesPagination(page_size=10)
+
         result_page = paginator.paginate_queryset(queryset, request)
 
         serializer = self.get_serializer(result_page, many=True)
@@ -180,7 +186,11 @@ class DigestAPIView(GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        digest = get_object_or_404(BaseDigest, id=digest_id, user=request.user)
+        if request.user.is_cradle_admin:
+            digest = get_object_or_404(BaseDigest, id=digest_id)
+        else:
+            digest = get_object_or_404(BaseDigest, id=digest_id, user=request.user)
+
         digest.delete()
 
         refresh_edges_materialized_view.apply_async(simulate=True)
