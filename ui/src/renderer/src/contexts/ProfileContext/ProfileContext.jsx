@@ -37,8 +37,6 @@ export function ProfileProvider({ children }) {
     };
 
     useEffect(() => {
-        console.log('ProfileProvider useEffect triggered');
-        // If the profile is not set, fetch it from the auth service
         if (auth.isAuthenticated()) {
             getUserProfile();
         } else {

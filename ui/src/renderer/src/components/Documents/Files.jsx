@@ -16,10 +16,15 @@ import { Search } from 'iconoir-react';
 export default function Files({ setAlert }) {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-    const [searchFilters, setSearchFilters] = useState({
+    const [searchFilters, setSearchFiltersFoo] = useState({
         keyword: '',
         mimetype: '',
     });
+
+    const setSearchFilters = (filters) => {
+        setSearchFiltersFoo(filters);
+        console.log('Search filters updated:', filters);
+    };
 
     // Error handler function
     const handleError = (error) => {
@@ -68,11 +73,13 @@ export default function Files({ setAlert }) {
                         </button>
                     </div>
                 </form>
-                <FilesList
-                    query={searchFilters}
-                    setAlert={setAlert}
-                    onError={handleError}
-                />
+                {searchFilters && (
+                    <FilesList
+                        query={searchFilters}
+                        setAlert={setAlert}
+                        onError={handleError}
+                    />
+                )}
             </div>
         </div>
     );

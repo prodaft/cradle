@@ -52,6 +52,7 @@ export default function FilesList({
 
     const fetchFiles = useCallback(() => {
         setLoading(true);
+        console.log(query, page, onError, setAlert);
 
         const params = {
             page,
@@ -76,7 +77,7 @@ export default function FilesList({
                 }
                 setLoading(false);
             });
-    }, [page, query, onError, setAlert]);
+    }, [page, query, setAlert]);
 
     useEffect(() => {
         setPage(Number(searchParams.get('files_page')) || 1);

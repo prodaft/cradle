@@ -21,8 +21,8 @@ export const HoverPreview = ({ note, position, onClose }) => {
 
     // Calculate position to keep preview in viewport
     const getPreviewStyle = () => {
-        const previewWidth = 400;
-        const previewHeight = 300;
+        const previewWidth = 450;
+        const previewHeight = 450;
         const padding = 20;
 
         let left = position.x + 10;

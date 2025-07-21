@@ -102,6 +102,7 @@ export default function NotesList({
     };
 
     const fetchNotes = useCallback(() => {
+        if (query == null) return;
         setLoading(true);
 
         searchNote({ page, ...query })

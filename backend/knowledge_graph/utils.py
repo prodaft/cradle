@@ -80,14 +80,16 @@ def get_neighbors_paginated(
     depths are not revisited.
     """
     current_level = sourceset
+
     offset = (page_number - 1) * page_size
     count = 0
     results = {}
     visited = [current_level]
 
     if offset == 0:
-        results[0] = current_level
-        count += current_level.count()
+        lvl = (filter(current_level) if filter else current_level).order_by(order_by)
+        results[0] = lvl
+        count += lvl.count()
 
     for current_depth in range(depth):
         if count >= page_size:
