@@ -12,7 +12,6 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 
 from entries.models import Entry
 from file_transfer.models import FileReference
-from file_transfer.serializers import FileReferenceSerializer
 
 from ..utils import get_guide_note
 

@@ -188,7 +188,7 @@ export default function NotesList({
                                                         <td>
                                                             {note.status && (
                                                                 <span
-                                                                    className='inline-flex items-center align-middle tooltip tooltip-top'
+                                                                    className='inline-flex items-center align-middle tooltip tooltip-right tooltip-primary'
                                                                     data-tooltip={
                                                                         note.status_message ||
                                                                         capitalizeString(

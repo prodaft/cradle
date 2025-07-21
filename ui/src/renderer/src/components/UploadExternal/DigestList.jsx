@@ -94,10 +94,15 @@ function DigestList({
                                     <td className=''>{digest.user_detail.username}</td>
                                     <td className=''>
                                         <span
-                                            className={`badge badge-warning ${digest.warnings?.length > 0 ? 'tooltip tooltip-top' : ''}`}
+                                            className={`badge badge-warning ${digest.warnings?.length > 0 ? 'tooltip tooltip-left tooltip-warning' : ''}`}
                                             data-tooltip={
                                                 digest.warnings?.length > 0
-                                                    ? digest.warnings.join(', ')
+                                                    ? digest.warnings
+                                                          .slice(0, 10)
+                                                          .join('\n') +
+                                                      (digest.warnings.length > 10
+                                                          ? '\n...'
+                                                          : '')
                                                     : undefined
                                             }
                                         >
@@ -106,10 +111,15 @@ function DigestList({
                                     </td>
                                     <td className=''>
                                         <span
-                                            className={`badge badge-error ${digest.errors?.length > 0 ? 'tooltip tooltip-top' : ''}`}
+                                            className={`badge badge-error ${digest.errors?.length > 0 ? 'tooltip tooltip-left tooltip-error' : ''}`}
                                             data-tooltip={
                                                 digest.errors?.length > 0
-                                                    ? digest.errors.join(', ')
+                                                    ? digest.errors
+                                                          .slice(0, 10)
+                                                          .join(', ') +
+                                                      (digest.errors.length > 10
+                                                          ? ', ...'
+                                                          : '')
                                                     : undefined
                                             }
                                         >

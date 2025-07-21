@@ -95,6 +95,7 @@ module.exports = {
                     backgroundPrimary: '#e8e8e8',
                     secondary: '#9984D4',
                     backgroundSecondary: '#555161',
+                    white: '#ffffff',
                 },
             },
             {
@@ -105,6 +106,7 @@ module.exports = {
                     backgroundPrimary: '#151515',
                     secondary: '#7659C5',
                     backgroundSecondary: '#555161',
+                    white: '#ffffff',
                 },
             },
         ],
