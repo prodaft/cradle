@@ -313,12 +313,12 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
             <div className='flex items-center justify-center min-h-screen'>
                 <div className='w-full max-w-2xl px-4'>
                     <h1 className='text-center text-xl font-bold text-primary mb-4'>
-                        {isEdit ? 'Account Settings' : 'Add New User'}
+                        {isEdit ? 'Settings' : 'Add New User'}
                     </h1>
                     <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
                         <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
                             <Tabs tabClasses='tabs gap-1' perTabClass='tab-pill'>
-                                <Tab title='Settings'>
+                                <Tab title='Account'>
                                     <div className='mt-4' />
                                     <FormField
                                         name='username'
@@ -515,7 +515,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                         </div>
                                     </Tab>
                                 )}
-                                <Tab title='Editor'>
+                                <Tab title='Interface'>
                                     <div className='mt-4' />
                                     <div className='form-control flex flex-column justify-between items-center'>
                                         <label
@@ -541,6 +541,15 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                             />
                                         </label>
                                     </div>
+                                    <div className='mt-4' />
+                                    <FormField
+                                        type='checkbox'
+                                        labelText='Compact UI'
+                                        className='switch switch-ghost-primary'
+                                        {...register('compact_ui')}
+                                        row={true}
+                                        error={errors.email_confirmed?.message}
+                                    />
                                     <div className='mt-4' />
                                     <SnippetList userId={target} />
 
