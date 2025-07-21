@@ -26,6 +26,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             "catalyst_api_key",
             "vt_api_key",
             "vim_mode",
+            "compact_mode",
         ]
         extra_kwargs: Dict[str, Dict[str, List]] = {"username": {"validators": []}}
 
@@ -90,6 +91,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             "catalyst_api_key", instance.catalyst_api_key
         )
         instance.vim_mode = validated_data.get("vim_mode", instance.vim_mode)
+        instance.compact_mode = validated_data.get("compact_mode", instance.vim_mode)
         instance.save()
 
         return instance
@@ -106,6 +108,7 @@ class UserCreateSerializerAdmin(UserCreateSerializer):
             "password",
             "catalyst_api_key",
             "vim_mode",
+            "compact_mode",
             "vt_api_key",
             "role",
             "email_confirmed",
@@ -155,6 +158,7 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
             "two_factor_enabled",
             "is_active",
             "vim_mode",
+            "compact_mode",
             "email_confirmed",
             "catalyst_api_key",
             "vt_api_key",

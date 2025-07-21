@@ -13,7 +13,12 @@ from core.pagination import LazyPaginator
 from entries.enums import EntryType
 from entries.models import Edge, Entry
 from entries.serializers import EntrySerializer
-from knowledge_graph.utils import filter_valid_edges, get_edges_for_paths, get_neighbors
+from knowledge_graph.utils import (
+    filter_valid_edges,
+    get_edges_for_paths,
+    get_neighbors,
+    get_neighbors_paginated,
+)
 from query.filters import EntryFilter
 from query.utils import parse_query
 from .serializers import (
@@ -182,41 +187,46 @@ class GraphNeighborsView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            neighbors_qs = get_neighbors(
+            neighbors_qs = get_neighbors_paginated(
                 sourceset,
                 depth,
                 request.user,
                 True,
                 True,
                 lambda qs: qs.filter(query_filter),
-            ).order_by("depth", "-last_seen")
+                page_size=page_size,
+                page_number=int(request.query_params.get("page", 1)),
+                order_by="-last_seen",
+            )
         else:
             filterset = EntryFilter(request.query_params)
 
             if filterset.is_valid():
-                neighbors_qs = get_neighbors(
+                neighbors_qs = get_neighbors_paginated(
                     sourceset,
                     depth,
                     request.user,
                     True,
                     True,
                     lambda qs: EntryFilter(request.query_params, queryset=qs).qs,
-                ).order_by("depth", "-last_seen")
+                    page_size=page_size,
+                    page_number=int(request.query_params.get("page", 1)),
+                    order_by="-last_seen",
+                )
             else:
                 return Response(
                     {"error": f"Invalid query syntax: {filterset.errors}"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        paginator = LazyPaginator(page_size=page_size)
-        paginated_entries = paginator.paginate_queryset(neighbors_qs, request)
-
-        if paginated_entries is not None:
-            serializer = EntryWithDepthSerializer(paginated_entries, many=True)
-            return paginator.get_paginated_response(serializer.data)
-
         serializer = EntryWithDepthSerializer(neighbors_qs, many=True)
-        return Response(serializer.data)
+        return Response(
+            {
+                "page": int(request.query_params.get("page", 1)),
+                "has_next": len(serializer.data) == page_size,
+                "results": serializer.data,
+            }
+        )
 
 
 @extend_schema(

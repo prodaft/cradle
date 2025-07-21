@@ -45,6 +45,10 @@ module.exports = {
                             borderBottomStyle: 'solid',
                             paddingBottom: '8px',
                         },
+                        br: {
+                            marginTop: '8px',
+                            marginBottom: '8px',
+                        },
                         hr: {
                             borderTopWidth: '3px',
                         },
@@ -89,7 +93,7 @@ module.exports = {
                 colors: {
                     primary: '#253746',
                     backgroundPrimary: '#e8e8e8',
-                    secondary: '#ffffff',
+                    secondary: '#9984D4',
                     backgroundSecondary: '#555161',
                 },
             },
@@ -99,7 +103,7 @@ module.exports = {
                 colors: {
                     primary: '#f68d2e',
                     backgroundPrimary: '#151515',
-                    secondary: '#ffffff',
+                    secondary: '#7659C5',
                     backgroundSecondary: '#555161',
                 },
             },

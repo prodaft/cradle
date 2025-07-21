@@ -20,6 +20,7 @@ export default function Notes({ setAlert }) {
     const [searchParams, setSearchParams] = useSearchParams();
 
     const [searchFilters, setSearchFilters] = useState({
+        page_size: 50,
         content: searchParams.get('content') || '',
         author__username: searchParams.get('author__username') || '',
     });
@@ -148,8 +149,10 @@ export default function Notes({ setAlert }) {
                     value={dateRange}
                     onChange={handleDateRangeChange}
                     inputClassName='input input-block py-1 px-2 text-sm flex-grow !max-w-full w-full'
+                    containerClassName='w-full text-gray-700'
                     toggleClassName='hidden'
                 />
+
                 <input
                     type='text'
                     name='content'

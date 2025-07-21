@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useModal } from '../../contexts/ModalContext/ModalContext';
 import { Trash } from 'iconoir-react';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import { deleteDigest } from '../../services/intelioService/intelioService';
 
 function DigestCard({ localDigest, setAlert, onDelete }) {
@@ -8,6 +10,7 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
     const [visible, setVisible] = useState(true);
     const [showErrors, setShowErrors] = useState(false);
     const [showWarnings, setShowWarnings] = useState(false);
+    const { setModal } = useModal();
 
     useEffect(() => {
         setFormattedDate(formatDate(new Date(localDigest.created_at)));
@@ -41,18 +44,24 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
                     <button
                         title='Delete Digest'
                         className='text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 transition-colors'
-                        onClick={handleDelete}
+                        onClick={() =>
+                            setModal(ConfirmDeletionModal, {
+                                title: 'Delete Digest',
+                                message: 'Are you sure you want to delete this digest?',
+                                onConfirm: handleDelete,
+                            })
+                        }
                     >
                         <Trash className='w-5 h-5' />
                     </button>
                 </div>
                 <span
-                    className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                    className={`badge ${
                         localDigest.status === 'done'
-                            ? 'bg-green-500 text-white'
+                            ? 'badge-success'
                             : localDigest.status === 'error'
-                              ? 'bg-red-500 text-white'
-                              : 'bg-yellow-500 text-white'
+                              ? 'badge-error'
+                              : 'badge-secondary'
                     }`}
                 >
                     {localDigest.status.charAt(0).toUpperCase() +

@@ -54,7 +54,7 @@ export function prependLinks(
 }
 
 const LINK_REGEX =
-    /^\[\[([^:|]+?):((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\](?:(?:\((\d{2}:\d{2}\s+)?(\d{2}-\d{2}-\d{4}))?\)?)?/;
+    /^\[\[([^:|]+?):((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\](?:\((?:(\d{2}:\d{2}\s+)?(\d{2}-\d{2}-\d{4}))\))?/;
 
 export function cradleLinkRule(state: any, silent: boolean): boolean {
     const match = LINK_REGEX.exec(state.src.slice(state.pos));

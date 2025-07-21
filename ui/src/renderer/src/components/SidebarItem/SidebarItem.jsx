@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
+import Tooltip from '../Tooltip/Tooltip';
 
 /**
  * SidebarItem component - single button in the sidebar
@@ -18,22 +19,33 @@ export default function SidebarItem({
     text = '',
     handleClick,
     highlightedLocation = '',
+    compact = false,
 }) {
     const location = useLocation();
     const isHighlighted = location.pathname === highlightedLocation;
 
     return (
         <li
-            className={`menu-item p-4 cursor-pointer group-hover/sidebar:flex items-center
+            className={`menu-item p-4 cursor-pointer group-hover/sidebar:flex items-center z-50 relative
                 ${isHighlighted ? 'menu-active' : ''}`}
             onClick={handleClick}
         >
-            <div className='icon flex-shrink-0 text-primary hover:bg-gray-4'>
-                {icon}
-            </div>
-            <div className='hidden whitespace-nowrap ml-2 group-hover/sidebar:block'>
-                {text}
-            </div>
+            {compact ? (
+                <Tooltip content={text} position='right'>
+                    <div className='icon flex-shrink-0 text-primary hover:bg-gray-4'>
+                        {icon}
+                    </div>
+                </Tooltip>
+            ) : (
+                <div className='icon flex-shrink-0 text-primary hover:bg-gray-4'>
+                    {icon}
+                </div>
+            )}
+            {!compact && (
+                <div className='hidden whitespace-nowrap ml-2 group-hover/sidebar:block'>
+                    {text}
+                </div>
+            )}
         </li>
     );
 }

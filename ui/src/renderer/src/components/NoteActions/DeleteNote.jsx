@@ -21,7 +21,7 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
  * @param {React.ReactNode} props.customControls - Custom controls to display in the header
  * @param {boolean} props.hideDefaultControls - Whether to hide the default controls
  */
-export default function DeleteNote({ note, setAlert, setHidden }) {
+export default function DeleteNote({ note, setAlert, setHidden, classNames }) {
     const navigate = useNavigate();
     const { setModal } = useModal();
 
@@ -41,10 +41,10 @@ export default function DeleteNote({ note, setAlert, setHidden }) {
     };
 
     return (
-        <span className='pb-1 space-x-1 flex flex-row pl-2'>
+        <span className='pb-1 space-x-1 flex flex-row pl-2 text-red-500 hover:text-red-600'>
             <button className=''>
                 <Trash
-                    height={24}
+                    className={classNames}
                     onClick={() =>
                         setModal(ConfirmDeletionModal, {
                             onConfirm: handleDelete,

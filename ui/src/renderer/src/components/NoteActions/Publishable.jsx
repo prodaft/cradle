@@ -21,7 +21,7 @@ import ReferenceTree from '../ReferenceTree/ReferenceTree';
  * @param {React.ReactNode} props.customControls - Custom controls to display in the header
  * @param {boolean} props.hideDefaultControls - Whether to hide the default controls
  */
-export default function Publishable({ note, setAlert }) {
+export default function Publishable({ note, setAlert, compact }) {
     const [isPublishable, setIsPublishable] = useState(note.publishable);
     const navigate = useNavigate();
 
@@ -54,7 +54,7 @@ export default function Publishable({ note, setAlert }) {
                 checked={isPublishable}
                 id={`publishable-switch-${note.id}`}
                 type='checkbox'
-                className='switch switch-ghost-primary'
+                className={compact ? '' : 'switch switch-ghost-primary'}
                 onChange={() => handleTogglePublishable(note.id)}
             />
         </span>

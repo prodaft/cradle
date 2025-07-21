@@ -35,7 +35,7 @@ export default function Login() {
 
     const { isDarkMode, toggleTheme } = useTheme();
 
-    const { from, state } = location.state || { from: { pathname: '/' } };
+    const { from } = location.state || { from: { pathname: '/' } };
 
     const auth = useAuth();
 
@@ -62,7 +62,7 @@ export default function Login() {
             .then((res) => {
                 if (res.status === 200) {
                     auth.logIn(res.data['access'], res.data['refresh']);
-                    navigate(from, { replace: true, state: state });
+                    navigate(from, { replace: true });
                 }
             })
             .catch((error) => {
@@ -249,7 +249,7 @@ export default function Login() {
                                         to='/register'
                                         className='font-semibold leading-6 text-primary hover:opacity-90 hover:shadow-gray-400'
                                         replace={true}
-                                        state={location.state}
+                                        state={{ from: from }}
                                         onClick={() => setRequiresTwoFactor(false)}
                                     >
                                         Register

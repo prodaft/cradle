@@ -57,6 +57,10 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         default=False, help_text="Whether to enable Vim keybindings in the editor"
     )
 
+    compact_mode = models.BooleanField(
+        default=False, help_text="Whether to use compact mode in the UI"
+    )
+
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["password", "email"]
     EMAIL_FIELD = "email"

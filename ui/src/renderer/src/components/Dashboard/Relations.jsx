@@ -74,6 +74,7 @@ export default function Relations({ obj }) {
             })
                 .then((response) => {
                     setHasNextPage(response.data.has_next);
+                    response.data.results.sort((a, b) => a.depth - b.depth);
                     setResults(response.data.results);
                 })
                 .catch(displayError(setAlert, navigate))

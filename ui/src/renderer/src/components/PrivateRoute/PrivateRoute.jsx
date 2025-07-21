@@ -17,13 +17,7 @@ export default function PrivateRoute({ fallback }) {
     const user = useAuth();
     const location = useLocation();
     if (!user.isAuthenticated()) {
-        return (
-            <Navigate
-                to={fallback}
-                state={{ from: location, state: location.state }}
-                replace={true}
-            />
-        );
+        return <Navigate to={fallback} state={{ from: location }} replace={true} />;
     }
     return <Outlet />;
 }
