@@ -109,7 +109,7 @@ const GraphSettings = forwardRef(
                         'text-background-color': isDarkMode ? '#333' : '#eee',
                         'text-background-opacity': 0.8,
                         'text-background-shape': 'roundrectangle',
-                        'text-background-padding': '3px',
+                        'text-background-padding': '1px',
                     },
                 },
                 {
@@ -125,7 +125,7 @@ const GraphSettings = forwardRef(
                         'text-background-color': isDarkMode ? '#333' : '#eee',
                         'text-background-opacity': 0.8,
                         'text-background-shape': 'roundrectangle',
-                        'text-background-padding': '3px',
+                        'text-background-padding': '1px',
                         color: isDarkMode ? 'white' : 'black',
                         'border-width': 2,
                         'border-color': '#ffa500', // Orange highlight
@@ -214,8 +214,8 @@ const GraphSettings = forwardRef(
                         {
                             label: 'Label Size',
                             value: config.labelSizeCoefficient,
-                            min: 12,
-                            max: 36,
+                            min: 4,
+                            max: 16,
                             step: 1,
                             key: 'labelSizeCoefficient',
                         },

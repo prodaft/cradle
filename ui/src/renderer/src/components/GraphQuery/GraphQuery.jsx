@@ -7,7 +7,7 @@ import { Tabs, Tab } from '../Tabs/Tabs';
 import RelationsList from '../RelationsList/RelationsList';
 
 const GraphQuery = forwardRef(function (
-    { selectedEntries, setSelectedEntries, config, setConfig },
+    { selectedEntries, setSelectedEntries, config, setConfig, SearchComponent },
     graphRef,
 ) {
     const navigate = useNavigate();
@@ -44,7 +44,11 @@ const GraphQuery = forwardRef(function (
             >
                 <Tab title='Search' classes='pt-2'>
                     <div className='mt-3 flex flex-col flex-1 overflow-hidden h-[85vh]'>
-                        <GraphControl settingsProps={settingsProps} ref={graphRef} />
+                        <GraphControl
+                            settingsProps={settingsProps}
+                            ref={graphRef}
+                            SearchComponent={SearchComponent}
+                        />
                     </div>
                 </Tab>
                 <Tab title='Notes' classes='pt-2'>

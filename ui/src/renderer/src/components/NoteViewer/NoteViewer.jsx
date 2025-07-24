@@ -34,6 +34,7 @@ import { Tab, Tabs } from '../Tabs/Tabs';
 import ActivityList from '../ActivityList/ActivityList';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import FileItem from '../FileItem/FileItem';
+import NoteGraph from '../NoteGraph/NoteGraph';
 
 /**
  * NoteViewer component
@@ -239,7 +240,7 @@ export default function NoteViewer() {
                     defaultTab={0}
                     queryParam={'tab'}
                     tabClasses='tabs-underline w-full'
-                    perTabClass={`justify-center ${note.files && note.files.length > 0 ? (isAdmin() ? 'w-[33%]' : 'w-[50%]') : isAdmin() ? 'w-[50%]' : 'w-full'}`}
+                    perTabClass={`justify-center ${note.files && note.files.length > 0 ? (isAdmin() ? 'w-[25%]' : 'w-[33%]') : isAdmin() ? 'w-[33%]' : 'w-[50%]'}`}
                 >
                     <Tab title='Content' classes='pt-2'>
                         <div className='w-full h-full overflow-hidden flex flex-col items-center px-4 pb-4 pt-1'>
@@ -398,6 +399,9 @@ export default function NoteViewer() {
                                 )}
                             </div>
                         </div>
+                    </Tab>
+                    <Tab title='Graph' classes='pt-2'>
+                        <NoteGraph noteId={id} />
                     </Tab>
                     {note.files && note.files.length > 0 && (
                         <Tab title='Files' classes='pt-2'>

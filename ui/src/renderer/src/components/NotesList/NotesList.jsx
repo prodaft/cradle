@@ -13,6 +13,9 @@ import {
     InfoCircleSolid,
     WarningTriangleSolid,
     WarningCircleSolid,
+    SortUp,
+    SortDown,
+    Sort,
 } from 'iconoir-react';
 import { HoverPreview } from '../HoverPreview/HoverPreview';
 import DeleteNote from '../NoteActions/DeleteNote';
@@ -30,11 +33,23 @@ export default function NotesList({
     const [totalPages, setTotalPages] = useState(1);
     const { profile } = useProfile();
     const [page, setPage] = useState(Number(searchParams.get('notes_page')) || 1);
+    const [sortField, setSortField] = useState('timestamp');
+    const [sortDirection, setSortDirection] = useState('desc');
     const navigate = useNavigate();
     const [hoveredNote, setHoveredNote] = useState(null);
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     const hoverTimeoutRef = useRef(null);
     const HOVER_DELAY = 800;
+
+    // Mapping of table columns to API field names
+    const sortFieldMapping = {
+        title: 'title',
+        description: 'timestamp', // Description column sorts by timestamp as fallback
+        author: 'author__username',
+        editor: 'editor__username',
+        createdAt: 'timestamp',
+        lastChanged: 'edit_timestamp',
+    };
 
     const handleMouseEnter = (note, event) => {
         const rect = event.currentTarget.getBoundingClientRect();
@@ -101,11 +116,46 @@ export default function NotesList({
         }
     };
 
+    const handleSort = (column) => {
+        const newSortField = sortFieldMapping[column];
+        if (!newSortField) return;
+
+        if (sortField === newSortField) {
+            // Toggle direction if same field
+            setSortDirection(sortDirection === 'desc' ? 'asc' : 'desc');
+        } else {
+            // New field, default to descending for timestamp fields, ascending for others
+            setSortField(newSortField);
+            setSortDirection(newSortField.includes('timestamp') ? 'desc' : 'asc');
+        }
+        
+        // Reset to first page when sorting changes
+        setPage(1);
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('notes_page', '1');
+        setSearchParams(newParams);
+    };
+
+    const getSortIcon = (column, className) => {
+        const fieldName = sortFieldMapping[column];
+        if (!fieldName || sortField !== fieldName) {
+            return <Sort className={className} />;
+        }
+        
+        return sortDirection === 'desc' ? (
+            <SortDown className={className} />
+        ) : (
+            <SortUp className={className} />
+        );
+    };
+
     const fetchNotes = useCallback(() => {
         if (query == null) return;
         setLoading(true);
 
-        searchNote({ page, ...query })
+        const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
+        
+        searchNote({ page_size: profile?.compact_mode ? 20 : 10, page, order_by: orderBy, ...query })
             .then((response) => {
                 setNotes(response.data.results);
                 setTotalPages(response.data.total_pages);
@@ -119,7 +169,7 @@ export default function NotesList({
                 });
                 setLoading(false);
             });
-    }, [page, query]);
+    }, [page, sortField, sortDirection, query]);
 
     useEffect(() => {
         setPage(Number(searchParams.get('notes_page')) || 1);
@@ -133,6 +183,18 @@ export default function NotesList({
 
         setPage(newPage);
     };
+
+    const SortableTableHeader = ({ column, children, className = '' }) => (
+        <th 
+            className={`cursor-pointer select-none ${className}`}
+            onClick={() => handleSort(column)}
+        >
+            <div className='flex items-center justify-between !border-b-0 !border-t-0'>
+                <span className='!border-b-0 !border-t-0'>{children}</span>
+                {getSortIcon(column, 'w-4 h-4 text-zinc-600 dark:text-zinc-400 !border-b-0 !border-t-0')}
+            </div>
+        </th>
+    );
 
     return (
         <>
@@ -157,11 +219,26 @@ export default function NotesList({
                                     <table className='table table-hover'>
                                         <thead>
                                             <tr>
-                                                <th>Status</th>
-                                                <th>Title</th>
-                                                <th>Description</th>
-                                                <th>Last Changed</th>
-                                                <th>Last Editor</th>
+                                                <th>
+                                                </th>
+                                                <SortableTableHeader column="title">
+                                                    Title
+                                                </SortableTableHeader>
+                                                <th>
+                                                    Description
+                                                </th>
+                                                <SortableTableHeader column="author">
+                                                    Author
+                                                </SortableTableHeader>
+                                                <SortableTableHeader column="editor">
+                                                    Editor
+                                                </SortableTableHeader>
+                                                <SortableTableHeader column="createdAt">
+                                                    Created At
+                                                </SortableTableHeader>
+                                                <SortableTableHeader column="lastChanged">
+                                                    Last Changed
+                                                </SortableTableHeader>
                                                 <th className='w-16'>Actions</th>
                                             </tr>
                                         </thead>
@@ -186,7 +263,7 @@ export default function NotesList({
                                                         }
                                                         onMouseLeave={handleMouseLeave}
                                                     >
-                                                        <td>
+                                                        <td className='w-8'>
                                                             {note.status && (
                                                                 <span
                                                                     className='inline-flex items-center align-middle tooltip tooltip-right tooltip-primary'
@@ -211,25 +288,19 @@ export default function NotesList({
                                                             {note.metadata
                                                                 ?.description || '-'}
                                                         </td>
-                                                        <td>
-                                                            {note.editor
-                                                                ? formatDate(
-                                                                      new Date(
-                                                                          note.edit_timestamp,
-                                                                      ),
-                                                                  )
-                                                                : formatDate(
-                                                                      new Date(
-                                                                          note.timestamp,
-                                                                      ),
-                                                                  )}
+                                                        <td className='w-32'>
+                                                            {note.author?.username || 'Unknown'}
                                                         </td>
-                                                        <td>
-                                                            {note.editor
-                                                                ? note.editor.username
-                                                                : note.author
-                                                                      ?.username ||
-                                                                  'Unknown'}
+                                                        <td className='w-32'>
+                                                            {note.editor?.username || '-'}
+                                                        </td>
+                                                        <td className='w-36'>
+                                                            {formatDate(new Date(note.timestamp))}
+                                                        </td>
+                                                        <td className='w-36'>
+                                                            {note.edit_timestamp
+                                                                ? formatDate(new Date(note.edit_timestamp))
+                                                                : '-'}
                                                         </td>
                                                         <td className='w-16'>
                                                             <div className='flex items-center space-x-1'>

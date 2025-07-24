@@ -25,27 +25,27 @@ export default function SidebarItem({
     const isHighlighted = location.pathname === highlightedLocation;
 
     return (
-        <li
-            className={`menu-item p-4 cursor-pointer group-hover/sidebar:flex items-center z-50 relative
-                ${isHighlighted ? 'menu-active' : ''}`}
-            onClick={handleClick}
-        >
-            {compact ? (
-                <Tooltip content={text} position='right'>
+        <Tooltip content={text} position='right'>
+            <li
+                className={`menu-item p-4 cursor-pointer group-hover/sidebar:flex items-center z-50 relative
+                    ${isHighlighted ? 'menu-active' : ''}`}
+                onClick={handleClick}
+            >
+                {compact ? (
+                        <div className='icon flex-shrink-0 text-primary hover:bg-gray-4'>
+                            {icon}
+                        </div>
+                ) : (
                     <div className='icon flex-shrink-0 text-primary hover:bg-gray-4'>
                         {icon}
                     </div>
-                </Tooltip>
-            ) : (
-                <div className='icon flex-shrink-0 text-primary hover:bg-gray-4'>
-                    {icon}
-                </div>
-            )}
-            {!compact && (
-                <div className='hidden whitespace-nowrap ml-2 group-hover/sidebar:block'>
-                    {text}
-                </div>
-            )}
-        </li>
+                )}
+                {!compact && (
+                    <div className='hidden whitespace-nowrap ml-2 group-hover/sidebar:block'>
+                        {text}
+                    </div>
+                )}
+            </li>
+       </Tooltip>
     );
 }

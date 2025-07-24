@@ -9,7 +9,7 @@ import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import { createDownloadPath } from '../../utils/textEditorUtils/textEditorUtils';
 import { authAxios } from '../../services/axiosInstance/axiosInstance';
-import { Download, Notes } from 'iconoir-react';
+import { Download, Notes, SortUp, SortDown, Sort } from 'iconoir-react';
 
 /**
  * FilesList component - This component is used to display a list of files.
@@ -44,18 +44,63 @@ export default function FilesList({
     const [loading, setLoading] = useState(false);
     const [totalPages, setTotalPages] = useState(1);
     const [page, setPage] = useState(Number(searchParams.get('files_page')) || 1);
+    const [sortField, setSortField] = useState('timestamp');
+    const [sortDirection, setSortDirection] = useState('desc');
     const { profile } = useProfile();
+
+    // Mapping of table columns to API field names
+    const sortFieldMapping = {
+        name: 'file_name',
+        uploadedAt: 'timestamp',
+        mimetype: 'mimetype',
+    };
 
     const { setNodeRef } = useDroppable({
         id: 'files-droppable',
     });
 
+    const handleSort = (column) => {
+        const newSortField = sortFieldMapping[column];
+        if (!newSortField) return;
+
+        if (sortField === newSortField) {
+            // Toggle direction if same field
+            setSortDirection(sortDirection === 'desc' ? 'asc' : 'desc');
+        } else {
+            // New field, default to descending for timestamp fields, ascending for others
+            setSortField(newSortField);
+            setSortDirection(newSortField.includes('timestamp') ? 'desc' : 'asc');
+        }
+        
+        // Reset to first page when sorting changes
+        setPage(1);
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('files_page', '1');
+        setSearchParams(newParams);
+    };
+
+    const getSortIcon = (column, className) => {
+        const fieldName = sortFieldMapping[column];
+        if (!fieldName || sortField !== fieldName) {
+            return <Sort className={className} />;
+        }
+        
+        return sortDirection === 'desc' ? (
+            <SortDown className={className} />
+        ) : (
+            <SortUp className={className} />
+        );
+    };
+
     const fetchFiles = useCallback(() => {
         setLoading(true);
         console.log(query, page, onError, setAlert);
 
+        const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
+
         const params = {
             page,
+            order_by: orderBy,
             ...query,
         };
 
@@ -77,7 +122,7 @@ export default function FilesList({
                 }
                 setLoading(false);
             });
-    }, [page, query, setAlert]);
+    }, [page, sortField, sortDirection, query, setAlert]);
 
     useEffect(() => {
         setPage(Number(searchParams.get('files_page')) || 1);
@@ -91,6 +136,18 @@ export default function FilesList({
 
         setPage(newPage);
     };
+
+    const SortableTableHeader = ({ column, children, className = '' }) => (
+        <th 
+            className={`cursor-pointer select-none ${className}`}
+            onClick={() => handleSort(column)}
+        >
+            <div className='flex items-center justify-between !border-b-0 !border-t-0'>
+                <span className='!border-b-0 !border-t-0'>{children}</span>
+                {getSortIcon(column, 'w-4 h-4 text-zinc-600 dark:text-zinc-400 !border-b-0 !border-t-0')}
+            </div>
+        </th>
+    );
 
     return (
         <>
@@ -121,12 +178,16 @@ export default function FilesList({
                                         <table className='table table-zebra'>
                                             <thead className=''>
                                                 <tr>
-                                                    <th className='w-64'>Name</th>
-                                                    <th className='w-32'>
+                                                    <SortableTableHeader column="name" className="w-64">
+                                                        Name
+                                                    </SortableTableHeader>
+                                                    <SortableTableHeader column="uploadedAt" className="w-32">
                                                         Uploaded At
-                                                    </th>
+                                                    </SortableTableHeader>
                                                     <th className='w-32'>Entities</th>
-                                                    <th className='w-32'>MimeType</th>
+                                                    <SortableTableHeader column="mimetype" className="w-32">
+                                                        MimeType
+                                                    </SortableTableHeader>
                                                     <th className=''>MD5</th>
                                                     <th className=''>SHA1</th>
                                                     <th className=''>SHA256</th>
