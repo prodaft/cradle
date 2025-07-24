@@ -16,10 +16,11 @@ import {
 } from '../../services/graphService/graphService';
 import { requestEntityAccess } from '../../services/dashboardService/dashboardService';
 import LazyPagination from '../Pagination/LazyPagination';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 
 export default function Relations({ obj }) {
     const [searchQuery, setSearchQuery] = useState('');
-    const [depth, setDepth] = useState(0);
+    const [depth, setDepth] = useState(2);
     const inputRef = useRef(null);
     const [showFilters, setShowFilters] = useState(false);
     const [entrySubtypeFilters, setEntrySubtypeFilters] = useState([]);
@@ -31,6 +32,7 @@ export default function Relations({ obj }) {
     const [isCopied, setIsCopied] = useState(false);
     const [inaccessibleEntities, setInaccessibleEntities] = useState([]);
     const [isRequestingAccess, setIsRequestingAccess] = useState(false);
+    const { profile } = useProfile();
 
     const dialogRoot = document.getElementById('portal-root');
     const navigate = useNavigate();
@@ -74,6 +76,7 @@ export default function Relations({ obj }) {
             })
                 .then((response) => {
                     setHasNextPage(response.data.has_next);
+                    response.data.results.sort((a, b) => a.depth - b.depth);
                     setResults(response.data.results);
                 })
                 .catch(displayError(setAlert, navigate))
@@ -268,18 +271,69 @@ export default function Relations({ obj }) {
                                 onPageChange={setPage}
                             />
 
-                            {results.map((result) => {
-                                const dashboardLink = createDashboardLink(result);
-                                return (
-                                    <SearchResult
-                                        key={result.id}
-                                        name={result.name}
-                                        type={result.type}
-                                        subtype={result.subtype}
-                                        onClick={handleResultClick(dashboardLink)}
-                                    />
-                                );
-                            })}
+                            {profile?.compact_mode ? (
+                                <div className='overflow-x-auto w-full'>
+                                    <table className='table table-zebra'>
+                                        <thead>
+                                            <tr>
+                                                <th className='w-32'>Type</th>
+                                                <th className=''>Name</th>
+                                                <th className='w-20'>Depth</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {results.map((result) => {
+                                                const dashboardLink =
+                                                    createDashboardLink(result);
+                                                return (
+                                                    <tr
+                                                        key={result.id}
+                                                        className='cursor-pointer hover:bg-zinc-100 hover:dark:bg-zinc-800'
+                                                        onClick={handleResultClick(
+                                                            dashboardLink,
+                                                        )}
+                                                    >
+                                                        <td className=''>
+                                                            <span
+                                                                className='badge text-white'
+                                                                style={{
+                                                                    backgroundColor:
+                                                                        result.color ||
+                                                                        '#ccc',
+                                                                }}
+                                                            >
+                                                                {result.subtype}
+                                                            </span>
+                                                        </td>
+                                                        <td className=''>
+                                                            {result.name}
+                                                        </td>
+                                                        <td className=''>
+                                                            <span className='badge badge-xs'>
+                                                                {result.depth}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                results.map((result) => {
+                                    const dashboardLink = createDashboardLink(result);
+                                    return (
+                                        <SearchResult
+                                            key={result.id}
+                                            name={result.name}
+                                            type={result.type}
+                                            subtype={result.subtype}
+                                            onClick={handleResultClick(dashboardLink)}
+                                            depth={result.depth}
+                                        />
+                                    );
+                                })
+                            )}
 
                             <LazyPagination
                                 currentPage={page}

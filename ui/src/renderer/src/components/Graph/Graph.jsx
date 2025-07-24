@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
 
 const Graph = forwardRef(function (
-    { onLinkClick, config, entryGraphColors, ...props },
+    { onLinkClick, onNodesSelected, config, entryGraphColors, ...props },
     cyRef,
 ) {
     const { isDarkMode } = useTheme();
@@ -21,6 +21,7 @@ const Graph = forwardRef(function (
                 name: 'canvas',
                 // webgl: true, // turns on WebGL mode
             },
+            boxSelectionEnabled: true, // Enable box selection for multiple nodes
         });
 
         cyRef.current = cy;
@@ -54,6 +55,17 @@ const Graph = forwardRef(function (
         // Handle node selection
         cy.on('tap', 'node', () => {
             cy.nodes().removeClass('highlighted');
+        });
+
+        // Handle multiple node selection
+        cy.on('select unselect', 'node', () => {
+            const selectedNodes = cy.nodes(':selected');
+            if (onNodesSelected) {
+                const nodeData = selectedNodes.map((node) => ({
+                    id: node.id(),
+                }));
+                onNodesSelected(nodeData);
+            }
         });
 
         // Clear selection when clicking on the background

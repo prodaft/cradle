@@ -9,9 +9,6 @@ import {
     Notes,
     SunLight,
     HalfMoon,
-    HelpCircle,
-    StatsReport,
-    CloudUpload,
     DataTransferBoth,
 } from 'iconoir-react';
 import { Graph, QuestionMark } from '@phosphor-icons/react';
@@ -19,7 +16,6 @@ import SidebarItem from '../SidebarItem/SidebarItem';
 import SidebarSection from '../SidebarSection/SidebarSection';
 import useAuth from '../../hooks/useAuth/useAuth';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
-import { HomeAltSlimHoriz } from 'iconoir-react/regular';
 import { useNavigate } from 'react-router-dom';
 
 /**
@@ -44,17 +40,22 @@ export default function Sidebar({
     onThemeToggle,
 }) {
     const [isRightMouseDown, setIsRightMouseDown] = useState(false);
+    const auth = useAuth();
+    const { isEntryManager, profile } = useProfile();
+    const navigate = useNavigate();
+
     const [isHovered, setIsHovered] = useState(false);
     const isHoveredRef = useRef(isHovered);
-    const auth = useAuth();
-    const { isEntryManager } = useProfile();
-    const navigate = useNavigate();
 
     useEffect(() => {
         isHoveredRef.current = isHovered;
     }, [isHovered]);
 
     useEffect(() => {
+        if (profile?.compact_mode) {
+            return;
+        }
+
         const handleMouseDown = (e) => {
             if (e.button === 0) {
                 setIsRightMouseDown(!isHoveredRef.current);
@@ -74,7 +75,7 @@ export default function Sidebar({
             document.removeEventListener('mousedown', handleMouseDown);
             document.removeEventListener('mouseup', handleMouseUp);
         };
-    }, []);
+    }, [profile?.compact_mode]);
 
     const newNoteLocation = '/editor/new';
     const handleNewNote = useCallback(() => {
@@ -115,8 +116,8 @@ export default function Sidebar({
     return (
         <div className='h-full sticky top-0' data-testid='sidebar-test'>
             <aside
-                className={`sidebar !h-full w-14 text-gray-400 transition-all duration-300 overflow-hidden group/sidebar ${
-                    !isRightMouseDown ? 'hover:w-48' : ''
+                className={`sidebar !h-full w-14 text-gray-400 transition-all duration-300 overflow-visible group/sidebar ${
+                    !profile?.compact_mode && !isRightMouseDown ? 'hover:w-48' : ''
                 }`}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
@@ -133,24 +134,28 @@ export default function Sidebar({
                                 icon={<Edit />}
                                 text='New Note'
                                 highlightedLocation={newNoteLocation}
+                                compact={profile?.compact_mode}
                             />
                             <SidebarItem
                                 handleClick={handleDocuments}
                                 icon={<Notes />}
                                 text='Documents'
                                 highlightedLocation={documentsLocation}
+                                compact={profile?.compact_mode}
                             />
                             <SidebarItem
                                 handleClick={handleGraphView}
                                 icon={<Graph height={24} width={24} />}
                                 text='Graph Explorer'
                                 highlightedLocation={graphViewLocation}
+                                compact={profile?.compact_mode}
                             />
                             <SidebarItem
                                 handleClick={handleConnectivity}
                                 icon={<DataTransferBoth />}
                                 text='Import/Export'
                                 highlightedLocation={connectivityLocation}
+                                compact={profile?.compact_mode}
                             />
 
                             <SidebarItem
@@ -158,6 +163,7 @@ export default function Sidebar({
                                 icon={<Settings />}
                                 text='Settings'
                                 highlightedLocation={accountSettingsLocation}
+                                compact={profile?.compact_mode}
                             />
                         </SidebarSection>
                         {isEntryManager() && (
@@ -167,6 +173,7 @@ export default function Sidebar({
                                     icon={<UserCrown />}
                                     text='Manage'
                                     highlightedLocation={adminLocation}
+                                    compact={profile?.compact_mode}
                                 />
                             </SidebarSection>
                         )}
@@ -176,6 +183,7 @@ export default function Sidebar({
                             handleClick={onThemeToggle}
                             icon={isDarkMode ? <SunLight /> : <HalfMoon />}
                             text={isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                            compact={profile?.compact_mode}
                         />
                         <SidebarItem
                             handleClick={() =>
@@ -184,6 +192,7 @@ export default function Sidebar({
                             icon={<QuestionMark height={24} width={24} />}
                             text='User Guide'
                             highlightedLocation='_blank'
+                            compact={profile?.compact_mode}
                         />
                         <SidebarItem
                             handleClick={handleNotifications}
@@ -197,11 +206,13 @@ export default function Sidebar({
                                 )
                             }
                             text={`${unreadNotificationsCount} Notifications`}
+                            compact={profile?.compact_mode}
                         />
                         <SidebarItem
                             handleClick={handleLogout}
                             icon={<LogOut />}
                             text='Logout'
+                            compact={profile?.compact_mode}
                         />
                     </SidebarSection>
                 </div>

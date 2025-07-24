@@ -210,6 +210,7 @@ export default function UploadExternal({ setAlert }) {
             };
 
             const response = await getDigests(searchQueryParams);
+
             setDigests(response.data.results);
             setTotalPages(response.data.total_pages);
         } catch (error) {

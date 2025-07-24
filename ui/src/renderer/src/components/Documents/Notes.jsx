@@ -20,14 +20,12 @@ export default function Notes({ setAlert }) {
     const [searchParams, setSearchParams] = useSearchParams();
 
     const [searchFilters, setSearchFilters] = useState({
+        page_size: 50,
         content: searchParams.get('content') || '',
         author__username: searchParams.get('author__username') || '',
     });
 
-    const [submittedFilters, setSubmittedFilters] = useState({
-        content: searchParams.get('content') || '',
-        author__username: searchParams.get('author__username') || '',
-    });
+    const [submittedFilters, setSubmittedFilters] = useState(null);
 
     const [dateRange, setDateRange] = useState({
         startDate: searchParams.get('timestamp_gte') || null,
@@ -122,20 +120,6 @@ export default function Notes({ setAlert }) {
 
         setSearchFilters(initialFilters);
         setDateRange(initialDateRange);
-
-        // Set initial submitted filters if URL has parameters
-        if (
-            searchParams.has('content') ||
-            searchParams.has('author__username') ||
-            searchParams.has('timestamp_gte') ||
-            searchParams.has('timestamp_lte')
-        ) {
-            setSubmittedFilters({
-                ...initialFilters,
-                timestamp_gte: searchParams.get('timestamp_gte') || '',
-                timestamp_lte: searchParams.get('timestamp_lte') || '',
-            });
-        }
     }, []);
 
     return (
@@ -148,8 +132,10 @@ export default function Notes({ setAlert }) {
                     value={dateRange}
                     onChange={handleDateRangeChange}
                     inputClassName='input input-block py-1 px-2 text-sm flex-grow !max-w-full w-full'
+                    containerClassName='w-full text-gray-700'
                     toggleClassName='hidden'
                 />
+
                 <input
                     type='text'
                     name='content'
@@ -171,13 +157,15 @@ export default function Notes({ setAlert }) {
                 </button>
             </form>
 
-            <NotesList
-                query={submittedFilters}
-                noteActions={[
-                    { Component: Publishable, props: { setAlert } },
-                    { Component: DeleteNote, props: { setAlert } },
-                ]}
-            />
+            {submittedFilters && (
+                <NotesList
+                    query={submittedFilters}
+                    noteActions={[
+                        { Component: Publishable, props: { setAlert } },
+                        { Component: DeleteNote, props: { setAlert } },
+                    ]}
+                />
+            )}
         </div>
     );
 }

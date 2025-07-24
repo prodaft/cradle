@@ -1,7 +1,7 @@
 {
     "name": "Cradle",
     "private": true,
-    "version": "2.7.1",
+    "version": "2.8.0",
     "description": "Batteries included collaborative knowledge management solution for threat intelligence researchers.",
     "author": {
         "name": "PRODAFT",
@@ -29,7 +29,8 @@
         "dist-electron": "electron-builder",
         "lint": "eslint . --max-warnings 0",
         "preview": "electron-vite preview",
-        "prettier": "npx prettier . --write"
+        "prettier": "npx prettier . --write",
+        "generate-api": "rm -rf src/renderer/src/services/cradle/; openapi-generator-cli generate -g typescript-fetch --input-spec ${npm_config_input:-http://localhost:8000/schema/} -c openapitools.json -o src/renderer/src/services/cradle/"
     },
     "dependencies": {
         "@codemirror/highlight": "^0.19.8",
@@ -105,6 +106,7 @@
         "@babel/preset-react": "^7.24.7",
         "@eslint/js": "^9.1.1",
         "@jest/globals": "^29.7.0",
+        "@openapitools/openapi-generator-cli": "^2.21.2",
         "@tailwindcss/typography": "github:tailwindcss/typography",
         "@testing-library/jest-dom": "^6.4.5",
         "@testing-library/react": "^15.0.6",

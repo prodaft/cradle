@@ -1,5 +1,6 @@
 from datetime import datetime
 from django.utils import timezone
+from django.db import IntegrityError
 from access.enums import AccessType
 from access.models import Access
 from entries.enums import EntryType
@@ -74,6 +75,7 @@ class FalconDigest(BaseDigest):
     def digest_chunk(self, start, end):
         rels = []
         typemapping: dict[str, EntryClass] = FalconMapping.get_typemapping_rev()
+        entities = {}
 
         for obj in self.digest_data()[start:end]:
             entity_obj = obj.get("entity", None)
@@ -82,34 +84,39 @@ class FalconDigest(BaseDigest):
                 self._append_warning("Entity fields missing")
                 return
 
-            eclass = typemapping.get(entity_obj.get("type"))
+            if f"{entity_obj.get('type')}:{entity_obj.get('value')}" not in entities:
+                eclass = typemapping.get(entity_obj.get("type"))
 
-            if eclass is None:
-                self._append_warning(f"Unknown type {entity_obj.get('type')}")
-                return
+                if eclass is None:
+                    self._append_warning(f"Unknown type {entity_obj.get('type')}")
+                    continue
 
-            entity = Entry.entities.filter(
-                entry_class=eclass,
-                name=entity_obj.get("value"),
-            ).first()
+                entity = Entry.entities.filter(
+                    entry_class=eclass,
+                    name=entity_obj.get("value"),
+                ).first()
 
-            if entity is None or not Access.objects.has_access_to_entities(
-                self.user, [entity], [AccessType.READ_WRITE]
-            ):
-                self._append_error(
-                    f"Entity {entity_obj.get('type')}:{entity_obj.get('value')} not found or you don't have access."
-                )
-                return
+                if entity is None or not Access.objects.has_access_to_entities(
+                    self.user, [entity], [AccessType.READ_WRITE]
+                ):
+                    self._append_warning(
+                        f"Entity {entity_obj.get('type')}:{entity_obj.get('value')} not found or you don't have access."
+                    )
+                    continue
+
+                entities[f"{entity_obj.get('type')}:{entity_obj.get('value')}"] = entity
+            else:
+                entity = entities[f"{entity_obj.get('type')}:{entity_obj.get('value')}"]
 
             eclass = typemapping.get(obj.get("type"), None)
 
             if eclass is None:
                 self._append_warning(f"Unknown type {obj.get('type')}")
-                return
+                continue
 
             if eclass.type != EntryType.ARTIFACT:
                 self._append_warning(f"You can't link to an entity ({eclass.subtype})!")
-                return
+                continue
 
             value = obj.get("value", None)
 
@@ -117,10 +124,31 @@ class FalconDigest(BaseDigest):
                 self._append_warning("Entity value missing")
                 return
 
-            parent_entry, created = Entry.objects.get_or_create(
-                entry_class=eclass,
-                name=value,
-            )
+            if len(value) > 1024:
+                self._append_warning(
+                    f"Entity value {value} is too long ({len(value)} characters, max 1024)."
+                )
+                continue
+
+            try:
+                parent_entry, created = Entry.objects.get_or_create(
+                    entry_class=eclass,
+                    name=value,
+                )
+            except InvalidEntryException as e:
+                self._append_warning(e.detail)
+                continue
+            except IntegrityError:
+                try:
+                    parent_entry = Entry.objects.get(
+                        entry_class=eclass,
+                        name=value,
+                    )
+                except Entry.DoesNotExist:
+                    self._append_warning(
+                        f"Entry {eclass.subtype} with name {value} already exists, but could not be retrieved."
+                    )
+                    continue
 
             # Get and parse unix timestamp with current timezone
             timestamp = obj.get("timestamp", None)
@@ -168,6 +196,12 @@ class FalconDigest(BaseDigest):
                     self._append_warning("Link value missing")
                     continue
 
+                if len(value) > 1024:
+                    self._append_warning(
+                        f"Entity value {value} is too long ({len(value)} characters, max 1024)."
+                    )
+                    continue
+
                 try:
                     child_entry, created = Entry.objects.get_or_create(
                         entry_class=eclass,
@@ -176,6 +210,17 @@ class FalconDigest(BaseDigest):
                 except InvalidEntryException as e:
                     self._append_warning(e.detail)
                     continue
+                except IntegrityError:
+                    try:
+                        child_entry = Entry.objects.get(
+                            entry_class=eclass,
+                            name=value,
+                        )
+                    except Entry.DoesNotExist:
+                        self._append_warning(
+                            f"Entry {eclass.subtype} with name {value} already exists, but could not be retrieved."
+                        )
+                        continue
 
                 rels.append(
                     Relation(

@@ -4,24 +4,97 @@ from django.db.models import Q
 
 from core.fields import BitStringField
 from entries.models import Edge, Entry
+from django.db.models import Value, IntegerField
 
 
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
 
-def get_neighbors(sourceset, depth, user=None, skip_virtual=False):
+def get_neighbors(
+    sourceset, depth, user=None, skip_virtual=False, cumulative=False, filter=None
+):
     """
     Returns a QuerySet of Entry objects that are exactly `depth` hops away from source_entry.
     Only follows relations where accessible=True, and ensures nodes visited at earlier
     depths are not revisited.
     """
-    if depth == 0:
-        return sourceset
-
     current_level = sourceset
+    result = current_level
     visited = [current_level]
 
-    for _ in range(depth):
+    for current_depth in range(depth):
+        if skip_virtual:
+            virt_edges = Edge.objects.filter(src__in=current_level, virtual=True)
+            virt_ids = virt_edges.values_list("dst", flat=True).distinct()
+
+            edges = Edge.objects.filter(
+                Q(src__in=current_level, virtual=False)
+                | Q(src__in=virt_ids, virtual=True)
+            )
+        else:
+            edges = Edge.objects.filter(src__in=current_level)
+
+        if user:
+            edges = edges.accessible(user=user)
+
+        dst_ids = edges.values_list("dst", flat=True).distinct()
+
+        qs = Entry.objects.filter(
+            id__in=dst_ids,
+        )
+        for v in visited:
+            qs = qs.exclude(pk__in=v)
+
+        qs = qs.distinct()
+
+        current_level = qs
+        lvl = filter(current_level) if filter else current_level
+        if cumulative:
+            result = result | lvl
+        else:
+            result = lvl
+
+        visited.append(current_level)
+
+        if skip_virtual:
+            visited.append(virt_ids)
+
+    # Return a queryset for the final level
+    return result
+
+
+def get_neighbors_paginated(
+    sourceset,
+    depth,
+    user=None,
+    skip_virtual=False,
+    cumulative=False,
+    filter=None,
+    page_size=1000,
+    page_number=1,
+    order_by="-last_seen",
+):
+    """
+    Returns a QuerySet of Entry objects that are exactly `depth` hops away from source_entry.
+    Only follows relations where accessible=True, and ensures nodes visited at earlier
+    depths are not revisited.
+    """
+    current_level = sourceset
+
+    offset = (page_number - 1) * page_size
+    count = 0
+    results = {}
+    visited = [current_level]
+
+    if offset == 0:
+        lvl = (filter(current_level) if filter else current_level).order_by(order_by)
+        results[0] = lvl
+        count += lvl.count()
+
+    for current_depth in range(depth):
+        if count >= page_size:
+            break
+
         if skip_virtual:
             virt_edges = Edge.objects.filter(src__in=current_level, virtual=True)
             virt_ids = virt_edges.values_list("dst", flat=True).distinct()
@@ -46,15 +119,39 @@ def get_neighbors(sourceset, depth, user=None, skip_virtual=False):
             qs = qs.exclude(pk__in=v)
 
         qs = qs.distinct()
+
         current_level = qs
+        lvl = (filter(current_level) if filter else current_level).order_by(order_by)
+
+        if cumulative:
+            if offset > 0:
+                lvl_count = lvl[:offset].count()
+                if lvl_count == offset:
+                    lvl = lvl[offset:]
+                offset -= lvl_count
+
+            if offset == 0:
+                results[current_depth + 1] = lvl[: (page_size - count)]
+                count += lvl.count()
+
+        else:
+            results = {current_depth + 1: lvl[offset : offset + page_size]}
 
         visited.append(current_level)
 
         if skip_virtual:
             visited.append(virt_ids)
 
+    final_result = None
+    for k, v in results.items():
+        v = v.annotate(depth=Value(k, output_field=IntegerField()))
+        if final_result is None:
+            final_result = v
+        else:
+            final_result = final_result.union(v)
+
     # Return a queryset for the final level
-    return current_level
+    return final_result
 
 
 def get_edges_for_paths(start_id, targets, user, start_time, end_time) -> List[Edge]:

@@ -3,6 +3,7 @@ import RelationCard from './RelationCard';
 import Pagination from '../Pagination/Pagination';
 import { getRelations } from '../../services/graphService/graphService';
 import AlertBox from '../AlertBox/AlertBox';
+import { useProfile } from '../../hooks/useProfile/useProfile';
 
 export default function RelationsList({ query }) {
     const [relations, setRelations] = useState([]);
@@ -10,6 +11,7 @@ export default function RelationsList({ query }) {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(false);
+    const { profile } = useProfile();
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
 
     useEffect(() => {

@@ -59,7 +59,7 @@ export default function AlertDismissible({ alert, setAlert, duration = 3500.0 })
                             className={`${colorVariants[alert.color]} hover:opacity-90 text-white font-bold py-2 pl-4`}
                             onClick={() => setAlert('')}
                         >
-                            <Xmark className="" color='gray-12' strokeWidth='2' />
+                            <Xmark className='' color='gray-12' strokeWidth='2' />
                         </button>
                     </div>
                     <div
@@ -68,7 +68,7 @@ export default function AlertDismissible({ alert, setAlert, duration = 3500.0 })
                         <progress
                             value={timeLeft}
                             max={duration}
-                            className='h-[0.3em] progress progress-flat-secondary w-full !rounded-md opacity-75'
+                            className='h-[0.3em] progress progress-flat-white w-full !rounded-md opacity-75'
                         />
                     </div>
                 </div>

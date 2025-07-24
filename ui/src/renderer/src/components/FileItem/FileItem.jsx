@@ -101,7 +101,7 @@ const FileItem = forwardRef(function ({ id, file, setAlert, ...props }, ref) {
                         {file.entities.map((entry) => (
                             <a
                                 key={entry.name}
-                                className='hover:underline badge badge-flat-primary badge-xs px-2 mx-1 my-1 py-1 text-secondary'
+                                className='hover:underline badge badge-flat-primary badge-xs px-2 mx-1 my-1 py-1 text-white'
                                 href={`#${createDashboardLink(entry)}`}
                                 data-custom-href={`#${createDashboardLink(entry)}`}
                                 style={{

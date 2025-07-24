@@ -1,11 +1,21 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Note from '../Note/Note';
 import { searchNote } from '../../services/notesService/notesService';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Pagination from '../Pagination/Pagination';
 import { useSearchParams } from 'react-router-dom';
-import { useDroppable } from '@dnd-kit/core';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import AlertBox from '../AlertBox/AlertBox';
+import { formatDate } from '../../utils/dateUtils/dateUtils';
+import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
+import { useNavigate } from 'react-router-dom';
+import {
+    CheckCircleSolid,
+    InfoCircleSolid,
+    WarningTriangleSolid,
+    WarningCircleSolid,
+} from 'iconoir-react';
+import { HoverPreview } from '../HoverPreview/HoverPreview';
+import DeleteNote from '../NoteActions/DeleteNote';
 
 export default function NotesList({
     query,
@@ -18,9 +28,81 @@ export default function NotesList({
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [loading, setLoading] = useState(false);
     const [totalPages, setTotalPages] = useState(1);
+    const { profile } = useProfile();
     const [page, setPage] = useState(Number(searchParams.get('notes_page')) || 1);
+    const navigate = useNavigate();
+    const [hoveredNote, setHoveredNote] = useState(null);
+    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+    const hoverTimeoutRef = useRef(null);
+    const HOVER_DELAY = 800;
+
+    const handleMouseEnter = (note, event) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        setMousePosition({
+            x: rect.right,
+            y: rect.top,
+        });
+
+        hoverTimeoutRef.current = setTimeout(() => {
+            setHoveredNote(note);
+        }, HOVER_DELAY);
+    };
+
+    const handleMouseLeave = () => {
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+            hoverTimeoutRef.current = null;
+        }
+        setHoveredNote(null);
+    };
+
+    useEffect(() => {
+        return () => {
+            if (hoverTimeoutRef.current) {
+                clearTimeout(hoverTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    const getStatusIcon = (status) => {
+        if (!status) return null;
+
+        switch (status) {
+            case 'healthy':
+                return (
+                    <CheckCircleSolid
+                        className='text-green-500'
+                        width='18'
+                        height='18'
+                    />
+                );
+            case 'processing':
+                return (
+                    <InfoCircleSolid className='text-blue-500' width='18' height='18' />
+                );
+            case 'warning':
+                return (
+                    <WarningTriangleSolid
+                        className='text-amber-500'
+                        width='18'
+                        height='18'
+                    />
+                );
+            case 'invalid':
+                return (
+                    <WarningCircleSolid
+                        className='text-red-500'
+                        width='18'
+                        height='18'
+                    />
+                );
+            default:
+                return null;
+        }
+    };
 
     const fetchNotes = useCallback(() => {
+        if (query == null) return;
         setLoading(true);
 
         searchNote({ page, ...query })
@@ -70,20 +152,118 @@ export default function NotesList({
                         </div>
                     ) : notes.length > 0 ? (
                         <div className='notes-list'>
-                            {notes.map((note, index) => {
-                                for (const n of filteredNotes) {
-                                    if (n.id === note.id) return null;
-                                }
-                                return (
-                                    <Note
-                                        id={note.id}
-                                        key={index}
-                                        note={note}
-                                        setAlert={setAlert}
-                                        actions={noteActions}
-                                    />
-                                );
-                            })}
+                            {profile?.compact_mode ? (
+                                <div className='overflow-x-auto w-full'>
+                                    <table className='table table-hover'>
+                                        <thead>
+                                            <tr>
+                                                <th>Status</th>
+                                                <th>Title</th>
+                                                <th>Description</th>
+                                                <th>Last Changed</th>
+                                                <th>Last Editor</th>
+                                                <th className='w-16'>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {notes.map((note) => {
+                                                // Skip filtered notes
+                                                for (const n of filteredNotes) {
+                                                    if (n.id === note.id) return null;
+                                                }
+
+                                                return (
+                                                    <tr
+                                                        key={note.id}
+                                                        className='cursor-pointer'
+                                                        onClick={() =>
+                                                            navigate(
+                                                                `/notes/${note.id}`,
+                                                            )
+                                                        }
+                                                        onMouseEnter={(e) =>
+                                                            handleMouseEnter(note, e)
+                                                        }
+                                                        onMouseLeave={handleMouseLeave}
+                                                    >
+                                                        <td>
+                                                            {note.status && (
+                                                                <span
+                                                                    className='inline-flex items-center align-middle tooltip tooltip-right tooltip-primary'
+                                                                    data-tooltip={
+                                                                        note.status_message ||
+                                                                        capitalizeString(
+                                                                            note.status,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    {getStatusIcon(
+                                                                        note.status,
+                                                                    )}
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td>
+                                                            {note.metadata?.title ||
+                                                                'Untitled'}
+                                                        </td>
+                                                        <td className='max-w-xs truncate'>
+                                                            {note.metadata
+                                                                ?.description || '-'}
+                                                        </td>
+                                                        <td>
+                                                            {note.editor
+                                                                ? formatDate(
+                                                                      new Date(
+                                                                          note.edit_timestamp,
+                                                                      ),
+                                                                  )
+                                                                : formatDate(
+                                                                      new Date(
+                                                                          note.timestamp,
+                                                                      ),
+                                                                  )}
+                                                        </td>
+                                                        <td>
+                                                            {note.editor
+                                                                ? note.editor.username
+                                                                : note.author
+                                                                      ?.username ||
+                                                                  'Unknown'}
+                                                        </td>
+                                                        <td className='w-16'>
+                                                            <div className='flex items-center space-x-1'>
+                                                                <DeleteNote
+                                                                    note={note}
+                                                                    setAlert={setAlert}
+                                                                    setHidden={() => {}}
+                                                                    key={note.id}
+                                                                    classNames='w-4 h-4'
+                                                                />
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                notes.map((note, index) => {
+                                    for (const n of filteredNotes) {
+                                        if (n.id === note.id) return null;
+                                    }
+                                    return (
+                                        <Note
+                                            id={note.id}
+                                            key={index}
+                                            note={note}
+                                            setAlert={setAlert}
+                                            actions={noteActions}
+                                        />
+                                    );
+                                })
+                            )}
                         </div>
                     ) : (
                         <div className='container mx-auto flex flex-col items-center'>
@@ -100,6 +280,13 @@ export default function NotesList({
                     />
                 </div>
             </div>
+            {hoveredNote && (
+                <HoverPreview
+                    note={hoveredNote}
+                    position={mousePosition}
+                    onClose={() => setHoveredNote(null)}
+                />
+            )}
         </>
     );
 }

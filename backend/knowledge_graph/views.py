@@ -13,13 +13,19 @@ from core.pagination import LazyPaginator
 from entries.enums import EntryType
 from entries.models import Edge, Entry
 from entries.serializers import EntrySerializer
-from knowledge_graph.utils import filter_valid_edges, get_edges_for_paths, get_neighbors
+from knowledge_graph.utils import (
+    filter_valid_edges,
+    get_edges_for_paths,
+    get_neighbors,
+    get_neighbors_paginated,
+)
 from query.filters import EntryFilter
 from query.utils import parse_query
 from .serializers import (
     PathfindQuery,
     SubGraphSerializer,
     GraphInaccessibleResponseSerializer,
+    EntryWithDepthSerializer,
 )
 from django.utils.dateparse import parse_datetime
 
@@ -118,7 +124,9 @@ class GraphPathFindView(APIView):
         ),
     ],
     responses={
-        200: EntrySerializer(many=True),
+        200: LazyPaginator().get_paginated_response_serializer(
+            EntryWithDepthSerializer
+        ),
         400: {"description": "Invalid parameters or query syntax"},
         401: {"description": "User is not authenticated"},
         404: {"description": "Source entry not found"},
@@ -165,8 +173,6 @@ class GraphNeighborsView(APIView):
 
         sourceset = source_entry.aliasqs(request.user).non_virtual()
 
-        neighbors_qs = get_neighbors(sourceset, depth, request.user, True)
-
         query_str = request.query_params.get("query")
 
         if query_str:
@@ -180,27 +186,47 @@ class GraphNeighborsView(APIView):
                     {"error": f"Invalid query syntax: {str(e)}"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            neighbors_qs = neighbors_qs.filter(query_filter)
+
+            neighbors_qs = get_neighbors_paginated(
+                sourceset,
+                depth,
+                request.user,
+                True,
+                True,
+                lambda qs: qs.filter(query_filter),
+                page_size=page_size,
+                page_number=int(request.query_params.get("page", 1)),
+                order_by="-last_seen",
+            )
         else:
-            filterset = EntryFilter(request.query_params, queryset=neighbors_qs)
+            filterset = EntryFilter(request.query_params)
 
             if filterset.is_valid():
-                neighbors_qs = filterset.qs
+                neighbors_qs = get_neighbors_paginated(
+                    sourceset,
+                    depth,
+                    request.user,
+                    True,
+                    True,
+                    lambda qs: EntryFilter(request.query_params, queryset=qs).qs,
+                    page_size=page_size,
+                    page_number=int(request.query_params.get("page", 1)),
+                    order_by="-last_seen",
+                )
             else:
                 return Response(
                     {"error": f"Invalid query syntax: {filterset.errors}"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        paginator = LazyPaginator(page_size=page_size)
-        paginated_entries = paginator.paginate_queryset(neighbors_qs, request)
-
-        if paginated_entries is not None:
-            serializer = EntrySerializer(paginated_entries, many=True)
-            return paginator.get_paginated_response(serializer.data)
-
-        serializer = EntrySerializer(neighbors_qs, many=True)
-        return Response(serializer.data)
+        serializer = EntryWithDepthSerializer(neighbors_qs, many=True)
+        return Response(
+            {
+                "page": int(request.query_params.get("page", 1)),
+                "has_next": len(serializer.data) == page_size,
+                "results": serializer.data,
+            }
+        )
 
 
 @extend_schema(
@@ -269,11 +295,16 @@ class GraphInaccessibleView(APIView):
                 {"error": f"Entry with ID {source_id} not found."}, status=404
             )
 
-        neighbors_qs = get_neighbors(
-            {source_entry.id}, depth, None, True
-        )  # Queryset of all neighbors
+        sourceset = source_entry.aliasqs(request.user).non_virtual()
 
-        entities = neighbors_qs.filter(entry_class__type=EntryType.ENTITY)
+        entities = get_neighbors(
+            sourceset,
+            depth,
+            None,
+            True,
+            True,
+            lambda qs: qs.filter(entry_class__type=EntryType.ENTITY),
+        )  # Queryset of all neighbors
 
         inaccessible = Access.objects.inaccessible_entries(
             request.user, entities, {AccessType.READ, AccessType.READ_WRITE}

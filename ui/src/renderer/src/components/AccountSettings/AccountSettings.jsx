@@ -27,6 +27,7 @@ import ActionConfirmationModal from '../Modals/ActionConfirmationModal.jsx';
 import MarkdownEditorModal from '../Modals/MarkdownEditorModal.jsx';
 import TwoFactorSetupModal from '../Modals/TwoFactorSetupModal';
 import AlertDismissible from '../AlertDismissible/AlertDismissible.jsx';
+import { compact } from 'lodash';
 
 const accountSettingsSchema = Yup.object().shape({
     username: Yup.string().required('Username is required'),
@@ -45,6 +46,8 @@ const accountSettingsSchema = Yup.object().shape({
     }),
     email_confirmed: Yup.boolean(),
     is_active: Yup.boolean(),
+    compact_mode: Yup.boolean(),
+    vim_mode: Yup.boolean(),
 });
 
 export default function AccountSettings({ target, isEdit = true, onAdd }) {
@@ -67,6 +70,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
               catalystKey: 'apikey',
               role: 'user',
               vim_mode: false,
+              compact_mode: false,
               email_confirmed: false,
               is_active: false,
           }
@@ -79,6 +83,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
               catalystKey: '',
               role: 'user',
               vim_mode: false,
+              compact_mode: false,
               email_confirmed: false,
               is_active: false,
           };
@@ -111,6 +116,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                         password: 'password',
                         vtKey: res.data.vt_api_key ? 'apikey' : '',
                         vimMode: res.data.vim_mode || false,
+                        compactMode: res.data.compact_mode || false,
                         catalystKey: res.data.catalyst_api_key ? 'apikey' : '',
                         role: res.data.role || 'user',
                         email_confirmed: res.data.email_confirmed || false,
@@ -137,6 +143,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                 payload.catalyst_api_key = data.catalystKey;
             }
             payload.vim_mode = data.vimMode;
+            payload.compact_mode = data.compactMode;
             if (isAdminAndNotOwn) {
                 payload.username = data.username;
                 payload.email = data.email;
@@ -177,6 +184,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                 email_confirmed: data.email_confirmed,
                 is_active: data.is_active,
                 vim_mode: data.vimMode,
+                compact_mode: data.compactMode,
             };
             try {
                 let result = await createUser(payload);
@@ -313,12 +321,12 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
             <div className='flex items-center justify-center min-h-screen'>
                 <div className='w-full max-w-2xl px-4'>
                     <h1 className='text-center text-xl font-bold text-primary mb-4'>
-                        {isEdit ? 'Account Settings' : 'Add New User'}
+                        {isEdit ? 'Settings' : 'Add New User'}
                     </h1>
                     <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
                         <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
                             <Tabs tabClasses='tabs gap-1' perTabClass='tab-pill'>
-                                <Tab title='Settings'>
+                                <Tab title='Account'>
                                     <div className='mt-4' />
                                     <FormField
                                         name='username'
@@ -515,7 +523,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                         </div>
                                     </Tab>
                                 )}
-                                <Tab title='Editor'>
+                                <Tab title='Interface'>
                                     <div className='mt-4' />
                                     <div className='form-control flex flex-column justify-between items-center'>
                                         <label
@@ -541,6 +549,15 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                             />
                                         </label>
                                     </div>
+                                    <div className='mt-4' />
+                                    <FormField
+                                        type='checkbox'
+                                        labelText='Compact UI'
+                                        className='switch switch-ghost-primary'
+                                        {...register('compactMode')}
+                                        row={true}
+                                        error={errors.compact_mode?.message}
+                                    />
                                     <div className='mt-4' />
                                     <SnippetList userId={target} />
 

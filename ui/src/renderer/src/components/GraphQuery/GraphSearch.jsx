@@ -62,15 +62,6 @@ const GraphSearch = forwardRef(({ processNewNode, addEdge }, graphRef) => {
     return (
         <div className='w-full'>
             <Tabs tabClasses='tabs gap-1' perTabClass='tab-pill' queryParam='searchTab'>
-                <Tab title='Find Paths' classes='space-y-4'>
-                    <PathFindSearch
-                        ref={graphRef}
-                        queryValues={queryValues.pathfind}
-                        setQueryValues={(vals) => updateQueryValues('pathfind', vals)}
-                        processNewNode={processNewNode}
-                        addEdge={addEdge}
-                    />
-                </Tab>
                 <Tab title='Fetch Graph' classes='space-y-4'>
                     <PaginatedGraphFetch
                         ref={graphRef}
@@ -78,6 +69,15 @@ const GraphSearch = forwardRef(({ processNewNode, addEdge }, graphRef) => {
                         setQueryValues={(vals) =>
                             updateQueryValues('paginatedgraphfetch', vals)
                         }
+                        processNewNode={processNewNode}
+                        addEdge={addEdge}
+                    />
+                </Tab>
+                <Tab title='Find Paths' classes='space-y-4'>
+                    <PathFindSearch
+                        ref={graphRef}
+                        queryValues={queryValues.pathfind}
+                        setQueryValues={(vals) => updateQueryValues('pathfind', vals)}
                         processNewNode={processNewNode}
                         addEdge={addEdge}
                     />

@@ -13,14 +13,26 @@ import React from 'react';
  * @returns {SearchResult}
  * @constructor
  */
-export default function SearchResult({ name, onClick, type, subtype, actions = [] }) {
+export default function SearchResult({
+    name,
+    onClick,
+    type,
+    subtype,
+    actions = [],
+    depth,
+}) {
     return (
         <div
             className='relative h-fit w-full bg-cradle3 px-3 py-6 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl cursor-pointer my-3 flex items-center'
             onClick={onClick}
         >
             <div className='flex-grow'>
-                <h2 className='card-header w-full mx-2 text-white'>{name}</h2>
+                <div className='flex items-center'>
+                    {depth != null && (
+                        <span className='badge mr-2'>Depth: {depth}</span>
+                    )}
+                    <h2 className='card-header text-white'>{name}</h2>
+                </div>
                 <p className='text-zinc-300 mx-2'>
                     {type}
                     {subtype ? `: ${subtype}` : ''}
