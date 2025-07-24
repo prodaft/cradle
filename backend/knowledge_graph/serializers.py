@@ -4,7 +4,6 @@ from access.models import Access
 from entries.enums import EntryType
 from entries.models import Entry, Edge, Relation
 from core.utils import flatten
-from django.db.models import QuerySet
 from entries.serializers import (
     EntryListCompressedTreeSerializer,
     EntryClassSerializerNoChildren,

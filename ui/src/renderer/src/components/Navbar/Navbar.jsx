@@ -76,13 +76,14 @@ export default function Navbar({
                 <NavbarButton
                     icon={
                         <ArrowRight
-                            className='text-zinc-500 hover:text-cradle2 mr-2'
+                            className='text-zinc-500 hover:text-cradle2'
                             width='1em'
                             height='1.1em'
                             strokeWidth='1.5'
                         />
                     }
                     onClick={() => navigate(1)}
+                    className='mr-2'
                 />
                 <input
                     className='form-input input-sm input-ghost-primary input focus:border-primary focus:ring-0 w-full max-w-lg'

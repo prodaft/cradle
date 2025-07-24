@@ -8,6 +8,7 @@ import AlertBox from '../AlertBox/AlertBox';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import { capitalizeString, truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { useNavigate } from 'react-router-dom';
+import { parseMarkdownInline } from '../../utils/customParser/customParser';
 import {
     CheckCircleSolid,
     InfoCircleSolid,
@@ -84,13 +85,7 @@ export default function NotesList({
 
         switch (status) {
             case 'healthy':
-                return (
-                    <CheckCircleSolid
-                        className='text-green-500'
-                        width='18'
-                        height='18'
-                    />
-                );
+                return null;
             case 'processing':
                 return (
                     <InfoCircleSolid className='text-blue-500' width='18' height='18' />
@@ -283,11 +278,12 @@ export default function NotesList({
                                                         <td className={`truncate w-64`}
                                                             data-tooltip={note.metadata?.title}
                                                         >
-                                                            {truncateText(note.metadata?.title, 64)}
+                                                            {truncateText(parseMarkdownInline(
+                                                                note.metadata?.title), 64)}
                                                         </td>
                                                         <td className='truncate max-w-xs'
                                                         >
-                                                            {note.metadata?.description}
+                                                            {note.metadata?.description ? parseMarkdownInline(note.metadata?.description) : '-'}
                                                         </td>
                                                         <td className='truncate w-32'>
                                                             {truncateText(note.author?.username, 16)}

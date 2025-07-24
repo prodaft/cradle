@@ -21,6 +21,11 @@ class UserRoles(models.TextChoices):
     USER = "author"  # Writer of notes
 
 
+class Theme(models.TextChoices):
+    DARK = "dark"
+    LIGHT = "light"
+
+
 class CradleUser(AbstractUser, LoggableModelMixin):
     id: models.UUIDField = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
@@ -57,6 +62,9 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         default=False, help_text="Whether to enable Vim keybindings in the editor"
     )
 
+    theme = models.CharField(
+        default=Theme.DARK, choices=Theme.choices, help_text="Theme to use in the UI"
+    )
     compact_mode = models.BooleanField(
         default=False, help_text="Whether to use compact mode in the UI"
     )

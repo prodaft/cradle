@@ -157,15 +157,16 @@ export default function Sidebar({
                                 highlightedLocation={connectivityLocation}
                                 compact={profile?.compact_mode}
                             />
-
-                            <SidebarItem
-                                handleClick={handleAccountSettings}
-                                icon={<Settings />}
-                                text='Settings'
-                                highlightedLocation={accountSettingsLocation}
-                                compact={profile?.compact_mode}
-                            />
                         </SidebarSection>
+                    </div>
+                    <SidebarSection type='footer' height='fit' justify='end'>
+                        <SidebarItem
+                            handleClick={handleAccountSettings}
+                            icon={<Settings />}
+                            text='Settings'
+                            highlightedLocation={accountSettingsLocation}
+                            compact={profile?.compact_mode}
+                        />
                         {isEntryManager() && (
                             <SidebarSection type='content' height='fit' justify='start'>
                                 <SidebarItem
@@ -177,14 +178,7 @@ export default function Sidebar({
                                 />
                             </SidebarSection>
                         )}
-                    </div>
-                    <SidebarSection type='footer' height='fit' justify='end'>
-                        <SidebarItem
-                            handleClick={onThemeToggle}
-                            icon={isDarkMode ? <SunLight /> : <HalfMoon />}
-                            text={isDarkMode ? 'Light Mode' : 'Dark Mode'}
-                            compact={profile?.compact_mode}
-                        />
+                        {/*
                         <SidebarItem
                             handleClick={() =>
                                 window.open('https://cradle.sh/docs/userguide/')
@@ -194,6 +188,7 @@ export default function Sidebar({
                             highlightedLocation='_blank'
                             compact={profile?.compact_mode}
                         />
+                        */}
                         <SidebarItem
                             handleClick={handleNotifications}
                             icon={

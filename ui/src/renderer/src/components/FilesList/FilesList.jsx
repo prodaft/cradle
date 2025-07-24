@@ -125,6 +125,18 @@ export default function FilesList({
             });
     }, [page, sortField, sortDirection, query, setAlert]);
 
+    const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text).catch((error) => {
+            console.error('Failed to copy text: ', error);
+        }).then(() => {
+            setAlert({
+                show: true,
+                message: 'Copied to clipboard',
+                color: 'green',
+            });
+        });
+    };
+
     useEffect(() => {
         setPage(Number(searchParams.get('files_page')) || 1);
         fetchFiles();
@@ -176,7 +188,7 @@ export default function FilesList({
                             >
                                 {profile?.compact_mode ? (
                                     <div className='overflow-x-auto w-full'>
-                                        <table className='table table-zebra'>
+                                        <table className='table'>
                                             <thead className=''>
                                                 <tr>
                                                     <SortableTableHeader column="name" className="w-64">
@@ -215,7 +227,7 @@ export default function FilesList({
                                                             </td>
                                                             <td className=''>
                                                                 <div className='flex flex-wrap gap-1'>
-                                                                    {file.entities?.map(
+                                                                    {file.entities?.slice(0,3).map(
                                                                         (entity) => (
                                                                             <span
                                                                                 key={
@@ -237,16 +249,14 @@ export default function FilesList({
                                                                 </div>
                                                             </td>
                                                             <td className='truncate w-32'>
-                                                                {file.mimetype}
+                                                                {truncateText(file.mimetype, 32)}
                                                             </td>
                                                             <td className=''>
                                                                 {file.md5_hash ? (
                                                                     <span
                                                                         className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
                                                                         onClick={() =>
-                                                                            navigator.clipboard.writeText(
-                                                                                file.md5_hash,
-                                                                            )
+                                                                            copyToClipboard(file.md5_hash)
                                                                         }
                                                                         title='Click to copy'
                                                                     >
@@ -257,7 +267,7 @@ export default function FilesList({
                                                                         ...
                                                                     </span>
                                                                 ) : (
-                                                                    'N/A'
+                                                                    '-'
                                                                 )}
                                                             </td>
                                                             <td className=''>
@@ -265,9 +275,7 @@ export default function FilesList({
                                                                     <span
                                                                         className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
                                                                         onClick={() =>
-                                                                            navigator.clipboard.writeText(
-                                                                                file.sha1_hash,
-                                                                            )
+                                                                            copyToClipboard(file.sha1_hash)
                                                                         }
                                                                         title='Click to copy'
                                                                     >
@@ -278,7 +286,7 @@ export default function FilesList({
                                                                         ...
                                                                     </span>
                                                                 ) : (
-                                                                    'N/A'
+                                                                    '-'
                                                                 )}
                                                             </td>
                                                             <td className=''>
@@ -286,9 +294,7 @@ export default function FilesList({
                                                                     <span
                                                                         className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
                                                                         onClick={() =>
-                                                                            navigator.clipboard.writeText(
-                                                                                file.sha256_hash,
-                                                                            )
+                                                                            copyToClipboard(file.sha256_hash)
                                                                         }
                                                                         title='Click to copy'
                                                                     >
@@ -299,7 +305,7 @@ export default function FilesList({
                                                                         ...
                                                                     </span>
                                                                 ) : (
-                                                                    'N/A'
+                                                                    '-'
                                                                 )}
                                                             </td>
                                                             <td className='w-32'>
@@ -336,7 +342,6 @@ export default function FilesList({
                                                                         file.minio_file_name && (
                                                                             <button
                                                                                 onClick={() => {
-                                                                                    // Download logic similar to FileItem
                                                                                     const url =
                                                                                         createDownloadPath(
                                                                                             {

@@ -82,6 +82,12 @@ const FileItem = forwardRef(function ({ id, file, setAlert, ...props }, ref) {
     const copyToClipboard = (text) => {
         navigator.clipboard.writeText(text).catch((error) => {
             console.error('Failed to copy text: ', error);
+        }).then(() => {
+            setAlert({
+                show: true,
+                message: 'Copied to clipboard',
+                color: 'green',
+            });
         });
     };
 

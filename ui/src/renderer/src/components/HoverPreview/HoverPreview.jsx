@@ -66,7 +66,7 @@ export const HoverPreview = ({ note, position, onClose }) => {
             </div>
             */}
 
-            <div classNameCommentedOut='border-gray-200 dark:border-gray-700 pt-2'>
+            <div className={''/*border-gray-200 dark:border-gray-700 pt-2*/}>
                 {loading ? (
                     <div className='flex items-center justify-center h-128'>
                         <div className='spinner-dot-pulse'>

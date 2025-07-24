@@ -14,7 +14,6 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 from entries.models import Entry
 from file_transfer.models import FileReference
 
-from ..utils import get_guide_note
 
 from ..filters import NoteFilter
 from ..serializers import (
@@ -29,7 +28,6 @@ from knowledge_graph.serializers import SubGraphSerializer
 from ..models import Note
 from user.models import CradleUser
 from access.enums import AccessType
-from entries.models import Relation
 from typing import cast
 
 from entries.enums import EntryType
@@ -110,7 +108,7 @@ from uuid import UUID
                 name="order_by",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Order notes by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: timestamp, edit_timestamp, title, author__username. Default: -timestamp",
+                description="Order notes by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: timestamp, edit_timestamp, title, author__username. Default: -timestamp",  # noqa: E501
                 required=False,
                 default="-timestamp",
             ),
@@ -497,7 +495,7 @@ class NoteDetail(APIView):
                 name="order_by",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Order files by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: timestamp, file_name, mimetype. Default: -timestamp",
+                description="Order files by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: timestamp, file_name, mimetype. Default: -timestamp",  # noqa: E501
                 required=False,
                 default="-timestamp",
             ),

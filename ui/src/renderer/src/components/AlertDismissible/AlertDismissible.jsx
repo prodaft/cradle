@@ -68,7 +68,7 @@ export default function AlertDismissible({ alert, setAlert, duration = 3500.0 })
                         <progress
                             value={timeLeft}
                             max={duration}
-                            className='h-[0.3em] progress progress-flat-white w-full !rounded-md opacity-75'
+                            className='h-[0.3em] progress w-full !rounded-md opacity-75 bg-white [&::-webkit-progress-value]:bg-gray-300 [&::-moz-progress-bar]:bg-gray-300'
                         />
                     </div>
                 </div>

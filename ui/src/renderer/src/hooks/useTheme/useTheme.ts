@@ -26,16 +26,10 @@ export function useTheme() {
         return () => mediaQuery.removeEventListener('change', handleChange);
     }, []);
 
+
     useEffect(() => {
         // Update localStorage whenever theme changes
         localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-
-        if (isDarkMode) {
-            // Set data-theme property
-            document.documentElement.setAttribute('data-theme', 'dark');
-        } else {
-            document.documentElement.setAttribute('data-theme', 'light');
-        }
     }, [isDarkMode]);
 
     const toggleTheme = () => {

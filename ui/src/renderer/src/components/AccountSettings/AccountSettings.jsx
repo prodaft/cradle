@@ -117,6 +117,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                         vtKey: res.data.vt_api_key ? 'apikey' : '',
                         vimMode: res.data.vim_mode || false,
                         compactMode: res.data.compact_mode || false,
+                        theme: res.data.theme || 'dark',
                         catalystKey: res.data.catalyst_api_key ? 'apikey' : '',
                         role: res.data.role || 'user',
                         email_confirmed: res.data.email_confirmed || false,
@@ -144,6 +145,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
             }
             payload.vim_mode = data.vimMode;
             payload.compact_mode = data.compactMode;
+            payload.theme = data.theme;
             if (isAdminAndNotOwn) {
                 payload.username = data.username;
                 payload.email = data.email;
@@ -185,6 +187,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                 is_active: data.is_active,
                 vim_mode: data.vimMode,
                 compact_mode: data.compactMode,
+                theme: data.theme,
             };
             try {
                 let result = await createUser(payload);
@@ -559,6 +562,31 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                         error={errors.compact_mode?.message}
                                     />
                                     <div className='mt-4' />
+                                    <div className='w-full mt-4'>
+                                        <label className='block text-sm font-medium'>
+                                            Theme
+                                                </label>
+                                                <div className='mt-1'>
+                                                    <select
+                                                        className='form-select select select-ghost-primary select-block focus:ring-0'
+                                                        {...register('theme')}
+                                                    >
+                                                        <option value='dark'>
+                                                            Dark
+                                                        </option>
+                                                        <option value='light'>
+                                                            Light
+                                                        </option>
+                                                    </select>
+                                                </div>
+                                        {errors.theme && (
+                                            <p className='text-red-600 text-sm'>
+                                                {errors.theme.message}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className='mt-4' />
+
                                     <SnippetList userId={target} />
 
                                     <div className='mt-4' />

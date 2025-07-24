@@ -6,15 +6,6 @@ const Login = React.lazy(() => import('./components/Login/Login.jsx'));
 const Documents = React.lazy(() => import('./components/Documents/Documents.jsx'));
 const Register = React.lazy(() => import('./components/Register/Register.jsx'));
 const Home = React.lazy(() => import('./components/Home/Home.jsx'));
-const PrivateRoute = React.lazy(
-    () => import('./components/PrivateRoute/PrivateRoute.jsx'),
-);
-const AuthProvider = React.lazy(
-    () => import('./components/AuthProvider/AuthProvider.jsx'),
-);
-const ApiProvider = React.lazy(
-    () => import('./components/ApiProvider/ApiProvider.jsx'),
-);
 
 const FeatureNotImplemented = React.lazy(
     () => import('./components/FeatureNotImplemented/FeatureNotImplemented.jsx'),
@@ -57,29 +48,23 @@ const Connectivity = React.lazy(
     () => import('./components/Connectivity/Connectivity.jsx'),
 );
 
-import { useTheme } from './hooks/useTheme/useTheme';
 import { ThemeProvider } from './contexts/ThemeContext/ThemeContext.jsx';
+import PrivateRoute from './components/PrivateRoute/PrivateRoute.jsx';
+import AuthProvider from './components/AuthProvider/AuthProvider.jsx';
+import ApiProvider from './components/ApiProvider/ApiProvider';
 import { ProfileProvider } from './contexts/ProfileContext/ProfileContext.jsx';
 import { ModalProvider } from './contexts/ModalContext/ModalContext.jsx';
 import CradleLoading from './components/CradleLoading/CradleLoading.jsx';
 
 function App() {
-    const { isDarkMode } = useTheme();
-
-    if (isDarkMode) {
-        document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-        document.documentElement.setAttribute('data-theme', 'light');
-    }
-
     return (
-        <ThemeProvider>
-            <ModalProvider>
-                <HashRouter>
-                    <Suspense fallback={<CradleLoading />}>
-                        <AuthProvider>
-                            <ApiProvider>
-                                <ProfileProvider>
+        <ModalProvider>
+            <HashRouter>
+                <AuthProvider>
+                    <ApiProvider>
+                        <ProfileProvider>
+                            <ThemeProvider>
+                                <Suspense fallback={<CradleLoading />}>
                                     <Routes>
                                         <Route
                                             element={
@@ -198,13 +183,13 @@ function App() {
                                         />
                                         <Route path='*' element={<NotFound />} />
                                     </Routes>
-                                </ProfileProvider>
-                            </ApiProvider>
-                        </AuthProvider>
-                    </Suspense>
-                </HashRouter>
-            </ModalProvider>
-        </ThemeProvider>
+                                </Suspense>
+                            </ThemeProvider>
+                        </ProfileProvider>
+                    </ApiProvider>
+                </AuthProvider>
+            </HashRouter>
+        </ModalProvider>
     );
 }
 

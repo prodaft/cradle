@@ -19,6 +19,7 @@ import {
     NavArrowUp,
 } from 'iconoir-react';
 import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
+import { parseMarkdownInline } from '../../utils/customParser/customParser';
 
 /**
  * Note component - This component is used to display a note on the dashboard.
@@ -49,13 +50,7 @@ const Note = forwardRef(function (
 
         switch (note.status) {
             case 'healthy':
-                return (
-                    <CheckCircleSolid
-                        className='text-green-500'
-                        width='18'
-                        height='18'
-                    />
-                );
+                return null;
             case 'processing':
                 return (
                     <InfoCircleSolid className='text-blue-500' width='18' height='18' />
@@ -216,7 +211,7 @@ const Note = forwardRef(function (
                                                 <div className='text-sm text-gray-600 dark:text-gray-400'>
                                                     {typeof value === 'object'
                                                         ? JSON.stringify(value)
-                                                        : String(value)}
+                                                        : parseMarkdownInline(String(value))}
                                                 </div>
                                             </React.Fragment>
                                         ),

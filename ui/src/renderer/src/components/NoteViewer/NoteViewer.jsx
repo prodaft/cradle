@@ -17,8 +17,13 @@ import { Trash, StatsReport } from 'iconoir-react/regular';
 import NavbarSwitch from '../NavbarSwitch/NavbarSwitch';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import ReferenceTree from '../ReferenceTree/ReferenceTree';
+
 import Prism from 'prismjs';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
+
 import 'prismjs/components/prism-markdown';
+import 'prismjs/components/prism-yaml';
 import {
     CheckCircleSolid,
     InfoCircleSolid,
@@ -35,6 +40,7 @@ import ActivityList from '../ActivityList/ActivityList';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import FileItem from '../FileItem/FileItem';
 import NoteGraph from '../NoteGraph/NoteGraph';
+import { parseMarkdownInline } from '../../utils/customParser/customParser';
 
 /**
  * NoteViewer component
@@ -65,13 +71,7 @@ export default function NoteViewer() {
 
         switch (note.status) {
             case 'healthy':
-                return (
-                    <CheckCircleSolid
-                        className='text-green-500'
-                        width='18'
-                        height='18'
-                    />
-                );
+                return null;
             case 'processing':
                 return (
                     <InfoCircleSolid className='text-blue-500' width='18' height='18' />
@@ -215,6 +215,7 @@ export default function NoteViewer() {
 
     useEffect(() => {
         if (isRaw) {
+            console.log(Prism.languages);
             Prism.highlightAll();
         }
     }, [isRaw, note.content]);
@@ -308,10 +309,10 @@ export default function NoteViewer() {
 
                                 {isRaw ? (
                                     <pre
-                                        className='h-full w-full p-4 bg-transparent prose-md max-w-none dark:prose-invert break-all
-              overflow-y-auto rounded-lg flex-1 overflow-x-hidden whitespace-pre-wrap'
+                                        className='line-numbers h-full w-full p-4 bg-transparent prose-md max-w-none dark:prose-invert break-all overflow-y-auto rounded-lg flex-1 overflow-x-hidden whitespace-pre-wrap'
+                                        data-start="1"
                                     >
-                                        <code className='language-js'>
+                                        <code className='language-markdown'>
                                             {note.content}
                                         </code>
                                     </pre>
@@ -376,9 +377,7 @@ export default function NoteViewer() {
                                                                                         ? JSON.stringify(
                                                                                               value,
                                                                                           )
-                                                                                        : String(
-                                                                                              value,
-                                                                                          )}
+                                                                                        : parseMarkdownInline(String(value))}
                                                                                 </div>
                                                                             </React.Fragment>
                                                                         ),

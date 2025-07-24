@@ -11,12 +11,14 @@ import DigestList from './DigestList';
 import { Search, NavArrowDown, NavArrowUp } from 'iconoir-react';
 import { useSearchParams } from 'react-router-dom';
 import Datepicker from 'react-tailwindcss-datepicker';
+import { useProfile } from '../../hooks/useProfile/useProfile';
 
 export default function UploadExternal({ setAlert }) {
     const [searchParams, setSearchParams] = useSearchParams();
     const [dataTypeOptions, setDataTypeOptions] = useState([]);
     const [isUploading, setIsUploading] = useState(false);
     const [alert, setLocalAlert] = useState({ show: false, message: '', color: '' });
+    const { profile } = useProfile();
     const [isUploadFormVisible, setIsUploadFormVisible] = useState(false);
 
     // Manage form state
@@ -34,6 +36,8 @@ export default function UploadExternal({ setAlert }) {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [sortField, setSortField] = useState('created_at');
+    const [sortDirection, setSortDirection] = useState('desc');
 
     // Search state
     const [searchFilters, setSearchFilters] = useState({
@@ -84,7 +88,7 @@ export default function UploadExternal({ setAlert }) {
 
         // Initial fetch of digests with search params
         fetchDigests();
-    }, [page, submittedFilters]);
+    }, [page, submittedFilters, sortField, sortDirection]);
 
     // Add an effect to initialize filters and date range from URL parameters
     useEffect(() => {
@@ -206,8 +210,13 @@ export default function UploadExternal({ setAlert }) {
             // Add search filters to the API call
             const searchQueryParams = {
                 page,
+                page_size: profile?.compact_mode ? 25 : 10,
                 ...submittedFilters,
             };
+
+            // Add sorting
+            const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
+            searchQueryParams.order_by = orderBy;
 
             const response = await getDigests(searchQueryParams);
 
@@ -228,6 +237,13 @@ export default function UploadExternal({ setAlert }) {
 
     const handlePageChange = (newPage) => {
         setPage(newPage);
+    };
+
+    const handleSort = (newSortField, newSortDirection) => {
+        setSortField(newSortField);
+        setSortDirection(newSortDirection);
+        // Reset to first page when sorting changes
+        setPage(1);
     };
 
     const handleUpload = async (values) => {
@@ -404,6 +420,9 @@ export default function UploadExternal({ setAlert }) {
                         handlePageChange={handlePageChange}
                         setAlert={alertHandler}
                         onDigestDelete={fetchDigests}
+                        sortField={sortField}
+                        sortDirection={sortDirection}
+                        onSort={handleSort}
                     />
                 </div>
             </div>

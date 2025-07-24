@@ -4,9 +4,9 @@ from rest_framework import status
 from typing import List, Optional, Tuple
 
 
-def flatten(l):
+def flatten(items):
     flat_list = []
-    for row in l:
+    for row in items:
         flat_list += row
     return flat_list
 
