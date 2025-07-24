@@ -10,6 +10,7 @@ import { formatDate } from '../../utils/dateUtils/dateUtils';
 import { createDownloadPath } from '../../utils/textEditorUtils/textEditorUtils';
 import { authAxios } from '../../services/axiosInstance/axiosInstance';
 import { Download, Notes, SortUp, SortDown, Sort } from 'iconoir-react';
+import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 
 /**
  * FilesList component - This component is used to display a list of files.
@@ -202,8 +203,8 @@ export default function FilesList({
                                                     }
                                                     return (
                                                         <tr key={file.id || index}>
-                                                            <td className=''>
-                                                                {file.file_name}
+                                                            <td className='truncate w-32'>
+                                                                {truncateText(file.file_name, 32)}
                                                             </td>
                                                             <td className=''>
                                                                 {formatDate(
@@ -235,8 +236,8 @@ export default function FilesList({
                                                                     )}
                                                                 </div>
                                                             </td>
-                                                            <td className=''>
-                                                                {file.mimetype || 'N/A'}
+                                                            <td className='truncate w-32'>
+                                                                {file.mimetype}
                                                             </td>
                                                             <td className=''>
                                                                 {file.md5_hash ? (

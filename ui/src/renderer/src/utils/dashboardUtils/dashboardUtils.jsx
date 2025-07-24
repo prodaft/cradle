@@ -280,7 +280,11 @@ export const renderDashboardSectionWithInaccessibleEntries = (
  * @param {number} maxLength - the maximum length of the truncated text (not including '...')
  * @returns {string} - the truncated text
  */
-export const truncateText = (text, maxLength) => {
+export const truncateText = (text, maxLength, defaultText = '-') => {
+    if (!text) {
+        return defaultText;
+    }
+
     if (text.length <= maxLength) {
         return text;
     }

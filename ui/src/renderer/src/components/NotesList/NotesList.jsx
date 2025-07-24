@@ -6,7 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import AlertBox from '../AlertBox/AlertBox';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
-import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
+import { capitalizeString, truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { useNavigate } from 'react-router-dom';
 import {
     CheckCircleSolid,
@@ -280,19 +280,20 @@ export default function NotesList({
                                                                 </span>
                                                             )}
                                                         </td>
-                                                        <td>
-                                                            {note.metadata?.title ||
-                                                                'Untitled'}
+                                                        <td className={`truncate w-64`}
+                                                            data-tooltip={note.metadata?.title}
+                                                        >
+                                                            {truncateText(note.metadata?.title, 64)}
                                                         </td>
-                                                        <td className='max-w-xs truncate'>
-                                                            {note.metadata
-                                                                ?.description || '-'}
+                                                        <td className='truncate max-w-xs'
+                                                        >
+                                                            {note.metadata?.description}
                                                         </td>
-                                                        <td className='w-32'>
-                                                            {note.author?.username || 'Unknown'}
+                                                        <td className='truncate w-32'>
+                                                            {truncateText(note.author?.username, 16)}
                                                         </td>
-                                                        <td className='w-32'>
-                                                            {note.editor?.username || '-'}
+                                                        <td className='truncate w-32'>
+                                                            {truncateText(note.editor?.username, 16)}
                                                         </td>
                                                         <td className='w-36'>
                                                             {formatDate(new Date(note.timestamp))}
