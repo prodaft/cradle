@@ -70,7 +70,10 @@ const GraphQuery = forwardRef(function (
                                         ))}
                                     </div>
 
-                                    <NotesList query={graphQuery} />
+                                    <NotesList
+                                        query={graphQuery}
+                                        forceCardView={true}
+                                    />
                                 </>
                             ) : (
                                 <div className='text-center text-sm text-gray-400 mt-10'>

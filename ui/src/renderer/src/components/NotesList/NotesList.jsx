@@ -28,6 +28,7 @@ export default function NotesList({
     query,
     filteredNotes = [],
     noteActions = [],
+    forceCardView = false,
     references = null,
 }) {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -154,7 +155,7 @@ export default function NotesList({
         const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
 
         searchNote({
-            page_size: profile?.compact_mode ? 20 : 10,
+            page_size: !forceCardView && profile?.compact_mode ? 20 : 10,
             page,
             order_by: orderBy,
             ...query,
@@ -220,7 +221,7 @@ export default function NotesList({
                         </div>
                     ) : notes.length > 0 ? (
                         <div className='notes-list'>
-                            {profile?.compact_mode ? (
+                            {!forceCardView && profile?.compact_mode ? (
                                 <div className='overflow-x-auto w-full'>
                                     <table className='table table-hover'>
                                         <thead>
