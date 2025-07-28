@@ -1,12 +1,12 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { CloudUpload } from 'iconoir-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import {
     getUploadLink,
     uploadFile,
 } from '../../services/fileUploadService/fileUploadService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import { CloudUpload } from 'iconoir-react';
-import { useNavigate } from 'react-router-dom';
 
 /**
  * This component is used to upload files to the server.
@@ -33,14 +33,14 @@ export default function FileInput({
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [isUploading, setIsUploading] = useState(false);
     const inputRef = useRef(null);
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
 
     // Update the file input's files when pendingFiles changes
     useEffect(() => {
         if (inputRef.current && pendingFiles.length > 0) {
             // Create a new DataTransfer object to convert the array back to a FileList
             const dataTransfer = new DataTransfer();
-            pendingFiles.forEach(file => dataTransfer.items.add(file));
+            pendingFiles.forEach((file) => dataTransfer.items.add(file));
             inputRef.current.files = dataTransfer.files;
         } else if (inputRef.current) {
             // Clear the input
@@ -107,23 +107,29 @@ export default function FileInput({
             });
     };
 
-    const handleFileChange = useCallback((event) => {
-        if (event.target && event.target.files && event.target.files.length > 0) {
-            // Convert FileList to Array to ensure consistency across browsers
-            setPendingFiles(Array.from(event.target.files));
-        } else {
-            setPendingFiles([]);
-        }
-    }, [setPendingFiles]);
+    const handleFileChange = useCallback(
+        (event) => {
+            if (event.target && event.target.files && event.target.files.length > 0) {
+                // Convert FileList to Array to ensure consistency across browsers
+                setPendingFiles(Array.from(event.target.files));
+            } else {
+                setPendingFiles([]);
+            }
+        },
+        [setPendingFiles],
+    );
 
     // Handle paste events (for the editor component issue)
-    const handlePaste = useCallback((e) => {
-        if (e.clipboardData && e.clipboardData.files.length > 0) {
-            e.preventDefault();
-            // Immediately convert FileList to Array
-            setPendingFiles(Array.from(e.clipboardData.files));
-        }
-    }, [setPendingFiles]);
+    const handlePaste = useCallback(
+        (e) => {
+            if (e.clipboardData && e.clipboardData.files.length > 0) {
+                e.preventDefault();
+                // Immediately convert FileList to Array
+                setPendingFiles(Array.from(e.clipboardData.files));
+            }
+        },
+        [setPendingFiles],
+    );
 
     return (
         <>

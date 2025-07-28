@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("intelio", "0010_rename_model_class_catalystmapping_field_and_more"),
     ]

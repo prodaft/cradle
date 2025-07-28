@@ -1,17 +1,16 @@
-import React, { forwardRef, useState, useRef, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { format, parseISO } from 'date-fns';
+import { Search } from 'iconoir-react';
+import { forwardRef, useEffect, useState } from 'react';
 import Datepicker from 'react-tailwindcss-datepicker';
 import * as Yup from 'yup';
-import { Search } from 'iconoir-react';
-import Selector from '../Selector/Selector';
-import { format, parseISO } from 'date-fns';
-import { advancedQuery } from '../../services/queryService/queryService';
 import { graphPathFind } from '../../services/graphService/graphService';
-import AlertBox from '../AlertBox/AlertBox';
+import { advancedQuery } from '../../services/queryService/queryService';
 import {
     LinkTreeFlattener,
     truncateText,
 } from '../../utils/dashboardUtils/dashboardUtils';
+import AlertBox from '../AlertBox/AlertBox';
+import Selector from '../Selector/Selector';
 
 const GraphQuerySchema = Yup.object().shape({
     src: Yup.string().required('Start node is required'),

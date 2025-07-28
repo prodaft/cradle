@@ -1,6 +1,6 @@
 import mime from 'mime';
-import template from './reportTemplate.js';
 import { prependLinks } from '../textEditorUtils/textEditorUtils.js';
+import template from './reportTemplate.js';
 
 /**
  * Function to create a markdown section from an array of objects.
@@ -143,8 +143,8 @@ const createHtmlReport = (title, htmlContent) => {
 };
 
 export {
-    createMarkdownSection,
-    createMarkdownReportFromJson,
-    downloadFile,
     createHtmlReport,
+    createMarkdownReportFromJson,
+    createMarkdownSection,
+    downloadFile,
 };

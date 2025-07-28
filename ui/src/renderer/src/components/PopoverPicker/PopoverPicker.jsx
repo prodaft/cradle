@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { HexColorInput, HexColorPicker } from 'react-colorful';
 
 export const PopoverPicker = ({ color, onChange }) => {

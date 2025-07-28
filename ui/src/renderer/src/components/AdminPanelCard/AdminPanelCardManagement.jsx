@@ -1,6 +1,6 @@
+import { EditPencil } from 'iconoir-react';
 import { useState } from 'react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import { EditPencil } from 'iconoir-react';
 
 export default function AdminPanelCardManagement({
     name,

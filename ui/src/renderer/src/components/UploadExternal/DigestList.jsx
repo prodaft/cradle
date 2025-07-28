@@ -1,12 +1,12 @@
-import React from 'react';
-import DigestCard from './DigestCard';
-import Pagination from '../Pagination/Pagination';
-import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import { Sort, SortDown, SortUp, Trash } from 'iconoir-react';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
-import { Trash } from 'iconoir-react';
-import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import { deleteDigest } from '../../services/intelioService/intelioService';
+import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
+import Pagination from '../Pagination/Pagination';
+import DigestCard from './DigestCard';
 
 function DigestList({
     digests,
@@ -16,9 +16,63 @@ function DigestList({
     handlePageChange,
     setAlert,
     onDigestDelete,
+    sortField = 'created_at',
+    sortDirection = 'desc',
+    onSort,
 }) {
     const { profile } = useProfile();
     const { setModal } = useModal();
+
+    // Mapping of table columns to API field names
+    const sortFieldMapping = {
+        title: 'title',
+        type: 'digest_type',
+        createdAt: 'created_at',
+        user: 'user__username',
+    };
+
+    const handleSort = (column) => {
+        const newSortField = sortFieldMapping[column];
+        if (!newSortField || !onSort) return;
+
+        if (sortField === newSortField) {
+            // Toggle direction if same field
+            const newDirection = sortDirection === 'desc' ? 'asc' : 'desc';
+            onSort(newSortField, newDirection);
+        } else {
+            // New field, default to descending for timestamp fields, ascending for others
+            const newDirection = newSortField.includes('created_at') ? 'desc' : 'asc';
+            onSort(newSortField, newDirection);
+        }
+    };
+
+    const getSortIcon = (column, className) => {
+        const fieldName = sortFieldMapping[column];
+        if (!fieldName || sortField !== fieldName) {
+            return <Sort className={className} />;
+        }
+
+        return sortDirection === 'desc' ? (
+            <SortDown className={className} />
+        ) : (
+            <SortUp className={className} />
+        );
+    };
+
+    const SortableTableHeader = ({ column, children, className = '' }) => (
+        <th
+            className={`cursor-pointer select-none ${className}`}
+            onClick={() => handleSort(column)}
+        >
+            <div className='flex items-center justify-between !border-b-0 !border-t-0'>
+                <span className='!border-b-0 !border-t-0'>{children}</span>
+                {getSortIcon(
+                    column,
+                    'w-4 h-4 text-zinc-600 dark:text-zinc-400 !border-b-0 !border-t-0',
+                )}
+            </div>
+        </th>
+    );
 
     const handleDelete = async (digestId) => {
         try {
@@ -59,20 +113,28 @@ function DigestList({
                     <table className='table table-zebra'>
                         <thead className=''>
                             <tr>
-                                <th className=''>Status</th>
-                                <th className=''>Title</th>
-                                <th className=''>Type</th>
-                                <th className=''>Created At</th>
-                                <th className=''>User</th>
-                                <th className=''>Warnings</th>
-                                <th className=''>Errors</th>
-                                <th className='w-16'>Actions</th>
+                                <th>Status</th>
+                                <SortableTableHeader column='title'>
+                                    Title
+                                </SortableTableHeader>
+                                <SortableTableHeader column='type'>
+                                    Type
+                                </SortableTableHeader>
+                                <SortableTableHeader column='createdAt'>
+                                    Created At
+                                </SortableTableHeader>
+                                <SortableTableHeader column='user'>
+                                    User
+                                </SortableTableHeader>
+                                <th>Warnings</th>
+                                <th>Errors</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody className=''>
                             {digests.map((digest) => (
                                 <tr key={digest.id}>
-                                    <td className=''>
+                                    <td className='w-16'>
                                         <span
                                             className={`badge ${
                                                 digest.status === 'done'
@@ -86,13 +148,28 @@ function DigestList({
                                                 digest.status.slice(1)}
                                         </span>
                                     </td>
-                                    <td className=''>{digest.title}</td>
-                                    <td className=''>{digest.display_name}</td>
-                                    <td className=''>
+                                    <td
+                                        className='truncate max-w-xs'
+                                        title={digest.title}
+                                    >
+                                        {digest.title}
+                                    </td>
+                                    <td
+                                        className='truncate w-24'
+                                        title={digest.display_name}
+                                    >
+                                        {truncateText(digest.display_name, 24)}
+                                    </td>
+                                    <td className='w-36'>
                                         {formatDate(new Date(digest.created_at))}
                                     </td>
-                                    <td className=''>{digest.user_detail.username}</td>
-                                    <td className=''>
+                                    <td
+                                        className='truncate w-32'
+                                        title={digest.user_detail.username}
+                                    >
+                                        {truncateText(digest.user_detail.username, 16)}
+                                    </td>
+                                    <td className='w-8'>
                                         <span
                                             className={`badge badge-warning ${digest.warnings?.length > 0 ? 'tooltip tooltip-left tooltip-warning' : ''}`}
                                             data-tooltip={
@@ -109,7 +186,7 @@ function DigestList({
                                             {digest.warnings?.length || 0}
                                         </span>
                                     </td>
-                                    <td className=''>
+                                    <td className='w-8'>
                                         <span
                                             className={`badge badge-error ${digest.errors?.length > 0 ? 'tooltip tooltip-left tooltip-error' : ''}`}
                                             data-tooltip={
@@ -126,7 +203,7 @@ function DigestList({
                                             {digest.errors?.length || 0}
                                         </span>
                                     </td>
-                                    <td className='w-16'>
+                                    <td className='w-8'>
                                         <button
                                             title='Delete Digest'
                                             className='btn btn-ghost btn-xs text-red-600 hover:text-red-500 transition-colors p-1'

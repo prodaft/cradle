@@ -1,10 +1,10 @@
-import React, { useState, useMemo } from 'react';
-import CodeMirror from '@uiw/react-codemirror';
-import { languages } from '@codemirror/language-data';
 import { markdown } from '@codemirror/lang-markdown';
+import { languages } from '@codemirror/language-data';
 import { EditorView } from '@codemirror/view';
-import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import { eclipse } from '@uiw/codemirror-theme-eclipse';
+import { vscodeDark } from '@uiw/codemirror-theme-vscode';
+import CodeMirror from '@uiw/react-codemirror';
+import { useMemo, useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
 
 const MarkdownEditorModal = ({

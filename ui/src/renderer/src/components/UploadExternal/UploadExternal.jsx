@@ -1,39 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import {
-    getDigestTypes,
-    saveDigest,
-    getDigests,
-} from '../../services/intelioService/intelioService';
-import UploadSchema from './UploadSchema';
-import UploadForm from './UploadForm';
-import DigestList from './DigestList';
-import { Search, NavArrowDown, NavArrowUp } from 'iconoir-react';
+import { NavArrowDown, NavArrowUp, Search } from 'iconoir-react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Datepicker from 'react-tailwindcss-datepicker';
+import { useProfile } from '../../hooks/useProfile/useProfile';
+import {
+    getDigests,
+    getDigestTypes,
+} from '../../services/intelioService/intelioService';
+import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import DigestList from './DigestList';
+import UploadForm from './UploadForm';
 
 export default function UploadExternal({ setAlert }) {
     const [searchParams, setSearchParams] = useSearchParams();
     const [dataTypeOptions, setDataTypeOptions] = useState([]);
-    const [isUploading, setIsUploading] = useState(false);
     const [alert, setLocalAlert] = useState({ show: false, message: '', color: '' });
+    const { profile } = useProfile();
     const [isUploadFormVisible, setIsUploadFormVisible] = useState(false);
-
-    // Manage form state
-    const [formValues, setFormValues] = useState({
-        title: '',
-        dataType: null,
-        associatedEntry: [],
-        files: [],
-    });
-    const [errors, setErrors] = useState({});
-    const [touched, setTouched] = useState({});
 
     // Digest list state
     const [digests, setDigests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [sortField, setSortField] = useState('created_at');
+    const [sortDirection, setSortDirection] = useState('desc');
 
     // Search state
     const [searchFilters, setSearchFilters] = useState({
@@ -61,7 +52,7 @@ export default function UploadExternal({ setAlert }) {
             .then((response) => {
                 if (response.status === 200) {
                     const dataTypes = response.data.map((type) => ({
-                        value: type.class,
+                        value: type.class_name,
                         label: type.name,
                         inferEntities: type.infer_entities,
                     }));
@@ -84,7 +75,7 @@ export default function UploadExternal({ setAlert }) {
 
         // Initial fetch of digests with search params
         fetchDigests();
-    }, [page, submittedFilters]);
+    }, [page, submittedFilters, sortField, sortDirection]);
 
     // Add an effect to initialize filters and date range from URL parameters
     useEffect(() => {
@@ -206,8 +197,13 @@ export default function UploadExternal({ setAlert }) {
             // Add search filters to the API call
             const searchQueryParams = {
                 page,
+                page_size: profile?.compact_mode ? 25 : 10,
                 ...submittedFilters,
             };
+
+            // Add sorting
+            const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
+            searchQueryParams.order_by = orderBy;
 
             const response = await getDigests(searchQueryParams);
 
@@ -230,86 +226,11 @@ export default function UploadExternal({ setAlert }) {
         setPage(newPage);
     };
 
-    const handleUpload = async (values) => {
-        setIsUploading(true);
-        try {
-            const body = {
-                digest_type: values.dataType.value,
-                title: values.title,
-            };
-
-            if (values.associatedEntry?.value)
-                body.entity = values.associatedEntry?.value;
-
-            const response = await saveDigest(body, values.files);
-
-            if (response.status === 201) {
-                (setAlert || setLocalAlert)({
-                    color: 'green',
-                    message: 'File uploaded successfully',
-                    show: true,
-                });
-                // Reset form state on success
-                setFormValues({
-                    title: '',
-                    dataType: null,
-                    associatedEntry: [],
-                    files: [],
-                });
-                setTouched({});
-                setErrors({});
-                // Refresh the digest list
-                fetchDigests();
-            } else {
-                (setAlert || setLocalAlert)({
-                    color: 'red',
-                    message: 'Upload failed',
-                    show: true,
-                });
-            }
-        } catch (error) {
-            (setAlert || setLocalAlert)({
-                color: 'red',
-                message: `Upload failed: ${error.message}`,
-                show: true,
-            });
-        } finally {
-            setIsUploading(false);
-        }
-    };
-
-    const validateForm = async () => {
-        try {
-            await UploadSchema.validate(formValues, { abortEarly: false });
-            setErrors({});
-            return true;
-        } catch (err) {
-            const formErrors = {};
-            if (err.inner) {
-                err.inner.forEach((error) => {
-                    formErrors[error.path] = error.message;
-                });
-            } else if (err.path) {
-                formErrors[err.path] = err.message;
-            }
-            setErrors(formErrors);
-            return false;
-        }
-    };
-
-    const onSubmit = async (e) => {
-        e.preventDefault();
-        // Mark all fields as touched
-        setTouched({
-            title: true,
-            dataType: true,
-            associatedEntry: true,
-            files: true,
-        });
-        const isValid = await validateForm();
-        if (isValid) {
-            await handleUpload(formValues);
-        }
+    const handleSort = (newSortField, newSortDirection) => {
+        setSortField(newSortField);
+        setSortDirection(newSortDirection);
+        // Reset to first page when sorting changes
+        setPage(1);
     };
 
     // Use the provided setAlert or the local one
@@ -339,23 +260,15 @@ export default function UploadExternal({ setAlert }) {
 
                 <div
                     id='upload-form-section'
-                    className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                    className={`ease-in-out ${
                         isUploadFormVisible
                             ? 'max-h-[1000px] opacity-100 mb-4'
                             : 'max-h-0 opacity-0'
                     }`}
                 >
                     <UploadForm
-                        formValues={formValues}
-                        setFormValues={setFormValues}
-                        errors={errors}
-                        setErrors={setErrors}
-                        touched={touched}
-                        setTouched={setTouched}
-                        onSubmit={onSubmit}
                         dataTypeOptions={dataTypeOptions}
-                        isUploading={isUploading}
-                        setAlert={alertHandler}
+                        onUpload={fetchDigests}
                     />
                 </div>
 
@@ -404,6 +317,9 @@ export default function UploadExternal({ setAlert }) {
                         handlePageChange={handlePageChange}
                         setAlert={alertHandler}
                         onDigestDelete={fetchDigests}
+                        sortField={sortField}
+                        sortDirection={sortDirection}
+                        onSort={handleSort}
                     />
                 </div>
             </div>

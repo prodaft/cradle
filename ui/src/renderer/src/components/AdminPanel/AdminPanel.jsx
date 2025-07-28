@@ -1,36 +1,37 @@
-import { useNavigate, useLocation } from 'react-router-dom';
+import { uniqueId } from 'lodash';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import {
     getEntities,
     getEntryClasses,
     getUsers,
 } from '../../services/adminService/adminService';
-import AdminPanelCardTypeMapping from '../AdminPanelCard/AdminPanelCardTypeMapping';
-import AdminPanelCardEntity from '../AdminPanelCard/AdminPanelCardEntity';
-import AdminPanelCardUser from '../AdminPanelCard/AdminPanelCardUser';
-import AdminPanelCardEntryType from '../AdminPanelCard/AdminPanelCardEntryType';
-import AdminPanelSection from '../AdminPanelSection/AdminPanelSection';
-import { useEffect, useState } from 'react';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
-import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
-import { Tabs, Tab } from '../Tabs/Tabs';
-import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
-import EntityForm from '../AdminPanelForms/EntityForm';
-import EntryTypeForm from '../AdminPanelForms/EntryTypeForm';
-import AccountSettings from '../AccountSettings/AccountSettings';
 import {
     getEnrichmentTypes,
     getMappingTypes,
 } from '../../services/intelioService/intelioService';
+import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
+import { displayError } from '../../utils/responseUtils/responseUtils';
+import AccountSettings from '../AccountSettings/AccountSettings';
 import AdminPanelCardEnrichment from '../AdminPanelCard/AdminPanelCardEnrichment';
+import AdminPanelCardEntity from '../AdminPanelCard/AdminPanelCardEntity';
+import AdminPanelCardEntryType from '../AdminPanelCard/AdminPanelCardEntryType';
 import AdminPanelCardManagement from '../AdminPanelCard/AdminPanelCardManagement';
-import NoteSettingsForm from '../AdminPanelForms/NoteSettingsForm';
-import GraphSettingsForm from '../AdminPanelForms/GraphSettingsForm';
+import AdminPanelCardTypeMapping from '../AdminPanelCard/AdminPanelCardTypeMapping';
+import AdminPanelCardUser from '../AdminPanelCard/AdminPanelCardUser';
+import EntityForm from '../AdminPanelForms/EntityForm';
 import EntriesSettingsForm from '../AdminPanelForms/EntriesSettingsForm';
-import UserSettingsForm from '../AdminPanelForms/UserSettingsForm';
+import EntryTypeForm from '../AdminPanelForms/EntryTypeForm';
 import FileSettingsForm from '../AdminPanelForms/FileSettingsForm';
-import { uniqueId } from 'lodash';
+import GraphSettingsForm from '../AdminPanelForms/GraphSettingsForm';
+import NoteSettingsForm from '../AdminPanelForms/NoteSettingsForm';
+import UserSettingsForm from '../AdminPanelForms/UserSettingsForm';
+import AdminPanelSection from '../AdminPanelSection/AdminPanelSection';
+import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
+import { Tab, Tabs } from '../Tabs/Tabs';
 
 /**
  * AdminPanel component - This component is used to display the AdminPanel.
@@ -54,7 +55,7 @@ export default function AdminPanel() {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [rightPane, setRightPane] = useState(null);
     const location = useLocation();
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const handleError = displayError(setAlert, navigate);
 
     const displayEntities = async () => {

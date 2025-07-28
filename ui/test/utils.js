@@ -1,4 +1,4 @@
-import { Builder, Browser, By, Keys, until } from 'selenium-webdriver';
+import { Browser, Builder, By, until } from 'selenium-webdriver';
 
 export const CRADLE_URL = 'http://cradle.yigit.run/';
 

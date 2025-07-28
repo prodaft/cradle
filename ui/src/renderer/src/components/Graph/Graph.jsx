@@ -1,14 +1,14 @@
-import React, { useRef, useEffect, forwardRef } from 'react';
 import cytoscape from 'cytoscape';
-import { useNavigate } from 'react-router-dom';
+import { forwardRef, useEffect, useRef } from 'react';
 import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 
 const Graph = forwardRef(function (
     { onLinkClick, onNodesSelected, config, entryGraphColors, ...props },
     cyRef,
 ) {
     const { isDarkMode } = useTheme();
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const containerRef = useRef(null);
 
     useEffect(() => {

@@ -66,4 +66,4 @@ const downloadFile = (url) => {
     });
 };
 
-export { getUploadLink, uploadFile, getDownloadLink, downloadFile };
+export { downloadFile, getDownloadLink, getUploadLink, uploadFile };

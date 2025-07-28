@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export function useTheme() {
     const getInitialTheme = () => {
@@ -29,18 +29,19 @@ export function useTheme() {
     useEffect(() => {
         // Update localStorage whenever theme changes
         localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-
-        if (isDarkMode) {
-            // Set data-theme property
-            document.documentElement.setAttribute('data-theme', 'dark');
-        } else {
-            document.documentElement.setAttribute('data-theme', 'light');
-        }
     }, [isDarkMode]);
 
     const toggleTheme = () => {
         setIsDarkMode((prev) => !prev);
     };
 
-    return { isDarkMode, toggleTheme };
+    const setTheme = (theme) => {
+        if (theme === 'dark' || theme === 'light') {
+            setIsDarkMode(theme === 'dark');
+        } else {
+            console.warn('Invalid theme value. Use "dark" or "light".');
+        }
+    };
+
+    return { isDarkMode, toggleTheme, setTheme };
 }

@@ -1,26 +1,24 @@
-import CodeMirror from '@uiw/react-codemirror';
-import { vim, Vim } from '@replit/codemirror-vim';
+import { acceptCompletion, completionKeymap } from '@codemirror/autocomplete';
 import { languages } from '@codemirror/language-data';
-import { drawSelection } from '@uiw/react-codemirror';
-import { useId, useState, useRef, useCallback, useEffect, useMemo, memo } from 'react';
 import { EditorView, keymap } from '@codemirror/view';
-import { vscodeDark } from '@uiw/codemirror-theme-vscode';
-import { eclipse } from '@uiw/codemirror-theme-eclipse';
-import FileInput from '../FileInput/FileInput';
-import FileTable from '../FileTable/FileTable';
-import { NavArrowDown, NavArrowUp, LightBulb } from 'iconoir-react/regular';
-import { completionKeymap, acceptCompletion } from '@codemirror/autocomplete';
-import { Prec } from '@uiw/react-codemirror';
+import { TreeView } from '@phosphor-icons/react';
+import { vim, Vim } from '@replit/codemirror-vim';
 import * as events from '@uiw/codemirror-extensions-events';
+import { eclipse } from '@uiw/codemirror-theme-eclipse';
+import { vscodeDark } from '@uiw/codemirror-theme-vscode';
+import CodeMirror, { drawSelection, Prec } from '@uiw/react-codemirror';
 import { NavArrowLeft, NavArrowRight } from 'iconoir-react';
+import { LightBulb, NavArrowDown, NavArrowUp } from 'iconoir-react/regular';
 import { debounce } from 'lodash';
+import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
 import { CradleEditor } from '../../utils/editorUtils/editorUtils';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import NoteOutline from '../NoteOutline/NoteOutline';
-import { TreeView } from '@phosphor-icons/react';
-import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import extractHeaderHierarchy from '../../utils/editorUtils/markdownOutliner';
+import { displayError } from '../../utils/responseUtils/responseUtils';
+import FileInput from '../FileInput/FileInput';
+import FileTable from '../FileTable/FileTable';
+import NoteOutline from '../NoteOutline/NoteOutline';
 
 /**
  * This component makes use of a pre-existing code editor component (CodeMirror, see https://github.com/uiw/react-codemirror)
@@ -250,42 +248,46 @@ function Editor({
         setShowOutline((prev) => !prev);
     }, []);
 
-    const smartLink = useCallback(() => {
-        if (!editorRef.current) {
-            return;
-        }
-        const doc = editorRef.current.view.state;
-        let to = doc.selection.main.to;
-        let from = doc.selection.main.from;
-        let content = doc.doc.toString();
+    const smartLink = useCallback(
+        (onlyTimestamps) => {
+            if (!editorRef.current) {
+                return;
+            }
+            const doc = editorRef.current.view.state;
+            let to = doc.selection.main.to;
+            let from = doc.selection.main.from;
+            let content = doc.doc.toString();
 
-        if (to === from) {
-            from = 0;
-            to = content.length;
-        }
+            if (to === from) {
+                from = 0;
+                to = content.length;
+            }
 
-        // Call autoFormatLinks as an async function
-        const [changes, linked] = editorUtils.autoFormatLinks(
-            editorRef.current.view,
-            from,
-            to,
-        );
-        // Update the editor content first
-        editorRef.current.view.dispatch({
-            from: 0,
-            to: content.length,
-            changes: { from: 0, to: content.length, insert: linked },
-        });
+            // Call autoFormatLinks as an async function
+            const [changes, linked] = editorUtils.autoFormatLinks(
+                editorRef.current.view,
+                from,
+                to,
+                onlyTimestamps,
+            );
+            // Update the editor content first
+            editorRef.current.view.dispatch({
+                from: 0,
+                to: content.length,
+                changes: { from: 0, to: content.length, insert: linked },
+            });
 
-        // Then update the state
-        setMarkdownContent(linked);
-        setAlert({
-            color: changes > 0 ? 'green' : 'gray',
-            show: true,
-            duration: 3000,
-            message: `${changes > 0 ? changes : 'No'} link${changes == 1 ? '' : 's'} found in text.`,
-        });
-    }, [editorUtils, setMarkdownContent]);
+            // Then update the state
+            setMarkdownContent(linked);
+            setAlert({
+                color: changes > 0 ? 'green' : 'gray',
+                show: true,
+                duration: 3000,
+                message: `${changes > 0 ? changes : 'No'} link${changes == 1 ? '' : 's'} ${onlyTimestamps ? 'timestamped.' : 'found in text.'}`,
+            });
+        },
+        [editorUtils, setMarkdownContent],
+    );
 
     // Use useMemo for noteOutline to prevent unnecessary recalculations
     useEffect(() => {
@@ -315,17 +317,38 @@ function Editor({
                             setPendingFiles={setPendingFiles}
                         />
                         {lspLoaded && (
-                            <button
-                                id={autoLinkId}
-                                data-testid='auto-link'
-                                name='auto-link'
-                                type='button'
-                                className='flex flex-row items-center hover:bg-gray-4 tooltip tooltip-bottom tooltip-primary'
-                                data-tooltip={'Auto Link'}
-                                onClick={smartLink}
-                            >
-                                <LightBulb />
-                            </button>
+                            <div className='dropdown'>
+                                <button
+                                    id={autoLinkId}
+                                    data-testid='auto-link'
+                                    name='auto-link'
+                                    type='button'
+                                    className='flex flex-row items-center hover:bg-gray-4 tooltip tooltip-bottom tooltip-primary'
+                                    data-tooltip={'Auto Link'}
+                                >
+                                    <LightBulb />
+                                </button>
+
+                                <div
+                                    className='dropdown-menu border border-gray-10'
+                                    data-testid='dropdown-menu'
+                                >
+                                    <a
+                                        key='timestamps'
+                                        className='dropdown-item text-sm'
+                                        onClick={() => smartLink(true)}
+                                    >
+                                        Add Timestamps To Links
+                                    </a>
+                                    <a
+                                        key='full-links'
+                                        className='dropdown-item text-sm'
+                                        onClick={() => smartLink(false)}
+                                    >
+                                        Find Links in Text
+                                    </a>
+                                </div>
+                            </div>
                         )}
                     </span>
                     <span className='flex flex-row space-x-3 items-center'>

@@ -8,12 +8,12 @@ from rest_framework.permissions import IsAuthenticated
 from django.http import QueryDict
 
 from core.pagination import TotalPagesPagination
+from core.utils import validate_order_by
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
 from entries.models import Entry
 from file_transfer.models import FileReference
 
-from ..utils import get_guide_note
 
 from ..filters import NoteFilter
 from ..serializers import (
@@ -23,6 +23,8 @@ from ..serializers import (
     NoteRetrieveWithLinksSerializer,
     FileReferenceWithNoteSerializer,
 )
+
+from knowledge_graph.serializers import SubGraphSerializer
 from ..models import Note
 from user.models import CradleUser
 from access.enums import AccessType
@@ -53,6 +55,13 @@ from uuid import UUID
                 location=OpenApiParameter.QUERY,
                 description="Number of characters to truncate note content to",
                 default=200,
+            ),
+            OpenApiParameter(
+                name="page_size",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Number of notes to return per page. Max 200.",
+                default=10,
             ),
             OpenApiParameter(
                 name="page",
@@ -95,6 +104,14 @@ from uuid import UUID
                 description="Filter by author username (case-insensitive partial match)",
                 required=False,
             ),
+            OpenApiParameter(
+                name="order_by",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Order notes by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: timestamp, edit_timestamp, title, author__username. Default: -timestamp",  # noqa: E501
+                required=False,
+                default="-timestamp",
+            ),
         ],
         responses={
             200: TotalPagesPagination().get_paginated_response_serializer(
@@ -129,6 +146,20 @@ class NoteList(APIView):
     def get(self, request: Request) -> Response:
         user = cast(CradleUser, request.user)
         queryset = Note.objects.get_accessible_notes(user).non_fleeting()
+
+        try:
+            page_size = int(request.query_params.get("page_size", 10))
+        except ValueError:
+            return Response(
+                "Invalid page_size value. Must be an integer.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if page_size > 200:
+            return Response(
+                "page_size cannot be greater than 200.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")
@@ -172,8 +203,31 @@ class NoteList(APIView):
         filterset = NoteFilter(request.query_params, queryset=queryset)
 
         if filterset.is_valid():
-            notes = filterset.qs.order_by("-timestamp")
-            paginator = TotalPagesPagination(page_size=10)
+            notes = filterset.qs
+
+            # Handle ordering
+            order_by = request.query_params.get("order_by", "-timestamp")
+            valid_order_fields = [
+                "timestamp",
+                "edit_timestamp",
+                "title",
+                "author__username",
+                "editor__username",
+            ]
+
+            # Parse and validate order_by parameter
+            order_fields, error_response = validate_order_by(
+                order_by, valid_order_fields
+            )
+            if error_response:
+                return error_response
+
+            if order_fields:
+                notes = notes.order_by(*order_fields)
+            else:
+                notes = notes.order_by("-timestamp")
+
+            paginator = TotalPagesPagination(page_size=page_size)
             paginated_notes = paginator.paginate_queryset(notes, request)
 
             if paginated_notes is not None:
@@ -228,10 +282,10 @@ class NoteList(APIView):
         description="Returns the full details of a specific note. User must have access to view the note. Can optionally include footnotes.",  # noqa: E501
         parameters=[
             OpenApiParameter(
-                name="note_id_s",
-                type=str,
+                name="note_id",
+                type=UUID,
                 location=OpenApiParameter.PATH,
-                description="ID of the note to retrieve. Can be a UUID or a guide note ID starting with 'guide'",
+                description="ID of the note to retrieve.",
             ),
             OpenApiParameter(
                 name="footnotes",
@@ -254,8 +308,8 @@ class NoteList(APIView):
         description="Updates an existing note. User must have read-write access to referenced entities.",  # noqa: E501
         parameters=[
             OpenApiParameter(
-                name="note_id_s",
-                type=str,
+                name="note_id",
+                type=UUID,
                 location=OpenApiParameter.PATH,
                 description="ID of the note to update. Must be a valid UUID",
             )
@@ -264,9 +318,7 @@ class NoteList(APIView):
             200: NoteRetrieveSerializer,
             400: {"description": "Invalid note ID format or invalid request data"},
             401: {"description": "User is not authenticated"},
-            403: {
-                "description": "Cannot edit guide notes or user lacks required permissions"
-            },
+            403: {"description": "User lacks required permissions"},
             404: {"description": "Note not found"},
         },
     ),
@@ -276,8 +328,8 @@ class NoteList(APIView):
         description="Deletes an existing note. User must have read-write access to all referenced entities.",
         parameters=[
             OpenApiParameter(
-                name="note_id_s",
-                type=str,
+                name="note_id",
+                type=UUID,
                 location=OpenApiParameter.PATH,
                 description="ID of the note to delete. Must be a valid UUID",
             )
@@ -286,9 +338,7 @@ class NoteList(APIView):
             200: {"description": "Note was deleted successfully"},
             400: {"description": "Invalid note ID format"},
             401: {"description": "User is not authenticated"},
-            403: {
-                "description": "Cannot delete guide notes or user lacks required permissions"
-            },
+            403: {"description": "User lacks required permissions"},
             404: {"description": "Note not found"},
         },
     ),
@@ -298,21 +348,7 @@ class NoteDetail(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = NoteRetrieveSerializer
 
-    def get(self, request: Request, note_id_s: str) -> Response:
-        if note_id_s.startswith("guide"):
-            note = get_guide_note(note_id_s, request)
-            if note is None:
-                return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
-
-            return Response(
-                NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK
-            )
-
-        try:
-            note_id = UUID(note_id_s)
-        except ValueError:
-            return Response("Invalid note ID.", status=status.HTTP_400_BAD_REQUEST)
-
+    def get(self, request: Request, note_id: UUID) -> Response:
         try:
             note: Note = (
                 Note.objects.get_accessible_notes(request.user)
@@ -329,17 +365,7 @@ class NoteDetail(APIView):
 
         return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
 
-    def post(self, request: Request, note_id_s: str) -> Response:
-        if note_id_s.startswith("guide"):
-            return Response(
-                "You cannot edit the guide note!", status=status.HTTP_403_FORBIDDEN
-            )
-
-        try:
-            note_id = UUID(note_id_s)
-        except ValueError:
-            return Response("Invalid note ID.", status=status.HTTP_400_BAD_REQUEST)
-
+    def post(self, request: Request, note_id: UUID) -> Response:
         try:
             note: Note = Note.objects.non_fleeting().get(id=note_id)
         except Note.DoesNotExist:
@@ -370,18 +396,8 @@ class NoteDetail(APIView):
 
         return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
 
-    def delete(self, request: Request, note_id_s: str) -> Response:
+    def delete(self, request: Request, note_id: UUID) -> Response:
         from entries.tasks import refresh_edges_materialized_view
-
-        if note_id_s.startswith("guide"):
-            return Response(
-                "You cannot delete the guide note!", status=status.HTTP_403_FORBIDDEN
-            )
-
-        try:
-            note_id = UUID(note_id_s)
-        except ValueError:
-            return Response("Invalid note ID.", status=status.HTTP_400_BAD_REQUEST)
 
         try:
             note_to_delete = Note.objects.non_fleeting().get(id=note_id)
@@ -421,6 +437,13 @@ class NoteDetail(APIView):
                 type=str,
                 location=OpenApiParameter.QUERY,
                 description="Filter notes by being linked to a specific entry",
+            ),
+            OpenApiParameter(
+                name="page_size",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Number of files to return per page. Max 200.",
+                default=10,
             ),
             OpenApiParameter(
                 name="linked_to_exact_match",
@@ -468,6 +491,14 @@ class NoteDetail(APIView):
                 location=OpenApiParameter.QUERY,
                 description="Page number for pagination",
             ),
+            OpenApiParameter(
+                name="order_by",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Order files by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: timestamp, file_name, mimetype. Default: -timestamp",  # noqa: E501
+                required=False,
+                default="-timestamp",
+            ),
         ],
         responses={
             200: TotalPagesPagination().get_paginated_response_serializer(
@@ -486,6 +517,20 @@ class NoteFiles(APIView):
     def get(self, request: Request) -> Response:
         user = cast(CradleUser, request.user)
         queryset = Note.objects.get_accessible_notes(user).non_fleeting()
+
+        try:
+            page_size = int(request.query_params.get("page_size", 10))
+        except ValueError:
+            return Response(
+                "Invalid page_size value. Must be an integer.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if page_size > 200:
+            return Response(
+                "page_size cannot be greater than 200.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")
@@ -529,11 +574,7 @@ class NoteFiles(APIView):
         notes = queryset
 
         # Get all files from the filtered notes
-        files = (
-            FileReference.objects.filter(note__in=notes)
-            .distinct()
-            .order_by("-timestamp")
-        )
+        files = FileReference.objects.filter(note__in=notes).distinct()
 
         # Filter by keyword (contains match with filename or exact match with hash)
         if "keyword" in request.query_params:
@@ -552,10 +593,99 @@ class NoteFiles(APIView):
             mimetype_pattern = mimetype.replace("*", ".*")
             files = files.filter(mimetype__regex=mimetype_pattern)
 
-        paginator = TotalPagesPagination(page_size=10)
+        # Handle ordering
+        order_by = request.query_params.get("order_by", "-timestamp")
+        valid_order_fields = ["timestamp", "file_name", "mimetype", "note__timestamp"]
+
+        # Parse and validate order_by parameter
+        order_fields, error_response = validate_order_by(order_by, valid_order_fields)
+        if error_response:
+            return error_response
+
+        if order_fields:
+            files = files.order_by(*order_fields)
+        else:
+            files = files.order_by("-timestamp")
+
+        paginator = TotalPagesPagination(page_size=page_size)
         paginated_files = paginator.paginate_queryset(files, request)
         if paginated_files is not None:
             serializer = FileReferenceWithNoteSerializer(paginated_files, many=True)
             return paginator.get_paginated_response(serializer.data)
         serializer = FileReferenceWithNoteSerializer(files, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema_view(
+    get=extend_schema(
+        summary="Get subgraph formed by note",
+        description="Returns paginated list of files that are linked to notes the user has access to. Can filter by references and other parameters. Results are ordered by note timestamp descending.",  # noqa: E501
+        parameters=[
+            OpenApiParameter(
+                name="note_id",
+                type=UUID,
+                location=OpenApiParameter.PATH,
+                description="The note's id",
+            ),
+            OpenApiParameter(
+                name="page",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Page number to retrieve.",
+            ),
+            OpenApiParameter(
+                name="page_size",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Number of files to return per page. Max 1000.",
+                default=250,
+            ),
+        ],
+        responses={
+            200: TotalPagesPagination().get_paginated_response_serializer(
+                SubGraphSerializer, many=False
+            ),
+            400: {"description": "Invalid note ID format or page size"},
+        },
+    ),
+)
+class NoteGraph(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, note_id: UUID) -> Response:
+        try:
+            page_size = int(request.query_params.get("page_size", 250))
+        except ValueError:
+            return Response(
+                "Invalid page_size value. Must be an integer.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if page_size > 1000:
+            return Response(
+                "page_size cannot be greater than 1000.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            note: Note = (
+                Note.objects.get_accessible_notes(request.user)
+                .non_fleeting()
+                .get(id=note_id)
+            )
+        except Note.DoesNotExist:
+            return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
+
+        rels = note.relations.all()
+
+        paginator = TotalPagesPagination(page_size=page_size)
+        paginated_rels = paginator.paginate_queryset(rels, request)
+
+        if paginated_rels is not None:
+            serializer = SubGraphSerializer.from_relations(paginated_rels)
+
+            return paginator.get_paginated_response(serializer.data)
+
+        serializer = SubGraphSerializer.from_relations(rels.all())
         return Response(serializer.data, status=status.HTTP_200_OK)

@@ -1,8 +1,7 @@
-import React from 'react';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import SortableNote from '../SortableNote/SortableNote';
-import RemoveNote from '../NoteActions/RemoveNote';
 import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import RemoveNote from '../NoteActions/RemoveNote';
+import SortableNote from '../SortableNote/SortableNote';
 
 export default function PublishPreview({
     selectedNotes,

@@ -1,18 +1,18 @@
+import { snippetCompletion } from '@codemirror/autocomplete';
+import { tags } from '@codemirror/highlight';
+import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
+import { yamlFrontmatter, yamlLanguage } from '@codemirror/lang-yaml';
+import { LanguageSupport, LRLanguage, syntaxTree } from '@codemirror/language';
 import { Diagnostic, linter } from '@codemirror/lint';
+import { basicSetup, EditorState } from '@uiw/react-codemirror';
+import dayjs from 'dayjs';
+import jsyaml from 'js-yaml';
 import {
-    fetchLspTypes,
     fetchCompletionTries,
+    fetchLspTypes,
 } from '../../services/queryService/queryService';
 import { getSnippets } from '../../services/snippetsService/snippetsService';
-import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
-import { yaml, yamlFrontmatter, yamlLanguage } from '@codemirror/lang-yaml';
-import { LanguageSupport, LRLanguage, syntaxTree } from '@codemirror/language';
-import { basicSetup, EditorState } from '@uiw/react-codemirror';
-import { tags } from '@codemirror/highlight';
-import jsyaml from 'js-yaml';
 import { DynamicTrie } from './trie';
-import { snippetCompletion } from '@codemirror/autocomplete';
-import dayjs from 'dayjs';
 
 /*==============================================================================
   HELPER FUNCTIONS
@@ -720,8 +720,6 @@ export class CradleEditor {
                     }),
                 );
                 break;
-                // For headings, paragraphs, or table cells, use plain text autocomplete.
-                if (!node.name.includes('Heading')) break;
             case 'Paragraph':
             case 'TableCell':
                 return await this.autocompleteForPlainText(context);
@@ -821,7 +819,12 @@ export class CradleEditor {
     /**
      * Auto-formats plain text into cradle links where applicable.
      */
-    autoFormatLinks(editor: any, start: number, end: number): [number, string] {
+    autoFormatLinks(
+        editor: any,
+        start: number,
+        end: number,
+        onlyTimestamps: boolean,
+    ): [number, string] {
         const text: string = editor.state.doc.toString();
         const changes: Array<{ from: number; to: number; replacement: string }> = [];
         const tree = syntaxTree(editor.state);
@@ -849,21 +852,23 @@ export class CradleEditor {
             },
         });
 
-        // Then, convert plain text to cradle links with timestamps
-        this.traverseTreeForSuggestions(
-            editor,
-            start,
-            end,
-            (suggestion, absoluteStart, absoluteEnd) => {
-                const timestamp = dayjs().format('DD-MM-YYYY');
-                const replacement = `[[${suggestion.type}:${suggestion.match}]](${timestamp})`;
-                changes.push({
-                    from: absoluteStart,
-                    to: absoluteEnd,
-                    replacement,
-                });
-            },
-        );
+        if (!onlyTimestamps) {
+            // Then, convert plain text to cradle links with timestamps
+            this.traverseTreeForSuggestions(
+                editor,
+                start,
+                end,
+                (suggestion, absoluteStart, absoluteEnd) => {
+                    const timestamp = dayjs().format('DD-MM-YYYY');
+                    const replacement = `[[${suggestion.type}:${suggestion.match}]](${timestamp})`;
+                    changes.push({
+                        from: absoluteStart,
+                        to: absoluteEnd,
+                        replacement,
+                    });
+                },
+            );
+        }
 
         // When there is an overlap, keep the bigger one
         const filteredChanges = changes.filter(

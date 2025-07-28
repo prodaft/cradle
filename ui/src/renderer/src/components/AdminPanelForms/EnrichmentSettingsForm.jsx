@@ -1,19 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
-import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import * as Yup from 'yup';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import { getEntryClasses } from '../../services/adminService/adminService';
 import {
     getEnrichmentSettings,
     saveEnrichmentSettings,
 } from '../../services/intelioService/intelioService';
+import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
+import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import { Tabs, Tab } from '../Tabs/Tabs';
 import Selector from '../Selector/Selector';
-import { getEntryClasses } from '../../services/adminService/adminService';
-import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
+import { Tab, Tabs } from '../Tabs/Tabs';
 
 // Dynamic schema generation based on form_fields
 const createEnrichmentSchema = (form_fields) => {
@@ -57,7 +57,7 @@ const createEnrichmentSchema = (form_fields) => {
  * @param {string} props.enrichment_class - The enrichment class to fetch settings for
  */
 export default function EnrichmentSettingsForm({ enrichment_class }) {
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const [displayName, setDisplayName] = useState('');
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [formFields, setFormFields] = useState({});
@@ -260,7 +260,10 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
                 </h1>
                 <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
                     <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
-                        <Tabs tabClasses='tabs gap-1' perTabClass='tab-pill'>
+                        <Tabs
+                            tabClasses='tabs gap-1 !bg-opacity-0'
+                            perTabClass='tab-pill'
+                        >
                             <Tab title='General' classes='space-y-4'>
                                 <div className='mt-4' />
                                 <div className='w-full'>

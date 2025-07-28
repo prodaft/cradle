@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
-import Preview from '../Preview/Preview';
+import { useEffect, useState } from 'react';
 import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
-import { formatDate } from '../../utils/dateUtils/dateUtils';
+import Preview from '../Preview/Preview';
 
 export const HoverPreview = ({ note, position, onClose }) => {
     const [parsedContent, setParsedContent] = useState('');
@@ -66,7 +65,7 @@ export const HoverPreview = ({ note, position, onClose }) => {
             </div>
             */}
 
-            <div classNameCommentedOut='border-gray-200 dark:border-gray-700 pt-2'>
+            <div className={'' /*border-gray-200 dark:border-gray-700 pt-2*/}>
                 {loading ? (
                     <div className='flex items-center justify-center h-128'>
                         <div className='spinner-dot-pulse'>

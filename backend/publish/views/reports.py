@@ -1,10 +1,12 @@
-from rest_framework import generics, status, filters
+from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from django.db.models import Q
 
 from core.pagination import TotalPagesPagination
+from core.utils import validate_order_by
 from notes.models import Note
 from publish.strategies import PUBLISH_STRATEGIES
 
@@ -31,10 +33,25 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
                 description="Search term to filter reports by ID or title",
             ),
             OpenApiParameter(
+                name="page_size",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Number of reports to return per page. Max 200.",
+                default=10,
+            ),
+            OpenApiParameter(
                 name="page",
                 type=int,
                 location=OpenApiParameter.QUERY,
                 description="Page number for pagination",
+            ),
+            OpenApiParameter(
+                name="order_by",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Order reports by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: created_at, title, status, strategy, user__username. Default: -created_at",  # noqa: E501
+                required=False,
+                default="-created_at",
             ),
         ],
         responses={
@@ -46,17 +63,69 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
     )
 )
 class ReportListDeleteAPIView(generics.ListAPIView):
-    def get_queryset(self):
-        return PublishedReport.objects.filter(user=self.request.user).order_by(
-            "-created_at"
-        )
-
     serializer_class = ReportSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    pagination_class = TotalPagesPagination
 
-    filter_backends = [filters.SearchFilter]
-    search_fields = ["id", "title"]
+    def get_queryset(self):
+        return PublishedReport.objects.filter(user=self.request.user)
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Handle search parameter
+        search = request.query_params.get("search")
+        if search:
+            queryset = queryset.filter(
+                Q(id__icontains=search) | Q(title__icontains=search)
+            )
+
+        # Handle page_size parameter
+        try:
+            page_size = int(request.query_params.get("page_size", 10))
+        except ValueError:
+            return Response(
+                "Invalid page_size value. Must be an integer.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if page_size > 200:
+            return Response(
+                "page_size cannot be greater than 200.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Handle ordering
+        order_by = request.query_params.get("order_by", "-created_at")
+        valid_order_fields = [
+            "created_at",
+            "title",
+            "status",
+            "strategy",
+            "user__username",
+        ]
+
+        # Parse and validate order_by parameter
+        order_fields, error_response = validate_order_by(order_by, valid_order_fields)
+        if error_response:
+            return error_response
+
+        if order_fields:
+            queryset = queryset.order_by(*order_fields)
+        else:
+            queryset = queryset.order_by("-created_at")
+
+        # Apply pagination
+        paginator = TotalPagesPagination(page_size=page_size)
+        result_page = paginator.paginate_queryset(queryset, request)
+
+        if result_page is not None:
+            serializer = self.get_serializer(result_page, many=True)
+            return paginator.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 @extend_schema_view(

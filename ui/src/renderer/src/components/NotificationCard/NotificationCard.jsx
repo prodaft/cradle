@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { markUnread } from '../../services/notificationsService/notificationsService';
-import { displayError } from '../../utils/responseUtils/responseUtils';
 import { Mail, MailOpen } from 'iconoir-react';
-import { changeAccess, activateUser } from '../../services/adminService/adminService';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import { activateUser, changeAccess } from '../../services/adminService/adminService';
+import { markUnread } from '../../services/notificationsService/notificationsService';
 import { getReport } from '../../services/publishService/publishService';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
+import { displayError } from '../../utils/responseUtils/responseUtils';
 
 /**
  * @typedef {Object} Notification
@@ -58,7 +58,7 @@ export default function NotificationCard({
         requesting_user_id,
     } = notification;
     const [isMarkedUnread, setIsMarkedUnread] = useState(is_marked_unread);
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
 
     const handleMarkUnread = (id) => {
         markUnread(id, !isMarkedUnread)
@@ -111,10 +111,6 @@ export default function NotificationCard({
                 }
             })
             .catch(displayError(setAlert, navigate));
-    };
-
-    const handleGoToReport = () => {
-        navigate(`/reports/${published_report_id}`);
     };
 
     return (
@@ -190,7 +186,7 @@ export default function NotificationCard({
                 <div className='flex flex-row justify-end items-center flex-wrap'>
                     <button
                         className='btn btn-solid-secondary btn-sm'
-                        onClick={handleGoToReport}
+                        onClick={navigateLink(`/reports/${published_report_id}`)}
                     >
                         View Details
                     </button>

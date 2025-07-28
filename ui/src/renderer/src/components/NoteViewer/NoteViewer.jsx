@@ -1,39 +1,44 @@
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { useEffect, useState, useCallback } from 'react';
-import React from 'react';
+import { Code, EditPencil } from 'iconoir-react';
+import { StatsReport, Trash } from 'iconoir-react/regular';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import {
     deleteNote,
     getNote,
     setPublishable,
 } from '../../services/notesService/notesService';
-import Preview from '../Preview/Preview';
-import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
-import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
-import { ClockRotateRight, Code, EditPencil } from 'iconoir-react';
-import NavbarButton from '../NavbarButton/NavbarButton';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { Trash, StatsReport } from 'iconoir-react/regular';
+import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
+import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import NavbarButton from '../NavbarButton/NavbarButton';
 import NavbarSwitch from '../NavbarSwitch/NavbarSwitch';
-import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import Preview from '../Preview/Preview';
 import ReferenceTree from '../ReferenceTree/ReferenceTree';
+
 import Prism from 'prismjs';
-import 'prismjs/components/prism-markdown';
+import 'prismjs/plugins/autoloader/prism-autoloader.js';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
+import '../../utils/customParser/prism-config.js';
+
 import {
-    CheckCircleSolid,
     InfoCircleSolid,
-    WarningTriangleSolid,
-    WarningCircleSolid,
     NavArrowDown,
     NavArrowUp,
+    WarningCircleSolid,
+    WarningTriangleSolid,
 } from 'iconoir-react';
-import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
-import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
-import { Tab, Tabs } from '../Tabs/Tabs';
-import ActivityList from '../ActivityList/ActivityList';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import { parseMarkdownInline } from '../../utils/customParser/customParser';
+import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
+import ActivityList from '../ActivityList/ActivityList';
 import FileItem from '../FileItem/FileItem';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
+import NoteGraph from '../NoteGraph/NoteGraph';
+import { Tab, Tabs } from '../Tabs/Tabs';
 
 /**
  * NoteViewer component
@@ -46,7 +51,7 @@ import FileItem from '../FileItem/FileItem';
  */
 export default function NoteViewer() {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const location = useLocation();
     const { isAdmin } = useProfile();
     const { from, state } = location.state || { from: { pathname: '/' } };
@@ -64,13 +69,7 @@ export default function NoteViewer() {
 
         switch (note.status) {
             case 'healthy':
-                return (
-                    <CheckCircleSolid
-                        className='text-green-500'
-                        width='18'
-                        height='18'
-                    />
-                );
+                return null;
             case 'processing':
                 return (
                     <InfoCircleSolid className='text-blue-500' width='18' height='18' />
@@ -161,7 +160,7 @@ export default function NoteViewer() {
                       text='Publish Report'
                       data-testid='publish-btn'
                       key='publish-btn'
-                      onClick={() => navigate(`/publish?notes=${id}`)}
+                      onClick={navigateLink(`/publish?notes=${id}`)}
                   />
               ),
               <NavbarSwitch
@@ -175,7 +174,7 @@ export default function NoteViewer() {
                   key='edit-btn'
                   text='Edit Note'
                   icon={<EditPencil />}
-                  onClick={() => navigate(`/notes/${id}/edit`)}
+                  onClick={navigateLink(`/notes/${id}/edit`)}
                   tesid='delete-btn'
               />,
               <NavbarButton
@@ -213,9 +212,7 @@ export default function NoteViewer() {
     ]);
 
     useEffect(() => {
-        if (isRaw) {
-            Prism.highlightAll();
-        }
+        Prism.highlightAll();
     }, [isRaw, note.content]);
 
     // Conditionally render spinner or component
@@ -234,14 +231,14 @@ export default function NoteViewer() {
                 setAlert={setAlert}
                 onClose={() => setAlert('')}
             />
-            <div className='w-[100%] h-full flex flex-col p-2 space-y-3'>
+            <div className='w-[100%] h-full flex flex-col space-y-3'>
                 <Tabs
                     defaultTab={0}
                     queryParam={'tab'}
                     tabClasses='tabs-underline w-full'
-                    perTabClass={`justify-center ${note.files && note.files.length > 0 ? (isAdmin() ? 'w-[33%]' : 'w-[50%]') : isAdmin() ? 'w-[50%]' : 'w-full'}`}
+                    perTabClass={`justify-center ${note.files && note.files.length > 0 ? (isAdmin() ? 'w-[25%]' : 'w-[33%]') : isAdmin() ? 'w-[33%]' : 'w-[50%]'}`}
                 >
-                    <Tab title='Content' classes='pt-2'>
+                    <Tab title='Content'>
                         <div className='w-full h-full overflow-hidden flex flex-col items-center px-4 pb-4 pt-1'>
                             <div className='h-full w-full rounded-md bg-cradle3 bg-opacity-20 backdrop-blur-lg backdrop-filter px-4 pb-4 pt-1 overflow-y-auto'>
                                 <div className='text-sm text-zinc-500 p-2 border-b-2 dark:border-b-zinc-800'>
@@ -307,10 +304,10 @@ export default function NoteViewer() {
 
                                 {isRaw ? (
                                     <pre
-                                        className='h-full w-full p-4 bg-transparent prose-md max-w-none dark:prose-invert break-all
-              overflow-y-auto rounded-lg flex-1 overflow-x-hidden whitespace-pre-wrap'
+                                        className='line-numbers h-full w-full p-4 bg-transparent prose-md max-w-none dark:prose-invert break-all overflow-y-auto rounded-lg flex-1 overflow-x-hidden whitespace-pre-wrap'
+                                        data-start='1'
                                     >
-                                        <code className='language-js'>
+                                        <code className='language-markdown'>
                                             {note.content}
                                         </code>
                                     </pre>
@@ -375,8 +372,10 @@ export default function NoteViewer() {
                                                                                         ? JSON.stringify(
                                                                                               value,
                                                                                           )
-                                                                                        : String(
-                                                                                              value,
+                                                                                        : parseMarkdownInline(
+                                                                                              String(
+                                                                                                  value,
+                                                                                              ),
                                                                                           )}
                                                                                 </div>
                                                                             </React.Fragment>
@@ -399,8 +398,11 @@ export default function NoteViewer() {
                             </div>
                         </div>
                     </Tab>
+                    <Tab title='Graph'>
+                        <NoteGraph noteId={id} />
+                    </Tab>
                     {note.files && note.files.length > 0 && (
-                        <Tab title='Files' classes='pt-2'>
+                        <Tab title='Files'>
                             <div className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'>
                                 <div className='w-[95%] h-full flex flex-col p-6 space-y-3'>
                                     {note.files.map((file) => (

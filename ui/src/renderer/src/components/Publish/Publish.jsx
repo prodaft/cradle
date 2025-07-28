@@ -1,31 +1,31 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { updateNote, getNote } from '../../services/notesService/notesService';
-import {
-    getPublishOptions,
-    publishReport,
-    editReport,
-    getReport,
-} from '../../services/publishService/publishService';
+import { useEffect, useRef, useState } from 'react';
 import 'tailwindcss/tailwind.css';
+import { useModal } from '../../contexts/ModalContext/ModalContext';
+import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
+import { getNote } from '../../services/notesService/notesService';
+import {
+    editReport,
+    getPublishOptions,
+    getReport,
+    publishReport,
+} from '../../services/publishService/publishService';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import FloatingTextInput from '../FloatingTextInput/FloatingTextInput';
-import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
+import Note from '../Note/Note';
 import NoteSelector from '../NoteSelector/NoteSelector';
 import PublishPreview from '../PublishPreview/PublishPreview';
-import Note from '../Note/Note';
-import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
-import { useModal } from '../../contexts/ModalContext/ModalContext';
+import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
 
-import { DndContext, closestCenter, DragOverlay, useSensor } from '@dnd-kit/core';
+import { closestCenter, DndContext, DragOverlay, useSensor } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { NoButtonsSensor } from '../../utils/dndUtils/dndUtils';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { displayError } from '../../utils/responseUtils/responseUtils';
 import { Download, Eye, EyeClosed, FloppyDisk, Upload } from 'iconoir-react';
+import { useSearchParams } from 'react-router-dom';
+import { NoButtonsSensor } from '../../utils/dndUtils/dndUtils';
+import { displayError } from '../../utils/responseUtils/responseUtils';
 import FormModal from '../Modals/FormModal';
 
-import NavbarDropdown from '../NavbarDropdown/NavbarDropdown';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import NavbarButton from '../NavbarButton/NavbarButton';
+import NavbarDropdown from '../NavbarDropdown/NavbarDropdown';
 
 export default function Publish() {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -42,7 +42,7 @@ export default function Publish() {
     const [reportId, setReportId] = useState(null);
     const [title, setTitle] = useState('');
 
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
 
     const sensors = [useSensor(NoButtonsSensor)];
 

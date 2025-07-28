@@ -1,11 +1,10 @@
-import { useNavigate } from 'react-router-dom';
-import { useCallback } from 'react';
-import { Trash, EditPencil } from 'iconoir-react/regular';
+import { Trash } from 'iconoir-react/regular';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 
-import { deleteNote } from '../../services/notesService/notesService';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
-import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
+import { deleteNote } from '../../services/notesService/notesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
 
 /**
  * Note component - This component is used to display a note on the dashboard.
@@ -22,7 +21,7 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
  * @param {boolean} props.hideDefaultControls - Whether to hide the default controls
  */
 export default function DeleteNote({ note, setAlert, setHidden, classNames }) {
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const { setModal } = useModal();
 
     const handleDelete = () => {
@@ -45,12 +44,14 @@ export default function DeleteNote({ note, setAlert, setHidden, classNames }) {
             <button className=''>
                 <Trash
                     className={classNames}
-                    onClick={() =>
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
                         setModal(ConfirmDeletionModal, {
                             onConfirm: handleDelete,
                             text: 'Are you sure you want to delete this note? This action is irreversible.',
-                        })
-                    }
+                        });
+                    }}
                 />
             </button>
         </span>

@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Update system and install dependencies
 RUN pacman -Sy --noconfirm && \
-    pacman -S --noconfirm python python-pip python-pipenv gdal
+    pacman -S --noconfirm python python-pip python-pipenv gdal gcc
 
 # Copy and install Python dependencies
 COPY ./backend/Pipfile .

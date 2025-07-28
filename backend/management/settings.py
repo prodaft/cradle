@@ -41,6 +41,10 @@ class GraphSettings(BaseSettingsSection):
     prefix = "graph"
 
     @property
+    def simulate_method(self):
+        return self.get("simulate_method", "graph_tool")
+
+    @property
     def K(self):
         return self.get("K", 300)
 
@@ -65,8 +69,48 @@ class GraphSettings(BaseSettingsSection):
         return self.get("r", 5)
 
     @property
-    def max_iter(self):
-        return self.get("max_iter", 2000)
+    def max_iter_gt(self):
+        return self.get("max_iter_gt", 2000)
+
+    @property
+    def max_iter_fa2(self):
+        return self.get("max_iter_fa2", 1000)
+
+    @property
+    def dissuade_hubs(self):
+        return self.get("dissuade_hubs", False)
+
+    @property
+    def lin_log_mode(self):
+        return self.get("lin_log_mode", False)
+
+    @property
+    def adjust_sizes(self):
+        return self.get("adjust_sizes", True)
+
+    @property
+    def jitter_tolerance(self):
+        return self.get("jitter_tolerance", 1.0)
+
+    @property
+    def barnes_hut_optimize(self):
+        return self.get("barnes_hut_optimize", True)
+
+    @property
+    def barnes_hut_theta(self):
+        return self.get("barnes_hut_theta", 1.2)
+
+    @property
+    def scaling_ratio(self):
+        return self.get("scaling_ratio", 2.0)
+
+    @property
+    def strong_gravity_mode(self):
+        return self.get("strong_gravity_mode", False)
+
+    @property
+    def gravity(self):
+        return self.get("gravity", 1.0)
 
 
 class FileSettings(BaseSettingsSection):

@@ -1,6 +1,6 @@
-import { getBaseUrl } from '../configService/configService';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
+import { getBaseUrl } from '../configService/configService';
 
 const authAxios = axios.create({
     baseURL: getBaseUrl(),

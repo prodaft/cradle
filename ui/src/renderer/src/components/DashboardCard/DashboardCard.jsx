@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 
 /**
  * DashboardCard component - This component is used to display a simple name card on the dashboard.
@@ -14,14 +14,11 @@ import { useNavigate } from 'react-router-dom';
  * @constructor
  */
 export default function DashboardCard({ name, link, type }) {
-    const navigate = useNavigate();
-    const handleClick = () => {
-        if (link) navigate(link);
-    };
+    const { navigate, navigateLink } = useCradleNavigate();
     return (
         <div
             className={`bg-cradle3 p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg shadow-md rounded-xl ${link ? 'cursor-pointer' : ''}`}
-            onClick={handleClick}
+            onClick={link ? navigateLink(link) : undefined}
         >
             {name}
             <div className='text-zinc-300'>{type ? type : ''}</div>

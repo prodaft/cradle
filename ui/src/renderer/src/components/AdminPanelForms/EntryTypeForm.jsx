@@ -1,21 +1,21 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
-import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useEffect, useMemo, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
+import { Controller, useForm } from 'react-hook-form';
+import * as Yup from 'yup';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import {
-    getEntryClass,
-    getEntryClasses,
     createArtifactClass,
     editArtifactClass,
+    getEntryClass,
+    getEntryClasses,
 } from '../../services/adminService/adminService';
+import { GoldenRatioColorGenerator } from '../../utils/colorUtils/colorUtils';
+import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import { GoldenRatioColorGenerator } from '../../utils/colorUtils/colorUtils';
-import { Tabs, Tab } from '../Tabs/Tabs';
 import Selector from '../Selector/Selector'; // imported Selector
+import { Tab, Tabs } from '../Tabs/Tabs';
 
 const entryTypeSchema = Yup.object().shape({
     type: Yup.string().required('Class Type is required'),
@@ -47,7 +47,7 @@ const entryTypeSchema = Yup.object().shape({
  * @param {boolean} [props.isEdit=false] - If true, the form will be used for editing.
  */
 export default function EntryTypeForm({ id = null, isEdit = false, onAdd }) {
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
     const [showColorPicker, setShowColorPicker] = useState(false);
     const [entryTypes, setEntryTypes] = useState([]);
@@ -162,7 +162,7 @@ export default function EntryTypeForm({ id = null, isEdit = false, onAdd }) {
                 result = await editArtifactClass(
                     {
                         generative_regex: data.generativeRegex,
-                        format: data.typeFormat == "" ? null : data.typeFormat,
+                        format: data.typeFormat == '' ? null : data.typeFormat,
                         ...data,
                         children: data.children.map((child) => child.value),
                     },
@@ -171,7 +171,7 @@ export default function EntryTypeForm({ id = null, isEdit = false, onAdd }) {
             } else {
                 result = await createArtifactClass({
                     generative_regex: data.generativeRegex,
-                    format: data.typeFormat == "" ? null : data.typeFormat,
+                    format: data.typeFormat == '' ? null : data.typeFormat,
                     ...data,
                     children: data.children.map((child) => child.value),
                 });
@@ -204,7 +204,10 @@ export default function EntryTypeForm({ id = null, isEdit = false, onAdd }) {
                 </h1>
                 <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
                     <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
-                        <Tabs tabClasses='tabs gap-1' perTabClass='tab-pill'>
+                        <Tabs
+                            tabClasses='tabs gap-1 !bg-opacity-0'
+                            perTabClass='tab-pill'
+                        >
                             <Tab title='Basic' classes='space-y-4'>
                                 <div className='mt-4' />
                                 <div className='w-full'>

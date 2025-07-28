@@ -1,16 +1,15 @@
-import React, { forwardRef, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { format, addDays } from 'date-fns';
-import GraphControl from './GraphControl';
+import { forwardRef, useMemo } from 'react';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import NotesList from '../NotesList/NotesList';
-import { Tabs, Tab } from '../Tabs/Tabs';
 import RelationsList from '../RelationsList/RelationsList';
+import { Tab, Tabs } from '../Tabs/Tabs';
+import GraphControl from './GraphControl';
 
 const GraphQuery = forwardRef(function (
-    { selectedEntries, setSelectedEntries, config, setConfig },
+    { selectedEntries, setSelectedEntries, config, setConfig, SearchComponent },
     graphRef,
 ) {
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
 
     // Prepare props for GraphSettings.
     const settingsProps = {
@@ -44,7 +43,11 @@ const GraphQuery = forwardRef(function (
             >
                 <Tab title='Search' classes='pt-2'>
                     <div className='mt-3 flex flex-col flex-1 overflow-hidden h-[85vh]'>
-                        <GraphControl settingsProps={settingsProps} ref={graphRef} />
+                        <GraphControl
+                            settingsProps={settingsProps}
+                            ref={graphRef}
+                            SearchComponent={SearchComponent}
+                        />
                     </div>
                 </Tab>
                 <Tab title='Notes' classes='pt-2'>
@@ -67,7 +70,10 @@ const GraphQuery = forwardRef(function (
                                         ))}
                                     </div>
 
-                                    <NotesList query={graphQuery} />
+                                    <NotesList
+                                        query={graphQuery}
+                                        forceCardView={true}
+                                    />
                                 </>
                             ) : (
                                 <div className='text-center text-sm text-gray-400 mt-10'>

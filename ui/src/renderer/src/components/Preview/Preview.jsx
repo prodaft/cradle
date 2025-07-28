@@ -1,6 +1,13 @@
 import DOMPurify from 'dompurify';
-import { useNavigate } from 'react-router-dom';
-import { useEffect, useRef, useState } from 'react';
+
+import Prism from 'prismjs';
+import 'prismjs/plugins/autoloader/prism-autoloader.js';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
+import '../../utils/customParser/prism-config.js';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { handleLinkClick } from '../../utils/textEditorUtils/textEditorUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 
@@ -10,11 +17,25 @@ export default function Preview({
     setCurrentLine = null,
 }) {
     const sanitizedContent = DOMPurify.sanitize(htmlContent);
-    const navigate = useNavigate();
-    const previewRef = useRef(null);
+    const { navigate, navigateLink } = useCradleNavigate();
     const preventScrollRef = useRef(false);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [isLoading, setIsLoading] = useState(true); // New state for loading spinner
+    const [previewElement, setPreviewElement] = useState(null);
+
+    const previewRef = useCallback(
+        (node) => {
+            if (node) {
+                setPreviewElement(node);
+                // Set content immediately when ref is attached
+                if (sanitizedContent) {
+                    node.innerHTML = sanitizedContent;
+                    Prism.highlightAllUnder(node);
+                }
+            }
+        },
+        [sanitizedContent],
+    );
 
     useEffect(() => {
         if (htmlContent !== null) {
@@ -38,6 +59,13 @@ export default function Preview({
             }
         }
     };
+
+    useEffect(() => {
+        if (previewElement && sanitizedContent) {
+            previewElement.innerHTML = sanitizedContent;
+            Prism.highlightAllUnder(previewElement);
+        }
+    }, [sanitizedContent, previewElement]);
 
     useEffect(() => {
         if (preventScrollRef.current) {
@@ -79,8 +107,7 @@ export default function Preview({
                 </div>
             ) : (
                 <div
-                    className='h-full w-full p-4 bg-transparent prose max-w-none break-normal whitespace-normal dark:prose-invert overflow-y-auto rounded-lg flex-1 overflow-x-hidden'
-                    dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+                    className='h-full w-full p-4 bg-transparent prose max-w-none break-normal whitespace-normal dark:prose-invert overflow-y-auto rounded-lg flex-1 overflow-x-hidden line-numbers'
                     data-testid='preview'
                     ref={previewRef}
                     onClick={handleLineClick}

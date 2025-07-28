@@ -1,33 +1,32 @@
-import React, { useEffect, useId, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
-import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
-import AlertBox from '../AlertBox/AlertBox';
-import vimIcon from '../../assets/vim32x32.gif';
 import { Edit } from 'iconoir-react';
-import FormField from '../FormField/FormField';
-import useAuth from '../../hooks/useAuth/useAuth';
-import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
-import SnippetList from '../SnippetList/SnippetList';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import {
-    getUser,
-    updateUser,
-    deleteUser,
-    createUser,
-    generateApiKey,
-    setDefaultNoteTemplate,
-    getDefaultNoteTemplate,
-} from '../../services/userService/userService';
-import { Tabs, Tab } from '../Tabs/Tabs';
-import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
+import { useEffect, useId, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as Yup from 'yup';
+import vimIcon from '../../assets/vim32x32.gif';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useAuth from '../../hooks/useAuth/useAuth';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import {
+    createUser,
+    deleteUser,
+    generateApiKey,
+    getDefaultNoteTemplate,
+    getUser,
+    setDefaultNoteTemplate,
+    updateUser,
+} from '../../services/userService/userService';
+import { displayError } from '../../utils/responseUtils/responseUtils';
+import AlertBox from '../AlertBox/AlertBox';
+import AlertDismissible from '../AlertDismissible/AlertDismissible.jsx';
+import FormField from '../FormField/FormField';
 import ActionConfirmationModal from '../Modals/ActionConfirmationModal.jsx';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import MarkdownEditorModal from '../Modals/MarkdownEditorModal.jsx';
 import TwoFactorSetupModal from '../Modals/TwoFactorSetupModal';
-import AlertDismissible from '../AlertDismissible/AlertDismissible.jsx';
-import { compact } from 'lodash';
+import SnippetList from '../SnippetList/SnippetList';
+import { Tab, Tabs } from '../Tabs/Tabs';
 
 const accountSettingsSchema = Yup.object().shape({
     username: Yup.string().required('Username is required'),
@@ -51,7 +50,7 @@ const accountSettingsSchema = Yup.object().shape({
 });
 
 export default function AccountSettings({ target, isEdit = true, onAdd }) {
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const auth = useAuth();
     const { profile, setProfile, isAdmin } = useProfile();
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
@@ -117,6 +116,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                         vtKey: res.data.vt_api_key ? 'apikey' : '',
                         vimMode: res.data.vim_mode || false,
                         compactMode: res.data.compact_mode || false,
+                        theme: res.data.theme || 'dark',
                         catalystKey: res.data.catalyst_api_key ? 'apikey' : '',
                         role: res.data.role || 'user',
                         email_confirmed: res.data.email_confirmed || false,
@@ -144,6 +144,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
             }
             payload.vim_mode = data.vimMode;
             payload.compact_mode = data.compactMode;
+            payload.theme = data.theme;
             if (isAdminAndNotOwn) {
                 payload.username = data.username;
                 payload.email = data.email;
@@ -185,6 +186,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                 is_active: data.is_active,
                 vim_mode: data.vimMode,
                 compact_mode: data.compactMode,
+                theme: data.theme,
             };
             try {
                 let result = await createUser(payload);
@@ -325,7 +327,10 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                     </h1>
                     <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
                         <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
-                            <Tabs tabClasses='tabs gap-1' perTabClass='tab-pill'>
+                            <Tabs
+                                tabClasses='tabs gap-1 !bg-opacity-0'
+                                perTabClass='tab-pill'
+                            >
                                 <Tab title='Account'>
                                     <div className='mt-4' />
                                     <FormField
@@ -468,11 +473,9 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                                         <button
                                                             type='button'
                                                             className='btn btn-primary btn-block'
-                                                            onClick={() =>
-                                                                navigate(
-                                                                    '/change-password',
-                                                                )
-                                                            }
+                                                            onClick={navigateLink(
+                                                                '/change-password',
+                                                            )}
                                                         >
                                                             Change Password
                                                         </button>
@@ -559,6 +562,27 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                         error={errors.compact_mode?.message}
                                     />
                                     <div className='mt-4' />
+                                    <div className='w-full mt-4'>
+                                        <label className='block text-sm font-medium'>
+                                            Theme
+                                        </label>
+                                        <div className='mt-1'>
+                                            <select
+                                                className='form-select select select-ghost-primary select-block focus:ring-0'
+                                                {...register('theme')}
+                                            >
+                                                <option value='dark'>Dark</option>
+                                                <option value='light'>Light</option>
+                                            </select>
+                                        </div>
+                                        {errors.theme && (
+                                            <p className='text-red-600 text-sm'>
+                                                {errors.theme.message}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className='mt-4' />
+
                                     <SnippetList userId={target} />
 
                                     <div className='mt-4' />

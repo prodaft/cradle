@@ -2,7 +2,8 @@ from rest_framework import serializers
 from access.enums import AccessType
 from access.models import Access
 from entries.enums import EntryType
-from entries.models import Entry, Edge
+from entries.models import Entry, Edge, Relation
+from core.utils import flatten
 from entries.serializers import (
     EntryListCompressedTreeSerializer,
     EntryClassSerializerNoChildren,
@@ -75,6 +76,38 @@ class SubGraphSerializer(serializers.Serializer):
 
     class Meta:
         fields = ["entries", "paths", "colors"]
+
+    @classmethod
+    def from_relations(cls, relations: list[Relation]) -> "SubGraphSerializer":
+        """
+        Create a SubGraphSerializer instance from a Relation queryset.
+        """
+        entries = flatten([(r.e1, r.e2) for r in relations])
+
+        colors = {
+            e.entry_class.subtype: e.entry_class.color
+            for e in entries
+            if e.entry_class.subtype is not None
+        }
+
+        serializer = cls(
+            {
+                "entries": entries,
+                "relations": [
+                    Edge(
+                        id=r.id,
+                        src=r.e1.id,
+                        dst=r.e2.id,
+                        created_at=r.created_at,
+                        last_seen=r.last_seen,
+                    )
+                    for r in relations
+                ],
+                "colors": colors,
+            }
+        )
+
+        return serializer
 
 
 class EntryWithDepthSerializer(EntrySerializer):

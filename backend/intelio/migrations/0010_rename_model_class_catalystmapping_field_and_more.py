@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("intelio", "0009_alter_enrichersettings_periodicity"),
     ]

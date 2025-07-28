@@ -43,7 +43,7 @@ class TotalPagesPagination(PageNumberPagination):
             "required": ["page", "count", "total_pages", "results"],
         }
 
-    def get_paginated_response_serializer(self, serializer_class, name=None):
+    def get_paginated_response_serializer(self, serializer_class, name=None, many=True):
         """
         Returns an inline serializer for the paginated response.
 
@@ -62,7 +62,7 @@ class TotalPagesPagination(PageNumberPagination):
                 "total_pages": serializers.IntegerField(
                     help_text="Total number of pages"
                 ),
-                "results": serializer_class(many=True),
+                "results": serializer_class(many=many),
             },
         )
 

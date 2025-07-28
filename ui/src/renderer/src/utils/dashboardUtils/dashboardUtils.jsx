@@ -280,7 +280,11 @@ export const renderDashboardSectionWithInaccessibleEntries = (
  * @param {number} maxLength - the maximum length of the truncated text (not including '...')
  * @returns {string} - the truncated text
  */
-export const truncateText = (text, maxLength) => {
+export const truncateText = (text, maxLength, defaultText = '-') => {
+    if (!text) {
+        return defaultText;
+    }
+
     if (text.length <= maxLength) {
         return text;
     }
@@ -301,13 +305,13 @@ export function capitalizeString(input) {
 export function naturalSort(a, b) {
     // Regular expression to split strings into parts
     const regex = /([^0-9]+)([0-9]+)/;
-    
+
     // Helper to split a string into text/number parts
     const getParts = (str) => {
         const parts = [];
         let remainder = str;
         let match;
-        
+
         while ((match = regex.exec(remainder)) !== null) {
             // Add the text part
             parts.push(match[1]);
@@ -315,15 +319,15 @@ export function naturalSort(a, b) {
             parts.push(parseInt(match[2], 10));
             remainder = remainder.substring(match[0].length);
         }
-        
+
         // Add any remaining text
         if (remainder) parts.push(remainder);
         return parts;
     };
-    
+
     const aParts = getParts(a);
     const bParts = getParts(b);
-    
+
     // Compare each part
     const minLength = Math.min(aParts.length, bParts.length);
     for (let i = 0; i < minLength; i++) {
@@ -332,13 +336,13 @@ export function naturalSort(a, b) {
             if (aParts[i] !== bParts[i]) {
                 return aParts[i] - bParts[i];
             }
-        } 
+        }
         // Otherwise compare as strings
         else if (aParts[i] !== bParts[i]) {
             return aParts[i].toString().localeCompare(bParts[i].toString());
         }
     }
-    
+
     // If all comparable parts are equal, the shorter string comes first
     return aParts.length - bParts.length;
 }

@@ -1,5 +1,5 @@
-import { createContext, useState } from 'react';
 import { jwtDecode } from 'jwt-decode';
+import { createContext, useState } from 'react';
 
 /**
  * AuthContext - the context for the authentication of the application

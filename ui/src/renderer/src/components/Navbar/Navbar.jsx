@@ -1,10 +1,10 @@
 import { ArrowLeft, ArrowRight, DesignNib } from 'iconoir-react';
-import SearchDialog from '../SearchDialog/SearchDialog';
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import NavbarButton from '../NavbarButton/NavbarButton';
-import Logo from '../Logo/Logo';
+import { useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import Logo from '../Logo/Logo';
+import NavbarButton from '../NavbarButton/NavbarButton';
+import SearchDialog from '../SearchDialog/SearchDialog';
 
 /**
  * Navbar component - the main navigation bar for the application.
@@ -23,7 +23,7 @@ export default function Navbar({
     handleFleetingNotesButton,
 }) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
 
     useHotkeys(
         'ctrl+k, cmd+k',
@@ -58,14 +58,14 @@ export default function Navbar({
             data-testid='navbar-test'
         >
             <div className='flex items-center space-x-2 justify-start'>
-                <Logo text={false} height='1.5em' onClick={() => navigate('/')} />
+                <Logo text={false} height='1.5em' onClick={navigateLink('/')} />
             </div>
 
             <div className='flex items-center justify-center space-x-2'>
                 <NavbarButton
                     icon={
                         <ArrowLeft
-                            className='text-zinc-500 hover:text-cradle2'
+                            className='text-zinc-500 group-hover:text-cradle2'
                             width='1em'
                             height='1.1em'
                             strokeWidth='1.5'
@@ -76,13 +76,14 @@ export default function Navbar({
                 <NavbarButton
                     icon={
                         <ArrowRight
-                            className='text-zinc-500 hover:text-cradle2 mr-2'
+                            className='text-zinc-500 group-hover:text-cradle2'
                             width='1em'
                             height='1.1em'
                             strokeWidth='1.5'
                         />
                     }
                     onClick={() => navigate(1)}
+                    className='mr-2'
                 />
                 <input
                     className='form-input input-sm input-ghost-primary input focus:border-primary focus:ring-0 w-full max-w-lg'

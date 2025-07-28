@@ -1,13 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Search } from 'iconoir-react';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import { useLocation, useParams } from 'react-router-dom';
-import { getEventLogs } from '../../services/logService/logService';
+import { format, parseISO } from 'date-fns';
 import dayjs from 'dayjs';
-import Activity from '../Activity/Activity';
-import Pagination from '../Pagination/Pagination';
+import { Search } from 'iconoir-react';
+import { useCallback, useEffect, useState } from 'react';
 import Datepicker from 'react-tailwindcss-datepicker';
-import { parseISO, format } from 'date-fns';
+import { getEventLogs } from '../../services/logService/logService';
+import Activity from '../Activity/Activity';
+import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import Pagination from '../Pagination/Pagination';
 
 export default function ActivityList({ name, objectId, content_type, username }) {
     const [searchFilters, setSearchFilters] = useState({

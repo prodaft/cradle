@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Tabs, Tab } from '../Tabs/Tabs';
-import AlertBox from '../AlertBox/AlertBox';
-import Selector from '../Selector/Selector';
+import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import * as Yup from 'yup';
+import { getEntryClasses } from '../../services/adminService/adminService';
 import {
     getSettings,
     performAction,
     setSettings,
 } from '../../services/managementService/managementService';
-import { getEntryClasses } from '../../services/adminService/adminService';
+import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
+import Selector from '../Selector/Selector';
+import { Tab, Tabs } from '../Tabs/Tabs';
 
 const fileSettingsSchema = Yup.object().shape({
     autoprocessFiles: Yup.boolean(),
@@ -167,7 +167,7 @@ export default function FileSettingsForm() {
                     File Processing Settings
                 </h1>
                 <div className='p-8 backdrop-blur-sm rounded-md bg-cradle3 bg-opacity-20'>
-                    <Tabs tabClasses='tabs gap-1' perTabClass='tab-pill'>
+                    <Tabs tabClasses='tabs gap-1 !bg-opacity-0' perTabClass='tab-pill'>
                         <Tab title='Settings'>
                             <form
                                 onSubmit={handleSubmit(onSubmit)}

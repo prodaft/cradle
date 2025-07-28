@@ -10,6 +10,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from django_filters.rest_framework import DjangoFilterBackend
 
 from core.pagination import TotalPagesPagination
+from core.utils import validate_order_by
 
 
 from ..models.base import BaseDigest
@@ -94,6 +95,27 @@ class DigestSubclassesAPIView(APIView):
             required=False,
             type=str,
         ),
+        OpenApiParameter(
+            name="page_size",
+            type=int,
+            location=OpenApiParameter.QUERY,
+            description="Number of digests to return per page. Max 200.",
+            default=10,
+        ),
+        OpenApiParameter(
+            name="page",
+            type=int,
+            location=OpenApiParameter.QUERY,
+            description="Page number for pagination",
+        ),
+        OpenApiParameter(
+            name="order_by",
+            type=str,
+            location=OpenApiParameter.QUERY,
+            description="Order digests by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: created_at, title, user__username, status, digest_type. Default: -created_at",  # noqa: E501
+            required=False,
+            default="-created_at",
+        ),
     ],
     responses={
         200: TotalPagesPagination().get_paginated_response_serializer(
@@ -135,8 +157,42 @@ class DigestAPIView(GenericAPIView):
         if filterset.is_valid():
             queryset = filterset.qs
 
+        # Handle page_size parameter
+        try:
+            page_size = int(request.query_params.get("page_size", 10))
+        except ValueError:
+            return Response(
+                "Invalid page_size value. Must be an integer.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if page_size > 200:
+            return Response(
+                "page_size cannot be greater than 200.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Handle ordering
+        order_by = request.query_params.get("order_by", "-created_at")
+        valid_order_fields = [
+            "created_at",
+            "title",
+            "user__username",
+            "digest_type",
+        ]
+
+        # Parse and validate order_by parameter
+        order_fields, error_response = validate_order_by(order_by, valid_order_fields)
+        if error_response:
+            return error_response
+
+        if order_fields:
+            queryset = queryset.order_by(*order_fields)
+        else:
+            queryset = queryset.order_by("-created_at")
+
         # Apply pagination
-        paginator = TotalPagesPagination(page_size=10)
+        paginator = TotalPagesPagination(page_size=page_size)
 
         result_page = paginator.paginate_queryset(queryset, request)
 

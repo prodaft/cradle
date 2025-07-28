@@ -1,5 +1,3 @@
-import * as d3 from 'd3';
-import { entryGraphColors } from '../entryDefinitions/entryDefinitions';
 import { truncateText } from '../dashboardUtils/dashboardUtils';
 
 /**

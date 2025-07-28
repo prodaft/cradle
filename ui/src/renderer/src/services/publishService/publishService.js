@@ -1,4 +1,3 @@
-import QueryString from 'qs';
 import { authAxios } from '../axiosInstance/axiosInstance';
 
 /**

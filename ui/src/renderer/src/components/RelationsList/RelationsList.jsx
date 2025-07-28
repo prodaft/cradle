@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import RelationCard from './RelationCard';
-import Pagination from '../Pagination/Pagination';
+import { useProfile } from '../../hooks/useProfile/useProfile';
 import { getRelations } from '../../services/graphService/graphService';
 import AlertBox from '../AlertBox/AlertBox';
-import { useProfile } from '../../hooks/useProfile/useProfile';
+import Pagination from '../Pagination/Pagination';
+import RelationCard from './RelationCard';
 
 export default function RelationsList({ query }) {
     const [relations, setRelations] = useState([]);

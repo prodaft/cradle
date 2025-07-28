@@ -1,4 +1,3 @@
-import React from 'react';
 import { SubtypeHierarchy } from '../../utils/dashboardUtils/dashboardUtils';
 import Collapsible from '../Collapsible/Collapsible';
 

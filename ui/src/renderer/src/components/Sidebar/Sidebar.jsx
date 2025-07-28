@@ -1,22 +1,20 @@
-import React, { useCallback, useState, useEffect, useRef } from 'react';
+import { Graph } from '@phosphor-icons/react';
 import {
-    Edit,
-    LogOut,
-    UserCrown,
     Bell,
     BellNotification,
-    Settings,
-    Notes,
-    SunLight,
-    HalfMoon,
     DataTransferBoth,
+    Edit,
+    LogOut,
+    Notes,
+    Settings,
+    UserCrown,
 } from 'iconoir-react';
-import { Graph, QuestionMark } from '@phosphor-icons/react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useAuth from '../../hooks/useAuth/useAuth';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import SidebarItem from '../SidebarItem/SidebarItem';
 import SidebarSection from '../SidebarSection/SidebarSection';
-import useAuth from '../../hooks/useAuth/useAuth';
-import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
-import { useNavigate } from 'react-router-dom';
 
 /**
  * Sidebar component - the main sidebar for the application.
@@ -42,7 +40,7 @@ export default function Sidebar({
     const [isRightMouseDown, setIsRightMouseDown] = useState(false);
     const auth = useAuth();
     const { isEntryManager, profile } = useProfile();
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
 
     const [isHovered, setIsHovered] = useState(false);
     const isHoveredRef = useRef(isHovered);
@@ -78,34 +76,30 @@ export default function Sidebar({
     }, [profile?.compact_mode]);
 
     const newNoteLocation = '/editor/new';
-    const handleNewNote = useCallback(() => {
-        navigate(newNoteLocation);
-    }, [navigate]);
+    const handleNewNote = useCallback(navigateLink(newNoteLocation), [navigateLink]);
 
     const documentsLocation = '/documents';
-    const handleDocuments = useCallback(() => {
-        navigate(documentsLocation);
-    }, [navigate]);
+    const handleDocuments = useCallback(navigateLink(documentsLocation), [
+        navigateLink,
+    ]);
 
     const graphViewLocation = '/knowledge-graph';
-    const handleGraphView = useCallback(() => {
-        navigate(graphViewLocation);
-    }, [navigate]);
+    const handleGraphView = useCallback(navigateLink(graphViewLocation), [
+        navigateLink,
+    ]);
 
     const connectivityLocation = '/connectivity';
-    const handleConnectivity = useCallback(() => {
-        navigate(connectivityLocation);
-    }, [navigate]);
+    const handleConnectivity = useCallback(navigateLink(connectivityLocation), [
+        navigateLink,
+    ]);
 
     const accountSettingsLocation = '/account';
-    const handleAccountSettings = useCallback(() => {
-        navigate(accountSettingsLocation);
-    }, [navigate]);
+    const handleAccountSettings = useCallback(navigateLink(accountSettingsLocation), [
+        navigateLink,
+    ]);
 
     const adminLocation = '/admin';
-    const handleAdminPanel = useCallback(() => {
-        navigate(adminLocation);
-    }, [navigate]);
+    const handleAdminPanel = useCallback(navigateLink(adminLocation), [navigateLink]);
 
     const handleLogout = useCallback(() => {
         auth.logOut();
@@ -157,15 +151,16 @@ export default function Sidebar({
                                 highlightedLocation={connectivityLocation}
                                 compact={profile?.compact_mode}
                             />
-
-                            <SidebarItem
-                                handleClick={handleAccountSettings}
-                                icon={<Settings />}
-                                text='Settings'
-                                highlightedLocation={accountSettingsLocation}
-                                compact={profile?.compact_mode}
-                            />
                         </SidebarSection>
+                    </div>
+                    <SidebarSection type='footer' height='fit' justify='end'>
+                        <SidebarItem
+                            handleClick={handleAccountSettings}
+                            icon={<Settings />}
+                            text='Settings'
+                            highlightedLocation={accountSettingsLocation}
+                            compact={profile?.compact_mode}
+                        />
                         {isEntryManager() && (
                             <SidebarSection type='content' height='fit' justify='start'>
                                 <SidebarItem
@@ -177,14 +172,7 @@ export default function Sidebar({
                                 />
                             </SidebarSection>
                         )}
-                    </div>
-                    <SidebarSection type='footer' height='fit' justify='end'>
-                        <SidebarItem
-                            handleClick={onThemeToggle}
-                            icon={isDarkMode ? <SunLight /> : <HalfMoon />}
-                            text={isDarkMode ? 'Light Mode' : 'Dark Mode'}
-                            compact={profile?.compact_mode}
-                        />
+                        {/*
                         <SidebarItem
                             handleClick={() =>
                                 window.open('https://cradle.sh/docs/userguide/')
@@ -194,6 +182,7 @@ export default function Sidebar({
                             highlightedLocation='_blank'
                             compact={profile?.compact_mode}
                         />
+                        */}
                         <SidebarItem
                             handleClick={handleNotifications}
                             icon={

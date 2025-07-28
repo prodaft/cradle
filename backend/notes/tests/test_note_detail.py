@@ -1,15 +1,17 @@
-from django.urls import reverse
-from user.models import CradleUser
-from unittest.mock import patch
-from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework.parsers import JSONParser
-from ..models import Note
-from entries.models import Entry
-from access.models import Access
-from access.enums import AccessType
 import io
-from .utils import NotesTestCase
 import uuid
+from unittest.mock import patch
+
+from access.enums import AccessType
+from access.models import Access
+from django.urls import reverse
+from entries.models import Entry
+from rest_framework.parsers import JSONParser
+from rest_framework_simplejwt.tokens import AccessToken
+from user.models import CradleUser
+
+from ..models import Note
+from .utils import NotesTestCase
 
 
 def bytes_to_json(data):
@@ -43,7 +45,7 @@ class GetNoteTest(NotesTestCase):
 
     def test_get_note_not_authenticated(self):
         response = self.client.get(
-            reverse("note_detail", kwargs={"note_id_s": uuid.uuid4()}),
+            reverse("note_detail", kwargs={"note_id": uuid.uuid4()}),
         )
 
         with self.subTest("Check correct response code."):
@@ -54,7 +56,7 @@ class GetNoteTest(NotesTestCase):
         mock_get.side_effect = Note.DoesNotExist
 
         response = self.client.get(
-            reverse("note_detail", kwargs={"note_id_s": uuid.uuid4()}),
+            reverse("note_detail", kwargs={"note_id": uuid.uuid4()}),
             **self.headers,
         )
 
@@ -69,7 +71,7 @@ class GetNoteTest(NotesTestCase):
         mock_get.return_value = note
         mock_access.return_value = False
         response = self.client.get(
-            reverse("note_detail", kwargs={"note_id_s": uuid1}), **self.headers
+            reverse("note_detail", kwargs={"note_id": uuid1}), **self.headers
         )
 
         with self.subTest("Check correct response code."):
@@ -83,7 +85,7 @@ class GetNoteTest(NotesTestCase):
         mock_get.return_value = SingleNoteGetMocker(note)
         mock_access.return_value = True
         response = self.client.get(
-            reverse("note_detail", kwargs={"note_id_s": uuid1}), **self.headers
+            reverse("note_detail", kwargs={"note_id": uuid1}), **self.headers
         )
 
         with self.subTest("Check correct response code."):
@@ -135,14 +137,14 @@ class DeleteNoteTest(NotesTestCase):
 
     def test_delete_note_not_authenticated(self):
         response = self.client.delete(
-            reverse("note_detail", kwargs={"note_id_s": self.notes[0].id})
+            reverse("note_detail", kwargs={"note_id": self.notes[0].id})
         )
 
         self.assertEqual(response.status_code, 401)
 
     def test_delete_note_not_found(self):
         response = self.client.delete(
-            reverse("note_detail", kwargs={"note_id_s": uuid.uuid4()}),
+            reverse("note_detail", kwargs={"note_id": uuid.uuid4()}),
             **self.headers,
         )
 
@@ -151,7 +153,7 @@ class DeleteNoteTest(NotesTestCase):
     def test_delete_note_successful(self):
         note_id = self.notes[0].id
         response = self.client.delete(
-            reverse("note_detail", kwargs={"note_id_s": self.notes[0].id}),
+            reverse("note_detail", kwargs={"note_id": self.notes[0].id}),
             **self.headers,
         )
 
@@ -162,7 +164,7 @@ class DeleteNoteTest(NotesTestCase):
     def test_delete_note_keeps_entities(self):
         note_id = self.notes[1].id
         response = self.client.delete(
-            reverse("note_detail", kwargs={"note_id_s": note_id}), **self.headers
+            reverse("note_detail", kwargs={"note_id": note_id}), **self.headers
         )
 
         with self.subTest("Check response code is correct"):
@@ -180,7 +182,7 @@ class DeleteNoteTest(NotesTestCase):
         self.notes[1].entries.add(entity1)
         note_id = self.notes[1].id
         response = self.client.delete(
-            reverse("note_detail", kwargs={"note_id_s": note_id}), **self.headers
+            reverse("note_detail", kwargs={"note_id": note_id}), **self.headers
         )
 
         with self.subTest("Check response code is correct"):

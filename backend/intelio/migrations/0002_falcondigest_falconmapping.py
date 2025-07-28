@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("entries", "0026_alter_entry_options"),
         ("intelio", "0001_initial"),

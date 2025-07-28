@@ -1,21 +1,22 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import 'tailwindcss/tailwind.css';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Graph from '../Graph/Graph';
 import GraphQuery from '../GraphQuery/GraphQuery';
+import GraphSearch from '../GraphQuery/GraphSearch';
 import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
 
 export default function GraphExplorer() {
     const [data, setData] = useState({ nodes: [], links: [] });
     const [config, setConfig] = useState({
-        nodeRadiusCoefficient: 1,
+        nodeRadiusCoefficient: 1.5,
         linkWidthCoefficient: 1,
         labelSizeCoefficient: 16,
         searchValue: '',
 
         layout: 'preset',
         animateLayout: false,
-        showLabels: false,
+        showLabels: true,
     });
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [selectedEntries, setSelectedEntries] = useState(new Set());
@@ -32,6 +33,7 @@ export default function GraphExplorer() {
                         setSelectedEntries={setSelectedEntries}
                         config={config}
                         setConfig={setConfig}
+                        SearchComponent={GraphSearch}
                         ref={cyRef} // pass cytoscape instance to GraphQuery
                     />
                 }

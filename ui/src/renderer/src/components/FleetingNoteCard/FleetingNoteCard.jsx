@@ -1,12 +1,12 @@
-import Preview from '../Preview/Preview';
-import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
-import { useNavigate } from 'react-router-dom';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import { useState, useEffect } from 'react';
-import { formatDate } from '../../utils/dateUtils/dateUtils';
 import { Trash } from 'iconoir-react/regular';
-import { deleteFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
+import { useEffect, useState } from 'react';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import { deleteFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
+import { formatDate } from '../../utils/dateUtils/dateUtils';
+import { displayError } from '../../utils/responseUtils/responseUtils';
+import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
+import Preview from '../Preview/Preview';
 
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 
@@ -21,7 +21,7 @@ import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
  * @constructor
  */
 export default function FleetingNoteCard({ note, setAlert }) {
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const [parsedContent, setParsedContent] = useState('');
     const [deleted, setDeleted] = useState(false);
     const { setModal } = useModal();
@@ -54,7 +54,7 @@ export default function FleetingNoteCard({ note, setAlert }) {
     return (
         <div
             className='bg-cradle3 bg-opacity-20 p-4 backdrop-blur-lg rounded-xl m-3 shadow-md'
-            onClick={() => navigate(`/editor/${note.id}`)}
+            onClick={navigateLink(`/editor/${note.id}`)}
         >
             <div className='flex flex-row justify-left'>
                 <div className='text-zinc-500 text-xs w-full'>

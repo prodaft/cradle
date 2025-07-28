@@ -1,10 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
-import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
-import NavbarButton from '../NavbarButton/NavbarButton';
 import { FloppyDisk, Trash } from 'iconoir-react/regular';
-import NavbarDropdown from '../NavbarDropdown/NavbarDropdown';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useOutletContext, useParams } from 'react-router-dom';
+import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import {
     addFleetingNote,
     deleteFleetingNote,
@@ -13,14 +10,17 @@ import {
     updateFleetingNote,
 } from '../../services/fleetingNotesService/fleetingNotesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
+import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import NavbarButton from '../NavbarButton/NavbarButton';
 
-import TextEditor from '../TextEditor/TextEditor';
-import { useHotkeys } from 'react-hotkeys-hook';
 import { keymap } from '@codemirror/view';
-import NavbarSwitch from '../NavbarSwitch/NavbarSwitch';
-import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
+import { useHotkeys } from 'react-hotkeys-hook';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext.jsx';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
+import NavbarSwitch from '../NavbarSwitch/NavbarSwitch';
+import TextEditor from '../TextEditor/TextEditor';
 
 export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
     const { profile } = useProfile();
@@ -37,7 +37,7 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
 
     const textEditorRef = useRef(null);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const { refreshFleetingNotes } = useOutletContext();
     const { id } = useParams();
     const idRef = useRef(id);

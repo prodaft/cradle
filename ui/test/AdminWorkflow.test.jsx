@@ -1,9 +1,9 @@
 /**
  * @jest-environment jsdom
  */
-import { SeleniumUtils, CRADLE_URL } from './utils';
 import 'geckodriver';
 import 'selenium-webdriver/firefox';
+import { CRADLE_URL, SeleniumUtils } from './utils';
 
 describe('Test admin functionality', () => {
     let loginPage = new SeleniumUtils(CRADLE_URL);

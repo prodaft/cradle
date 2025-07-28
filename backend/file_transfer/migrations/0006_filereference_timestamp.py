@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("file_transfer", "0005_remove_filereference_fleeting_note"),
     ]

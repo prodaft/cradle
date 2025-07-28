@@ -1,10 +1,10 @@
-import React, { createContext, useContext, useEffect } from 'react';
+import { createContext, useContext, useEffect } from 'react';
+import useAuth from '../../hooks/useAuth/useAuth';
 import { useProfile as useProfileHook } from '../../hooks/useProfile/useProfile';
 import {
-    getUser,
     getDefaultNoteTemplate,
+    getUser,
 } from '../../services/userService/userService';
-import useAuth from '../../hooks/useAuth/useAuth';
 
 const ProfileContext = createContext();
 

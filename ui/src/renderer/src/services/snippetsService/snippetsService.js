@@ -1,5 +1,4 @@
 import { authAxios } from '../axiosInstance/axiosInstance';
-import qs from 'qs';
 
 /**
  * Function to get a specific snippet from the API
@@ -133,13 +132,13 @@ const deleteSnippet = (id) => {
 };
 
 export {
-    getSnippet,
-    getSnippets,
-    getUserSnippets,
-    getSystemSnippets,
     createSnippet,
     createSystemSnippet,
-    updateSnippet,
-    patchSnippet,
     deleteSnippet,
+    getSnippet,
+    getSnippets,
+    getSystemSnippets,
+    getUserSnippets,
+    patchSnippet,
+    updateSnippet,
 };

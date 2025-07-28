@@ -1,20 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
-import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import * as Yup from 'yup';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import {
-    getEntryClasses,
-    getEntity,
     createEntity,
     editEntity,
+    getEntity,
+    getEntryClasses,
     getNextEntityName,
 } from '../../services/adminService/adminService';
+import { advancedQuery } from '../../services/queryService/queryService';
+import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
-import { displayError } from '../../utils/responseUtils/responseUtils';
 import Selector from '../Selector/Selector';
-import { advancedQuery, queryEntries } from '../../services/queryService/queryService';
 
 const entitySchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -24,7 +24,7 @@ const entitySchema = Yup.object().shape({
 });
 
 export default function EntityForm({ id = null, isEdit = false, onAdd }) {
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const [subclasses, setSubclasses] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
 

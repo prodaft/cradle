@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
-import { yupResolver } from '@hookform/resolvers/yup';
-import AlertBox from '../AlertBox/AlertBox';
-import FormField from '../FormField/FormField';
-import { Tabs, Tab } from '../Tabs/Tabs';
 import {
     getSettings,
-    setSettings,
     performAction,
+    setSettings,
 } from '../../services/managementService/managementService';
+import AlertBox from '../AlertBox/AlertBox';
+import FormField from '../FormField/FormField';
 import SnippetList from '../SnippetList/SnippetList';
+import { Tab, Tabs } from '../Tabs/Tabs';
 
 const noteSettingsSchema = Yup.object().shape({
     minEntries: Yup.number()
@@ -128,7 +128,10 @@ export default function NoteSettingsForm() {
                 </h1>
                 <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
                     <form onSubmit={handleSubmit(onSubmit)} className='space-y-6 mb-3'>
-                        <Tabs tabClasses='tabs gap-1' perTabClass='tab-pill'>
+                        <Tabs
+                            tabClasses='tabs gap-1 !bg-opacity-0'
+                            perTabClass='tab-pill'
+                        >
                             <Tab title='Settings'>
                                 <div className='flex flex-col gap-3 pt-2'>
                                     <FormField

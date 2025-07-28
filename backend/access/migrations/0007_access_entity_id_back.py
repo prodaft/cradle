@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("access", "0006_access_entity_access_unique_user_id_entity_id"),
     ]

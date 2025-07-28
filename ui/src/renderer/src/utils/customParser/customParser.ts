@@ -1,11 +1,10 @@
 import MarkdownIt from 'markdown-it';
-import { getBaseUrl } from '../../services/configService/configService';
 import Prism from 'prismjs';
-import 'prismjs/components/prism-c.js';
-import 'prismjs/components/prism-python.js';
-import { parseWithExtensions } from './markdownExtensions';
+import { getBaseUrl } from '../../services/configService/configService';
+
 import { getEntryClasses } from '../../services/adminService/adminService';
 import { authAxios } from '../../services/axiosInstance/axiosInstance';
+import { parseWithExtensions, parseWithExtensionsInline } from './markdownExtensions';
 
 export async function parseMarkdown(
     mdContent: string,
@@ -46,6 +45,26 @@ export async function parseMarkdown(
             (error.response && error.response.status === 401)
         ) {
             return;
+        }
+        throw error;
+    }
+}
+
+export function parseMarkdownInline(mdContent: string | undefined): string | undefined {
+    if (!mdContent) return mdContent;
+    try {
+        const md = new MarkdownIt({
+            html: false,
+        });
+
+        return parseWithExtensionsInline(md, mdContent);
+    } catch (error: any) {
+        // Handle network or authorization errors by returning undefined.
+        if (
+            error.code === 'ERR_NETWORK' ||
+            (error.response && error.response.status === 401)
+        ) {
+            return '';
         }
         throw error;
     }

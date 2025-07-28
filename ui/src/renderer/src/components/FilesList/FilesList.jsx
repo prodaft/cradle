@@ -1,15 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
-import FileItem from '../FileItem/FileItem';
-import { getFiles } from '../../services/notesService/notesService';
-import AlertBox from '../AlertBox/AlertBox';
-import Pagination from '../Pagination/Pagination';
-import { useSearchParams } from 'react-router-dom';
 import { useDroppable } from '@dnd-kit/core';
+import { Download, Notes, Sort, SortDown, SortUp } from 'iconoir-react';
+import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import { authAxios } from '../../services/axiosInstance/axiosInstance';
+import { getFiles } from '../../services/notesService/notesService';
+import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import { createDownloadPath } from '../../utils/textEditorUtils/textEditorUtils';
-import { authAxios } from '../../services/axiosInstance/axiosInstance';
-import { Download, Notes } from 'iconoir-react';
+import AlertBox from '../AlertBox/AlertBox';
+import FileItem from '../FileItem/FileItem';
+import Pagination from '../Pagination/Pagination';
 
 /**
  * FilesList component - This component is used to display a list of files.
@@ -44,18 +45,63 @@ export default function FilesList({
     const [loading, setLoading] = useState(false);
     const [totalPages, setTotalPages] = useState(1);
     const [page, setPage] = useState(Number(searchParams.get('files_page')) || 1);
+    const [sortField, setSortField] = useState('timestamp');
+    const [sortDirection, setSortDirection] = useState('desc');
     const { profile } = useProfile();
+
+    // Mapping of table columns to API field names
+    const sortFieldMapping = {
+        name: 'file_name',
+        uploadedAt: 'timestamp',
+        mimetype: 'mimetype',
+    };
 
     const { setNodeRef } = useDroppable({
         id: 'files-droppable',
     });
 
+    const handleSort = (column) => {
+        const newSortField = sortFieldMapping[column];
+        if (!newSortField) return;
+
+        if (sortField === newSortField) {
+            // Toggle direction if same field
+            setSortDirection(sortDirection === 'desc' ? 'asc' : 'desc');
+        } else {
+            // New field, default to descending for timestamp fields, ascending for others
+            setSortField(newSortField);
+            setSortDirection(newSortField.includes('timestamp') ? 'desc' : 'asc');
+        }
+
+        // Reset to first page when sorting changes
+        setPage(1);
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('files_page', '1');
+        setSearchParams(newParams);
+    };
+
+    const getSortIcon = (column, className) => {
+        const fieldName = sortFieldMapping[column];
+        if (!fieldName || sortField !== fieldName) {
+            return <Sort className={className} />;
+        }
+
+        return sortDirection === 'desc' ? (
+            <SortDown className={className} />
+        ) : (
+            <SortUp className={className} />
+        );
+    };
+
     const fetchFiles = useCallback(() => {
         setLoading(true);
         console.log(query, page, onError, setAlert);
 
+        const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
+
         const params = {
             page,
+            order_by: orderBy,
             ...query,
         };
 
@@ -77,7 +123,22 @@ export default function FilesList({
                 }
                 setLoading(false);
             });
-    }, [page, query, setAlert]);
+    }, [page, sortField, sortDirection, query, setAlert]);
+
+    const copyToClipboard = (text) => {
+        navigator.clipboard
+            .writeText(text)
+            .catch((error) => {
+                console.error('Failed to copy text: ', error);
+            })
+            .then(() => {
+                setAlert({
+                    show: true,
+                    message: 'Copied to clipboard',
+                    color: 'green',
+                });
+            });
+    };
 
     useEffect(() => {
         setPage(Number(searchParams.get('files_page')) || 1);
@@ -91,6 +152,21 @@ export default function FilesList({
 
         setPage(newPage);
     };
+
+    const SortableTableHeader = ({ column, children, className = '' }) => (
+        <th
+            className={`cursor-pointer select-none ${className}`}
+            onClick={() => handleSort(column)}
+        >
+            <div className='flex items-center justify-between !border-b-0 !border-t-0'>
+                <span className='!border-b-0 !border-t-0'>{children}</span>
+                {getSortIcon(
+                    column,
+                    'w-4 h-4 text-zinc-600 dark:text-zinc-400 !border-b-0 !border-t-0',
+                )}
+            </div>
+        </th>
+    );
 
     return (
         <>
@@ -118,15 +194,28 @@ export default function FilesList({
                             >
                                 {profile?.compact_mode ? (
                                     <div className='overflow-x-auto w-full'>
-                                        <table className='table table-zebra'>
+                                        <table className='table'>
                                             <thead className=''>
                                                 <tr>
-                                                    <th className='w-64'>Name</th>
-                                                    <th className='w-32'>
+                                                    <SortableTableHeader
+                                                        column='name'
+                                                        className='w-64'
+                                                    >
+                                                        Name
+                                                    </SortableTableHeader>
+                                                    <SortableTableHeader
+                                                        column='uploadedAt'
+                                                        className='w-32'
+                                                    >
                                                         Uploaded At
-                                                    </th>
+                                                    </SortableTableHeader>
                                                     <th className='w-32'>Entities</th>
-                                                    <th className='w-32'>MimeType</th>
+                                                    <SortableTableHeader
+                                                        column='mimetype'
+                                                        className='w-32'
+                                                    >
+                                                        MimeType
+                                                    </SortableTableHeader>
                                                     <th className=''>MD5</th>
                                                     <th className=''>SHA1</th>
                                                     <th className=''>SHA256</th>
@@ -141,8 +230,11 @@ export default function FilesList({
                                                     }
                                                     return (
                                                         <tr key={file.id || index}>
-                                                            <td className=''>
-                                                                {file.file_name}
+                                                            <td className='truncate w-32'>
+                                                                {truncateText(
+                                                                    file.file_name,
+                                                                    32,
+                                                                )}
                                                             </td>
                                                             <td className=''>
                                                                 {formatDate(
@@ -153,36 +245,43 @@ export default function FilesList({
                                                             </td>
                                                             <td className=''>
                                                                 <div className='flex flex-wrap gap-1'>
-                                                                    {file.entities?.map(
-                                                                        (entity) => (
-                                                                            <span
-                                                                                key={
-                                                                                    entity.name
-                                                                                }
-                                                                                className='badge badge-xs px-1 text-white'
-                                                                                style={{
-                                                                                    backgroundColor:
-                                                                                        entity.color ||
-                                                                                        '#ccc',
-                                                                                }}
-                                                                            >
-                                                                                {
-                                                                                    entity.name
-                                                                                }
-                                                                            </span>
-                                                                        ),
-                                                                    )}
+                                                                    {file.entities
+                                                                        ?.slice(0, 3)
+                                                                        .map(
+                                                                            (
+                                                                                entity,
+                                                                            ) => (
+                                                                                <span
+                                                                                    key={
+                                                                                        entity.name
+                                                                                    }
+                                                                                    className='badge badge-xs px-1 text-white'
+                                                                                    style={{
+                                                                                        backgroundColor:
+                                                                                            entity.color ||
+                                                                                            '#ccc',
+                                                                                    }}
+                                                                                >
+                                                                                    {
+                                                                                        entity.name
+                                                                                    }
+                                                                                </span>
+                                                                            ),
+                                                                        )}
                                                                 </div>
                                                             </td>
-                                                            <td className=''>
-                                                                {file.mimetype || 'N/A'}
+                                                            <td className='truncate w-32'>
+                                                                {truncateText(
+                                                                    file.mimetype,
+                                                                    32,
+                                                                )}
                                                             </td>
                                                             <td className=''>
                                                                 {file.md5_hash ? (
                                                                     <span
                                                                         className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
                                                                         onClick={() =>
-                                                                            navigator.clipboard.writeText(
+                                                                            copyToClipboard(
                                                                                 file.md5_hash,
                                                                             )
                                                                         }
@@ -195,7 +294,7 @@ export default function FilesList({
                                                                         ...
                                                                     </span>
                                                                 ) : (
-                                                                    'N/A'
+                                                                    '-'
                                                                 )}
                                                             </td>
                                                             <td className=''>
@@ -203,7 +302,7 @@ export default function FilesList({
                                                                     <span
                                                                         className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
                                                                         onClick={() =>
-                                                                            navigator.clipboard.writeText(
+                                                                            copyToClipboard(
                                                                                 file.sha1_hash,
                                                                             )
                                                                         }
@@ -216,7 +315,7 @@ export default function FilesList({
                                                                         ...
                                                                     </span>
                                                                 ) : (
-                                                                    'N/A'
+                                                                    '-'
                                                                 )}
                                                             </td>
                                                             <td className=''>
@@ -224,7 +323,7 @@ export default function FilesList({
                                                                     <span
                                                                         className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
                                                                         onClick={() =>
-                                                                            navigator.clipboard.writeText(
+                                                                            copyToClipboard(
                                                                                 file.sha256_hash,
                                                                             )
                                                                         }
@@ -237,7 +336,7 @@ export default function FilesList({
                                                                         ...
                                                                     </span>
                                                                 ) : (
-                                                                    'N/A'
+                                                                    '-'
                                                                 )}
                                                             </td>
                                                             <td className='w-32'>
@@ -274,7 +373,6 @@ export default function FilesList({
                                                                         file.minio_file_name && (
                                                                             <button
                                                                                 onClick={() => {
-                                                                                    // Download logic similar to FileItem
                                                                                     const url =
                                                                                         createDownloadPath(
                                                                                             {

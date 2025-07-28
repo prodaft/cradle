@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
 import { Search } from 'iconoir-react';
-import NotesList from '../NotesList/NotesList';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import Publishable from '../NoteActions/Publishable';
-import DeleteNote from '../NoteActions/DeleteNote';
 import Datepicker from 'react-tailwindcss-datepicker';
+import DeleteNote from '../NoteActions/DeleteNote';
+import Publishable from '../NoteActions/Publishable';
+import NotesList from '../NotesList/NotesList';
 
 /**
  * Notes component

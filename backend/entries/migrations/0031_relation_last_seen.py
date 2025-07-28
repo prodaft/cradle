@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("entries", "0030_edge_alter_entry_options_alter_relation_options_and_more"),
     ]

@@ -1,4 +1,4 @@
-import { useState, useEffect, React } from 'react';
+import { useEffect, useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
 
 import logo_dark from '../../assets/logos/dark_notext.svg';

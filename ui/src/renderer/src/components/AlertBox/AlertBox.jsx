@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import rippleUiAlertIcon from '../../assets/ripple-ui-alert-icon.svg';
 
 /**
@@ -90,17 +90,18 @@ export default function AlertBox({ alert, timeout }) {
     return (
         visible && (
             <div
-
                 data-testid='auth-err-alert'
                 className={`alert ${colorVariants[alert.color]} flex items-center justify-between`}
             >
                 <div className='flex items-center space-x-2'>
                     {renderIcon()}
-                    <div className={`flex flex-col text-black dark:text-white ${alert.code ? 'items-center' : ''} whitespace-pre-line`}>
+                    <div
+                        className={`flex flex-col text-black dark:text-white ${alert.code ? 'items-center' : ''} whitespace-pre-line`}
+                    >
                         <span>{alert.message.trim()}</span>
                         {alert.code && (
-                        <code className="block bg-gray-800 bg-opacity-10 dark:bg-white dark:bg-opacity-10 p-1 px-2 mt-1 rounded text-center select-all">
-                            {alert.code}
+                            <code className='block bg-gray-800 bg-opacity-10 dark:bg-white dark:bg-opacity-10 p-1 px-2 mt-1 rounded text-center select-all'>
+                                {alert.code}
                             </code>
                         )}
                     </div>
@@ -113,7 +114,7 @@ export default function AlertBox({ alert, timeout }) {
                         {alert.button.text}
                     </button>
                 )}
-                    </div>
+            </div>
         )
     );
 }

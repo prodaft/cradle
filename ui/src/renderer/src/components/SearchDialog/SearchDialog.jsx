@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { Search } from 'iconoir-react';
-import SearchFilterSection from '../SearchFilterSection/SearchFilterSection';
-import { queryEntries, advancedQuery } from '../../services/queryService/queryService';
-import AlertBox from '../AlertBox/AlertBox';
-import SearchResult from '../SearchResult/SearchResult';
-import { useNavigate } from 'react-router-dom';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { getEntryClasses } from '../../services/adminService/adminService';
+import { advancedQuery, queryEntries } from '../../services/queryService/queryService';
+import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
+import { displayError } from '../../utils/responseUtils/responseUtils';
+import AlertBox from '../AlertBox/AlertBox';
 import Pagination from '../Pagination/Pagination';
+import SearchFilterSection from '../SearchFilterSection/SearchFilterSection';
+import SearchResult from '../SearchResult/SearchResult';
 
 /**
  * Dialog to search for entries
@@ -39,7 +39,7 @@ export default function SearchDialog({ isOpen, onClose }) {
     const [totalPages, setTotalPages] = useState(1);
 
     const dialogRoot = document.getElementById('portal-root');
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const handleError = displayError(setAlert, navigate);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -62,10 +62,11 @@ export default function SearchDialog({ isOpen, onClose }) {
         }
     };
 
-    const handleResultClick = (link) => () => {
+    const handleResultClick = (link) => (e) => {
+        e.preventDefault();
         setAlert({ ...alert, show: false });
         onClose();
-        navigate(link);
+        navigate(link, { event: e });
     };
 
     const performSearch = () => {
@@ -185,7 +186,7 @@ export default function SearchDialog({ isOpen, onClose }) {
                     </div>
                 ) : (
                     <div className='flex-grow overflow-y-auto no-scrollbar space-y-2'>
-                        {(results && results.length > 0) ? (
+                        {results && results.length > 0 ? (
                             <div>
                                 {results.map((result) => {
                                     const dashboardLink = createDashboardLink(result);

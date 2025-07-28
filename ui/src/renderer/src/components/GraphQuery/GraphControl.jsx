@@ -1,9 +1,8 @@
-import React, { forwardRef, useEffect, useState } from 'react';
-import GraphSearch from './GraphSearch';
-import GraphSettings from './GraphSettings';
+import { forwardRef, useEffect, useState } from 'react';
 import GraphLegend from './GraphLegend';
+import GraphSettings from './GraphSettings';
 
-const GraphControl = forwardRef(({ settingsProps }, graphRef) => {
+const GraphControl = forwardRef(({ settingsProps, SearchComponent }, graphRef) => {
     const [graphStats, setGraphStats] = useState({
         nodes: 0,
         edges: 0,
@@ -83,7 +82,7 @@ const GraphControl = forwardRef(({ settingsProps }, graphRef) => {
 
     return (
         <>
-            <GraphSearch
+            <SearchComponent
                 ref={graphRef}
                 graphStats={graphStats}
                 processNewNode={processNewNode}

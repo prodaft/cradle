@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useModal } from '../../contexts/ModalContext/ModalContext';
 import { Trash } from 'iconoir-react';
+import { useEffect, useState } from 'react';
+import { useModal } from '../../contexts/ModalContext/ModalContext';
+import { deleteDigest } from '../../services/intelioService/intelioService';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
-import { deleteDigest } from '../../services/intelioService/intelioService';
 
 function DigestCard({ localDigest, setAlert, onDelete }) {
     const [formattedDate, setFormattedDate] = useState('');
