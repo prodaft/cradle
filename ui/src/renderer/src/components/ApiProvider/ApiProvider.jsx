@@ -1,5 +1,6 @@
-import { createContext, useMemo } from 'react';
-import { Configuration } from '../../services/cradle/runtime';
+import { createContext, useMemo, useState } from 'react';
+import useAuth from '../../hooks/useAuth/useAuth';
+import { getBaseUrl } from '../../services/configService/configService';
 import {
     AccessApi,
     EntriesApi,
@@ -17,7 +18,7 @@ import {
     StatisticsApi,
     UsersApi,
 } from '../../services/cradle/apis';
-import useAuth from '../../hooks/useAuth/useAuth';
+import { Configuration } from '../../services/cradle/runtime';
 
 /**
  * ApiContext - provides access to all API instances
@@ -36,14 +37,14 @@ export const ApiContext = createContext();
  * @returns {ApiProvider}
  * @constructor
  */
-export default function ApiProvider({ children, basePath }) {
+export default function ApiProvider({ children }) {
     const { access, isAuthenticated } = useAuth();
+    const [basePath, setBasePath] = useState(getBaseUrl());
 
     // Create configuration with authentication
     const configuration = useMemo(() => {
         const config = new Configuration({
-            basePath:
-                basePath || process.env.VITE_API_BASE_URL || 'http://localhost:8000',
+            basePath: basePath,
             accessToken: isAuthenticated() ? () => access : undefined,
             headers: {
                 'Content-Type': 'application/json',
@@ -74,5 +75,9 @@ export default function ApiProvider({ children, basePath }) {
         [configuration],
     );
 
-    return <ApiContext.Provider value={apis}>{children}</ApiContext.Provider>;
+    return (
+        <ApiContext.Provider value={{ ...apis, basePath, setBasePath }}>
+            {children}
+        </ApiContext.Provider>
+    );
 }
