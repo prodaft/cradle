@@ -327,7 +327,10 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                     </h1>
                     <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
                         <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
-                            <Tabs tabClasses='tabs gap-1' perTabClass='tab-pill'>
+                            <Tabs
+                                tabClasses='tabs gap-1 !bg-opacity-0'
+                                perTabClass='tab-pill'
+                            >
                                 <Tab title='Account'>
                                     <div className='mt-4' />
                                     <FormField

@@ -260,7 +260,10 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
                 </h1>
                 <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
                     <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
-                        <Tabs tabClasses='tabs gap-1' perTabClass='tab-pill'>
+                        <Tabs
+                            tabClasses='tabs gap-1 !bg-opacity-0'
+                            perTabClass='tab-pill'
+                        >
                             <Tab title='General' classes='space-y-4'>
                                 <div className='mt-4' />
                                 <div className='w-full'>

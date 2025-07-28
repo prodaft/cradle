@@ -1,9 +1,9 @@
-import React, { useEffect, forwardRef, useState } from 'react';
-import PathFindSearch from './PathFindSearch';
-import { Tabs, Tab } from '../Tabs/Tabs';
-import PaginatedGraphFetch from './PaginatedGraphFetch';
+import { addDays, format } from 'date-fns';
+import { forwardRef, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { format, addDays } from 'date-fns';
+import { Tab, Tabs } from '../Tabs/Tabs';
+import PaginatedGraphFetch from './PaginatedGraphFetch';
+import PathFindSearch from './PathFindSearch';
 
 const GraphSearch = forwardRef(({ processNewNode, addEdge }, graphRef) => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -61,7 +61,11 @@ const GraphSearch = forwardRef(({ processNewNode, addEdge }, graphRef) => {
 
     return (
         <div className='w-full'>
-            <Tabs tabClasses='tabs gap-1' perTabClass='tab-pill' queryParam='searchTab'>
+            <Tabs
+                tabClasses='tabs gap-1 !bg-opacity-0'
+                perTabClass='tab-pill'
+                queryParam='searchTab'
+            >
                 <Tab title='Fetch Graph' classes='space-y-4'>
                     <PaginatedGraphFetch
                         ref={graphRef}
