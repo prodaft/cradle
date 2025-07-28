@@ -1,10 +1,10 @@
-import './styles/fonts.css';
-import './styles/main.css';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
 import 'prismjs/themes/prism-tomorrow.css';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
-import { worker } from './mocks/browser';
+import './styles/fonts.css';
+import './styles/main.css';
 
 // worker.start();
 //

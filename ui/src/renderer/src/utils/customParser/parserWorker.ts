@@ -1,14 +1,8 @@
-import './prism-config.js';
 import axios from 'axios';
 import MarkdownIt from 'markdown-it';
-import Prism from 'prismjs';
-import 'prismjs/components/prism-markup-templating.js';
-import 'prismjs/components/prism-c.js';
-import 'prismjs/components/prism-cpp.js';
-import 'prismjs/components/prism-php.js';
-import 'prismjs/components/prism-python.js';
-import { parseWithExtensions } from './markdownExtensions';
 import inject_line_numbers_plugin from 'markdown-it-inject-linenumbers';
+
+import { parseWithExtensions } from './markdownExtensions';
 
 let EntryClassesCached: any = null;
 
@@ -42,12 +36,6 @@ self.addEventListener('message', async (event) => {
 
             const md = new MarkdownIt({
                 html: true,
-                highlight: (code: string, lang: string) => {
-                    if (lang && Prism.languages[lang]) {
-                        return Prism.highlight(code, Prism.languages[lang], lang);
-                    }
-                    return '';
-                },
             });
             md.use(inject_line_numbers_plugin);
             const result = await parseWithExtensions(
@@ -57,7 +45,11 @@ self.addEventListener('message', async (event) => {
                 entryColors,
                 axios,
             );
-            self.postMessage({ success: true, html: result.html, metadata: result.metadata });
+            self.postMessage({
+                success: true,
+                html: result.html,
+                metadata: result.metadata,
+            });
         }
     } catch (error: any) {
         if (error.code === 'ERR_NETWORK') {

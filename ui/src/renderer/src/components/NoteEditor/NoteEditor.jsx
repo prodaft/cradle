@@ -2,6 +2,7 @@ import { keymap } from '@codemirror/view';
 import { diff_match_patch } from 'diff-match-patch';
 import { Trash } from 'iconoir-react';
 import { FloppyDisk } from 'iconoir-react/regular';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import { useEffect, useRef, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useParams } from 'react-router-dom';

@@ -1,15 +1,16 @@
-import React, { createContext, useContext, useEffect, useMemo } from 'react';
-import { useTheme as useThemeHook } from '../../hooks/useTheme/useTheme';
+import { createContext, useContext, useEffect, useMemo } from 'react';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import { useTheme as useThemeHook } from '../../hooks/useTheme/useTheme';
 
 const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
-    const { isDarkMode: isDarkModeHook, toggleTheme } = useThemeHook();
+    const { isDarkMode: isDarkModeHook, toggleTheme, setTheme } = useThemeHook();
     const { profile } = useProfile();
 
     const isDarkMode = useMemo(() => {
         if (profile) {
+            setTheme(profile.theme);
             return profile.theme === 'dark';
         }
         return isDarkModeHook;

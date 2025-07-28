@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export function useTheme() {
     const getInitialTheme = () => {
@@ -26,7 +26,6 @@ export function useTheme() {
         return () => mediaQuery.removeEventListener('change', handleChange);
     }, []);
 
-
     useEffect(() => {
         // Update localStorage whenever theme changes
         localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
@@ -36,5 +35,13 @@ export function useTheme() {
         setIsDarkMode((prev) => !prev);
     };
 
-    return { isDarkMode, toggleTheme };
+    const setTheme = (theme) => {
+        if (theme === 'dark' || theme === 'light') {
+            setIsDarkMode(theme === 'dark');
+        } else {
+            console.warn('Invalid theme value. Use "dark" or "light".');
+        }
+    };
+
+    return { isDarkMode, toggleTheme, setTheme };
 }

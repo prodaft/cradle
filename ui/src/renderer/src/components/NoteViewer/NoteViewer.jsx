@@ -18,8 +18,9 @@ import Preview from '../Preview/Preview';
 import ReferenceTree from '../ReferenceTree/ReferenceTree';
 
 import Prism from 'prismjs';
-import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
+import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
+import '../../utils/customParser/prism-config.js';
 
 import {
     InfoCircleSolid,
@@ -28,8 +29,6 @@ import {
     WarningCircleSolid,
     WarningTriangleSolid,
 } from 'iconoir-react';
-import 'prismjs/components/prism-markdown';
-import 'prismjs/components/prism-yaml';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { parseMarkdownInline } from '../../utils/customParser/customParser';
@@ -213,10 +212,7 @@ export default function NoteViewer() {
     ]);
 
     useEffect(() => {
-        if (isRaw) {
-            console.log(Prism.languages);
-            Prism.highlightAll();
-        }
+        Prism.highlightAll();
     }, [isRaw, note.content]);
 
     // Conditionally render spinner or component

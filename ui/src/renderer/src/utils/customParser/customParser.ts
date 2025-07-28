@@ -1,15 +1,10 @@
 import MarkdownIt from 'markdown-it';
-import { getBaseUrl } from '../../services/configService/configService';
 import Prism from 'prismjs';
-import 'prismjs/components/prism-markup-templating.js';
-import 'prismjs/components/prism-c.js';
-import 'prismjs/components/prism-cpp.js';
-import 'prismjs/components/prism-python.js';
-import 'prismjs/components/prism-php.js';
+import { getBaseUrl } from '../../services/configService/configService';
 
-import { parseWithExtensions, parseWithExtensionsInline } from './markdownExtensions';
 import { getEntryClasses } from '../../services/adminService/adminService';
 import { authAxios } from '../../services/axiosInstance/axiosInstance';
+import { parseWithExtensions, parseWithExtensionsInline } from './markdownExtensions';
 
 export async function parseMarkdown(
     mdContent: string,
@@ -55,20 +50,14 @@ export async function parseMarkdown(
     }
 }
 
-
-export function parseMarkdownInline(
-    mdContent: string | undefined,
-): string | undefined {
+export function parseMarkdownInline(mdContent: string | undefined): string | undefined {
     if (!mdContent) return mdContent;
     try {
         const md = new MarkdownIt({
             html: false,
         });
 
-        return parseWithExtensionsInline(
-            md,
-            mdContent,
-        );
+        return parseWithExtensionsInline(md, mdContent);
     } catch (error: any) {
         // Handle network or authorization errors by returning undefined.
         if (
@@ -80,7 +69,6 @@ export function parseMarkdownInline(
         throw error;
     }
 }
-
 
 export function parseWorker() {
     // In some React component or service file
