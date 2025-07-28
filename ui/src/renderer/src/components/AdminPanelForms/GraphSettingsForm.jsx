@@ -12,35 +12,28 @@ import FormField from '../FormField/FormField';
 import { Tab, Tabs } from '../Tabs/Tabs';
 
 const graphSettingsSchema = Yup.object().shape({
-    K: Yup.number()
+    dissuade_hubs: Yup.boolean().typeError('Must be a boolean'),
+    lin_log_mode: Yup.boolean().typeError('Must be a boolean'),
+    adjust_sizes: Yup.boolean().typeError('Must be a boolean'),
+    jitter_tolerance: Yup.number()
         .typeError('Must be a number')
-        .required('Edge length constant (K) is required')
-        .min(1, 'K must be at least 1'),
-    p: Yup.number()
+        .min(0, 'Must be positive'),
+    barnes_hut_optimize: Yup.boolean().typeError('Must be a boolean'),
+    barnes_hut_theta: Yup.number()
         .typeError('Must be a number')
-        .required('Repulsive force strength (p) is required')
-        .min(0, 'p must be at least 0'),
-    theta: Yup.number()
+        .min(0, 'Must be positive'),
+    scaling_ratio: Yup.number()
         .typeError('Must be a number')
-        .required('Theta is required')
-        .min(0, 'Theta must be at least 0')
-        .max(1, 'Theta cannot exceed 1'),
-    max_level: Yup.number()
+        .min(0, 'Must be positive'),
+    strong_gravity_mode: Yup.boolean().typeError('Must be a boolean'),
+    gravity: Yup.number()
         .typeError('Must be a number')
-        .required('Max level is required')
-        .min(1, 'Max level must be at least 1'),
-    epsilon: Yup.number()
-        .typeError('Must be a number')
-        .required('Epsilon is required')
-        .min(0, 'Epsilon must be positive'),
-    r: Yup.number()
-        .typeError('Must be a number')
-        .required('r is required')
-        .min(0, 'r must be positive'),
+        .required('Gravity is required')
+        .min(0, 'Gravity must be positive'),
     max_iter: Yup.number()
         .typeError('Must be a number')
-        .required('Max iterations is required')
-        .min(1, 'Max iterations must be at least 1'),
+        .min(1, 'Max iterations must be at least 1')
+        .required('Max iterations is required'),
 });
 
 export default function GraphSettingsForm() {
@@ -52,13 +45,16 @@ export default function GraphSettingsForm() {
     } = useForm({
         resolver: yupResolver(graphSettingsSchema),
         defaultValues: {
-            K: 300,
-            p: 2,
-            theta: 0.9,
-            max_level: 10,
-            epsilon: 0.001,
-            r: 5,
-            max_iter: 2000,
+            dissuade_hubs: false,
+            lin_log_mode: false,
+            adjust_sizes: true,
+            jitter_tolerance: 1.0,
+            barnes_hut_optimize: true,
+            barnes_hut_theta: 1.2,
+            scaling_ratio: 2.0,
+            strong_gravity_mode: false,
+            gravity: 1.0,
+            max_iter: 1000, // Default value for max iterations
         },
     });
 
@@ -70,13 +66,17 @@ export default function GraphSettingsForm() {
                 const response = await getSettings();
                 if (response.status === 200 && response.data) {
                     reset({
-                        K: response.data.graph?.K ?? 300,
-                        p: response.data.graph?.p ?? 2,
-                        theta: response.data.graph?.theta ?? 0.9,
-                        max_level: response.data.graph?.max_level ?? 10,
-                        epsilon: response.data.graph?.epsilon ?? 0.001,
-                        r: response.data.graph?.r ?? 5,
-                        max_iter: response.data.graph?.max_iter ?? 2000,
+                        dissuade_hubs: response.data.graph?.dissuade_hubs ?? false,
+                        lin_log_mode: response.data.graph?.lin_log_mode ?? false,
+                        adjust_sizes: response.data.graph?.adjust_sizes ?? true,
+                        jitter_tolerance: response.data.graph?.jitter_tolerance ?? 1.0,
+                        barnes_hut_optimize:
+                            response.data.graph?.barnes_hut_optimize ?? true,
+                        barnes_hut_theta: response.data.graph?.barnes_hut_theta ?? 1.2,
+                        scaling_ratio: response.data.graph?.scaling_ratio ?? 2.0,
+                        strong_gravity_mode:
+                            response.data.graph?.strong_gravity_mode ?? false,
+                        gravity: response.data.graph?.gravity ?? 1.0,
                     });
                 }
             } catch (error) {
@@ -95,13 +95,15 @@ export default function GraphSettingsForm() {
         try {
             const response = await setSettings({
                 graph: {
-                    K: data.K,
-                    p: data.p,
-                    theta: data.theta,
-                    max_level: data.max_level,
-                    epsilon: data.epsilon,
-                    r: data.r,
-                    max_iter: data.max_iter,
+                    dissuade_hubs: data.dissuade_hubs,
+                    lin_log_mode: data.lin_log_mode,
+                    adjust_sizes: data.adjust_sizes,
+                    jitter_tolerance: data.jitter_tolerance,
+                    barnes_hut_optimize: data.barnes_hut_optimize,
+                    barnes_hut_theta: data.barnes_hut_theta,
+                    scaling_ratio: data.scaling_ratio,
+                    strong_gravity_mode: data.strong_gravity_mode,
+                    gravity: data.gravity,
                 },
             });
             if (response.status === 200) {
@@ -176,59 +178,91 @@ export default function GraphSettingsForm() {
                             <Tab title='Simulation Settings'>
                                 <div className='flex flex-col gap-3 pt-2'>
                                     <FormField
-                                        type='number'
-                                        name='K'
-                                        labelText='Edge Length Constant (K)'
-                                        className='form-input input input-ghost-primary input-block focus:ring-0'
-                                        {...register('K')}
-                                        error={errors.K?.message}
+                                        type='checkbox'
+                                        row={true}
+                                        name='dissuade_hubs'
+                                        labelText='Dissuade Hubs'
+                                        className='form-input switch switch-ghost-primary'
+                                        {...register('dissuade_hubs')}
+                                        error={errors.dissuade_hubs?.message}
                                     />
                                     <FormField
-                                        type='number'
-                                        name='p'
-                                        labelText='Repulsive Force Strength (p)'
-                                        className='form-input input input-ghost-primary input-block focus:ring-0'
-                                        {...register('p')}
-                                        error={errors.p?.message}
+                                        type='checkbox'
+                                        row={true}
+                                        name='lin_log_mode'
+                                        labelText='LinLog Mode'
+                                        className='form-input switch switch-ghost-primary'
+                                        {...register('lin_log_mode')}
+                                        error={errors.lin_log_mode?.message}
+                                    />
+                                    <FormField
+                                        type='checkbox'
+                                        row={true}
+                                        name='adjust_sizes'
+                                        labelText='Adjust Sizes (Prevent Overlap)'
+                                        className='form-input switch switch-ghost-primary'
+                                        {...register('adjust_sizes')}
+                                        error={errors.adjust_sizes?.message}
                                     />
                                     <FormField
                                         type='number'
                                         step='0.01'
-                                        name='theta'
-                                        labelText='Tradeoff Between Speed and Precision (theta)'
+                                        name='jitter_tolerance'
+                                        labelText='Jitter Tolerance'
                                         className='form-input input input-ghost-primary input-block focus:ring-0'
-                                        {...register('theta')}
-                                        error={errors.theta?.message}
+                                        {...register('jitter_tolerance')}
+                                        error={errors.jitter_tolerance?.message}
+                                    />
+                                    <FormField
+                                        type='checkbox'
+                                        row={true}
+                                        name='barnes_hut_optimize'
+                                        labelText='Barnes-Hut Optimize'
+                                        className='form-input switch switch-ghost-primary'
+                                        {...register('barnes_hut_optimize')}
+                                        error={errors.barnes_hut_optimize?.message}
                                     />
                                     <FormField
                                         type='number'
-                                        name='max_level'
-                                        labelText='Max Level (for Multilevel Optimization)'
+                                        step='0.01'
+                                        name='barnes_hut_theta'
+                                        labelText='Barnes-Hut Theta'
                                         className='form-input input input-ghost-primary input-block focus:ring-0'
-                                        {...register('max_level')}
-                                        error={errors.max_level?.message}
+                                        {...register('barnes_hut_theta')}
+                                        error={errors.barnes_hut_theta?.message}
                                     />
                                     <FormField
                                         type='number'
-                                        name='r'
-                                        labelText='r (Attractive Force Between Connected Components)'
+                                        step='0.01'
+                                        name='scaling_ratio'
+                                        labelText='Scaling Ratio'
                                         className='form-input input input-ghost-primary input-block focus:ring-0'
-                                        {...register('r')}
-                                        error={errors.r?.message}
+                                        {...register('scaling_ratio')}
+                                        error={errors.scaling_ratio?.message}
+                                    />
+                                    <FormField
+                                        type='checkbox'
+                                        row={true}
+                                        name='strong_gravity_mode'
+                                        labelText='Strong Gravity Mode'
+                                        className='form-input switch switch-ghost-primary'
+                                        {...register('strong_gravity_mode')}
+                                        error={errors.strong_gravity_mode?.message}
                                     />
                                     <FormField
                                         type='number'
-                                        step='0.001'
-                                        name='epsilon'
-                                        labelText='Convergence Precision (epsilon)'
+                                        step='0.01'
+                                        name='gravity'
+                                        labelText='Gravity Coefficient'
                                         className='form-input input input-ghost-primary input-block focus:ring-0'
-                                        {...register('epsilon')}
-                                        error={errors.epsilon?.message}
+                                        {...register('gravity')}
+                                        error={errors.gravity?.message}
                                     />
                                     <FormField
                                         type='number'
+                                        step='10'
                                         name='max_iter'
-                                        labelText='Maximum Iterations (max_iter)'
+                                        labelText='Max Iterations'
                                         className='form-input input input-ghost-primary input-block focus:ring-0'
                                         {...register('max_iter')}
                                         error={errors.max_iter?.message}

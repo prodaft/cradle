@@ -1,24 +1,20 @@
-from celery import group, shared_task
-from django.contrib.contenttypes.models import ContentType
-from entries.enums import EntryType
-from core.decorators import debounce_task, distributed_lock
-from entries.models import Edge, Entry, Relation
-from entries.enums import RelationReason
-from notes.processor.task_scheduler import TaskScheduler
-from notes.utils import calculate_acvec
-from notes.tasks import propagate_acvec
-from intelio.tasks import propagate_acvec as propagate_digest_acvec
-from django.db import transaction
-from django.db import connection
-
-from notes.models import Note
-from notes.markdown.to_markdown import remap_links
-
 import numpy as np
-
+from celery import group, shared_task
+from core.decorators import debounce_task, distributed_lock
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.geos import Point
+from django.db import connection, transaction
+from intelio.tasks import propagate_acvec as propagate_digest_acvec
 from management.settings import cradle_settings
+from notes.markdown.to_markdown import remap_links
+from notes.models import Note
+from notes.processor.task_scheduler import TaskScheduler
+from notes.tasks import propagate_acvec
+from notes.utils import calculate_acvec
 from user.models import CradleUser
+
+from entries.enums import EntryType, RelationReason
+from entries.models import Edge, Entry, Relation
 
 # import networkx as nx
 # from pyforceatlas2 import ForceAtlas2
@@ -130,7 +126,8 @@ def scan_for_children(entry_ids, content_type_id, content_id):
 
 @shared_task
 def simulate_graph():
-    from graph_tool.all import Graph, sfdp_layout
+    import networkx as nx
+    from fa2_modified import ForceAtlas2
 
     # Assign random coordinates to entries with no location
     null_location_entries = Entry.objects.filter(location__isnull=True)
@@ -142,36 +139,59 @@ def simulate_graph():
             entry.location = Point(x, y, srid=0)
         Entry.objects.bulk_update(null_location_entries, ["location"])
 
-    # Build directed graph using graph_tool
-    g = Graph()
-    # Create a mapping from entry id to graph vertex
-    vertex_map = {}
+    # Build directed graph using NetworkX
+    g = nx.DiGraph()
+
+    # Add nodes (entries)
     entries = list(Entry.objects.all())
-    for entry in entries:
-        v = g.add_vertex()
-        vertex_map[entry.id] = v
+    entry_ids = [entry.id for entry in entries]
+    g.add_nodes_from(entry_ids)
 
     # Add edges from Edge objects
-    entry_ids = set(vertex_map.keys())
+    entry_ids_set = set(entry_ids)
     rels = Edge.objects.distinct("src", "dst").remove_mirrors()
+    edges_to_add = []
+
     for rel in rels.only("src", "dst"):
         src_id = rel.src
         dst_id = rel.dst
-        if src_id in entry_ids and dst_id in entry_ids:
-            g.add_edge(vertex_map[src_id], vertex_map[dst_id])
+        if src_id in entry_ids_set and dst_id in entry_ids_set:
+            edges_to_add.append((src_id, dst_id))
 
-    pos = sfdp_layout(
-        g,
-        K=cradle_settings.graph.K,  # Edge length constant
-        p=cradle_settings.graph.p,  # Repulsive force strength
-        theta=cradle_settings.graph.theta,  # Tradeoff between speed and precision
-        max_level=cradle_settings.graph.max_level,  # Enable multilevel optimization
-        epsilon=cradle_settings.graph.epsilon,  # Convergence precision
-        r=cradle_settings.graph.r,
-        max_iter=cradle_settings.graph.max_iter,
+    g.add_edges_from(edges_to_add)
+
+    forceatlas2 = ForceAtlas2(
+        outboundAttractionDistribution=cradle_settings.graph.dissuade_hubs,
+        linLogMode=cradle_settings.graph.lin_log_mode,
+        adjustSizes=cradle_settings.graph.adjust_sizes,  # Prevent Overlap
+        edgeWeightInfluence=0,
+        jitterTolerance=cradle_settings.graph.jitter_tolerance,  # Tolerance
+        barnesHutOptimize=cradle_settings.graph.barnes_hut_optimize,
+        barnesHutTheta=cradle_settings.graph.barnes_hut_theta,
+        multiThreaded=False,
+        # Tuning parameters
+        scalingRatio=cradle_settings.graph.scaling_ratio,
+        strongGravityMode=cradle_settings.graph.strong_gravity_mode,
+        gravity=cradle_settings.graph.gravity,
+        # Logging
+        verbose=False,
     )
 
-    coords = np.array([pos[vertex_map[entry.id]] for entry in entries])
+    # Get initial positions from existing locations or use random
+    pos = {}
+    for entry in entries:
+        if entry.location:
+            pos[entry.id] = [entry.location.x, entry.location.y]
+        else:
+            pos[entry.id] = np.random.uniform(-100, 100, 2)
+
+    # Run ForceAtlas2 algorithm
+    positions = forceatlas2.forceatlas2_networkx_layout(
+        g, pos=pos, iterations=cradle_settings.graph.max_iter
+    )
+
+    # Convert positions to numpy array for scaling
+    coords = np.array([positions[entry.id] for entry in entries])
 
     # Get min and max for each dimension
     min_vals = coords.min(axis=0)

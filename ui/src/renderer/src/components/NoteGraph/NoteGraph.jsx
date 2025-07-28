@@ -240,9 +240,9 @@ const NoteGraphSearch = (noteId) => {
 export default function NoteGraph({ noteId }) {
     const [data, setData] = useState({ nodes: [], links: [] });
     const [config, setConfig] = useState({
-        nodeRadiusCoefficient: 1,
+        nodeRadiusCoefficient: 1.5,
         linkWidthCoefficient: 1,
-        labelSizeCoefficient: 8,
+        labelSizeCoefficient: 16,
         searchValue: '',
 
         layout: 'preset',

@@ -124,18 +124,17 @@ export default function Dashboard() {
                 }))}
             />
         ),
-        <NavbarButton
-            key='view-graph-btn'
-            icon={<Graph height={24} width={24} />}
-            text='Explore in Graph'
-            onClick={(e) =>
-                navigateLink(
-                    `/knowledge-graph?&pf_src={"value": "${contentObject.id}", "label": "${contentObject.name}"}&pgf_src={"value": "${contentObject.id}", "label": "${contentObject.name}"}`,
-                    { event: e },
-                )
-            }
-            data-testid='view-graph-btn'
-        />,
+        contentObject && (
+            <NavbarButton
+                key='view-graph-btn'
+                icon={<Graph height={24} width={24} />}
+                text='Explore in Graph'
+                onClick={navigateLink(
+                    `/knowledge-graph?&pf_src={"value": "${contentObject?.id}", "label": "${contentObject?.name}"}&pgf_src={"value": "${contentObject.id}", "label": "${contentObject.name}"}`,
+                )}
+                data-testid='view-graph-btn'
+            />
+        ),
 
         // If the user is an admin and the dashboard is not for an artifact, add a delete button to the navbar
         isAdmin() && contentObject && contentObject.type !== 'artifact' && (
