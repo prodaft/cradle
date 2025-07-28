@@ -124,10 +124,9 @@ def scan_for_children(entry_ids, content_type_id, content_id):
     refresh_edges_materialized_view.apply_async(simulate=created)
 
 
-@shared_task
-def simulate_graph():
-    import networkx as nx
+def simulate_fa2():
     from fa2_modified import ForceAtlas2
+    from scipy.sparse import csr_matrix
 
     # Assign random coordinates to entries with no location
     null_location_entries = Entry.objects.filter(location__isnull=True)
@@ -139,31 +138,50 @@ def simulate_graph():
             entry.location = Point(x, y, srid=0)
         Entry.objects.bulk_update(null_location_entries, ["location"])
 
-    # Build directed graph using NetworkX
-    g = nx.DiGraph()
-
-    # Add nodes (entries)
+    # Get all entries
     entries = list(Entry.objects.all())
-    entry_ids = [entry.id for entry in entries]
-    g.add_nodes_from(entry_ids)
+    entry_count = len(entries)
 
-    # Add edges from Edge objects
-    entry_ids_set = set(entry_ids)
+    # Create mapping from entry ID to index
+    entry_id_to_index = {entry.id: i for i, entry in enumerate(entries)}
+
+    # Build sparse adjacency matrix
+    row_indices = []
+    col_indices = []
+    data = []
+
+    # Get edges and populate sparse matrix data
     rels = Edge.objects.distinct("src", "dst").remove_mirrors()
-    edges_to_add = []
-
     for rel in rels.only("src", "dst"):
-        src_id = rel.src
-        dst_id = rel.dst
-        if src_id in entry_ids_set and dst_id in entry_ids_set:
-            edges_to_add.append((src_id, dst_id))
+        src_idx = entry_id_to_index.get(rel.src)
+        dst_idx = entry_id_to_index.get(rel.dst)
+        if src_idx is not None and dst_idx is not None:
+            # Add both directions to make symmetric (undirected)
+            row_indices.extend([src_idx, dst_idx])
+            col_indices.extend([dst_idx, src_idx])
+            data.extend([1.0, 1.0])
 
-    g.add_edges_from(edges_to_add)
+    # Create sparse adjacency matrix
+    adjacency_matrix = csr_matrix(
+        (data, (row_indices, col_indices)), shape=(entry_count, entry_count)
+    )
 
+    # Get initial positions
+    pos = np.zeros((entry_count, 2))
+    for i, entry in enumerate(entries):
+        if entry.location:
+            pos[i] = [entry.location.x, entry.location.y]
+        else:
+            pos[i] = np.random.uniform(-100, 100, 2)
+
+    # Initialize ForceAtlas2
     forceatlas2 = ForceAtlas2(
         outboundAttractionDistribution=cradle_settings.graph.dissuade_hubs,
-        linLogMode=cradle_settings.graph.lin_log_mode,
-        adjustSizes=cradle_settings.graph.adjust_sizes,  # Prevent Overlap
+        # TODO: Implement linLogMode and adjustSizes in ForceAtlas2
+        # (https://github.com/bhargavchippada/forceatlas2/pull/9)
+        # For now ignore these settings since they are not implemented
+        linLogMode=False and cradle_settings.graph.lin_log_mode,
+        adjustSizes=False and cradle_settings.graph.adjust_sizes,  # Prevent Overlap
         edgeWeightInfluence=0,
         jitterTolerance=cradle_settings.graph.jitter_tolerance,  # Tolerance
         barnesHutOptimize=cradle_settings.graph.barnes_hut_optimize,
@@ -177,21 +195,13 @@ def simulate_graph():
         verbose=False,
     )
 
-    # Get initial positions from existing locations or use random
-    pos = {}
-    for entry in entries:
-        if entry.location:
-            pos[entry.id] = [entry.location.x, entry.location.y]
-        else:
-            pos[entry.id] = np.random.uniform(-100, 100, 2)
-
-    # Run ForceAtlas2 algorithm
-    positions = forceatlas2.forceatlas2_networkx_layout(
-        g, pos=pos, iterations=cradle_settings.graph.max_iter
+    # Run ForceAtlas2 algorithm directly on adjacency matrix
+    positions = forceatlas2.forceatlas2(
+        adjacency_matrix, pos=pos, iterations=cradle_settings.graph.max_iter_fa2
     )
 
     # Convert positions to numpy array for scaling
-    coords = np.array([positions[entry.id] for entry in entries])
+    coords = np.array(positions)
 
     # Get min and max for each dimension
     min_vals = coords.min(axis=0)
@@ -208,6 +218,80 @@ def simulate_graph():
         entry.location = Point(float(x), float(y), srid=0)
 
     result = Entry.objects.bulk_update(entries, ["location"])
+    return result
+
+
+def simulate_graph_tool():
+    from graph_tool.all import Graph, sfdp_layout
+
+    # Build directed graph using graph_tool
+    g = Graph()
+    # Create a mapping from entry id to graph vertex
+    vertex_map = {}
+    entries = list(Entry.objects.all())
+    for entry in entries:
+        v = g.add_vertex()
+        vertex_map[entry.id] = v
+
+    # Add edges from Edge objects
+    entry_ids = set(vertex_map.keys())
+    rels = Edge.objects.distinct("src", "dst").remove_mirrors()
+    for rel in rels.only("src", "dst"):
+        src_id = rel.src
+        dst_id = rel.dst
+        if src_id in entry_ids and dst_id in entry_ids:
+            g.add_edge(vertex_map[src_id], vertex_map[dst_id])
+
+    pos = sfdp_layout(
+        g,
+        K=cradle_settings.graph.K,  # Edge length constant
+        p=cradle_settings.graph.p,  # Repulsive force strength
+        theta=cradle_settings.graph.theta,  # Tradeoff between speed and precision
+        max_level=cradle_settings.graph.max_level,  # Enable multilevel optimization
+        epsilon=cradle_settings.graph.epsilon,  # Convergence precision
+        r=cradle_settings.graph.r,
+        max_iter=cradle_settings.graph.max_iter_gt,
+    )
+
+    coords = np.array([pos[vertex_map[entry.id]] for entry in entries])
+
+    # Get min and max for each dimension
+    min_vals = coords.min(axis=0)
+    max_vals = coords.max(axis=0)
+
+    # Prevent division by zero by setting range to 1 where min == max
+    ranges = np.where(max_vals - min_vals == 0, 1, max_vals - min_vals)
+
+    # Scale to [-2000, 2000]
+    scaled_coords = (coords - min_vals) / ranges * 4000 - 2000
+
+    # Assign scaled positions to entries
+    for entry, (x, y) in zip(entries, scaled_coords):
+        entry.location = Point(float(x), float(y), srid=0)
+
+    result = Entry.objects.bulk_update(entries, ["location"])
+    return result
+
+
+@shared_task
+def simulate_graph():
+    # Assign random coordinates to entries with no location
+    null_location_entries = Entry.objects.filter(location__isnull=True)
+    if null_location_entries.exists():
+        random_coords = np.random.uniform(
+            -100, 100, size=(null_location_entries.count(), 2)
+        )
+        for entry, (x, y) in zip(null_location_entries, random_coords):
+            entry.location = Point(x, y, srid=0)
+        Entry.objects.bulk_update(null_location_entries, ["location"])
+
+    if cradle_settings.graph.simulate_method == "forceatlas2":
+        result = simulate_fa2()
+    elif cradle_settings.graph.simulate_method == "graph_tool":
+        result = simulate_graph_tool()
+    else:
+        raise ValueError(f"Unknown graph method: {cradle_settings.graph.method}")
+
     return result
 
 

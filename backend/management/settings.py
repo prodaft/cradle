@@ -41,8 +41,40 @@ class GraphSettings(BaseSettingsSection):
     prefix = "graph"
 
     @property
-    def max_iter(self):
-        return self.get("max_iter", 1000)
+    def simulate_method(self):
+        return self.get("simulate_method", "graph_tool")
+
+    @property
+    def K(self):
+        return self.get("K", 300)
+
+    @property
+    def p(self):
+        return self.get("p", 2)
+
+    @property
+    def theta(self):
+        return self.get("theta", 0.9)
+
+    @property
+    def max_level(self):
+        return self.get("max_level", 10)
+
+    @property
+    def epsilon(self):
+        return self.get("epsilon", 1e-3)
+
+    @property
+    def r(self):
+        return self.get("r", 5)
+
+    @property
+    def max_iter_gt(self):
+        return self.get("max_iter_gt", 2000)
+
+    @property
+    def max_iter_fa2(self):
+        return self.get("max_iter_fa2", 1000)
 
     @property
     def dissuade_hubs(self):
