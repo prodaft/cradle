@@ -235,14 +235,14 @@ export default function NoteViewer() {
                 setAlert={setAlert}
                 onClose={() => setAlert('')}
             />
-            <div className='w-[100%] h-full flex flex-col p-2 space-y-3'>
+            <div className='w-[100%] h-full flex flex-col space-y-3'>
                 <Tabs
                     defaultTab={0}
                     queryParam={'tab'}
                     tabClasses='tabs-underline w-full'
                     perTabClass={`justify-center ${note.files && note.files.length > 0 ? (isAdmin() ? 'w-[25%]' : 'w-[33%]') : isAdmin() ? 'w-[33%]' : 'w-[50%]'}`}
                 >
-                    <Tab title='Content' classes='pt-2'>
+                    <Tab title='Content'>
                         <div className='w-full h-full overflow-hidden flex flex-col items-center px-4 pb-4 pt-1'>
                             <div className='h-full w-full rounded-md bg-cradle3 bg-opacity-20 backdrop-blur-lg backdrop-filter px-4 pb-4 pt-1 overflow-y-auto'>
                                 <div className='text-sm text-zinc-500 p-2 border-b-2 dark:border-b-zinc-800'>
@@ -402,11 +402,11 @@ export default function NoteViewer() {
                             </div>
                         </div>
                     </Tab>
-                    <Tab title='Graph' classes='pt-2'>
+                    <Tab title='Graph'>
                         <NoteGraph noteId={id} />
                     </Tab>
                     {note.files && note.files.length > 0 && (
-                        <Tab title='Files' classes='pt-2'>
+                        <Tab title='Files'>
                             <div className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'>
                                 <div className='w-[95%] h-full flex flex-col p-6 space-y-3'>
                                     {note.files.map((file) => (
