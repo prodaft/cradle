@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Settings, Undo, SunLight, HalfMoon } from 'iconoir-react';
-import FormField from '../FormField/FormField';
-import { Link, useLocation } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
-import { logInReq } from '../../services/authReqService/authReqService';
-import AlertBox from '../AlertBox/AlertBox';
-import useAuth from '../../hooks/useAuth/useAuth';
-import Logo from '../Logo/Logo';
-import { displayError } from '../../utils/responseUtils/responseUtils';
 import { useWindowSize } from '@uidotdev/usehooks';
+import { HalfMoon, Settings, SunLight, Undo } from 'iconoir-react';
+import { useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
+import useAuth from '../../hooks/useAuth/useAuth';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import { logInReq } from '../../services/authReqService/authReqService';
 import { getBaseUrl } from '../../services/configService/configService';
+import { displayError } from '../../utils/responseUtils/responseUtils';
+import AlertBox from '../AlertBox/AlertBox';
+import FormField from '../FormField/FormField';
+import Logo from '../Logo/Logo';
 
 /**
  * Login component - renders the login form.
@@ -39,7 +39,7 @@ export default function Login() {
 
     const auth = useAuth();
 
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
 
     useEffect(() => {
         // If backend URL is not set, force settings to be shown

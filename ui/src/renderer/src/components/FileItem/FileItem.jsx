@@ -1,14 +1,14 @@
-import { useNavigate } from 'react-router-dom';
+import { Download } from 'iconoir-react';
 import { forwardRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { formatDate } from '../../utils/dateUtils/dateUtils';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import { authAxios } from '../../services/axiosInstance/axiosInstance';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
-import { Download, Refresh } from 'iconoir-react';
+import { formatDate } from '../../utils/dateUtils/dateUtils';
 import {
     createDownloadPath,
     createProcessFilePath,
 } from '../../utils/textEditorUtils/textEditorUtils';
-import { authAxios } from '../../services/axiosInstance/axiosInstance';
 
 /**
  * FileItem component - This component is used to display a file in a list.
@@ -19,7 +19,7 @@ import { authAxios } from '../../services/axiosInstance/axiosInstance';
  * @param {Function} props.setAlert - Function to set alerts
  */
 const FileItem = forwardRef(function ({ id, file, setAlert, ...props }, ref) {
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const [hidden, setHidden] = useState(false);
     const location = useLocation();
 
@@ -80,15 +80,18 @@ const FileItem = forwardRef(function ({ id, file, setAlert, ...props }, ref) {
     };
 
     const copyToClipboard = (text) => {
-        navigator.clipboard.writeText(text).catch((error) => {
-            console.error('Failed to copy text: ', error);
-        }).then(() => {
-            setAlert({
-                show: true,
-                message: 'Copied to clipboard',
-                color: 'green',
+        navigator.clipboard
+            .writeText(text)
+            .catch((error) => {
+                console.error('Failed to copy text: ', error);
+            })
+            .then(() => {
+                setAlert({
+                    show: true,
+                    message: 'Copied to clipboard',
+                    color: 'green',
+                });
             });
-        });
     };
 
     if (hidden) return null;
@@ -121,10 +124,7 @@ const FileItem = forwardRef(function ({ id, file, setAlert, ...props }, ref) {
                     <div className='mt-1'>
                         <a
                             href={`/notes/${file.note_id}`}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                navigate(`/notes/${file.note_id}`);
-                            }}
+                            onClick={navigateLink(`/notes/${file.note_id}`)}
                             className='text-zinc-500 hover:text-zinc-600 ml-2'
                         >
                             View Note

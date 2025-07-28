@@ -1,20 +1,21 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
-import NavbarButton from '../NavbarButton/NavbarButton';
+import { keymap } from '@codemirror/view';
+import { diff_match_patch } from 'diff-match-patch';
+import { Trash } from 'iconoir-react';
 import { FloppyDisk } from 'iconoir-react/regular';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import { useEffect, useRef, useState } from 'react';
+import { useHotkeys } from 'react-hotkeys-hook';
+import { useParams } from 'react-router-dom';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import {
-    updateNote,
-    getNote,
     deleteNote,
+    getNote,
+    updateNote,
 } from '../../services/notesService/notesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
+import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import NavbarButton from '../NavbarButton/NavbarButton';
 import TextEditor from '../TextEditor/TextEditor';
-import { diff_match_patch } from 'diff-match-patch';
-import { useHotkeys } from 'react-hotkeys-hook';
-import { keymap } from '@codemirror/view';
-import { Trash } from 'iconoir-react';
 
 export default function NoteEditor() {
     const [initialMarkdown, setInitialMarkdown] = useState('');
@@ -27,7 +28,7 @@ export default function NoteEditor() {
     const textEditorRef = useRef(null);
     const [editorExtensions, setEditorExtensions] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const { id } = useParams();
 
     // Ensure the ref to the markdown content is correct

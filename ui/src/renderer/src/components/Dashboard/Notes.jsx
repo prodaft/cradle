@@ -29,6 +29,7 @@ import Publishable from '../NoteActions/Publishable';
 import { Tabs, Tab } from '../Tabs/Tabs';
 import DeleteNote from '../NoteActions/DeleteNote';
 import Datepicker from 'react-tailwindcss-datepicker';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 
 export default function Notes({ setAlert, obj }) {
     const [searchFilters, setSearchFilters] = useState({

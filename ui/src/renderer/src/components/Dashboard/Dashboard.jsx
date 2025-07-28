@@ -1,32 +1,30 @@
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Graph } from '@phosphor-icons/react';
+import { SparksSolid } from 'iconoir-react';
+import { Trash } from 'iconoir-react/regular';
+import pluralize from 'pluralize';
 import { useEffect, useRef, useState } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
+import { useModal } from '../../contexts/ModalContext/ModalContext';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
+import { deleteEntry } from '../../services/adminService/adminService';
 import {
     enrichEntry,
     getEnrichmentTechniques,
-    requestEntityAccess,
 } from '../../services/dashboardService/dashboardService';
-import useAuth from '../../hooks/useAuth/useAuth';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
-import NavbarButton from '../NavbarButton/NavbarButton';
-import { TaskList, Trash } from 'iconoir-react/regular';
-import { Graph } from '@phosphor-icons/react';
-import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
-import { deleteEntry } from '../../services/adminService/adminService';
-import NotFound from '../NotFound/NotFound';
-import pluralize from 'pluralize';
 import { queryEntries } from '../../services/queryService/queryService';
-import { Tabs, Tab } from '../Tabs/Tabs';
+import { displayError } from '../../utils/responseUtils/responseUtils';
+import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import ActionConfirmationModal from '../Modals/ActionConfirmationModal.jsx';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
+import NavbarButton from '../NavbarButton/NavbarButton';
+import NavbarDropdown from '../NavbarDropdown/NavbarDropdown.jsx';
+import NotFound from '../NotFound/NotFound';
+import { Tab, Tabs } from '../Tabs/Tabs';
+import Files from './Files.jsx';
 import Notes from './Notes';
 import Relations from './Relations';
-import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
-import ActionConfirmationModal from '../Modals/ActionConfirmationModal.jsx';
-import { useModal } from '../../contexts/ModalContext/ModalContext';
-import { SparksSolid } from 'iconoir-react';
-import NavbarDropdown from '../NavbarDropdown/NavbarDropdown.jsx';
-import Files from './Files.jsx';
-import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 
 /**
  * Dashboard component
@@ -51,7 +49,7 @@ export default function Dashboard() {
     const [contentObject, setContentObject] = useState(null);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [enrichers, setEnrichers] = useState([]);
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const { profile, isAdmin } = useProfile();
     const dashboard = useRef(null);
 
@@ -130,9 +128,10 @@ export default function Dashboard() {
             key='view-graph-btn'
             icon={<Graph height={24} width={24} />}
             text='Explore in Graph'
-            onClick={() =>
-                navigate(
+            onClick={(e) =>
+                navigateLink(
                     `/knowledge-graph?&pf_src={"value": "${contentObject.id}", "label": "${contentObject.name}"}&pgf_src={"value": "${contentObject.id}", "label": "${contentObject.name}"}`,
+                    { event: e },
                 )
             }
             data-testid='view-graph-btn'

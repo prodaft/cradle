@@ -1,22 +1,34 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import Pagination from '../Pagination/Pagination';
 import {
-    getReports,
+    Edit,
+    Eye,
+    PlusCircle,
+    RefreshCircle,
+    Sort,
+    SortDown,
+    SortUp,
+    Trash,
+} from 'iconoir-react';
+import PropTypes from 'prop-types';
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import {
     getReport,
+    getReports,
     importReport,
 } from '../../services/publishService/publishService';
-import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
-import { PlusCircle, CloudUpload, SortUp, SortDown, Sort } from 'iconoir-react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import PropTypes from 'prop-types';
-import { Eye, RefreshCircle, Trash, Edit } from 'iconoir-react';
+import Pagination from '../Pagination/Pagination';
 
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import {
     deleteReport,
     retryReport,
 } from '../../services/publishService/publishService';
-import { capitalizeString, truncateText } from '../../utils/dashboardUtils/dashboardUtils';
+import {
+    capitalizeString,
+    truncateText,
+} from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 
 /**
@@ -32,7 +44,7 @@ export function ReportCard({ report, setAlert }) {
     const [formattedDate, setFormattedDate] = useState('');
     const [localReport, setLocalReport] = useState(report);
     const [visible, setVisible] = useState(true);
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
 
     useEffect(() => {
         setFormattedDate(formatDate(new Date(localReport.created_at)));
@@ -214,7 +226,7 @@ export default function ReportList({ setAlert = null }) {
     const [totalPages, setTotalPages] = useState(1);
     const [sortField, setSortField] = useState('created_at');
     const [sortDirection, setSortDirection] = useState('desc');
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const { profile } = useProfile();
 
     let [alert, setAlertState] = useState({ show: false, message: '', color: 'red' });
@@ -243,7 +255,7 @@ export default function ReportList({ setAlert = null }) {
             setSortField(newSortField);
             setSortDirection(newSortField.includes('created_at') ? 'desc' : 'asc');
         }
-        
+
         // Reset to first page when sorting changes
         setPage(1);
     };
@@ -253,7 +265,7 @@ export default function ReportList({ setAlert = null }) {
         if (!fieldName || sortField !== fieldName) {
             return <Sort className={className} />;
         }
-        
+
         return sortDirection === 'desc' ? (
             <SortDown className={className} />
         ) : (
@@ -273,7 +285,11 @@ export default function ReportList({ setAlert = null }) {
                 setReports([response.data]);
             } else {
                 const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
-                const response = await getReports({ page, page_size: profile?.compact_mode ? 25 : 10, order_by: orderBy });
+                const response = await getReports({
+                    page,
+                    page_size: profile?.compact_mode ? 25 : 10,
+                    order_by: orderBy,
+                });
                 setReports(response.data.results);
                 setTotalPages(response.data.total_pages);
             }
@@ -290,13 +306,16 @@ export default function ReportList({ setAlert = null }) {
     };
 
     const SortableTableHeader = ({ column, children, className = '' }) => (
-        <th 
+        <th
             className={`cursor-pointer select-none ${className}`}
             onClick={() => handleSort(column)}
         >
             <div className='flex items-center justify-between !border-b-0 !border-t-0'>
                 <span className='!border-b-0 !border-t-0'>{children}</span>
-                {getSortIcon(column, 'w-4 h-4 text-zinc-600 dark:text-zinc-400 !border-b-0 !border-t-0')}
+                {getSortIcon(
+                    column,
+                    'w-4 h-4 text-zinc-600 dark:text-zinc-400 !border-b-0 !border-t-0',
+                )}
             </div>
         </th>
     );
@@ -337,7 +356,7 @@ export default function ReportList({ setAlert = null }) {
                         Reports
                         <button
                             className='justify-center ml-2'
-                            onClick={() => navigate('/publish')}
+                            onClick={navigateLink('/publish')}
                         >
                             <PlusCircle width={24} />
                         </button>
@@ -354,21 +373,26 @@ export default function ReportList({ setAlert = null }) {
                             <table className='table table-zebra'>
                                 <thead>
                                     <tr>
-                                        <th>
-                                            Status
-                                        </th>
-                                        <SortableTableHeader column='title' className='truncate font-medium'>
+                                        <th>Status</th>
+                                        <SortableTableHeader
+                                            column='title'
+                                            className='truncate font-medium'
+                                        >
                                             Title
                                         </SortableTableHeader>
-                                        <SortableTableHeader column='strategy' className='truncate w-24'>
+                                        <SortableTableHeader
+                                            column='strategy'
+                                            className='truncate w-24'
+                                        >
                                             Strategy
                                         </SortableTableHeader>
-                                        <SortableTableHeader column='createdAt' className='w-36'>
+                                        <SortableTableHeader
+                                            column='createdAt'
+                                            className='w-36'
+                                        >
                                             Created At
                                         </SortableTableHeader>
-                                        <th>
-                                            Anonymized
-                                        </th>
+                                        <th>Anonymized</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -391,18 +415,29 @@ export default function ReportList({ setAlert = null }) {
                                                         report.status.slice(1)}
                                                 </span>
                                             </td>
-                                            <td className='truncate max-w-xs font-medium' title={report.title}>
+                                            <td
+                                                className='truncate max-w-xs font-medium'
+                                                title={report.title}
+                                            >
                                                 {report.title}
                                             </td>
-                                            <td className='truncate w-24' title={report.strategy_label}>
-                                                {truncateText(report.strategy_label, 24)}
+                                            <td
+                                                className='truncate w-24'
+                                                title={report.strategy_label}
+                                            >
+                                                {truncateText(
+                                                    report.strategy_label,
+                                                    24,
+                                                )}
                                             </td>
                                             <td className='w-36'>
                                                 {formatDate(
                                                     new Date(report.created_at),
                                                 )}
                                             </td>
-                                            <td className='w-24'>{report.anonymized ? 'Yes' : 'No'}</td>
+                                            <td className='w-24'>
+                                                {report.anonymized ? 'Yes' : 'No'}
+                                            </td>
                                             <td className='w-32'>
                                                 <div className='flex space-x-1'>
                                                     {report.strategy !== 'import' && (

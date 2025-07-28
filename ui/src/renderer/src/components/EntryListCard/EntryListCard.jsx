@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 
 /**
@@ -15,7 +15,7 @@ import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
  * @constructor
  */
 export default function EntryListCard({ title, items = [] }) {
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     return (
         <div className='card bg-gray-2 overflow-auto !max-w-none'>
             <div className='card-body'>
@@ -26,7 +26,7 @@ export default function EntryListCard({ title, items = [] }) {
                             key={index}
                             className='opacity-90 hover:opacity-70 active:opacity-50 hover:cursor-pointer card p-4 
                             bg-gray-4 hover:bg-gray-6 active:bg-gray-8 !max-w-none break-all'
-                            onClick={() => navigate(createDashboardLink(item))}
+                            onClick={navigateLink(createDashboardLink(item))}
                         >
                             <p className='card-title'>{item.name}</p>
                         </div>

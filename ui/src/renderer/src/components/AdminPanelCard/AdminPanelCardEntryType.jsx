@@ -1,14 +1,14 @@
-import { Trash, EditPencil, ClockRotateRight } from 'iconoir-react/regular';
-import { Link, useNavigate } from 'react-router-dom';
+import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
 import { useState } from 'react';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import { useModal } from '../../contexts/ModalContext/ModalContext';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { deleteArtifactClass } from '../../services/adminService/adminService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
-import EntryTypeForm from '../AdminPanelForms/EntryTypeForm.jsx';
-import { useModal } from '../../contexts/ModalContext/ModalContext';
-import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import ActivityList from '../ActivityList/ActivityList.jsx';
+import EntryTypeForm from '../AdminPanelForms/EntryTypeForm.jsx';
+import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 
 export default function AdminPanelCardEntryType({
     name,
@@ -18,7 +18,7 @@ export default function AdminPanelCardEntryType({
     setRightPane,
 }) {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const { setModal } = useModal();
     const { isAdmin } = useProfile();
 

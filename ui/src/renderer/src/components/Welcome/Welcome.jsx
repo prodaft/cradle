@@ -1,12 +1,12 @@
-import React, { useRef, useState, useEffect } from 'react';
-import Logo from '../Logo/Logo';
-import EntryListCard from '../EntryListCard/EntryListCard';
-import NoteListCard from '../NoteListCard/NoteListCard';
+import { useEffect, useRef, useState } from 'react';
 import useChangeFlexDirectionBySize from '../../hooks/useChangeFlexDirectionBySize/useChangeFlexDirectionBySize';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { getStatistics } from '../../services/statisticsService/statisticsService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import { useNavigate } from 'react-router-dom';
+import EntryListCard from '../EntryListCard/EntryListCard';
+import Logo from '../Logo/Logo';
+import NoteListCard from '../NoteListCard/NoteListCard';
 
 /**
  * The Welcome component is the landing page of the application.
@@ -25,7 +25,7 @@ export default function Welcome() {
     const flexDirection = useChangeFlexDirectionBySize(entryListsDiv);
     const entryCardWrapperWidth = flexDirection === 'flex-row' ? 'w-[37%]' : 'w-full';
     const entryLogoWidth = flexDirection === 'flex-row' ? 'w-[18%]' : 'w-full';
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
 
     useEffect(() => {
         getStatistics()

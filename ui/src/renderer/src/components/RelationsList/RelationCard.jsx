@@ -1,20 +1,20 @@
 import { Trash } from 'iconoir-react';
 import { useEffect, useState } from 'react';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import { deleteRelation } from '../../services/graphService/graphService';
 import {
     capitalizeString,
     createDashboardLink,
 } from '../../utils/dashboardUtils/dashboardUtils';
-import { deleteRelation } from '../../services/graphService/graphService';
-import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
-import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 
 export default function RelationCard({ relation, onDelete, setAlert }) {
     const [formattedCreated, setFormattedCreated] = useState('');
     const [formattedSeen, setFormattedSeen] = useState('');
     const [visible, setVisible] = useState(true);
     const { isAdmin } = useProfile();
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
 
     useEffect(() => {
         setFormattedCreated(formatDate(new Date(relation.created_at)));
@@ -41,9 +41,9 @@ export default function RelationCard({ relation, onDelete, setAlert }) {
         }
     };
 
-    const handleEntryClick = (name, subtype) => {
+    const handleEntryClick = (name, subtype) => (e) => {
         const link = createDashboardLink({ name, subtype });
-        navigate(link);
+        navigate(link, { event: e });
     };
 
     if (!visible) return null;
@@ -69,9 +69,10 @@ export default function RelationCard({ relation, onDelete, setAlert }) {
                     <span
                         className='underline cursor-pointer'
                         style={{ color: relation.e1.color || '#2563eb' }} // default to blue if missing
-                        onClick={() =>
-                            handleEntryClick(relation.e1.name, relation.e1.subtype)
-                        }
+                        onClick={handleEntryClick(
+                            relation.e1.name,
+                            relation.e1.subtype,
+                        )}
                     >
                         [{relation.e1.subtype}] {relation.e1.name}
                     </span>

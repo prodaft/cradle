@@ -1,9 +1,9 @@
-import { useNavigate } from 'react-router-dom';
-import Preview from '../Preview/Preview';
-import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
 import { useEffect, useState } from 'react';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { displayError } from '../../utils/responseUtils/responseUtils';
+import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
+import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import Preview from '../Preview/Preview';
 
 /**
  * This component is a card component that displays a list of notes.
@@ -18,7 +18,7 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
  * @constructor
  */
 export default function NoteListCard({ title = '', notes = [] }) {
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const [noteCards, setNoteCards] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
 
@@ -31,7 +31,7 @@ export default function NoteListCard({ title = '', notes = [] }) {
                             key={index}
                             className='opacity-90 hover:opacity-70 active:opacity-50 hover:cursor-pointer 
                                 card p-2 bg-gray-4 hover:bg-gray-6 active:bg-gray-8 !max-w-none'
-                            onClick={() => navigate(`/notes/${note.id}`)}
+                            onClick={navigateLink(`/notes/${note.id}`)}
                         >
                             <Preview htmlContent={result.html} />
                         </div>

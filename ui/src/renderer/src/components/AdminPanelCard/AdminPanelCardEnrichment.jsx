@@ -1,13 +1,13 @@
-import { Trash, EditPencil, ClockRotateRight } from 'iconoir-react/regular';
-import { Link, useNavigate } from 'react-router-dom';
+import { EditPencil } from 'iconoir-react/regular';
 import { useState } from 'react';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import EnrichmentSettingsForm from '../AdminPanelForms/EnrichmentSettingsForm';
+import AlertDismissible from '../AlertDismissible/AlertDismissible';
 
 export default function AdminPanelCardEnrichment({ name, id, setRightPane }) {
     const [dialog, setDialog] = useState(false);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
 
     const handleEditClick = () => {
         setRightPane(<EnrichmentSettingsForm enrichment_class={id} />);

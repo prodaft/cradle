@@ -38,7 +38,7 @@ export default function NavbarButton({
                 </div>
             ) : (
                 <button
-                    className={`navbar-item text-primary hover:bg-gray-4 ${text ? `tooltip tooltip-${tooltipDirection} tooltip-primary` : ''}`}
+                    className={`navbar-item text-primary hover:bg-gray-4 group ${text ? `tooltip tooltip-${tooltipDirection} tooltip-primary` : ''}`}
                     onClick={handleClick}
                     data-tooltip={text}
                     data-testid={testid || ''}

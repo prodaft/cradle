@@ -1,15 +1,11 @@
-import React, { useState } from 'react';
-import { UserCircle } from 'iconoir-react';
-import FormField from '../FormField/FormField';
-import { Link, useLocation } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
-import {
-    forgotPasswordReq,
-    logInReq,
-} from '../../services/authReqService/authReqService';
-import AlertBox from '../AlertBox/AlertBox';
-import { displayError } from '../../utils/responseUtils/responseUtils';
 import { useWindowSize } from '@uidotdev/usehooks';
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import { forgotPasswordReq } from '../../services/authReqService/authReqService';
+import { displayError } from '../../utils/responseUtils/responseUtils';
+import AlertBox from '../AlertBox/AlertBox';
+import FormField from '../FormField/FormField';
 
 /**
  * ForgotPassword component - renders the form for a user to get a forgot password email.
@@ -26,7 +22,7 @@ export default function ForgotPassword() {
     const location = useLocation();
     const { from, state } = location.state || { from: { pathname: '/' } };
 
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();

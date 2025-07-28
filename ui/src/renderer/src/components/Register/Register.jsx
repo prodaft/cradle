@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import FormField from '../FormField/FormField';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { registerReq } from '../../services/authReqService/authReqService';
-import AlertBox from '../AlertBox/AlertBox';
 import { displayError } from '../../utils/responseUtils/responseUtils';
+import AlertBox from '../AlertBox/AlertBox';
+import FormField from '../FormField/FormField';
 
 /**
  * Register component - renders the registration form.
@@ -21,7 +22,7 @@ export default function Register() {
     const [password, setPassword] = useState('');
     const [passwordCheck, setPasswordCheck] = useState('');
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const location = useLocation();
 
     const handleSubmit = async (e) => {

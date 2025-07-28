@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import FormField from '../FormField/FormField';
-import AlertBox from '../AlertBox/AlertBox';
-import { displayError } from '../../utils/responseUtils/responseUtils';
+import { useState } from 'react';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { changePassword } from '../../services/userService/userService';
+import { displayError } from '../../utils/responseUtils/responseUtils';
+import AlertBox from '../AlertBox/AlertBox';
+import FormField from '../FormField/FormField';
 
 /**
  * ChangePassword component - allows an authenticated user to change their password
@@ -25,7 +25,7 @@ export default function ChangePassword() {
         color: 'red',
     });
 
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const handleError = displayError(setAlert, navigate);
 
     const handleSubmit = async (e) => {

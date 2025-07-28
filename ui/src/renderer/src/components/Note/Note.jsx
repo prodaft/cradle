@@ -1,25 +1,20 @@
-import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
-import { Link, useNavigate } from 'react-router-dom';
-import React, { forwardRef, useCallback, useEffect, useState } from 'react';
-import Preview from '../Preview/Preview';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import { useLocation } from 'react-router-dom';
-import ReferenceTree from '../ReferenceTree/ReferenceTree';
-import { formatDate } from '../../utils/dateUtils/dateUtils';
 import {
-    InfoCircle,
-    WarningTriangle,
-    CheckCircle,
-    WarningCircle,
-    CheckCircleSolid,
     InfoCircleSolid,
-    WarningTriangleSolid,
-    WarningCircleSolid,
     NavArrowDown,
     NavArrowUp,
+    WarningCircleSolid,
+    WarningTriangleSolid,
 } from 'iconoir-react';
-import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
+import React, { forwardRef, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { parseMarkdownInline } from '../../utils/customParser/customParser';
+import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
+import { formatDate } from '../../utils/dateUtils/dateUtils';
+import { displayError } from '../../utils/responseUtils/responseUtils';
+import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
+import Preview from '../Preview/Preview';
+import ReferenceTree from '../ReferenceTree/ReferenceTree';
 
 /**
  * Note component - This component is used to display a note on the dashboard.
@@ -39,7 +34,7 @@ const Note = forwardRef(function (
     { id, note, setAlert, actions = [], ghost = false, ...props },
     ref,
 ) {
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const [hidden, setHidden] = useState(false);
     const location = useLocation();
     const [parsedContent, setParsedContent] = useState('');
@@ -211,7 +206,9 @@ const Note = forwardRef(function (
                                                 <div className='text-sm text-gray-600 dark:text-gray-400'>
                                                     {typeof value === 'object'
                                                         ? JSON.stringify(value)
-                                                        : parseMarkdownInline(String(value))}
+                                                        : parseMarkdownInline(
+                                                              String(value),
+                                                          )}
                                                 </div>
                                             </React.Fragment>
                                         ),
@@ -224,8 +221,9 @@ const Note = forwardRef(function (
 
                 <div
                     className='bg-transparent h-fit p-2 backdrop-filter overflow-hidden flex-grow flex flex-col cursor-pointer'
-                    onClick={() =>
+                    onClick={(e) =>
                         navigate(`/notes/${note.id}`, {
+                            event: e,
                             state: { from: location, state: location.state },
                         })
                     }

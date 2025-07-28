@@ -1,6 +1,6 @@
 import DOMPurify from 'dompurify';
-import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { handleLinkClick } from '../../utils/textEditorUtils/textEditorUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 
@@ -10,7 +10,7 @@ export default function Preview({
     setCurrentLine = null,
 }) {
     const sanitizedContent = DOMPurify.sanitize(htmlContent);
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const previewRef = useRef(null);
     const preventScrollRef = useRef(false);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });

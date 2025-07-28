@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import Selector from '../Selector/Selector';
+import { useEffect, useState } from 'react';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { getEntryClasses } from '../../services/adminService/adminService';
-import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
 import {
-    getMappingKeys,
-    saveMapping,
-    getMappings,
     deleteMapping,
+    getMappingKeys,
+    getMappings,
+    saveMapping,
 } from '../../services/intelioService/intelioService';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { useNavigate } from 'react-router-dom';
+import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import Selector from '../Selector/Selector';
 
 const TypeMappingsEditor = ({ id }) => {
     const [columnDefinitions, setColumnDefinitions] = useState(null);
@@ -18,7 +18,7 @@ const TypeMappingsEditor = ({ id }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [validationErrors, setValidationErrors] = useState({});
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
 
     const allColumns = columnDefinitions
         ? [

@@ -1,25 +1,28 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import Note from '../Note/Note';
-import { searchNote } from '../../services/notesService/notesService';
-import Pagination from '../Pagination/Pagination';
+import {
+    InfoCircleSolid,
+    Sort,
+    SortDown,
+    SortUp,
+    WarningCircleSolid,
+    WarningTriangleSolid,
+} from 'iconoir-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
-import AlertBox from '../AlertBox/AlertBox';
-import { formatDate } from '../../utils/dateUtils/dateUtils';
-import { capitalizeString, truncateText } from '../../utils/dashboardUtils/dashboardUtils';
-import { useNavigate } from 'react-router-dom';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import { searchNote } from '../../services/notesService/notesService';
 import { parseMarkdownInline } from '../../utils/customParser/customParser';
 import {
-    CheckCircleSolid,
-    InfoCircleSolid,
-    WarningTriangleSolid,
-    WarningCircleSolid,
-    SortUp,
-    SortDown,
-    Sort,
-} from 'iconoir-react';
+    capitalizeString,
+    truncateText,
+} from '../../utils/dashboardUtils/dashboardUtils';
+import { formatDate } from '../../utils/dateUtils/dateUtils';
+import AlertBox from '../AlertBox/AlertBox';
 import { HoverPreview } from '../HoverPreview/HoverPreview';
+import Note from '../Note/Note';
 import DeleteNote from '../NoteActions/DeleteNote';
+import EditNote from '../NoteActions/EditNote';
+import Pagination from '../Pagination/Pagination';
 
 export default function NotesList({
     query,
@@ -36,7 +39,7 @@ export default function NotesList({
     const [page, setPage] = useState(Number(searchParams.get('notes_page')) || 1);
     const [sortField, setSortField] = useState('timestamp');
     const [sortDirection, setSortDirection] = useState('desc');
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const [hoveredNote, setHoveredNote] = useState(null);
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     const hoverTimeoutRef = useRef(null);
@@ -123,7 +126,7 @@ export default function NotesList({
             setSortField(newSortField);
             setSortDirection(newSortField.includes('timestamp') ? 'desc' : 'asc');
         }
-        
+
         // Reset to first page when sorting changes
         setPage(1);
         const newParams = new URLSearchParams(searchParams);
@@ -136,7 +139,7 @@ export default function NotesList({
         if (!fieldName || sortField !== fieldName) {
             return <Sort className={className} />;
         }
-        
+
         return sortDirection === 'desc' ? (
             <SortDown className={className} />
         ) : (
@@ -149,8 +152,13 @@ export default function NotesList({
         setLoading(true);
 
         const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
-        
-        searchNote({ page_size: profile?.compact_mode ? 20 : 10, page, order_by: orderBy, ...query })
+
+        searchNote({
+            page_size: profile?.compact_mode ? 20 : 10,
+            page,
+            order_by: orderBy,
+            ...query,
+        })
             .then((response) => {
                 setNotes(response.data.results);
                 setTotalPages(response.data.total_pages);
@@ -180,13 +188,16 @@ export default function NotesList({
     };
 
     const SortableTableHeader = ({ column, children, className = '' }) => (
-        <th 
+        <th
             className={`cursor-pointer select-none ${className}`}
             onClick={() => handleSort(column)}
         >
             <div className='flex items-center justify-between !border-b-0 !border-t-0'>
                 <span className='!border-b-0 !border-t-0'>{children}</span>
-                {getSortIcon(column, 'w-4 h-4 text-zinc-600 dark:text-zinc-400 !border-b-0 !border-t-0')}
+                {getSortIcon(
+                    column,
+                    'w-4 h-4 text-zinc-600 dark:text-zinc-400 !border-b-0 !border-t-0',
+                )}
             </div>
         </th>
     );
@@ -214,25 +225,22 @@ export default function NotesList({
                                     <table className='table table-hover'>
                                         <thead>
                                             <tr>
-                                                <th>
-                                                </th>
-                                                <SortableTableHeader column="title">
+                                                <th></th>
+                                                <SortableTableHeader column='title'>
                                                     Title
                                                 </SortableTableHeader>
-                                                <th>
-                                                    Description
-                                                </th>
-                                                <SortableTableHeader column="author">
+                                                <th>Description</th>
+                                                <SortableTableHeader column='author'>
                                                     Author
                                                 </SortableTableHeader>
-                                                <SortableTableHeader column="editor">
+                                                <SortableTableHeader column='editor'>
                                                     Editor
                                                 </SortableTableHeader>
-                                                <SortableTableHeader column="createdAt">
+                                                <SortableTableHeader column='createdAt'>
                                                     Created At
                                                 </SortableTableHeader>
-                                                <SortableTableHeader column="lastChanged">
-                                                    Last Changed
+                                                <SortableTableHeader column='lastChanged'>
+                                                    Updated At
                                                 </SortableTableHeader>
                                                 <th className='w-16'>Actions</th>
                                             </tr>
@@ -248,11 +256,9 @@ export default function NotesList({
                                                     <tr
                                                         key={note.id}
                                                         className='cursor-pointer'
-                                                        onClick={() =>
-                                                            navigate(
-                                                                `/notes/${note.id}`,
-                                                            )
-                                                        }
+                                                        onClick={navigateLink(
+                                                            `/notes/${note.id}`,
+                                                        )}
                                                         onMouseEnter={(e) =>
                                                             handleMouseEnter(note, e)
                                                         }
@@ -275,32 +281,65 @@ export default function NotesList({
                                                                 </span>
                                                             )}
                                                         </td>
-                                                        <td className={`truncate w-64`}
-                                                            data-tooltip={note.metadata?.title}
+                                                        <td
+                                                            className={`truncate w-64`}
+                                                            data-tooltip={
+                                                                note.metadata?.title
+                                                            }
                                                         >
-                                                            {truncateText(parseMarkdownInline(
-                                                                note.metadata?.title), 64)}
+                                                            {truncateText(
+                                                                parseMarkdownInline(
+                                                                    note.metadata
+                                                                        ?.title,
+                                                                ),
+                                                                64,
+                                                            )}
                                                         </td>
-                                                        <td className='truncate max-w-xs'
-                                                        >
-                                                            {note.metadata?.description ? parseMarkdownInline(note.metadata?.description) : '-'}
+                                                        <td className='truncate max-w-xs'>
+                                                            {note.metadata?.description
+                                                                ? parseMarkdownInline(
+                                                                      note.metadata
+                                                                          ?.description,
+                                                                  )
+                                                                : '-'}
                                                         </td>
                                                         <td className='truncate w-32'>
-                                                            {truncateText(note.author?.username, 16)}
+                                                            {truncateText(
+                                                                note.author?.username,
+                                                                16,
+                                                            )}
                                                         </td>
                                                         <td className='truncate w-32'>
-                                                            {truncateText(note.editor?.username, 16)}
+                                                            {truncateText(
+                                                                note.editor?.username,
+                                                                16,
+                                                            )}
                                                         </td>
                                                         <td className='w-36'>
-                                                            {formatDate(new Date(note.timestamp))}
+                                                            {formatDate(
+                                                                new Date(
+                                                                    note.timestamp,
+                                                                ),
+                                                            )}
                                                         </td>
                                                         <td className='w-36'>
                                                             {note.edit_timestamp
-                                                                ? formatDate(new Date(note.edit_timestamp))
+                                                                ? formatDate(
+                                                                      new Date(
+                                                                          note.edit_timestamp,
+                                                                      ),
+                                                                  )
                                                                 : '-'}
                                                         </td>
                                                         <td className='w-16'>
                                                             <div className='flex items-center space-x-1'>
+                                                                <EditNote
+                                                                    note={note}
+                                                                    setAlert={setAlert}
+                                                                    setHidden={() => {}}
+                                                                    key={note.id}
+                                                                    classNames='w-4 h-4'
+                                                                />
                                                                 <DeleteNote
                                                                     note={note}
                                                                     setAlert={setAlert}

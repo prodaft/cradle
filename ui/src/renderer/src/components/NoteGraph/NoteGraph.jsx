@@ -1,20 +1,20 @@
-import React, { useRef, useState, forwardRef } from 'react';
+import { forwardRef, useRef, useState } from 'react';
 import 'tailwindcss/tailwind.css';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Graph from '../Graph/Graph';
 import GraphQuery from '../GraphQuery/GraphQuery';
 import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
 
+import { ArrowLeft, ArrowRight, PlaySolid } from 'iconoir-react';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { useNavigate } from 'react-router-dom';
-import { PlaySolid, ArrowLeft, ArrowRight } from 'iconoir-react';
 
+import useApi from '../../hooks/useApi/useApi';
 import {
     LinkTreeFlattener,
     truncateText,
 } from '../../utils/dashboardUtils/dashboardUtils';
 import AlertBox from '../AlertBox/AlertBox';
-import useApi from '../../hooks/useApi/useApi';
 
 const NoteGraphSearch = (noteId) => {
     return forwardRef(({ processNewNode, addEdge }, graphRef) => {
@@ -25,7 +25,7 @@ const NoteGraphSearch = (noteId) => {
         const [loading, setLoading] = useState(false);
         const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
         const { notesApi } = useApi();
-        const navigate = useNavigate();
+        const { navigate, navigateLink } = useCradleNavigate();
 
         const fetchGraphPage = async () => {
             setLoading(true);

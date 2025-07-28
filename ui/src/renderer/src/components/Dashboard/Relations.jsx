@@ -1,22 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { Search, Check } from 'iconoir-react';
-import SearchFilterSection from '../SearchFilterSection/SearchFilterSection';
-import { queryEntries, advancedQuery } from '../../services/queryService/queryService';
-import AlertBox from '../AlertBox/AlertBox';
-import SearchResult from '../SearchResult/SearchResult';
-import { useNavigate } from 'react-router-dom';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
+import { Check, Search } from 'iconoir-react';
+import { useEffect, useRef, useState } from 'react';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { getEntryClasses } from '../../services/adminService/adminService';
-import Pagination from '../Pagination/Pagination';
+import { requestEntityAccess } from '../../services/dashboardService/dashboardService';
 import {
     getInaccessibleEntities,
     searchRelatedEntries,
 } from '../../services/graphService/graphService';
-import { requestEntityAccess } from '../../services/dashboardService/dashboardService';
+import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
+import { displayError } from '../../utils/responseUtils/responseUtils';
+import AlertBox from '../AlertBox/AlertBox';
 import LazyPagination from '../Pagination/LazyPagination';
-import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import SearchFilterSection from '../SearchFilterSection/SearchFilterSection';
+import SearchResult from '../SearchResult/SearchResult';
 
 export default function Relations({ obj }) {
     const [searchQuery, setSearchQuery] = useState('');
@@ -35,7 +32,7 @@ export default function Relations({ obj }) {
     const { profile } = useProfile();
 
     const dialogRoot = document.getElementById('portal-root');
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const handleError = displayError(setAlert, navigate);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -56,11 +53,6 @@ export default function Relations({ obj }) {
             setPage(1);
             performSearch(depth, 1);
         }
-    };
-
-    const handleResultClick = (link) => () => {
-        setAlert({ ...alert, show: false });
-        navigate(link);
     };
 
     const performSearch = (depth, page) => {
@@ -289,7 +281,7 @@ export default function Relations({ obj }) {
                                                     <tr
                                                         key={result.id}
                                                         className='cursor-pointer hover:bg-zinc-100 hover:dark:bg-zinc-800'
-                                                        onClick={handleResultClick(
+                                                        onClick={navigateLink(
                                                             dashboardLink,
                                                         )}
                                                     >

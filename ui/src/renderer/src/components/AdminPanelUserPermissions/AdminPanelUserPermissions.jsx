@@ -1,12 +1,12 @@
-import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { getPermissions, manageUser } from '../../services/adminService/adminService';
-import AdminPanelPermissionCard from '../AdminPanelPermissionCard/AdminPanelPermissionCard';
-import useFrontendSearch from '../../hooks/useFrontendSearch/useFrontendSearch';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import { naturalSort } from '../../utils/dashboardUtils/dashboardUtils';
 import useAuth from '../../hooks/useAuth/useAuth';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import useFrontendSearch from '../../hooks/useFrontendSearch/useFrontendSearch';
+import { getPermissions, manageUser } from '../../services/adminService/adminService';
+import { naturalSort } from '../../utils/dashboardUtils/dashboardUtils';
+import { displayError } from '../../utils/responseUtils/responseUtils';
+import AdminPanelPermissionCard from '../AdminPanelPermissionCard/AdminPanelPermissionCard';
+import AlertDismissible from '../AlertDismissible/AlertDismissible';
 
 /**
  * AdminPanelUserPermissions component - This component is used to display the permissions for a specific user.
@@ -22,7 +22,7 @@ import useAuth from '../../hooks/useAuth/useAuth';
 export default function AdminPanelUserPermissions({ username, id }) {
     const [entities, setEntities] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const auth = useAuth();
 
     const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(entities);

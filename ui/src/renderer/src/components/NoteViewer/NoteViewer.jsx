@@ -1,46 +1,45 @@
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { useEffect, useState, useCallback } from 'react';
-import React from 'react';
+import { Code, EditPencil } from 'iconoir-react';
+import { StatsReport, Trash } from 'iconoir-react/regular';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import {
     deleteNote,
     getNote,
     setPublishable,
 } from '../../services/notesService/notesService';
-import Preview from '../Preview/Preview';
-import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
-import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
-import { ClockRotateRight, Code, EditPencil } from 'iconoir-react';
-import NavbarButton from '../NavbarButton/NavbarButton';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { Trash, StatsReport } from 'iconoir-react/regular';
+import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
+import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import NavbarButton from '../NavbarButton/NavbarButton';
 import NavbarSwitch from '../NavbarSwitch/NavbarSwitch';
-import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import Preview from '../Preview/Preview';
 import ReferenceTree from '../ReferenceTree/ReferenceTree';
 
 import Prism from 'prismjs';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 
-import 'prismjs/components/prism-markdown';
-import 'prismjs/components/prism-yaml';
 import {
-    CheckCircleSolid,
     InfoCircleSolid,
-    WarningTriangleSolid,
-    WarningCircleSolid,
     NavArrowDown,
     NavArrowUp,
+    WarningCircleSolid,
+    WarningTriangleSolid,
 } from 'iconoir-react';
-import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
+import 'prismjs/components/prism-markdown';
+import 'prismjs/components/prism-yaml';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
-import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
-import { Tab, Tabs } from '../Tabs/Tabs';
-import ActivityList from '../ActivityList/ActivityList';
-import { formatDate } from '../../utils/dateUtils/dateUtils';
-import FileItem from '../FileItem/FileItem';
-import NoteGraph from '../NoteGraph/NoteGraph';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { parseMarkdownInline } from '../../utils/customParser/customParser';
+import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
+import { formatDate } from '../../utils/dateUtils/dateUtils';
+import ActivityList from '../ActivityList/ActivityList';
+import FileItem from '../FileItem/FileItem';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
+import NoteGraph from '../NoteGraph/NoteGraph';
+import { Tab, Tabs } from '../Tabs/Tabs';
 
 /**
  * NoteViewer component
@@ -53,7 +52,7 @@ import { parseMarkdownInline } from '../../utils/customParser/customParser';
  */
 export default function NoteViewer() {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const location = useLocation();
     const { isAdmin } = useProfile();
     const { from, state } = location.state || { from: { pathname: '/' } };
@@ -162,7 +161,7 @@ export default function NoteViewer() {
                       text='Publish Report'
                       data-testid='publish-btn'
                       key='publish-btn'
-                      onClick={() => navigate(`/publish?notes=${id}`)}
+                      onClick={navigateLink(`/publish?notes=${id}`)}
                   />
               ),
               <NavbarSwitch
@@ -176,7 +175,7 @@ export default function NoteViewer() {
                   key='edit-btn'
                   text='Edit Note'
                   icon={<EditPencil />}
-                  onClick={() => navigate(`/notes/${id}/edit`)}
+                  onClick={navigateLink(`/notes/${id}/edit`)}
                   tesid='delete-btn'
               />,
               <NavbarButton
@@ -310,7 +309,7 @@ export default function NoteViewer() {
                                 {isRaw ? (
                                     <pre
                                         className='line-numbers h-full w-full p-4 bg-transparent prose-md max-w-none dark:prose-invert break-all overflow-y-auto rounded-lg flex-1 overflow-x-hidden whitespace-pre-wrap'
-                                        data-start="1"
+                                        data-start='1'
                                     >
                                         <code className='language-markdown'>
                                             {note.content}
@@ -377,7 +376,11 @@ export default function NoteViewer() {
                                                                                         ? JSON.stringify(
                                                                                               value,
                                                                                           )
-                                                                                        : parseMarkdownInline(String(value))}
+                                                                                        : parseMarkdownInline(
+                                                                                              String(
+                                                                                                  value,
+                                                                                              ),
+                                                                                          )}
                                                                                 </div>
                                                                             </React.Fragment>
                                                                         ),

@@ -1,17 +1,17 @@
-import React, { useState, useRef, forwardRef, useEffect } from 'react';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import { useNavigate } from 'react-router-dom';
-import { PlaySolid, PauseSolid, ArrowLeft, ArrowRight } from 'iconoir-react';
-import Datepicker from 'react-tailwindcss-datepicker';
 import { format, parseISO } from 'date-fns';
+import { ArrowLeft, ArrowRight, PlaySolid } from 'iconoir-react';
+import { forwardRef, useEffect, useState } from 'react';
+import Datepicker from 'react-tailwindcss-datepicker';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { fetchGraph } from '../../services/graphService/graphService';
+import { advancedQuery } from '../../services/queryService/queryService';
 import {
     LinkTreeFlattener,
     truncateText,
 } from '../../utils/dashboardUtils/dashboardUtils';
+import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
 import Selector from '../Selector/Selector';
-import { advancedQuery } from '../../services/queryService/queryService';
 
 const PaginatedGraphFetch = forwardRef(
     ({ queryValues, setQueryValues, processNewNode, addEdge }, graphRef) => {
@@ -22,9 +22,9 @@ const PaginatedGraphFetch = forwardRef(
         const [hasNextPage, setHasNextPage] = useState(true);
         const [loading, setLoading] = useState(false);
         const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-        const navigate = useNavigate();
+        const { navigate, navigateLink } = useCradleNavigate();
         const MAX_DEPTH = 3; // Set maximum depth to 3
-        
+
         // Track if we've hit both max depth and end of pagination
         const [reachedMaxDepthAndEnd, setReachedMaxDepthAndEnd] = useState(false);
 
@@ -54,7 +54,7 @@ const PaginatedGraphFetch = forwardRef(
                 setPageSize(queryValues.pageSize || 250);
                 // Ensure depth never exceeds MAX_DEPTH
                 setCurrentDepth(Math.min(queryValues.depth || 1, MAX_DEPTH));
-                
+
                 // Reset reachedMaxDepthAndEnd when queryValues change
                 setReachedMaxDepthAndEnd(false);
             }
@@ -402,7 +402,9 @@ const PaginatedGraphFetch = forwardRef(
                             onClick={fetchGraphPage}
                             className='btn btn flex items-center tooltip tooltip-top'
                             data-tooltip='Fetch graph data'
-                            disabled={isGraphFetching || reachedMaxDepthAndEnd || (!sourceNode)}
+                            disabled={
+                                isGraphFetching || reachedMaxDepthAndEnd || !sourceNode
+                            }
                         >
                             {isGraphFetching ? (
                                 <div className='flex justify-center py-1'>

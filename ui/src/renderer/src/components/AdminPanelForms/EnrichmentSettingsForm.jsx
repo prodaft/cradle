@@ -1,19 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
-import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import * as Yup from 'yup';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import { getEntryClasses } from '../../services/adminService/adminService';
 import {
     getEnrichmentSettings,
     saveEnrichmentSettings,
 } from '../../services/intelioService/intelioService';
+import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
+import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import { Tabs, Tab } from '../Tabs/Tabs';
 import Selector from '../Selector/Selector';
-import { getEntryClasses } from '../../services/adminService/adminService';
-import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
+import { Tab, Tabs } from '../Tabs/Tabs';
 
 // Dynamic schema generation based on form_fields
 const createEnrichmentSchema = (form_fields) => {
@@ -57,7 +57,7 @@ const createEnrichmentSchema = (form_fields) => {
  * @param {string} props.enrichment_class - The enrichment class to fetch settings for
  */
 export default function EnrichmentSettingsForm({ enrichment_class }) {
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const [displayName, setDisplayName] = useState('');
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [formFields, setFormFields] = useState({});

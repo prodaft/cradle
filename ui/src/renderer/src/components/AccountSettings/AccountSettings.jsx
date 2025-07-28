@@ -1,33 +1,32 @@
-import React, { useEffect, useId, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
-import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
-import AlertBox from '../AlertBox/AlertBox';
-import vimIcon from '../../assets/vim32x32.gif';
 import { Edit } from 'iconoir-react';
-import FormField from '../FormField/FormField';
-import useAuth from '../../hooks/useAuth/useAuth';
-import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
-import SnippetList from '../SnippetList/SnippetList';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import {
-    getUser,
-    updateUser,
-    deleteUser,
-    createUser,
-    generateApiKey,
-    setDefaultNoteTemplate,
-    getDefaultNoteTemplate,
-} from '../../services/userService/userService';
-import { Tabs, Tab } from '../Tabs/Tabs';
-import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
+import { useEffect, useId, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as Yup from 'yup';
+import vimIcon from '../../assets/vim32x32.gif';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useAuth from '../../hooks/useAuth/useAuth';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import {
+    createUser,
+    deleteUser,
+    generateApiKey,
+    getDefaultNoteTemplate,
+    getUser,
+    setDefaultNoteTemplate,
+    updateUser,
+} from '../../services/userService/userService';
+import { displayError } from '../../utils/responseUtils/responseUtils';
+import AlertBox from '../AlertBox/AlertBox';
+import AlertDismissible from '../AlertDismissible/AlertDismissible.jsx';
+import FormField from '../FormField/FormField';
 import ActionConfirmationModal from '../Modals/ActionConfirmationModal.jsx';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import MarkdownEditorModal from '../Modals/MarkdownEditorModal.jsx';
 import TwoFactorSetupModal from '../Modals/TwoFactorSetupModal';
-import AlertDismissible from '../AlertDismissible/AlertDismissible.jsx';
-import { compact } from 'lodash';
+import SnippetList from '../SnippetList/SnippetList';
+import { Tab, Tabs } from '../Tabs/Tabs';
 
 const accountSettingsSchema = Yup.object().shape({
     username: Yup.string().required('Username is required'),
@@ -51,7 +50,7 @@ const accountSettingsSchema = Yup.object().shape({
 });
 
 export default function AccountSettings({ target, isEdit = true, onAdd }) {
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const auth = useAuth();
     const { profile, setProfile, isAdmin } = useProfile();
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
@@ -471,11 +470,9 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                                         <button
                                                             type='button'
                                                             className='btn btn-primary btn-block'
-                                                            onClick={() =>
-                                                                navigate(
-                                                                    '/change-password',
-                                                                )
-                                                            }
+                                                            onClick={navigateLink(
+                                                                '/change-password',
+                                                            )}
                                                         >
                                                             Change Password
                                                         </button>
@@ -565,20 +562,16 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                     <div className='w-full mt-4'>
                                         <label className='block text-sm font-medium'>
                                             Theme
-                                                </label>
-                                                <div className='mt-1'>
-                                                    <select
-                                                        className='form-select select select-ghost-primary select-block focus:ring-0'
-                                                        {...register('theme')}
-                                                    >
-                                                        <option value='dark'>
-                                                            Dark
-                                                        </option>
-                                                        <option value='light'>
-                                                            Light
-                                                        </option>
-                                                    </select>
-                                                </div>
+                                        </label>
+                                        <div className='mt-1'>
+                                            <select
+                                                className='form-select select select-ghost-primary select-block focus:ring-0'
+                                                {...register('theme')}
+                                            >
+                                                <option value='dark'>Dark</option>
+                                                <option value='light'>Light</option>
+                                            </select>
+                                        </div>
                                         {errors.theme && (
                                             <p className='text-red-600 text-sm'>
                                                 {errors.theme.message}

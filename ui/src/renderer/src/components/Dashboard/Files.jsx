@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import FilesList from '../FilesList/FilesList';
 import { Search } from 'iconoir-react';
+import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import { displayError } from '../../utils/responseUtils/responseUtils';
+import FilesList from '../FilesList/FilesList';
 
 /**
  * Files component
@@ -15,7 +16,7 @@ import { Search } from 'iconoir-react';
  * @returns {JSX.Element}
  */
 export default function Files({ obj, setAlert }) {
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const [exactMatch, setExactMatch] = useState(false);
     const [searchFilters, setSearchFilters] = useState({

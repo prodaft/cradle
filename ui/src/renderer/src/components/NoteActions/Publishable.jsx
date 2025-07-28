@@ -1,11 +1,7 @@
-import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
-import { Link, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useState } from 'react';
-import Preview from '../Preview/Preview';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { setPublishable } from '../../services/notesService/notesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { useLocation } from 'react-router-dom';
-import ReferenceTree from '../ReferenceTree/ReferenceTree';
 
 /**
  * Note component - This component is used to display a note on the dashboard.
@@ -23,7 +19,7 @@ import ReferenceTree from '../ReferenceTree/ReferenceTree';
  */
 export default function Publishable({ note, setAlert, compact }) {
     const [isPublishable, setIsPublishable] = useState(note.publishable);
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
 
     const handleTogglePublishable = useCallback(
         (noteId) => {

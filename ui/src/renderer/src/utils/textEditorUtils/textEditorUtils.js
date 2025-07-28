@@ -1,8 +1,8 @@
+import { syntaxTree } from '@codemirror/language';
 import DOMPurify from 'dompurify';
+import QueryString from 'qs';
 import { getBaseUrl } from '../../services/configService/configService';
 import parseMarkdown from '../customParser/customParser.ts';
-import QueryString from 'qs';
-import { syntaxTree } from '@codemirror/language';
 
 /**
  * Parses markdown content into HTML using a custom marked.js parser
@@ -94,7 +94,7 @@ const handleLinkClick = (navigateHandler) => (event) => {
         const navigatePath = target.dataset.customHref;
         if (navigatePath) {
             // Local links to dashboards
-            navigateHandler(navigatePath);
+            navigateHandler(navigatePath, { event });
         } else {
             // External links
             window.open(target.href, '_blank');
@@ -193,11 +193,11 @@ const parseLink = (from, current, text) => {
 };
 
 export {
-    parseContent,
-    handleLinkClick,
     createDownloadPath,
     createProcessFilePath,
-    prependLinks,
     getLinkNode,
+    handleLinkClick,
+    parseContent,
     parseLink,
+    prependLinks,
 };

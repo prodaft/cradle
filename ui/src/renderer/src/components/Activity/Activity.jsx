@@ -1,8 +1,8 @@
-import { useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-diff';
 import 'prismjs/themes/prism-tomorrow.css';
+import { useEffect, useState } from 'react';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 
 /**
@@ -15,7 +15,7 @@ import { formatDate } from '../../utils/dateUtils/dateUtils';
  * @constructor
  */
 export default function Activity({ log }) {
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const [formattedTimestamp, setFormattedTimestamp] = useState('');
 
     useEffect(() => {

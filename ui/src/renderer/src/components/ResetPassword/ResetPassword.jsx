@@ -1,15 +1,11 @@
-import React, { useState } from 'react';
-import { UserCircle } from 'iconoir-react';
-import FormField from '../FormField/FormField';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
-import {
-    resetPasswordReq,
-    logInReq,
-} from '../../services/authReqService/authReqService';
-import AlertBox from '../AlertBox/AlertBox';
-import { displayError } from '../../utils/responseUtils/responseUtils';
 import { useWindowSize } from '@uidotdev/usehooks';
+import { useState } from 'react';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import { resetPasswordReq } from '../../services/authReqService/authReqService';
+import { displayError } from '../../utils/responseUtils/responseUtils';
+import AlertBox from '../AlertBox/AlertBox';
+import FormField from '../FormField/FormField';
 
 /**
  * ResetPassword component - renders the change password form
@@ -27,7 +23,7 @@ export default function ResetPassword() {
     const [searchParams, setSearchParams] = useSearchParams();
     const token = searchParams.get('token');
 
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();

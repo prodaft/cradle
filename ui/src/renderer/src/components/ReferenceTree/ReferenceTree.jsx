@@ -1,13 +1,14 @@
-import { Link, useNavigate } from 'react-router-dom';
-import Collapsible from '../Collapsible/Collapsible';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import { queryEntries } from '../../services/queryService/queryService';
 import {
     createDashboardLink,
-    truncateText,
     SubtypeHierarchy,
+    truncateText,
 } from '../../utils/dashboardUtils/dashboardUtils';
-import { useState } from 'react';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { queryEntries } from '../../services/queryService/queryService';
+import Collapsible from '../Collapsible/Collapsible';
 
 /**
  * References Component
@@ -24,7 +25,7 @@ import { queryEntries } from '../../services/queryService/queryService';
 export default function ReferenceTree({ note, setAlert }) {
     const [references, setReferences] = useState({});
     const [nextPageStatus, setNextPageStatus] = useState({});
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
 
     // If there's no entry_classes, there is nothing to display
     if (!note || !note.entry_classes) {
