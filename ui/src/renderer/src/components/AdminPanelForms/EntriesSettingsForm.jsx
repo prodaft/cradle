@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import AlertBox from '../AlertBox/AlertBox';
+import { useState } from 'react';
 import { performAction } from '../../services/managementService/managementService';
+import AlertBox from '../AlertBox/AlertBox';
 
 export default function EntriesManagement() {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });

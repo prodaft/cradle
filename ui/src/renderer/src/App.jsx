@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { Outlet, Route, Routes, HashRouter } from 'react-router-dom';
+import { HashRouter, Outlet, Route, Routes } from 'react-router-dom';
 
 const NoteEditor = React.lazy(() => import('./components/NoteEditor/NoteEditor.jsx'));
 const Login = React.lazy(() => import('./components/Login/Login.jsx'));
@@ -48,13 +48,13 @@ const Connectivity = React.lazy(
     () => import('./components/Connectivity/Connectivity.jsx'),
 );
 
-import { ThemeProvider } from './contexts/ThemeContext/ThemeContext.jsx';
-import PrivateRoute from './components/PrivateRoute/PrivateRoute.jsx';
-import AuthProvider from './components/AuthProvider/AuthProvider.jsx';
 import ApiProvider from './components/ApiProvider/ApiProvider';
-import { ProfileProvider } from './contexts/ProfileContext/ProfileContext.jsx';
-import { ModalProvider } from './contexts/ModalContext/ModalContext.jsx';
+import AuthProvider from './components/AuthProvider/AuthProvider.jsx';
 import CradleLoading from './components/CradleLoading/CradleLoading.jsx';
+import PrivateRoute from './components/PrivateRoute/PrivateRoute.jsx';
+import { ModalProvider } from './contexts/ModalContext/ModalContext.jsx';
+import { ProfileProvider } from './contexts/ProfileContext/ProfileContext.jsx';
+import { ThemeProvider } from './contexts/ThemeContext/ThemeContext.jsx';
 
 function App() {
     return (

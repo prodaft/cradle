@@ -1,16 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
-import FileItem from '../FileItem/FileItem';
-import { getFiles } from '../../services/notesService/notesService';
-import AlertBox from '../AlertBox/AlertBox';
-import Pagination from '../Pagination/Pagination';
-import { useSearchParams } from 'react-router-dom';
 import { useDroppable } from '@dnd-kit/core';
+import { Download, Notes, Sort, SortDown, SortUp } from 'iconoir-react';
+import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import { authAxios } from '../../services/axiosInstance/axiosInstance';
+import { getFiles } from '../../services/notesService/notesService';
+import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import { createDownloadPath } from '../../utils/textEditorUtils/textEditorUtils';
-import { authAxios } from '../../services/axiosInstance/axiosInstance';
-import { Download, Notes, SortUp, SortDown, Sort } from 'iconoir-react';
-import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
+import AlertBox from '../AlertBox/AlertBox';
+import FileItem from '../FileItem/FileItem';
+import Pagination from '../Pagination/Pagination';
 
 /**
  * FilesList component - This component is used to display a list of files.
@@ -72,7 +72,7 @@ export default function FilesList({
             setSortField(newSortField);
             setSortDirection(newSortField.includes('timestamp') ? 'desc' : 'asc');
         }
-        
+
         // Reset to first page when sorting changes
         setPage(1);
         const newParams = new URLSearchParams(searchParams);
@@ -85,7 +85,7 @@ export default function FilesList({
         if (!fieldName || sortField !== fieldName) {
             return <Sort className={className} />;
         }
-        
+
         return sortDirection === 'desc' ? (
             <SortDown className={className} />
         ) : (
@@ -126,15 +126,18 @@ export default function FilesList({
     }, [page, sortField, sortDirection, query, setAlert]);
 
     const copyToClipboard = (text) => {
-        navigator.clipboard.writeText(text).catch((error) => {
-            console.error('Failed to copy text: ', error);
-        }).then(() => {
-            setAlert({
-                show: true,
-                message: 'Copied to clipboard',
-                color: 'green',
+        navigator.clipboard
+            .writeText(text)
+            .catch((error) => {
+                console.error('Failed to copy text: ', error);
+            })
+            .then(() => {
+                setAlert({
+                    show: true,
+                    message: 'Copied to clipboard',
+                    color: 'green',
+                });
             });
-        });
     };
 
     useEffect(() => {
@@ -151,13 +154,16 @@ export default function FilesList({
     };
 
     const SortableTableHeader = ({ column, children, className = '' }) => (
-        <th 
+        <th
             className={`cursor-pointer select-none ${className}`}
             onClick={() => handleSort(column)}
         >
             <div className='flex items-center justify-between !border-b-0 !border-t-0'>
                 <span className='!border-b-0 !border-t-0'>{children}</span>
-                {getSortIcon(column, 'w-4 h-4 text-zinc-600 dark:text-zinc-400 !border-b-0 !border-t-0')}
+                {getSortIcon(
+                    column,
+                    'w-4 h-4 text-zinc-600 dark:text-zinc-400 !border-b-0 !border-t-0',
+                )}
             </div>
         </th>
     );
@@ -191,14 +197,23 @@ export default function FilesList({
                                         <table className='table'>
                                             <thead className=''>
                                                 <tr>
-                                                    <SortableTableHeader column="name" className="w-64">
+                                                    <SortableTableHeader
+                                                        column='name'
+                                                        className='w-64'
+                                                    >
                                                         Name
                                                     </SortableTableHeader>
-                                                    <SortableTableHeader column="uploadedAt" className="w-32">
+                                                    <SortableTableHeader
+                                                        column='uploadedAt'
+                                                        className='w-32'
+                                                    >
                                                         Uploaded At
                                                     </SortableTableHeader>
                                                     <th className='w-32'>Entities</th>
-                                                    <SortableTableHeader column="mimetype" className="w-32">
+                                                    <SortableTableHeader
+                                                        column='mimetype'
+                                                        className='w-32'
+                                                    >
                                                         MimeType
                                                     </SortableTableHeader>
                                                     <th className=''>MD5</th>
@@ -216,7 +231,10 @@ export default function FilesList({
                                                     return (
                                                         <tr key={file.id || index}>
                                                             <td className='truncate w-32'>
-                                                                {truncateText(file.file_name, 32)}
+                                                                {truncateText(
+                                                                    file.file_name,
+                                                                    32,
+                                                                )}
                                                             </td>
                                                             <td className=''>
                                                                 {formatDate(
@@ -227,36 +245,45 @@ export default function FilesList({
                                                             </td>
                                                             <td className=''>
                                                                 <div className='flex flex-wrap gap-1'>
-                                                                    {file.entities?.slice(0,3).map(
-                                                                        (entity) => (
-                                                                            <span
-                                                                                key={
-                                                                                    entity.name
-                                                                                }
-                                                                                className='badge badge-xs px-1 text-white'
-                                                                                style={{
-                                                                                    backgroundColor:
-                                                                                        entity.color ||
-                                                                                        '#ccc',
-                                                                                }}
-                                                                            >
-                                                                                {
-                                                                                    entity.name
-                                                                                }
-                                                                            </span>
-                                                                        ),
-                                                                    )}
+                                                                    {file.entities
+                                                                        ?.slice(0, 3)
+                                                                        .map(
+                                                                            (
+                                                                                entity,
+                                                                            ) => (
+                                                                                <span
+                                                                                    key={
+                                                                                        entity.name
+                                                                                    }
+                                                                                    className='badge badge-xs px-1 text-white'
+                                                                                    style={{
+                                                                                        backgroundColor:
+                                                                                            entity.color ||
+                                                                                            '#ccc',
+                                                                                    }}
+                                                                                >
+                                                                                    {
+                                                                                        entity.name
+                                                                                    }
+                                                                                </span>
+                                                                            ),
+                                                                        )}
                                                                 </div>
                                                             </td>
                                                             <td className='truncate w-32'>
-                                                                {truncateText(file.mimetype, 32)}
+                                                                {truncateText(
+                                                                    file.mimetype,
+                                                                    32,
+                                                                )}
                                                             </td>
                                                             <td className=''>
                                                                 {file.md5_hash ? (
                                                                     <span
                                                                         className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
                                                                         onClick={() =>
-                                                                            copyToClipboard(file.md5_hash)
+                                                                            copyToClipboard(
+                                                                                file.md5_hash,
+                                                                            )
                                                                         }
                                                                         title='Click to copy'
                                                                     >
@@ -275,7 +302,9 @@ export default function FilesList({
                                                                     <span
                                                                         className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
                                                                         onClick={() =>
-                                                                            copyToClipboard(file.sha1_hash)
+                                                                            copyToClipboard(
+                                                                                file.sha1_hash,
+                                                                            )
                                                                         }
                                                                         title='Click to copy'
                                                                     >
@@ -294,7 +323,9 @@ export default function FilesList({
                                                                     <span
                                                                         className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
                                                                         onClick={() =>
-                                                                            copyToClipboard(file.sha256_hash)
+                                                                            copyToClipboard(
+                                                                                file.sha256_hash,
+                                                                            )
                                                                         }
                                                                         title='Click to copy'
                                                                     >

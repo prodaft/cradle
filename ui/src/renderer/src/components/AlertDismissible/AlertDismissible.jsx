@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
 import { Xmark } from 'iconoir-react';
+import { useEffect, useState } from 'react';
 
 /**
  * AlertDismissible component - This component is used to display an alert that can be dismissed.

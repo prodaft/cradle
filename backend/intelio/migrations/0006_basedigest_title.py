@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("intelio", "0005_remove_basedigest_entity_basedigest_entities_and_more"),
     ]

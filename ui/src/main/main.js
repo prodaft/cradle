@@ -1,6 +1,6 @@
 import { app, BrowserWindow, nativeImage } from 'electron';
-import path from 'path';
 import { autoUpdater } from 'electron-updater';
+import path from 'path';
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 let mainWindow;

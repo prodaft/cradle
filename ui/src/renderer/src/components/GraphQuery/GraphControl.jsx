@@ -1,6 +1,6 @@
-import React, { forwardRef, useEffect, useState } from 'react';
-import GraphSettings from './GraphSettings';
+import { forwardRef, useEffect, useState } from 'react';
 import GraphLegend from './GraphLegend';
+import GraphSettings from './GraphSettings';
 
 const GraphControl = forwardRef(({ settingsProps, SearchComponent }, graphRef) => {
     const [graphStats, setGraphStats] = useState({

@@ -1,13 +1,13 @@
-import { Outlet } from 'react-router-dom';
-import Sidebar from '../Sidebar/Sidebar';
-import Navbar from '../Navbar/Navbar';
-import { Suspense, useCallback, useMemo, useState } from 'react';
 import { IconoirProvider } from 'iconoir-react';
-import FleetingNotesPanel from '../FleetingNotesPanel/FleetingNotesPanel';
-import NotificationsPanel from '../NotificationsPanel/NotificationsPanel';
+import { Suspense, useCallback, useMemo, useState } from 'react';
+import { Outlet } from 'react-router-dom';
+import { useTheme } from '../../contexts/ThemeContext/ThemeContext.jsx';
 import useInterval from '../../hooks/useInterval/useInterval';
 import { getNotificationCount } from '../../services/notificationsService/notificationsService';
-import { useTheme } from '../../contexts/ThemeContext/ThemeContext.jsx';
+import FleetingNotesPanel from '../FleetingNotesPanel/FleetingNotesPanel';
+import Navbar from '../Navbar/Navbar';
+import NotificationsPanel from '../NotificationsPanel/NotificationsPanel';
+import Sidebar from '../Sidebar/Sidebar';
 
 /**
  * The Home component serves as the main layout of the application. It is composed of several child components:

@@ -1,13 +1,11 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Search } from 'iconoir-react';
 import { useDroppable } from '@dnd-kit/core';
+import { Search } from 'iconoir-react';
+import { useCallback, useEffect, useState } from 'react';
 
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import Pagination from '../Pagination/Pagination';
 import DraggableNote from '../DraggableNote/DraggableNote';
-import Note from '../Note/Note';
 import AddNote from '../NoteActions/AddNote';
+import Pagination from '../Pagination/Pagination';
 
 import { searchNote } from '../../services/notesService/notesService';
 

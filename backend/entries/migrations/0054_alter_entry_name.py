@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("entries", "0053_alter_relation_created_at_alter_relation_last_seen"),
     ]

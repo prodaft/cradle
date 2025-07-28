@@ -1,9 +1,8 @@
 import { EditPencil } from 'iconoir-react/regular';
-import { Link } from 'react-router-dom';
 import { useState } from 'react';
+import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils.jsx';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import TypeMappingsEditor from '../TypeMappingsEditor/TypeMappingsEditor.jsx';
-import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils.jsx';
 
 export default function AdminPanelCardTypeMapping({ name, id, setRightPane }) {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });

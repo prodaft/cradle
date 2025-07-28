@@ -1,8 +1,7 @@
 import { NavArrowDown, NavArrowUp } from 'iconoir-react';
-import React from 'react';
-import SearchFilter from '../SearchFilter/SearchFilter';
-import Collapsible from '../Collapsible/Collapsible';
 import { SubtypeHierarchy } from '../../utils/dashboardUtils/dashboardUtils';
+import Collapsible from '../Collapsible/Collapsible';
+import SearchFilter from '../SearchFilter/SearchFilter';
 
 /**
  * Section for filters in the search dialog

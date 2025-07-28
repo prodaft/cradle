@@ -1,5 +1,5 @@
-import { useOutletContext } from 'react-router-dom';
 import { useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 
 /**
  * useNavbarContents hook - sets the contents of the navbar

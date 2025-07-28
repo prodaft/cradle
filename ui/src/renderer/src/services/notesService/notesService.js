@@ -1,5 +1,5 @@
-import { authAxios } from '../axiosInstance/axiosInstance';
 import qs from 'qs';
+import { authAxios } from '../axiosInstance/axiosInstance';
 
 /**
  * Function to get notes from the API
@@ -95,4 +95,4 @@ export const getFiles = (params = {}) => {
     return authAxios.get(`/notes/files/`, { params });
 };
 
-export { getNote, setPublishable, deleteNote, updateNote, searchNote };
+export { deleteNote, getNote, searchNote, setPublishable, updateNote };

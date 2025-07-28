@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { confirmReq, logInReq } from '../../services/authReqService/authReqService';
-import AlertBox from '../AlertBox/AlertBox';
+import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { confirmReq } from '../../services/authReqService/authReqService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
+import AlertBox from '../AlertBox/AlertBox';
 
 /**
  * ConfirmEmail component.

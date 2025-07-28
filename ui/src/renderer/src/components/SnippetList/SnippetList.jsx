@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash } from 'iconoir-react/regular';
+import { Edit, Plus, Trash } from 'iconoir-react/regular';
+import { useEffect, useState } from 'react';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
-import MarkdownEditorModal from '../Modals/MarkdownEditorModal';
 import {
-    getUserSnippets,
     createSnippet,
-    updateSnippet,
     deleteSnippet,
+    getUserSnippets,
+    updateSnippet,
 } from '../../services/snippetsService/snippetsService';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
+import MarkdownEditorModal from '../Modals/MarkdownEditorModal';
 
 export default function SnippetList({ userId = null }) {
     const [snippets, setSnippets] = useState([]);

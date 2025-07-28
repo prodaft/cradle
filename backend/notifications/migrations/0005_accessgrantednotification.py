@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("entries", "0020_entryclass_generative_regex"),
         ("notifications", "0004_reportprocessingerrornotification_and_more"),

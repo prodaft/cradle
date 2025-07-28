@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("intelio", "0001_initial"),
         ("notes", "0014_auto_20250324_2204"),

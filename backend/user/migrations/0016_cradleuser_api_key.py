@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("user", "0015_alter_cradleuser_email_confirmed_and_more"),
     ]

@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("entries", "0024_remove_entryclass_catalyst_type_entry_aliases_and_more"),
     ]

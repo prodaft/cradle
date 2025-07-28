@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("publish", "0008_remove_publishedreport_report_location"),
     ]

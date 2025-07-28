@@ -1,35 +1,9 @@
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    getDashboardData,
-    getSecondHopData,
-    requestEntityAccess,
-} from '../../services/dashboardService/dashboardService';
-import useAuth from '../../hooks/useAuth/useAuth';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
-import NavbarButton from '../NavbarButton/NavbarButton';
-import { TaskList, Trash } from 'iconoir-react/regular';
-import { Graph } from '@phosphor-icons/react';
-import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
-import { deleteEntry } from '../../services/adminService/adminService';
-import NotFound from '../NotFound/NotFound';
-import pluralize from 'pluralize';
-import {
-    createDashboardLink,
-    renderDashboardSection,
-    renderDashboardSectionWithInaccessibleEntries,
-    SubtypeHierarchy,
-} from '../../utils/dashboardUtils/dashboardUtils';
 import { Search } from 'iconoir-react';
-import NotesList from '../NotesList/NotesList';
-import { queryEntries } from '../../services/queryService/queryService';
-import Publishable from '../NoteActions/Publishable';
-import { Tabs, Tab } from '../Tabs/Tabs';
-import DeleteNote from '../NoteActions/DeleteNote';
+import { useEffect, useState } from 'react';
 import Datepicker from 'react-tailwindcss-datepicker';
-import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import DeleteNote from '../NoteActions/DeleteNote';
+import Publishable from '../NoteActions/Publishable';
+import NotesList from '../NotesList/NotesList';
 
 export default function Notes({ setAlert, obj }) {
     const [searchFilters, setSearchFilters] = useState({

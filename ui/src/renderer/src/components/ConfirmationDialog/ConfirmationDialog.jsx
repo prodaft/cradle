@@ -1,5 +1,3 @@
-import React from 'react';
-
 /**
  * ConfirmationDialog component - This component is used to display a confirmation dialog.
  * The dialog will display a title and a description.

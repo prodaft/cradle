@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import { Tabs, Tab } from '../Tabs/Tabs';
 import ReportList from '../ReportList/ReportList';
+import { Tab, Tabs } from '../Tabs/Tabs';
 import UploadExternal from '../UploadExternal/UploadExternal';
 
 /**

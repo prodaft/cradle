@@ -25,7 +25,7 @@ class LoggingUtils:
         timestamp = datetime.now().strftime("%d/%b/%Y:%H:%M:%S %z")
         request_line = (
             f"{request.method} {request.path} "
-            + f'{request.META.get("SERVER_PROTOCOL", "HTTP/1.1")}'
+            + f"{request.META.get('SERVER_PROTOCOL', 'HTTP/1.1')}"
         )
         user_agent = request.META.get("HTTP_USER_AGENT", "-")
 

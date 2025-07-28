@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("entries", "0039_relation_e1_relation_e2"),
         ("notes", "0017_remove_note_entries"),

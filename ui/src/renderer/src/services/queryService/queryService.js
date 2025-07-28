@@ -63,11 +63,11 @@ export function fetchCompletionTries(type, prefix) {
     const url = `/lsp/trie/`;
 
     if (type && prefix) {
-      return authAxios({
-          method: 'GET',
-          url: url,
-          params: { type, prefix },
-      });
+        return authAxios({
+            method: 'GET',
+            url: url,
+            params: { type, prefix },
+        });
     }
 
     return authAxios({

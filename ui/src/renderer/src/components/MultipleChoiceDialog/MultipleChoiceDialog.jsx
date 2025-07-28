@@ -1,5 +1,3 @@
-import React from 'react';
-
 /**
  * @typedef {Object} Button
  * @property {string} label - the text of the button

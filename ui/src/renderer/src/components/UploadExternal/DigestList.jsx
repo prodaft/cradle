@@ -1,13 +1,12 @@
-import React from 'react';
-import DigestCard from './DigestCard';
-import Pagination from '../Pagination/Pagination';
-import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import { Sort, SortDown, SortUp, Trash } from 'iconoir-react';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
-import { Trash, SortUp, SortDown, Sort } from 'iconoir-react';
-import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import { deleteDigest } from '../../services/intelioService/intelioService';
-import { formatDate } from '../../utils/dateUtils/dateUtils';
 import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
+import { formatDate } from '../../utils/dateUtils/dateUtils';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
+import Pagination from '../Pagination/Pagination';
+import DigestCard from './DigestCard';
 
 function DigestList({
     digests,
@@ -52,7 +51,7 @@ function DigestList({
         if (!fieldName || sortField !== fieldName) {
             return <Sort className={className} />;
         }
-        
+
         return sortDirection === 'desc' ? (
             <SortDown className={className} />
         ) : (
@@ -61,13 +60,16 @@ function DigestList({
     };
 
     const SortableTableHeader = ({ column, children, className = '' }) => (
-        <th 
+        <th
             className={`cursor-pointer select-none ${className}`}
             onClick={() => handleSort(column)}
         >
             <div className='flex items-center justify-between !border-b-0 !border-t-0'>
                 <span className='!border-b-0 !border-t-0'>{children}</span>
-                {getSortIcon(column, 'w-4 h-4 text-zinc-600 dark:text-zinc-400 !border-b-0 !border-t-0')}
+                {getSortIcon(
+                    column,
+                    'w-4 h-4 text-zinc-600 dark:text-zinc-400 !border-b-0 !border-t-0',
+                )}
             </div>
         </th>
     );
@@ -112,10 +114,18 @@ function DigestList({
                         <thead className=''>
                             <tr>
                                 <th>Status</th>
-                                <SortableTableHeader column='title'>Title</SortableTableHeader>
-                                <SortableTableHeader column='type'>Type</SortableTableHeader>
-                                <SortableTableHeader column='createdAt'>Created At</SortableTableHeader>
-                                <SortableTableHeader column='user'>User</SortableTableHeader>
+                                <SortableTableHeader column='title'>
+                                    Title
+                                </SortableTableHeader>
+                                <SortableTableHeader column='type'>
+                                    Type
+                                </SortableTableHeader>
+                                <SortableTableHeader column='createdAt'>
+                                    Created At
+                                </SortableTableHeader>
+                                <SortableTableHeader column='user'>
+                                    User
+                                </SortableTableHeader>
                                 <th>Warnings</th>
                                 <th>Errors</th>
                                 <th>Actions</th>
@@ -138,16 +148,25 @@ function DigestList({
                                                 digest.status.slice(1)}
                                         </span>
                                     </td>
-                                    <td className='truncate max-w-xs' title={digest.title}>
+                                    <td
+                                        className='truncate max-w-xs'
+                                        title={digest.title}
+                                    >
                                         {digest.title}
                                     </td>
-                                    <td className='truncate w-24' title={digest.display_name}>
+                                    <td
+                                        className='truncate w-24'
+                                        title={digest.display_name}
+                                    >
                                         {truncateText(digest.display_name, 24)}
                                     </td>
                                     <td className='w-36'>
                                         {formatDate(new Date(digest.created_at))}
                                     </td>
-                                    <td className='truncate w-32' title={digest.user_detail.username}>
+                                    <td
+                                        className='truncate w-32'
+                                        title={digest.user_detail.username}
+                                    >
                                         {truncateText(digest.user_detail.username, 16)}
                                     </td>
                                     <td className='w-8'>

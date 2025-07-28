@@ -1,9 +1,9 @@
 import { useState } from 'react';
 
-import { Tabs, Tab } from '../Tabs/Tabs';
-import Notes from './Notes';
-import Files from './Files';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import { Tab, Tabs } from '../Tabs/Tabs';
+import Files from './Files';
+import Notes from './Notes';
 
 export default function Documents() {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });

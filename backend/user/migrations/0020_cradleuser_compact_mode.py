@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("user", "0019_cradleuser_default_note_template_cradleuser_vim_mode"),
     ]

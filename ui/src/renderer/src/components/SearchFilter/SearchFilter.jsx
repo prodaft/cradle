@@ -1,5 +1,3 @@
-import React from 'react';
-
 /**
  * Single filter for search dialog
  * Manages the state of the filters passed as parameters

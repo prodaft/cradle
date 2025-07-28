@@ -1,6 +1,6 @@
 import { PlusCircle } from 'iconoir-react';
+import { useMemo, useState } from 'react';
 import useFrontendSearch from '../../hooks/useFrontendSearch/useFrontendSearch';
-import { useState, useMemo } from 'react';
 import { naturalSort } from '../../utils/dashboardUtils/dashboardUtils';
 /**
  * AdminPanelSection component - This component is used to display a section in the AdminPanel.

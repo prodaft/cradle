@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { InputField, PasteClipboard, Trash } from 'iconoir-react';
+import { useState } from 'react';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { PasteClipboard, Trash, InputField } from 'iconoir-react';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { createDownloadPath } from '../../utils/textEditorUtils/textEditorUtils';
+import AlertDismissible from '../AlertDismissible/AlertDismissible';
 
 /**
  * This component is used to display a table of fileData.

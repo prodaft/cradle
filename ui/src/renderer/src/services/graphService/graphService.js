@@ -1,5 +1,5 @@
-import { authAxios } from '../axiosInstance/axiosInstance';
 import qs from 'qs';
+import { authAxios } from '../axiosInstance/axiosInstance';
 
 /**
  * Function to get the knowledge graph data from the API
