@@ -2,32 +2,27 @@ from typing import List, Optional
 
 from celery import chain
 from diff_match_patch import diff_match_patch
-
+from django.db import transaction
+from django.utils import timezone
 from entries.enums import EntryType
+from user.models import CradleUser
 
-from ..utils import calculate_acvec
 from ..enums import NoteStatus
 from ..exceptions import (
     FieldTooLongException,
 )
-
 from ..models import Note
-from .connect_aliases_task import AliasConnectionTask
-from .smart_linker_task import SmartLinkerTask
-
-from .entry_population_task import EntryPopulationTask
-from .entry_class_creation_task import EntryClassCreationTask
-
-from .base_task import BaseTask
+from ..utils import calculate_acvec
 from .access_control_task import AccessControlTask
+from .base_task import BaseTask
+from .connect_aliases_task import AliasConnectionTask
+from .entry_class_creation_task import EntryClassCreationTask
+from .entry_population_task import EntryPopulationTask
 from .finalize_note_task import FinalizeNoteTask
 from .link_files_task import LinkFilesTask
-from .validate_note_task import ValidateNoteTask
 from .metadata_process_task import MetadataProcessTask
-from user.models import CradleUser
-
-from django.db import transaction
-from django.utils import timezone
+from .smart_linker_task import SmartLinkerTask
+from .validate_note_task import ValidateNoteTask
 
 
 class TaskScheduler:
@@ -117,7 +112,9 @@ class TaskScheduler:
             note.save()
 
         if patches is None:
-            note.log_create(self.user)
+            patches = dmp.patch_make("", note.content)
+
+            note.log_create(self.user, dmp.patch_toText(patches) if patches else None)
         elif len(patches) > 0:
             note.log_edit(self.user, dmp.patch_toText(patches))
 

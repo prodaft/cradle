@@ -1,11 +1,13 @@
-from django.db import models
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.db.models.fields.related import ReverseManyToOneDescriptor
-from .managers import EventLogManager
-from .enums import EventType
-from typing import Optional, Union
 import uuid
+from typing import Optional, Union
+
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.db import models
+from django.db.models.fields.related import ReverseManyToOneDescriptor
+
+from .enums import EventType
+from .managers import EventLogManager
 
 
 class EventLog(models.Model):
@@ -58,7 +60,6 @@ class EventLog(models.Model):
             user=self.user,
             content_object=obj,
             type=EventType.EDIT,
-            details=self.details,
             src_log=self,  # Set the originating log if provided
         )
 
@@ -88,7 +89,7 @@ class LoggableModelMixin:
         for i in self._linked_loggables():
             i.propagate_from(log)
 
-    def propagate_from(self, log):
+    def propagate_from(self, log: EventLog):
         log.propagate(self).save()
 
     def _save_log(self, log):
@@ -96,9 +97,11 @@ class LoggableModelMixin:
         self._propagate_log(log)
         return log
 
-    def log_create(self, user):
+    def log_create(self, user, details=None):
         return self._save_log(
-            EventLog(user=user, content_object=self, type=EventType.CREATE)
+            EventLog(
+                user=user, content_object=self, type=EventType.CREATE, details=details
+            )
         )
 
     def log_delete(self, user, details=None):

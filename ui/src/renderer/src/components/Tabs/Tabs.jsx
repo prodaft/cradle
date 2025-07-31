@@ -59,7 +59,6 @@ const Tabs = ({
                     style={{
                         top: `${stickyTop}px`,
                         margin: '0 0.5rem',
-                        borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
                     }}
                 >
                     {tabs.map((tab, index) => {

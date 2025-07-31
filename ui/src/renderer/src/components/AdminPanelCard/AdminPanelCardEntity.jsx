@@ -33,7 +33,9 @@ export default function AdminPanelCardEntity({
     };
 
     const handleActivityClick = () => {
-        setRightPane(<ActivityList content_type='entry' objectId={id} name={name} />);
+        setRightPane(
+            <ActivityList content_type='entry' objectId={id} name={name} key={id} />,
+        );
     };
 
     const handleEditClick = () => {

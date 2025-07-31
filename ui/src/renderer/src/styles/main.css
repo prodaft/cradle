@@ -35,3 +35,9 @@ body {
 .tooltip::before {
     white-space: pre-line;
 }
+
+[data-theme='light'] .tab-toggle:checked + .tab.tab-pill,
+[data-theme='light'] .tabs-boxed .tab-toggle:checked + .tab {
+    --tw-bg-opacity: 0.2 !important;
+    background-color: rgb(var(--cradle3) / var(--tw-bg-opacity)) !important;
+}

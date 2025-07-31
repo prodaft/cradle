@@ -359,7 +359,11 @@ export default function AdminPanel() {
                             )}
                         </Tabs>
                     }
-                    rightContent={<div>{rightPane}</div>}
+                    rightContent={
+                        <div className='max-h-[calc(100vh-5rem)] overflow-y-auto'>
+                            {rightPane}
+                        </div>
+                    }
                 />
             </div>
         </>

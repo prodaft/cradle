@@ -28,7 +28,12 @@ export default function AdminPanelCardUser({ name, id, onDelete, setRightPane })
 
     const handleActivityClick = () => {
         setRightPane(
-            <ActivityList content_type='entryclass' username={name} name={name} />,
+            <ActivityList
+                content_type='entryclass'
+                username={name}
+                name={name}
+                key={name}
+            />,
         );
     };
 

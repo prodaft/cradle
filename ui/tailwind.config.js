@@ -1,4 +1,10 @@
 // eslint-disable-next-line no-undef
+const EXTENDED_COLORS = {
+    cradle1: '#02111a',
+    cradle2: '#f68d2e',
+    cradle3: '#253746',
+};
+
 module.exports = {
     darkMode: ['selector', '[data-theme="dark"]'],
     content: [
@@ -9,11 +15,7 @@ module.exports = {
     plugins: [],
     theme: {
         extend: {
-            colors: {
-                cradle1: '#02111a',
-                cradle2: '#f68d2e',
-                cradle3: '#253746',
-            },
+            colors: EXTENDED_COLORS,
             typography: (theme) => ({
                 DEFAULT: {
                     css: {
@@ -96,6 +98,7 @@ module.exports = {
                     secondary: '#9984D4',
                     backgroundSecondary: '#555161',
                     white: '#ffffff',
+                    ...EXTENDED_COLORS,
                 },
             },
             {
@@ -107,6 +110,7 @@ module.exports = {
                     secondary: '#7659C5',
                     backgroundSecondary: '#555161',
                     white: '#ffffff',
+                    ...EXTENDED_COLORS,
                 },
             },
         ],

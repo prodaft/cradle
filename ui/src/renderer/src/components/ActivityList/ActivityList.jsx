@@ -153,6 +153,12 @@ export default function ActivityList({ name, objectId, content_type, username })
                         </div>
                     ) : events.length > 0 ? (
                         <div>
+                            <Pagination
+                                currentPage={page}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}
+                            />
+
                             <div className='events-list'>
                                 {events.map((event, index) => (
                                     <Activity log={event} key={index} />
