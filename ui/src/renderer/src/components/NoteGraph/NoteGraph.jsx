@@ -151,7 +151,7 @@ const NoteGraphSearch = (noteId) => {
         };
 
         return (
-            <div className='p-2 mt-2 w-full'>
+            <div className='px-2 mt-2 w-full'>
                 <div className='flex items-end w-full justify-between gap-4'>
                     <div className='flex items-center gap-4'>
                         <div className='flex flex-col'>
@@ -212,8 +212,7 @@ const NoteGraphSearch = (noteId) => {
                     <button
                         type='button'
                         onClick={fetchGraphPage}
-                        className='btn btn flex items-center tooltip tooltip-top'
-                        data-tooltip='Fetch graph data'
+                        className='btn btn flex items-center'
                         disabled={isGraphFetching}
                     >
                         {isGraphFetching ? (

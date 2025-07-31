@@ -197,8 +197,8 @@ const PathFindSearch = forwardRef(
         };
 
         return (
-            <div className='flex flex-col space-y-4'>
-                <form className='flex flex-col space-y-2 px-2' onSubmit={handleSubmit}>
+            <div className='flex flex-col space-y-4 px-2'>
+                <form className='flex flex-col space-y-2' onSubmit={handleSubmit}>
                     <div className='grid grid-cols-12 gap-2'>
                         <div className='col-span-6 flex flex-col'>
                             <label className='text-xs text-gray-400 mb-1'>

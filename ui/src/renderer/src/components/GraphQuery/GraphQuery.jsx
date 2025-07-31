@@ -35,14 +35,14 @@ const GraphQuery = forwardRef(function (
     }, [selectedEntries]);
 
     return (
-        <div className='h-full p-3 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col'>
+        <div className='h-full px-3 rounded-xl flex flex-col'>
             <Tabs
                 defaultTab={0}
-                tabClasses='tabs-underline w-full'
+                tabClasses='tabs-underline w-full bg-opacity-9'
                 perTabClass='w-[33%] justify-center'
             >
-                <Tab title='Search' classes='pt-2'>
-                    <div className='mt-3 flex flex-col flex-1 overflow-hidden h-[85vh]'>
+                <Tab title='Search'>
+                    <div className='flex flex-col flex-1 overflow-hidden h-[85vh]'>
                         <GraphControl
                             settingsProps={settingsProps}
                             ref={graphRef}

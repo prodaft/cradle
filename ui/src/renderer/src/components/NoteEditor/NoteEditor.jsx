@@ -6,6 +6,7 @@ import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import { useEffect, useRef, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useParams } from 'react-router-dom';
+import { useModal } from '../../contexts/ModalContext/ModalContext';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import {
@@ -15,6 +16,7 @@ import {
 } from '../../services/notesService/notesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
 import NavbarButton from '../NavbarButton/NavbarButton';
 import TextEditor from '../TextEditor/TextEditor';
 
@@ -30,6 +32,7 @@ export default function NoteEditor() {
     const [editorExtensions, setEditorExtensions] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const { navigate, navigateLink } = useCradleNavigate();
+    const { setModal } = useModal();
     const { id } = useParams();
 
     // Ensure the ref to the markdown content is correct
@@ -161,7 +164,14 @@ export default function NoteEditor() {
                 key='delete-note-btn'
                 icon={<Trash />}
                 text='Delete'
-                onClick={() => handleDeleteNote()}
+                onClick={() =>
+                    setModal(ConfirmDeletionModal, {
+                        props: {
+                            onConfirm: handleDeleteNote,
+                            text: 'Are you sure you want to delete this note? This action is irreversible.',
+                        },
+                    })
+                }
                 awaitOnClick={true}
             />,
         ],

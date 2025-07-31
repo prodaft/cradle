@@ -33,7 +33,12 @@ export default function AdminPanelCardEntryType({
 
     const handleActivityClick = () => {
         setRightPane(
-            <ActivityList content_type='entryclass' objectId={id} name={name} />,
+            <ActivityList
+                content_type='entryclass'
+                objectId={id}
+                name={name}
+                key={id}
+            />,
         );
     };
 

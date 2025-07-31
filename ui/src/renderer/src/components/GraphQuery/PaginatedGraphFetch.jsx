@@ -292,7 +292,7 @@ const PaginatedGraphFetch = forwardRef(
         };
 
         return (
-            <div className='p-2 mt-2 w-full'>
+            <div className='w-full px-2'>
                 <div className='flex flex-col w-full gap-2 mb-2'>
                     {/* First row - Date picker and Source node selector */}
                     <div className='flex items-start w-full gap-4'>
