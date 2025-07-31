@@ -38,8 +38,6 @@ const NoteGraphSearch = (noteId) => {
                     pageSize,
                 });
 
-                console.log(response);
-
                 if (totalPages != response.totalPages) {
                     setTotalPages(response.totalPages);
                 }
