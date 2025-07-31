@@ -2,632 +2,610 @@
   pk: actor
   fields:
     type: artifact
+    description: null
     timestamp: 2024-10-16 11:45:20.354324+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#dc00e6'
     prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: address/jabber
+  fields:
+    type: artifact
+    description: null
+    timestamp: 2025-01-17 13:38:40.537881+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#f38972'
+    prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: alias
+  fields:
+    type: artifact
+    description: null
+    timestamp: 2025-03-10 12:42:30.106396+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#7f8389'
+    prefix: ''
+    children: []
 - model: entries.entryclass
   pk: case
   fields:
     type: entity
+    description: null
     timestamp: 2024-10-16 11:45:20.354324+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#e66100'
-    prefix: ''
+    prefix: CASE-
+    children: []
 - model: entries.entryclass
-  pk: catalyst/larva
+  pk: codeby.net/id
   fields:
     type: artifact
-    timestamp: 2025-02-03 16:50:21.990127+00:00
+    description: ''
+    timestamp: 2025-07-14 13:36:05.053109+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
-    color: '#35a200'
+    color: '#d2ac79'
     prefix: ''
+    children: []
 - model: entries.entryclass
-  pk: city
+  pk: codeby.net/username
   fields:
     type: artifact
-    timestamp: 2024-10-16 11:45:20.354324+00:00
+    description: ''
+    timestamp: 2025-07-14 13:36:02.110255+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
-    color: '#e66100'
+    color: '#d2ac79'
     prefix: ''
-- model: entries.entryclass
-  pk: country
-  fields:
-    type: artifact
-    timestamp: 2024-10-16 11:45:20.354324+00:00
-    regex: ''
-    options: 'Afghanistan
-
-      Albania
-
-      Algeria
-
-      Andorra
-
-      Angola
-
-      Argentina
-
-      Armenia
-
-      Australia
-
-      Austria
-
-      Azerbaijan
-
-      Bahamas
-
-      Bahrain
-
-      Bangladesh
-
-      Barbados
-
-      Belarus
-
-      Belgium
-
-      Belize
-
-      Benin
-
-      Bhutan
-
-      Bolivia
-
-      Botswana
-
-      Brazil
-
-      Brunei
-
-      Bulgaria
-
-      Burkina
-
-      Burundi
-
-      Cambodia
-
-      Cameroon
-
-      Canada
-
-      Chad
-
-      Chile
-
-      China
-
-      Colombia
-
-      Comoros
-
-      Congo
-
-      Croatia
-
-      Cuba
-
-      Cyprus
-
-      Denmark
-
-      Djibouti
-
-      Dominica
-
-      Ecuador
-
-      Egypt
-
-      Eritrea
-
-      Estonia
-
-      Ethiopia
-
-      Fiji
-
-      Finland
-
-      France
-
-      Gabon
-
-      Gambia
-
-      Georgia
-
-      Germany
-
-      Ghana
-
-      Greece
-
-      Grenada
-
-      Guatemala
-
-      Guinea
-
-      Guinea-Bissau
-
-      Guyana
-
-      Haiti
-
-      Honduras
-
-      Hungary
-
-      Iceland
-
-      India
-
-      Indonesia
-
-      Iran
-
-      Iraq
-
-      Israel
-
-      Italy
-
-      Jamaica
-
-      Japan
-
-      Jordan
-
-      Kazakhstan
-
-      Kenya
-
-      Kiribati
-
-      Kosovo
-
-      Kuwait
-
-      Kyrgyzstan
-
-      Laos
-
-      Latvia
-
-      Lebanon
-
-      Lesotho
-
-      Liberia
-
-      Libya
-
-      Liechtenstein
-
-      Lithuania
-
-      Luxembourg
-
-      Macedonia
-
-      Madagascar
-
-      Malawi
-
-      Malaysia
-
-      Maldives
-
-      Mali
-
-      Malta
-
-      Mauritania
-
-      Mauritius
-
-      Mexico
-
-      Micronesia
-
-      Moldova
-
-      Monaco
-
-      Mongolia
-
-      Montenegro
-
-      Morocco
-
-      Mozambique
-
-      Namibia
-
-      Nauru
-
-      Nepal
-
-      Netherlands
-
-      Nicaragua
-
-      Niger
-
-      Nigeria
-
-      Norway
-
-      Oman
-
-      Pakistan
-
-      Palau
-
-      Panama
-
-      Paraguay
-
-      Peru
-
-      Philippines
-
-      Poland
-
-      Portugal
-
-      Qatar
-
-      Romania
-
-      Rwanda
-
-      Samoa
-
-      Senegal
-
-      Serbia
-
-      Seychelles
-
-      Singapore
-
-      Slovakia
-
-      Slovenia
-
-      Somalia
-
-      Spain
-
-      Sudan
-
-      Suriname
-
-      Swaziland
-
-      Sweden
-
-      Switzerland
-
-      Syria
-
-      Taiwan
-
-      Tajikistan
-
-      Tanzania
-
-      Thailand
-
-      Togo
-
-      Tonga
-
-      Tunisia
-
-      Turkey
-
-      Turkmenistan
-
-      Tuvalu
-
-      Uganda
-
-      Ukraine
-
-      Uruguay
-
-      Uzbekistan
-
-      Vanuatu
-
-      Venezuela
-
-      Vietnam
-
-      Yemen
-
-      Zambia
-
-      Zimbabwe'
-    color: '#e66100'
-    prefix: ''
+    children: []
 - model: entries.entryclass
   pk: crypto/btc
   fields:
     type: artifact
+    description: null
     timestamp: 2024-10-15 14:43:28.730491+00:00
+    format: regex
     regex: (bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}
+    generative_regex: ''
     options: ''
     color: '#e66100'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: crypto/eth
   fields:
     type: artifact
+    description: null
     timestamp: 2024-10-24 21:14:58.785834+00:00
+    format: regex
     regex: (0x)?[0-9a-fA-F]{40}
+    generative_regex: ''
     options: ''
     color: '#e66100'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: crypto/ltc
   fields:
     type: artifact
+    description: null
     timestamp: 2024-10-28 19:59:10.609980+00:00
+    format: regex
     regex: (?:L[a-km-zA-HJ-NP-Z1-9]{26,33}|3[a-km-zA-HJ-NP-Z1-9]{26,33}|ltc1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{39,59})
+    generative_regex: ''
     options: ''
     color: '#e66100'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: crypto/tron
   fields:
     type: artifact
+    description: null
     timestamp: 2024-10-24 21:15:09.931152+00:00
+    format: regex
     regex: T[A-Za-z1-9]{33}
+    generative_regex: ''
     options: ''
     color: '#e66100'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: crypto/xmr
   fields:
     type: artifact
+    description: null
     timestamp: 2025-02-03 09:56:27.365103+00:00
+    format: regex
     regex: 4[0-9AB][1-9A-HJ-NP-Za-km-z]{93}
+    generative_regex: ''
     options: ''
     color: '#bc3541'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: crypto/xrp
   fields:
     type: artifact
+    description: null
     timestamp: 2024-10-24 21:15:25.498814+00:00
+    format: regex
     regex: r[1-9A-HJ-NP-Za-km-z]{25,34}
+    generative_regex: ''
     options: ''
     color: '#e66100'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: domain
   fields:
     type: artifact
+    description: null
     timestamp: 2024-10-16 11:45:20.354324+00:00
-    regex: '[a-zA-Z0-9\-]{4,}(?:[a-zA-Z0-9\-\.]+)?\.(?:abogado|ac|academy|accountant|ad|ae|af|afl|africa|ag|agency|ai|al|am|ao|app|ar|army|art|asia|at|au|audio|autos|aws|ax|az|ba|baby|bar|bargains|bazar|bd|be|beauty|beer|berlin|best|bet|bf|bg|bh|bi|bid|bike|bingo|bio|bit|biz|bj|black|blackfriday|blog|blue|bo|boats|bond|boo|br|broker|business|buzz|bw|by|bz|ca|cab|cafe|cam|camp|capetown|capital|cards|care|careers|casa|cash|casino|cat|cc|cd|center|ceo|cf|cfd|cg|ch|charity|chat|cheap|christmas|church|ci|city|cl|click|clinic|clothing|cloud|club|cm|cn|co|codes|coffee|college|com|com|comm|community|company|computer|construction|contact|contractors|cool|corsica|cr|credit|creditcard|cv|cw|cx|cyou|cz|date|day|de|deals|delivery|desi|design|dev|digital|directory|dk|do|doctor|dog|domains|download|durban|dz|ec|eco|edu|education|ee|eg|email|engineer|enterprises|equip|es|et|eu|eus|events|expert|exposed|express|fail|faith|fan|fans|farm|fi|finance|fish|fit|fitness|fj|flights|flowers|fly|fm|fo|foundation|fr|frl|fun|fund|futbol|fyi|ga|gallery|games|gay|gd|gdn|ge|geek|gg|gh|gift|gives|gl|global|gm|gmbh|gold|golf|google|gq|gr|gratis|green|group|gs|gt|guru|gy|hair|haus|healthcare|help|hk|hn|homes|host|hosting|house|hr|ht|hu|ic|icu|id|ie|il|im|immo|in|inc|industries|indy|inf|info|ink|institute|insure|international|investments|io|iq|ir|is|ist|it|je|jm|jo|jobs|joburg|jp|ke|kg|kh|kim|kitchen|kiwi|kr|krd|kred|kz|la|land|lat|law|lb|lc|lease|legal|lgbt|li|lib|life|limited|link|live|lk|loan|loans|loc|local|lol|london|love|lr|lt|ltd|lu|lv|ly|ma|makeup|market|marketing|markets|md|me|media|melbourne|men|mg|miami|mk|ml|mls|mm|mn|mobi|moe|mom|money|monster|moscow|mr|ms|mu|mv|mw|mx|my|mz|name|ne|net|network|news|nf|ng|ngo|ni|ninja|nl|no|np|nra|nu|nyc|nz|observer|ocm|old|om|one|ong|onion|onl|online|ooo|or|org|organic|ovh|pa|page|parody|partners|parts|party|pe|pet|pg|ph|photo|photography|photos|pics|pictures|pink|pirate|pizza|pk|pl|place|plus|pm|poker|porn|press|pro|productions|ps|pt|pw|py|qa|quebec|quest|racing|re|realtor|realty|red|ren|rent|rentals|repair|report|rest|restaurant|review|reviews|rg|rip|ro|rocks|rs|rsvp|ru|run|rw|sa|sale|salon|sbs|sc|school|science|sd|se|services|sexy|sg|sh|shell|shop|si|singles|site|sk|skin|sl|sn|so|soccer|social|software|solutions|space|spae|srl|st|store|stream|studio|su|supplies|support|surf|sv|sx|systems|tattoo|tax|taxi|tc|team|tech|technology|tel|tf|tg|th|tips|tj|tk|tn|to|today|tokyo|tools|top|tours|town|toys|tr|trade|travel|turkey|tv|tw|tz|ua|ug|uk|uno|us|uy|uz|vacations|ve|vegas|ventures|vessel|vet|video|vin|vip|vision|vn|vote|voto|voyage|vru|vu|wang|watch|webcam|website|wf|wiki|win|work|works|world|wow|ws|wtf|xin|xn--6frz82g|xn--j6w193g|xn--p1ai|xxx|xy|xyz|yachts|ye|yoga|yt|za|zero|zip|zm|zone|zw)'
+    format: regex
+    regex: '[a-zA-Z0-9]{1,}(?:[a-zA-Z0-9\-\.äà]+)?\.(?i:international|construction|blackfriday|contractors|enterprises|investments|photography|productions|xn--6frz82g|xn--j6w193g|accountant|creditcard|foundation|healthcare|industries|restaurant|technology|christmas|community|directory|education|institute|marketing|melbourne|solutions|vacations|bargains|business|capetown|clothing|computer|delivery|democrat|download|engineer|observer|partners|pictures|services|software|supplies|ventures|xn--p1ai|abogado|academy|capital|careers|charity|college|company|contact|corsica|digital|domains|exposed|express|finance|fitness|flights|flowers|gallery|hosting|kitchen|limited|markets|monster|network|organic|realtor|rentals|reviews|science|singles|support|systems|website|africa|agency|beauty|berlin|broker|casino|center|church|clinic|coffee|credit|design|direct|doctor|durban|events|expert|futbol|global|google|gratis|insure|joburg|london|makeup|market|moscow|online|parody|photos|pirate|quebec|racing|realty|repair|report|review|school|soccer|social|stream|studio|tattoo|travel|turkey|vessel|vision|voyage|webcam|yachts|click|audio|autos|bazar|bingo|black|boats|cards|cheap|click|cloud|codes|deals|email|equip|faith|games|gives|green|group|homes|house|lease|legal|loans|local|media|miami|money|ninja|onion|parts|party|photo|pizza|place|poker|press|quest|rocks|salon|shell|space|store|today|tokyo|tools|tours|trade|vegas|video|watch|works|world|army|asia|baby|beer|best|bike|blog|blue|bond|buzz|cafe|camp|care|casa|cash|chat|city|club|comm|cool|cyou|date|desi|fail|fans|farm|fish|fund|geek|gift|gmbh|gold|golf|guru|hair|haus|help|host|immo|indy|info|jobs|kiwi|kred|land|lgbt|life|link|live|loan|love|mobi|name|news|page|pics|pink|plus|porn|qpon|rent|rest|rsvp|sale|sexy|shop|site|skin|spae|surf|taxi|team|tech|tips|town|toys|vote|voto|wang|wiki|work|yoga|zero|zone|afl|app|art|aws|bar|bet|bid|bio|bit|biz|boo|cab|cam|cat|ceo|cfd|com|com|day|dev|dog|eco|edu|eus|fan|fit|fly|frl|fun|fyi|gay|gdn|icu|inc|inf|ing|ink|ist|kim|krd|lat|law|lib|llc|loc|lol|ltd|men|mls|moe|mom|net|ngo|nra|nyc|ocm|old|one|ong|onl|ooo|org|ovh|pet|pro|pub|red|ren|rip|run|sbs|srl|tax|tel|top|uno|vet|vin|vip|vru|win|wow|wtf|xin|xxx|xyz|zip|ac|ad|ae|af|ag|ai|al|am|ao|ar|at|au|ax|az|ba|bd|be|bf|bg|bh|bi|bj|bo|br|bw|by|bz|ca|cc|cd|cf|cg|ch|ci|cl|cm|cn|co|cr|cv|cw|cx|cz|de|dk|do|dz|ec|ee|eg|es|et|eu|fi|fj|fm|fo|fr|ga|gd|ge|gg|gh|gl|gm|gq|gr|gs|gt|gy|hk|hn|hr|ht|hu|ic|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|kr|kz|la|lb|lc|li|lk|lr|lt|lu|lv|ly|ma|md|me|mg|mk|ml|mm|mn|mr|ms|mu|mv|mw|mx|my|mz|ne|nf|ng|ni|nl|no|np|nu|nz|om|or|pa|pe|pg|ph|pk|pl|pm|ps|pt|pw|py|qa|re|rg|ro|rs|ru|rw|sa|sc|sd|se|sg|sh|si|sk|sl|sn|so|st|su|sv|sx|tc|tf|tg|th|tj|tk|tm|tn|to|tr|tv|tw|tz|ua|ug|uk|us|uy|uz|vc|ve|vn|vu|wf|ws|xy|ye|yt|za|zm|zw)'
+    generative_regex: ''
     options: ''
     color: '#e66100'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: email
   fields:
     type: artifact
+    description: null
     timestamp: 2024-10-16 11:45:20.354324+00:00
-    regex: ^(?:[a-zA-Z0-9_\-\.]+)@(?:(?:\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(?:(?:[a-zA-Z0-9\-]+\.)+))(?:[a-zA-Z]{2,4}|[0-9]{1,3})(?:\]?)$
+    format: regex
+    regex: ^(?:[a-zA-Z0-9_\-\.]+)@(?:(?:\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(?:(?:[a-zA-Z0-9\-]+\.)+))(?:[a-zA-Z]{2,6}|[0-9]{1,3})(?:\]?)$
+    generative_regex: ''
     options: ''
     color: '#e66100'
     prefix: ''
+    children:
+    - domain
+- model: entries.entryclass
+  pk: enabler
+  fields:
+    type: artifact
+    description: cybercrimeenabler type for catalyst
+    timestamp: 2025-06-02 10:18:43.203421+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#d2797c'
+    prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: file
+  fields:
+    type: artifact
+    description: null
+    timestamp: 2025-05-30 12:27:09.451231+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#7f8389'
+    prefix: ''
+    children: []
 - model: entries.entryclass
   pk: hash/md5
   fields:
     type: artifact
+    description: null
     timestamp: 2024-10-16 11:45:20.354324+00:00
+    format: regex
     regex: '[a-fA-F0-9]{32}'
+    generative_regex: ''
     options: ''
     color: '#e66100'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: hash/sha1
   fields:
     type: artifact
+    description: null
     timestamp: 2024-10-16 11:45:20.354324+00:00
+    format: regex
     regex: '[a-fA-F0-9]{40}'
+    generative_regex: ''
     options: ''
     color: '#e66100'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: hash/sha256
   fields:
     type: artifact
+    description: null
     timestamp: 2024-10-16 11:45:20.354324+00:00
+    format: regex
     regex: '[a-fA-F0-9]{64}'
+    generative_regex: ''
     options: ''
     color: '#e66100'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: id/antichat
   fields:
     type: artifact
+    description: null
     timestamp: 2024-12-17 11:05:25.771989+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#67f757'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: id/bhf
   fields:
     type: artifact
+    description: null
     timestamp: 2024-12-17 11:05:30.789340+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#17bbb5'
     prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: id/breached
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-03-10 13:15:43.162420+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#d1d279'
+    prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: id/breachforums
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-03-10 13:16:19.031866+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#79a0d2'
+    prefix: ''
+    children: []
 - model: entries.entryclass
   pk: id/dark2web
   fields:
     type: artifact
+    description: null
     timestamp: 2024-12-17 11:06:22.896131+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#171bfa'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: id/darkmarket
   fields:
     type: artifact
+    description: null
     timestamp: 2024-12-17 11:05:41.390544+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#067841'
     prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: id/darkmoney
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-06-04 08:51:50.094912+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#d279b3'
+    prefix: ''
+    children: []
 - model: entries.entryclass
   pk: id/dublikat
   fields:
     type: artifact
+    description: null
     timestamp: 2024-12-17 11:05:36.020425+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#ffd330'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: id/exploit.in
   fields:
     type: artifact
+    description: null
     timestamp: 2024-11-14 12:12:08.804612+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#f17a62'
     prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: id/fuckav.ru
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-04-30 08:49:56.522220+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#79d29b'
+    prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: id/gerki
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-03-10 14:47:51.452004+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#799ed2'
+    prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: id/icq
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-03-31 08:38:05.809070+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#7997d2'
+    prefix: ''
+    children: []
 - model: entries.entryclass
   pk: id/leakbase.io
   fields:
     type: artifact
+    description: null
     timestamp: 2024-12-17 11:05:55.582046+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#bcd297'
     prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: id/mazafaka.ru
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-03-31 20:27:19.396875+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#79d28f'
+    prefix: ''
+    children: []
 - model: entries.entryclass
   pk: id/raidforums
   fields:
     type: artifact
+    description: null
     timestamp: 2024-11-14 12:13:15.092449+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#7aa594'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: id/ramp4u
   fields:
     type: artifact
+    description: null
     timestamp: 2024-11-14 12:13:14.538362+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#7aa594'
     prefix: ''
+    children: []
 - model: entries.entryclass
-  pk: id/tg
+  pk: id/session
   fields:
     type: artifact
-    timestamp: 2024-11-05 12:16:09.856559+00:00
+    description: ''
+    timestamp: 2025-05-14 15:01:48.119201+00:00
+    format: null
     regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#7988d2'
+    prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: id/telegram
+  fields:
+    type: artifact
+    description: null
+    timestamp: 2025-05-19 14:48:58.585986+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
     options: ''
     color: '#536ea1'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: id/tox
   fields:
     type: artifact
+    description: null
     timestamp: 2024-11-05 12:15:48.526846+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#b229a7'
     prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: id/ufolabs
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-04-30 08:50:13.565832+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#79d29b'
+    prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: id/verified_forum
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-03-30 17:21:44.117235+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#79c9d2'
+    prefix: ''
+    children: []
 - model: entries.entryclass
   pk: id/wwh-club
   fields:
     type: artifact
+    description: null
     timestamp: 2024-11-14 12:13:14.779496+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#7aa594'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: id/xss.is
   fields:
     type: artifact
+    description: null
     timestamp: 2024-11-14 12:12:32.698446+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#7aa594'
     prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: id/zloy.org
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-03-31 20:27:47.327288+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#79d2c8'
+    prefix: ''
+    children: []
 - model: entries.entryclass
   pk: ip
   fields:
     type: artifact
+    description: null
     timestamp: 2024-10-16 11:45:20.354324+00:00
+    format: regex
     regex: (?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])
+    generative_regex: ''
     options: ''
     color: '#e66100'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: ipv6
   fields:
     type: artifact
+    description: null
     timestamp: 2024-10-16 11:45:20.354324+00:00
+    format: regex
     regex: (?:(?:[0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,7}:|(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,5}(?::[0-9a-fA-F]{1,4}){1,2}|(?:[0-9a-fA-F]{1,4}:){1,4}(?::[0-9a-fA-F]{1,4}){1,3}|(?:[0-9a-fA-F]{1,4}:){1,3}(?::[0-9a-fA-F]{1,4}){1,4}|(?:[0-9a-fA-F]{1,4}:){1,2}(?::[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(?:(?::[0-9a-fA-F]{1,4}){1,6})|:(?:(?::[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(?::[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(?:ffff(?::0{1,4}){0,1}:){0,1}(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])|(?:[0-9a-fA-F]{1,4}:){1,4}:(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9]))
+    generative_regex: ''
     options: ''
     color: '#e66100'
     prefix: ''
+    children: []
 - model: entries.entryclass
-  pk: jabber/address
+  pk: location/city
   fields:
     type: artifact
-    timestamp: 2025-01-17 13:38:40.537881+00:00
+    description: ''
+    timestamp: 2025-04-23 13:32:55.708591+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
-    color: '#f38972'
+    color: '#d28c79'
     prefix: ''
-- model: entries.entryclass
-  pk: jabber/name
-  fields:
-    type: artifact
-    timestamp: 2025-01-17 13:38:44.628560+00:00
-    regex: ''
-    options: ''
-    color: '#a21293'
-    prefix: ''
-- model: entries.entryclass
-  pk: location/code
-  fields:
-    type: artifact
-    timestamp: 2025-02-03 13:46:27.761711+00:00
-    regex: ''
-    options: ''
-    color: '#e66100'
-    prefix: ''
+    children: []
 - model: entries.entryclass
   pk: location/country
   fields:
     type: artifact
+    description: null
     timestamp: 2025-02-03 13:46:18.904152+00:00
+    format: options
     regex: ''
+    generative_regex: ''
     options: 'Afghanistan
 
       Albania
@@ -951,93 +929,237 @@
       Zimbabwe'
     color: '#e66100'
     prefix: ''
+    children: []
 - model: entries.entryclass
-  pk: name
+  pk: lolzteam/id
   fields:
     type: artifact
-    timestamp: 2024-10-16 11:45:07.251442+00:00
+    description: ''
+    timestamp: 2025-07-14 13:35:23.831571+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
-    color: '#e66100'
+    color: '#d2ac79'
     prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: lolzteam/username
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-07-14 13:35:34.107146+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#d2ac79'
+    prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: name/jabber
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-04-29 14:55:59.358051+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#d28c79'
+    prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: name/matrix
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-04-30 12:49:27.464761+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#797bd2'
+    prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: name/rocket.chat
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-06-02 10:34:23.879983+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#79d2b2'
+    prefix: ''
+    children: []
 - model: entries.entryclass
   pk: name/skype
   fields:
     type: artifact
+    description: null
     timestamp: 2025-01-17 13:19:30.416186+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#6ec3a0'
     prefix: ''
+    children: []
 - model: entries.entryclass
-  pk: name/tg
+  pk: name/telegram
   fields:
     type: artifact
-    timestamp: 2024-11-05 12:15:35.880107+00:00
+    description: null
+    timestamp: 2025-05-19 14:49:02.694500+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#664f7b'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: name/tox
   fields:
     type: artifact
+    description: null
     timestamp: 2024-11-05 12:15:44.506325+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#d72ce5'
     prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: nickname/rocket.chat
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-06-03 11:53:19.031300+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#8fd279'
+    prefix: ''
+    children: []
 - model: entries.entryclass
   pk: password
   fields:
     type: artifact
+    description: null
     timestamp: 2024-10-03 08:57:56.088545+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#e66100'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: phone
   fields:
     type: artifact
+    description: null
     timestamp: 2024-10-16 11:45:31.065195+00:00
+    format: regex
     regex: (\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}
+    generative_regex: ''
     options: ''
     color: '#e66100'
     prefix: ''
+    children: []
 - model: entries.entryclass
-  pk: service-key
+  pk: skynetzone/id
   fields:
     type: artifact
-    timestamp: 2025-01-02 08:08:58.126154+00:00
+    description: ''
+    timestamp: 2025-07-14 13:58:55.464267+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
-    color: '#a26831'
+    color: '#d2ac79'
     prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: skynetzone/username
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-07-14 13:58:52.779793+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#d2ac79'
+    prefix: ''
+    children: []
 - model: entries.entryclass
   pk: source
   fields:
     type: entity
+    description: null
     timestamp: 2024-10-16 11:45:20.354324+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#744abf'
     prefix: PTI-
+    children: []
+- model: entries.entryclass
+  pk: tag/c2
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-04-30 12:10:51.843619+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#d2bf79'
+    prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: tag/malware
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-04-30 12:10:48.298656+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#d2bf79'
+    prefix: ''
+    children: []
 - model: entries.entryclass
   pk: tool
   fields:
     type: artifact
+    description: null
     timestamp: 2024-11-22 13:26:10.171988+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#f4870f'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: ttp
   fields:
     type: artifact
+    description: null
     timestamp: 2024-10-16 11:45:20.354324+00:00
+    format: options
     regex: ''
+    generative_regex: ''
     options: 'T1001
 
       T1001.001
@@ -2094,204 +2216,482 @@
 
       T1614
 
-      T1614.001'
+      T1614.001
+
+      T1041
+
+      T1105
+
+      T1496
+
+      T1113
+
+      T1083
+
+      T1046
+
+      T1140
+
+      T1190
+
+      T1203'
     color: '#e66100'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: url
   fields:
     type: artifact
+    description: null
     timestamp: 2024-10-16 11:45:20.354324+00:00
-    regex: https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9(?:)]{1,6}\b(?:[-a-zA-Z0-9(?:)!@:%_\+.~#?&\/\/=]*)
+    format: regex
+    regex: https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9(?:)]{1,6}\b(?:[-a-zA-Z0-9(?:)!@:%_\+.~#?\$&\/\/=]*)
+    generative_regex: ''
     options: ''
     color: '#e66100'
     prefix: ''
-- model: entries.entryclass
-  pk: user-agent
-  fields:
-    type: artifact
-    timestamp: 2025-01-02 08:08:41.251184+00:00
-    regex: ''
-    options: ''
-    color: '#a08168'
-    prefix: ''
+    children:
+    - domain
+    - ip
 - model: entries.entryclass
   pk: username/antichat
   fields:
     type: artifact
+    description: null
     timestamp: 2024-12-17 11:06:40.741908+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#c1cb3c'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: username/bhf
   fields:
     type: artifact
+    description: null
     timestamp: 2024-12-17 11:06:46.311917+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#52508c'
     prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: username/blackhatworld.com
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-03-31 08:37:42.226865+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#7997d2'
+    prefix: ''
+    children: []
 - model: entries.entryclass
   pk: username/breached
   fields:
     type: artifact
+    description: null
     timestamp: 2025-02-03 13:18:01.611361+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#aa68eb'
     prefix: ''
+    children: []
 - model: entries.entryclass
-  pk: username/breachedforums
+  pk: username/breachforums
   fields:
     type: artifact
-    timestamp: 2025-02-03 13:18:07.984827+00:00
+    description: null
+    timestamp: 2025-03-10 13:16:09.707120+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#43f02e'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: username/dark2web
   fields:
     type: artifact
+    description: null
     timestamp: 2024-12-17 11:07:08.732384+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#fddaad'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: username/darkmarket
   fields:
     type: artifact
+    description: null
     timestamp: 2024-12-17 11:06:57.631608+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#205836'
     prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: username/darkmoney
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-06-04 08:51:57.603806+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#d279b3'
+    prefix: ''
+    children: []
 - model: entries.entryclass
   pk: username/dublikat
   fields:
     type: artifact
+    description: null
     timestamp: 2024-12-17 11:06:51.593810+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#06f82d'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: username/exploit.in
   fields:
     type: artifact
+    description: null
     timestamp: 2024-11-14 12:15:23.995145+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#c88686'
     prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: username/exposed.vc
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-03-11 08:23:21.997165+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#79d2cf'
+    prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: username/fuckav.ru
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-04-30 08:50:01.314566+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#79d29b'
+    prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: username/gerki
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-03-10 14:48:02.099222+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#c379d2'
+    prefix: ''
+    children: []
 - model: entries.entryclass
   pk: username/leakbase.io
   fields:
     type: artifact
+    description: null
     timestamp: 2024-12-17 11:07:03.051996+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#557813'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: username/magbo.cc
   fields:
     type: artifact
+    description: null
     timestamp: 2025-02-17 08:19:58.597566+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#a3f455'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: username/matrix
   fields:
     type: artifact
+    description: null
     timestamp: 2025-02-07 16:09:30.292001+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#796485'
     prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: username/mazafaka.ru
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-03-31 20:27:23.692603+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#79d28f'
+    prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: username/other
+  fields:
+    type: artifact
+    description: null
+    timestamp: 2025-05-06 12:14:17.906531+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#e66100'
+    prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: username/qip.ru
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-03-31 20:32:42.158075+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#79d282'
+    prefix: ''
+    children: []
 - model: entries.entryclass
   pk: username/raidforums
   fields:
     type: artifact
+    description: null
     timestamp: 2024-11-14 12:15:23.802293+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#c88686'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: username/ramp4u
   fields:
     type: artifact
+    description: null
     timestamp: 2024-11-14 12:15:23.419850+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#c88686'
     prefix: ''
+    children: []
 - model: entries.entryclass
-  pk: username/rocketchat
+  pk: username/rocket.chat
   fields:
     type: artifact
-    timestamp: 2024-12-17 11:07:18.146244+00:00
+    description: null
+    timestamp: 2025-05-19 14:42:46.339369+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#ca3bb8'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: username/skype
   fields:
     type: artifact
+    description: null
     timestamp: 2025-01-17 13:19:36.787191+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#ed284a'
     prefix: ''
+    children: []
 - model: entries.entryclass
-  pk: username/tg
+  pk: username/telegram
   fields:
     type: artifact
-    timestamp: 2024-11-05 12:15:30.503754+00:00
+    description: null
+    timestamp: 2025-05-19 14:49:06.582536+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#fbbb9e'
     prefix: ''
+    children: []
 - model: entries.entryclass
-  pk: username/unk
+  pk: username/thesecure.biz
   fields:
     type: artifact
-    timestamp: 2025-02-03 16:49:38.637718+00:00
+    description: ''
+    timestamp: 2025-05-26 15:37:30.868040+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
-    color: '#e66100'
+    color: '#d29e79'
     prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: username/ufolabs
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-04-30 08:50:10.746940+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#79d29b'
+    prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: username/verified_forum
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-03-30 17:21:30.765447+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#79c9d2'
+    prefix: ''
+    children: []
 - model: entries.entryclass
   pk: username/wwh-club
   fields:
     type: artifact
+    description: null
     timestamp: 2024-11-14 12:15:23.612016+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#c88686'
     prefix: ''
+    children: []
 - model: entries.entryclass
   pk: username/xss.is
   fields:
     type: artifact
+    description: null
     timestamp: 2024-11-14 12:15:24.205798+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
     color: '#c88686'
     prefix: ''
+    children: []
 - model: entries.entryclass
-  pk: victim/domain
+  pk: username/yalishanda
   fields:
     type: artifact
-    timestamp: 2025-02-03 16:44:50.335334+00:00
+    description: ''
+    timestamp: 2025-03-26 14:37:00.416595+00:00
+    format: null
     regex: ''
+    generative_regex: ''
     options: ''
-    color: '#2444d6'
+    color: '#d2bf79'
     prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: username/zloy.org
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-03-31 20:27:51.513808+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#79d2c8'
+    prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: virtual
+  fields:
+    type: artifact
+    description: null
+    timestamp: 2025-04-25 18:18:31.953234+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#7f8389'
+    prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: vlmi/id
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-07-14 13:37:09.049068+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#d2ac79'
+    prefix: ''
+    children: []
+- model: entries.entryclass
+  pk: vlmi/username
+  fields:
+    type: artifact
+    description: ''
+    timestamp: 2025-07-14 13:37:12.620365+00:00
+    format: null
+    regex: ''
+    generative_regex: ''
+    options: ''
+    color: '#d2ac79'
+    prefix: ''
+    children: []
