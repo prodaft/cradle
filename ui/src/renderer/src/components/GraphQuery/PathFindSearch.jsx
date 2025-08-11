@@ -276,8 +276,7 @@ const PathFindSearch = forwardRef(
                         <button
                             type='submit'
                             title='Search graph'
-                            className='btn w-fit flex items-center mt-auto tooltip tooltip-bottom'
-                            data-tooltip='Find paths between the specified nodes'
+                            className='btn w-fit flex items-center mt-auto'
                             disabled={isSubmitting}
                         >
                             {isSubmitting ? (

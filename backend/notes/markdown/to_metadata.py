@@ -1,115 +1,15 @@
-import mistune
+from typing import Any, Dict
+
 import frontmatter
-from .common import ErrorBypassYAMLHandler, cradle_link_plugin
-from .table import table
+import mistune
+from mistune import BlockState
+
 from ..models import Note
-from typing import Any, Dict, Tuple, cast
-
-from mistune.core import BlockState
-from mistune.renderers.markdown import MarkdownRenderer as BaseMarkdownRenderer
+from .common import ErrorBypassYAMLHandler
+from .to_markdown import MarkdownRenderer
 
 
-class SimplifiedRenderer(BaseMarkdownRenderer):
-    """A renderer for converting Markdown to markdown, with changes."""
-
-    NAME = "markdown"
-
-    def __init__(
-        self,
-        entryclass_remap: Dict[str, str] = {},
-        entry_remap: Dict[Tuple[str, str], str] = {},
-    ) -> None:
-        self.entryclass_remap = entryclass_remap
-        self.entry_remap = entry_remap
-        super(SimplifiedRenderer, self).__init__()
-
-    def paragraph(self, token: Dict[str, Any], state: BlockState) -> str:
-        text = self.render_children(token, state)
-        return text + "\n"
-
-    def cradle_link(self, token: Dict[str, any], state: BlockState) -> str:
-        _, value, alias, _, _ = (
-            token["attrs"].get("key"),
-            token["attrs"].get("value"),
-            token["attrs"].get("alias"),
-            token["attrs"].get("date"),
-            token["attrs"].get("time"),
-        )
-
-        return alias or value or ""
-
-    def blank_line(self, token: Dict[str, Any], state: BlockState) -> str:
-        return token.get("content", "")
-
-    def table(self, token: Dict[str, any], state: BlockState) -> str:
-        return ""
-
-    def table_head(self, token: Dict[str, any], state: BlockState) -> str:
-        return ""
-
-    def table_body(self, token: Dict[str, any], state: BlockState) -> str:
-        return ""
-
-    def table_row(self, token: Dict[str, any], state: BlockState) -> str:
-        return ""
-
-    def table_cell(self, token: Dict[str, any], state: BlockState) -> str:
-        return ""
-
-    def text(self, token: Dict[str, Any], state: BlockState) -> str:
-        return token.get("raw", "")
-
-    def emphasis(self, token: Dict[str, Any], state: BlockState) -> str:
-        return self.render_children(token, state)
-
-    def strong(self, token: Dict[str, Any], state: BlockState) -> str:
-        return self.render_children(token, state)
-
-    def link(self, token: Dict[str, Any], state: BlockState) -> str:
-        label = cast(str, token.get("label"))
-        return label
-
-    def image(self, token: Dict[str, Any], state: BlockState) -> str:
-        return ""
-
-    def codespan(self, token: Dict[str, Any], state: BlockState) -> str:
-        return ""
-
-    def linebreak(self, token: Dict[str, Any], state: BlockState) -> str:
-        return ""
-
-    def softbreak(self, token: Dict[str, Any], state: BlockState) -> str:
-        return ""
-
-    def inline_html(self, token: Dict[str, Any], state: BlockState) -> str:
-        return ""
-
-    def heading(self, token: Dict[str, Any], state: BlockState) -> str:
-        return ""
-
-    def thematic_break(self, token: Dict[str, Any], state: BlockState) -> str:
-        return ""
-
-    def block_text(self, token: Dict[str, Any], state: BlockState) -> str:
-        return ""
-
-    def block_code(self, token: Dict[str, Any], state: BlockState) -> str:
-        return ""
-
-    def block_quote(self, token: Dict[str, Any], state: BlockState) -> str:
-        return ""
-
-    def block_html(self, token: Dict[str, Any], state: BlockState) -> str:
-        return ""
-
-    def block_error(self, token: Dict[str, Any], state: BlockState) -> str:
-        return ""
-
-    def list(self, token: Dict[str, Any], state: BlockState) -> str:
-        return ""
-
-
-class MetadataGuesser(mistune.HTMLRenderer):
+class MetadataGuesser(MarkdownRenderer):
     def render_tokens(self, tokens, state):
         if len(self.expected_fields) == 0:
             return ""
@@ -133,22 +33,19 @@ class MetadataGuesser(mistune.HTMLRenderer):
         if key in self.expected_fields:
             self.expected_fields.remove(key)
 
-    def heading(self, text, level):
+    def heading(self, token: Dict[str, Any], state: BlockState) -> str:
+        text = self.render_children(token, state)
         self.set_field("title", text)
 
         return ""
 
-    def paragraph(self, text):
+    def paragraph(self, token: Dict[str, Any], state: BlockState) -> str:
         if "description" in self.metadata:
             return ""
 
-        renderer = SimplifiedRenderer()
-        markdown = mistune.create_markdown(
-            renderer=renderer, plugins=[table, cradle_link_plugin], hard_wrap=True
-        )
-        simplified = markdown(text)
+        text = self.render_children(token, state)
 
-        stripped = simplified.strip()
+        stripped = text.strip()
         self.set_field(
             "description",
             stripped[0 : min(Note.description.field.max_length, len(stripped))],

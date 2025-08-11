@@ -1,9 +1,10 @@
 from typing import Iterable, Tuple
+
 from entries.models import Entry
 
-from .base_task import BaseTask
-from ..models import Note
 from ..markdown.to_metadata import infer_metadata
+from ..models import Note
+from .base_task import BaseTask
 
 
 class MetadataProcessTask(BaseTask):

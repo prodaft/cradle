@@ -131,12 +131,13 @@ export function renderCradleLink(
     const colorClass = entryColors.get(type) || '#000000';
 
     let displayText = displayedName;
-    if (date) {
-        displayText += ` (${time ? time + ' ' : ''}${date})`;
-    }
 
     if (plaintext) {
         return displayText;
+    }
+
+    if (date) {
+        displayText += ` (${time ? time + ' ' : ''}${date})`;
     }
 
     return `<a style="color: ${colorClass};" href="${url}" data-custom-href="${url}" ${

@@ -400,8 +400,7 @@ const PaginatedGraphFetch = forwardRef(
                         <button
                             type='button'
                             onClick={fetchGraphPage}
-                            className='btn btn flex items-center tooltip tooltip-top'
-                            data-tooltip='Fetch graph data'
+                            className='btn btn flex items-center'
                             disabled={
                                 isGraphFetching || reachedMaxDepthAndEnd || !sourceNode
                             }
