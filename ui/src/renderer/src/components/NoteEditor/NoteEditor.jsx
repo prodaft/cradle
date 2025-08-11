@@ -159,17 +159,14 @@ export default function NoteEditor() {
                 onClick={() => handleSaveNote('Changes saved successfully.')}
                 awaitOnClick={true}
             />,
-
             <NavbarButton
                 key='delete-note-btn'
                 icon={<Trash />}
                 text='Delete'
                 onClick={() =>
                     setModal(ConfirmDeletionModal, {
-                        props: {
-                            onConfirm: handleDeleteNote,
-                            text: 'Are you sure you want to delete this note? This action is irreversible.',
-                        },
+                        onConfirm: handleDeleteNote,
+                        text: 'Are you sure you want to delete this note? This action is irreversible.',
                     })
                 }
                 awaitOnClick={true}
