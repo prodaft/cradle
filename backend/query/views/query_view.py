@@ -1,23 +1,25 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.request import Request
+from typing import cast
+from uuid import UUID
+
+from access.models import Access
+from core.pagination import TotalPagesPagination
+from django.db.models import Q, Subquery
+from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from entries.enums import EntryType
+from entries.models import Entry
+from entries.serializers import EntryResponseSerializer
 from rest_framework import status
 from rest_framework.generics import ListAPIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
-from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q, Subquery
-from typing import cast
-
-from entries.models import Entry
-from access.models import Access
-from query.filters import EntryFilter
-from core.pagination import TotalPagesPagination
-from drf_spectacular.utils import extend_schema, OpenApiParameter
-from entries.serializers import EntryResponseSerializer
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from user.authentication import APIKeyAuthentication
-from uuid import UUID
-from entries.enums import EntryType
+
+from query.filters import EntryFilter
+
 from ..utils import parse_query
 
 
@@ -33,8 +35,9 @@ from ..utils import parse_query
         ),
         OpenApiParameter(
             name="subtype",
-            description="Filter by entry class subtype. Supports multiple values separated by commas.",
+            description="Filter by entry class subtype.",
             required=False,
+            many=True,
             type=str,
         ),
         OpenApiParameter(
@@ -42,11 +45,13 @@ from ..utils import parse_query
             description="Filter by entry name (case-insensitive contains search)",
             required=False,
             type=str,
+            many=True,
         ),
         OpenApiParameter(
             name="name_exact",
             description="Filter by exact entry name",
             required=False,
+            many=True,
             type=str,
         ),
         OpenApiParameter(
@@ -69,9 +74,7 @@ from ..utils import parse_query
         ),
     ],
     responses={
-        200: TotalPagesPagination().get_paginated_response_serializer(
-            EntryResponseSerializer
-        ),
+        200: EntryResponseSerializer(many=True),
         401: {"description": "Unauthorized"},
     },
 )
@@ -123,6 +126,7 @@ class AdvancedQueryView(APIView):
                 name="query",
                 description="Advanced query string (e.g., 'type:name', '*:name', 'type:*', 'type:name && type2:name2')",
                 required=True,
+                many=True,
                 type=str,
             ),
             OpenApiParameter(
@@ -146,7 +150,9 @@ class AdvancedQueryView(APIView):
             ),
         ],
         responses={
-            200: EntryResponseSerializer(many=True),
+            200: TotalPagesPagination().get_paginated_response_serializer(
+                EntryResponseSerializer
+            ),
             400: {"description": "Invalid query syntax"},
             401: {"description": "Unauthorized"},
         },
@@ -157,22 +163,34 @@ class AdvancedQueryView(APIView):
         if getattr(self, "swagger_fake_view", False):
             return Response([])
 
+        page_size = request.query_params.get("page_size", "10")
+        if not page_size.isdigit() or int(page_size) <= 0:
+            return Response(
+                {"error": "Invalid page_size parameter. Must be a positive integer."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        page_size = int(page_size)
+
         # Get the query parameter from the request
-        query_str = request.query_params.get("query")
+        queries = request.query_params.getlist("query", [])
 
         if request.query_params.get("wildcard") == "true":
-            query_str = "*" + query_str + "*"
+            queries = [f"*{query}*" for query in queries]
 
-        if not query_str:
+        if not queries:
             query_filter = Q()
         else:
-            try:
-                query_filter = parse_query(query_str)
-            except Exception as e:
-                return Response(
-                    {"error": f"Invalid query syntax: {str(e)}"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+            query_filter = Q()
+            for query_str in queries:
+                if not query_str.strip():
+                    continue
+                try:
+                    query_filter |= parse_query(query_str.strip())
+                except Exception as e:
+                    return Response(
+                        {"error": f"Invalid query syntax: {str(e)}"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
         # Get accessible entries for the user
         accessible_entries = Entry.objects.accessible(request.user).non_virtual()
@@ -196,7 +214,7 @@ class AdvancedQueryView(APIView):
 
         # Order and paginate the results
         filtered_entries = filtered_entries.order_by("-last_seen")
-        paginator = TotalPagesPagination()
+        paginator = TotalPagesPagination(page_size=page_size)
         paginated_entries = paginator.paginate_queryset(filtered_entries, request)
 
         # Serialize and return the response

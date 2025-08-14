@@ -178,6 +178,12 @@ export default function Relations({ obj }) {
             });
     };
 
+    const handleResultClick = (link) => (e) => {
+        e.preventDefault();
+        setAlert({ ...alert, show: false });
+        navigate(link, { event: e });
+    };
+
     useEffect(() => {
         performSearch(depth, page);
         populateEntrySubtypes();

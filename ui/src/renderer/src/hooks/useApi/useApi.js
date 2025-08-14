@@ -1,5 +1,22 @@
 import { useContext } from 'react';
 import { ApiContext } from '../../components/ApiProvider/ApiProvider';
+import {
+    AccessApi,
+    EntriesApi,
+    FileTransferApi,
+    FleetingNotesApi,
+    IntelioApi,
+    KnowledgeGraphApi,
+    LogsApi,
+    LspApi,
+    ManagementApi,
+    NotesApi,
+    NotificationsApi,
+    QueryApi,
+    ReportsApi,
+    StatisticsApi,
+    UsersApi,
+} from '../../services/cradle/apis';
 
 /**
  * Hook to use the ApiContext

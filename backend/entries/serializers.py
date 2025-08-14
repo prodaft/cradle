@@ -1,18 +1,16 @@
-from rest_framework import serializers
-from .models import Entry, EntryClass, Relation
-from .enums import EntryType
 from django.db.models import Q
-
-
-from .exceptions import (
-    DuplicateEntryException,
-    EntryTypeMismatchException,
-    EntryMustHaveASubtype,
-    EntryTypeDoesNotExist,
-)
-
 from drf_spectacular.extensions import OpenApiSerializerExtension
 from drf_spectacular.utils import extend_schema_field
+from rest_framework import serializers
+
+from .enums import EntryType
+from .exceptions import (
+    DuplicateEntryException,
+    EntryMustHaveASubtype,
+    EntryTypeDoesNotExist,
+    EntryTypeMismatchException,
+)
+from .models import Entry, EntryClass, Relation
 
 
 class EntryCompressedTreeValueSerializer(serializers.Serializer):
@@ -313,6 +311,44 @@ class NextNameResponseSerializer(serializers.Serializer):
     name = serializers.CharField(
         allow_null=True, help_text="Next available name, or null if class has no prefix"
     )
+
+
+class EntryResponseSerializerExtension(OpenApiSerializerExtension):
+    target_class = "entries.serializers.EntryResponseSerializer"
+    match_subclasses = True
+
+    def map_serializer(self, auto_schema, direction):
+        schema = super().map_serializer(auto_schema, direction)
+
+        properties = schema.get("properties", {})
+        properties.pop("entry_class", None)
+
+        properties["type"] = {
+            "type": "string",
+            "description": "Type of the entry (e.g., entity, artifact)",
+        }
+        properties["subtype"] = {
+            "type": "string",
+            "description": "Subtype for the entry",
+        }
+        properties["description"] = {
+            "type": "string",
+            "description": "Description of the entry",
+            "nullable": True,
+        }
+        properties["color"] = {
+            "type": "string",
+            "description": "Color associated with the entry class",
+            "nullable": True,
+        }
+
+        required = set(schema.get("required", []))
+
+        required.add("subtype")
+        required.add("type")
+        schema["required"] = list(required)
+
+        return schema
 
 
 class EntryResponseSerializer(serializers.ModelSerializer):

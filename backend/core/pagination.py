@@ -1,7 +1,7 @@
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.response import Response
 from drf_spectacular.utils import inline_serializer
 from rest_framework import serializers
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
 
 
 class TotalPagesPagination(PageNumberPagination):

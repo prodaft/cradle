@@ -1,9 +1,9 @@
 import { Search } from 'iconoir-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { getEntryClasses } from '../../services/adminService/adminService';
-import { advancedQuery, queryEntries } from '../../services/queryService/queryService';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
@@ -40,8 +40,21 @@ export default function SearchDialog({ isOpen, onClose }) {
 
     const dialogRoot = document.getElementById('portal-root');
     const { navigate, navigateLink } = useCradleNavigate();
+    const { queryApi } = useApi();
     const handleError = displayError(setAlert, navigate);
     const [isLoading, setIsLoading] = useState(false);
+
+    const autoResize = (el) => {
+        if (!el) return;
+        el.style.height = 'auto';
+        const maxH = parseInt(getComputedStyle(el).maxHeight || '0', 10);
+        const newHeight = el.scrollHeight;
+        if (maxH && newHeight > maxH) {
+            el.style.height = `${maxH}px`;
+        } else {
+            el.style.height = `${newHeight}px`;
+        }
+    };
 
     const populateEntrySubtypes = () => {
         getEntryClasses()
@@ -55,10 +68,14 @@ export default function SearchDialog({ isOpen, onClose }) {
     };
 
     const handleKeyDown = (event) => {
+        // Enter to search; Shift+Enter to insert a newline
         if (event.key === 'Enter') {
+            if (event.shiftKey) {
+                return; // allow newline
+            }
             event.preventDefault();
-            performSearch();
             setPage(1);
+            performSearch();
         }
     };
 
@@ -69,51 +86,62 @@ export default function SearchDialog({ isOpen, onClose }) {
         navigate(link, { event: e });
     };
 
-    const performSearch = () => {
+    const performSearch = async () => {
         setAlert({ ...alert, show: false });
         setIsLoading(true);
-
+        let searchQueries = searchQuery
+            .split('\n')
+            .map((q) => q.trim())
+            .filter((q) => q !== '');
         if (entrySubtypeFilters.length == 0) {
-            // Use advanced query method for direct search
-            advancedQuery(searchQuery, true, page)
-                .then((response) => {
-                    setTotalPages(response.data.total_pages);
-                    setResults(response.data.results);
-                })
-                .catch(displayError(setAlert, navigate))
-                .finally(() => {
-                    setIsLoading(false);
+            try {
+                let response = await queryApi.queryAdvancedRetrieve({
+                    page: page,
+                    pageSize: 20,
+                    query: searchQueries,
+                    wildcard: true,
                 });
+                setTotalPages(response.totalPages);
+                setResults(response.results);
+            } catch (error) {
+                displayError(setAlert, navigate)(error);
+            } finally {
+                setIsLoading(false);
+            }
         } else {
-            // Use standard query with filters
-            queryEntries(
-                {
-                    name: searchQuery,
-                    subtype:
-                        entrySubtypeFilters.length == 0
-                            ? entrySubtypes
-                            : entrySubtypeFilters,
-                },
-                page,
-            )
-                .then((response) => {
-                    setTotalPages(response.data.total_pages);
-                    setResults(response.data.results);
-                })
-                .catch(displayError(setAlert, navigate))
-                .finally(() => {
-                    setIsLoading(false);
+            try {
+                let response = await queryApi.queryList({
+                    page: page,
+                    pageSize: 20,
+                    name: searchQueries,
+                    subtype: entrySubtypeFilters,
                 });
+
+                setTotalPages(response.totalPages);
+                setResults(response.results);
+            } catch (error) {
+                displayError(setAlert, navigate)(error);
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 
     useEffect(() => {
         if (isOpen && inputRef.current) {
             inputRef.current.focus();
+            autoResize(inputRef.current);
             performSearch();
         }
         populateEntrySubtypes();
     }, [isOpen, page]);
+
+    useEffect(() => {
+        // Keep textarea sized correctly if value changes programmatically
+        if (inputRef.current) {
+            autoResize(inputRef.current);
+        }
+    }, [searchQuery]);
 
     useEffect(() => {
         if (isOpen) {
@@ -137,14 +165,15 @@ export default function SearchDialog({ isOpen, onClose }) {
             >
                 <div className='mb-4 flex items-center gap-2'>
                     <div className='flex-grow relative'>
-                        <input
+                        <textarea
                             ref={inputRef}
-                            type='text'
-                            className='form-input input input-block input-ghost-primary focus:ring-0 pr-10 text-white'
+                            className='form-input input input-block input-ghost-primary focus:ring-0 pr-10 text-white resize-none max-h-[20vh] overflow-auto'
                             placeholder='Search...'
                             value={searchQuery}
+                            rows={1}
                             onChange={(event) => {
                                 setSearchQuery(event.target.value);
+                                autoResize(event.target);
                             }}
                             onKeyDown={handleKeyDown}
                         />
@@ -208,7 +237,7 @@ export default function SearchDialog({ isOpen, onClose }) {
                                 />
                             </div>
                         ) : (
-                            <div className='w-full text-center text-zinc-700 dark:text-zinc-500'>
+                            <div className='w-full text-center text-zinc-400 dark:text-zinc-300'>
                                 No results found!
                             </div>
                         )}
