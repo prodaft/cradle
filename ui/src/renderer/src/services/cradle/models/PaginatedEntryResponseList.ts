@@ -24,39 +24,39 @@ import {
 /**
  * 
  * @export
- * @interface PaginatedEntryResponseSerializerResponse
+ * @interface PaginatedEntryResponseList
  */
-export interface PaginatedEntryResponseSerializerResponse {
+export interface PaginatedEntryResponseList {
     /**
      * Current page number
      * @type {number}
-     * @memberof PaginatedEntryResponseSerializerResponse
+     * @memberof PaginatedEntryResponseList
      */
     page: number;
     /**
      * Total number of items
      * @type {number}
-     * @memberof PaginatedEntryResponseSerializerResponse
+     * @memberof PaginatedEntryResponseList
      */
     count: number;
     /**
      * Total number of pages
      * @type {number}
-     * @memberof PaginatedEntryResponseSerializerResponse
+     * @memberof PaginatedEntryResponseList
      */
     totalPages: number;
     /**
      * 
      * @type {Array<EntryResponse>}
-     * @memberof PaginatedEntryResponseSerializerResponse
+     * @memberof PaginatedEntryResponseList
      */
     results: Array<EntryResponse>;
 }
 
 /**
- * Check if a given object implements the PaginatedEntryResponseSerializerResponse interface.
+ * Check if a given object implements the PaginatedEntryResponseList interface.
  */
-export function instanceOfPaginatedEntryResponseSerializerResponse(value: object): value is PaginatedEntryResponseSerializerResponse {
+export function instanceOfPaginatedEntryResponseList(value: object): value is PaginatedEntryResponseList {
     if (!('page' in value) || value['page'] === undefined) return false;
     if (!('count' in value) || value['count'] === undefined) return false;
     if (!('totalPages' in value) || value['totalPages'] === undefined) return false;
@@ -64,11 +64,11 @@ export function instanceOfPaginatedEntryResponseSerializerResponse(value: object
     return true;
 }
 
-export function PaginatedEntryResponseSerializerResponseFromJSON(json: any): PaginatedEntryResponseSerializerResponse {
-    return PaginatedEntryResponseSerializerResponseFromJSONTyped(json, false);
+export function PaginatedEntryResponseListFromJSON(json: any): PaginatedEntryResponseList {
+    return PaginatedEntryResponseListFromJSONTyped(json, false);
 }
 
-export function PaginatedEntryResponseSerializerResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean): PaginatedEntryResponseSerializerResponse {
+export function PaginatedEntryResponseListFromJSONTyped(json: any, ignoreDiscriminator: boolean): PaginatedEntryResponseList {
     if (json == null) {
         return json;
     }
@@ -81,11 +81,11 @@ export function PaginatedEntryResponseSerializerResponseFromJSONTyped(json: any,
     };
 }
 
-export function PaginatedEntryResponseSerializerResponseToJSON(json: any): PaginatedEntryResponseSerializerResponse {
-    return PaginatedEntryResponseSerializerResponseToJSONTyped(json, false);
+export function PaginatedEntryResponseListToJSON(json: any): PaginatedEntryResponseList {
+    return PaginatedEntryResponseListToJSONTyped(json, false);
 }
 
-export function PaginatedEntryResponseSerializerResponseToJSONTyped(value?: PaginatedEntryResponseSerializerResponse | null, ignoreDiscriminator: boolean = false): any {
+export function PaginatedEntryResponseListToJSONTyped(value?: PaginatedEntryResponseList | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }

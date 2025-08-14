@@ -7,6 +7,7 @@ import useAuth from '../../hooks/useAuth/useAuth';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { logInReq } from '../../services/authReqService/authReqService';
 import { getBaseUrl } from '../../services/configService/configService';
+import { strip } from '../../utils/linkUtils/linkUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
@@ -31,7 +32,7 @@ export default function Login() {
     const location = useLocation();
 
     const [showSettings, setShowSettings] = useState(!getBaseUrl());
-    const [backendUrl, setBackendUrl] = useState(getBaseUrl() || '');
+    const [backendUrl, _setBackendUrl] = useState(getBaseUrl() || '');
 
     const { isDarkMode, toggleTheme } = useTheme();
 
@@ -40,6 +41,10 @@ export default function Login() {
     const auth = useAuth();
 
     const { navigate, navigateLink } = useCradleNavigate();
+
+    const setBackendUrl = (url) => {
+        _setBackendUrl(strip(url));
+    };
 
     useEffect(() => {
         // If backend URL is not set, force settings to be shown
