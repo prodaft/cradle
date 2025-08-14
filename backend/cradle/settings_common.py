@@ -6,7 +6,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-VERSION = "2.9.5"
+VERSION = "2.10.0"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
