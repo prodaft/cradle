@@ -163,7 +163,7 @@ class AdvancedQueryView(APIView):
         if getattr(self, "swagger_fake_view", False):
             return Response([])
 
-        page_size = request.query_params.get("page_size", 10)
+        page_size = request.query_params.get("page_size", "10")
         if not page_size.isdigit() or int(page_size) <= 0:
             return Response(
                 {"error": "Invalid page_size parameter. Must be a positive integer."},
