@@ -45,17 +45,12 @@ def update_accesses(entry_id):
         note_model.objects.bulk_update(update_notes, ["access_vector"])
 
     digest_ids = entry.digests.all().values_list("id", flat=True)
-    digest_tasks = []
-
-    for digest in digest_ids:
-        digest_tasks.append(propagate_digest_acvec.si(digest))
 
     # Reset the status field.
-    entry.status = None
     entry.save()
 
     g_notes = group(*[propagate_acvec.si(n.id) for n in update_notes])
-    g_digests = group(*[propagate_digest_acvec.si(n.id) for n in update_notes])
+    g_digests = group(*[propagate_digest_acvec.si(d) for d in digest_ids])
 
     transaction.on_commit(lambda: g_notes.apply_async())
     transaction.on_commit(lambda: g_digests.apply_async())

@@ -196,7 +196,7 @@ class ActionView(APIView):
         )
 
         for i in notes:
-            scheduler.run_pipeline(i)
+            scheduler.run_pipeline(i, update_acvec=False)
 
         return Response({"message": "Started relinking notes."})
 

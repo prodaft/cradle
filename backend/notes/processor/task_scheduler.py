@@ -44,7 +44,12 @@ class TaskScheduler:
 
         self.processing: List[BaseTask] = [task(user) for task in tasks]
 
-    def run_pipeline(self, note: Optional[Note] = None, validate: bool = True):
+    def run_pipeline(
+        self,
+        note: Optional[Note] = None,
+        validate: bool = True,
+        update_acvec: bool = True,
+    ):
         """Performs all of the checks that are necessary for creating a note.
         First, it creates a dictionary mapping entry types to all of the referenced
         entries in the note. Then, it performs the mentioned checks. Lastly, it
@@ -95,9 +100,10 @@ class TaskScheduler:
 
             transaction.on_commit(lambda: task_chain.apply_async())
 
-            note.access_vector = calculate_acvec(
-                [x for x in entries if x.entry_class.type == EntryType.ENTITY]
-            )
+            if update_acvec:
+                note.access_vector = calculate_acvec(
+                    [x for x in entries if x.entry_class.type == EntryType.ENTITY]
+                )
 
             if len(note.description) > Note.description.field.max_length:
                 raise FieldTooLongException(
