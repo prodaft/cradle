@@ -183,6 +183,12 @@ export default function NoteViewer() {
                               requestBody: {
                                   note_id: id,
                               },
+                          }).then(() => {
+                              setAlert({
+                                  show: true,
+                                  message: 'Relinking note...',
+                                  color: 'green',
+                              });
                           })
                       }
                       tesid='relink-btn'
