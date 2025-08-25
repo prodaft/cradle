@@ -19,6 +19,14 @@ export default function Pagination({
         <div className='pagination flex justify-center mt-4 mb-4 items-center'>
             {/* Left Arrow */}
             <button
+                onClick={() => onPageChange(1)}
+                disabled={currentPage == 1}
+                className='btn'
+            >
+                &lt;&lt;
+            </button>
+
+            <button
                 onClick={() => onPageChange(currentPage - 1)}
                 disabled={currentPage == 1}
                 className='btn'
@@ -45,6 +53,13 @@ export default function Pagination({
                 className='btn'
             >
                 &gt;
+            </button>
+            <button
+                onClick={() => onPageChange(totalPages)}
+                disabled={currentPage === totalPages}
+                className='btn'
+            >
+                &gt;&gt;
             </button>
         </div>
     );

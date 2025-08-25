@@ -2,8 +2,8 @@ from typing import Iterable, Tuple
 
 from entries.models import Entry
 
-from ..markdown.to_metadata import infer_metadata
 from ..models import Note
+from ..tasks import note_metadata_process_task
 from .base_task import BaseTask
 
 
@@ -22,22 +22,4 @@ class MetadataProcessTask(BaseTask):
         Returns:
             The processed note object.
         """
-        metadata = infer_metadata(note.content)
-
-        for key, field in Note.metadata_fields.items():
-            if field:
-                setattr(note, field, getattr(Note, field, None).field.default)
-            if key not in metadata:
-                continue
-
-            value = metadata.get(key)
-
-            if field is None:
-                metadata.pop(key, None)
-                continue
-
-            setattr(note, field, value)
-
-        note.metadata = metadata
-
-        return None, entries
+        return note_metadata_process_task.si(note.id), entries

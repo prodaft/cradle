@@ -23,7 +23,8 @@ import {
 } from '../models/index';
 
 export interface ManagementActionsCreateRequest {
-    actionName: string;
+    actionName: ManagementActionsCreateActionNameEnum;
+    requestBody?: { [key: string]: any; };
 }
 
 /**
@@ -47,6 +48,8 @@ export class ManagementApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+        headerParameters['Content-Type'] = 'application/json';
+
         if (this.configuration && this.configuration.apiKey) {
             headerParameters["Api-Key"] = await this.configuration.apiKey("Api-Key"); // ApiKey authentication
         }
@@ -68,6 +71,7 @@ export class ManagementApi extends runtime.BaseAPI {
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
+            body: requestParameters['requestBody'],
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => ManagementActionResponseFromJSON(jsonValue));
@@ -169,3 +173,16 @@ export class ManagementApi extends runtime.BaseAPI {
     }
 
 }
+
+/**
+ * @export
+ */
+export const ManagementActionsCreateActionNameEnum = {
+    DeleteHangingArtifacts: 'deleteHangingArtifacts',
+    PropagateAccessVectors: 'propagateAccessVectors',
+    RecalculateNodePositions: 'recalculateNodePositions',
+    RefreshMaterializedGraph: 'refreshMaterializedGraph',
+    RelinkNotes: 'relinkNotes',
+    ReprocessAllFiles: 'reprocessAllFiles'
+} as const;
+export type ManagementActionsCreateActionNameEnum = typeof ManagementActionsCreateActionNameEnum[keyof typeof ManagementActionsCreateActionNameEnum];

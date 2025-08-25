@@ -1,37 +1,39 @@
-from celery import chain
+import inspect
+
 from django.contrib.contenttypes.models import ContentType
-from django_lifecycle.mixins import transaction
-from rest_framework import status, serializers
 from django.core.cache import cache
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
-from entries.models import Relation
-from notes.models import Note
-from notes.processor.entry_class_creation_task import EntryClassCreationTask
-from notes.processor.entry_population_task import EntryPopulationTask
-from notes.processor.smart_linker_task import SmartLinkerTask
-from .models import BaseSettingsSection
-from .serializers import ManagementActionResponseSerializer
-from user.permissions import HasAdminRole
-from rest_framework.permissions import IsAuthenticated
+from django_lifecycle.mixins import transaction
 from drf_spectacular.utils import (
-    extend_schema,
     OpenApiExample,
-    OpenApiResponse,
     OpenApiParameter,
+    OpenApiResponse,
+    extend_schema,
 )
-
-from .settings import cradle_settings
-from .models import Setting
+from entries.models import Entry, Relation
 from entries.tasks import (
     refresh_edges_materialized_view,
     simulate_graph,
     update_accesses,
 )
 from file_transfer.tasks import reprocess_all_files_task
-from entries.models import Entry
-import inspect
+from notes.models import Note
+from notes.processor.connect_aliases_task import AliasConnectionTask
+from notes.processor.entry_class_creation_task import EntryClassCreationTask
+from notes.processor.entry_population_task import EntryPopulationTask
+from notes.processor.finalize_note_task import FinalizeNoteTask
+from notes.processor.link_files_task import LinkFilesTask
+from notes.processor.metadata_process_task import MetadataProcessTask
+from notes.processor.smart_linker_task import SmartLinkerTask
+from notes.processor.task_scheduler import TaskScheduler
+from rest_framework import serializers, status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from user.permissions import HasAdminRole
+
+from .models import BaseSettingsSection, Setting
+from .serializers import ManagementActionResponseSerializer
+from .settings import cradle_settings
 
 
 class ActionSerializer(serializers.Serializer):
@@ -149,37 +151,17 @@ class SettingsView(APIView):
         return nested
 
 
-@extend_schema(
-    summary="Execute management actions",
-    description="Executes various management actions for admin users. Available actions:"
-    + ", ".join(
-        [
-            "relinkNotes",
-            "refreshMaterializedGraph",
-            "recalculateNodePositions",
-            "propagateAccessVectors",
-            "reprocessAllFiles",
-            "deleteHangingArtifacts",
-        ]
-    ),
-    parameters=[
-        OpenApiParameter(
-            name="action_name",
-            type=str,
-            location=OpenApiParameter.PATH,
-            description="Name of the action to execute",
-        )
-    ],
-    responses={
-        200: ManagementActionResponseSerializer,
-        400: {"description": "Unknown action"},
-        401: {"description": "User is not authenticated"},
-        403: {"description": "User is not an admin"},
-    },
-)
 class ActionView(APIView):
     permission_classes = [IsAuthenticated, HasAdminRole]
     serializer_class = ActionSerializer
+
+    @classmethod
+    def get_action_names(cls):
+        return [
+            name[len("action_") :]
+            for name in dir(cls)
+            if name.startswith("action_") and callable(getattr(cls, name))
+        ]
 
     def post(self, request, action_name: str | None = None, *args, **kwargs):
         handler = getattr(self, "action_" + action_name, None) if action_name else None
@@ -191,15 +173,30 @@ class ActionView(APIView):
         )
 
     def action_relinkNotes(self, request, *args, **kwargs):
+        if request.data and "note_id" in request.data:
+            notes = Note.objects.filter(id=request.data["note_id"])
+        else:
+            notes = Note.objects.all()
+
         Relation.objects.filter(
             content_type=ContentType.objects.get_for_model(Note)
         ).delete()
 
-        for i in Note.objects.all():
-            class_creation_task, _ = EntryClassCreationTask(request.user).run(i, [])
-            creation_task, _ = EntryPopulationTask(request.user).run(i, [])
-            linker_task, _ = SmartLinkerTask(request.user).run(i, [])
-            chain(class_creation_task, creation_task, linker_task).apply_async()
+        scheduler = TaskScheduler(
+            request.user,
+            tasks=[
+                EntryClassCreationTask,
+                EntryPopulationTask,
+                SmartLinkerTask,
+                LinkFilesTask,
+                MetadataProcessTask,
+                AliasConnectionTask,
+                FinalizeNoteTask,
+            ],
+        )
+
+        for i in notes:
+            scheduler.run_pipeline(i)
 
         return Response({"message": "Started relinking notes."})
 
@@ -228,3 +225,42 @@ class ActionView(APIView):
         count, _ = Entry.artifacts.unreferenced().distinct().delete()
 
         return Response({"message": f"Deleted {count} artifacts."})
+
+
+ActionView = extend_schema(
+    summary="Execute management actions",
+    description="Executes various management actions for admin users. Available actions:"
+    + ", ".join(
+        [
+            "relinkNotes",
+            "refreshMaterializedGraph",
+            "recalculateNodePositions",
+            "propagateAccessVectors",
+            "reprocessAllFiles",
+            "deleteHangingArtifacts",
+        ]
+    ),
+    parameters=[
+        OpenApiParameter(
+            name="action_name",
+            type=str,
+            location=OpenApiParameter.PATH,
+            description="Name of the action to execute",
+            enum=ActionView.get_action_names(),
+        )
+    ],
+    request={
+        "application/json": {
+            "type": "object",
+            "additionalProperties": True,
+            "description": "Action-specific parameters",
+            "example": {"note_id": "123", "any_param": "any_value"},
+        }
+    },
+    responses={
+        200: ManagementActionResponseSerializer,
+        400: {"description": "Unknown action"},
+        401: {"description": "User is not authenticated"},
+        403: {"description": "User is not an admin"},
+    },
+)(ActionView)

@@ -1,25 +1,24 @@
+import logging
 from collections import defaultdict
+
 from celery import shared_task
+from core.decorators import distributed_lock
 from django.contrib.contenttypes.models import ContentType
 from django.db import close_old_connections
 from django.utils import timezone
-from entries.enums import EntryType
+from entries.enums import EntryType, RelationReason
 from entries.exceptions import InvalidEntryException
+from entries.models import Entry, EntryClass, Relation
 from intelio.enums import EnrichmentStrategy
-from user.models import CradleUser
-from .markdown.to_links import Link
-from .models import Note
-from entries.models import Relation
-
-from core.decorators import distributed_lock
-from notes.exceptions import EntriesDoNotExistException, EntryClassesDoNotExistException
-from entries.models import Entry, EntryClass
-from entries.enums import RelationReason
-from notes.enums import NoteStatus
 from management.settings import cradle_settings
+from user.models import CradleUser
 
+from notes.enums import NoteStatus
+from notes.exceptions import EntriesDoNotExistException, EntryClassesDoNotExistException
+from notes.markdown.to_links import Link
+from notes.markdown.to_metadata import infer_metadata
 
-import logging
+from .models import Note
 
 logger = logging.getLogger(__name__)
 
@@ -449,3 +448,32 @@ def note_finalize_task(note_id):
     if note.status == NoteStatus.PROCESSING:
         note.set_status(NoteStatus.HEALTHY)
         note.save()
+
+
+@shared_task
+@distributed_lock("metadata_process_{note_id}", timeout=1800)
+def note_metadata_process_task(note_id):
+    note = Note.objects.get(id=note_id)
+
+    metadata = infer_metadata(note.content)
+
+    for key, field in Note.metadata_fields.items():
+        if field:
+            setattr(note, field, getattr(Note, field, None).field.default)
+        if key not in metadata:
+            continue
+
+        value = metadata.get(key)
+
+        if field is None:
+            metadata.pop(key, None)
+            continue
+
+        setattr(note, field, value)
+
+    note.metadata = metadata
+
+    if note.title is None or len(note.title.strip()) == 0:
+        note.set_status(NoteStatus.WARNING, "Note title is empty.")
+
+    note.save()
