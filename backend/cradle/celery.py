@@ -1,11 +1,11 @@
 from __future__ import absolute_import, unicode_literals
-import os
-from celery import Celery
-from django.conf import settings
-from django.apps import apps
-from celery.schedules import crontab
 
-import json
+import os
+
+from celery import Celery
+from celery.schedules import crontab
+from django.apps import apps
+from django.conf import settings
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cradle.settings")
 
@@ -28,6 +28,7 @@ app.conf.task_routes = {
     "notes.tasks.ping_entries": {"queue": "notes"},
     "notes.tasks.note_finalize_task": {"queue": "notes"},
     "notes.tasks.link_files_task": {"queue": "notes"},
+    "notes.tasks.note_metadata_process_task": {"queue": "notes"},
     "entries.tasks.remap_notes_task": {"queue": "notes"},
     "entries.tasks.simulate_graph": {"queue": "graph"},
     "entries.tasks.refresh_edges_materialized_view": {"queue": "graph"},

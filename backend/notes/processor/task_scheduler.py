@@ -24,23 +24,25 @@ from .metadata_process_task import MetadataProcessTask
 from .smart_linker_task import SmartLinkerTask
 from .validate_note_task import ValidateNoteTask
 
+TASKS = [
+    ValidateNoteTask,
+    AccessControlTask,
+    EntryClassCreationTask,
+    EntryPopulationTask,
+    SmartLinkerTask,
+    LinkFilesTask,
+    MetadataProcessTask,
+    AliasConnectionTask,
+    FinalizeNoteTask,
+]
+
 
 class TaskScheduler:
-    def __init__(self, user: CradleUser, **kwargs):
+    def __init__(self, user: CradleUser, tasks: List[BaseTask] = TASKS, **kwargs):
         self.user = user
         self.kwargs = kwargs
 
-        self.processing: List[BaseTask] = [
-            ValidateNoteTask(user),
-            AccessControlTask(user),
-            EntryClassCreationTask(user),
-            EntryPopulationTask(user),
-            SmartLinkerTask(user),
-            LinkFilesTask(user),
-            MetadataProcessTask(user),
-            AliasConnectionTask(user),
-            FinalizeNoteTask(user),
-        ]
+        self.processing: List[BaseTask] = [task(user) for task in tasks]
 
     def run_pipeline(self, note: Optional[Note] = None, validate: bool = True):
         """Performs all of the checks that are necessary for creating a note.
@@ -74,8 +76,9 @@ class TaskScheduler:
                 for i in self.kwargs:
                     setattr(note, i, self.kwargs[i])
 
-                note.editor = self.user
-                note.edit_timestamp = timezone.now()
+                if patches:
+                    note.editor = self.user
+                    note.edit_timestamp = timezone.now()
 
             entries = []
             tasks = []
@@ -104,10 +107,7 @@ class TaskScheduler:
             if len(note.title) > Note.title.field.max_length:
                 raise FieldTooLongException("title", Note.title.field.max_length)
 
-            if note.title is None or len(note.title.strip()) == 0:
-                note.set_status(NoteStatus.WARNING, "Note title is empty.")
-            else:
-                note.set_status(NoteStatus.PROCESSING)
+            note.set_status(NoteStatus.PROCESSING)
 
             note.save()
 

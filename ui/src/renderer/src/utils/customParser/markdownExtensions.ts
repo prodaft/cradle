@@ -145,6 +145,22 @@ export function renderCradleLink(
     } ${time ? `data-time="${time}"` : ''}>${displayText}</a>`;
 }
 
+// Match ![....][....] or [....][....]
+const FOOTNOTE_REF_REGEX = /^\!?\[(.*)\]\[(.*)\]/;
+
+export function footnoteRefRule(state: any, silent: boolean): boolean {
+    const match = FOOTNOTE_REF_REGEX.exec(state.src.slice(state.pos));
+    if (!match) return false;
+    if (silent) return false;
+
+    const token = state.push('footnote_ref', '', 0);
+    token.content = match[1];
+    token.footnote_ref = match[2];
+
+    state.pos += match[0].length;
+    return true;
+}
+
 let DownloadLinkPromiseCache: Record<
     string,
     Promise<{ presigned: string; expiry: number }>
@@ -265,6 +281,7 @@ export function parseWithExtensionsInline(md: MarkdownIt, mdContent: string): st
 
     // Add the cradle link rule
     md.inline.ruler.before('link', 'cradle_link', cradleLinkRule);
+    md.inline.ruler.before('cradle_link', 'footnote_ref', footnoteRefRule);
 
     const originalRules: { [key: string]: any } = {};
 
@@ -341,6 +358,7 @@ export function parseWithExtensionsInline(md: MarkdownIt, mdContent: string): st
 
 function extractPlainText(tokens: Token[]): string {
     let text = '';
+    console.log(tokens);
 
     for (let i = 0; i < tokens.length; i++) {
         const token = tokens[i];
@@ -401,6 +419,8 @@ function extractInlineText(tokens: Token[]): string {
             case 's_close':
             case 'cradle_link':
                 text += renderCradleLink(new Map(), token, true);
+            case 'footnote_ref':
+                text += token.content;
             case 'html_inline':
                 // Skip formatting tags
                 break;

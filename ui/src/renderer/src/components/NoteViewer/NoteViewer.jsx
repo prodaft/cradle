@@ -1,4 +1,4 @@
-import { Code, EditPencil } from 'iconoir-react';
+import { Code, EditPencil, RefreshCircle } from 'iconoir-react';
 import { StatsReport, Trash } from 'iconoir-react/regular';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
@@ -30,6 +30,7 @@ import {
     WarningTriangleSolid,
 } from 'iconoir-react';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
+import useApi from '../../hooks/useApi/useApi.js';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { parseMarkdownInline } from '../../utils/customParser/customParser';
 import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
@@ -63,6 +64,7 @@ export default function NoteViewer() {
     const [isLoading, setIsLoading] = useState(true);
     const [metadataExpanded, setMetadataExpanded] = useState(true);
     const { setModal } = useModal();
+    const { managementApi } = useApi();
 
     const getStatusIcon = () => {
         if (!note.status) return null;
@@ -170,6 +172,28 @@ export default function NoteViewer() {
                   onChange={togglePublishable}
                   testid='publishable-btn'
               />,
+              isAdmin() && (
+                  <NavbarButton
+                      key='relink-btn'
+                      text='Relink Note'
+                      icon={<RefreshCircle />}
+                      onClick={() =>
+                          managementApi.managementActionsCreate({
+                              actionName: 'relinkNotes',
+                              requestBody: {
+                                  note_id: id,
+                              },
+                          }).then(() => {
+                              setAlert({
+                                  show: true,
+                                  message: 'Relinking note...',
+                                  color: 'green',
+                              });
+                          })
+                      }
+                      tesid='relink-btn'
+                  />
+              ),
               <NavbarButton
                   key='edit-btn'
                   text='Edit Note'
