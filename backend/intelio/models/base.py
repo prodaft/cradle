@@ -318,7 +318,7 @@ class ClassMapping(models.Model):
         return typemapping
 
 
-class EnrichmentRequest(models.Model, LifecycleModel):
+class EnrichmentRequest(LifecycleModel):
     enrichment_settings = models.ForeignKey(
         EnricherSettings,
         on_delete=models.SET_NULL,
