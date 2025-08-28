@@ -1,13 +1,11 @@
+from core.fields import BitStringField
 from django.apps import apps
 from django.db import models
 from django.db.models.expressions import F
 from django.db.models.query_utils import Q
-
 from user.models import CradleUser
 
 from .enums import EntryType
-
-from core.fields import BitStringField
 
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 

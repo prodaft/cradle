@@ -1,24 +1,24 @@
+import os
+import uuid
+from collections import defaultdict
 from datetime import timedelta
 from typing import Any, Optional
+
+from core.fields import BitStringField
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
-from core.fields import BitStringField
-from entries.models import EntryClass, Entry
-from entries.models import Relation
-from collections import defaultdict
-import os
-
 from django_lifecycle import (
+    AFTER_CREATE,
     AFTER_DELETE,
     LifecycleModel,
     hook,
 )
+from entries.models import Entry, EntryClass, Relation
+from user.models import CradleUser
 
-
-from ..enums import EnrichmentStrategy, DigestStatus
-import uuid
+from ..enums import DigestStatus, EnrichmentStatus, EnrichmentStrategy
 
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
@@ -258,9 +258,6 @@ class EnricherSettings(models.Model):
         return f"{display} ({self.for_eclasses})"
 
     def clean(self):
-        """
-        Optional: validate that the settings match the expected fields for the enricher_type.
-        """
         config = BaseEnricher.get_subclass(self.enricher_type)
         if config is None:
             raise ValidationError(f"Unknown enricher type: {self.enricher_type}")
@@ -319,3 +316,71 @@ class ClassMapping(models.Model):
             typemapping[mapping.internal_class] = mapping
 
         return typemapping
+
+
+class EnrichmentRequest(models.Model, LifecycleModel):
+    enrichment_settings = models.ForeignKey(
+        EnricherSettings,
+        on_delete=models.SET_NULL,
+        null=True,
+    )
+    title = models.CharField(max_length=255)
+    automated = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    status = models.CharField(
+        max_length=255,
+        choices=EnrichmentStatus.choices,
+        default=EnrichmentStatus.WAITING,
+    )
+
+    user = models.ForeignKey(
+        CradleUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="enrichment_requests",
+    )
+    entity = models.ForeignKey(
+        Entry, on_delete=models.CASCADE, related_name="enrichments"
+    )
+    relations = GenericRelation(Relation, related_query_name="enrichment")
+
+    request = models.JSONField(default=list, blank=False)
+    errors = models.JSONField(default=list, blank=True)
+
+    def clean(self):
+        if not self.enrichment_settings:
+            return
+
+        config = BaseEnricher.get_subclass(self.enrichment_settings.enricher_type)
+        if config is None:
+            raise ValidationError(
+                f"Unknown enricher type: {self.enrichment_settings.enricher_type}"
+            )
+
+    @property
+    def enricher(self):
+        """
+        Return the enricher class based on the enrichment_settings.
+        """
+        if not self.enrichment_settings:
+            return None
+
+        config = BaseEnricher.get_subclass(self.enrichment_settings.enricher_type)
+        if config is None:
+            raise ValidationError(
+                f"Unknown enricher type: {self.enrichment_settings.enricher_type}"
+            )
+        return config(settings=self.enrichment_settings.settings)
+
+    @hook(AFTER_CREATE)
+    def start_enrichment(self):
+        """
+        Start the enrichment process after creation.
+        """
+        self.id = self._initial_state.get_value(self, "id")
+
+        # Trigger the enrichment process
+        # This could be handled by a background task or Celery
+        self.status = EnrichmentStatus.WORKING
+        self.save(update_fields=["status"])

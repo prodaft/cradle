@@ -2,16 +2,15 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Optional
 
+from access.enums import AccessType
+from core.fields import BitStringField
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django_otp.plugins.otp_totp.models import TOTPDevice
-
-from access.enums import AccessType
 from logs.models import LoggableModelMixin
 from mail.models import ConfirmationMail, ResetPasswordMail
 
 from .managers import CradleUserManager
-from core.fields import BitStringField
 
 
 class UserRoles(models.TextChoices):

@@ -1,14 +1,15 @@
-from rest_framework import serializers
-from rest_framework.fields import SerializerMethodField
+from core.utils import fields_to_form
 from drf_spectacular.utils import extend_schema_field
-
 from entries.models import Entry, EntryClass
 from entries.serializers import EntryClassSerializer, EntrySerializer
-from intelio.models.base import BaseDigest
-from core.utils import fields_to_form
+from rest_framework import serializers
+from rest_framework.fields import SerializerMethodField
 from user.models import CradleUser
 from user.serializers import EssentialUserRetrieveSerializer
-from .models import EnricherSettings, BaseEnricher
+
+from intelio.models.base import BaseDigest, EnrichmentRequest
+
+from .models import BaseEnricher, EnricherSettings
 
 
 class DigestSubclassSerializer(serializers.Serializer):
@@ -33,6 +34,7 @@ class EnrichmentSubclassSerializer(serializers.Serializer):
         source="class", help_text="The class name of the enricher"
     )
     name = serializers.CharField(help_text="The display name of the enricher")
+    enabled = serializers.BooleanField(help_text="Whether the enricher is enabled")
 
     class Meta:
         ref_name = "EnrichmentSubclass"
@@ -219,4 +221,122 @@ class BaseDigestCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # Remove file from validated_data as it's handled separately in the view
         validated_data.pop("file", None)
+        return super().create(validated_data)
+
+
+class EnrichmentRequestSerializer(serializers.ModelSerializer):
+    """Serializer for enrichment requests."""
+
+    # Input field for enricher name instead of enrichment_settings
+    enricher_name = serializers.CharField(
+        write_only=True, help_text="The name of the enricher to use for this request"
+    )
+
+    # Make enrichment_settings read-only as it will be set automatically
+    enrichment_settings = serializers.PrimaryKeyRelatedField(
+        read_only=True, help_text="The enrichment settings used for this request"
+    )
+
+    entity = serializers.PrimaryKeyRelatedField(
+        queryset=Entry.objects.all(), help_text="The entity to enrich"
+    )
+
+    user = serializers.PrimaryKeyRelatedField(
+        read_only=True, help_text="The user who created the request"
+    )
+
+    # Read-only details
+    user_detail = EssentialUserRetrieveSerializer(source="user", read_only=True)
+    entity_detail = EntrySerializer(source="entity", read_only=True)
+
+    # Add enricher class and name fields for response
+    enricher_class = serializers.SerializerMethodField(read_only=True)
+    enricher_name = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = EnrichmentRequest
+        fields = [
+            "id",
+            "title",
+            "automated",
+            "created_at",
+            "status",
+            "user",
+            "user_detail",
+            "entity",
+            "entity_detail",
+            "enrichment_settings",
+            "enricher_class",
+            "enricher_name",
+            "request",
+            "results",
+            "errors",
+        ]
+        read_only_fields = [
+            "id",
+            "created_at",
+            "user",
+            "status",
+            "results",
+            "errors",
+            "enrichment_settings",
+            "enricher_class",
+            "enricher_name",
+        ]
+
+    def get_enricher_class(self, obj):
+        """Return the class name of the enricher"""
+        if obj.enrichment_settings:
+            return obj.enrichment_settings.enricher_type
+        return None
+
+    def get_enricher_name(self, obj):
+        """Return the display name of the enricher"""
+        if obj.enrichment_settings:
+            config = BaseEnricher.get_subclass(obj.enrichment_settings.enricher_type)
+            return (
+                config.display_name if config else obj.enrichment_settings.enricher_type
+            )
+        return None
+
+    def validate_enricher_name(self, value):
+        """Validate the enricher_name and find the corresponding enrichment_settings"""
+        # Find enricher class by display_name
+        for subclass in BaseEnricher.__subclasses__():
+            if hasattr(subclass, "display_name") and subclass.display_name == value:
+                # Check if settings exist and are enabled
+                try:
+                    EnricherSettings.objects.get(
+                        enricher_type=subclass.__name__, enabled=True
+                    )
+                    return value
+                except EnricherSettings.DoesNotExist:
+                    raise serializers.ValidationError(
+                        f"No enabled settings found for enricher: {value}"
+                    )
+
+        raise serializers.ValidationError(f"Unknown enricher name: {value}")
+
+    def create(self, validated_data):
+        # Extract enricher_name
+        enricher_name = validated_data.pop("enricher_name")
+
+        # Find the corresponding enrichment_settings
+        for subclass in BaseEnricher.__subclasses__():
+            if (
+                hasattr(subclass, "display_name")
+                and subclass.display_name == enricher_name
+            ):
+                enrichment_settings = EnricherSettings.objects.get(
+                    enricher_type=subclass.__name__, enabled=True
+                )
+                validated_data["enrichment_settings"] = enrichment_settings
+                break
+
+        # Set the user to the current user
+        validated_data["user"] = self.context["request"].user
+
+        # Set automated to False by default
+        validated_data["automated"] = validated_data.get("automated", False)
+
         return super().create(validated_data)

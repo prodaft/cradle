@@ -1,16 +1,16 @@
 from typing import cast
-from django.contrib.contenttypes.models import ContentType
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema, OpenApiParameter
 
+from django.contrib.contenttypes.models import ContentType
+from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from intelio.tasks import enrich_entries
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from user.models import CradleUser
 
 from ..models import Entry
-from rest_framework.permissions import IsAuthenticated
-from intelio.tasks import enrich_entries
 from ..serializers import (
     EnricherListSerializer,
     EnricherRequestSerializer,
