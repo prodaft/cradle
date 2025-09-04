@@ -51,7 +51,6 @@ class StatisticsList(APIView):
 
         from django.db.models import Prefetch
 
-        # Optimize notes queryset with prefetching
         entries_prefetch = Prefetch(
             "entries", queryset=Entry.objects.select_related("entry_class")
         )
@@ -65,10 +64,8 @@ class StatisticsList(APIView):
             .distinct()
         )
 
-        # Get first 10 notes
         notes_list = list(accessible_notes[:10])
 
-        # Get entities with prefetching
         if request.user.is_cradle_admin:
             entities_qs = Entry.entities.select_related("entry_class").all()
         else:
@@ -77,7 +74,6 @@ class StatisticsList(APIView):
             )
         entities_list = list(islice(entities_qs, 3))
 
-        # Get artifacts directly from database instead of iterating through notes
         artifacts_list = list(
             Entry.objects.filter(
                 notes__in=accessible_notes, entry_class__type="artifact"
@@ -88,7 +84,6 @@ class StatisticsList(APIView):
             .order_by("-notes__timestamp")[:3]
         )
 
-        # Use optimized serializers
         notes_serializer = StatisticsNoteSerializer(truncate=150, many=True)
         entities_serializer = StatisticsEntrySerializer(many=True)
         artifacts_serializer = StatisticsEntrySerializer(many=True)

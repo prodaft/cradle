@@ -43,6 +43,7 @@ dependencies = [
     "networkx",
     "scipy",
     "django-silk[formatting]",
+    "gunicorn",
 ]
 
 [project.optional-dependencies]

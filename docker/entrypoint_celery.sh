@@ -4,7 +4,7 @@
 : "${LOGLEVEL:=info}"
 : "${CELERY_CONCURRENCY:=4}"
 
-pipenv run python manage.py migrate django_celery_beat
-pipenv run python manage.py migrate
+uv run python manage.py migrate django_celery_beat
+uv run python manage.py migrate
 
-pipenv run celery -A cradle worker --beat -Q "$CELERY_QUEUES" --loglevel="$LOGLEVEL" --concurrency="$CELERY_CONCURRENCY"
+uv run celery -A cradle worker --beat -Q "$CELERY_QUEUES" --loglevel="$LOGLEVEL" --concurrency="$CELERY_CONCURRENCY"
