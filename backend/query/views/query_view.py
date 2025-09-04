@@ -92,7 +92,13 @@ class EntryListQuery(ListAPIView):
         if getattr(self, "swagger_fake_view", False):
             return Entry.objects.none()
 
-        accessible_entries = Entry.objects.accessible(self.request.user).non_virtual()
+        # Optimize queries to prevent N+1 issues
+        accessible_entries = (
+            Entry.objects.accessible(self.request.user)
+            .non_virtual()
+            .select_related("entry_class")
+            .prefetch_related("entry_class__children")
+        )
         if not self.request.user.is_cradle_admin:
             accessible_entries = accessible_entries.filter(
                 Q(
@@ -192,8 +198,13 @@ class AdvancedQueryView(APIView):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
-        # Get accessible entries for the user
-        accessible_entries = Entry.objects.accessible(request.user).non_virtual()
+        # Get accessible entries for the user with optimized queries
+        accessible_entries = (
+            Entry.objects.accessible(request.user)
+            .non_virtual()
+            .select_related("entry_class")
+            .prefetch_related("entry_class__children")
+        )
         if not request.user.is_cradle_admin:
             accessible_entries = accessible_entries.filter(
                 Q(

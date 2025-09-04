@@ -114,7 +114,7 @@ class TaskScheduler:
                 raise FieldTooLongException("title", Note.title.field.max_length)
 
             note.set_status(NoteStatus.PROCESSING)
-
+            note.metadata = None
             note.save()
 
         if patches is None:

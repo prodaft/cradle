@@ -292,7 +292,7 @@ class NoteListSerializer:
             "status_timestamp": note.status_timestamp.isoformat()
             if note.status_timestamp
             else None,
-            "content": self._truncate_content(note.content),
+            "content": self._truncate_content(note),
             "title": note.title,
             "description": note.description,
             "metadata": note.metadata,
@@ -344,11 +344,17 @@ class NoteListSerializer:
 
         return data
 
-    def _truncate_content(self, content):
+    def _truncate_content(self, note):
         """Truncate content if needed"""
-        if self.truncate == -1 or len(content) <= self.truncate:
-            return content
-        return content[: self.truncate] + "..."
+        if (
+            self.truncate == -1
+            or len(note.content) - note.content_offset <= self.truncate
+        ):
+            return note.content[note.content_offset]
+        return (
+            note.content[note.content_offset : note.content_offset + self.truncate]
+            + "..."
+        )
 
     def _get_file_entities(self, file_ref, note):
         """Get entities for file reference"""
@@ -422,14 +428,16 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
         data = super().to_representation(obj)
 
         data["entry_classes"] = data.pop("entries")
+        content = data["content"]
 
-        if self.truncate == -1:
+        if self.truncate == -1 or len(content) - obj.content_offset <= self.truncate:
             return data
 
         # Optimize string operations for truncation
-        content = data["content"]
         if len(content) > self.truncate:
-            data["content"] = content[: self.truncate] + "..."
+            data["content"] = (
+                content[obj.content_offset : obj.content_offset + self.truncate] + "..."
+            )
 
         return data
 

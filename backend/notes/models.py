@@ -46,7 +46,8 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
 
     title: models.CharField = models.CharField(max_length=255, default="")
     description: models.TextField = models.TextField(default="", max_length=4096)
-    metadata: models.JSONField = models.JSONField(default=dict)
+    metadata: models.JSONField = models.JSONField(default=dict, blank=True, null=True)
+    content_offset: models.IntegerField = models.IntegerField(default=0)
 
     author = models.ForeignKey[CradleUser](
         CradleUser, related_name="author", on_delete=models.SET_NULL, null=True

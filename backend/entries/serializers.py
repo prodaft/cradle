@@ -300,6 +300,10 @@ class EntryClassSerializerCount(EntryClassSerializer):
         ]
 
     def get_count(self, obj):
+        # Use annotated count if available (for performance), otherwise fallback to query
+        if hasattr(obj, "entry_count"):
+            return min(obj.entry_count, 100)
+
         entry_count = Entry.objects.filter(entry_class=obj).values("id")[:101].count()
         entry_count = min(entry_count, 100)
         return entry_count

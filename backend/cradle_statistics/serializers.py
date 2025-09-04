@@ -20,8 +20,12 @@ class StatisticsNoteSerializer:
     def _serialize_note(self, note):
         """Serialize a single note for statistics"""
         content = note.content
-        if len(content) > self.truncate:
-            content = content[: self.truncate] + "..."
+
+        if self.truncate > -1 and len(content) - note.content_offset > self.truncate:
+            content = (
+                content[note.content_offset : note.content_offset + self.truncate]
+                + "..."
+            )
 
         return {
             "id": str(note.id),
