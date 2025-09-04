@@ -1,6 +1,7 @@
+from typing import Generator
+
 from django.db import models
 from entries.enums import EntryType
-from typing import Generator
 
 
 def note_artifacts_iterator(note_list: models.QuerySet) -> Generator:
@@ -21,9 +22,14 @@ def note_artifacts_iterator(note_list: models.QuerySet) -> Generator:
     returned_entries = set()
 
     for note in note_list:
-        for entry in note.entries.filter(
-            entry_class__type=EntryType.ARTIFACT
-        ).non_virtual():
-            if entry not in returned_entries:
+        # Use prefetched data to avoid N+1 queries
+        for entry in note.entries.all():
+            if (
+                hasattr(entry, "entry_class")
+                and entry.entry_class
+                and entry.entry_class.type == EntryType.ARTIFACT
+                and entry.entry_class.subtype not in ("virtual", "file")
+                and entry not in returned_entries
+            ):
                 returned_entries.add(entry)
                 yield entry

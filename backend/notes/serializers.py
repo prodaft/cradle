@@ -174,7 +174,7 @@ class LinkedEntrySerializer(serializers.ModelSerializer):
 
 
 class OptimizedEntryResponseSerializer(serializers.ModelSerializer):
-    """Lightweight entry serializer for file references that uses prefetched data"""
+    """Entry serializer for file references"""
 
     class Meta:
         model = Entry
@@ -182,7 +182,6 @@ class OptimizedEntryResponseSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        # Add entry_class fields from prefetched data
         if hasattr(instance, "entry_class") and instance.entry_class:
             representation["type"] = instance.entry_class.type
             representation["subtype"] = instance.entry_class.subtype
@@ -216,8 +215,7 @@ class FileReferenceWithNoteSerializer(serializers.ModelSerializer):
 
 class FileReferenceListSerializer:
     """
-    Optimized file reference serializer for list operations.
-    Built for maximum performance with minimal allocations.
+    Serializer for file reference list operations.
     """
 
     def __init__(self, files_data=None, many=False):
@@ -232,7 +230,7 @@ class FileReferenceListSerializer:
             return self._serialize_file(data_source)
 
     def _serialize_file(self, file_ref):
-        """Serialize a single file reference with minimal overhead"""
+        """Serialize a single file reference"""
         data = {
             "id": str(file_ref.id),
             "minio_file_name": file_ref.minio_file_name,
@@ -249,10 +247,9 @@ class FileReferenceListSerializer:
         return data
 
     def _get_entities_optimized(self, file_ref):
-        """Get entities using prefetched data efficiently"""
+        """Get entities for the file reference"""
         entities = []
         if file_ref.note:
-            # Use prefetched data to avoid N+1 queries
             for entry in file_ref.note.entries.all():
                 if (
                     hasattr(entry, "entry_class")
@@ -272,8 +269,7 @@ class FileReferenceListSerializer:
 
 class NoteListSerializer:
     """
-    Optimized note serializer for list operations.
-    Built for maximum performance with minimal allocations.
+    Serializer for note list operations.
     """
 
     def __init__(self, truncate=-1, many=False):
@@ -287,8 +283,7 @@ class NoteListSerializer:
             return self._serialize_note(notes_data)
 
     def _serialize_note(self, note):
-        """Serialize a single note with minimal overhead"""
-        # Basic note data (direct field access)
+        """Serialize a single note"""
         data = {
             "id": str(note.id),
             "publishable": note.publishable,
@@ -308,7 +303,6 @@ class NoteListSerializer:
             "last_linked": note.last_linked.isoformat() if note.last_linked else None,
         }
 
-        # Author (use prefetched data)
         if note.author:
             data["author"] = {
                 "id": str(note.author.id),
@@ -317,7 +311,6 @@ class NoteListSerializer:
         else:
             data["author"] = None
 
-        # Editor (use prefetched data)
         if note.editor:
             data["editor"] = {
                 "id": str(note.editor.id),
@@ -326,14 +319,11 @@ class NoteListSerializer:
         else:
             data["editor"] = None
 
-        # Entry classes (use prefetched data efficiently)
         entry_classes = set()
         for entry in note.entries.all():
             if hasattr(entry, "entry_class") and entry.entry_class:
                 entry_classes.add(entry.entry_class.subtype)
         data["entry_classes"] = list(entry_classes)
-
-        # Files (use prefetched data efficiently)
         files_data = []
         for file_ref in note.files.all():
             file_data = {
@@ -355,13 +345,13 @@ class NoteListSerializer:
         return data
 
     def _truncate_content(self, content):
-        """Efficiently truncate content if needed"""
+        """Truncate content if needed"""
         if self.truncate == -1 or len(content) <= self.truncate:
             return content
         return content[: self.truncate] + "..."
 
     def _get_file_entities(self, file_ref, note):
-        """Get entities for file reference using prefetched data"""
+        """Get entities for file reference"""
         entities = []
         for entry in note.entries.all():
             if (
@@ -381,7 +371,6 @@ class NoteListSerializer:
 
     @property
     def data(self):
-        # This property makes it compatible with DRF response patterns
         return self.to_representation(self._data)
 
     def __call__(self, data, **kwargs):

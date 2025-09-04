@@ -111,7 +111,7 @@ from ..serializers import (
         ],
         responses={
             200: TotalPagesPagination().get_paginated_response_serializer(
-                NoteRetrieveSerializer  # Schema still based on NoteRetrieveSerializer for API compatibility
+                NoteRetrieveSerializer
             ),
             400: {"description": "Invalid filter parameters"},
             401: {"description": "User is not authenticated"},
@@ -536,7 +536,7 @@ class NoteDetail(APIView):
         ],
         responses={
             200: TotalPagesPagination().get_paginated_response_serializer(
-                FileReferenceWithNoteSerializer  # Schema based on original for API compatibility
+                FileReferenceWithNoteSerializer
             ),
             400: {"description": "Invalid filter parameters"},
             401: {"description": "User is not authenticated"},
@@ -657,7 +657,6 @@ class NoteFiles(APIView):
         paginator = TotalPagesPagination(page_size=page_size)
         paginated_files = paginator.paginate_queryset(files, request)
         if paginated_files is not None:
-            # Use optimized serializer for file references
             serializer = FileReferenceListSerializer(many=True)
             serialized_data = serializer.to_representation(paginated_files)
             return paginator.get_paginated_response(serialized_data)
