@@ -1,11 +1,12 @@
-from environs import Env
-
-from .settings_common import *  # noqa:F401
-import sentry_sdk
+import random
 
 # Ugly hack to get graph_tool working
 import sys
-import random
+
+import sentry_sdk
+from environs import Env
+
+from .settings_common import *  # noqa:F401
 
 global_base = random.__file__.removesuffix("random.py")
 
@@ -72,3 +73,9 @@ EMAIL_HOST_USER = env.str("EMAIL_HOST_USER", None)
 DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL", None)
 EMAIL_HOST_PASSWORD = env.str("EMAIL_HOST_PASSWORD", None)
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", False)
+
+USE_SILK = env.bool("USE_SILK", False)
+
+if USE_SILK:
+    MIDDLEWARE = ["silk.middleware.SilkyMiddleware"] + MIDDLEWARE
+    INSTALLED_APPS.append("silk")

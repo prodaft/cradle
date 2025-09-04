@@ -1,10 +1,12 @@
-from django.db import models
-from typing import TYPE_CHECKING
-from django_lifecycle import AFTER_DELETE, LifecycleModelMixin, hook
 import uuid
-from .utils import MinioClient
+from typing import TYPE_CHECKING
+
+from django.db import models
+from django_lifecycle import AFTER_DELETE, LifecycleModelMixin, hook
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
+
+from .utils import MinioClient
 
 if TYPE_CHECKING:
     pass
@@ -59,6 +61,16 @@ class FileReference(models.Model, LifecycleModelMixin):
     @property
     def entities(self) -> list[str]:
         if self.note:
+            # Use prefetched data if available to avoid N+1 queries
+            if (
+                hasattr(self.note, "_prefetched_objects_cache")
+                and "entries" in self.note._prefetched_objects_cache
+            ):
+                return [
+                    entry
+                    for entry in self.note.entries.all()
+                    if entry.entry_class.type == EntryType.ENTITY
+                ]
             return list(
                 self.note.entries.filter(entry_class__type=EntryType.ENTITY).all()
             )

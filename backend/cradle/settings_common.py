@@ -54,11 +54,9 @@ INSTALLED_APPS = [
     "django.contrib.gis",
     "django_otp",
     "django_otp.plugins.otp_totp",
-    "silk",
 ]
 
 MIDDLEWARE = [
-    "silk.middleware.SilkyMiddleware",
     "django.middleware.gzip.GZipMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -180,7 +178,6 @@ TEMPLATES = [
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
-                "django.template.context_processors.request",
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",

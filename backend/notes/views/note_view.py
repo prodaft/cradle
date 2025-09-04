@@ -1,39 +1,35 @@
-from django.db.models import Q, Count
-from rest_framework.response import Response
-from rest_framework.request import Request
-from rest_framework import status
-from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.permissions import IsAuthenticated
-from django.http import QueryDict
+from typing import cast
+from uuid import UUID
 
+from access.enums import AccessType
+from access.models import Access
 from core.pagination import TotalPagesPagination
 from core.utils import validate_order_by
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
-
+from django.db.models import Count, Q
+from django.http import QueryDict
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from entries.enums import EntryType
 from entries.models import Entry
 from file_transfer.models import FileReference
-
+from knowledge_graph.serializers import SubGraphSerializer
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from user.models import CradleUser
 
 from ..filters import NoteFilter
+from ..models import Note
 from ..serializers import (
+    FileReferenceListSerializer,
+    FileReferenceWithNoteSerializer,
     NoteCreateSerializer,
     NoteEditSerializer,
+    NoteListSerializer,
     NoteRetrieveSerializer,
-    NoteRetrieveWithLinksSerializer,
-    FileReferenceWithNoteSerializer,
 )
-
-from knowledge_graph.serializers import SubGraphSerializer
-from ..models import Note
-from user.models import CradleUser
-from access.enums import AccessType
-from typing import cast
-
-from entries.enums import EntryType
-from access.models import Access
-
-from uuid import UUID
 
 
 @extend_schema_view(
@@ -115,7 +111,7 @@ from uuid import UUID
         ],
         responses={
             200: TotalPagesPagination().get_paginated_response_serializer(
-                NoteRetrieveWithLinksSerializer
+                NoteRetrieveSerializer  # Schema still based on NoteRetrieveSerializer for API compatibility
             ),
             400: {"description": "Invalid filter parameters"},
             401: {"description": "User is not authenticated"},
@@ -227,19 +223,57 @@ class NoteList(APIView):
             else:
                 notes = notes.order_by("-timestamp")
 
+            from django.db.models import Prefetch
+
+            entries_prefetch = Prefetch(
+                "entries", queryset=Entry.objects.select_related("entry_class")
+            )
+
+            files_prefetch = Prefetch(
+                "files", queryset=FileReference.objects.select_related("note")
+            )
+
+            notes = (
+                notes.select_related("author", "editor")
+                .prefetch_related(
+                    entries_prefetch,
+                    files_prefetch,
+                )
+                .only(
+                    "id",
+                    "content",
+                    "publishable",
+                    "status",
+                    "status_message",
+                    "status_timestamp",
+                    "title",
+                    "description",
+                    "metadata",
+                    "timestamp",
+                    "edit_timestamp",
+                    "last_linked",
+                    "author__id",
+                    "author__username",
+                    "editor__id",
+                    "editor__username",
+                )
+            )
+
             paginator = TotalPagesPagination(page_size=page_size)
             paginated_notes = paginator.paginate_queryset(notes, request)
 
             if paginated_notes is not None:
-                serializer = NoteRetrieveWithLinksSerializer(
-                    paginated_notes,
+                serializer = NoteListSerializer(
                     truncate=int(request.query_params.get("truncate", 200)),
                     many=True,
                 )
-                return paginator.get_paginated_response(serializer.data)
+                serialized_data = serializer.to_representation(paginated_notes)
+                return paginator.get_paginated_response(serialized_data)
 
-            serializer = NoteRetrieveWithLinksSerializer(notes, truncate=200, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            serializer = NoteListSerializer(truncate=200, many=True)
+            return Response(
+                serializer.to_representation(notes), status=status.HTTP_200_OK
+            )
         else:
             return Response(filterset.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -360,7 +394,7 @@ class NoteDetail(APIView):
 
         if request.query_params.get("footnotes", "true") == "true":
             return Response(
-                NoteRetrieveWithLinksSerializer(note).data, status=status.HTTP_200_OK
+                NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK
             )
 
         return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
@@ -502,7 +536,7 @@ class NoteDetail(APIView):
         ],
         responses={
             200: TotalPagesPagination().get_paginated_response_serializer(
-                FileReferenceWithNoteSerializer
+                FileReferenceWithNoteSerializer  # Schema based on original for API compatibility
             ),
             400: {"description": "Invalid filter parameters"},
             401: {"description": "User is not authenticated"},
@@ -571,10 +605,23 @@ class NoteFiles(APIView):
         if filterset.is_valid():
             queryset = filterset.qs
 
-        notes = queryset
+        from django.db.models import Prefetch
 
-        # Get all files from the filtered notes
-        files = FileReference.objects.filter(note__in=notes).distinct()
+        notes_prefetch = Prefetch(
+            "files",
+            queryset=FileReference.objects.select_related("note").prefetch_related(
+                "note__entries__entry_class"
+            ),
+        )
+
+        notes = queryset.prefetch_related(notes_prefetch)
+
+        files = (
+            FileReference.objects.filter(note__in=notes)
+            .select_related("note")
+            .prefetch_related("note__entries__entry_class")
+            .distinct()
+        )
 
         # Filter by keyword (contains match with filename or exact match with hash)
         if "keyword" in request.query_params:
@@ -610,10 +657,12 @@ class NoteFiles(APIView):
         paginator = TotalPagesPagination(page_size=page_size)
         paginated_files = paginator.paginate_queryset(files, request)
         if paginated_files is not None:
-            serializer = FileReferenceWithNoteSerializer(paginated_files, many=True)
-            return paginator.get_paginated_response(serializer.data)
-        serializer = FileReferenceWithNoteSerializer(files, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            # Use optimized serializer for file references
+            serializer = FileReferenceListSerializer(many=True)
+            serialized_data = serializer.to_representation(paginated_files)
+            return paginator.get_paginated_response(serialized_data)
+        serializer = FileReferenceListSerializer(many=True)
+        return Response(serializer.to_representation(files), status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
