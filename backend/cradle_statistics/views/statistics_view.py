@@ -9,7 +9,8 @@ from notes.models import Note
 from itertools import islice
 from entries.enums import EntryType
 from ..serializers import HomePageStatisticsSerializer
-from typing import cast
+from ..utils import note_artifacts_iterator
+from typing import Generator, cast
 from user.models import CradleUser
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
@@ -66,9 +67,7 @@ class StatisticsList(APIView):
 
         response_data["artifacts"] = list(
             islice(
-                Note.objects.note_references_iterator(
-                    accessible_notes, EntryType.ARTIFACT
-                ),
+                note_artifacts_iterator(accessible_notes),
                 3,
             )
         )

@@ -45,6 +45,7 @@ urlpatterns = [
                 path("lsp/", include("lsp.urls")),
                 path("intelio/", include("intelio.urls")),
                 path("management/", include("management.urls")),
+                path("silk/", include("silk.urls", namespace="silk")),
                 path(
                     "schema/",
                     SpectacularAPIView.as_view(api_version=settings.VERSION),

@@ -42,6 +42,7 @@ python-magic = "*"
 fa2-modified = "*"
 networkx = "*"
 scipy = "*"
+django-silk = {extras = ["formatting"], version = "*"}
 
 [dev-packages]
 bump-my-version = "*"

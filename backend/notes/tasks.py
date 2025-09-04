@@ -18,6 +18,9 @@ from notes.exceptions import EntriesDoNotExistException, EntryClassesDoNotExistE
 from notes.markdown.to_links import Link
 from notes.markdown.to_metadata import infer_metadata
 
+import json
+from django.core.serializers.json import DjangoJSONEncoder
+
 from .models import Note
 
 logger = logging.getLogger(__name__)
@@ -471,7 +474,7 @@ def note_metadata_process_task(note_id):
 
         setattr(note, field, value)
 
-    note.metadata = metadata
+    note.metadata = json.loads(json.dumps(metadata, cls=DjangoJSONEncoder))
 
     if note.title is None or len(note.title.strip()) == 0:
         note.set_status(NoteStatus.WARNING, "Note title is empty.")
