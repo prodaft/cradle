@@ -69,6 +69,30 @@ exclude = "*/migrations/*.py,*/tests/*.py"
 django_settings_module = "cradle.settings"
 
 [tool.flake8]
-exclude = ".git,__pycache__,.vscode,cradle,manage.py,env,venv,*/migrations/*"
+exclude = ".git,__pycache__,.vscode,cradle,manage.py,env,venv,.venv,*/migrations/*"
 max-line-length = 120
 extend-ignore = "E203"
+
+[tool.black]
+exclude = '''
+(
+  /(
+      \.git
+    | __pycache__
+    | \.venv
+    | env
+    | venv
+    | migrations
+  )/
+)
+'''
+
+[tool.ruff]
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    "env",
+    "venv",
+    "*/migrations/*"
+]
