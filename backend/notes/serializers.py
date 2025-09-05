@@ -262,6 +262,7 @@ class FileReferenceListSerializer:
                             "name": entry.name,
                             "type": entry.entry_class.type,
                             "subtype": entry.entry_class.subtype,
+                            "color": entry.entry_class.color,
                         }
                     )
         return entities
@@ -371,6 +372,7 @@ class NoteListSerializer:
                         "name": entry.name,
                         "type": entry.entry_class.type,
                         "subtype": entry.entry_class.subtype,
+                        "color": entry.entry_class.color,
                     }
                 )
         return entities

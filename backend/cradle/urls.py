@@ -61,11 +61,11 @@ urlpatterns = [
                     name="redoc",
                 ),
             ]
-            + [
-                path("silk/", include("silk.urls", namespace="silk"))
+            + (
+                [path("silk/", include("silk.urls", namespace="silk"))]
                 if settings.USE_SILK
                 else []
-            ],
+            ),
         ),
     ),
 ]
