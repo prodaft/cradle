@@ -173,10 +173,12 @@ class ActionView(APIView):
         )
 
     def action_relinkNotes(self, request, *args, **kwargs):
+        notes = Note.objects.non_fleeting()
+
         if request.data and "note_id" in request.data:
-            notes = Note.objects.filter(id=request.data["note_id"])
+            notes = notes.filter(id=request.data["note_id"])
         else:
-            notes = Note.objects.all()
+            notes = notes.all()
 
         Relation.objects.filter(
             content_type=ContentType.objects.get_for_model(Note)

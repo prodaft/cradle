@@ -17,27 +17,19 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # Cache pipenv dependencies (pip cache and virtualenvs)
-      - name: Cache pipenv dependencies
-        uses: actions/cache@v3
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: |
-            ~/.cache/pip
-            ~/.local/share/virtualenvs
-          key: ${{ runner.os }}-pipenv-${{ hashFiles('backend/Pipfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pipenv-
+          enable-cache: true
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
       - name: Install dependencies
-        run: |
-          pip install pipenv
-          pipenv sync -d
+        run: uv sync --extra dev
       - name: Run flake8
-        run: pipenv run python3 -m flake8 --verbose .
+        run: uv run flake8 --verbose .
 
   tests:
     name: Run Django Tests
@@ -75,16 +67,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # Cache pipenv dependencies (reuse the same caching step)
-      - name: Cache pipenv dependencies
-        uses: actions/cache@v3
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: |
-            ~/.cache/pip
-            ~/.local/share/virtualenvs
-          key: ${{ runner.os }}-pipenv-${{ hashFiles('backend/Pipfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pipenv-
+          enable-cache: true
+
       - name: Cache APT packages
         uses: actions/cache@v3
         with:
@@ -94,20 +81,19 @@ jobs:
           key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/ci.yml') }}
           restore-keys: |
             ${{ runner.os }}-apt-
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           apt update
-          apt install -y pipenv python3-pip
+          apt install -y python3-pip
       - name: Install dependencies
-        run: |
-          pipenv sync -d
+        run: uv sync --extra dev
       - name: Settings Copy
         run: cp cradle/settings_test.py cradle/settings.py
       - name: Apply Migrations
         run: |
-          pipenv run python3 manage.py migrate
-          pipenv run python3 manage.py check
+          uv run python3 manage.py migrate
+          uv run python3 manage.py check
       - name: Run Tests with Coverage
         run: |
-          pipenv run coverage run manage.py test
-          pipenv run coverage report
+          uv run coverage run manage.py test
+          uv run coverage report

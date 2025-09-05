@@ -1,17 +1,22 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.request import Request
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.permissions import IsAuthenticated
+from itertools import islice
+from typing import cast
+
 from access.models import Access
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from entries.models import Entry
 from notes.models import Note
-from itertools import islice
-from entries.enums import EntryType
-from ..serializers import HomePageStatisticsSerializer
-from typing import cast
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from user.models import CradleUser
-from drf_spectacular.utils import extend_schema, extend_schema_view
+
+from ..serializers import (
+    HomePageStatisticsSerializer,
+    StatisticsEntrySerializer,
+    StatisticsNoteSerializer,
+)
 
 
 @extend_schema_view(
@@ -44,33 +49,49 @@ class StatisticsList(APIView):
             request is not authenticated.
         """
 
+        from django.db.models import Prefetch
+
+        entries_prefetch = Prefetch(
+            "entries", queryset=Entry.objects.select_related("entry_class")
+        )
+
         accessible_notes = (
             Note.objects.non_fleeting()
             .accessible(user=cast(CradleUser, request.user))
+            .select_related("author", "editor")
+            .prefetch_related(entries_prefetch, "files")
             .order_by("-timestamp")
             .distinct()
         )
 
-        response_data = {}
-
-        response_data["notes"] = list(accessible_notes[:10])
+        notes_list = list(accessible_notes[:10])
 
         if request.user.is_cradle_admin:
-            response_data["entities"] = Entry.entities.all()
+            entities_qs = Entry.entities.select_related("entry_class").all()
         else:
-            response_data["entities"] = Entry.entities.filter(
+            entities_qs = Entry.entities.select_related("entry_class").filter(
                 pk__in=Access.objects.get_accessible_entity_ids(request.user.id)
             )
+        entities_list = list(islice(entities_qs, 3))
 
-        response_data["entities"] = list(islice(response_data["entities"], 3))
-
-        response_data["artifacts"] = list(
-            islice(
-                Note.objects.note_references_iterator(
-                    accessible_notes, EntryType.ARTIFACT
-                ),
-                3,
+        artifacts_list = list(
+            Entry.objects.filter(
+                notes__in=accessible_notes, entry_class__type="artifact"
             )
+            .exclude(entry_class__subtype__in=("virtual", "file"))
+            .select_related("entry_class")
+            .distinct()
+            .order_by("-notes__timestamp")[:3]
         )
 
-        return Response(HomePageStatisticsSerializer(response_data).data)
+        notes_serializer = StatisticsNoteSerializer(truncate=150, many=True)
+        entities_serializer = StatisticsEntrySerializer(many=True)
+        artifacts_serializer = StatisticsEntrySerializer(many=True)
+
+        response_data = {
+            "notes": notes_serializer.to_representation(notes_list),
+            "entities": entities_serializer.to_representation(entities_list),
+            "artifacts": artifacts_serializer.to_representation(artifacts_list),
+        }
+
+        return Response(response_data)

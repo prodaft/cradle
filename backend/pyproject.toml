@@ -1,3 +1,64 @@
+[project]
+name = "cradle-backend"
+version = "2.10.2"
+description = "CRADLE Backend"
+requires-python = ">=3.10"
+dependencies = [
+    "django==5.0.4",
+    "djangorestframework==3.15.1",
+    "django-cors-headers==4.3.1",
+    "djangorestframework-simplejwt==5.3.1",
+    "djangorestframework-stubs==3.15.0",
+    "django-stubs",
+    "django-stubs-ext",
+    "minio",
+    "django-model-utils",
+    "django-extensions",
+    "pytest",
+    "pyyaml",
+    "mistune",
+    "drf-spectacular",
+    "django-filter",
+    "pytest-django",
+    "environs",
+    "django-lifecycle",
+    "sentry-sdk[django]",
+    "celery[redis]",
+    "redis",
+    "python-redis-lock",
+    "diff-match-patch",
+    "xeger",
+    "bleach",
+    "numpy",
+    "psycopg2-binary",
+    "dnspython",
+    "bcrypt",
+    "django-celery-beat",
+    "requests",
+    "python-frontmatter",
+    "django-otp",
+    "qrcode",
+    "python-magic",
+    "fa2-modified",
+    "networkx",
+    "scipy",
+    "django-silk[formatting]",
+    "gunicorn",
+]
+
+[project.optional-dependencies]
+dev = [
+    "bump-my-version",
+    "deptry",
+    "coverage",
+    "flake8==7.0.0",
+    "black==24.4.2",
+    "mypy==1.10.0",
+    "ipython",
+    "autoflake",
+    "flake8-pyproject",
+]
+
 [tool.mypy]
 namespace_packages = true
 warn_unused_ignores = false
@@ -8,6 +69,30 @@ exclude = "*/migrations/*.py,*/tests/*.py"
 django_settings_module = "cradle.settings"
 
 [tool.flake8]
-exclude = ".git,__pycache__,.vscode,cradle,manage.py,env,venv,*/migrations/*"
+exclude = ".git,__pycache__,.vscode,cradle,manage.py,env,venv,.venv,*/migrations/*"
 max-line-length = 120
 extend-ignore = "E203"
+
+[tool.black]
+exclude = '''
+(
+  /(
+      \.git
+    | __pycache__
+    | \.venv
+    | env
+    | venv
+    | migrations
+  )/
+)
+'''
+
+[tool.ruff]
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    "env",
+    "venv",
+    "*/migrations/*"
+]
