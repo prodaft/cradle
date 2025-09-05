@@ -1,19 +1,20 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.request import Request
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from uuid import UUID
 
 from access.enums import AccessType
 from access.models import Access
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from user.permissions import HasEntryManagerRole
 
-from ..serializers import EntitySerializer, EntryResponseSerializer
-from ..models import Entry
-from uuid import UUID
 from entries.tasks import refresh_edges_materialized_view
+
+from ..models import Entry
+from ..serializers import EntitySerializer, EntryResponseSerializer
 
 
 @extend_schema_view(
@@ -164,7 +165,8 @@ class EntityDetail(APIView):
                 "There is no entity with specified ID.",
                 status=status.HTTP_404_NOT_FOUND,
             )
-        entity.delete()
+
+        entity.delete_renaming(request.user.id)
         refresh_edges_materialized_view.apply_async(simulate=True)
 
         return Response("Requested entity was deleted", status=status.HTTP_200_OK)

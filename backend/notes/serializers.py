@@ -185,6 +185,7 @@ class OptimizedEntryResponseSerializer(serializers.ModelSerializer):
         if hasattr(instance, "entry_class") and instance.entry_class:
             representation["type"] = instance.entry_class.type
             representation["subtype"] = instance.entry_class.subtype
+            representation["color"] = instance.entry_class.color
         return representation
 
 
