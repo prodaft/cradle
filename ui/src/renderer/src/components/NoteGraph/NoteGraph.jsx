@@ -262,7 +262,6 @@ export default function NoteGraph({ noteId }) {
                         config={config}
                         setConfig={setConfig}
                         SearchComponent={NoteGraphSearch(noteId)}
-                        ref={cyRef} // pass cytoscape instance to GraphQuery
                     />
                 }
                 rightContent={

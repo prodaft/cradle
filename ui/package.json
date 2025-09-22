@@ -32,6 +32,9 @@
         "prettier": "npx prettier . --write",
         "generate-api": "rm -rf src/renderer/src/services/cradle/; openapi-generator-cli generate -g typescript-fetch --input-spec ${npm_config_input:-http://localhost:8000/schema/} -c openapitools.json -o src/renderer/src/services/cradle/"
     },
+    "overrides": {
+        "@react-three/fiber": "8.15.19"
+    },
     "dependencies": {
         "@codemirror/highlight": "^0.19.8",
         "@codemirror/lang-markdown": "^6.2.5",
@@ -39,6 +42,7 @@
         "@codemirror/language-data": "^6.5.1",
         "@codemirror/lint": "^6.8.4",
         "@codemirror/view": "^6.26.3",
+        "@cosmograph/react": "^1.4.2",
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/dom": "^0.0.9",
         "@dnd-kit/helpers": "^0.0.9",
@@ -66,6 +70,10 @@
         "force-graph": "^1.45.0",
         "geckodriver": "^4.4.1",
         "github-markdown-css": "^5.8.1",
+        "graphology": "^0.26.0",
+        "graphology-assertions": "^2.2.1",
+        "graphology-layout": "^0.6.1",
+        "graphology-layout-forceatlas2": "^0.10.1",
         "gray-matter": "^4.0.3",
         "iconoir": "^7.7.0",
         "iconoir-react": "^7.7.0",
@@ -79,6 +87,7 @@
         "marked": "^12.0.2",
         "marked-highlight": "^2.1.1",
         "mime": "^4.0.3",
+        "pixi.js": "^8.13.2",
         "pluralize": "^8.0.0",
         "prismjs": "^1.29.0",
         "qrcode.react": "^4.2.0",
@@ -94,6 +103,7 @@
         "react-router-dom": "^6.23.0",
         "react-select": "^5.10.1",
         "react-tailwindcss-datepicker": "^1.7.3",
+        "reagraph": "^4.30.4",
         "rippleui": "^1.12.1",
         "selenium-webdriver": "^4.21.0",
         "tailwind-scrollbar": "^3.1.0",

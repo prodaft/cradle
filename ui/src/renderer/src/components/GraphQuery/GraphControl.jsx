@@ -1,43 +1,21 @@
-import { forwardRef, useEffect, useState } from 'react';
+import { useState } from 'react';
 import GraphLegend from './GraphLegend';
 import GraphSettings from './GraphSettings';
 
-const GraphControl = forwardRef(({ settingsProps, SearchComponent }, graphRef) => {
+export default function GraphControl({
+    settingsProps,
+    SearchComponent,
+    addNodes,
+    addEdges,
+    nodes,
+    edges,
+}) {
     const [graphStats, setGraphStats] = useState({
         nodes: 0,
         edges: 0,
         perCategory: {},
         legend: {},
     });
-
-    const processNewNode = (node) => {
-        setGraphStats((prev) => {
-            const newNodesCount = prev.nodes + 1;
-            const newPerCategory = { ...prev.perCategory };
-            if (node.subtype) {
-                newPerCategory[node.subtype] = (newPerCategory[node.subtype] || 0) + 1;
-            }
-            const newLegend = { ...prev.legend };
-            if (node.subtype && node.color && !newLegend[node.subtype]) {
-                newLegend[node.subtype] = node.color;
-            }
-            return {
-                ...prev,
-                nodes: newNodesCount,
-                perCategory: newPerCategory,
-                legend: newLegend,
-            };
-        });
-    };
-
-    const addEdge = (n) => {
-        setGraphStats((prev) => {
-            return {
-                ...prev,
-                edges: prev.edges + n,
-            };
-        });
-    };
 
     const [disabledTypes, setDisabledTypes] = useState(new Set());
     const toggleDisabledType = (type) => {
@@ -48,27 +26,6 @@ const GraphControl = forwardRef(({ settingsProps, SearchComponent }, graphRef) =
             return newSet;
         });
     };
-
-    useEffect(() => {
-        if (!graphRef.current) return;
-
-        const graph = graphRef.current;
-        const disabled = new Set(disabledTypes);
-
-        graph.nodes().forEach((node) => {
-            const subtype = node.data('subtype');
-            node.style('display', disabled.has(subtype) ? 'none' : 'element');
-        });
-
-        graph.edges().forEach((edge) => {
-            const sourceNode = graph.getElementById(edge.data('source'));
-            const targetNode = graph.getElementById(edge.data('target'));
-            const hidden =
-                sourceNode.style('display') === 'none' ||
-                targetNode.style('display') === 'none';
-            edge.style('display', hidden ? 'none' : 'element');
-        });
-    }, [disabledTypes, graphRef]);
 
     const resetGraphStats = () => {
         setGraphStats({
@@ -83,15 +40,13 @@ const GraphControl = forwardRef(({ settingsProps, SearchComponent }, graphRef) =
     return (
         <>
             <SearchComponent
-                ref={graphRef}
                 graphStats={graphStats}
-                processNewNode={processNewNode}
-                addEdge={addEdge}
+                addEdges={addEdges}
+                addNodes={addNodes}
             />
             <div className='border-b-2 border-b-zinc-400 dark:border-b-zinc-800 mt-4 mx-2' />
             <GraphSettings
                 {...settingsProps}
-                ref={graphRef}
                 graphStats={graphStats}
                 resetGraphStats={resetGraphStats}
             />
@@ -104,6 +59,4 @@ const GraphControl = forwardRef(({ settingsProps, SearchComponent }, graphRef) =
             />
         </>
     );
-});
-
-export default GraphControl;
+}

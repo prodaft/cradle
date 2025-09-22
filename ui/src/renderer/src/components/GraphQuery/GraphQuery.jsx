@@ -1,14 +1,21 @@
-import { forwardRef, useMemo } from 'react';
+import { useMemo } from 'react';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import NotesList from '../NotesList/NotesList';
 import RelationsList from '../RelationsList/RelationsList';
 import { Tab, Tabs } from '../Tabs/Tabs';
 import GraphControl from './GraphControl';
 
-const GraphQuery = forwardRef(function (
-    { selectedEntries, setSelectedEntries, config, setConfig, SearchComponent },
-    graphRef,
-) {
+export default function GraphQuery({
+    selectedEntries,
+    setSelectedEntries,
+    config,
+    setConfig,
+    SearchComponent,
+    addEdges,
+    addNodes,
+    nodes,
+    edges,
+}) {
     const { navigate, navigateLink } = useCradleNavigate();
 
     // Prepare props for GraphSettings.
@@ -45,8 +52,11 @@ const GraphQuery = forwardRef(function (
                     <div className='flex flex-col flex-1 overflow-hidden h-[85vh]'>
                         <GraphControl
                             settingsProps={settingsProps}
-                            ref={graphRef}
                             SearchComponent={SearchComponent}
+                            addEdges={addEdges}
+                            addNodes={addNodes}
+                            nodes={nodes}
+                            edges={edges}
                         />
                     </div>
                 </Tab>
@@ -117,6 +127,4 @@ const GraphQuery = forwardRef(function (
             </Tabs>
         </div>
     );
-});
-
-export default GraphQuery;
+}
