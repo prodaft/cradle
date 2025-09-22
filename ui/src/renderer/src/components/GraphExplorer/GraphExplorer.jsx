@@ -10,13 +10,12 @@ export default function GraphExplorer() {
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
     const [config, setConfig] = useState({
-        nodeRadiusCoefficient: 1.5,
+        nodeRadiusCoefficient: 1,
         linkWidthCoefficient: 1,
-        labelSizeCoefficient: 16,
-        searchValue: '',
-        layout: 'preset',
-        animateLayout: false,
-        showLabels: true,
+        simulationGravity: 0.2,
+        simulationRepulsion: 1.5,
+        simulationLinkSpring: 0.5,
+        simulationLinkDistance: 10,
     });
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [selectedEntries, setSelectedEntries] = useState(new Set());
@@ -109,12 +108,12 @@ export default function GraphExplorer() {
                 rightContent={
                     <div className='relative'>
                         <Graph
-                            onLinkClick={(link) => {
-                                setSelectedEntries([link.source, link.target]);
-                            }}
-                            onNodesSelected={(nodes) => {
-                                console.log(nodes);
-                                setSelectedEntries(nodes);
+                            setSelectedEntries={setSelectedEntries}
+                            onClearGraph={() => {
+                                setNodes([]);
+                                setEdges([]);
+                                setNodeIds(new Set());
+                                setEdgeIds(new Set());
                             }}
                             config={config}
                             nodes={nodes}

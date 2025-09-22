@@ -1,13 +1,27 @@
 import { Cosmograph, CosmographProvider, CosmographSearch } from '@cosmograph/react';
+import { Erase, RefreshDouble } from 'iconoir-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 
-export default function GraphViewer({ config = {}, nodes = [], edges = [] }) {
+function normalize(x, inputMin, inputMax) {
+  x = Math.min(x, inputMax);
+  x = Math.max(x, inputMin);
+  const outputMin = 2, outputMax = 10;
+  
+  const shifted = x - inputMin + 1;
+  const maxShifted = inputMax - inputMin + 1;
+  
+  const normalized = shifted / maxShifted;
+  return outputMin + normalized * (outputMax - outputMin);
+}
+
+export default function GraphViewer({ setSelectedEntries, config = {}, nodes = [], edges = [], onClearGraph }) {
     const [selectedNodes, setSelectedNodes] = useState([]);
     const { isDarkMode } = useTheme();
     const cosmographRef = useRef(null);
     const { navigate, navigateLink } = useCradleNavigate();
+    const [graphInstanceKey, setGraphInstanceKey] = useState(0);
 
     let onClick = (node, index, nodePosition, event) => {
         if (!node) {
@@ -38,6 +52,7 @@ export default function GraphViewer({ config = {}, nodes = [], edges = [] }) {
     };
 
     useEffect(() => {
+        setSelectedEntries(new Set(selectedNodes));
         if (!cosmographRef.current) return;
         if (selectedNodes.length === 0) {
             cosmographRef.current.unselectNodes();
@@ -57,8 +72,41 @@ export default function GraphViewer({ config = {}, nodes = [], edges = [] }) {
             }}
         >
             <CosmographProvider>
-                <CosmographSearch />
+                <div className='absolute top-2 right-2 z-10 flex items-center gap-2 bg-[#222222] px-2 rounded-xl'>
+                    <CosmographSearch 
+                    accessors={[
+                        {
+                            label: 'label',
+                            accessor: (node) => node.label,
+                        },
+                    ]}
+                    onSelectResult={(node) => {
+                        if (node == null || cosmographRef.current == null) return;
+                        cosmographRef.current.focusNode(node);
+                        cosmographRef.current.zoomToNode(node);
+                        setSelectedNodes([node]);
+
+                    }}
+                    />
+                    <button
+                        type='button'
+                        className='btn btn-sm btn-ghost'
+                        title='Clear graph elements'
+                        onClick={() => onClearGraph && onClearGraph()}
+                    >
+                        <Erase />
+                    </button>
+                    <button
+                        type='button'
+                        className='btn btn-sm btn-ghost'
+                        title='Refresh graph'
+                        onClick={() => setGraphInstanceKey((k) => k + 1)}
+                    >
+                        <RefreshDouble />
+                    </button>
+                </div>
                 <Cosmograph
+                    key={graphInstanceKey}
                     nodes={nodes}
                     links={edges}
                     ref={cosmographRef}
@@ -67,19 +115,41 @@ export default function GraphViewer({ config = {}, nodes = [], edges = [] }) {
                     nodeColor={(node) => node.color || '#4A90E2'}
                     nodeLabelAccessor={(node) => node.label || node.id}
                     nodeGreyoutOpacity={0.1}
-                    nodeSize={(node) => Math.min(8, Math.max(2, node.degree))}
+                    nodeSizeScale={(typeof config.nodeRadiusCoefficient === 'number'
+                                    ? config.nodeRadiusCoefficient
+                                    : 1)}
+                    nodeSize={(node) => normalize(node.degree || 1, 1, 60)}
                     showDynamicLabels={true}
                     nodeLabel={(node) => node.label || node.id}
                     disableSimulation={false}
-                    linkColor={'#888888'}
+                    linkColor={'#999999'}
                     linkWidth={2}
-                    simulationGravity={0.2} /* 0.0 - 1.0 */
-                    simulationRepulsion={1.5} /* 0.3 - 2.0 */
-                    simulationLinkSpring={0.5} /* 0.0 - 2.0 */
-                    simulationLinkDistance={10} /* 0 - 20 */
+                    linkWidthScale={(typeof config.linkWidthCoefficient === 'number'
+                                    ? config.linkWidthCoefficient
+                                    : 1)}
+                    simulationGravity={
+                        typeof config.simulationGravity === 'number'
+                            ? config.simulationGravity
+                            : 0.2
+                    } /* 0.0 - 1.0 */
+                    simulationRepulsion={
+                        typeof config.simulationRepulsion === 'number'
+                            ? config.simulationRepulsion
+                            : 1.5
+                    } /* 0.3 - 2.0 */
+                    simulationLinkSpring={
+                        typeof config.simulationLinkSpring === 'number'
+                            ? config.simulationLinkSpring
+                            : 0.5
+                    } /* 0.0 - 2.0 */
+                    simulationLinkDistance={
+                        typeof config.simulationLinkDistance === 'number'
+                            ? config.simulationLinkDistance
+                            : 10
+                    } /* 0 - 20 */
                     curvedLinks={false}
-                    arrows={true}
-                    arrowSizeScale={2}
+                    arrows={false}
+                    arrowSizeScale={0}
                 />
             </CosmographProvider>
         </div>
