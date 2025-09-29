@@ -20,6 +20,7 @@ from .exceptions import (
 )
 from .models import Note, Snippet
 from .processor.task_scheduler import TaskScheduler
+from django.conf import settings
 
 
 class SnippetSerializer(serializers.ModelSerializer):
@@ -391,7 +392,7 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
     files = FileReferenceWithNoteSerializer(many=True)
     author = EssentialUserRetrieveSerializer()
     editor = EssentialUserRetrieveSerializer()
-    entries = EntryTypesCompressedTreeSerializer()
+    entries = EntryTypesCompressedTreeSerializer(exclude=settings.INTERNAL_SUBTYPES)
 
     class Meta:
         model = Note
