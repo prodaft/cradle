@@ -5,7 +5,7 @@ import { FloppyDisk } from 'iconoir-react/regular';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import { useEffect, useRef, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
@@ -34,6 +34,8 @@ export default function NoteEditor() {
     const { navigate, navigateLink } = useCradleNavigate();
     const { setModal } = useModal();
     const { id } = useParams();
+    const location = useLocation();
+    const { from, state } = location.state || { from: { pathname: '/' } };
 
     // Ensure the ref to the markdown content is correct
     useEffect(() => {
@@ -96,7 +98,6 @@ export default function NoteEditor() {
                         color: 'green',
                     });
                 }
-                // navigate(`/notes/${response.data.id}`);
             }
         } catch (error) {
             displayError(setAlert, navigate)(error);
@@ -114,8 +115,8 @@ export default function NoteEditor() {
                     });
                     // Navigate after 2 seconds
                     setTimeout(() => {
-                        navigate('/');
-                    }, 2000);
+                        navigate(from, { replace: true });
+                    }, 500);
                 }
             })
             .catch(displayError(setAlert, navigate));

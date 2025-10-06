@@ -75,7 +75,6 @@ export default function FilesList({
 
     const fetchFiles = useCallback(() => {
         setLoading(true);
-        console.log(query, page, onError, setAlert);
 
         const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
 

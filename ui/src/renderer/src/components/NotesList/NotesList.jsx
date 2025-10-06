@@ -314,14 +314,14 @@ export default function NotesList({
                             note={note}
                             setAlert={setAlert}
                             setHidden={() => { }}
-                            key={note.id}
+                            key={`${note.id}-edit`}
                             classNames='w-4 h-4'
                         />
                         <DeleteNote
                             note={note}
                             setAlert={setAlert}
                             setHidden={() => { }}
-                            key={note.id}
+                            key={`${note.id}-delete`}
                             classNames='w-4 h-4'
                         />
                     </div>

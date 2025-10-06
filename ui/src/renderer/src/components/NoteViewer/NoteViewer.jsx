@@ -218,8 +218,8 @@ export default function NoteViewer() {
                 key='edit-btn'
                 text='Edit Note'
                 icon={<EditPencil />}
-                onClick={navigateLink(`/notes/${id}/edit`)}
-                tesid='delete-btn'
+                onClick={navigateLink(`/notes/${id}/edit`, { state: { from } })}
+                tesid='edit-btn'
             />,
             <NavbarButton
                 key='delete-btn'
