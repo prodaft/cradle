@@ -160,18 +160,50 @@ function DigestList({
             value: 'delete',
             label: 'Delete',
             handler: async (selectedIds) => {
-                // Dummy async function
-                await new Promise((resolve) => setTimeout(resolve, 2000));
-                console.log('Delete digests:', selectedIds);
-            },
-        },
-        {
-            value: 'export',
-            label: 'Export',
-            handler: async (selectedIds) => {
-                // Dummy async function
-                await new Promise((resolve) => setTimeout(resolve, 2000));
-                console.log('Export digests:', selectedIds);
+                setModal(ConfirmDeletionModal, {
+                    onConfirm: async () => {
+                        try {
+                            // Send all delete requests in parallel
+                            const deletePromises = selectedIds.map(id => deleteDigest(id));
+                            const results = await Promise.allSettled(deletePromises);
+
+                            // Count successes and failures
+                            const successes = results.filter(r => r.status === 'fulfilled').length;
+                            const failures = results.filter(r => r.status === 'rejected').length;
+
+                            if (failures === 0) {
+                                setAlert({
+                                    show: true,
+                                    color: 'green',
+                                    message: `Successfully deleted ${successes} digest${successes > 1 ? 's' : ''}`,
+                                });
+                            } else if (successes === 0) {
+                                setAlert({
+                                    show: true,
+                                    color: 'red',
+                                    message: `Failed to delete ${failures} digest${failures > 1 ? 's' : ''}`,
+                                });
+                            } else {
+                                setAlert({
+                                    show: true,
+                                    color: 'amber',
+                                    message: `Deleted ${successes} digest${successes > 1 ? 's' : ''}, ${failures} failed`,
+                                });
+                            }
+
+                            // Refresh the digests list
+                            setSelectedDigests([]);
+                            if (onDigestDelete) onDigestDelete();
+                        } catch (error) {
+                            setAlert({
+                                show: true,
+                                color: 'red',
+                                message: 'An unexpected error occurred while deleting digests',
+                            });
+                        }
+                    },
+                    text: `Are you sure you want to delete ${selectedIds.length} digest${selectedIds.length > 1 ? 's' : ''}? This action is irreversible.`,
+                });
             },
         },
     ];

@@ -305,18 +305,50 @@ export default function ReportList({ setAlert = null }) {
             value: 'delete',
             label: 'Delete',
             handler: async (selectedIds) => {
-                // Dummy async function
-                await new Promise((resolve) => setTimeout(resolve, 2000));
-                console.log('Delete reports:', selectedIds);
-            },
-        },
-        {
-            value: 'export',
-            label: 'Export',
-            handler: async (selectedIds) => {
-                // Dummy async function
-                await new Promise((resolve) => setTimeout(resolve, 2000));
-                console.log('Export reports:', selectedIds);
+                setModal(ConfirmDeletionModal, {
+                    onConfirm: async () => {
+                        try {
+                            // Send all delete requests in parallel
+                            const deletePromises = selectedIds.map(id => deleteReport(id));
+                            const results = await Promise.allSettled(deletePromises);
+
+                            // Count successes and failures
+                            const successes = results.filter(r => r.status === 'fulfilled').length;
+                            const failures = results.filter(r => r.status === 'rejected').length;
+
+                            if (failures === 0) {
+                                setAlert({
+                                    show: true,
+                                    color: 'green',
+                                    message: `Successfully deleted ${successes} report${successes > 1 ? 's' : ''}`,
+                                });
+                            } else if (successes === 0) {
+                                setAlert({
+                                    show: true,
+                                    color: 'red',
+                                    message: `Failed to delete ${failures} report${failures > 1 ? 's' : ''}`,
+                                });
+                            } else {
+                                setAlert({
+                                    show: true,
+                                    color: 'amber',
+                                    message: `Deleted ${successes} report${successes > 1 ? 's' : ''}, ${failures} failed`,
+                                });
+                            }
+
+                            // Refresh the reports list
+                            setSelectedReports([]);
+                            fetchReports();
+                        } catch (error) {
+                            setAlert({
+                                show: true,
+                                color: 'red',
+                                message: 'An unexpected error occurred while deleting reports',
+                            });
+                        }
+                    },
+                    text: `Are you sure you want to delete ${selectedIds.length} report${selectedIds.length > 1 ? 's' : ''}? This action is irreversible.`,
+                });
             },
         },
     ];

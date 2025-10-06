@@ -5,9 +5,10 @@ import {
 } from 'iconoir-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useModal } from '../../contexts/ModalContext/ModalContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { searchNote } from '../../services/notesService/notesService';
+import { deleteNote, searchNote } from '../../services/notesService/notesService';
 import { parseMarkdownInline } from '../../utils/customParser/customParser';
 import {
     capitalizeString,
@@ -18,6 +19,7 @@ import ActionBar from '../ActionBar/ActionBar';
 import AlertBox from '../AlertBox/AlertBox';
 import { HoverPreview } from '../HoverPreview/HoverPreview';
 import ListView from '../ListView/ListView';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
 import Note from '../Note/Note';
 import DeleteNote from '../NoteActions/DeleteNote';
 import EditNote from '../NoteActions/EditNote';
@@ -41,6 +43,7 @@ export default function NotesList({
     const [sortField, setSortField] = useState(searchParams.get('notes_sort_field') || 'timestamp');
     const [sortDirection, setSortDirection] = useState(searchParams.get('notes_sort_direction') || 'desc');
     const { navigate, navigateLink } = useCradleNavigate();
+    const { setModal } = useModal();
     const [hoveredNote, setHoveredNote] = useState(null);
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     const hoverTimeoutRef = useRef(null);
@@ -179,27 +182,50 @@ export default function NotesList({
             value: 'delete',
             label: 'Delete',
             handler: async (selectedIds) => {
-                // Dummy async function
-                await new Promise((resolve) => setTimeout(resolve, 2000));
-                console.log('Delete notes:', selectedIds);
-            },
-        },
-        {
-            value: 'export',
-            label: 'Export',
-            handler: async (selectedIds) => {
-                // Dummy async function
-                await new Promise((resolve) => setTimeout(resolve, 2000));
-                console.log('Export notes:', selectedIds);
-            },
-        },
-        {
-            value: 'archive',
-            label: 'Archive',
-            handler: async (selectedIds) => {
-                // Dummy async function
-                await new Promise((resolve) => setTimeout(resolve, 2000));
-                console.log('Archive notes:', selectedIds);
+                setModal(ConfirmDeletionModal, {
+                    onConfirm: async () => {
+                        try {
+                            // Send all delete requests in parallel
+                            const deletePromises = selectedIds.map(id => deleteNote(id));
+                            const results = await Promise.allSettled(deletePromises);
+
+                            // Count successes and failures
+                            const successes = results.filter(r => r.status === 'fulfilled').length;
+                            const failures = results.filter(r => r.status === 'rejected').length;
+
+                            if (failures === 0) {
+                                setAlert({
+                                    show: true,
+                                    color: 'green',
+                                    message: `Successfully deleted ${successes} note${successes > 1 ? 's' : ''}`,
+                                });
+                            } else if (successes === 0) {
+                                setAlert({
+                                    show: true,
+                                    color: 'red',
+                                    message: `Failed to delete ${failures} note${failures > 1 ? 's' : ''}`,
+                                });
+                            } else {
+                                setAlert({
+                                    show: true,
+                                    color: 'amber',
+                                    message: `Deleted ${successes} note${successes > 1 ? 's' : ''}, ${failures} failed`,
+                                });
+                            }
+
+                            // Refresh the notes list
+                            setSelectedNotes([]);
+                            fetchNotes();
+                        } catch (error) {
+                            setAlert({
+                                show: true,
+                                color: 'red',
+                                message: 'An unexpected error occurred while deleting notes',
+                            });
+                        }
+                    },
+                    text: `Are you sure you want to delete ${selectedIds.length} note${selectedIds.length > 1 ? 's' : ''}? This action is irreversible.`,
+                });
             },
         },
     ];
