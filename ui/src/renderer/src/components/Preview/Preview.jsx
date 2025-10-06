@@ -7,6 +7,7 @@ import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import '../../utils/customParser/prism-config.js';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { handleLinkClick } from '../../utils/textEditorUtils/textEditorUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
@@ -22,6 +23,7 @@ export default function Preview({
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [isLoading, setIsLoading] = useState(true); // New state for loading spinner
     const [previewElement, setPreviewElement] = useState(null);
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const previewRef = useCallback(
         (node) => {
@@ -95,6 +97,26 @@ export default function Preview({
             targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     }, [currentLine, previewRef]);
+
+    // Scroll to heading if heading parameter exists
+    useEffect(() => {
+        const headingId = searchParams.get('heading');
+        if (headingId && previewElement) {
+            try {
+                // Escape the ID to handle special characters
+                const escapedId = CSS.escape(headingId);
+                const headingElement = previewElement.querySelector(`#${escapedId}`);
+                if (headingElement) {
+                    // Small delay to ensure content is fully rendered
+                    setTimeout(() => {
+                        headingElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 100);
+                }
+            } catch (error) {
+                console.error('Error scrolling to heading:', error);
+            }
+        }
+    }, [searchParams, previewElement]);
 
     return (
         <>

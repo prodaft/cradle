@@ -4,12 +4,12 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
+import { authAxios } from '../../services/axiosInstance/axiosInstance';
 import {
     deleteNote,
     getNote,
     setPublishable,
 } from '../../services/notesService/notesService';
-import { authAxios } from '../../services/axiosInstance/axiosInstance';
 import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { createDownloadPath, parseContent } from '../../utils/textEditorUtils/textEditorUtils';
@@ -126,7 +126,7 @@ export default function NoteViewer() {
                 return responseNote;
             })
             .then((note) => {
-                return parseContent(note.content, note.files).then((result) =>
+                return parseContent(note.content, note.files, true).then((result) =>
                     setParsedContent(result.html),
                 );
             })

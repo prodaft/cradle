@@ -41,3 +41,13 @@ body {
     --tw-bg-opacity: 0.2 !important;
     background-color: rgb(var(--cradle3) / var(--tw-bg-opacity)) !important;
 }
+
+/* Show header anchor icon on hover */
+h1:hover .header-anchor-icon,
+h2:hover .header-anchor-icon,
+h3:hover .header-anchor-icon,
+h4:hover .header-anchor-icon,
+h5:hover .header-anchor-icon,
+h6:hover .header-anchor-icon {
+    opacity: 1;
+}
