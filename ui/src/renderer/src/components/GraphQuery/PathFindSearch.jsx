@@ -53,6 +53,9 @@ export default function PathFindSearch({
         if (results.status === 200) {
             return results.data.results.map((alias) => ({
                 value: alias.id,
+                id: String(e.id),
+                degree: e.degree,
+                type: e.subtype,
                 label: `${alias.subtype}:${alias.name}`,
             }));
         } else {

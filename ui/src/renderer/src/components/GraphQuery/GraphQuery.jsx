@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import NotesList from '../NotesList/NotesList';
 import RelationsList from '../RelationsList/RelationsList';
@@ -8,6 +8,9 @@ import GraphControl from './GraphControl';
 export default function GraphQuery({
     selectedEntries,
     setSelectedEntries,
+    entryGraphColors,
+    disabledTypes,
+    setDisabledTypes,
     config,
     setConfig,
     SearchComponent,
@@ -18,11 +21,6 @@ export default function GraphQuery({
 }) {
     const { navigate, navigateLink } = useCradleNavigate();
 
-    useEffect(() => {
-        console.log(selectedEntries, selectedEntries?.size);
-    }, [selectedEntries]);
-
-    // Prepare props for GraphSettings.
     const settingsProps = {
         config,
         setConfig,
@@ -57,6 +55,9 @@ export default function GraphQuery({
                         <GraphControl
                             settingsProps={settingsProps}
                             SearchComponent={SearchComponent}
+                            entryGraphColors={entryGraphColors}
+                            disabledTypes={disabledTypes}
+                            setDisabledTypes={setDisabledTypes}
                             addEdges={addEdges}
                             addNodes={addNodes}
                             nodes={nodes}

@@ -129,6 +129,7 @@ export default function PaginatedGraphFetch({
             let nodes = flattenedEntries.map((e) => ({
                 id: String(e.id),
                 degree: e.degree,
+                type: e.subtype,
                 label:
                     e.subtype == 'virtual'
                         ? 'virtual'

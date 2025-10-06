@@ -276,18 +276,17 @@ export default function UploadExternal({ setAlert }) {
                     </h2>
                 </div>
 
-                <div
-                    id='upload-form-section'
-                    className={`ease-in-out ${isUploadFormVisible
-                            ? 'max-h-[1000px] opacity-100 mb-4'
-                            : 'max-h-0 opacity-0'
-                        }`}
-                >
-                    <UploadForm
-                        dataTypeOptions={dataTypeOptions}
-                        onUpload={fetchDigests}
-                    />
-                </div>
+                {isUploadFormVisible && (
+                    <div
+                        id='upload-form-section'
+                        className='max-h-[1000px] opacity-100 mb-4  border-b border-gray-700 '
+                    >
+                        <UploadForm
+                            dataTypeOptions={dataTypeOptions}
+                            onUpload={fetchDigests}
+                        />
+                    </div>
+                )}
 
                 {/* Search Section */}
                 <div>

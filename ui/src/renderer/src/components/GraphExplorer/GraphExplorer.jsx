@@ -1,13 +1,16 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import 'tailwindcss/tailwind.css';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Graph from '../Graph/Graph';
 import GraphQuery from '../GraphQuery/GraphQuery';
 import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
+import { filterGraph } from './graphFilterUtils';
 
-export default function GraphExplorer({GraphSearchComponent}) {
+export default function GraphExplorer({ GraphSearchComponent }) {
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
+    const [disabledTypes, setDisabledTypes] = useState(new Set());
+    const [entryGraphColors, setEntryGraphColors] = useState({});
     const [config, setConfig] = useState({
         nodeRadiusCoefficient: 1,
         linkWidthCoefficient: 1,
@@ -43,6 +46,16 @@ export default function GraphExplorer({GraphSearchComponent}) {
                 nodesToAdd.forEach((node) => newIds.add(node.id));
                 return newIds;
             });
+
+            setEntryGraphColors((prevColors) => {
+                const newColors = { ...prevColors };
+                nodesToAdd.forEach((node) => {
+                    if (node.type && node.color && !newColors[node.type]) {
+                        newColors[node.type] = node.color;
+                    }
+                });
+                return newColors;
+            });
         }
     };
 
@@ -52,7 +65,6 @@ export default function GraphExplorer({GraphSearchComponent}) {
         }
 
         const edgesToAdd = newEdges.filter((edge) => {
-            // Check if edge has required properties
             if (!edge.id || !edge.source || !edge.target) {
                 console.warn(
                     'Edge missing required properties (id, source, target):',
@@ -61,16 +73,9 @@ export default function GraphExplorer({GraphSearchComponent}) {
                 return false;
             }
 
-            // Check if edge already exists
             if (edgeIds.has(edge.id)) {
                 return false;
             }
-
-            // Check if both source and target nodes exist
-            // if (!nodeIds.has(edge.source) || !nodeIds.has(edge.target)) {
-            //     console.warn('Edge references non-existent nodes:', edge);
-            //     return false;
-            // }
 
             return true;
         });
@@ -86,6 +91,11 @@ export default function GraphExplorer({GraphSearchComponent}) {
         }
     };
 
+    // Filter nodes and edges based on disabled types
+    const { nodes: filteredNodes, edges: filteredEdges } = useMemo(() => {
+        return filterGraph(nodes, edges, disabledTypes);
+    }, [nodes, edges, disabledTypes]);
+
     return (
         <div className='w-full h-full overflow-y-hidden relative'>
             <AlertDismissible alert={alert} setAlert={setAlert} />
@@ -98,6 +108,9 @@ export default function GraphExplorer({GraphSearchComponent}) {
                         config={config}
                         setConfig={setConfig}
                         SearchComponent={GraphSearchComponent}
+                        entryGraphColors={entryGraphColors}
+                        disabledTypes={disabledTypes}
+                        setDisabledTypes={setDisabledTypes}
                         addNodes={addNodes}
                         addEdges={addEdges}
                         nodes={nodes}
@@ -113,10 +126,11 @@ export default function GraphExplorer({GraphSearchComponent}) {
                                 setEdges([]);
                                 setNodeIds(new Set());
                                 setEdgeIds(new Set());
+                                setEntryGraphColors({});
                             }}
                             config={config}
-                            nodes={nodes}
-                            edges={edges}
+                            nodes={filteredNodes}
+                            edges={filteredEdges}
                         />
                     </div>
                 }
