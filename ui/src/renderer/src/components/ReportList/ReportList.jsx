@@ -3,9 +3,6 @@ import {
     Eye,
     PlusCircle,
     RefreshCircle,
-    Sort,
-    SortDown,
-    SortUp,
     Trash,
 } from 'iconoir-react';
 import PropTypes from 'prop-types';
@@ -18,7 +15,7 @@ import {
     importReport,
 } from '../../services/publishService/publishService';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import Pagination from '../Pagination/Pagination';
+import ListView from '../ListView/ListView';
 
 import { useModal } from '../../contexts/ModalContext/ModalContext.jsx';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
@@ -251,34 +248,11 @@ export default function ReportList({ setAlert = null }) {
         createdAt: 'created_at',
     };
 
-    const handleSort = (column) => {
-        const newSortField = sortFieldMapping[column];
-        if (!newSortField) return;
-
-        if (sortField === newSortField) {
-            // Toggle direction if same field
-            setSortDirection(sortDirection === 'desc' ? 'asc' : 'desc');
-        } else {
-            // New field, default to descending for timestamp fields, ascending for others
-            setSortField(newSortField);
-            setSortDirection(newSortField.includes('created_at') ? 'desc' : 'asc');
-        }
-
+    const handleSort = (field, direction) => {
+        setSortField(field);
+        setSortDirection(direction);
         // Reset to first page when sorting changes
         setPage(1);
-    };
-
-    const getSortIcon = (column, className) => {
-        const fieldName = sortFieldMapping[column];
-        if (!fieldName || sortField !== fieldName) {
-            return <Sort className={className} />;
-        }
-
-        return sortDirection === 'desc' ? (
-            <SortDown className={className} />
-        ) : (
-            <SortUp className={className} />
-        );
     };
 
     useEffect(() => {
@@ -313,19 +287,134 @@ export default function ReportList({ setAlert = null }) {
         setPage(newPage);
     };
 
-    const SortableTableHeader = ({ column, children, className = '' }) => (
-        <th
-            className={`cursor-pointer select-none ${className}`}
-            onClick={() => handleSort(column)}
-        >
-            <div className='flex items-center justify-between !border-b-0 !border-t-0'>
-                <span className='!border-b-0 !border-t-0'>{children}</span>
-                {getSortIcon(
-                    column,
-                    'w-4 h-4 text-zinc-600 dark:text-zinc-400 !border-b-0 !border-t-0',
-                )}
-            </div>
-        </th>
+    const columns = [
+        { key: 'status', label: 'Status' },
+        { key: 'title', label: 'Title', className: 'truncate font-medium' },
+        { key: 'strategy', label: 'Strategy', className: 'truncate w-24' },
+        { key: 'createdAt', label: 'Created At', className: 'w-36' },
+        { key: 'anonymized', label: 'Anonymized' },
+        { key: 'actions', label: 'Actions' },
+    ];
+
+    const renderRow = (report) => (
+        <tr key={report.id}>
+            <td className='w-8'>
+                <span
+                    className={`badge text-white ${
+                        report.status === 'done'
+                            ? 'bg-green-500'
+                            : report.status === 'error'
+                                ? 'bg-red-500'
+                                : 'bg-yellow-500'
+                    }`}
+                >
+                    {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+                </span>
+            </td>
+            <td className='truncate max-w-xs font-medium' title={report.title}>
+                {report.title}
+            </td>
+            <td className='truncate w-24' title={report.strategy_label}>
+                {truncateText(report.strategy_label, 24)}
+            </td>
+            <td className='w-36'>{formatDate(new Date(report.created_at))}</td>
+            <td className='w-24'>{report.anonymized ? 'Yes' : 'No'}</td>
+            <td className='w-32'>
+                <div className='flex space-x-1'>
+                    {report.strategy !== 'import' && (
+                        <>
+                            {report.status === 'done' && (
+                                <button
+                                    onClick={() => {
+                                        if (report.report_url) {
+                                            window.open(report.report_url, '_blank');
+                                        } else {
+                                            setAlert({
+                                                show: true,
+                                                message: 'No report location available',
+                                                color: 'red',
+                                            });
+                                        }
+                                    }}
+                                    className='btn btn-ghost btn-xs text-blue-600 hover:text-blue-500'
+                                    title='View Report'
+                                >
+                                    <Eye className='w-4 h-4' />
+                                </button>
+                            )}
+                            {report.status !== 'working' && (
+                                <button
+                                    onClick={() => navigate(`/publish?report=${report.id}`)}
+                                    className='btn btn-ghost btn-xs text-green-600 hover:text-green-500'
+                                    title='Edit Report'
+                                >
+                                    <Edit className='w-4 h-4' />
+                                </button>
+                            )}
+                            {report.status === 'error' && (
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            await retryReport(report.id);
+                                            fetchReports();
+                                            setAlert({
+                                                show: true,
+                                                message: 'Retrying to build report!',
+                                                color: 'green',
+                                            });
+                                        } catch (error) {
+                                            console.error('Retry report failed:', error);
+                                            setAlert({
+                                                show: true,
+                                                message: 'Failed to retry report',
+                                                color: 'red',
+                                            });
+                                        }
+                                    }}
+                                    className='btn btn-ghost btn-xs text-yellow-600 hover:text-yellow-500'
+                                    title='Retry Report'
+                                >
+                                    <RefreshCircle className='w-4 h-4' />
+                                </button>
+                            )}
+                        </>
+                    )}
+                    <button
+                        onClick={() =>
+                            setModal(ConfirmDeletionModal, {
+                                text: `Are you sure you want to delete this report?`,
+                                onConfirm: async () => {
+                                    try {
+                                        await deleteReport(report.id);
+                                        fetchReports();
+                                        setAlert({
+                                            show: true,
+                                            message: 'Report deleted successfully',
+                                            color: 'green',
+                                        });
+                                    } catch (error) {
+                                        console.error('Delete report failed:', error);
+                                        setAlert({
+                                            show: true,
+                                            message: 'Failed to delete report',
+                                            color: 'red',
+                                        });
+                                    }
+                                },
+                            })
+                        }
+                        className='btn btn-ghost btn-xs text-red-600 hover:text-red-500'
+                        title='Delete Report'
+                    >
+                        <Trash className='w-4 h-4' />
+                    </button>
+                </div>
+            </td>
+        </tr>
+    );
+
+    const renderCard = (report) => (
+        <ReportCard key={report.id} report={report} setAlert={setAlert} />
     );
 
     const handleImportClick = () => {
@@ -372,221 +461,29 @@ export default function ReportList({ setAlert = null }) {
                 )}
             </h1>
 
-            {loading ? (
+            {!report_id ? (
+                <ListView
+                    data={reports}
+                    columns={columns}
+                    renderRow={renderRow}
+                    renderCard={renderCard}
+                    loading={loading}
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                    sortField={sortField}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                    sortFieldMapping={sortFieldMapping}
+                    emptyMessage="No reports found."
+                    tableClassName="table table-zebra"
+                />
+            ) : loading ? (
                 <p className='text-gray-300'>Loading reports...</p>
             ) : reports.length > 0 ? (
-                <>
-                    {profile?.compact_mode ? (
-                        <div className='overflow-x-auto w-full'>
-                            <table className='table table-zebra'>
-                                <thead>
-                                    <tr>
-                                        <th>Status</th>
-                                        <SortableTableHeader
-                                            column='title'
-                                            className='truncate font-medium'
-                                        >
-                                            Title
-                                        </SortableTableHeader>
-                                        <SortableTableHeader
-                                            column='strategy'
-                                            className='truncate w-24'
-                                        >
-                                            Strategy
-                                        </SortableTableHeader>
-                                        <SortableTableHeader
-                                            column='createdAt'
-                                            className='w-36'
-                                        >
-                                            Created At
-                                        </SortableTableHeader>
-                                        <th>Anonymized</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {reports.map((report) => (
-                                        <tr key={report.id}>
-                                            <td className='w-8'>
-                                                <span
-                                                    className={`badge text-white ${report.status === 'done'
-                                                        ? 'bg-green-500'
-                                                        : report.status === 'error'
-                                                            ? 'bg-red-500'
-                                                            : 'bg-yellow-500'
-                                                        }`}
-                                                >
-                                                    {report.status
-                                                        .charAt(0)
-                                                        .toUpperCase() +
-                                                        report.status.slice(1)}
-                                                </span>
-                                            </td>
-                                            <td
-                                                className='truncate max-w-xs font-medium'
-                                                title={report.title}
-                                            >
-                                                {report.title}
-                                            </td>
-                                            <td
-                                                className='truncate w-24'
-                                                title={report.strategy_label}
-                                            >
-                                                {truncateText(
-                                                    report.strategy_label,
-                                                    24,
-                                                )}
-                                            </td>
-                                            <td className='w-36'>
-                                                {formatDate(
-                                                    new Date(report.created_at),
-                                                )}
-                                            </td>
-                                            <td className='w-24'>
-                                                {report.anonymized ? 'Yes' : 'No'}
-                                            </td>
-                                            <td className='w-32'>
-                                                <div className='flex space-x-1'>
-                                                    {report.strategy !== 'import' && (
-                                                        <>
-                                                            {report.status ===
-                                                                'done' && (
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            if (
-                                                                                report.report_url
-                                                                            ) {
-                                                                                window.open(
-                                                                                    report.report_url,
-                                                                                    '_blank',
-                                                                                );
-                                                                            } else {
-                                                                                setAlert({
-                                                                                    show: true,
-                                                                                    message:
-                                                                                        'No report location available',
-                                                                                    color: 'red',
-                                                                                });
-                                                                            }
-                                                                        }}
-                                                                        className='btn btn-ghost btn-xs text-blue-600 hover:text-blue-500'
-                                                                        title='View Report'
-                                                                    >
-                                                                        <Eye className='w-4 h-4' />
-                                                                    </button>
-                                                                )}
-                                                            {report.status !==
-                                                                'working' && (
-                                                                    <button
-                                                                        onClick={() =>
-                                                                            navigate(
-                                                                                `/publish?report=${report.id}`,
-                                                                            )
-                                                                        }
-                                                                        className='btn btn-ghost btn-xs text-green-600 hover:text-green-500'
-                                                                        title='Edit Report'
-                                                                    >
-                                                                        <Edit className='w-4 h-4' />
-                                                                    </button>
-                                                                )}
-                                                            {report.status ===
-                                                                'error' && (
-                                                                    <button
-                                                                        onClick={async () => {
-                                                                            try {
-                                                                                await retryReport(
-                                                                                    report.id,
-                                                                                );
-                                                                                // Refresh the reports list
-                                                                                fetchReports();
-                                                                                setAlert({
-                                                                                    show: true,
-                                                                                    message:
-                                                                                        'Retrying to build report!',
-                                                                                    color: 'green',
-                                                                                });
-                                                                            } catch (error) {
-                                                                                console.error(
-                                                                                    'Retry report failed:',
-                                                                                    error,
-                                                                                );
-                                                                                setAlert({
-                                                                                    show: true,
-                                                                                    message:
-                                                                                        'Failed to retry report',
-                                                                                    color: 'red',
-                                                                                });
-                                                                            }
-                                                                        }}
-                                                                        className='btn btn-ghost btn-xs text-yellow-600 hover:text-yellow-500'
-                                                                        title='Retry Report'
-                                                                    >
-                                                                        <RefreshCircle className='w-4 h-4' />
-                                                                    </button>
-                                                                )}
-                                                        </>
-                                                    )}
-                                                    <button
-                                                        onClick={() =>
-                                                            setModal(ConfirmDeletionModal, {
-                                                                text: `Are you sure you want to delete this report?`,
-                                                                onConfirm: async () => {
-                                                                    try {
-                                                                        await deleteReport(
-                                                                            report.id,
-                                                                        );
-                                                                        // Refresh the reports list
-                                                                        fetchReports();
-                                                                        setAlert({
-                                                                            show: true,
-                                                                            message:
-                                                                                'Report deleted successfully',
-                                                                            color: 'green',
-                                                                        });
-                                                                    } catch (error) {
-                                                                        console.error(
-                                                                            'Delete report failed:',
-                                                                            error,
-                                                                        );
-                                                                        setAlert({
-                                                                            show: true,
-                                                                            message:
-                                                                                'Failed to delete report',
-                                                                            color: 'red',
-                                                                        });
-                                                                    }
-                                                                }
-                                                            })}
-                                                        className='btn btn-ghost btn-xs text-red-600 hover:text-red-500'
-                                                        title='Delete Report'
-                                                    >
-                                                        <Trash className='w-4 h-4' />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    ) : (
-                        reports.map((report) => (
-                            <ReportCard
-                                key={report.id}
-                                report={report}
-                                setAlert={setAlert}
-                            />
-                        ))
-                    )}
-
-                    {!report_id && (
-                        <Pagination
-                            currentPage={page}
-                            totalPages={totalPages}
-                            onPageChange={handlePageChange}
-                        />
-                    )}
-                </>
+                reports.map((report) => (
+                    <ReportCard key={report.id} report={report} setAlert={setAlert} />
+                ))
             ) : (
                 <p className='text-gray-400'>No reports found.</p>
             )}
