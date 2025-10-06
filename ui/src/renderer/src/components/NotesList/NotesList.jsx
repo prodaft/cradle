@@ -27,6 +27,7 @@ export default function NotesList({
     query,
     filteredNotes = [],
     noteActions = [],
+    hideActionBar = false,
     forceCardView = false,
     references = null,
 }) {
@@ -326,11 +327,11 @@ export default function NotesList({
                 {!loading && notes.length > 0 && (
                     <div className='flex items-center justify-between gap-4'>
                         <div className='flex-1'>
-                            <ActionBar
+                            {hideActionBar ? null : <ActionBar
                                 actions={actions}
                                 selectedItems={selectedNotes}
                                 itemLabel='row'
-                            />
+                            />}
                         </div>
                         <Pagination
                             currentPage={page}
@@ -370,11 +371,11 @@ export default function NotesList({
                 {!loading && notes.length > 0 && (
                     <div className='flex items-center justify-between gap-4'>
                         <div className='flex-1'>
-                            <ActionBar
+                            {hideActionBar ? null : <ActionBar
                                 actions={actions}
                                 selectedItems={selectedNotes}
                                 itemLabel='row'
-                            />
+                            />}
                         </div>
                         <Pagination
                             currentPage={page}

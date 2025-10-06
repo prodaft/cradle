@@ -27,6 +27,7 @@ export default function GraphViewer({ setSelectedEntries, config = {}, nodes = [
     let onClick = (node, index, nodePosition, event) => {
         if (!node) {
             setSelectedNodes([]);
+            cosmographRef.current.focusNode(null);
             return;
         }
 
@@ -49,6 +50,7 @@ export default function GraphViewer({ setSelectedEntries, config = {}, nodes = [
                 newNodes.push(n);
             }
         }
+        cosmographRef.current.focusNode(node);
         setSelectedNodes(newNodes);
     };
     useEffect(() => {
@@ -139,7 +141,8 @@ export default function GraphViewer({ setSelectedEntries, config = {}, nodes = [
                     showDynamicLabels={true}
                     nodeLabel={(node) => node.label || node.id}
                     disableSimulation={false}
-                    linkColor={'#999999'}
+                    linkColor='#999999'
+                    focusedNodeRingColor="#f68d2e"
                     linkWidth={2}
                     linkWidthScale={(typeof config.linkWidthCoefficient === 'number'
                         ? config.linkWidthCoefficient

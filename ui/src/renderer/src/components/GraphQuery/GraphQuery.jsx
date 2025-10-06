@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import NotesList from '../NotesList/NotesList';
 import RelationsList from '../RelationsList/RelationsList';
@@ -17,6 +17,10 @@ export default function GraphQuery({
     edges,
 }) {
     const { navigate, navigateLink } = useCradleNavigate();
+
+    useEffect(() => {
+        console.log(selectedEntries, selectedEntries?.size);
+    }, [selectedEntries]);
 
     // Prepare props for GraphSettings.
     const settingsProps = {
@@ -63,11 +67,11 @@ export default function GraphQuery({
                 <Tab title='Notes' classes='pt-2'>
                     <div className='mt-3 flex flex-col flex-1 overflow-hidden h-[85vh]'>
                         <div className='flex-1 overflow-y-auto mt-2 px-4'>
-                            {selectedEntries?.length >= 2 ? (
+                            {selectedEntries?.size >= 2 ? (
                                 <>
                                     {/* Badges for selected entries */}
                                     <div className='flex flex-wrap gap-2 mb-2'>
-                                        {selectedEntries.map((entry) => (
+                                        {Array.from(selectedEntries).slice(0, 3).map((entry) => (
                                             <span
                                                 key={entry.id || entry.value || entry}
                                                 className='badge badge-outline-primary text-sm'
@@ -82,6 +86,7 @@ export default function GraphQuery({
 
                                     <NotesList
                                         query={graphQuery}
+                                        hideActionBar={true}
                                         forceCardView={true}
                                     />
                                 </>
@@ -96,11 +101,11 @@ export default function GraphQuery({
                 <Tab title='Relations' classes='pt-2'>
                     <div className='mt-3 flex flex-col flex-1 overflow-hidden h-[85vh]'>
                         <div className='flex-1 overflow-y-auto mt-2 px-4'>
-                            {selectedEntries?.length >= 2 ? (
+                            {selectedEntries?.size >= 2 ? (
                                 <>
                                     {/* Badges for selected entries */}
                                     <div className='flex flex-wrap gap-2 mb-2'>
-                                        {selectedEntries.map((entry) => (
+                                        {Array.from(selectedEntries).slice(0, 3).map((entry) => (
                                             <span
                                                 key={entry.id || entry.value || entry}
                                                 className='badge badge-outline-primary text-sm'

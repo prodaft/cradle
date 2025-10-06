@@ -1,13 +1,13 @@
-export default function GraphSettings({ graphStats, config, setConfig }) {
+export default function GraphSettings({ config, setConfig, nodes, edges }) {
 
     return (
         <div className='px-8 pt-3'>
             <div className='flex flex-wrap gap-2 mt-2'>
                 <span className='badge badge-outline-primary'>
-                    Total Nodes: {graphStats.nodes}
+                    Total Nodes: {nodes.length}
                 </span>
                 <span className='badge badge-outline-primary'>
-                    Total Edges: {graphStats.edges}
+                    Total Edges: {edges.length}
                 </span>
             </div>
             {/* Search, clear, and reset layout controls removed */}

@@ -40,14 +40,14 @@ export default function GraphControl({
     return (
         <>
             <SearchComponent
-                graphStats={graphStats}
                 addEdges={addEdges}
                 addNodes={addNodes}
             />
             <div className='border-b-2 border-b-zinc-400 dark:border-b-zinc-800 mt-4 mx-2' />
             <GraphSettings
                 {...settingsProps}
-                graphStats={graphStats}
+                nodes={nodes}
+                edges={edges}
                 resetGraphStats={resetGraphStats}
             />
             <div className='border-b-2  border-b-zinc-400 dark:border-b-zinc-800 mt-4 mx-2' />
