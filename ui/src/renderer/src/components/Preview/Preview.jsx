@@ -9,6 +9,7 @@ import '../../utils/customParser/prism-config.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import { addCopyButtonsToCodeBlocks } from '../../utils/prismCopyButton';
 import { handleLinkClick } from '../../utils/textEditorUtils/textEditorUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 
@@ -33,6 +34,7 @@ export default function Preview({
                 if (sanitizedContent) {
                     node.innerHTML = sanitizedContent;
                     Prism.highlightAllUnder(node);
+                    addCopyButtonsToCodeBlocks(node, null);
                 }
             }
         },
@@ -66,6 +68,7 @@ export default function Preview({
         if (previewElement && sanitizedContent) {
             previewElement.innerHTML = sanitizedContent;
             Prism.highlightAllUnder(previewElement);
+            addCopyButtonsToCodeBlocks(previewElement, null);
         }
     }, [sanitizedContent, previewElement]);
 

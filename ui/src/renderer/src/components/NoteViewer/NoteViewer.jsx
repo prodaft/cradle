@@ -24,6 +24,7 @@ import Prism from 'prismjs';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import '../../utils/customParser/prism-config.js';
+import { addCopyButtonsToCodeBlocks } from '../../utils/prismCopyButton';
 
 import {
     InfoCircleSolid,
@@ -256,6 +257,13 @@ export default function NoteViewer() {
 
     useEffect(() => {
         Prism.highlightAll();
+        if (isRaw) {
+            // Add copy buttons to raw markdown view
+            const container = document.querySelector('.language-markdown');
+            if (container && container.parentElement) {
+                addCopyButtonsToCodeBlocks(container.parentElement.parentElement, null);
+            }
+        }
     }, [isRaw, note.content]);
 
     // Conditionally render spinner or component
