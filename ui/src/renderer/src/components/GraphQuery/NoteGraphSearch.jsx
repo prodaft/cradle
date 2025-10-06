@@ -1,9 +1,5 @@
-import { forwardRef, useRef, useState } from 'react';
+import { useState } from 'react';
 import 'tailwindcss/tailwind.css';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import Graph from '../Graph/Graph';
-import GraphQuery from '../GraphQuery/GraphQuery';
-import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
 
 import { ArrowLeft, ArrowRight, PlaySolid } from 'iconoir-react';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
@@ -16,8 +12,13 @@ import {
 } from '../../utils/dashboardUtils/dashboardUtils';
 import AlertBox from '../AlertBox/AlertBox';
 
-const NoteGraphSearch = (noteId) => {
-    return forwardRef(({ processNewNode, addEdge }, graphRef) => {
+export default function NoteGraphSearch(noteId) {
+    return function ({
+        queryValues,
+        setQueryValues,
+        addEdges,
+        addNodes,
+    }) {
         const [isGraphFetching, setIsGraphFetching] = useState(false);
         const [currentPage, setCurrentPage] = useState(1);
         const [pageSize, setPageSize] = useState(100);
@@ -58,62 +59,22 @@ const NoteGraphSearch = (noteId) => {
                 }
 
                 const flattenedEntries = LinkTreeFlattener.flatten(entries);
-                let changes = [];
-
-                // Process nodes: add new nodes and update their styles
-                for (let e of flattenedEntries) {
-                    if (!graphRef.current.hasElementWithId(e.id)) {
-                        e.label = truncateText(`${e.subtype}: ${e.name || e.id}`, 25);
-                        e.color = colors[e.subtype];
-                        e.location = e.location || [
-                            Math.floor(Math.random() * 50),
-                            Math.floor(Math.random() * 50),
-                        ];
-                        const node = {
-                            group: 'nodes',
-                            data: {
-                                ...e,
-                                originalX: e.location[0],
-                                originalY: e.location[1],
-                            },
-                            position: { x: e.location[0], y: e.location[1] },
-                        };
-                        changes.push(node);
-                        processNewNode(e);
-                    }
-                }
-
-                graphRef.current.add(changes);
-
-                changes = [];
-                let edgeCount = 0;
-                for (let relation of relations) {
-                    // Only add edges if both source and destination nodes are in the graph.
-                    if (
-                        !graphRef.current.hasElementWithId(relation.src) ||
-                        !graphRef.current.hasElementWithId(relation.dst)
-                    ) {
-                        continue;
-                    }
-                    if (!graphRef.current.hasElementWithId(relation.id)) {
-                        const link = {
-                            group: 'edges',
-                            data: {
-                                source: relation.src,
-                                target: relation.dst,
-                                created_at: relation.created_at,
-                                last_seen: relation.last_seen,
-                                id: relation.id,
-                            },
-                        };
-                        changes.push(link);
-                        edgeCount += 1;
-                    }
-                }
-                graphRef.current.add(changes);
-                graphRef.current.layout({ name: 'preset', animate: true });
-                addEdge(edgeCount);
-                graphRef.current.fit(graphRef.current.elements(), 100);
+                let nodes = flattenedEntries.map((e) => ({
+                    id: String(e.id),
+                    degree: e.degree,
+                    label:
+                        e.subtype == 'virtual'
+                            ? 'virtual'
+                            : truncateText(`${e.subtype}: ${e.name || e.id}`, 25),
+                    color: colors[e.subtype] || '#4A90E2',
+                }));
+                relations.forEach((r) => {
+                    r.source = String(r.src);
+                    r.target = String(r.dst);
+                });
+                addNodes(nodes);
+                addEdges(relations);
+                setAlert({ show: false });
                 setAlert({ show: false });
                 handlePageChange(currentPage + 1);
             } catch (error) {
@@ -231,55 +192,5 @@ const NoteGraphSearch = (noteId) => {
                 <AlertBox alert={alert} />
             </div>
         );
-    });
-};
-
-export default function NoteGraph({ noteId }) {
-    const [data, setData] = useState({ nodes: [], links: [] });
-    const [config, setConfig] = useState({
-        nodeRadiusCoefficient: 1.5,
-        linkWidthCoefficient: 1,
-        labelSizeCoefficient: 16,
-        searchValue: '',
-
-        layout: 'preset',
-        animateLayout: false,
-        showLabels: true,
-    });
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const [selectedEntries, setSelectedEntries] = useState(new Set());
-    const cyRef = useRef(null);
-
-    return (
-        <div className='w-full h-full overflow-y-hidden relative'>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
-            <ResizableSplitPane
-                initialSplitPosition={30}
-                leftContent={
-                    <GraphQuery
-                        selectedEntries={selectedEntries}
-                        setSelectedEntries={setSelectedEntries}
-                        config={config}
-                        setConfig={setConfig}
-                        SearchComponent={NoteGraphSearch(noteId)}
-                    />
-                }
-                rightContent={
-                    <div className='relative'>
-                        <Graph
-                            onLinkClick={(link) => {
-                                setSelectedEntries([link.source, link.target]);
-                            }}
-                            onNodesSelected={(nodes) => {
-                                console.log(nodes);
-                                setSelectedEntries(nodes);
-                            }}
-                            config={config}
-                            ref={cyRef} // pass setter to receive the cytoscape instance
-                        />
-                    </div>
-                }
-            />
-        </div>
-    );
+    }
 }

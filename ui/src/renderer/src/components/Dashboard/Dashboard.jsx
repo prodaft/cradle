@@ -175,7 +175,7 @@ export default function Dashboard() {
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div
-                className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'
+                className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-hidden'
                 ref={dashboard}
             >
                 {contentObject == null ? (

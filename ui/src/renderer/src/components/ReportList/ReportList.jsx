@@ -20,6 +20,7 @@ import {
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Pagination from '../Pagination/Pagination';
 
+import { useModal } from '../../contexts/ModalContext/ModalContext.jsx';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import {
     deleteReport,
@@ -30,6 +31,7 @@ import {
     truncateText,
 } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 
 /**
  * ReportCard component - Displays details of a report.
@@ -45,6 +47,7 @@ export function ReportCard({ report, setAlert }) {
     const [localReport, setLocalReport] = useState(report);
     const [visible, setVisible] = useState(true);
     const { navigate, navigateLink } = useCradleNavigate();
+    const { setModal } = useModal();
 
     useEffect(() => {
         setFormattedDate(formatDate(new Date(localReport.created_at)));
@@ -143,19 +146,23 @@ export function ReportCard({ report, setAlert }) {
                     <button
                         title='Delete Report'
                         className='text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 transition-colors'
-                        onClick={() => handleDelete(localReport.id)}
+                        onClick={() =>
+                            setModal(ConfirmDeletionModal, {
+                                text: `Are you sure you want to delete this report?`,
+                                onConfirm: () => handleDelete(localReport.id),
+                            })
+                        }
                     >
                         <Trash className='w-5 h-5' />
                     </button>
                 </div>
                 <span
-                    className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                        localReport.status === 'done'
-                            ? 'bg-green-500 text-white'
-                            : localReport.status === 'error'
-                              ? 'bg-red-500 text-white'
-                              : 'bg-yellow-500 text-white'
-                    }`}
+                    className={`px-2 py-1 rounded-full text-xs font-semibold ${localReport.status === 'done'
+                        ? 'bg-green-500 text-white'
+                        : localReport.status === 'error'
+                            ? 'bg-red-500 text-white'
+                            : 'bg-yellow-500 text-white'
+                        }`}
                 >
                     {localReport.status.charAt(0).toUpperCase() +
                         localReport.status.slice(1)}
@@ -228,6 +235,7 @@ export default function ReportList({ setAlert = null }) {
     const [sortDirection, setSortDirection] = useState('desc');
     const { navigate, navigateLink } = useCradleNavigate();
     const { profile } = useProfile();
+    const { setModal } = useModal();
 
     let [alert, setAlertState] = useState({ show: false, message: '', color: 'red' });
 
@@ -401,13 +409,12 @@ export default function ReportList({ setAlert = null }) {
                                         <tr key={report.id}>
                                             <td className='w-8'>
                                                 <span
-                                                    className={`badge text-white ${
-                                                        report.status === 'done'
-                                                            ? 'bg-green-500'
-                                                            : report.status === 'error'
-                                                              ? 'bg-red-500'
-                                                              : 'bg-yellow-500'
-                                                    }`}
+                                                    className={`badge text-white ${report.status === 'done'
+                                                        ? 'bg-green-500'
+                                                        : report.status === 'error'
+                                                            ? 'bg-red-500'
+                                                            : 'bg-yellow-500'
+                                                        }`}
                                                 >
                                                     {report.status
                                                         .charAt(0)
@@ -444,108 +451,112 @@ export default function ReportList({ setAlert = null }) {
                                                         <>
                                                             {report.status ===
                                                                 'done' && (
-                                                                <button
-                                                                    onClick={() => {
-                                                                        if (
-                                                                            report.report_url
-                                                                        ) {
-                                                                            window.open(
-                                                                                report.report_url,
-                                                                                '_blank',
-                                                                            );
-                                                                        } else {
-                                                                            setAlert({
-                                                                                show: true,
-                                                                                message:
-                                                                                    'No report location available',
-                                                                                color: 'red',
-                                                                            });
-                                                                        }
-                                                                    }}
-                                                                    className='btn btn-ghost btn-xs text-blue-600 hover:text-blue-500'
-                                                                    title='View Report'
-                                                                >
-                                                                    <Eye className='w-4 h-4' />
-                                                                </button>
-                                                            )}
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            if (
+                                                                                report.report_url
+                                                                            ) {
+                                                                                window.open(
+                                                                                    report.report_url,
+                                                                                    '_blank',
+                                                                                );
+                                                                            } else {
+                                                                                setAlert({
+                                                                                    show: true,
+                                                                                    message:
+                                                                                        'No report location available',
+                                                                                    color: 'red',
+                                                                                });
+                                                                            }
+                                                                        }}
+                                                                        className='btn btn-ghost btn-xs text-blue-600 hover:text-blue-500'
+                                                                        title='View Report'
+                                                                    >
+                                                                        <Eye className='w-4 h-4' />
+                                                                    </button>
+                                                                )}
                                                             {report.status !==
                                                                 'working' && (
-                                                                <button
-                                                                    onClick={() =>
-                                                                        navigate(
-                                                                            `/publish?report=${report.id}`,
-                                                                        )
-                                                                    }
-                                                                    className='btn btn-ghost btn-xs text-green-600 hover:text-green-500'
-                                                                    title='Edit Report'
-                                                                >
-                                                                    <Edit className='w-4 h-4' />
-                                                                </button>
-                                                            )}
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            navigate(
+                                                                                `/publish?report=${report.id}`,
+                                                                            )
+                                                                        }
+                                                                        className='btn btn-ghost btn-xs text-green-600 hover:text-green-500'
+                                                                        title='Edit Report'
+                                                                    >
+                                                                        <Edit className='w-4 h-4' />
+                                                                    </button>
+                                                                )}
                                                             {report.status ===
                                                                 'error' && (
-                                                                <button
-                                                                    onClick={async () => {
-                                                                        try {
-                                                                            await retryReport(
-                                                                                report.id,
-                                                                            );
-                                                                            // Refresh the reports list
-                                                                            fetchReports();
-                                                                            setAlert({
-                                                                                show: true,
-                                                                                message:
-                                                                                    'Retrying to build report!',
-                                                                                color: 'green',
-                                                                            });
-                                                                        } catch (error) {
-                                                                            console.error(
-                                                                                'Retry report failed:',
-                                                                                error,
-                                                                            );
-                                                                            setAlert({
-                                                                                show: true,
-                                                                                message:
-                                                                                    'Failed to retry report',
-                                                                                color: 'red',
-                                                                            });
-                                                                        }
-                                                                    }}
-                                                                    className='btn btn-ghost btn-xs text-yellow-600 hover:text-yellow-500'
-                                                                    title='Retry Report'
-                                                                >
-                                                                    <RefreshCircle className='w-4 h-4' />
-                                                                </button>
-                                                            )}
+                                                                    <button
+                                                                        onClick={async () => {
+                                                                            try {
+                                                                                await retryReport(
+                                                                                    report.id,
+                                                                                );
+                                                                                // Refresh the reports list
+                                                                                fetchReports();
+                                                                                setAlert({
+                                                                                    show: true,
+                                                                                    message:
+                                                                                        'Retrying to build report!',
+                                                                                    color: 'green',
+                                                                                });
+                                                                            } catch (error) {
+                                                                                console.error(
+                                                                                    'Retry report failed:',
+                                                                                    error,
+                                                                                );
+                                                                                setAlert({
+                                                                                    show: true,
+                                                                                    message:
+                                                                                        'Failed to retry report',
+                                                                                    color: 'red',
+                                                                                });
+                                                                            }
+                                                                        }}
+                                                                        className='btn btn-ghost btn-xs text-yellow-600 hover:text-yellow-500'
+                                                                        title='Retry Report'
+                                                                    >
+                                                                        <RefreshCircle className='w-4 h-4' />
+                                                                    </button>
+                                                                )}
                                                         </>
                                                     )}
                                                     <button
-                                                        onClick={async () => {
-                                                            try {
-                                                                await deleteReport(
-                                                                    report.id,
-                                                                );
-                                                                // Refresh the reports list
-                                                                fetchReports();
-                                                                setAlert({
-                                                                    show: true,
-                                                                    message:
-                                                                        'Report deleted successfully',
-                                                                    color: 'green',
-                                                                });
-                                                            } catch (error) {
-                                                                console.error(
-                                                                    'Delete report failed:',
-                                                                    error,
-                                                                );
-                                                                setAlert({
-                                                                    show: true,
-                                                                    message:
-                                                                        'Failed to delete report',
-                                                                    color: 'red',
-                                                                });
-                                                            }
-                                                        }}
+                                                        onClick={() =>
+                                                            setModal(ConfirmDeletionModal, {
+                                                                text: `Are you sure you want to delete this report?`,
+                                                                onConfirm: async () => {
+                                                                    try {
+                                                                        await deleteReport(
+                                                                            report.id,
+                                                                        );
+                                                                        // Refresh the reports list
+                                                                        fetchReports();
+                                                                        setAlert({
+                                                                            show: true,
+                                                                            message:
+                                                                                'Report deleted successfully',
+                                                                            color: 'green',
+                                                                        });
+                                                                    } catch (error) {
+                                                                        console.error(
+                                                                            'Delete report failed:',
+                                                                            error,
+                                                                        );
+                                                                        setAlert({
+                                                                            show: true,
+                                                                            message:
+                                                                                'Failed to delete report',
+                                                                            color: 'red',
+                                                                        });
+                                                                    }
+                                                                }
+                                                            })}
                                                         className='btn btn-ghost btn-xs text-red-600 hover:text-red-500'
                                                         title='Delete Report'
                                                     >

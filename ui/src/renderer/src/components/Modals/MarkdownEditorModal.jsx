@@ -4,7 +4,7 @@ import { EditorView } from '@codemirror/view';
 import { eclipse } from '@uiw/codemirror-theme-eclipse';
 import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import CodeMirror from '@uiw/react-codemirror';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
 
 const MarkdownEditorModal = ({
@@ -19,10 +19,7 @@ const MarkdownEditorModal = ({
     const [noteTitle, setNoteTitle] = useState(title || '');
     const { isDarkMode } = useTheme();
 
-    const extensions = useMemo(
-        () => [markdown({ codeLanguages: languages }), EditorView.lineWrapping],
-        [],
-    );
+    const extensions = [markdown({ codeLanguages: languages }), EditorView.lineWrapping];
 
     const handleConfirm = () => {
         onConfirm(userInput, noteTitle);

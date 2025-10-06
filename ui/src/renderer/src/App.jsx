@@ -25,6 +25,7 @@ const Welcome = React.lazy(() => import('./components/Welcome/Welcome.jsx'));
 const ActivityList = React.lazy(
     () => import('./components/ActivityList/ActivityList.jsx'),
 );
+const GraphSearch = React.lazy(() => import('./components/GraphQuery/GraphSearch.jsx'));
 const ConfirmEmail = React.lazy(
     () => import('./components/ConfirmEmail/ConfirmEmail.jsx'),
 );
@@ -58,12 +59,12 @@ import { ThemeProvider } from './contexts/ThemeContext/ThemeContext.jsx';
 
 function App() {
     return (
-        <ModalProvider>
-            <HashRouter>
-                <AuthProvider>
-                    <ApiProvider>
-                        <ProfileProvider>
-                            <ThemeProvider>
+        <HashRouter>
+            <AuthProvider>
+                <ApiProvider>
+                    <ProfileProvider>
+                        <ThemeProvider>
+                            <ModalProvider>
                                 <Suspense fallback={<CradleLoading />}>
                                     <Routes>
                                         <Route
@@ -103,7 +104,7 @@ function App() {
                                                 />
                                                 <Route
                                                     path='/knowledge-graph'
-                                                    element={<GraphExplorer />}
+                                                    element={<GraphExplorer GraphSearchComponent={GraphSearch} />}
                                                 />
                                                 <Route
                                                     path='/connectivity'
@@ -184,12 +185,12 @@ function App() {
                                         <Route path='*' element={<NotFound />} />
                                     </Routes>
                                 </Suspense>
-                            </ThemeProvider>
-                        </ProfileProvider>
-                    </ApiProvider>
-                </AuthProvider>
-            </HashRouter>
-        </ModalProvider>
+                            </ModalProvider>
+                        </ThemeProvider>
+                    </ProfileProvider>
+                </ApiProvider>
+            </AuthProvider>
+        </HashRouter>
     );
 }
 

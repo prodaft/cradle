@@ -167,7 +167,7 @@ export default function SearchDialog({ isOpen, onClose }) {
                     <div className='flex-grow relative'>
                         <textarea
                             ref={inputRef}
-                            className='form-input input input-block input-ghost-primary focus:ring-0 pr-10 text-white resize-none max-h-[20vh] overflow-auto'
+                            className='form-input input input-block input-ghost-primary focus:ring-0 pr-10 text-white resize-none max-h-[20vh] overflow-auto overflow-y-hidden'
                             placeholder='Search...'
                             value={searchQuery}
                             rows={1}

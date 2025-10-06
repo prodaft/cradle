@@ -38,8 +38,9 @@ import { formatDate } from '../../utils/dateUtils/dateUtils';
 import ActivityList from '../ActivityList/ActivityList';
 import FileItem from '../FileItem/FileItem';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
-import NoteGraph from '../NoteGraph/NoteGraph';
 import { Tab, Tabs } from '../Tabs/Tabs';
+import GraphExplorer from '../GraphExplorer/GraphExplorer.jsx';
+import NoteGraphSearch from '../GraphQuery/NoteGraphSearch.jsx';
 
 /**
  * NoteViewer component
@@ -156,64 +157,64 @@ export default function NoteViewer() {
     const navbarContents = id?.startsWith('guide_')
         ? []
         : [
-              isPublishable && (
-                  <NavbarButton
-                      icon={<StatsReport />}
-                      text='Publish Report'
-                      data-testid='publish-btn'
-                      key='publish-btn'
-                      onClick={navigateLink(`/publish?notes=${id}`)}
-                  />
-              ),
-              <NavbarSwitch
-                  key='publishable-btn'
-                  text='Publishable'
-                  checked={isPublishable}
-                  onChange={togglePublishable}
-                  testid='publishable-btn'
-              />,
-              isAdmin() && (
-                  <NavbarButton
-                      key='relink-btn'
-                      text='Relink Note'
-                      icon={<RefreshCircle />}
-                      onClick={() =>
-                          managementApi.managementActionsCreate({
-                              actionName: 'relinkNotes',
-                              requestBody: {
-                                  note_id: id,
-                              },
-                          }).then(() => {
-                              setAlert({
-                                  show: true,
-                                  message: 'Relinking note...',
-                                  color: 'green',
-                              });
-                          })
-                      }
-                      tesid='relink-btn'
-                  />
-              ),
-              <NavbarButton
-                  key='edit-btn'
-                  text='Edit Note'
-                  icon={<EditPencil />}
-                  onClick={navigateLink(`/notes/${id}/edit`)}
-                  tesid='delete-btn'
-              />,
-              <NavbarButton
-                  key='delete-btn'
-                  text='Delete Note'
-                  icon={<Trash />}
-                  onClick={() =>
-                      setModal(ConfirmDeletionModal, {
-                          onConfirm: handleDelete,
-                          text: 'Are you sure you want to delete this note? This action is irreversible.',
-                      })
-                  }
-                  tesid='delete-btn'
-              />,
-          ];
+            isPublishable && (
+                <NavbarButton
+                    icon={<StatsReport />}
+                    text='Publish Report'
+                    data-testid='publish-btn'
+                    key='publish-btn'
+                    onClick={navigateLink(`/publish?notes=${id}`)}
+                />
+            ),
+            <NavbarSwitch
+                key='publishable-btn'
+                text='Publishable'
+                checked={isPublishable}
+                onChange={togglePublishable}
+                testid='publishable-btn'
+            />,
+            isAdmin() && (
+                <NavbarButton
+                    key='relink-btn'
+                    text='Relink Note'
+                    icon={<RefreshCircle />}
+                    onClick={() =>
+                        managementApi.managementActionsCreate({
+                            actionName: 'relinkNotes',
+                            requestBody: {
+                                note_id: id,
+                            },
+                        }).then(() => {
+                            setAlert({
+                                show: true,
+                                message: 'Relinking note...',
+                                color: 'green',
+                            });
+                        })
+                    }
+                    tesid='relink-btn'
+                />
+            ),
+            <NavbarButton
+                key='edit-btn'
+                text='Edit Note'
+                icon={<EditPencil />}
+                onClick={navigateLink(`/notes/${id}/edit`)}
+                tesid='delete-btn'
+            />,
+            <NavbarButton
+                key='delete-btn'
+                text='Delete Note'
+                icon={<Trash />}
+                onClick={() =>
+                    setModal(ConfirmDeletionModal, {
+                        onConfirm: handleDelete,
+                        text: 'Are you sure you want to delete this note? This action is irreversible.',
+                    })
+                }
+                tesid='delete-btn'
+            />,
+        ];
 
     navbarContents.push(
         <NavbarButton
@@ -340,7 +341,7 @@ export default function NoteViewer() {
                                         <div className='flex-grow'>
                                             {note.metadata &&
                                                 Object.keys(note.metadata).length >
-                                                    0 && (
+                                                0 && (
                                                     <div className='mt-2'>
                                                         <div
                                                             className='flex items-center cursor-pointer p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded'
@@ -392,15 +393,15 @@ export default function NoteViewer() {
                                                                                 </div>
                                                                                 <div className='text-sm text-gray-600 dark:text-gray-400'>
                                                                                     {typeof value ===
-                                                                                    'object'
+                                                                                        'object'
                                                                                         ? JSON.stringify(
-                                                                                              value,
-                                                                                          )
+                                                                                            value,
+                                                                                        )
                                                                                         : parseMarkdownInline(
-                                                                                              String(
-                                                                                                  value,
-                                                                                              ),
-                                                                                          )}
+                                                                                            String(
+                                                                                                value,
+                                                                                            ),
+                                                                                        )}
                                                                                 </div>
                                                                             </React.Fragment>
                                                                         ),
@@ -423,7 +424,7 @@ export default function NoteViewer() {
                         </div>
                     </Tab>
                     <Tab title='Graph'>
-                        <NoteGraph noteId={id} />
+                        <GraphExplorer GraphSearchComponent={NoteGraphSearch(note.id)} />
                     </Tab>
                     {note.files && note.files.length > 0 && (
                         <Tab title='Files'>

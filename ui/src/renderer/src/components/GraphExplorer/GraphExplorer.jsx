@@ -3,10 +3,9 @@ import 'tailwindcss/tailwind.css';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Graph from '../Graph/Graph';
 import GraphQuery from '../GraphQuery/GraphQuery';
-import GraphSearch from '../GraphQuery/GraphSearch';
 import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
 
-export default function GraphExplorer() {
+export default function GraphExplorer({GraphSearchComponent}) {
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
     const [config, setConfig] = useState({
@@ -98,7 +97,7 @@ export default function GraphExplorer() {
                         setSelectedEntries={setSelectedEntries}
                         config={config}
                         setConfig={setConfig}
-                        SearchComponent={GraphSearch}
+                        SearchComponent={GraphSearchComponent}
                         addNodes={addNodes}
                         addEdges={addEdges}
                         nodes={nodes}

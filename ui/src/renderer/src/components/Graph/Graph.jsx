@@ -1,19 +1,19 @@
 import { Cosmograph, CosmographProvider, CosmographSearch } from '@cosmograph/react';
-import { Erase, RefreshDouble } from 'iconoir-react';
+import { Erase, PauseSolid, PlaySolid, RefreshDouble } from 'iconoir-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 
 function normalize(x, inputMin, inputMax) {
-  x = Math.min(x, inputMax);
-  x = Math.max(x, inputMin);
-  const outputMin = 2, outputMax = 10;
-  
-  const shifted = x - inputMin + 1;
-  const maxShifted = inputMax - inputMin + 1;
-  
-  const normalized = shifted / maxShifted;
-  return outputMin + normalized * (outputMax - outputMin);
+    x = Math.min(x, inputMax);
+    x = Math.max(x, inputMin);
+    const outputMin = 2, outputMax = 10;
+
+    const shifted = x - inputMin + 1;
+    const maxShifted = inputMax - inputMin + 1;
+
+    const normalized = shifted / maxShifted;
+    return outputMin + normalized * (outputMax - outputMin);
 }
 
 export default function GraphViewer({ setSelectedEntries, config = {}, nodes = [], edges = [], onClearGraph }) {
@@ -21,6 +21,7 @@ export default function GraphViewer({ setSelectedEntries, config = {}, nodes = [
     const { isDarkMode } = useTheme();
     const cosmographRef = useRef(null);
     const { navigate, navigateLink } = useCradleNavigate();
+    const [disableSimulation, setDisableSimulation] = useState(false);
     const [graphInstanceKey, setGraphInstanceKey] = useState(0);
 
     let onClick = (node, index, nodePosition, event) => {
@@ -50,6 +51,14 @@ export default function GraphViewer({ setSelectedEntries, config = {}, nodes = [
         }
         setSelectedNodes(newNodes);
     };
+    useEffect(() => {
+        if (cosmographRef.current == null) return;
+        if (disableSimulation) {
+            cosmographRef.current.pause();
+        } else {
+            cosmographRef.current.start();
+        }
+    }, [disableSimulation]);
 
     useEffect(() => {
         setSelectedEntries(new Set(selectedNodes));
@@ -73,20 +82,20 @@ export default function GraphViewer({ setSelectedEntries, config = {}, nodes = [
         >
             <CosmographProvider>
                 <div className='absolute top-2 right-2 z-10 flex items-center gap-2 bg-[#222222] px-2 rounded-xl'>
-                    <CosmographSearch 
-                    accessors={[
-                        {
-                            label: 'label',
-                            accessor: (node) => node.label,
-                        },
-                    ]}
-                    onSelectResult={(node) => {
-                        if (node == null || cosmographRef.current == null) return;
-                        cosmographRef.current.focusNode(node);
-                        cosmographRef.current.zoomToNode(node);
-                        setSelectedNodes([node]);
+                    <CosmographSearch
+                        accessors={[
+                            {
+                                label: 'label',
+                                accessor: (node) => node.label,
+                            },
+                        ]}
+                        onSelectResult={(node) => {
+                            if (node == null || cosmographRef.current == null) return;
+                            cosmographRef.current.focusNode(node);
+                            cosmographRef.current.zoomToNode(node);
+                            setSelectedNodes([node]);
 
-                    }}
+                        }}
                     />
                     <button
                         type='button'
@@ -95,6 +104,14 @@ export default function GraphViewer({ setSelectedEntries, config = {}, nodes = [
                         onClick={() => onClearGraph && onClearGraph()}
                     >
                         <Erase />
+                    </button>
+                    <button
+                        type='button'
+                        className='btn btn-sm btn-ghost'
+                        title='Clear graph elements'
+                        onClick={() => setDisableSimulation(!disableSimulation)}
+                    >
+                        {disableSimulation ? <PlaySolid /> : <PauseSolid />}
                     </button>
                     <button
                         type='button'
@@ -116,8 +133,8 @@ export default function GraphViewer({ setSelectedEntries, config = {}, nodes = [
                     nodeLabelAccessor={(node) => node.label || node.id}
                     nodeGreyoutOpacity={0.1}
                     nodeSizeScale={(typeof config.nodeRadiusCoefficient === 'number'
-                                    ? config.nodeRadiusCoefficient
-                                    : 1)}
+                        ? config.nodeRadiusCoefficient
+                        : 1)}
                     nodeSize={(node) => normalize(node.degree || 1, 1, 60)}
                     showDynamicLabels={true}
                     nodeLabel={(node) => node.label || node.id}
@@ -125,8 +142,8 @@ export default function GraphViewer({ setSelectedEntries, config = {}, nodes = [
                     linkColor={'#999999'}
                     linkWidth={2}
                     linkWidthScale={(typeof config.linkWidthCoefficient === 'number'
-                                    ? config.linkWidthCoefficient
-                                    : 1)}
+                        ? config.linkWidthCoefficient
+                        : 1)}
                     simulationGravity={
                         typeof config.simulationGravity === 'number'
                             ? config.simulationGravity
