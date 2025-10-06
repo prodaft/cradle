@@ -16,10 +16,11 @@ import {
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import AlertBox from '../AlertBox/AlertBox';
 import { HoverPreview } from '../HoverPreview/HoverPreview';
+import ListView from '../ListView/ListView';
 import Note from '../Note/Note';
 import DeleteNote from '../NoteActions/DeleteNote';
 import EditNote from '../NoteActions/EditNote';
-import ListView from '../ListView/ListView';
+import Pagination from '../Pagination/Pagination';
 
 export default function NotesList({
     query,
@@ -35,13 +36,20 @@ export default function NotesList({
     const [totalPages, setTotalPages] = useState(1);
     const { profile } = useProfile();
     const [page, setPage] = useState(Number(searchParams.get('notes_page')) || 1);
-    const [sortField, setSortField] = useState('timestamp');
-    const [sortDirection, setSortDirection] = useState('desc');
+    const [sortField, setSortField] = useState(searchParams.get('notes_sort_field') || 'timestamp');
+    const [sortDirection, setSortDirection] = useState(searchParams.get('notes_sort_direction') || 'desc');
     const { navigate, navigateLink } = useCradleNavigate();
     const [hoveredNote, setHoveredNote] = useState(null);
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     const hoverTimeoutRef = useRef(null);
     const HOVER_DELAY = 800;
+    const [selectedNotes, setSelectedNotes] = useState([]);
+    const [selectedAction, setSelectedAction] = useState('');
+    const [isApplyingAction, setIsApplyingAction] = useState(false);
+    const [pageSize, setPageSize] = useState(
+        Number(searchParams.get('notes_pagesize')) ||
+        (!forceCardView && profile?.compact_mode ? 20 : 10)
+    );
 
     // Mapping of table columns to API field names
     const sortFieldMapping = {
@@ -120,7 +128,9 @@ export default function NotesList({
         setPage(1);
         const newParams = new URLSearchParams(searchParams);
         newParams.set('notes_page', '1');
-        setSearchParams(newParams);
+        newParams.set('notes_sort_field', field);
+        newParams.set('notes_sort_direction', direction);
+        setSearchParams(newParams, { replace: true });
     };
 
     const fetchNotes = useCallback(() => {
@@ -130,7 +140,7 @@ export default function NotesList({
         const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
 
         searchNote({
-            page_size: !forceCardView && profile?.compact_mode ? 20 : 10,
+            page_size: pageSize,
             page,
             order_by: orderBy,
             ...query,
@@ -148,12 +158,12 @@ export default function NotesList({
                 });
                 setLoading(false);
             });
-    }, [page, sortField, sortDirection, query]);
+    }, [page, pageSize, sortField, sortDirection, query]);
 
     useEffect(() => {
         setPage(Number(searchParams.get('notes_page')) || 1);
         fetchNotes();
-    }, [fetchNotes]);
+    }, [fetchNotes, pageSize]);
 
     const handlePageChange = (newPage) => {
         const newParams = new URLSearchParams(searchParams);
@@ -161,6 +171,18 @@ export default function NotesList({
         setSearchParams(newParams);
 
         setPage(newPage);
+    };
+
+    const handleApplyAction = async () => {
+        if (!selectedAction || selectedNotes.length === 0) return;
+
+        setIsApplyingAction(true);
+
+        // Dummy async function
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        setIsApplyingAction(false);
+        console.log('Applied action:', selectedAction, 'to notes:', selectedNotes);
     };
 
     const columns = [
@@ -174,11 +196,13 @@ export default function NotesList({
         { key: 'actions', label: 'Actions', className: 'w-16' },
     ];
 
-    const renderRow = (note) => {
+    const renderRow = (note, index, selectProps = {}) => {
         // Skip filtered notes
         for (const n of filteredNotes) {
             if (n.id === note.id) return null;
         }
+
+        const { enableMultiSelect, isSelected, onSelect } = selectProps;
 
         return (
             <tr
@@ -188,6 +212,16 @@ export default function NotesList({
                 onMouseEnter={(e) => handleMouseEnter(note, e)}
                 onMouseLeave={handleMouseLeave}
             >
+                {enableMultiSelect && (
+                    <td className='w-12' onClick={(e) => e.stopPropagation()}>
+                        <input
+                            type='checkbox'
+                            className='checkbox checkbox-sm'
+                            checked={isSelected}
+                            onChange={onSelect}
+                        />
+                    </td>
+                )}
                 <td className='w-8'>
                     {note.status && (
                         <span
@@ -234,14 +268,14 @@ export default function NotesList({
                         <EditNote
                             note={note}
                             setAlert={setAlert}
-                            setHidden={() => {}}
+                            setHidden={() => { }}
                             key={note.id}
                             classNames='w-4 h-4'
                         />
                         <DeleteNote
                             note={note}
                             setAlert={setAlert}
-                            setHidden={() => {}}
+                            setHidden={() => { }}
                             key={note.id}
                             classNames='w-4 h-4'
                         />
@@ -266,19 +300,71 @@ export default function NotesList({
         );
     };
 
+    const actionBar = (
+        <div className='flex items-center gap-3'>
+            <select
+                className='select select-sm select-bordered w-48'
+                value={selectedAction}
+                onChange={(e) => setSelectedAction(e.target.value)}
+                disabled={selectedNotes.length === 0}
+            >
+                <option value=''>Select action...</option>
+                <option value='delete'>Delete</option>
+                <option value='export'>Export</option>
+                <option value='archive'>Archive</option>
+            </select>
+            <span className='text-sm text-gray-600 dark:text-gray-400'>
+                {selectedNotes.length} row{selectedNotes.length !== 1 ? 's' : ''} selected
+            </span>
+            <button
+                className='btn btn-sm btn-primary'
+                onClick={handleApplyAction}
+                disabled={!selectedAction || selectedNotes.length === 0 || isApplyingAction}
+            >
+                {isApplyingAction ? (
+                    <>
+                        <span className='loading loading-spinner loading-sm'></span>
+                        Applying...
+                    </>
+                ) : (
+                    'Apply'
+                )}
+            </button>
+        </div>
+    );
+
     return (
         <>
             <div className='flex flex-col space-y-4'>
                 <AlertBox alert={alert} setAlert={setAlert} />
+
+                {!loading && notes.length > 0 && (
+                    <div className='flex items-center justify-between gap-4'>
+                        <div className='flex-1'>{actionBar}</div>
+                        <Pagination
+                            currentPage={page}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                            pageSize={pageSize}
+                            onPageSizeChange={(newSize) => {
+                                setPageSize(newSize);
+                                setPage(1);
+                                const newParams = new URLSearchParams(searchParams);
+                                newParams.set('notes_page', '1');
+                                newParams.set('notes_pagesize', String(newSize));
+                                setSearchParams(newParams, { replace: true });
+                            }}
+                        />
+                        <div className='flex-1'></div>
+                    </div>
+                )}
+
                 <ListView
                     data={notes}
                     columns={columns}
                     renderRow={renderRow}
                     renderCard={renderCard}
                     loading={loading}
-                    currentPage={page}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
                     sortField={sortField}
                     sortDirection={sortDirection}
                     onSort={handleSort}
@@ -286,7 +372,30 @@ export default function NotesList({
                     forceCardView={forceCardView}
                     emptyMessage="No notes found!"
                     tableClassName="table table-hover"
+                    enableMultiSelect={true}
+                    setSelected={setSelectedNotes}
                 />
+
+                {!loading && notes.length > 0 && (
+                    <div className='flex items-center justify-between gap-4'>
+                        <div className='flex-1'>{actionBar}</div>
+                        <Pagination
+                            currentPage={page}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                            pageSize={pageSize}
+                            onPageSizeChange={(newSize) => {
+                                setPageSize(newSize);
+                                setPage(1);
+                                const newParams = new URLSearchParams(searchParams);
+                                newParams.set('notes_page', '1');
+                                newParams.set('notes_pagesize', String(newSize));
+                                setSearchParams(newParams, { replace: true });
+                            }}
+                        />
+                        <div className='flex-1'></div>
+                    </div>
+                )}
             </div>
             {hoveredNote && (
                 <HoverPreview

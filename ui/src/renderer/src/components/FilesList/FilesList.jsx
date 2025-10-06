@@ -10,6 +10,7 @@ import { createDownloadPath } from '../../utils/textEditorUtils/textEditorUtils'
 import AlertBox from '../AlertBox/AlertBox';
 import FileItem from '../FileItem/FileItem';
 import ListView from '../ListView/ListView';
+import Pagination from '../Pagination/Pagination';
 
 /**
  * FilesList component - This component is used to display a list of files.
@@ -44,8 +45,9 @@ export default function FilesList({
     const [loading, setLoading] = useState(false);
     const [totalPages, setTotalPages] = useState(1);
     const [page, setPage] = useState(Number(searchParams.get('files_page')) || 1);
-    const [sortField, setSortField] = useState('timestamp');
-    const [sortDirection, setSortDirection] = useState('desc');
+    const [sortField, setSortField] = useState(searchParams.get('files_sort_field') || 'timestamp');
+    const [sortDirection, setSortDirection] = useState(searchParams.get('files_sort_direction') || 'desc');
+    const [pageSize, setPageSize] = useState(Number(searchParams.get('files_pagesize')) || 10);
 
     // Mapping of table columns to API field names
     const sortFieldMapping = {
@@ -66,7 +68,9 @@ export default function FilesList({
         setPage(1);
         const newParams = new URLSearchParams(searchParams);
         newParams.set('files_page', '1');
-        setSearchParams(newParams);
+        newParams.set('files_sort_field', field);
+        newParams.set('files_sort_direction', direction);
+        setSearchParams(newParams, { replace: true });
     };
 
     const fetchFiles = useCallback(() => {
@@ -77,6 +81,7 @@ export default function FilesList({
 
         const params = {
             page,
+            page_size: pageSize,
             order_by: orderBy,
             ...query,
         };
@@ -99,7 +104,7 @@ export default function FilesList({
                 }
                 setLoading(false);
             });
-    }, [page, sortField, sortDirection, query, setAlert]);
+    }, [page, pageSize, sortField, sortDirection, query, setAlert]);
 
     const copyToClipboard = (text) => {
         navigator.clipboard
@@ -119,7 +124,7 @@ export default function FilesList({
     useEffect(() => {
         setPage(Number(searchParams.get('files_page')) || 1);
         fetchFiles();
-    }, [fetchFiles]);
+    }, [fetchFiles, pageSize]);
 
     const handlePageChange = (newPage) => {
         const newParams = new URLSearchParams(searchParams);
@@ -285,6 +290,24 @@ export default function FilesList({
         <>
             <div className='flex flex-col space-y-4'>
                 <AlertBox alert={alert} setAlert={setAlert} />
+
+                {!loading && files.length > 0 && (
+                    <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                        pageSize={pageSize}
+                        onPageSizeChange={(newSize) => {
+                            setPageSize(newSize);
+                            setPage(1);
+                            const newParams = new URLSearchParams(searchParams);
+                            newParams.set('files_page', '1');
+                            newParams.set('files_pagesize', String(newSize));
+                            setSearchParams(newParams, { replace: true });
+                        }}
+                    />
+                )}
+
                 <div ref={setNodeRef} className='grid grid-cols-1 gap-2 p-4'>
                     <ListView
                         data={files}
@@ -292,9 +315,6 @@ export default function FilesList({
                         renderRow={renderRow}
                         renderCard={renderCard}
                         loading={loading}
-                        currentPage={page}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
                         sortField={sortField}
                         sortDirection={sortDirection}
                         onSort={handleSort}
@@ -303,6 +323,23 @@ export default function FilesList({
                         tableClassName="table"
                     />
                 </div>
+
+                {!loading && files.length > 0 && (
+                    <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                        pageSize={pageSize}
+                        onPageSizeChange={(newSize) => {
+                            setPageSize(newSize);
+                            setPage(1);
+                            const newParams = new URLSearchParams(searchParams);
+                            newParams.set('files_page', '1');
+                            newParams.set('files_pagesize', String(newSize));
+                            setSearchParams(newParams, { replace: true });
+                        }}
+                    />
+                )}
             </div>
         </>
     );

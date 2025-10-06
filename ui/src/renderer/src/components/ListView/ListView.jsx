@@ -1,7 +1,7 @@
 import { Sort, SortDown, SortUp } from 'iconoir-react';
 import PropTypes from 'prop-types';
+import { useState } from 'react';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
-import Pagination from '../Pagination/Pagination';
 
 /**
  * ListView component - A reusable component for displaying data in table or card view
@@ -11,9 +11,6 @@ import Pagination from '../Pagination/Pagination';
  * @param {Array} props.columns - Column definitions for table view
  * @param {Function} props.renderCard - Function to render card view for each item
  * @param {boolean} props.loading - Loading state
- * @param {number} props.currentPage - Current page number
- * @param {number} props.totalPages - Total number of pages
- * @param {Function} props.onPageChange - Page change handler
  * @param {string} props.sortField - Current sort field
  * @param {string} props.sortDirection - Current sort direction ('asc' or 'desc')
  * @param {Function} props.onSort - Sort handler
@@ -22,6 +19,8 @@ import Pagination from '../Pagination/Pagination';
  * @param {string} props.emptyMessage - Message to display when no data
  * @param {Function} props.renderRow - Custom row renderer for table view
  * @param {string} props.tableClassName - Additional className for table
+ * @param {boolean} props.enableMultiSelect - Enable row selection with checkboxes
+ * @param {Function} props.setSelected - Callback with array of selected item IDs
  * @returns {JSX.Element}
  */
 export default function ListView({
@@ -29,9 +28,6 @@ export default function ListView({
     columns = [],
     renderCard = null,
     loading = false,
-    currentPage = 1,
-    totalPages = 1,
-    onPageChange = () => {},
     sortField = '',
     sortDirection = 'desc',
     onSort = null,
@@ -40,8 +36,31 @@ export default function ListView({
     emptyMessage = 'No items found!',
     renderRow = null,
     tableClassName = 'table table-hover',
+    enableMultiSelect = false,
+    setSelected = () => {},
 }) {
     const { profile } = useProfile();
+    const [selectedIds, setSelectedIds] = useState([]);
+
+    const handleSelectAll = (checked) => {
+        if (checked) {
+            const allIds = data.map((item) => item.id);
+            setSelectedIds(allIds);
+            setSelected(allIds);
+        } else {
+            setSelectedIds([]);
+            setSelected([]);
+        }
+    };
+
+    const handleSelectRow = (id) => {
+        const newSelectedIds = selectedIds.includes(id)
+            ? selectedIds.filter((selectedId) => selectedId !== id)
+            : [...selectedIds, id];
+
+        setSelectedIds(newSelectedIds);
+        setSelected(newSelectedIds);
+    };
 
     const handleSort = (column) => {
         if (!onSort || !sortFieldMapping[column]) return;
@@ -98,46 +117,50 @@ export default function ListView({
         );
     };
 
-    const LoadingSpinner = () => (
-        <div className='flex items-center justify-center min-h-[200px]'>
-            <div className='spinner-dot-pulse'>
-                <div className='spinner-pulse-dot'></div>
-            </div>
-        </div>
-    );
-
-    const EmptyState = () => (
-        <div className='container mx-auto flex flex-col items-center'>
-            <p className='mt-6 !text-sm !font-normal text-zinc-500'>
-                {emptyMessage}
-            </p>
-        </div>
-    );
-
     if (loading) {
-        return <LoadingSpinner />;
+        return (
+            <div className='flex items-center justify-center min-h-[200px]'>
+                <div className='spinner-dot-pulse'>
+                    <div className='spinner-pulse-dot'></div>
+                </div>
+            </div>
+        );
     }
 
     if (data.length === 0) {
-        return <EmptyState />;
+        return (
+            <div className='container mx-auto flex flex-col items-center'>
+                <p className='mt-6 !text-sm !font-normal text-zinc-500'>
+                    {emptyMessage}
+                </p>
+            </div>
+        );
     }
 
     const showTableView = !forceCardView && profile?.compact_mode;
 
     return (
         <>
-            <div className='flex flex-col space-y-4'>
-                <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={onPageChange}
-                />
-
-                {showTableView ? (
-                    <div className='overflow-x-auto w-full'>
+            {showTableView ? (
+                <div className='overflow-x-auto w-full'>
                         <table className={tableClassName}>
                             <thead>
                                 <tr>
+                                    {enableMultiSelect && (
+                                        <th className='w-12'>
+                                            <input
+                                                type='checkbox'
+                                                className='checkbox checkbox-sm'
+                                                checked={
+                                                    data.length > 0 &&
+                                                    selectedIds.length === data.length
+                                                }
+                                                onChange={(e) =>
+                                                    handleSelectAll(e.target.checked)
+                                                }
+                                            />
+                                        </th>
+                                    )}
                                     {columns.map((column) => (
                                         <SortableTableHeader
                                             key={column.key}
@@ -151,23 +174,20 @@ export default function ListView({
                             </thead>
                             <tbody>
                                 {data.map((item, index) =>
-                                    renderRow ? renderRow(item, index) : null
+                                    renderRow ? renderRow(item, index, {
+                                        enableMultiSelect,
+                                        isSelected: selectedIds.includes(item.id),
+                                        onSelect: () => handleSelectRow(item.id),
+                                    }) : null
                                 )}
                             </tbody>
                         </table>
-                    </div>
-                ) : (
-                    data.map((item, index) =>
-                        renderCard ? renderCard(item, index) : null
-                    )
-                )}
-
-                <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={onPageChange}
-                />
-            </div>
+                </div>
+            ) : (
+                data.map((item, index) =>
+                    renderCard ? renderCard(item, index) : null
+                )
+            )}
         </>
     );
 }
@@ -183,9 +203,6 @@ ListView.propTypes = {
     ),
     renderCard: PropTypes.func,
     loading: PropTypes.bool,
-    currentPage: PropTypes.number,
-    totalPages: PropTypes.number,
-    onPageChange: PropTypes.func,
     sortField: PropTypes.string,
     sortDirection: PropTypes.oneOf(['asc', 'desc']),
     onSort: PropTypes.func,
@@ -194,4 +211,6 @@ ListView.propTypes = {
     emptyMessage: PropTypes.string,
     renderRow: PropTypes.func,
     tableClassName: PropTypes.string,
+    enableMultiSelect: PropTypes.bool,
+    setSelected: PropTypes.func,
 };

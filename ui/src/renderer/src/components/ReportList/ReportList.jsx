@@ -7,7 +7,7 @@ import {
 } from 'iconoir-react';
 import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import {
     getReport,
@@ -16,6 +16,7 @@ import {
 } from '../../services/publishService/publishService';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import ListView from '../ListView/ListView';
+import Pagination from '../Pagination/Pagination';
 
 import { useModal } from '../../contexts/ModalContext/ModalContext.jsx';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
@@ -224,15 +225,23 @@ ReportCard.propTypes = {
 
 export default function ReportList({ setAlert = null }) {
     const { report_id } = useParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [sortField, setSortField] = useState('created_at');
-    const [sortDirection, setSortDirection] = useState('desc');
+    const [sortField, setSortField] = useState(searchParams.get('reports_sort_field') || 'created_at');
+    const [sortDirection, setSortDirection] = useState(searchParams.get('reports_sort_direction') || 'desc');
     const { navigate, navigateLink } = useCradleNavigate();
     const { profile } = useProfile();
     const { setModal } = useModal();
+    const [selectedReports, setSelectedReports] = useState([]);
+    const [selectedAction, setSelectedAction] = useState('');
+    const [isApplyingAction, setIsApplyingAction] = useState(false);
+    const [pageSize, setPageSize] = useState(
+        Number(searchParams.get('reports_pagesize')) ||
+        (profile?.compact_mode ? 25 : 10)
+    );
 
     let [alert, setAlertState] = useState({ show: false, message: '', color: 'red' });
 
@@ -253,11 +262,15 @@ export default function ReportList({ setAlert = null }) {
         setSortDirection(direction);
         // Reset to first page when sorting changes
         setPage(1);
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('reports_sort_field', field);
+        newParams.set('reports_sort_direction', direction);
+        setSearchParams(newParams, { replace: true });
     };
 
     useEffect(() => {
         fetchReports();
-    }, [report_id, page, sortField, sortDirection]);
+    }, [report_id, page, sortField, sortDirection, pageSize]);
 
     const fetchReports = async () => {
         setLoading(true);
@@ -269,7 +282,7 @@ export default function ReportList({ setAlert = null }) {
                 const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
                 const response = await getReports({
                     page,
-                    page_size: profile?.compact_mode ? 25 : 10,
+                    page_size: pageSize,
                     order_by: orderBy,
                 });
                 setReports(response.data.results);
@@ -287,6 +300,18 @@ export default function ReportList({ setAlert = null }) {
         setPage(newPage);
     };
 
+    const handleApplyAction = async () => {
+        if (!selectedAction || selectedReports.length === 0) return;
+
+        setIsApplyingAction(true);
+
+        // Dummy async function
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        setIsApplyingAction(false);
+        console.log('Applied action:', selectedAction, 'to reports:', selectedReports);
+    };
+
     const columns = [
         { key: 'status', label: 'Status' },
         { key: 'title', label: 'Title', className: 'truncate font-medium' },
@@ -296,125 +321,170 @@ export default function ReportList({ setAlert = null }) {
         { key: 'actions', label: 'Actions' },
     ];
 
-    const renderRow = (report) => (
-        <tr key={report.id}>
-            <td className='w-8'>
-                <span
-                    className={`badge text-white ${
-                        report.status === 'done'
+    const renderRow = (report, index, selectProps = {}) => {
+        const { enableMultiSelect, isSelected, onSelect } = selectProps;
+
+        return (
+            <tr key={report.id}>
+                {enableMultiSelect && (
+                    <td className='w-12' onClick={(e) => e.stopPropagation()}>
+                        <input
+                            type='checkbox'
+                            className='checkbox checkbox-sm'
+                            checked={isSelected}
+                            onChange={onSelect}
+                        />
+                    </td>
+                )}
+                <td className='w-8'>
+                    <span
+                        className={`badge text-white ${report.status === 'done'
                             ? 'bg-green-500'
                             : report.status === 'error'
                                 ? 'bg-red-500'
                                 : 'bg-yellow-500'
-                    }`}
-                >
-                    {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
-                </span>
-            </td>
-            <td className='truncate max-w-xs font-medium' title={report.title}>
-                {report.title}
-            </td>
-            <td className='truncate w-24' title={report.strategy_label}>
-                {truncateText(report.strategy_label, 24)}
-            </td>
-            <td className='w-36'>{formatDate(new Date(report.created_at))}</td>
-            <td className='w-24'>{report.anonymized ? 'Yes' : 'No'}</td>
-            <td className='w-32'>
-                <div className='flex space-x-1'>
-                    {report.strategy !== 'import' && (
-                        <>
-                            {report.status === 'done' && (
-                                <button
-                                    onClick={() => {
-                                        if (report.report_url) {
-                                            window.open(report.report_url, '_blank');
-                                        } else {
-                                            setAlert({
-                                                show: true,
-                                                message: 'No report location available',
-                                                color: 'red',
-                                            });
-                                        }
-                                    }}
-                                    className='btn btn-ghost btn-xs text-blue-600 hover:text-blue-500'
-                                    title='View Report'
-                                >
-                                    <Eye className='w-4 h-4' />
-                                </button>
-                            )}
-                            {report.status !== 'working' && (
-                                <button
-                                    onClick={() => navigate(`/publish?report=${report.id}`)}
-                                    className='btn btn-ghost btn-xs text-green-600 hover:text-green-500'
-                                    title='Edit Report'
-                                >
-                                    <Edit className='w-4 h-4' />
-                                </button>
-                            )}
-                            {report.status === 'error' && (
-                                <button
-                                    onClick={async () => {
+                            }`}
+                    >
+                        {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+                    </span>
+                </td>
+                <td className='truncate max-w-xs font-medium' title={report.title}>
+                    {report.title}
+                </td>
+                <td className='truncate w-24' title={report.strategy_label}>
+                    {truncateText(report.strategy_label, 24)}
+                </td>
+                <td className='w-36'>{formatDate(new Date(report.created_at))}</td>
+                <td className='w-24'>{report.anonymized ? 'Yes' : 'No'}</td>
+                <td className='w-32'>
+                    <div className='flex space-x-1'>
+                        {report.strategy !== 'import' && (
+                            <>
+                                {report.status === 'done' && (
+                                    <button
+                                        onClick={() => {
+                                            if (report.report_url) {
+                                                window.open(report.report_url, '_blank');
+                                            } else {
+                                                setAlert({
+                                                    show: true,
+                                                    message: 'No report location available',
+                                                    color: 'red',
+                                                });
+                                            }
+                                        }}
+                                        className='btn btn-ghost btn-xs text-blue-600 hover:text-blue-500'
+                                        title='View Report'
+                                    >
+                                        <Eye className='w-4 h-4' />
+                                    </button>
+                                )}
+                                {report.status !== 'working' && (
+                                    <button
+                                        onClick={() => navigate(`/publish?report=${report.id}`)}
+                                        className='btn btn-ghost btn-xs text-green-600 hover:text-green-500'
+                                        title='Edit Report'
+                                    >
+                                        <Edit className='w-4 h-4' />
+                                    </button>
+                                )}
+                                {report.status === 'error' && (
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                await retryReport(report.id);
+                                                fetchReports();
+                                                setAlert({
+                                                    show: true,
+                                                    message: 'Retrying to build report!',
+                                                    color: 'green',
+                                                });
+                                            } catch (error) {
+                                                console.error('Retry report failed:', error);
+                                                setAlert({
+                                                    show: true,
+                                                    message: 'Failed to retry report',
+                                                    color: 'red',
+                                                });
+                                            }
+                                        }}
+                                        className='btn btn-ghost btn-xs text-yellow-600 hover:text-yellow-500'
+                                        title='Retry Report'
+                                    >
+                                        <RefreshCircle className='w-4 h-4' />
+                                    </button>
+                                )}
+                            </>
+                        )}
+                        <button
+                            onClick={() =>
+                                setModal(ConfirmDeletionModal, {
+                                    text: `Are you sure you want to delete this report?`,
+                                    onConfirm: async () => {
                                         try {
-                                            await retryReport(report.id);
+                                            await deleteReport(report.id);
                                             fetchReports();
                                             setAlert({
                                                 show: true,
-                                                message: 'Retrying to build report!',
+                                                message: 'Report deleted successfully',
                                                 color: 'green',
                                             });
                                         } catch (error) {
-                                            console.error('Retry report failed:', error);
+                                            console.error('Delete report failed:', error);
                                             setAlert({
                                                 show: true,
-                                                message: 'Failed to retry report',
+                                                message: 'Failed to delete report',
                                                 color: 'red',
                                             });
                                         }
-                                    }}
-                                    className='btn btn-ghost btn-xs text-yellow-600 hover:text-yellow-500'
-                                    title='Retry Report'
-                                >
-                                    <RefreshCircle className='w-4 h-4' />
-                                </button>
-                            )}
-                        </>
-                    )}
-                    <button
-                        onClick={() =>
-                            setModal(ConfirmDeletionModal, {
-                                text: `Are you sure you want to delete this report?`,
-                                onConfirm: async () => {
-                                    try {
-                                        await deleteReport(report.id);
-                                        fetchReports();
-                                        setAlert({
-                                            show: true,
-                                            message: 'Report deleted successfully',
-                                            color: 'green',
-                                        });
-                                    } catch (error) {
-                                        console.error('Delete report failed:', error);
-                                        setAlert({
-                                            show: true,
-                                            message: 'Failed to delete report',
-                                            color: 'red',
-                                        });
-                                    }
-                                },
-                            })
-                        }
-                        className='btn btn-ghost btn-xs text-red-600 hover:text-red-500'
-                        title='Delete Report'
-                    >
-                        <Trash className='w-4 h-4' />
-                    </button>
-                </div>
-            </td>
-        </tr>
-    );
+                                    },
+                                })
+                            }
+                            className='btn btn-ghost btn-xs text-red-600 hover:text-red-500'
+                            title='Delete Report'
+                        >
+                            <Trash className='w-4 h-4' />
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        );
+    };
 
     const renderCard = (report) => (
         <ReportCard key={report.id} report={report} setAlert={setAlert} />
+    );
+
+    const actionBar = (
+        <div className='flex items-center gap-3'>
+            <select
+                className='select select-sm select-bordered w-48'
+                value={selectedAction}
+                onChange={(e) => setSelectedAction(e.target.value)}
+                disabled={selectedReports.length === 0}
+            >
+                <option value=''>Select action...</option>
+                <option value='delete'>Delete</option>
+                <option value='export'>Export</option>
+            </select>
+            <span className='text-sm text-gray-600 dark:text-gray-400'>
+                {selectedReports.length} row{selectedReports.length !== 1 ? 's' : ''} selected
+            </span>
+            <button
+                className='btn btn-sm btn-primary'
+                onClick={handleApplyAction}
+                disabled={!selectedAction || selectedReports.length === 0 || isApplyingAction}
+            >
+                {isApplyingAction ? (
+                    <>
+                        <span className='loading loading-spinner loading-sm'></span>
+                        Applying...
+                    </>
+                ) : (
+                    'Apply'
+                )}
+            </button>
+        </div>
     );
 
     const handleImportClick = () => {
@@ -462,22 +532,63 @@ export default function ReportList({ setAlert = null }) {
             </h1>
 
             {!report_id ? (
-                <ListView
-                    data={reports}
-                    columns={columns}
-                    renderRow={renderRow}
-                    renderCard={renderCard}
-                    loading={loading}
-                    currentPage={page}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                    sortField={sortField}
-                    sortDirection={sortDirection}
-                    onSort={handleSort}
-                    sortFieldMapping={sortFieldMapping}
-                    emptyMessage="No reports found."
-                    tableClassName="table table-zebra"
-                />
+                <>
+                    {!loading && reports.length > 0 && (
+                        <div className='flex items-center justify-between gap-4'>
+                            <div className='flex-1'>{actionBar}</div>
+                            <Pagination
+                                currentPage={page}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}
+                                pageSize={pageSize}
+                                onPageSizeChange={(newSize) => {
+                                    setPageSize(newSize);
+                                    setPage(1);
+                                    const newParams = new URLSearchParams(searchParams);
+                                    newParams.set('reports_pagesize', String(newSize));
+                                    setSearchParams(newParams, { replace: true });
+                                }}
+                            />
+                            <div className='flex-1'></div>
+                        </div>
+                    )}
+
+                    <ListView
+                        data={reports}
+                        columns={columns}
+                        renderRow={renderRow}
+                        renderCard={renderCard}
+                        loading={loading}
+                        sortField={sortField}
+                        sortDirection={sortDirection}
+                        onSort={handleSort}
+                        sortFieldMapping={sortFieldMapping}
+                        emptyMessage="No reports found."
+                        tableClassName="table table-zebra"
+                        enableMultiSelect={true}
+                        setSelected={setSelectedReports}
+                    />
+
+                    {!loading && reports.length > 0 && (
+                        <div className='flex items-center justify-between gap-4'>
+                            <div className='flex-1'>{actionBar}</div>
+                            <Pagination
+                                currentPage={page}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}
+                                pageSize={pageSize}
+                                onPageSizeChange={(newSize) => {
+                                    setPageSize(newSize);
+                                    setPage(1);
+                                    const newParams = new URLSearchParams(searchParams);
+                                    newParams.set('reports_pagesize', String(newSize));
+                                    setSearchParams(newParams, { replace: true });
+                                }}
+                            />
+                            <div className='flex-1'></div>
+                        </div>
+                    )}
+                </>
             ) : loading ? (
                 <p className='text-gray-300'>Loading reports...</p>
             ) : reports.length > 0 ? (

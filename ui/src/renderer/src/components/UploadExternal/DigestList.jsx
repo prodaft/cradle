@@ -1,10 +1,12 @@
 import { Trash } from 'iconoir-react';
+import React from 'react';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import { deleteDigest } from '../../services/intelioService/intelioService';
 import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import ListView from '../ListView/ListView';
+import Pagination from '../Pagination/Pagination';
 import DigestCard from './DigestCard';
 
 function DigestList({
@@ -18,6 +20,10 @@ function DigestList({
     sortField = 'created_at',
     sortDirection = 'desc',
     onSort,
+    selectedDigests = [],
+    setSelectedDigests = () => {},
+    pageSize = 10,
+    setPageSize = () => {},
 }) {
     const { setModal } = useModal();
 
@@ -55,8 +61,21 @@ function DigestList({
         { key: 'actions', label: 'Actions' },
     ];
 
-    const renderRow = (digest) => (
-        <tr key={digest.id}>
+    const renderRow = (digest, index, selectProps = {}) => {
+        const { enableMultiSelect, isSelected, onSelect } = selectProps;
+
+        return (
+            <tr key={digest.id}>
+                {enableMultiSelect && (
+                    <td className='w-12' onClick={(e) => e.stopPropagation()}>
+                        <input
+                            type='checkbox'
+                            className='checkbox checkbox-sm'
+                            checked={isSelected}
+                            onChange={onSelect}
+                        />
+                    </td>
+                )}
             <td className='w-16'>
                 <span
                     className={`badge ${
@@ -122,7 +141,8 @@ function DigestList({
                 </button>
             </td>
         </tr>
-    );
+        );
+    };
 
     const renderCard = (digest) => (
         <DigestCard
@@ -133,23 +153,105 @@ function DigestList({
         />
     );
 
+    const [selectedAction, setSelectedAction] = React.useState('');
+    const [isApplyingAction, setIsApplyingAction] = React.useState(false);
+
+    const handleApplyAction = async () => {
+        if (!selectedAction || selectedDigests.length === 0) return;
+
+        setIsApplyingAction(true);
+
+        // Dummy async function
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        setIsApplyingAction(false);
+        console.log('Applied action:', selectedAction, 'to digests:', selectedDigests);
+    };
+
+    const actionBar = (
+        <div className='flex items-center gap-3'>
+            <select
+                className='select select-sm select-bordered w-48'
+                value={selectedAction}
+                onChange={(e) => setSelectedAction(e.target.value)}
+                disabled={selectedDigests.length === 0}
+            >
+                <option value=''>Select action...</option>
+                <option value='delete'>Delete</option>
+                <option value='export'>Export</option>
+            </select>
+            <span className='text-sm text-gray-600 dark:text-gray-400'>
+                {selectedDigests.length} row{selectedDigests.length !== 1 ? 's' : ''} selected
+            </span>
+            <button
+                className='btn btn-sm btn-primary'
+                onClick={handleApplyAction}
+                disabled={!selectedAction || selectedDigests.length === 0 || isApplyingAction}
+            >
+                {isApplyingAction ? (
+                    <>
+                        <span className='loading loading-spinner loading-sm'></span>
+                        Applying...
+                    </>
+                ) : (
+                    'Apply'
+                )}
+            </button>
+        </div>
+    );
+
     return (
-        <ListView
-            data={digests}
-            columns={columns}
-            renderRow={renderRow}
-            renderCard={renderCard}
-            loading={loading}
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            sortField={sortField}
-            sortDirection={sortDirection}
-            onSort={onSort}
-            sortFieldMapping={sortFieldMapping}
-            emptyMessage="No digests found!"
-            tableClassName="table table-zebra"
-        />
+        <>
+            {!loading && digests.length > 0 && (
+                <div className='flex items-center justify-between gap-4'>
+                    <div className='flex-1'>{actionBar}</div>
+                    <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                        pageSize={pageSize}
+                        onPageSizeChange={(newSize) => {
+                            setPageSize(newSize);
+                            handlePageChange(1);
+                        }}
+                    />
+                    <div className='flex-1'></div>
+                </div>
+            )}
+
+            <ListView
+                data={digests}
+                columns={columns}
+                renderRow={renderRow}
+                renderCard={renderCard}
+                loading={loading}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                onSort={onSort}
+                sortFieldMapping={sortFieldMapping}
+                emptyMessage="No digests found!"
+                tableClassName="table table-zebra"
+                enableMultiSelect={true}
+                setSelected={setSelectedDigests}
+            />
+
+            {!loading && digests.length > 0 && (
+                <div className='flex items-center justify-between gap-4'>
+                    <div className='flex-1'>{actionBar}</div>
+                    <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                        pageSize={pageSize}
+                        onPageSizeChange={(newSize) => {
+                            setPageSize(newSize);
+                            handlePageChange(1);
+                        }}
+                    />
+                    <div className='flex-1'></div>
+                </div>
+            )}
+        </>
     );
 }
 
