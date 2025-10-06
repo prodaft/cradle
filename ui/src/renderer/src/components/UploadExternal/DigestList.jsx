@@ -4,6 +4,7 @@ import { useModal } from '../../contexts/ModalContext/ModalContext';
 import { deleteDigest } from '../../services/intelioService/intelioService';
 import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
+import ActionBar from '../ActionBar/ActionBar';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import ListView from '../ListView/ListView';
 import Pagination from '../Pagination/Pagination';
@@ -153,58 +154,39 @@ function DigestList({
         />
     );
 
-    const [selectedAction, setSelectedAction] = React.useState('');
-    const [isApplyingAction, setIsApplyingAction] = React.useState(false);
-
-    const handleApplyAction = async () => {
-        if (!selectedAction || selectedDigests.length === 0) return;
-
-        setIsApplyingAction(true);
-
-        // Dummy async function
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
-        setIsApplyingAction(false);
-        console.log('Applied action:', selectedAction, 'to digests:', selectedDigests);
-    };
-
-    const actionBar = (
-        <div className='flex items-center gap-3'>
-            <select
-                className='select select-sm select-bordered w-48'
-                value={selectedAction}
-                onChange={(e) => setSelectedAction(e.target.value)}
-                disabled={selectedDigests.length === 0}
-            >
-                <option value=''>Select action...</option>
-                <option value='delete'>Delete</option>
-                <option value='export'>Export</option>
-            </select>
-            <span className='text-sm text-gray-600 dark:text-gray-400'>
-                {selectedDigests.length} row{selectedDigests.length !== 1 ? 's' : ''} selected
-            </span>
-            <button
-                className='btn btn-sm btn-primary'
-                onClick={handleApplyAction}
-                disabled={!selectedAction || selectedDigests.length === 0 || isApplyingAction}
-            >
-                {isApplyingAction ? (
-                    <>
-                        <span className='loading loading-spinner loading-sm'></span>
-                        Applying...
-                    </>
-                ) : (
-                    'Apply'
-                )}
-            </button>
-        </div>
-    );
+    // Define actions for the ActionBar
+    const actions = [
+        {
+            value: 'delete',
+            label: 'Delete',
+            handler: async (selectedIds) => {
+                // Dummy async function
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+                console.log('Delete digests:', selectedIds);
+            },
+        },
+        {
+            value: 'export',
+            label: 'Export',
+            handler: async (selectedIds) => {
+                // Dummy async function
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+                console.log('Export digests:', selectedIds);
+            },
+        },
+    ];
 
     return (
         <>
             {!loading && digests.length > 0 && (
                 <div className='flex items-center justify-between gap-4'>
-                    <div className='flex-1'>{actionBar}</div>
+                    <div className='flex-1'>
+                        <ActionBar
+                            actions={actions}
+                            selectedItems={selectedDigests}
+                            itemLabel='row'
+                        />
+                    </div>
                     <Pagination
                         currentPage={page}
                         totalPages={totalPages}
@@ -237,7 +219,13 @@ function DigestList({
 
             {!loading && digests.length > 0 && (
                 <div className='flex items-center justify-between gap-4'>
-                    <div className='flex-1'>{actionBar}</div>
+                    <div className='flex-1'>
+                        <ActionBar
+                            actions={actions}
+                            selectedItems={selectedDigests}
+                            itemLabel='row'
+                        />
+                    </div>
                     <Pagination
                         currentPage={page}
                         totalPages={totalPages}

@@ -91,13 +91,13 @@ export default function UploadExternal({ setAlert }) {
         const initialDateRange = {
             startDate: searchParams.get('created_at_gte')
                 ? new Date(searchParams.get('created_at_gte'))
-                      .toISOString()
-                      .split('T')[0]
+                    .toISOString()
+                    .split('T')[0]
                 : null,
             endDate: searchParams.get('created_at_lte')
                 ? new Date(searchParams.get('created_at_lte'))
-                      .toISOString()
-                      .split('T')[0]
+                    .toISOString()
+                    .split('T')[0]
                 : null,
         };
 
@@ -161,10 +161,10 @@ export default function UploadExternal({ setAlert }) {
                 : '',
             created_at_lte: dateRangeValue.endDate
                 ? (() => {
-                      const endDate = new Date(dateRangeValue.endDate);
-                      endDate.setHours(23, 59, 59, 999);
-                      return endDate.toISOString();
-                  })()
+                    const endDate = new Date(dateRangeValue.endDate);
+                    endDate.setHours(23, 59, 59, 999);
+                    return endDate.toISOString();
+                })()
                 : '',
         });
     };
@@ -239,7 +239,7 @@ export default function UploadExternal({ setAlert }) {
         const newParams = new URLSearchParams(searchParams);
         newParams.set('digests_sort_field', newSortField);
         newParams.set('digests_sort_direction', newSortDirection);
-        setSearchParams(newParams);
+        setSearchParams(newParams, { replace: true });
     };
 
     const handlePageSizeChange = (newSize) => {
@@ -248,7 +248,7 @@ export default function UploadExternal({ setAlert }) {
 
         const newParams = new URLSearchParams(searchParams);
         newParams.set('digests_pagesize', String(newSize));
-        setSearchParams(newParams);
+        setSearchParams(newParams, { replace: true });
     };
 
     // Use the provided setAlert or the local one
@@ -278,11 +278,10 @@ export default function UploadExternal({ setAlert }) {
 
                 <div
                     id='upload-form-section'
-                    className={`ease-in-out ${
-                        isUploadFormVisible
+                    className={`ease-in-out ${isUploadFormVisible
                             ? 'max-h-[1000px] opacity-100 mb-4'
                             : 'max-h-0 opacity-0'
-                    }`}
+                        }`}
                 >
                     <UploadForm
                         dataTypeOptions={dataTypeOptions}

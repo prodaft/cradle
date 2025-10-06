@@ -29,6 +29,7 @@ import {
     truncateText,
 } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
+import ActionBar from '../ActionBar/ActionBar';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 
 /**
@@ -236,8 +237,6 @@ export default function ReportList({ setAlert = null }) {
     const { profile } = useProfile();
     const { setModal } = useModal();
     const [selectedReports, setSelectedReports] = useState([]);
-    const [selectedAction, setSelectedAction] = useState('');
-    const [isApplyingAction, setIsApplyingAction] = useState(false);
     const [pageSize, setPageSize] = useState(
         Number(searchParams.get('reports_pagesize')) ||
         (profile?.compact_mode ? 25 : 10)
@@ -300,17 +299,27 @@ export default function ReportList({ setAlert = null }) {
         setPage(newPage);
     };
 
-    const handleApplyAction = async () => {
-        if (!selectedAction || selectedReports.length === 0) return;
-
-        setIsApplyingAction(true);
-
-        // Dummy async function
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
-        setIsApplyingAction(false);
-        console.log('Applied action:', selectedAction, 'to reports:', selectedReports);
-    };
+    // Define actions for the ActionBar
+    const actions = [
+        {
+            value: 'delete',
+            label: 'Delete',
+            handler: async (selectedIds) => {
+                // Dummy async function
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+                console.log('Delete reports:', selectedIds);
+            },
+        },
+        {
+            value: 'export',
+            label: 'Export',
+            handler: async (selectedIds) => {
+                // Dummy async function
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+                console.log('Export reports:', selectedIds);
+            },
+        },
+    ];
 
     const columns = [
         { key: 'status', label: 'Status' },
@@ -455,38 +464,6 @@ export default function ReportList({ setAlert = null }) {
         <ReportCard key={report.id} report={report} setAlert={setAlert} />
     );
 
-    const actionBar = (
-        <div className='flex items-center gap-3'>
-            <select
-                className='select select-sm select-bordered w-48'
-                value={selectedAction}
-                onChange={(e) => setSelectedAction(e.target.value)}
-                disabled={selectedReports.length === 0}
-            >
-                <option value=''>Select action...</option>
-                <option value='delete'>Delete</option>
-                <option value='export'>Export</option>
-            </select>
-            <span className='text-sm text-gray-600 dark:text-gray-400'>
-                {selectedReports.length} row{selectedReports.length !== 1 ? 's' : ''} selected
-            </span>
-            <button
-                className='btn btn-sm btn-primary'
-                onClick={handleApplyAction}
-                disabled={!selectedAction || selectedReports.length === 0 || isApplyingAction}
-            >
-                {isApplyingAction ? (
-                    <>
-                        <span className='loading loading-spinner loading-sm'></span>
-                        Applying...
-                    </>
-                ) : (
-                    'Apply'
-                )}
-            </button>
-        </div>
-    );
-
     const handleImportClick = () => {
         const input = document.createElement('input');
         input.type = 'file';
@@ -535,7 +512,13 @@ export default function ReportList({ setAlert = null }) {
                 <>
                     {!loading && reports.length > 0 && (
                         <div className='flex items-center justify-between gap-4'>
-                            <div className='flex-1'>{actionBar}</div>
+                            <div className='flex-1'>
+                                <ActionBar
+                                    actions={actions}
+                                    selectedItems={selectedReports}
+                                    itemLabel='row'
+                                />
+                            </div>
                             <Pagination
                                 currentPage={page}
                                 totalPages={totalPages}
@@ -571,7 +554,13 @@ export default function ReportList({ setAlert = null }) {
 
                     {!loading && reports.length > 0 && (
                         <div className='flex items-center justify-between gap-4'>
-                            <div className='flex-1'>{actionBar}</div>
+                            <div className='flex-1'>
+                                <ActionBar
+                                    actions={actions}
+                                    selectedItems={selectedReports}
+                                    itemLabel='row'
+                                />
+                            </div>
                             <Pagination
                                 currentPage={page}
                                 totalPages={totalPages}

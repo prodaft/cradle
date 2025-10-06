@@ -14,6 +14,7 @@ import {
     truncateText,
 } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
+import ActionBar from '../ActionBar/ActionBar';
 import AlertBox from '../AlertBox/AlertBox';
 import { HoverPreview } from '../HoverPreview/HoverPreview';
 import ListView from '../ListView/ListView';
@@ -44,8 +45,6 @@ export default function NotesList({
     const hoverTimeoutRef = useRef(null);
     const HOVER_DELAY = 800;
     const [selectedNotes, setSelectedNotes] = useState([]);
-    const [selectedAction, setSelectedAction] = useState('');
-    const [isApplyingAction, setIsApplyingAction] = useState(false);
     const [pageSize, setPageSize] = useState(
         Number(searchParams.get('notes_pagesize')) ||
         (!forceCardView && profile?.compact_mode ? 20 : 10)
@@ -173,17 +172,36 @@ export default function NotesList({
         setPage(newPage);
     };
 
-    const handleApplyAction = async () => {
-        if (!selectedAction || selectedNotes.length === 0) return;
-
-        setIsApplyingAction(true);
-
-        // Dummy async function
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
-        setIsApplyingAction(false);
-        console.log('Applied action:', selectedAction, 'to notes:', selectedNotes);
-    };
+    // Define actions for the ActionBar
+    const actions = [
+        {
+            value: 'delete',
+            label: 'Delete',
+            handler: async (selectedIds) => {
+                // Dummy async function
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+                console.log('Delete notes:', selectedIds);
+            },
+        },
+        {
+            value: 'export',
+            label: 'Export',
+            handler: async (selectedIds) => {
+                // Dummy async function
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+                console.log('Export notes:', selectedIds);
+            },
+        },
+        {
+            value: 'archive',
+            label: 'Archive',
+            handler: async (selectedIds) => {
+                // Dummy async function
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+                console.log('Archive notes:', selectedIds);
+            },
+        },
+    ];
 
     const columns = [
         { key: 'status', label: '' },
@@ -300,39 +318,6 @@ export default function NotesList({
         );
     };
 
-    const actionBar = (
-        <div className='flex items-center gap-3'>
-            <select
-                className='select select-sm select-bordered w-48'
-                value={selectedAction}
-                onChange={(e) => setSelectedAction(e.target.value)}
-                disabled={selectedNotes.length === 0}
-            >
-                <option value=''>Select action...</option>
-                <option value='delete'>Delete</option>
-                <option value='export'>Export</option>
-                <option value='archive'>Archive</option>
-            </select>
-            <span className='text-sm text-gray-600 dark:text-gray-400'>
-                {selectedNotes.length} row{selectedNotes.length !== 1 ? 's' : ''} selected
-            </span>
-            <button
-                className='btn btn-sm btn-primary'
-                onClick={handleApplyAction}
-                disabled={!selectedAction || selectedNotes.length === 0 || isApplyingAction}
-            >
-                {isApplyingAction ? (
-                    <>
-                        <span className='loading loading-spinner loading-sm'></span>
-                        Applying...
-                    </>
-                ) : (
-                    'Apply'
-                )}
-            </button>
-        </div>
-    );
-
     return (
         <>
             <div className='flex flex-col space-y-4'>
@@ -340,7 +325,13 @@ export default function NotesList({
 
                 {!loading && notes.length > 0 && (
                     <div className='flex items-center justify-between gap-4'>
-                        <div className='flex-1'>{actionBar}</div>
+                        <div className='flex-1'>
+                            <ActionBar
+                                actions={actions}
+                                selectedItems={selectedNotes}
+                                itemLabel='row'
+                            />
+                        </div>
                         <Pagination
                             currentPage={page}
                             totalPages={totalPages}
@@ -378,7 +369,13 @@ export default function NotesList({
 
                 {!loading && notes.length > 0 && (
                     <div className='flex items-center justify-between gap-4'>
-                        <div className='flex-1'>{actionBar}</div>
+                        <div className='flex-1'>
+                            <ActionBar
+                                actions={actions}
+                                selectedItems={selectedNotes}
+                                itemLabel='row'
+                            />
+                        </div>
                         <Pagination
                             currentPage={page}
                             totalPages={totalPages}
