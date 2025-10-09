@@ -1,17 +1,26 @@
-import { forwardRef, useMemo } from 'react';
+import { useMemo } from 'react';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import NotesList from '../NotesList/NotesList';
 import RelationsList from '../RelationsList/RelationsList';
 import { Tab, Tabs } from '../Tabs/Tabs';
 import GraphControl from './GraphControl';
 
-const GraphQuery = forwardRef(function (
-    { selectedEntries, setSelectedEntries, config, setConfig, SearchComponent },
-    graphRef,
-) {
+export default function GraphQuery({
+    selectedEntries,
+    setSelectedEntries,
+    entryGraphColors,
+    disabledTypes,
+    setDisabledTypes,
+    config,
+    setConfig,
+    SearchComponent,
+    addEdges,
+    addNodes,
+    nodes,
+    edges,
+}) {
     const { navigate, navigateLink } = useCradleNavigate();
 
-    // Prepare props for GraphSettings.
     const settingsProps = {
         config,
         setConfig,
@@ -45,19 +54,25 @@ const GraphQuery = forwardRef(function (
                     <div className='flex flex-col flex-1 overflow-hidden h-[85vh]'>
                         <GraphControl
                             settingsProps={settingsProps}
-                            ref={graphRef}
                             SearchComponent={SearchComponent}
+                            entryGraphColors={entryGraphColors}
+                            disabledTypes={disabledTypes}
+                            setDisabledTypes={setDisabledTypes}
+                            addEdges={addEdges}
+                            addNodes={addNodes}
+                            nodes={nodes}
+                            edges={edges}
                         />
                     </div>
                 </Tab>
                 <Tab title='Notes' classes='pt-2'>
                     <div className='mt-3 flex flex-col flex-1 overflow-hidden h-[85vh]'>
                         <div className='flex-1 overflow-y-auto mt-2 px-4'>
-                            {selectedEntries?.length >= 2 ? (
+                            {selectedEntries?.size >= 2 ? (
                                 <>
                                     {/* Badges for selected entries */}
                                     <div className='flex flex-wrap gap-2 mb-2'>
-                                        {selectedEntries.map((entry) => (
+                                        {Array.from(selectedEntries).slice(0, 3).map((entry) => (
                                             <span
                                                 key={entry.id || entry.value || entry}
                                                 className='badge badge-outline-primary text-sm'
@@ -72,6 +87,7 @@ const GraphQuery = forwardRef(function (
 
                                     <NotesList
                                         query={graphQuery}
+                                        hideActionBar={true}
                                         forceCardView={true}
                                     />
                                 </>
@@ -86,11 +102,11 @@ const GraphQuery = forwardRef(function (
                 <Tab title='Relations' classes='pt-2'>
                     <div className='mt-3 flex flex-col flex-1 overflow-hidden h-[85vh]'>
                         <div className='flex-1 overflow-y-auto mt-2 px-4'>
-                            {selectedEntries?.length >= 2 ? (
+                            {selectedEntries?.size >= 2 ? (
                                 <>
                                     {/* Badges for selected entries */}
                                     <div className='flex flex-wrap gap-2 mb-2'>
-                                        {selectedEntries.map((entry) => (
+                                        {Array.from(selectedEntries).slice(0, 3).map((entry) => (
                                             <span
                                                 key={entry.id || entry.value || entry}
                                                 className='badge badge-outline-primary text-sm'
@@ -117,6 +133,4 @@ const GraphQuery = forwardRef(function (
             </Tabs>
         </div>
     );
-});
-
-export default GraphQuery;
+}

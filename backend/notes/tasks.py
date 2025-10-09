@@ -1,9 +1,11 @@
+import json
 import logging
 from collections import defaultdict
 
 from celery import shared_task
 from core.decorators import distributed_lock
 from django.contrib.contenttypes.models import ContentType
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import close_old_connections
 from django.utils import timezone
 from entries.enums import EntryType, RelationReason
@@ -455,7 +457,7 @@ def note_finalize_task(note_id):
 def note_metadata_process_task(note_id):
     note = Note.objects.get(id=note_id)
 
-    metadata = infer_metadata(note.content)
+    offset, metadata = infer_metadata(note.content)
 
     for key, field in Note.metadata_fields.items():
         if field:
@@ -471,7 +473,8 @@ def note_metadata_process_task(note_id):
 
         setattr(note, field, value)
 
-    note.metadata = metadata
+    note.content_offset = offset
+    note.metadata = json.loads(json.dumps(metadata, cls=DjangoJSONEncoder))
 
     if note.title is None or len(note.title.strip()) == 0:
         note.set_status(NoteStatus.WARNING, "Note title is empty.")

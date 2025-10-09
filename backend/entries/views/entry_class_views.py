@@ -1,25 +1,24 @@
 from typing import cast
+
+from django.conf import settings
 from django.db.models.functions import Length
 from django_lifecycle.mixins import transaction
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
-
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from user.models import CradleUser
 from user.permissions import HasAdminRole, HasEntryManagerRole
 
-from django.conf import settings
-
+from ..models import Entry, EntryClass
 from ..serializers import (
     EntryClassSerializer,
     EntryClassSerializerCount,
     NextNameResponseSerializer,
 )
-from ..models import Entry, EntryClass
 
 
 @extend_schema_view(
@@ -61,13 +60,19 @@ class EntryClassList(APIView):
         return False
 
     def get(self, request: Request) -> Response:
-        entities = EntryClass.objects.all()
+        # Optimize queries to prevent N+1 issues
+        entities = EntryClass.objects.prefetch_related("children")
+
         if request.query_params.get("show_count") == "true":
             if not request.user.is_entry_manager:
                 return Response(
                     "User must be an admin to see the count of entries in each class.",
                     status=status.HTTP_403_FORBIDDEN,
                 )
+            # For count queries, we need to prefetch entry counts as well
+            from django.db.models import Count
+
+            entities = entities.annotate(entry_count=Count("entries"))
             serializer = EntryClassSerializerCount(entities, many=True)
         else:
             serializer = EntryClassSerializer(entities, many=True)

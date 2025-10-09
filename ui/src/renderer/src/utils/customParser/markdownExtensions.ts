@@ -358,7 +358,6 @@ export function parseWithExtensionsInline(md: MarkdownIt, mdContent: string): st
 
 function extractPlainText(tokens: Token[]): string {
     let text = '';
-    console.log(tokens);
 
     for (let i = 0; i < tokens.length; i++) {
         const token = tokens[i];

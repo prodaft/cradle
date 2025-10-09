@@ -256,7 +256,6 @@ def simulate_graph_tool():
 
     # Prevent division by zero by setting range to 1 where min == max
     ranges = np.where(max_vals - min_vals == 0, 1, max_vals - min_vals)
-    print(ranges)
 
     # Scale to [-2000, 2000]
     scaled_coords = (coords - min_vals) / ranges * 4000 - 2000

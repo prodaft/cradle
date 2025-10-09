@@ -1,30 +1,25 @@
-from datetime import timedelta
-from rest_framework import serializers
-from drf_spectacular.utils import extend_schema_field
+from typing import Any, Dict, cast
 
-from file_transfer.exceptions import MinioObjectNotFound
-from file_transfer.utils import MinioClient
-from .models import Note, Snippet
-from .processor.task_scheduler import TaskScheduler
-from .exceptions import (
-    NoteIsEmptyException,
-    InvalidRequestException,
-    NoteDoesNotExistException,
-    NoteNotPublishableException,
-)
+from drf_spectacular.utils import extend_schema_field
+from entries.models import Entry, EntryClass
 from entries.serializers import (
     EntryResponseSerializer,
     EntryTypesCompressedTreeSerializer,
 )
-from typing import Any, Dict
-from file_transfer.serializers import FileReferenceSerializer
 from file_transfer.models import FileReference
-from user.serializers import UserRetrieveSerializer
-from entries.models import Entry, EntryClass
+from file_transfer.serializers import FileReferenceSerializer
+from rest_framework import serializers
 from user.models import CradleUser
-from typing import cast
-import frontmatter
-from .markdown.common import ErrorBypassYAMLHandler
+from user.serializers import EssentialUserRetrieveSerializer, UserRetrieveSerializer
+
+from .exceptions import (
+    InvalidRequestException,
+    NoteDoesNotExistException,
+    NoteIsEmptyException,
+    NoteNotPublishableException,
+)
+from .models import Note, Snippet
+from .processor.task_scheduler import TaskScheduler
 
 
 class SnippetSerializer(serializers.ModelSerializer):
@@ -178,9 +173,25 @@ class LinkedEntrySerializer(serializers.ModelSerializer):
         return internal
 
 
+class OptimizedEntryResponseSerializer(serializers.ModelSerializer):
+    """Entry serializer for file references"""
+
+    class Meta:
+        model = Entry
+        fields = ["id", "name"]
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if hasattr(instance, "entry_class") and instance.entry_class:
+            representation["type"] = instance.entry_class.type
+            representation["subtype"] = instance.entry_class.subtype
+            representation["color"] = instance.entry_class.color
+        return representation
+
+
 class FileReferenceWithNoteSerializer(serializers.ModelSerializer):
     note_id = serializers.SerializerMethodField(read_only=True)
-    entities = EntryResponseSerializer(many=True, read_only=True)
+    entities = OptimizedEntryResponseSerializer(many=True, read_only=True)
 
     class Meta:
         model = FileReference
@@ -203,10 +214,183 @@ class FileReferenceWithNoteSerializer(serializers.ModelSerializer):
         return obj.note.id if obj.note else None
 
 
+class FileReferenceListSerializer:
+    """
+    Serializer for file reference list operations.
+    """
+
+    def __init__(self, files_data=None, many=False):
+        self.many = many
+        self._data = files_data
+
+    def to_representation(self, files_data=None):
+        data_source = files_data if files_data is not None else self._data
+        if self.many:
+            return [self._serialize_file(file_ref) for file_ref in data_source]
+        else:
+            return self._serialize_file(data_source)
+
+    def _serialize_file(self, file_ref):
+        """Serialize a single file reference"""
+        data = {
+            "id": str(file_ref.id),
+            "minio_file_name": file_ref.minio_file_name,
+            "mimetype": file_ref.mimetype,
+            "file_name": file_ref.file_name,
+            "bucket_name": file_ref.bucket_name,
+            "timestamp": file_ref.timestamp.isoformat(),
+            "note_id": str(file_ref.note.id) if file_ref.note else None,
+            "md5_hash": file_ref.md5_hash,
+            "sha1_hash": file_ref.sha1_hash,
+            "sha256_hash": file_ref.sha256_hash,
+            "entities": self._get_entities_optimized(file_ref),
+        }
+        return data
+
+    def _get_entities_optimized(self, file_ref):
+        """Get entities for the file reference"""
+        entities = []
+        if file_ref.note:
+            for entry in file_ref.note.entries.all():
+                if (
+                    hasattr(entry, "entry_class")
+                    and entry.entry_class
+                    and entry.entry_class.type == "entity"
+                ):
+                    entities.append(
+                        {
+                            "id": str(entry.id),
+                            "name": entry.name,
+                            "type": entry.entry_class.type,
+                            "subtype": entry.entry_class.subtype,
+                            "color": entry.entry_class.color,
+                        }
+                    )
+        return entities
+
+
+class NoteListSerializer:
+    """
+    Serializer for note list operations.
+    """
+
+    def __init__(self, truncate=-1, many=False):
+        self.truncate = truncate
+        self.many = many
+
+    def to_representation(self, notes_data):
+        if self.many:
+            return [self._serialize_note(note) for note in notes_data]
+        else:
+            return self._serialize_note(notes_data)
+
+    def _serialize_note(self, note):
+        """Serialize a single note"""
+        data = {
+            "id": str(note.id),
+            "publishable": note.publishable,
+            "status": note.status,
+            "status_message": note.status_message,
+            "status_timestamp": note.status_timestamp.isoformat()
+            if note.status_timestamp
+            else None,
+            "content": self._truncate_content(note),
+            "title": note.title,
+            "description": note.description,
+            "metadata": note.metadata,
+            "timestamp": note.timestamp.isoformat(),
+            "edit_timestamp": note.edit_timestamp.isoformat()
+            if note.edit_timestamp
+            else None,
+            "last_linked": note.last_linked.isoformat() if note.last_linked else None,
+        }
+
+        if note.author:
+            data["author"] = {
+                "id": str(note.author.id),
+                "username": note.author.username,
+            }
+        else:
+            data["author"] = None
+
+        if note.editor:
+            data["editor"] = {
+                "id": str(note.editor.id),
+                "username": note.editor.username,
+            }
+        else:
+            data["editor"] = None
+
+        entry_classes = set()
+        for entry in note.entries.all():
+            if hasattr(entry, "entry_class") and entry.entry_class:
+                entry_classes.add(entry.entry_class.subtype)
+        data["entry_classes"] = list(entry_classes)
+        files_data = []
+        for file_ref in note.files.all():
+            file_data = {
+                "id": str(file_ref.id),
+                "minio_file_name": file_ref.minio_file_name,
+                "mimetype": file_ref.mimetype,
+                "file_name": file_ref.file_name,
+                "bucket_name": file_ref.bucket_name,
+                "timestamp": file_ref.timestamp.isoformat(),
+                "note_id": str(note.id),
+                "md5_hash": file_ref.md5_hash,
+                "sha1_hash": file_ref.sha1_hash,
+                "sha256_hash": file_ref.sha256_hash,
+                "entities": self._get_file_entities(file_ref, note),
+            }
+            files_data.append(file_data)
+        data["files"] = files_data
+
+        return data
+
+    def _truncate_content(self, note):
+        """Truncate content if needed"""
+        if (
+            self.truncate == -1
+            or len(note.content) - note.content_offset <= self.truncate
+        ):
+            return note.content[note.content_offset]
+        return (
+            note.content[note.content_offset : note.content_offset + self.truncate]
+            + "..."
+        )
+
+    def _get_file_entities(self, file_ref, note):
+        """Get entities for file reference"""
+        entities = []
+        for entry in note.entries.all():
+            if (
+                hasattr(entry, "entry_class")
+                and entry.entry_class
+                and entry.entry_class.type == "entity"
+            ):
+                entities.append(
+                    {
+                        "id": str(entry.id),
+                        "name": entry.name,
+                        "type": entry.entry_class.type,
+                        "subtype": entry.entry_class.subtype,
+                        "color": entry.entry_class.color,
+                    }
+                )
+        return entities
+
+    @property
+    def data(self):
+        return self.to_representation(self._data)
+
+    def __call__(self, data, **kwargs):
+        self._data = data
+        return self
+
+
 class NoteRetrieveSerializer(serializers.ModelSerializer):
     files = FileReferenceWithNoteSerializer(many=True)
-    author = UserRetrieveSerializer()
-    editor = UserRetrieveSerializer()
+    author = EssentialUserRetrieveSerializer()
+    editor = EssentialUserRetrieveSerializer()
     entries = EntryTypesCompressedTreeSerializer()
 
     class Meta:
@@ -247,36 +431,16 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
         data = super().to_representation(obj)
 
         data["entry_classes"] = data.pop("entries")
+        content = data["content"]
 
-        if self.truncate == -1:
+        if self.truncate == -1 or len(content) - obj.content_offset <= self.truncate:
             return data
 
-        _, data["content"] = frontmatter.parse(
-            data["content"], handler=ErrorBypassYAMLHandler()
-        )
-
-        if len(data["content"]) > self.truncate:
-            data["content"] = data["content"][: self.truncate] + "..."
-
-        return data
-
-
-class NoteRetrieveWithLinksSerializer(NoteRetrieveSerializer):
-    def to_representation(self, obj: Any) -> Dict[str, Any]:
-        data = super().to_representation(obj)
-
-        data["content"] += "\n\n"
-        for i in obj.files.all():
-            try:
-                data["content"] += f"""[{i.minio_file_name}]: {
-                    MinioClient().create_presigned_get(
-                        i.bucket_name, i.minio_file_name, timedelta(minutes=5)
-                    )
-                } "{i.file_name}"\n"""
-            except MinioObjectNotFound:
-                pass
-
-        data["files"] = []
+        # Optimize string operations for truncation
+        if len(content) > self.truncate:
+            data["content"] = (
+                content[obj.content_offset : obj.content_offset + self.truncate] + "..."
+            )
 
         return data
 

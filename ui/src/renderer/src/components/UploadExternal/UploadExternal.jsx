@@ -23,8 +23,12 @@ export default function UploadExternal({ setAlert }) {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [sortField, setSortField] = useState('created_at');
-    const [sortDirection, setSortDirection] = useState('desc');
+    const [sortField, setSortField] = useState(searchParams.get('digests_sort_field') || 'created_at');
+    const [sortDirection, setSortDirection] = useState(searchParams.get('digests_sort_direction') || 'desc');
+    const [pageSize, setPageSize] = useState(
+        Number(searchParams.get('digests_pagesize')) ||
+        (profile?.compact_mode ? 25 : 10)
+    );
 
     // Search state
     const [searchFilters, setSearchFilters] = useState({
@@ -75,7 +79,7 @@ export default function UploadExternal({ setAlert }) {
 
         // Initial fetch of digests with search params
         fetchDigests();
-    }, [page, submittedFilters, sortField, sortDirection]);
+    }, [page, submittedFilters, sortField, sortDirection, pageSize]);
 
     // Add an effect to initialize filters and date range from URL parameters
     useEffect(() => {
@@ -87,13 +91,13 @@ export default function UploadExternal({ setAlert }) {
         const initialDateRange = {
             startDate: searchParams.get('created_at_gte')
                 ? new Date(searchParams.get('created_at_gte'))
-                      .toISOString()
-                      .split('T')[0]
+                    .toISOString()
+                    .split('T')[0]
                 : null,
             endDate: searchParams.get('created_at_lte')
                 ? new Date(searchParams.get('created_at_lte'))
-                      .toISOString()
-                      .split('T')[0]
+                    .toISOString()
+                    .split('T')[0]
                 : null,
         };
 
@@ -157,10 +161,10 @@ export default function UploadExternal({ setAlert }) {
                 : '',
             created_at_lte: dateRangeValue.endDate
                 ? (() => {
-                      const endDate = new Date(dateRangeValue.endDate);
-                      endDate.setHours(23, 59, 59, 999);
-                      return endDate.toISOString();
-                  })()
+                    const endDate = new Date(dateRangeValue.endDate);
+                    endDate.setHours(23, 59, 59, 999);
+                    return endDate.toISOString();
+                })()
                 : '',
         });
     };
@@ -197,7 +201,7 @@ export default function UploadExternal({ setAlert }) {
             // Add search filters to the API call
             const searchQueryParams = {
                 page,
-                page_size: profile?.compact_mode ? 25 : 10,
+                page_size: pageSize,
                 ...submittedFilters,
             };
 
@@ -231,6 +235,20 @@ export default function UploadExternal({ setAlert }) {
         setSortDirection(newSortDirection);
         // Reset to first page when sorting changes
         setPage(1);
+
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('digests_sort_field', newSortField);
+        newParams.set('digests_sort_direction', newSortDirection);
+        setSearchParams(newParams, { replace: true });
+    };
+
+    const handlePageSizeChange = (newSize) => {
+        setPageSize(newSize);
+        setPage(1);
+
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('digests_pagesize', String(newSize));
+        setSearchParams(newParams, { replace: true });
     };
 
     // Use the provided setAlert or the local one
@@ -258,19 +276,17 @@ export default function UploadExternal({ setAlert }) {
                     </h2>
                 </div>
 
-                <div
-                    id='upload-form-section'
-                    className={`ease-in-out ${
-                        isUploadFormVisible
-                            ? 'max-h-[1000px] opacity-100 mb-4'
-                            : 'max-h-0 opacity-0'
-                    }`}
-                >
-                    <UploadForm
-                        dataTypeOptions={dataTypeOptions}
-                        onUpload={fetchDigests}
-                    />
-                </div>
+                {isUploadFormVisible && (
+                    <div
+                        id='upload-form-section'
+                        className='max-h-[1000px] opacity-100 mb-4  border-b border-gray-700 '
+                    >
+                        <UploadForm
+                            dataTypeOptions={dataTypeOptions}
+                            onUpload={fetchDigests}
+                        />
+                    </div>
+                )}
 
                 {/* Search Section */}
                 <div>
@@ -320,6 +336,8 @@ export default function UploadExternal({ setAlert }) {
                         sortField={sortField}
                         sortDirection={sortDirection}
                         onSort={handleSort}
+                        pageSize={pageSize}
+                        setPageSize={handlePageSizeChange}
                     />
                 </div>
             </div>

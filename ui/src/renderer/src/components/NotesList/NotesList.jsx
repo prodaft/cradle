@@ -1,24 +1,25 @@
 import {
     InfoCircleSolid,
-    Sort,
-    SortDown,
-    SortUp,
     WarningCircleSolid,
     WarningTriangleSolid,
 } from 'iconoir-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useModal } from '../../contexts/ModalContext/ModalContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { searchNote } from '../../services/notesService/notesService';
+import { deleteNote, searchNote } from '../../services/notesService/notesService';
 import { parseMarkdownInline } from '../../utils/customParser/customParser';
 import {
     capitalizeString,
     truncateText,
 } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
+import ActionBar from '../ActionBar/ActionBar';
 import AlertBox from '../AlertBox/AlertBox';
 import { HoverPreview } from '../HoverPreview/HoverPreview';
+import ListView from '../ListView/ListView';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
 import Note from '../Note/Note';
 import DeleteNote from '../NoteActions/DeleteNote';
 import EditNote from '../NoteActions/EditNote';
@@ -28,6 +29,7 @@ export default function NotesList({
     query,
     filteredNotes = [],
     noteActions = [],
+    hideActionBar = false,
     forceCardView = false,
     references = null,
 }) {
@@ -38,13 +40,19 @@ export default function NotesList({
     const [totalPages, setTotalPages] = useState(1);
     const { profile } = useProfile();
     const [page, setPage] = useState(Number(searchParams.get('notes_page')) || 1);
-    const [sortField, setSortField] = useState('timestamp');
-    const [sortDirection, setSortDirection] = useState('desc');
+    const [sortField, setSortField] = useState(searchParams.get('notes_sort_field') || 'timestamp');
+    const [sortDirection, setSortDirection] = useState(searchParams.get('notes_sort_direction') || 'desc');
     const { navigate, navigateLink } = useCradleNavigate();
+    const { setModal } = useModal();
     const [hoveredNote, setHoveredNote] = useState(null);
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     const hoverTimeoutRef = useRef(null);
     const HOVER_DELAY = 800;
+    const [selectedNotes, setSelectedNotes] = useState([]);
+    const [pageSize, setPageSize] = useState(
+        Number(searchParams.get('notes_pagesize')) ||
+        (!forceCardView && profile?.compact_mode ? 20 : 10)
+    );
 
     // Mapping of table columns to API field names
     const sortFieldMapping = {
@@ -115,37 +123,17 @@ export default function NotesList({
         }
     };
 
-    const handleSort = (column) => {
-        const newSortField = sortFieldMapping[column];
-        if (!newSortField) return;
-
-        if (sortField === newSortField) {
-            // Toggle direction if same field
-            setSortDirection(sortDirection === 'desc' ? 'asc' : 'desc');
-        } else {
-            // New field, default to descending for timestamp fields, ascending for others
-            setSortField(newSortField);
-            setSortDirection(newSortField.includes('timestamp') ? 'desc' : 'asc');
-        }
+    const handleSort = (field, direction) => {
+        setSortField(field);
+        setSortDirection(direction);
 
         // Reset to first page when sorting changes
         setPage(1);
         const newParams = new URLSearchParams(searchParams);
         newParams.set('notes_page', '1');
-        setSearchParams(newParams);
-    };
-
-    const getSortIcon = (column, className) => {
-        const fieldName = sortFieldMapping[column];
-        if (!fieldName || sortField !== fieldName) {
-            return <Sort className={className} />;
-        }
-
-        return sortDirection === 'desc' ? (
-            <SortDown className={className} />
-        ) : (
-            <SortUp className={className} />
-        );
+        newParams.set('notes_sort_field', field);
+        newParams.set('notes_sort_direction', direction);
+        setSearchParams(newParams, { replace: true });
     };
 
     const fetchNotes = useCallback(() => {
@@ -155,7 +143,7 @@ export default function NotesList({
         const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
 
         searchNote({
-            page_size: !forceCardView && profile?.compact_mode ? 20 : 10,
+            page_size: pageSize,
             page,
             order_by: orderBy,
             ...query,
@@ -173,12 +161,12 @@ export default function NotesList({
                 });
                 setLoading(false);
             });
-    }, [page, sortField, sortDirection, query]);
+    }, [page, pageSize, sortField, sortDirection, query]);
 
     useEffect(() => {
         setPage(Number(searchParams.get('notes_page')) || 1);
         fetchNotes();
-    }, [fetchNotes]);
+    }, [fetchNotes, pageSize]);
 
     const handlePageChange = (newPage) => {
         const newParams = new URLSearchParams(searchParams);
@@ -188,205 +176,250 @@ export default function NotesList({
         setPage(newPage);
     };
 
-    const SortableTableHeader = ({ column, children, className = '' }) => (
-        <th
-            className={`cursor-pointer select-none ${className}`}
-            onClick={() => handleSort(column)}
-        >
-            <div className='flex items-center justify-between !border-b-0 !border-t-0'>
-                <span className='!border-b-0 !border-t-0'>{children}</span>
-                {getSortIcon(
-                    column,
-                    'w-4 h-4 text-zinc-600 dark:text-zinc-400 !border-b-0 !border-t-0',
+    // Define actions for the ActionBar
+    const actions = [
+        {
+            value: 'delete',
+            label: 'Delete',
+            handler: async (selectedIds) => {
+                setModal(ConfirmDeletionModal, {
+                    onConfirm: async () => {
+                        try {
+                            // Send all delete requests in parallel
+                            const deletePromises = selectedIds.map(id => deleteNote(id));
+                            const results = await Promise.allSettled(deletePromises);
+
+                            // Count successes and failures
+                            const successes = results.filter(r => r.status === 'fulfilled').length;
+                            const failures = results.filter(r => r.status === 'rejected').length;
+
+                            if (failures === 0) {
+                                setAlert({
+                                    show: true,
+                                    color: 'green',
+                                    message: `Successfully deleted ${successes} note${successes > 1 ? 's' : ''}`,
+                                });
+                            } else if (successes === 0) {
+                                setAlert({
+                                    show: true,
+                                    color: 'red',
+                                    message: `Failed to delete ${failures} note${failures > 1 ? 's' : ''}`,
+                                });
+                            } else {
+                                setAlert({
+                                    show: true,
+                                    color: 'amber',
+                                    message: `Deleted ${successes} note${successes > 1 ? 's' : ''}, ${failures} failed`,
+                                });
+                            }
+
+                            // Refresh the notes list
+                            setSelectedNotes([]);
+                            fetchNotes();
+                        } catch (error) {
+                            setAlert({
+                                show: true,
+                                color: 'red',
+                                message: 'An unexpected error occurred while deleting notes',
+                            });
+                        }
+                    },
+                    text: `Are you sure you want to delete ${selectedIds.length} note${selectedIds.length > 1 ? 's' : ''}? This action is irreversible.`,
+                });
+            },
+        },
+    ];
+
+    const columns = [
+        { key: 'status', label: '' },
+        { key: 'title', label: 'Title' },
+        { key: 'description', label: 'Description' },
+        { key: 'author', label: 'Author' },
+        { key: 'editor', label: 'Editor' },
+        { key: 'createdAt', label: 'Created At' },
+        { key: 'lastChanged', label: 'Updated At' },
+        { key: 'actions', label: 'Actions', className: 'w-16' },
+    ];
+
+    const renderRow = (note, index, selectProps = {}) => {
+        // Skip filtered notes
+        for (const n of filteredNotes) {
+            if (n.id === note.id) return null;
+        }
+
+        const { enableMultiSelect, isSelected, onSelect } = selectProps;
+
+        return (
+            <tr
+                key={note.id}
+                className='cursor-pointer'
+                onClick={navigateLink(`/notes/${note.id}`)}
+                onMouseEnter={(e) => handleMouseEnter(note, e)}
+                onMouseLeave={handleMouseLeave}
+            >
+                {enableMultiSelect && (
+                    <td className='w-12' onClick={(e) => e.stopPropagation()}>
+                        <input
+                            type='checkbox'
+                            className='checkbox checkbox-sm'
+                            checked={isSelected}
+                            onChange={onSelect}
+                        />
+                    </td>
                 )}
-            </div>
-        </th>
-    );
+                <td className='w-8'>
+                    {note.status && (
+                        <span
+                            className='inline-flex items-center align-middle tooltip tooltip-right tooltip-primary'
+                            data-tooltip={
+                                note.status_message ||
+                                capitalizeString(note.status)
+                            }
+                        >
+                            {getStatusIcon(note.status)}
+                        </span>
+                    )}
+                </td>
+                <td
+                    className={`truncate w-64`}
+                    data-tooltip={note.metadata?.title}
+                >
+                    {truncateText(
+                        parseMarkdownInline(note.metadata?.title),
+                        64,
+                    )}
+                </td>
+                <td className='truncate max-w-xs'>
+                    {note.metadata?.description
+                        ? parseMarkdownInline(note.metadata?.description)
+                        : '-'}
+                </td>
+                <td className='truncate w-32'>
+                    {truncateText(note.author?.username, 16)}
+                </td>
+                <td className='truncate w-32'>
+                    {truncateText(note.editor?.username, 16)}
+                </td>
+                <td className='w-36'>
+                    {formatDate(new Date(note.timestamp))}
+                </td>
+                <td className='w-36'>
+                    {note.edit_timestamp
+                        ? formatDate(new Date(note.edit_timestamp))
+                        : '-'}
+                </td>
+                <td className='w-16'>
+                    <div className='flex items-center space-x-1'>
+                        <EditNote
+                            note={note}
+                            setAlert={setAlert}
+                            setHidden={() => { }}
+                            key={`${note.id}-edit`}
+                            classNames='w-4 h-4'
+                        />
+                        <DeleteNote
+                            note={note}
+                            setAlert={setAlert}
+                            setHidden={() => { }}
+                            key={`${note.id}-delete`}
+                            classNames='w-4 h-4'
+                        />
+                    </div>
+                </td>
+            </tr>
+        );
+    };
+
+    const renderCard = (note, index) => {
+        for (const n of filteredNotes) {
+            if (n.id === note.id) return null;
+        }
+        return (
+            <Note
+                id={note.id}
+                key={index}
+                note={note}
+                setAlert={setAlert}
+                actions={noteActions}
+            />
+        );
+    };
 
     return (
         <>
             <div className='flex flex-col space-y-4'>
                 <AlertBox alert={alert} setAlert={setAlert} />
-                <div>
-                    <Pagination
-                        currentPage={page}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                    />
-                    {loading ? (
-                        <div className='flex items-center justify-center min-h-screen'>
-                            <div className='spinner-dot-pulse'>
-                                <div className='spinner-pulse-dot'></div>
-                            </div>
-                        </div>
-                    ) : notes.length > 0 ? (
-                        <div className='notes-list'>
-                            {!forceCardView && profile?.compact_mode ? (
-                                <div className='overflow-x-auto w-full'>
-                                    <table className='table table-hover'>
-                                        <thead>
-                                            <tr>
-                                                <th></th>
-                                                <SortableTableHeader column='title'>
-                                                    Title
-                                                </SortableTableHeader>
-                                                <th>Description</th>
-                                                <SortableTableHeader column='author'>
-                                                    Author
-                                                </SortableTableHeader>
-                                                <SortableTableHeader column='editor'>
-                                                    Editor
-                                                </SortableTableHeader>
-                                                <SortableTableHeader column='createdAt'>
-                                                    Created At
-                                                </SortableTableHeader>
-                                                <SortableTableHeader column='lastChanged'>
-                                                    Updated At
-                                                </SortableTableHeader>
-                                                <th className='w-16'>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {notes.map((note) => {
-                                                // Skip filtered notes
-                                                for (const n of filteredNotes) {
-                                                    if (n.id === note.id) return null;
-                                                }
 
-                                                return (
-                                                    <tr
-                                                        key={note.id}
-                                                        className='cursor-pointer'
-                                                        onClick={navigateLink(
-                                                            `/notes/${note.id}`,
-                                                        )}
-                                                        onMouseEnter={(e) =>
-                                                            handleMouseEnter(note, e)
-                                                        }
-                                                        onMouseLeave={handleMouseLeave}
-                                                    >
-                                                        <td className='w-8'>
-                                                            {note.status && (
-                                                                <span
-                                                                    className='inline-flex items-center align-middle tooltip tooltip-right tooltip-primary'
-                                                                    data-tooltip={
-                                                                        note.status_message ||
-                                                                        capitalizeString(
-                                                                            note.status,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    {getStatusIcon(
-                                                                        note.status,
-                                                                    )}
-                                                                </span>
-                                                            )}
-                                                        </td>
-                                                        <td
-                                                            className={`truncate w-64`}
-                                                            data-tooltip={
-                                                                note.metadata?.title
-                                                            }
-                                                        >
-                                                            {truncateText(
-                                                                parseMarkdownInline(
-                                                                    note.metadata
-                                                                        ?.title,
-                                                                ),
-                                                                64,
-                                                            )}
-                                                        </td>
-                                                        <td className='truncate max-w-xs'>
-                                                            {note.metadata?.description
-                                                                ? parseMarkdownInline(
-                                                                      note.metadata
-                                                                          ?.description,
-                                                                  )
-                                                                : '-'}
-                                                        </td>
-                                                        <td className='truncate w-32'>
-                                                            {truncateText(
-                                                                note.author?.username,
-                                                                16,
-                                                            )}
-                                                        </td>
-                                                        <td className='truncate w-32'>
-                                                            {truncateText(
-                                                                note.editor?.username,
-                                                                16,
-                                                            )}
-                                                        </td>
-                                                        <td className='w-36'>
-                                                            {formatDate(
-                                                                new Date(
-                                                                    note.timestamp,
-                                                                ),
-                                                            )}
-                                                        </td>
-                                                        <td className='w-36'>
-                                                            {note.edit_timestamp
-                                                                ? formatDate(
-                                                                      new Date(
-                                                                          note.edit_timestamp,
-                                                                      ),
-                                                                  )
-                                                                : '-'}
-                                                        </td>
-                                                        <td className='w-16'>
-                                                            <div className='flex items-center space-x-1'>
-                                                                <EditNote
-                                                                    note={note}
-                                                                    setAlert={setAlert}
-                                                                    setHidden={() => {}}
-                                                                    key={note.id}
-                                                                    classNames='w-4 h-4'
-                                                                />
-                                                                <DeleteNote
-                                                                    note={note}
-                                                                    setAlert={setAlert}
-                                                                    setHidden={() => {}}
-                                                                    key={note.id}
-                                                                    classNames='w-4 h-4'
-                                                                />
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            ) : (
-                                notes.map((note, index) => {
-                                    for (const n of filteredNotes) {
-                                        if (n.id === note.id) return null;
-                                    }
-                                    return (
-                                        <Note
-                                            id={note.id}
-                                            key={index}
-                                            note={note}
-                                            setAlert={setAlert}
-                                            actions={noteActions}
-                                        />
-                                    );
-                                })
-                            )}
+                {!loading && notes.length > 0 && (
+                    <div className='flex items-center justify-between gap-4'>
+                        <div className='flex-1'>
+                            {hideActionBar ? null : <ActionBar
+                                actions={actions}
+                                selectedItems={selectedNotes}
+                                itemLabel='row'
+                            />}
                         </div>
-                    ) : (
-                        <div className='container mx-auto flex flex-col items-center'>
-                            <p className='mt-6 !text-sm !font-normal text-zinc-500'>
-                                No notes found!
-                            </p>
-                        </div>
-                    )}
+                        <Pagination
+                            currentPage={page}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                            pageSize={pageSize}
+                            onPageSizeChange={(newSize) => {
+                                setPageSize(newSize);
+                                setPage(1);
+                                const newParams = new URLSearchParams(searchParams);
+                                newParams.set('notes_page', '1');
+                                newParams.set('notes_pagesize', String(newSize));
+                                setSearchParams(newParams, { replace: true });
+                            }}
+                        />
+                        <div className='flex-1'></div>
+                    </div>
+                )}
 
-                    <Pagination
-                        currentPage={page}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                    />
-                </div>
+                <ListView
+                    data={notes}
+                    columns={columns}
+                    renderRow={renderRow}
+                    renderCard={renderCard}
+                    loading={loading}
+                    sortField={sortField}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                    sortFieldMapping={sortFieldMapping}
+                    forceCardView={forceCardView}
+                    emptyMessage="No notes found!"
+                    tableClassName="table table-hover"
+                    enableMultiSelect={true}
+                    setSelected={setSelectedNotes}
+                />
+
+                {!loading && notes.length > 0 && (
+                    <div className='flex items-center justify-between gap-4'>
+                        <div className='flex-1'>
+                            {hideActionBar ? null : <ActionBar
+                                actions={actions}
+                                selectedItems={selectedNotes}
+                                itemLabel='row'
+                            />}
+                        </div>
+                        <Pagination
+                            currentPage={page}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                            pageSize={pageSize}
+                            onPageSizeChange={(newSize) => {
+                                setPageSize(newSize);
+                                setPage(1);
+                                const newParams = new URLSearchParams(searchParams);
+                                newParams.set('notes_page', '1');
+                                newParams.set('notes_pagesize', String(newSize));
+                                setSearchParams(newParams, { replace: true });
+                            }}
+                        />
+                        <div className='flex-1'></div>
+                    </div>
+                )}
             </div>
             {hoveredNote && (
                 <HoverPreview

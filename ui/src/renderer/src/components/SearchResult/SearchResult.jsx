@@ -29,9 +29,9 @@ export default function SearchResult({
             <div className='flex-grow'>
                 <div className='flex items-center'>
                     {depth != null && (
-                        <span className='badge mr-2'>Depth: {depth}</span>
+                        <span className='badge ml-2'>Depth: {depth}</span>
                     )}
-                    <h2 className='card-header text-white'>{name}</h2>
+                    <h2 className='card-header text-white mx-2'>{name}</h2>
                 </div>
                 <p className='text-zinc-300 mx-2'>
                     {type}

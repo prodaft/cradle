@@ -3,6 +3,8 @@ export default function Pagination({
     totalPages,
     onPageChange,
     maxVisible = 7,
+    pageSize = null,
+    onPageSizeChange = null,
 }) {
     const startPage = Math.max(
         1,
@@ -16,7 +18,7 @@ export default function Pagination({
     );
 
     return (
-        <div className='pagination flex justify-center mt-4 mb-4 items-center'>
+        <div className='pagination flex justify-center mt-4 mb-4 items-center gap-3'>
             {/* Left Arrow */}
             <button
                 onClick={() => onPageChange(1)}
@@ -61,6 +63,20 @@ export default function Pagination({
             >
                 &gt;&gt;
             </button>
+
+            {/* Page Size Dropdown */}
+            {pageSize !== null && onPageSizeChange && (
+                <select
+                    className='select select-sm select-bordered w-32'
+                    value={pageSize}
+                    onChange={(e) => onPageSizeChange(Number(e.target.value))}
+                >
+                    <option value={10}>10 / page</option>
+                    <option value={20}>20 / page</option>
+                    <option value={50}>50 / page</option>
+                    <option value={100}>100 / page</option>
+                </select>
+            )}
         </div>
     );
 }

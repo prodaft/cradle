@@ -1,24 +1,21 @@
+import re
+import uuid
 from typing import Optional
+
+from core.fields import BitStringField
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.gis.db import models as gis_models
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 from django_lifecycle import AFTER_CREATE, AFTER_UPDATE, LifecycleModel, hook
 from django_lifecycle.conditions import WhenFieldHasChanged
 from django_lifecycle.mixins import LifecycleModelMixin, transaction
-from django.db.models import Q
-
-from core.fields import BitStringField
+from intelio.enums import EnrichmentStrategy
 from logs.models import LoggableModelMixin
 
-from .managers import (
-    EntityManager,
-    ArtifactManager,
-    EntryManager,
-    RelationManager,
-    EdgeManager,
-)
-
+from .enums import EntryType, EntryTypeFormat, RelationReason
 from .exceptions import (
     ClassBreaksHierarchyException,
     InvalidClassFormatException,
@@ -26,13 +23,13 @@ from .exceptions import (
     InvalidRegexException,
     OutOfEntitySlotsException,
 )
-from .enums import EntryType, RelationReason, EntryTypeFormat
-from intelio.enums import EnrichmentStrategy
-
-import uuid
-import re
-
-from django.contrib.gis.db import models as gis_models
+from .managers import (
+    ArtifactManager,
+    EdgeManager,
+    EntityManager,
+    EntryManager,
+    RelationManager,
+)
 
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
@@ -101,6 +98,7 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
             return None
 
         from django.db import transaction
+
         from entries.tasks import remap_notes_task
 
         old_subtype = self.subtype
@@ -330,10 +328,10 @@ class Entry(LifecycleModel, LoggableModelMixin):
         if self.acvec_offset > 2047:
             raise OutOfEntitySlotsException()
 
-    def delete(self, *args, **kwargs):
-        from entries.tasks import remap_notes_task
-
+    def delete_renaming(self, user_id: str, *args, **kwargs):
         from django.db import transaction
+
+        from entries.tasks import remap_notes_task
 
         note_ids = list({note.id for note in self.notes.all()})
 
@@ -342,6 +340,7 @@ class Entry(LifecycleModel, LoggableModelMixin):
                 note_ids,
                 {},
                 {self.entry_class.subtype + ":" + self.name: None},
+                user_id,
             )
         )
 

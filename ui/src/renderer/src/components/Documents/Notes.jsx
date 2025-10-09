@@ -65,22 +65,18 @@ export default function Notes({ setAlert }) {
                 : '',
             timestamp_lte: dateRangeValue.endDate
                 ? (() => {
-                      const endDate = new Date(dateRangeValue.endDate);
-                      endDate.setHours(23, 59, 59, 999);
-                      return endDate.toISOString();
-                  })()
+                    const endDate = new Date(dateRangeValue.endDate);
+                    endDate.setHours(23, 59, 59, 999);
+                    return endDate.toISOString();
+                })()
                 : '',
         });
     };
 
     // Auto-update search when filters or date range change
     useEffect(() => {
-        const timeoutId = setTimeout(() => {
-            updateSearchParams(searchFilters, dateRange);
-        }, 500); // Debounce for 500ms to avoid too many requests
-
-        return () => clearTimeout(timeoutId);
-    }, [searchFilters, dateRange]);
+        updateSearchParams(searchFilters, dateRange);
+    }, []);
 
     const handleSearchSubmit = (e) => {
         e.preventDefault();
@@ -108,13 +104,13 @@ export default function Notes({ setAlert }) {
         const initialDateRange = {
             startDate: searchParams.get('timestamp_gte')
                 ? new Date(searchParams.get('timestamp_gte'))
-                      .toISOString()
-                      .split('T')[0]
+                    .toISOString()
+                    .split('T')[0]
                 : null,
             endDate: searchParams.get('timestamp_lte')
                 ? new Date(searchParams.get('timestamp_lte'))
-                      .toISOString()
-                      .split('T')[0]
+                    .toISOString()
+                    .split('T')[0]
                 : null,
         };
 

@@ -1,8 +1,9 @@
-from .settings_common import *  # noqa:F401
+import random
 
 # Ugly hack to get graph_tool working
 import sys
-import random
+
+from .settings_common import *  # noqa:F401
 
 global_base = random.__file__.removesuffix("random.py")
 
@@ -52,6 +53,10 @@ EMAIL_HOST_USER = "cradle@prodaft.com"
 DEFAULT_FROM_EMAIL = "cradle@prodaft.com"
 EMAIL_HOST_PASSWORD = None
 EMAIL_USE_TLS = True
+
+USE_SILK = True
+MIDDLEWARE = ["silk.middleware.SilkyMiddleware"] + MIDDLEWARE
+INSTALLED_APPS.append("silk")
 
 DEFAULT_SETTINGS = {
     "users": {

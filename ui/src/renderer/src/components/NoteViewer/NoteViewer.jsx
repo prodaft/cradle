@@ -1,17 +1,20 @@
-import { Code, EditPencil, RefreshCircle } from 'iconoir-react';
+import { Code, Download, EditPencil, RefreshCircle } from 'iconoir-react';
 import { StatsReport, Trash } from 'iconoir-react/regular';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
+import { authAxios } from '../../services/axiosInstance/axiosInstance';
 import {
     deleteNote,
     getNote,
     setPublishable,
 } from '../../services/notesService/notesService';
+import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
+import { createDownloadPath, parseContent } from '../../utils/textEditorUtils/textEditorUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import ListView from '../ListView/ListView';
 import NavbarButton from '../NavbarButton/NavbarButton';
 import NavbarSwitch from '../NavbarSwitch/NavbarSwitch';
 import Preview from '../Preview/Preview';
@@ -21,6 +24,7 @@ import Prism from 'prismjs';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import '../../utils/customParser/prism-config.js';
+import { addCopyButtonsToCodeBlocks } from '../../utils/prismCopyButton';
 
 import {
     InfoCircleSolid,
@@ -37,8 +41,9 @@ import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import ActivityList from '../ActivityList/ActivityList';
 import FileItem from '../FileItem/FileItem';
+import GraphExplorer from '../GraphExplorer/GraphExplorer.jsx';
+import NoteGraphSearch from '../GraphQuery/NoteGraphSearch.jsx';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
-import NoteGraph from '../NoteGraph/NoteGraph';
 import { Tab, Tabs } from '../Tabs/Tabs';
 
 /**
@@ -54,7 +59,7 @@ export default function NoteViewer() {
     const { id } = useParams();
     const { navigate, navigateLink } = useCradleNavigate();
     const location = useLocation();
-    const { isAdmin } = useProfile();
+    const { isAdmin, profile } = useProfile();
     const { from, state } = location.state || { from: { pathname: '/' } };
     const [note, setNote] = useState({});
     const [isPublishable, setIsPublishable] = useState(false);
@@ -65,6 +70,21 @@ export default function NoteViewer() {
     const [metadataExpanded, setMetadataExpanded] = useState(true);
     const { setModal } = useModal();
     const { managementApi } = useApi();
+
+    const copyToClipboard = (text) => {
+        navigator.clipboard
+            .writeText(text)
+            .catch((error) => {
+                console.error('Failed to copy text: ', error);
+            })
+            .then(() => {
+                setAlert({
+                    show: true,
+                    message: 'Copied to clipboard',
+                    color: 'green',
+                });
+            });
+    };
 
     const getStatusIcon = () => {
         if (!note.status) return null;
@@ -107,7 +127,7 @@ export default function NoteViewer() {
                 return responseNote;
             })
             .then((note) => {
-                return parseContent(note.content, note.files).then((result) =>
+                return parseContent(note.content, note.files, true).then((result) =>
                     setParsedContent(result.html),
                 );
             })
@@ -156,64 +176,64 @@ export default function NoteViewer() {
     const navbarContents = id?.startsWith('guide_')
         ? []
         : [
-              isPublishable && (
-                  <NavbarButton
-                      icon={<StatsReport />}
-                      text='Publish Report'
-                      data-testid='publish-btn'
-                      key='publish-btn'
-                      onClick={navigateLink(`/publish?notes=${id}`)}
-                  />
-              ),
-              <NavbarSwitch
-                  key='publishable-btn'
-                  text='Publishable'
-                  checked={isPublishable}
-                  onChange={togglePublishable}
-                  testid='publishable-btn'
-              />,
-              isAdmin() && (
-                  <NavbarButton
-                      key='relink-btn'
-                      text='Relink Note'
-                      icon={<RefreshCircle />}
-                      onClick={() =>
-                          managementApi.managementActionsCreate({
-                              actionName: 'relinkNotes',
-                              requestBody: {
-                                  note_id: id,
-                              },
-                          }).then(() => {
-                              setAlert({
-                                  show: true,
-                                  message: 'Relinking note...',
-                                  color: 'green',
-                              });
-                          })
-                      }
-                      tesid='relink-btn'
-                  />
-              ),
-              <NavbarButton
-                  key='edit-btn'
-                  text='Edit Note'
-                  icon={<EditPencil />}
-                  onClick={navigateLink(`/notes/${id}/edit`)}
-                  tesid='delete-btn'
-              />,
-              <NavbarButton
-                  key='delete-btn'
-                  text='Delete Note'
-                  icon={<Trash />}
-                  onClick={() =>
-                      setModal(ConfirmDeletionModal, {
-                          onConfirm: handleDelete,
-                          text: 'Are you sure you want to delete this note? This action is irreversible.',
-                      })
-                  }
-                  tesid='delete-btn'
-              />,
-          ];
+            isPublishable && (
+                <NavbarButton
+                    icon={<StatsReport />}
+                    text='Publish Report'
+                    data-testid='publish-btn'
+                    key='publish-btn'
+                    onClick={navigateLink(`/publish?notes=${id}`)}
+                />
+            ),
+            <NavbarSwitch
+                key='publishable-btn'
+                text='Publishable'
+                checked={isPublishable}
+                onChange={togglePublishable}
+                testid='publishable-btn'
+            />,
+            isAdmin() && (
+                <NavbarButton
+                    key='relink-btn'
+                    text='Relink Note'
+                    icon={<RefreshCircle />}
+                    onClick={() =>
+                        managementApi.managementActionsCreate({
+                            actionName: 'relinkNotes',
+                            requestBody: {
+                                note_id: id,
+                            },
+                        }).then(() => {
+                            setAlert({
+                                show: true,
+                                message: 'Relinking note...',
+                                color: 'green',
+                            });
+                        })
+                    }
+                    tesid='relink-btn'
+                />
+            ),
+            <NavbarButton
+                key='edit-btn'
+                text='Edit Note'
+                icon={<EditPencil />}
+                onClick={navigateLink(`/notes/${id}/edit`, { state: { from } })}
+                tesid='edit-btn'
+            />,
+            <NavbarButton
+                key='delete-btn'
+                text='Delete Note'
+                icon={<Trash />}
+                onClick={() =>
+                    setModal(ConfirmDeletionModal, {
+                        onConfirm: handleDelete,
+                        text: 'Are you sure you want to delete this note? This action is irreversible.',
+                    })
+                }
+                tesid='delete-btn'
+            />,
+        ];
 
     navbarContents.push(
         <NavbarButton
@@ -237,6 +257,13 @@ export default function NoteViewer() {
 
     useEffect(() => {
         Prism.highlightAll();
+        if (isRaw) {
+            // Add copy buttons to raw markdown view
+            const container = document.querySelector('.language-markdown');
+            if (container && container.parentElement) {
+                addCopyButtonsToCodeBlocks(container.parentElement.parentElement, null);
+            }
+        }
     }, [isRaw, note.content]);
 
     // Conditionally render spinner or component
@@ -340,7 +367,7 @@ export default function NoteViewer() {
                                         <div className='flex-grow'>
                                             {note.metadata &&
                                                 Object.keys(note.metadata).length >
-                                                    0 && (
+                                                0 && (
                                                     <div className='mt-2'>
                                                         <div
                                                             className='flex items-center cursor-pointer p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded'
@@ -392,15 +419,15 @@ export default function NoteViewer() {
                                                                                 </div>
                                                                                 <div className='text-sm text-gray-600 dark:text-gray-400'>
                                                                                     {typeof value ===
-                                                                                    'object'
+                                                                                        'object'
                                                                                         ? JSON.stringify(
-                                                                                              value,
-                                                                                          )
+                                                                                            value,
+                                                                                        )
                                                                                         : parseMarkdownInline(
-                                                                                              String(
-                                                                                                  value,
-                                                                                              ),
-                                                                                          )}
+                                                                                            String(
+                                                                                                value,
+                                                                                            ),
+                                                                                        )}
                                                                                 </div>
                                                                             </React.Fragment>
                                                                         ),
@@ -423,19 +450,143 @@ export default function NoteViewer() {
                         </div>
                     </Tab>
                     <Tab title='Graph'>
-                        <NoteGraph noteId={id} />
+                        <GraphExplorer GraphSearchComponent={NoteGraphSearch(note.id)} />
                     </Tab>
                     {note.files && note.files.length > 0 && (
                         <Tab title='Files'>
                             <div className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'>
-                                <div className='w-[95%] h-full flex flex-col p-6 space-y-3'>
-                                    {note.files.map((file) => (
-                                        <FileItem
-                                            key={file.id}
-                                            file={file}
-                                            setAlert={setAlert}
-                                        />
-                                    ))}
+                                <div className='w-[95%] h-full flex flex-col p-6'>
+                                    <ListView
+                                        data={note.files}
+                                        columns={[
+                                            { key: 'name', label: 'Name', className: 'w-64' },
+                                            { key: 'uploadedAt', label: 'Uploaded At', className: 'w-32' },
+                                            { key: 'entities', label: 'Entities', className: 'w-32' },
+                                            { key: 'mimetype', label: 'MimeType', className: 'w-32' },
+                                            { key: 'md5', label: 'MD5' },
+                                            { key: 'sha1', label: 'SHA1' },
+                                            { key: 'sha256', label: 'SHA256' },
+                                            { key: 'actions', label: 'Actions', className: 'w-32' },
+                                        ]}
+                                        renderRow={(file, index) => (
+                                            <tr key={file.id || index}>
+                                                <td className='truncate w-32'>
+                                                    {truncateText(file.file_name, 32)}
+                                                </td>
+                                                <td className=''>
+                                                    {formatDate(new Date(file.timestamp))}
+                                                </td>
+                                                <td className=''>
+                                                    <div className='flex flex-wrap gap-1'>
+                                                        {file.entities?.slice(0, 3).map((entity) => (
+                                                            <span
+                                                                key={entity.name}
+                                                                className='badge badge-xs px-1 text-white'
+                                                                style={{
+                                                                    backgroundColor: entity.color || '#ccc',
+                                                                }}
+                                                            >
+                                                                {entity.name}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </td>
+                                                <td className='truncate w-32'>
+                                                    {truncateText(file.mimetype, 32)}
+                                                </td>
+                                                <td className=''>
+                                                    {file.md5_hash ? (
+                                                        <span
+                                                            className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
+                                                            onClick={() => copyToClipboard(file.md5_hash)}
+                                                            title='Click to copy'
+                                                        >
+                                                            {file.md5_hash.substring(0, 16)}...
+                                                        </span>
+                                                    ) : (
+                                                        '-'
+                                                    )}
+                                                </td>
+                                                <td className=''>
+                                                    {file.sha1_hash ? (
+                                                        <span
+                                                            className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
+                                                            onClick={() => copyToClipboard(file.sha1_hash)}
+                                                            title='Click to copy'
+                                                        >
+                                                            {file.sha1_hash.substring(0, 32)}...
+                                                        </span>
+                                                    ) : (
+                                                        '-'
+                                                    )}
+                                                </td>
+                                                <td className=''>
+                                                    {file.sha256_hash ? (
+                                                        <span
+                                                            className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
+                                                            onClick={() => copyToClipboard(file.sha256_hash)}
+                                                            title='Click to copy'
+                                                        >
+                                                            {file.sha256_hash.substring(0, 32)}...
+                                                        </span>
+                                                    ) : (
+                                                        '-'
+                                                    )}
+                                                </td>
+                                                <td className='w-32'>
+                                                    <div className='flex space-x-1'>
+                                                        {file.bucket_name && file.minio_file_name && (
+                                                            <button
+                                                                onClick={() => {
+                                                                    const url = createDownloadPath({
+                                                                        bucket_name: file.bucket_name,
+                                                                        minio_file_name: file.minio_file_name,
+                                                                    });
+
+                                                                    authAxios
+                                                                        .get(url)
+                                                                        .then((response) => {
+                                                                            const { presigned } = response.data;
+                                                                            const link = document.createElement('a');
+                                                                            link.href = presigned;
+                                                                            const fileName =
+                                                                                file.minio_file_name.split('/').pop() ||
+                                                                                file.minio_file_name;
+                                                                            link.download = fileName;
+                                                                            document.body.appendChild(link);
+                                                                            link.click();
+                                                                            document.body.removeChild(link);
+                                                                        })
+                                                                        .catch((error) => {
+                                                                            setAlert({
+                                                                                show: true,
+                                                                                message: 'Failed to download file. Please try again.',
+                                                                                color: 'red',
+                                                                            });
+                                                                        });
+                                                                }}
+                                                                className='btn btn-ghost btn-xs text-green-600 hover:text-green-500'
+                                                                title='Download'
+                                                            >
+                                                                <Download className='w-4 h-4' aria-hidden='true' />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                        renderCard={(file) => (
+                                            <FileItem
+                                                key={file.id}
+                                                file={file}
+                                                setAlert={setAlert}
+                                            />
+                                        )}
+                                        loading={false}
+                                        forceCardView={!profile?.compact_mode}
+                                        emptyMessage="No files found!"
+                                        tableClassName="table"
+                                    />
                                 </div>
                             </div>
                         </Tab>

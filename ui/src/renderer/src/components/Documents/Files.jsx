@@ -50,7 +50,7 @@ export default function Files({ setAlert }) {
             <div className='flex justify-between items-center w-full border-b border-gray-700 px-4 pb-3'>
                 <h1 className='text-4xl font-bold w-full break-all'>All Files</h1>
             </div>
-            <div className='bg-cradle3 bg-opacity-20 p-4 backdrop-filter backdrop-blur-lg rounded-xl mb-4'>
+            <div className='p-4 backdrop-filter backdrop-blur-lg rounded-xl mb-4'>
                 <form onSubmit={handleSearchSubmit} className='flex space-x-4'>
                     <input
                         type='text'

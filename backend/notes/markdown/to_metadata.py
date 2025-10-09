@@ -62,4 +62,4 @@ def infer_metadata(md_text: str) -> dict[str, str]:
 
     renderer.metadata.update(metadata)
 
-    return renderer.metadata
+    return len(md_text) - len(content), renderer.metadata

@@ -1,21 +1,20 @@
+import uuid
+
+from core.fields import BitStringField
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
+from django.utils import timezone
 from django_lifecycle import AFTER_CREATE, AFTER_UPDATE, hook
 from django_lifecycle.mixins import LifecycleModelMixin, transaction
-from django.utils import timezone
-
-from intelio.models.base import BaseDigest
-
-from .markdown.to_links import Node, cradle_connections, compress_tree
 from entries.models import Entry, Relation
+from intelio.models.base import BaseDigest
 from logs.models import LoggableModelMixin
-from .managers import NoteManager
-from .enums import NoteStatus
-
-import uuid
-from user.models import CradleUser
-from core.fields import BitStringField
 from management.settings import cradle_settings
+from user.models import CradleUser
+
+from .enums import NoteStatus
+from .managers import NoteManager
+from .markdown.to_links import Node, compress_tree, cradle_connections
 
 
 class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
@@ -47,7 +46,8 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
 
     title: models.CharField = models.CharField(max_length=255, default="")
     description: models.TextField = models.TextField(default="", max_length=4096)
-    metadata: models.JSONField = models.JSONField(default=dict)
+    metadata: models.JSONField = models.JSONField(default=dict, blank=True, null=True)
+    content_offset: models.IntegerField = models.IntegerField(default=0)
 
     author = models.ForeignKey[CradleUser](
         CradleUser, related_name="author", on_delete=models.SET_NULL, null=True
@@ -74,6 +74,16 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
     last_linked = models.DateTimeField(default=None, null=True)
 
     _reference_tree = None
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=["-timestamp", "fleeting"]
+            ),  # For get_accessible_notes ordering
+            models.Index(fields=["fleeting", "timestamp"]),  # Alternative order
+            models.Index(fields=["author", "-timestamp"]),  # For author filtering
+            models.Index(fields=["editor", "-edit_timestamp"]),  # For editor filtering
+        ]
 
     def set_status(self, status: NoteStatus, message: str = ""):
         self.status = status

@@ -13,8 +13,8 @@ import parseMarkdown from '../customParser/customParser.ts';
  * @param {Array<FileData>} [fileData] - information about the files that will be linked
  * @returns {Promise<{html: string, metadata: Record<string, any>}>} parsed and sanitized HTML with metadata
  */
-const parseContent = async (content, fileData) =>
-    parseMarkdown(content, fileData).then((result) => {
+const parseContent = async (content, fileData, addLinks = false) =>
+    parseMarkdown(content, fileData, addLinks).then((result) => {
         if (!result) return { html: '', metadata: {} };
         return {
             html: DOMPurify.sanitize(result.html),
@@ -199,5 +199,6 @@ export {
     handleLinkClick,
     parseContent,
     parseLink,
-    prependLinks,
+    prependLinks
 };
+

@@ -1,10 +1,12 @@
-import { Sort, SortDown, SortUp, Trash } from 'iconoir-react';
+import { Trash } from 'iconoir-react';
+import React from 'react';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
-import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import { deleteDigest } from '../../services/intelioService/intelioService';
 import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
+import ActionBar from '../ActionBar/ActionBar';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
+import ListView from '../ListView/ListView';
 import Pagination from '../Pagination/Pagination';
 import DigestCard from './DigestCard';
 
@@ -19,8 +21,11 @@ function DigestList({
     sortField = 'created_at',
     sortDirection = 'desc',
     onSort,
+    selectedDigests = [],
+    setSelectedDigests = () => {},
+    pageSize = 10,
+    setPageSize = () => {},
 }) {
-    const { profile } = useProfile();
     const { setModal } = useModal();
 
     // Mapping of table columns to API field names
@@ -30,49 +35,6 @@ function DigestList({
         createdAt: 'created_at',
         user: 'user__username',
     };
-
-    const handleSort = (column) => {
-        const newSortField = sortFieldMapping[column];
-        if (!newSortField || !onSort) return;
-
-        if (sortField === newSortField) {
-            // Toggle direction if same field
-            const newDirection = sortDirection === 'desc' ? 'asc' : 'desc';
-            onSort(newSortField, newDirection);
-        } else {
-            // New field, default to descending for timestamp fields, ascending for others
-            const newDirection = newSortField.includes('created_at') ? 'desc' : 'asc';
-            onSort(newSortField, newDirection);
-        }
-    };
-
-    const getSortIcon = (column, className) => {
-        const fieldName = sortFieldMapping[column];
-        if (!fieldName || sortField !== fieldName) {
-            return <Sort className={className} />;
-        }
-
-        return sortDirection === 'desc' ? (
-            <SortDown className={className} />
-        ) : (
-            <SortUp className={className} />
-        );
-    };
-
-    const SortableTableHeader = ({ column, children, className = '' }) => (
-        <th
-            className={`cursor-pointer select-none ${className}`}
-            onClick={() => handleSort(column)}
-        >
-            <div className='flex items-center justify-between !border-b-0 !border-t-0'>
-                <span className='!border-b-0 !border-t-0'>{children}</span>
-                {getSortIcon(
-                    column,
-                    'w-4 h-4 text-zinc-600 dark:text-zinc-400 !border-b-0 !border-t-0',
-                )}
-            </div>
-        </th>
-    );
 
     const handleDelete = async (digestId) => {
         try {
@@ -88,158 +50,227 @@ function DigestList({
             setAlert({ show: true, message: 'Failed to delete digest', color: 'red' });
         }
     };
-    if (loading) {
-        return (
-            <div className='flex justify-center w-full pt-4'>
-                <div className='spinner-dot-pulse spinner-xl'>
-                    <div className='spinner-pulse-dot'></div>
-                </div>
-            </div>
-        );
-    }
 
-    if (digests.length === 0) {
+    const columns = [
+        { key: 'status', label: 'Status' },
+        { key: 'title', label: 'Title' },
+        { key: 'type', label: 'Type' },
+        { key: 'createdAt', label: 'Created At' },
+        { key: 'user', label: 'User' },
+        { key: 'warnings', label: 'Warnings' },
+        { key: 'errors', label: 'Errors' },
+        { key: 'actions', label: 'Actions' },
+    ];
+
+    const renderRow = (digest, index, selectProps = {}) => {
+        const { enableMultiSelect, isSelected, onSelect } = selectProps;
+
         return (
-            <div className='flex justify-center w-full'>
-                <p className='text-gray-400'>No digests found!</p>
-            </div>
+            <tr key={digest.id}>
+                {enableMultiSelect && (
+                    <td className='w-12' onClick={(e) => e.stopPropagation()}>
+                        <input
+                            type='checkbox'
+                            className='checkbox checkbox-sm'
+                            checked={isSelected}
+                            onChange={onSelect}
+                        />
+                    </td>
+                )}
+            <td className='w-16'>
+                <span
+                    className={`badge ${
+                        digest.status === 'done'
+                            ? 'badge-success'
+                            : digest.status === 'error'
+                              ? 'badge-error'
+                              : 'badge-secondary'
+                    }`}
+                >
+                    {digest.status.charAt(0).toUpperCase() + digest.status.slice(1)}
+                </span>
+            </td>
+            <td className='truncate max-w-xs' title={digest.title}>
+                {digest.title}
+            </td>
+            <td className='truncate w-24' title={digest.display_name}>
+                {truncateText(digest.display_name, 24)}
+            </td>
+            <td className='w-36'>{formatDate(new Date(digest.created_at))}</td>
+            <td className='truncate w-32' title={digest.user_detail.username}>
+                {truncateText(digest.user_detail.username, 16)}
+            </td>
+            <td className='w-8'>
+                <span
+                    className={`badge badge-warning ${digest.warnings?.length > 0 ? 'tooltip tooltip-left tooltip-warning' : ''}`}
+                    data-tooltip={
+                        digest.warnings?.length > 0
+                            ? digest.warnings.slice(0, 10).join('\n') +
+                              (digest.warnings.length > 10 ? '\n...' : '')
+                            : undefined
+                    }
+                >
+                    {digest.warnings?.length || 0}
+                </span>
+            </td>
+            <td className='w-8'>
+                <span
+                    className={`badge badge-error ${digest.errors?.length > 0 ? 'tooltip tooltip-left tooltip-error' : ''}`}
+                    data-tooltip={
+                        digest.errors?.length > 0
+                            ? digest.errors.slice(0, 10).join(', ') +
+                              (digest.errors.length > 10 ? ', ...' : '')
+                            : undefined
+                    }
+                >
+                    {digest.errors?.length || 0}
+                </span>
+            </td>
+            <td className='w-8'>
+                <button
+                    title='Delete Digest'
+                    className='btn btn-ghost btn-xs text-red-600 hover:text-red-500 transition-colors p-1'
+                    onClick={() =>
+                        setModal(ConfirmDeletionModal, {
+                            title: 'Delete Digest',
+                            message: 'Are you sure you want to delete this digest?',
+                            onConfirm: () => handleDelete(digest.id),
+                        })
+                    }
+                >
+                    <Trash className='w-4 h-4' />
+                </button>
+            </td>
+        </tr>
         );
-    }
+    };
+
+    const renderCard = (digest) => (
+        <DigestCard
+            key={digest.id}
+            localDigest={digest}
+            setAlert={setAlert}
+            onDelete={onDigestDelete}
+        />
+    );
+
+    // Define actions for the ActionBar
+    const actions = [
+        {
+            value: 'delete',
+            label: 'Delete',
+            handler: async (selectedIds) => {
+                setModal(ConfirmDeletionModal, {
+                    onConfirm: async () => {
+                        try {
+                            // Send all delete requests in parallel
+                            const deletePromises = selectedIds.map(id => deleteDigest(id));
+                            const results = await Promise.allSettled(deletePromises);
+
+                            // Count successes and failures
+                            const successes = results.filter(r => r.status === 'fulfilled').length;
+                            const failures = results.filter(r => r.status === 'rejected').length;
+
+                            if (failures === 0) {
+                                setAlert({
+                                    show: true,
+                                    color: 'green',
+                                    message: `Successfully deleted ${successes} digest${successes > 1 ? 's' : ''}`,
+                                });
+                            } else if (successes === 0) {
+                                setAlert({
+                                    show: true,
+                                    color: 'red',
+                                    message: `Failed to delete ${failures} digest${failures > 1 ? 's' : ''}`,
+                                });
+                            } else {
+                                setAlert({
+                                    show: true,
+                                    color: 'amber',
+                                    message: `Deleted ${successes} digest${successes > 1 ? 's' : ''}, ${failures} failed`,
+                                });
+                            }
+
+                            // Refresh the digests list
+                            setSelectedDigests([]);
+                            if (onDigestDelete) onDigestDelete();
+                        } catch (error) {
+                            setAlert({
+                                show: true,
+                                color: 'red',
+                                message: 'An unexpected error occurred while deleting digests',
+                            });
+                        }
+                    },
+                    text: `Are you sure you want to delete ${selectedIds.length} digest${selectedIds.length > 1 ? 's' : ''}? This action is irreversible.`,
+                });
+            },
+        },
+    ];
 
     return (
         <>
-            {profile?.compact_mode ? (
-                <div className='overflow-x-auto w-full'>
-                    <table className='table table-zebra'>
-                        <thead className=''>
-                            <tr>
-                                <th>Status</th>
-                                <SortableTableHeader column='title'>
-                                    Title
-                                </SortableTableHeader>
-                                <SortableTableHeader column='type'>
-                                    Type
-                                </SortableTableHeader>
-                                <SortableTableHeader column='createdAt'>
-                                    Created At
-                                </SortableTableHeader>
-                                <SortableTableHeader column='user'>
-                                    User
-                                </SortableTableHeader>
-                                <th>Warnings</th>
-                                <th>Errors</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className=''>
-                            {digests.map((digest) => (
-                                <tr key={digest.id}>
-                                    <td className='w-16'>
-                                        <span
-                                            className={`badge ${
-                                                digest.status === 'done'
-                                                    ? 'badge-success'
-                                                    : digest.status === 'error'
-                                                      ? 'badge-error'
-                                                      : 'badge-secondary'
-                                            }`}
-                                        >
-                                            {digest.status.charAt(0).toUpperCase() +
-                                                digest.status.slice(1)}
-                                        </span>
-                                    </td>
-                                    <td
-                                        className='truncate max-w-xs'
-                                        title={digest.title}
-                                    >
-                                        {digest.title}
-                                    </td>
-                                    <td
-                                        className='truncate w-24'
-                                        title={digest.display_name}
-                                    >
-                                        {truncateText(digest.display_name, 24)}
-                                    </td>
-                                    <td className='w-36'>
-                                        {formatDate(new Date(digest.created_at))}
-                                    </td>
-                                    <td
-                                        className='truncate w-32'
-                                        title={digest.user_detail.username}
-                                    >
-                                        {truncateText(digest.user_detail.username, 16)}
-                                    </td>
-                                    <td className='w-8'>
-                                        <span
-                                            className={`badge badge-warning ${digest.warnings?.length > 0 ? 'tooltip tooltip-left tooltip-warning' : ''}`}
-                                            data-tooltip={
-                                                digest.warnings?.length > 0
-                                                    ? digest.warnings
-                                                          .slice(0, 10)
-                                                          .join('\n') +
-                                                      (digest.warnings.length > 10
-                                                          ? '\n...'
-                                                          : '')
-                                                    : undefined
-                                            }
-                                        >
-                                            {digest.warnings?.length || 0}
-                                        </span>
-                                    </td>
-                                    <td className='w-8'>
-                                        <span
-                                            className={`badge badge-error ${digest.errors?.length > 0 ? 'tooltip tooltip-left tooltip-error' : ''}`}
-                                            data-tooltip={
-                                                digest.errors?.length > 0
-                                                    ? digest.errors
-                                                          .slice(0, 10)
-                                                          .join(', ') +
-                                                      (digest.errors.length > 10
-                                                          ? ', ...'
-                                                          : '')
-                                                    : undefined
-                                            }
-                                        >
-                                            {digest.errors?.length || 0}
-                                        </span>
-                                    </td>
-                                    <td className='w-8'>
-                                        <button
-                                            title='Delete Digest'
-                                            className='btn btn-ghost btn-xs text-red-600 hover:text-red-500 transition-colors p-1'
-                                            onClick={() =>
-                                                setModal(ConfirmDeletionModal, {
-                                                    title: 'Delete Digest',
-                                                    message:
-                                                        'Are you sure you want to delete this digest?',
-                                                    onConfirm: () =>
-                                                        handleDelete(digest.id),
-                                                })
-                                            }
-                                        >
-                                            <Trash className='w-4 h-4' />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            ) : (
-                digests.map((digest) => (
-                    <DigestCard
-                        key={digest.id}
-                        localDigest={digest}
-                        setAlert={setAlert}
-                        onDelete={onDigestDelete}
+            {!loading && digests.length > 0 && (
+                <div className='flex items-center justify-between gap-4'>
+                    <div className='flex-1'>
+                        <ActionBar
+                            actions={actions}
+                            selectedItems={selectedDigests}
+                            itemLabel='row'
+                        />
+                    </div>
+                    <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                        pageSize={pageSize}
+                        onPageSizeChange={(newSize) => {
+                            setPageSize(newSize);
+                            handlePageChange(1);
+                        }}
                     />
-                ))
+                    <div className='flex-1'></div>
+                </div>
             )}
-            <Pagination
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
+
+            <ListView
+                data={digests}
+                columns={columns}
+                renderRow={renderRow}
+                renderCard={renderCard}
+                loading={loading}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                onSort={onSort}
+                sortFieldMapping={sortFieldMapping}
+                emptyMessage="No digests found!"
+                tableClassName="table table-zebra"
+                enableMultiSelect={true}
+                setSelected={setSelectedDigests}
             />
+
+            {!loading && digests.length > 0 && (
+                <div className='flex items-center justify-between gap-4'>
+                    <div className='flex-1'>
+                        <ActionBar
+                            actions={actions}
+                            selectedItems={selectedDigests}
+                            itemLabel='row'
+                        />
+                    </div>
+                    <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                        pageSize={pageSize}
+                        onPageSizeChange={(newSize) => {
+                            setPageSize(newSize);
+                            handlePageChange(1);
+                        }}
+                    />
+                    <div className='flex-1'></div>
+                </div>
+            )}
         </>
     );
 }

@@ -71,7 +71,7 @@ const ResizableSplitPane = ({
             setLastPosition(splitPosition);
             setSplitPosition(100);
         }
-    }, [showRightPane, lastPosition]);
+    }, [showRightPane]);
 
     useEffect(() => {
         if (showLeftPane) {
@@ -80,7 +80,7 @@ const ResizableSplitPane = ({
             setLastPosition(splitPosition);
             setSplitPosition(0);
         }
-    }, [showLeftPane, lastPosition]);
+    }, [showLeftPane]);
 
     return (
         <div

@@ -1,11 +1,11 @@
 import { addDays, format } from 'date-fns';
-import { forwardRef, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Tab, Tabs } from '../Tabs/Tabs';
 import PaginatedGraphFetch from './PaginatedGraphFetch';
 import PathFindSearch from './PathFindSearch';
 
-const GraphSearch = forwardRef(({ processNewNode, addEdge }, graphRef) => {
+export default function GraphSearch({ addNodes, addEdges }) {
     const [searchParams, setSearchParams] = useSearchParams();
 
     const [queryValues, setQueryValues] = useState({
@@ -68,27 +68,23 @@ const GraphSearch = forwardRef(({ processNewNode, addEdge }, graphRef) => {
             >
                 <Tab title='Fetch Graph' classes='space-y-4'>
                     <PaginatedGraphFetch
-                        ref={graphRef}
                         queryValues={queryValues.paginatedgraphfetch}
                         setQueryValues={(vals) =>
                             updateQueryValues('paginatedgraphfetch', vals)
                         }
-                        processNewNode={processNewNode}
-                        addEdge={addEdge}
+                        addNodes={addNodes}
+                        addEdges={addEdges}
                     />
                 </Tab>
                 <Tab title='Find Paths' classes='space-y-4'>
                     <PathFindSearch
-                        ref={graphRef}
                         queryValues={queryValues.pathfind}
                         setQueryValues={(vals) => updateQueryValues('pathfind', vals)}
-                        processNewNode={processNewNode}
-                        addEdge={addEdge}
+                        addNodes={addNodes}
+                        addEdges={addEdges}
                     />
                 </Tab>
             </Tabs>
         </div>
     );
-});
-
-export default GraphSearch;
+}
