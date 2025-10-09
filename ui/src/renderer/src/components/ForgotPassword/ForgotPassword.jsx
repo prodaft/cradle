@@ -52,19 +52,39 @@ export default function ForgotPassword() {
     };
 
     return (
-        <div className='flex flex-row items-center justify-center h-screen overflow-y-auto'>
-            <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 xl:w-1/3'>
-                <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8 text-gray-500'>
-                    <div className='sm:mx-auto sm:w-full sm:max-w-sm'>
-                        <h3 className='mt-10 text-center text-2xl font-bold leading-9 tracking-tight '>
-                            Forgot Password
-                        </h3>
+        <div className='min-h-screen overflow-y-auto cradle-bg-primary'>
+            <div className='flex min-h-screen'>
+                {/* Left Side - Branding */}
+                <div className='hidden lg:flex lg:w-1/2 cradle-bg-secondary relative overflow-hidden'>
+                    <div className='absolute inset-0 cradle-grid-bg opacity-30'></div>
+                    <div className='absolute top-0 left-0 w-32 h-32 border-l-2 border-t-2 border-cradle2'></div>
+                    
+                    <div className='relative z-10 flex flex-col justify-center items-start px-16 py-12'>
+                        <h1 className='text-4xl font-bold cradle-text-primary cradle-mono mb-4 tracking-tight'>
+                            Password Recovery
+                        </h1>
+                        <p className='text-lg cradle-text-tertiary cradle-mono leading-relaxed max-w-md'>
+                            Reset your password to regain access to your account.
+                        </p>
                     </div>
-                    <div
-                        name='login-form'
-                        className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'
-                    >
-                        <form className='space-y-6' onSubmit={handleSubmit}>
+                </div>
+
+                {/* Right Side - Password Reset Form */}
+                <div className='flex-1 flex items-center justify-center px-4 py-12'>
+                    <div className='w-full max-w-md'>
+                        <div className='cradle-border cradle-bg-elevated'>
+                            <div className='cradle-card-header cradle-border-b'>
+                                <span className='cradle-mono text-xs tracking-widest'>
+                                    PASSWORD RECOVERY
+                                </span>
+                            </div>
+
+                            <div className='p-8'>
+                                <p className='text-sm cradle-text-secondary mb-6 cradle-mono'>
+                                    Enter your username or email to receive password reset instructions.
+                                </p>
+
+                                <form className='space-y-5' onSubmit={handleSubmit}>
                             <FormField
                                 name='username'
                                 labelText='Username'
@@ -74,6 +94,9 @@ export default function ForgotPassword() {
                                 autofocus={true}
                                 required={false}
                             />
+                            <div className='cradle-separator-labeled my-4'>
+                                <span>Or</span>
+                            </div>
                             <FormField
                                 name='email'
                                 labelText='Email'
@@ -86,20 +109,31 @@ export default function ForgotPassword() {
                             <button
                                 type='submit'
                                 data-testid='login-register-button'
-                                className='btn btn-primary btn-block'
+                                className='cradle-btn cradle-btn-primary w-full'
                             >
-                                Change Password
+                                Send Reset Link
                             </button>
                         </form>
-                        <p className='mt-10 text-center text-sm text-gray-500'>
-                            <Link
-                                to='/login'
-                                className='font-semibold leading-6 text-cradle2 hover:opacity-90 hover:shadow-gray-400'
-                                replace={true}
-                            >
-                                Go back to login
-                            </Link>
-                        </p>
+
+                                {/* Footer Link */}
+                                <div className='cradle-separator mt-8'></div>
+                                <div className='text-center text-xs cradle-mono mt-6'>
+                                    <Link
+                                        to='/login'
+                                        className='cradle-text-tertiary hover:text-cradle2  uppercase tracking-wider'
+                                        replace={true}
+                                    >
+                                        Back to Login
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className='mt-6 text-center'>
+                            <span className='text-xs cradle-text-muted cradle-mono tracking-wider'>
+                                v1.0.0
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>

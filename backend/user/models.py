@@ -65,9 +65,6 @@ class CradleUser(AbstractUser, LoggableModelMixin):
     theme = models.CharField(
         default=Theme.DARK, choices=Theme.choices, help_text="Theme to use in the UI"
     )
-    compact_mode = models.BooleanField(
-        default=False, help_text="Whether to use compact mode in the UI"
-    )
 
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["password", "email"]

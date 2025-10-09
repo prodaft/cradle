@@ -96,53 +96,92 @@ export default function Login() {
     };
 
     return (
-        <div className='flex flex-row items-center justify-center h-screen overflow-y-auto'>
-            <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 xl:w-1/3 relative'>
-                {showSettings ? (
-                    <>
-                        {getBaseUrl() && (
-                            <button
-                                onClick={() => {
-                                    setBackendUrl(getBaseUrl());
-                                    setShowSettings(false);
-                                }}
-                                className='absolute top-2 left-2 p-2 hover:opacity-80 text-gray-500'
-                                data-testid='settings-button'
-                            >
-                                <Undo />
-                            </button>
-                        )}
-                        <button
-                            onClick={toggleTheme}
-                            className='absolute top-2 right-2 p-2 hover:opacity-80 text-gray-500'
-                            data-testid='theme-button'
-                        >
-                            {isDarkMode ? <SunLight /> : <HalfMoon />}
-                        </button>
-                    </>
-                ) : (
-                    !requiresTwoFactor && (
-                        <button
-                            onClick={() => setShowSettings(!showSettings)}
-                            className='absolute top-2 right-2 p-2 hover:opacity-80 text-gray-500'
-                            data-testid='settings-button'
-                        >
-                            <Settings />
-                        </button>
-                    )
-                )}
-
-                <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8 text-gray-500'>
-                    <div className='sm:mx-auto sm:w-full sm:max-w-sm'>
-                        {windowSize.height > 800 && (
-                            <div className='flex flex-row items-center justify-center'>
-                                <Logo text={true} width='80%' />
+        <div className='min-h-screen overflow-y-auto cradle-bg-primary'>
+            {/* Two Column Layout */}
+            <div className='flex min-h-screen'>
+                {/* Left Side - Branding/Info */}
+                <div className='hidden lg:flex lg:w-1/2 cradle-bg-secondary relative overflow-hidden'>
+                    {/* Grid Pattern Background */}
+                    <div className='absolute inset-0 cradle-grid-bg opacity-30'></div>
+                    
+                    
+                    <div className='relative z-10 flex flex-col justify-center items-start px-16 py-12'>
+                        {windowSize.height > 700 && (
+                            <div className='mb-12'>
+                                <Logo text={true} width='60%' />
                             </div>
                         )}
+                        <h1 className='text-4xl font-bold cradle-text-primary cradle-mono mb-4 tracking-tight'>
+                            Knowledge System
+                        </h1>
+                        <p className='text-lg cradle-text-tertiary cradle-mono leading-relaxed max-w-md'>
+                            A minimal, technical interface for organizing and connecting your knowledge.
+                        </p>
                     </div>
-                    <div className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'>
-                        <form
-                            className='space-y-6'
+                </div>
+
+                {/* Right Side - Login Form */}
+                <div className='flex-1 flex items-center justify-center px-4 py-12'>
+                    <div className='w-full max-w-md'>
+                        {/* Mobile Logo */}
+                        {windowSize.height > 600 && (
+                            <div className='lg:hidden flex justify-center mb-8'>
+                                <Logo text={true} width='60%' />
+                            </div>
+                        )}
+
+                        {/* Login Form */}
+                        <div className='cradle-border cradle-bg-elevated'>
+                            {/* Top Control Bar */}
+                            <div className='cradle-card-header cradle-border-b'>
+                        <span className='cradle-mono text-xs tracking-widest'>
+                            {showSettings ? 'CONFIGURATION' : requiresTwoFactor ? 'AUTHENTICATION' : 'SYSTEM ACCESS'}
+                        </span>
+                        <div className='flex items-center gap-2'>
+                            {showSettings ? (
+                                <>
+                                    {getBaseUrl() && (
+                                        <button
+                                            onClick={() => {
+                                                setBackendUrl(getBaseUrl());
+                                                setShowSettings(false);
+                                            }}
+                                            className='p-1.5 hover:text-cradle2  cradle-text-tertiary'
+                                            data-testid='back-button'
+                                            title='Back'
+                                        >
+                                            <Undo size={18} />
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={toggleTheme}
+                                        className='p-1.5 hover:text-cradle2  cradle-text-tertiary'
+                                        data-testid='theme-button'
+                                        title='Toggle Theme'
+                                    >
+                                        {isDarkMode ? <SunLight size={18} /> : <HalfMoon size={18} />}
+                                    </button>
+                                </>
+                            ) : (
+                                !requiresTwoFactor && (
+                                    <button
+                                        onClick={() => setShowSettings(!showSettings)}
+                                        className='p-1.5 hover:text-cradle2  cradle-text-tertiary'
+                                        data-testid='settings-button'
+                                        title='Settings'
+                                    >
+                                        <Settings size={18} />
+                                    </button>
+                                )
+                            )}
+                        </div>
+                    </div>
+
+                            {/* Form Body */}
+                            <div className='p-8'>
+                                {/* Form Section */}
+                                <form
+                            className='space-y-5'
                             onSubmit={showSettings ? handleSaveSettings : handleSubmit}
                         >
                             {showSettings ? (
@@ -160,18 +199,21 @@ export default function Login() {
                                     <AlertBox alert={alert} />
                                     <button
                                         type='submit'
-                                        className='btn btn-primary btn-block'
+                                        className='cradle-btn cradle-btn-primary w-full'
                                     >
-                                        Save
+                                        Save Configuration
                                     </button>
                                 </>
                             ) : (
                                 <>
                                     {requiresTwoFactor ? (
-                                        <div className='mt-4 space-y-6'>
+                                        <div className='space-y-5'>
+                                            <div className='cradle-separator-labeled my-6'>
+                                                <span>Two-Factor Authentication</span>
+                                            </div>
                                             <FormField
                                                 name='twoFactorToken'
-                                                labelText='Two-Factor Authentication Code'
+                                                labelText='Authentication Code'
                                                 key='twoFactorToken'
                                                 type='text'
                                                 value={twoFactorToken}
@@ -179,19 +221,22 @@ export default function Login() {
                                                 autofocus={true}
                                                 pattern='[0-9]*'
                                                 maxLength='6'
-                                                placeholder='Enter the 6-digit code from your authenticator app'
+                                                placeholder='000000'
                                             />
+                                            <p className='text-xs cradle-text-muted cradle-mono'>
+                                                Enter the 6-digit code from your authenticator app
+                                            </p>
                                             <AlertBox alert={alert} />
                                             <button
                                                 type='submit'
                                                 data-testid='login-register-button'
-                                                className='btn btn-primary btn-block'
+                                                className='cradle-btn cradle-btn-primary w-full'
                                             >
-                                                Verify
+                                                Verify Code
                                             </button>
                                             <button
                                                 type='button'
-                                                className='btn btn-ghost btn-block mt-2'
+                                                className='cradle-btn cradle-btn-ghost w-full'
                                                 onClick={() => {
                                                     setRequiresTwoFactor(false);
                                                     setTwoFactorToken('');
@@ -228,9 +273,9 @@ export default function Login() {
                                             <button
                                                 type='submit'
                                                 data-testid='login-register-button'
-                                                className='btn btn-primary btn-block'
+                                                className='cradle-btn cradle-btn-primary w-full'
                                             >
-                                                Login
+                                                Authenticate
                                             </button>
                                         </>
                                     )}
@@ -238,30 +283,41 @@ export default function Login() {
                             )}
                         </form>
 
-                        {/* Hide links when in settings mode or when backend URL is not set */}
-                        {!requiresTwoFactor && !showSettings && getBaseUrl() && (
-                            <p className='mt-10 text-center text-sm text-gray-500'>
-                                <p className='mt-10 flex justify-between text-sm text-gray-500'>
-                                    <Link
-                                        to='/forgot-password'
-                                        className='font-semibold leading-6 text-primary hover:opacity-90 hover:shadow-gray-400'
-                                        replace={true}
-                                        onClick={() => setRequiresTwoFactor(false)}
-                                    >
-                                        Forgot Password
-                                    </Link>
-                                    <Link
-                                        to='/register'
-                                        className='font-semibold leading-6 text-primary hover:opacity-90 hover:shadow-gray-400'
-                                        replace={true}
-                                        state={{ from: from }}
-                                        onClick={() => setRequiresTwoFactor(false)}
-                                    >
-                                        Register
-                                    </Link>
-                                </p>
-                            </p>
-                        )}
+                                {/* Footer Links */}
+                                {!requiresTwoFactor && !showSettings && getBaseUrl() && (
+                                    <>
+                                        <div className='cradle-separator mt-8'></div>
+                                        <div className='flex justify-between items-center text-xs cradle-mono mt-6'>
+                                            <Link
+                                                to='/forgot-password'
+                                                className='cradle-text-tertiary hover:text-cradle2  uppercase tracking-wider'
+                                                replace={true}
+                                                onClick={() => setRequiresTwoFactor(false)}
+                                            >
+                                                Reset Password
+                                            </Link>
+                                            <span className='cradle-text-muted'>·</span>
+                                            <Link
+                                                to='/register'
+                                                className='cradle-text-tertiary hover:text-cradle2  uppercase tracking-wider'
+                                                replace={true}
+                                                state={{ from: from }}
+                                                onClick={() => setRequiresTwoFactor(false)}
+                                            >
+                                                Register
+                                            </Link>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Version/Status Indicator */}
+                        <div className='mt-6 text-center'>
+                            <span className='text-xs cradle-text-muted cradle-mono tracking-wider'>
+                                v1.0.0
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>

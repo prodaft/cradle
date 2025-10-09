@@ -2,6 +2,9 @@ import {
     InfoCircleSolid,
     WarningCircleSolid,
     WarningTriangleSolid,
+    Search,
+    Xmark,
+    DesignNib,
 } from 'iconoir-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -9,6 +12,7 @@ import { useModal } from '../../contexts/ModalContext/ModalContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { deleteNote, searchNote } from '../../services/notesService/notesService';
+import { deleteFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
 import { parseMarkdownInline } from '../../utils/customParser/customParser';
 import {
     capitalizeString,
@@ -32,6 +36,8 @@ export default function NotesList({
     hideActionBar = false,
     forceCardView = false,
     references = null,
+    onFilterChange = null,
+    contentSearch = null,
 }) {
     const [searchParams, setSearchParams] = useSearchParams();
     const [notes, setNotes] = useState([]);
@@ -51,8 +57,21 @@ export default function NotesList({
     const [selectedNotes, setSelectedNotes] = useState([]);
     const [pageSize, setPageSize] = useState(
         Number(searchParams.get('notes_pagesize')) ||
-        (!forceCardView && profile?.compact_mode ? 20 : 10)
+        (!forceCardView ? 20 : 10)
     );
+    const [columnFilters, setColumnFilters] = useState({
+        author: query?.author__username || '',
+        editor: query?.editor__username || '',
+        createdAt: { 
+            from: query?.created_date_from || '', 
+            to: query?.created_date_to || '' 
+        },
+        lastChanged: { 
+            from: query?.updated_date_from || '', 
+            to: query?.updated_date_to || '' 
+        },
+    });
+    const [searchInputValue, setSearchInputValue] = useState(contentSearch?.value || '');
 
     // Mapping of table columns to API field names
     const sortFieldMapping = {
@@ -136,6 +155,49 @@ export default function NotesList({
         setSearchParams(newParams, { replace: true });
     };
 
+    const handleColumnFilter = (column, value) => {
+        setColumnFilters(prev => ({
+            ...prev,
+            [column]: value,
+        }));
+
+        // Notify parent component if callback is provided
+        if (onFilterChange) {
+            onFilterChange(column, value);
+        }
+    };
+
+    // Define filterable columns with their handlers
+    const filterableColumns = {
+        author: (value) => handleColumnFilter('author', value),
+        editor: (value) => handleColumnFilter('editor', value),
+        createdAt: (value) => handleColumnFilter('createdAt', value),
+        lastChanged: (value) => handleColumnFilter('lastChanged', value),
+    };
+
+    // Update column filters when query changes
+    useEffect(() => {
+        setColumnFilters({
+            author: query?.author__username || '',
+            editor: query?.editor__username || '',
+            createdAt: { 
+                from: query?.created_date_from || '', 
+                to: query?.created_date_to || '' 
+            },
+            lastChanged: { 
+                from: query?.updated_date_from || '', 
+                to: query?.updated_date_to || '' 
+            },
+        });
+    }, [query?.author__username, query?.editor__username, query?.created_date_from, query?.created_date_to, query?.updated_date_from, query?.updated_date_to]);
+
+    // Update search input value when contentSearch changes
+    useEffect(() => {
+        if (contentSearch?.value !== undefined) {
+            setSearchInputValue(contentSearch.value);
+        }
+    }, [contentSearch?.value]);
+
     const fetchNotes = useCallback(() => {
         if (query == null) return;
         setLoading(true);
@@ -143,10 +205,10 @@ export default function NotesList({
         const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
 
         searchNote({
+            ...query,
             page_size: pageSize,
             page,
             order_by: orderBy,
-            ...query,
         })
             .then((response) => {
                 setNotes(response.data.results);
@@ -186,7 +248,15 @@ export default function NotesList({
                     onConfirm: async () => {
                         try {
                             // Send all delete requests in parallel
-                            const deletePromises = selectedIds.map(id => deleteNote(id));
+                            // Use the appropriate delete function based on whether the note is fleeting
+                            const deletePromises = selectedIds.map(id => {
+                                const note = notes.find(n => n.id === id);
+                                if (note && note.fleeting) {
+                                    return deleteFleetingNote(id);
+                                } else {
+                                    return deleteNote(id);
+                                }
+                            });
                             const results = await Promise.allSettled(deletePromises);
 
                             // Count successes and failures
@@ -234,10 +304,10 @@ export default function NotesList({
         { key: 'status', label: '' },
         { key: 'title', label: 'Title' },
         { key: 'description', label: 'Description' },
-        { key: 'author', label: 'Author' },
-        { key: 'editor', label: 'Editor' },
-        { key: 'createdAt', label: 'Created At' },
-        { key: 'lastChanged', label: 'Updated At' },
+        { key: 'author', label: 'Author', filterType: 'text' },
+        { key: 'editor', label: 'Editor', filterType: 'text' },
+        { key: 'createdAt', label: 'Created At', filterType: 'date' },
+        { key: 'lastChanged', label: 'Updated At', filterType: 'date' },
         { key: 'actions', label: 'Actions', className: 'w-16' },
     ];
 
@@ -284,10 +354,22 @@ export default function NotesList({
                     className={`truncate w-64`}
                     data-tooltip={note.metadata?.title}
                 >
-                    {truncateText(
-                        parseMarkdownInline(note.metadata?.title),
-                        64,
-                    )}
+                    <div className='flex items-center justify-between gap-2'>
+                        <span className='truncate'>
+                            {truncateText(
+                                parseMarkdownInline(note.metadata?.title),
+                                64,
+                            )}
+                        </span>
+                        {note.fleeting && (
+                            <span
+                                className='inline-flex items-center align-middle tooltip tooltip-left tooltip-primary flex-shrink-0'
+                                data-tooltip='Fleeting Note'
+                            >
+                                <DesignNib className='text-[#FF8C00]' width='18' height='18' />
+                            </span>
+                        )}
+                    </div>
                 </td>
                 <td className='truncate max-w-xs'>
                     {note.metadata?.description
@@ -350,30 +432,96 @@ export default function NotesList({
             <div className='flex flex-col space-y-4'>
                 <AlertBox alert={alert} setAlert={setAlert} />
 
-                {!loading && notes.length > 0 && (
-                    <div className='flex items-center justify-between gap-4'>
-                        <div className='flex-1'>
-                            {hideActionBar ? null : <ActionBar
-                                actions={actions}
-                                selectedItems={selectedNotes}
-                                itemLabel='row'
-                            />}
+                {/* Compact Control Bar - Actions and Pagination */}
+                {!loading && (
+                    <div className='cradle-card cradle-card-compact'>
+                        <div className='cradle-card-body p-3'>
+                            <div className='flex flex-wrap items-center justify-between gap-4'>
+                                {/* Left: Action Bar and Search */}
+                                <div className='flex items-center gap-4 flex-shrink-0'>
+                                    {!hideActionBar && (
+                                        <div className={`${notes.length === 0 ? 'opacity-50 pointer-events-none' : ''}`}>
+                                            <ActionBar
+                                                actions={actions}
+                                                selectedItems={selectedNotes}
+                                                itemLabel='note'
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* Content Search */}
+                                    {contentSearch && (
+                                        <div className='flex items-stretch gap-2 min-w-[280px]'>
+                                            <div className='relative flex-1'>
+                                                <input
+                                                    type='text'
+                                                    value={searchInputValue}
+                                                    onChange={(e) => {
+                                                        setSearchInputValue(e.target.value);
+                                                        if (contentSearch?.onChange) {
+                                                            contentSearch.onChange(e.target.value);
+                                                        }
+                                                    }}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' && contentSearch?.onSubmit) {
+                                                            contentSearch.onSubmit();
+                                                        }
+                                                    }}
+                                                    placeholder='Search content...'
+                                                    className='cradle-search text-sm py-2 px-3 w-full pr-8 h-full'
+                                                />
+                                                {searchInputValue && (
+                                                    <button
+                                                        onClick={() => {
+                                                            setSearchInputValue('');
+                                                            if (contentSearch?.onChange) {
+                                                                contentSearch.onChange('');
+                                                            }
+                                                            if (contentSearch?.onSubmit) {
+                                                                contentSearch.onSubmit();
+                                                            }
+                                                        }}
+                                                        className='absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:cradle-bg-secondary rounded '
+                                                        title='Clear search'
+                                                    >
+                                                        <Xmark className='w-4 h-4 cradle-text-tertiary' />
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    if (contentSearch?.onSubmit) {
+                                                        contentSearch.onSubmit();
+                                                    }
+                                                }}
+                                                className='cradle-btn cradle-btn-secondary px-3 py-2 hover:cradle-bg-secondary rounded  flex items-center justify-center'
+                                                title='Search'
+                                            >
+                                                <Search className='w-4 h-4' />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Right: Pagination */}
+                                <div className={`flex-shrink-0 ${notes.length === 0 ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <Pagination
+                                        currentPage={page}
+                                        totalPages={totalPages}
+                                        onPageChange={handlePageChange}
+                                        pageSize={pageSize}
+                                        onPageSizeChange={(newSize) => {
+                                            setPageSize(newSize);
+                                            setPage(1);
+                                            const newParams = new URLSearchParams(searchParams);
+                                            newParams.set('notes_page', '1');
+                                            newParams.set('notes_pagesize', String(newSize));
+                                            setSearchParams(newParams, { replace: true });
+                                        }}
+                                    />
+                                </div>
+                            </div>
                         </div>
-                        <Pagination
-                            currentPage={page}
-                            totalPages={totalPages}
-                            onPageChange={handlePageChange}
-                            pageSize={pageSize}
-                            onPageSizeChange={(newSize) => {
-                                setPageSize(newSize);
-                                setPage(1);
-                                const newParams = new URLSearchParams(searchParams);
-                                newParams.set('notes_page', '1');
-                                newParams.set('notes_pagesize', String(newSize));
-                                setSearchParams(newParams, { replace: true });
-                            }}
-                        />
-                        <div className='flex-1'></div>
                     </div>
                 )}
 
@@ -392,34 +540,9 @@ export default function NotesList({
                     tableClassName="table table-hover"
                     enableMultiSelect={true}
                     setSelected={setSelectedNotes}
+                    filterableColumns={filterableColumns}
+                    filterValues={columnFilters}
                 />
-
-                {!loading && notes.length > 0 && (
-                    <div className='flex items-center justify-between gap-4'>
-                        <div className='flex-1'>
-                            {hideActionBar ? null : <ActionBar
-                                actions={actions}
-                                selectedItems={selectedNotes}
-                                itemLabel='row'
-                            />}
-                        </div>
-                        <Pagination
-                            currentPage={page}
-                            totalPages={totalPages}
-                            onPageChange={handlePageChange}
-                            pageSize={pageSize}
-                            onPageSizeChange={(newSize) => {
-                                setPageSize(newSize);
-                                setPage(1);
-                                const newParams = new URLSearchParams(searchParams);
-                                newParams.set('notes_page', '1');
-                                newParams.set('notes_pagesize', String(newSize));
-                                setSearchParams(newParams, { replace: true });
-                            }}
-                        />
-                        <div className='flex-1'></div>
-                    </div>
-                )}
             </div>
             {hoveredNote && (
                 <HoverPreview

@@ -41,19 +41,35 @@ export default function Register() {
     };
 
     return (
-        <div className='flex flex-row items-center justify-center h-screen overflow-y-auto'>
-            <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 md:h-fit xl:w-1/3'>
-                <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8'>
-                    <div className='sm:mx-auto sm:w-full sm:max-w-sm'>
-                        <h1 className='mt-10 text-primary text-center text-2xl font-bold leading-9 tracking-tight text-cradle2'>
-                            Register
+        <div className='min-h-screen overflow-y-auto cradle-bg-primary'>
+            <div className='flex min-h-screen'>
+                {/* Left Side - Branding */}
+                <div className='hidden lg:flex lg:w-1/2 cradle-bg-secondary relative overflow-hidden'>
+                    <div className='absolute inset-0 cradle-grid-bg opacity-30'></div>
+                    <div className='absolute top-0 left-0 w-32 h-32 border-l-2 border-t-2 border-cradle2'></div>
+                    
+                    <div className='relative z-10 flex flex-col justify-center items-start px-16 py-12'>
+                        <h1 className='text-4xl font-bold cradle-text-primary cradle-mono mb-4 tracking-tight'>
+                            Join Cradle
                         </h1>
+                        <p className='text-lg cradle-text-tertiary cradle-mono leading-relaxed max-w-md'>
+                            Create an account to start building your knowledge repository.
+                        </p>
                     </div>
-                    <div
-                        name='register-form'
-                        className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'
-                    >
-                        <form className='space-y-6' onSubmit={handleSubmit}>
+                </div>
+
+                {/* Right Side - Registration Form */}
+                <div className='flex-1 flex items-center justify-center px-4 py-12'>
+                    <div className='w-full max-w-md'>
+                        <div className='cradle-border cradle-bg-elevated'>
+                            <div className='cradle-card-header cradle-border-b'>
+                                <span className='cradle-mono text-xs tracking-widest'>
+                                    USER REGISTRATION
+                                </span>
+                            </div>
+
+                            <div className='p-8'>
+                                <form className='space-y-5' onSubmit={handleSubmit}>
                             <FormField
                                 name='username'
                                 labelText='Username'
@@ -87,21 +103,33 @@ export default function Register() {
                             <button
                                 type='submit'
                                 data-testid='login-register-button'
-                                className='btn btn-primary btn-block'
+                                className='cradle-btn cradle-btn-primary w-full'
                             >
-                                Register
+                                Create Account
                             </button>
                         </form>
-                        <p className='mt-10 text-center text-sm text-gray-500'>
-                            <Link
-                                to='/login'
-                                className='text-primary font-semibold leading-6 text-cradle2 hover:opacity-90 hover:shadow-gray-400'
-                                state={location.state}
-                                replace={true}
-                            >
-                                Login
-                            </Link>
-                        </p>
+
+                                {/* Footer Link */}
+                                <div className='cradle-separator mt-8'></div>
+                                <div className='text-center text-xs cradle-mono mt-6'>
+                                    <span className='cradle-text-tertiary'>Already have an account? </span>
+                                    <Link
+                                        to='/login'
+                                        className='cradle-text-tertiary hover:text-cradle2  uppercase tracking-wider'
+                                        state={location.state}
+                                        replace={true}
+                                    >
+                                        Login
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className='mt-6 text-center'>
+                            <span className='text-xs cradle-text-muted cradle-mono tracking-wider'>
+                                v1.0.0
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>

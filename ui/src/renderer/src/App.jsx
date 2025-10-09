@@ -4,8 +4,10 @@ import { HashRouter, Outlet, Route, Routes } from 'react-router-dom';
 const NoteEditor = React.lazy(() => import('./components/NoteEditor/NoteEditor.jsx'));
 const Login = React.lazy(() => import('./components/Login/Login.jsx'));
 const Documents = React.lazy(() => import('./components/Documents/Documents.jsx'));
+const Files = React.lazy(() => import('./components/Files/Files.jsx'));
 const Register = React.lazy(() => import('./components/Register/Register.jsx'));
-const Home = React.lazy(() => import('./components/Home/Home.jsx'));
+const Welcome = React.lazy(() => import('./components/Welcome/Welcome.jsx'));
+const MainLayout = React.lazy(() => import('./components/MainLayout/MainLayout.jsx'));
 
 const FeatureNotImplemented = React.lazy(
     () => import('./components/FeatureNotImplemented/FeatureNotImplemented.jsx'),
@@ -21,16 +23,12 @@ const NoteViewer = React.lazy(() => import('./components/NoteViewer/NoteViewer.j
 const NoteSelector = React.lazy(
     () => import('./components/NoteSelector/NoteSelector.jsx'),
 );
-const Welcome = React.lazy(() => import('./components/Welcome/Welcome.jsx'));
 const ActivityList = React.lazy(
     () => import('./components/ActivityList/ActivityList.jsx'),
 );
 const GraphSearch = React.lazy(() => import('./components/GraphQuery/GraphSearch.jsx'));
 const ConfirmEmail = React.lazy(
     () => import('./components/ConfirmEmail/ConfirmEmail.jsx'),
-);
-const ChangePassword = React.lazy(
-    () => import('./components/ChangePassword/ChangePassword.jsx'),
 );
 const ResetPassword = React.lazy(
     () => import('./components/ResetPassword/ResetPassword.jsx'),
@@ -45,9 +43,10 @@ const FleetingNoteEditor = React.lazy(
     () => import('./components/FleetingNoteEditor/FleetingNoteEditor.jsx'),
 );
 const ReportList = React.lazy(() => import('./components/ReportList/ReportList.jsx'));
-const Connectivity = React.lazy(
-    () => import('./components/Connectivity/Connectivity.jsx'),
+const Reports = React.lazy(
+    () => import('./components/Reports/Reports.jsx'),
 );
+const DigestData = React.lazy(() => import('./components/DigestData/DigestData.jsx'));
 
 import ApiProvider from './components/ApiProvider/ApiProvider';
 import AuthProvider from './components/AuthProvider/AuthProvider.jsx';
@@ -56,6 +55,8 @@ import PrivateRoute from './components/PrivateRoute/PrivateRoute.jsx';
 import { ModalProvider } from './contexts/ModalContext/ModalContext.jsx';
 import { ProfileProvider } from './contexts/ProfileContext/ProfileContext.jsx';
 import { ThemeProvider } from './contexts/ThemeContext/ThemeContext.jsx';
+import { LayoutProvider } from './contexts/LayoutContext/LayoutContext.jsx';
+import { PaneTabsProvider } from './contexts/PaneTabsContext/PaneTabsContext.jsx';
 
 function App() {
     return (
@@ -64,15 +65,17 @@ function App() {
                 <ApiProvider>
                     <ProfileProvider>
                         <ThemeProvider>
-                            <ModalProvider>
-                                <Suspense fallback={<CradleLoading />}>
-                                    <Routes>
+                            <LayoutProvider>
+                                <PaneTabsProvider>
+                                    <ModalProvider>
+                                        <Suspense fallback={<CradleLoading />}>
+                                            <Routes>
                                         <Route
                                             element={
                                                 <PrivateRoute fallback={'/login'} />
                                             }
                                         >
-                                            <Route path='/' element={<Home />}>
+                                            <Route path='/' element={<MainLayout />}>
                                                 <Route index element={<Welcome />} />
                                                 <Route
                                                     path='/not-implemented'
@@ -81,6 +84,14 @@ function App() {
                                                 <Route
                                                     path='/documents'
                                                     element={<Documents />}
+                                                />
+                                                <Route
+                                                    path='/files'
+                                                    element={<Files />}
+                                                />
+                                                <Route
+                                                    path='/digest-data'
+                                                    element={<DigestData />}
                                                 />
                                                 <Route
                                                     path='/editor/:id'
@@ -108,7 +119,7 @@ function App() {
                                                 />
                                                 <Route
                                                     path='/connectivity'
-                                                    element={<Connectivity />}
+                                                    element={<Reports />}
                                                 />
                                                 <Route
                                                     path='/reports/:report_id'
@@ -117,10 +128,6 @@ function App() {
                                                 <Route
                                                     path='/publish'
                                                     element={<Publish />}
-                                                />
-                                                <Route
-                                                    path='/change-password'
-                                                    element={<ChangePassword />}
                                                 />
                                                 <Route
                                                     path='/account/'
@@ -183,9 +190,11 @@ function App() {
                                             }
                                         />
                                         <Route path='*' element={<NotFound />} />
-                                    </Routes>
-                                </Suspense>
-                            </ModalProvider>
+                                            </Routes>
+                                        </Suspense>
+                                    </ModalProvider>
+                                </PaneTabsProvider>
+                            </LayoutProvider>
                         </ThemeProvider>
                     </ProfileProvider>
                 </ApiProvider>

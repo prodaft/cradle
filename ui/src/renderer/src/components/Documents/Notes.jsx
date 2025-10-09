@@ -1,7 +1,7 @@
-import { Search } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import Datepicker from 'react-tailwindcss-datepicker';
+import { PlusCircle } from 'iconoir-react';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import DeleteNote from '../NoteActions/DeleteNote';
 import Publishable from '../NoteActions/Publishable';
 import NotesList from '../NotesList/NotesList';
@@ -9,7 +9,7 @@ import NotesList from '../NotesList/NotesList';
 /**
  * Notes component
  * Allows the user to search through all notes they have access to
- * Provides search filters for content and author
+ * Provides content search and table header filters for author/editor/dates
  * Fetches notes based on the provided search filters
  *
  * @function Notes
@@ -18,150 +18,150 @@ import NotesList from '../NotesList/NotesList';
  */
 export default function Notes({ setAlert }) {
     const [searchParams, setSearchParams] = useSearchParams();
+    const { navigate, navigateLink } = useCradleNavigate();
 
     const [searchFilters, setSearchFilters] = useState({
-        page_size: 50,
         content: searchParams.get('content') || '',
         author__username: searchParams.get('author__username') || '',
+        editor__username: searchParams.get('editor__username') || '',
+        created_date_from: searchParams.get('created_date_from') || '',
+        created_date_to: searchParams.get('created_date_to') || '',
+        updated_date_from: searchParams.get('updated_date_from') || '',
+        updated_date_to: searchParams.get('updated_date_to') || '',
     });
 
     const [submittedFilters, setSubmittedFilters] = useState(null);
 
-    const [dateRange, setDateRange] = useState({
-        startDate: searchParams.get('timestamp_gte') || null,
-        endDate: searchParams.get('timestamp_lte') || null,
-    });
-
-    const updateSearchParams = (filters, dateRangeValue) => {
+    const updateSearchParams = (filters) => {
         const newParams = new URLSearchParams(searchParams);
         newParams.set('content', filters.content);
         newParams.set('author__username', filters.author__username);
-
-        // Add date range parameters if they exist
-        if (dateRangeValue.startDate) {
-            newParams.set(
-                'timestamp_gte',
-                new Date(dateRangeValue.startDate).toISOString(),
-            );
+        newParams.set('editor__username', filters.editor__username);
+        
+        // Set or delete created_date_from/to filters
+        if (filters.created_date_from) {
+            newParams.set('created_date_from', filters.created_date_from);
         } else {
-            newParams.delete('timestamp_gte');
+            newParams.delete('created_date_from');
         }
-
-        if (dateRangeValue.endDate) {
-            // Set end date to end of day
-            const endDate = new Date(dateRangeValue.endDate);
-            endDate.setHours(23, 59, 59, 999);
-            newParams.set('timestamp_lte', endDate.toISOString());
+        if (filters.created_date_to) {
+            newParams.set('created_date_to', filters.created_date_to);
         } else {
-            newParams.delete('timestamp_lte');
+            newParams.delete('created_date_to');
+        }
+        
+        // Set or delete updated_date_from/to filters
+        if (filters.updated_date_from) {
+            newParams.set('updated_date_from', filters.updated_date_from);
+        } else {
+            newParams.delete('updated_date_from');
+        }
+        if (filters.updated_date_to) {
+            newParams.set('updated_date_to', filters.updated_date_to);
+        } else {
+            newParams.delete('updated_date_to');
         }
 
         setSearchParams(newParams, { replace: true });
-
-        setSubmittedFilters({
-            ...filters,
-            timestamp_gte: dateRangeValue.startDate
-                ? new Date(dateRangeValue.startDate).toISOString()
-                : '',
-            timestamp_lte: dateRangeValue.endDate
-                ? (() => {
-                    const endDate = new Date(dateRangeValue.endDate);
-                    endDate.setHours(23, 59, 59, 999);
-                    return endDate.toISOString();
-                })()
-                : '',
-        });
+        setSubmittedFilters(filters);
     };
 
-    // Auto-update search when filters or date range change
+    // Auto-update search when filters change
     useEffect(() => {
-        updateSearchParams(searchFilters, dateRange);
+        updateSearchParams(searchFilters);
     }, []);
 
-    const handleSearchSubmit = (e) => {
-        e.preventDefault();
-        updateSearchParams(searchFilters, dateRange);
+    const handleColumnFilterChange = (column, value) => {
+        let updatedFilters = { ...searchFilters };
+
+        // Handle date range columns differently
+        if (column === 'createdAt') {
+            updatedFilters.created_date_from = value.from || '';
+            updatedFilters.created_date_to = value.to || '';
+        } else if (column === 'lastChanged') {
+            updatedFilters.updated_date_from = value.from || '';
+            updatedFilters.updated_date_to = value.to || '';
+        } else {
+            // Map column names to filter field names for text filters
+            const filterFieldMap = {
+                author: 'author__username',
+                editor: 'editor__username',
+            };
+
+            const fieldName = filterFieldMap[column];
+            if (fieldName) {
+                updatedFilters[fieldName] = value;
+            }
+        }
+
+        setSearchFilters(updatedFilters);
+        
+        // Auto-submit the filter after a short delay
+        setTimeout(() => {
+            updateSearchParams(updatedFilters);
+        }, 500);
     };
 
-    const handleSearchChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setSearchFilters((prev) => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value,
-        }));
-    };
-
-    const handleDateRangeChange = (value) => {
-        setDateRange(value);
-    };
 
     useEffect(() => {
         const initialFilters = {
             content: searchParams.get('content') || '',
             author__username: searchParams.get('author__username') || '',
-        };
-
-        const initialDateRange = {
-            startDate: searchParams.get('timestamp_gte')
-                ? new Date(searchParams.get('timestamp_gte'))
-                    .toISOString()
-                    .split('T')[0]
-                : null,
-            endDate: searchParams.get('timestamp_lte')
-                ? new Date(searchParams.get('timestamp_lte'))
-                    .toISOString()
-                    .split('T')[0]
-                : null,
+            editor__username: searchParams.get('editor__username') || '',
+            created_date_from: searchParams.get('created_date_from') || '',
+            created_date_to: searchParams.get('created_date_to') || '',
+            updated_date_from: searchParams.get('updated_date_from') || '',
+            updated_date_to: searchParams.get('updated_date_to') || '',
         };
 
         setSearchFilters(initialFilters);
-        setDateRange(initialDateRange);
     }, []);
 
+
     return (
-        <div className='w-full h-full flex flex-col space-y-3'>
-            <div className='flex justify-between items-center w-full border-b border-gray-700 px-4 pb-3'>
-                <h1 className='text-4xl font-bold w-full break-all'>All Notes</h1>
-            </div>
-            <form onSubmit={handleSearchSubmit} className='flex space-x-4 px-3 pb-2'>
-                <Datepicker
-                    value={dateRange}
-                    onChange={handleDateRangeChange}
-                    inputClassName='input input-block py-1 px-2 text-sm flex-grow !max-w-full w-full'
-                    containerClassName='w-full text-gray-700'
-                    toggleClassName='hidden'
-                />
-
-                <input
-                    type='text'
-                    name='content'
-                    value={searchFilters.content}
-                    onChange={handleSearchChange}
-                    placeholder='Search by content'
-                    className='input !max-w-full w-full'
-                />
-                <input
-                    type='text'
-                    name='author__username'
-                    value={searchFilters.author__username}
-                    onChange={handleSearchChange}
-                    placeholder='Search by author'
-                    className='input !max-w-full w-full'
-                />
-                <button type='submit' className='btn w-1/2'>
-                    <Search /> Search
+        <div className='w-full h-full flex flex-col space-y-4'>
+            {/* Header Section - Minimal Design */}
+            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+                <div>
+                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
+                        All Notes
+                    </h1>
+                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
+                        Search & Manage Your Notes
+                    </p>
+                </div>
+                <button
+                    className='cradle-btn cradle-btn-primary flex items-center gap-2'
+                    onClick={navigateLink('/editor/new')}
+                >
+                    <PlusCircle width={20} height={20} />
+                    <span>New Note</span>
                 </button>
-            </form>
+            </div>
 
-            {submittedFilters && (
-                <NotesList
-                    query={submittedFilters}
-                    noteActions={[
-                        { Component: Publishable, props: { setAlert } },
-                        { Component: DeleteNote, props: { setAlert } },
-                    ]}
-                />
-            )}
+            {/* Results Section */}
+            <div className='px-4'>
+                {submittedFilters && (
+                    <NotesList
+                        query={submittedFilters}
+                        noteActions={[
+                            { Component: Publishable, props: { setAlert } },
+                            { Component: DeleteNote, props: { setAlert } },
+                        ]}
+                        onFilterChange={handleColumnFilterChange}
+                        contentSearch={{
+                            value: searchFilters.content,
+                            onChange: (value) => {
+                                const updatedFilters = { ...searchFilters, content: value };
+                                setSearchFilters(updatedFilters);
+                            },
+                            onSubmit: () => {
+                                updateSearchParams(searchFilters);
+                            }
+                        }}
+                    />
+                )}
+            </div>
         </div>
     );
 }

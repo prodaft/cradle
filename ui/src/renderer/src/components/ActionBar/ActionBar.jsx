@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 /**
- * ActionBar component - Displays a dropdown for selecting actions and applying them to selected items
+ * ActionBar component - Displays action select dropdown for selected items
  * @function ActionBar
  * @param {Object} props - Component props
  * @param {Array} props.actions - Array of action objects with { value: string, label: string, handler: async function }
@@ -14,58 +14,49 @@ export default function ActionBar({
     selectedItems = [],
     itemLabel = 'row',
 }) {
-    const [selectedAction, setSelectedAction] = useState('');
-    const [isApplying, setIsApplying] = useState(false);
+    const [loadingAction, setLoadingAction] = useState(null);
 
-    const handleApplyAction = async () => {
-        if (!selectedAction || selectedItems.length === 0) return;
+    const handleActionChange = async (e) => {
+        const actionValue = e.target.value;
+        if (!actionValue || selectedItems.length === 0) return;
 
-        const action = actions.find((a) => a.value === selectedAction);
-        if (!action || !action.handler) return;
+        const action = actions.find(a => a.value === actionValue);
+        if (!action) return;
 
-        setIsApplying(true);
+        setLoadingAction(action.value);
         try {
             await action.handler(selectedItems);
         } catch (error) {
             console.error('Action failed:', error);
         } finally {
-            setIsApplying(false);
+            setLoadingAction(null);
+            e.target.value = ''; // Reset select
         }
     };
 
+    const isDisabled = selectedItems.length === 0 || loadingAction !== null;
+
     return (
-        <div className='flex items-center gap-3'>
+        <div className='flex items-center gap-2'>
             <select
-                className='select select-sm select-bordered w-48'
-                value={selectedAction}
-                onChange={(e) => setSelectedAction(e.target.value)}
-                disabled={selectedItems.length === 0}
+                className='cradle-select text-sm py-2 px-3'
+                value=''
+                onChange={handleActionChange}
+                disabled={isDisabled}
+                title={selectedItems.length > 0 ? `Select action for ${selectedItems.length} ${itemLabel}${selectedItems.length !== 1 ? 's' : ''}` : `Select ${itemLabel}s to perform actions`}
             >
-                <option value=''>Select action...</option>
+                <option value='' disabled>
+                    {loadingAction ? 'Processing...' : 'Actions'}
+                </option>
                 {actions.map((action) => (
                     <option key={action.value} value={action.value}>
                         {action.label}
                     </option>
                 ))}
             </select>
-            <span className='text-sm text-gray-600 dark:text-gray-400'>
-                {selectedItems.length} {itemLabel}
-                {selectedItems.length !== 1 ? 's' : ''} selected
-            </span>
-            <button
-                className='btn btn-sm btn-primary'
-                onClick={handleApplyAction}
-                disabled={!selectedAction || selectedItems.length === 0 || isApplying}
-            >
-                {isApplying ? (
-                    <>
-                        <span className='loading loading-spinner loading-sm'></span>
-                        Applying...
-                    </>
-                ) : (
-                    'Apply'
-                )}
-            </button>
+            {loadingAction && (
+                <span className='loading loading-spinner loading-sm'></span>
+            )}
         </div>
     );
 }

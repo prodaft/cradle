@@ -179,14 +179,14 @@ const FileItem = forwardRef(function ({ id, file, setAlert, ...props }, ref) {
                         onClick={() =>
                             downloadFile(file.bucket_name, file.minio_file_name)
                         }
-                        className='text-white hover:bg-white/20 p-2 rounded-full transition-colors'
+                        className='text-white hover:bg-white/20 p-2 rounded-full '
                         title='Download file'
                     >
                         <Download />
                     </button>
                     {/*
                     <button
-                        className='text-white p-2 rounded-full transition-colors hover:bg-white/20'
+                        className='text-white p-2 rounded-full  hover:bg-white/20'
                         title='Process file'
                         onClick={processFile}
                     >

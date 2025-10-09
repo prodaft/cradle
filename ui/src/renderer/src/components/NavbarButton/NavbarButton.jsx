@@ -38,7 +38,11 @@ export default function NavbarButton({
                 </div>
             ) : (
                 <button
-                    className={`navbar-item text-primary hover:bg-gray-4 group ${text ? `tooltip tooltip-${tooltipDirection} tooltip-primary` : ''}`}
+                    className={`p-2 group flex items-center justify-center cradle-border hover:border-[#FF8C00] ${text ? `tooltip tooltip-${tooltipDirection} tooltip-primary` : ''}`}
+                    style={{ 
+                        color: 'var(--cradle-sidebar-icon)',
+                        backgroundColor: 'transparent'
+                    }}
                     onClick={handleClick}
                     data-tooltip={text}
                     data-testid={testid || ''}

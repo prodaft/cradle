@@ -1,6 +1,6 @@
 import { FloppyDisk, Trash } from 'iconoir-react/regular';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useOutletContext, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import {
     addFleetingNote,
@@ -10,8 +10,11 @@ import {
     updateFleetingNote,
 } from '../../services/fleetingNotesService/fleetingNotesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
+import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import NavbarButton from '../NavbarButton/NavbarButton';
+import Preview from '../Preview/Preview';
+import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
 
 import { keymap } from '@codemirror/view';
 import { useHotkeys } from 'react-hotkeys-hook';
@@ -20,7 +23,7 @@ import { useProfile } from '../../contexts/ProfileContext/ProfileContext.jsx';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import NavbarSwitch from '../NavbarSwitch/NavbarSwitch';
-import TextEditor from '../TextEditor/TextEditor';
+import Editor from '../Editor/Editor';
 
 export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
     const { profile } = useProfile();
@@ -38,13 +41,22 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
     const textEditorRef = useRef(null);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const { navigate, navigateLink } = useCradleNavigate();
-    const { refreshFleetingNotes } = useOutletContext();
     const { id } = useParams();
     const idRef = useRef(id);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(true);
     const [editorExtensions, setEditorExtensions] = useState([]);
     const prevIdRef = useRef(null);
     const { setModal } = useModal();
+    const [viewCollapsed, setViewCollapsed] = useState(false);
+    const [currentLine, setCurrentLine] = useState(1);
+    const [parsedContent, setParsedContent] = useState('');
+
+    // Parse markdown content for preview
+    useEffect(() => {
+        parseContent(markdownContent, fileData).then((result) => {
+            setParsedContent(result.html);
+        });
+    }, [markdownContent, fileData]);
 
     // Ensure the ref to the markdown content is correct
     useEffect(() => {
@@ -121,7 +133,6 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
                     addFleetingNote(storedContent, storedFileData)
                         .then((res) => {
                             if (res.status === 200) {
-                                refreshFleetingNotes();
                                 setHasUnsavedChanges(false);
                                 // Set previous id as the one from the response to avoid re-fetching the note
                                 prevIdRef.current = res.data.id;
@@ -144,7 +155,6 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
                                     });
                                 }
                             }
-                            refreshFleetingNotes();
                         })
                         .catch(displayError(setAlert, navigate))
                         .finally(() => setSaving(false));
@@ -167,7 +177,6 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
                             message: 'Note deleted successfully.',
                             color: 'green',
                         });
-                        refreshFleetingNotes();
                         // Navigate to new note page on deletion
                         navigate('/editor/new');
                     }
@@ -189,7 +198,6 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
                             message: 'Note finalized successfully.',
                             color: 'green',
                         });
-                        refreshFleetingNotes();
                         // Navigate to new note page on deletion
                         navigate(`/notes/${response.data.id}`, { replace: true });
                     }
@@ -285,16 +293,34 @@ export default function FleetingNoteEditor({ autoSaveDelay = 1000 }) {
     return (
         <>
             <div className='w-full h-full p-1.5 relative' ref={textEditorRef}>
-                <TextEditor
-                    noteid={id}
-                    markdownContent={markdownContent}
-                    setMarkdownContent={setMarkdownContent}
-                    saveNote={() => handleSaveNote('Changes saved successfully.')}
-                    fileData={fileData}
-                    setFileData={setFileData}
-                    editorExtensions={editorExtensions}
+                <ResizableSplitPane
+                    initialSplitPosition={50}
+                    showRightPane={!viewCollapsed}
+                    leftContent={
+                        <Editor
+                            noteid={id}
+                            markdownContent={markdownContent}
+                            setMarkdownContent={setMarkdownContent}
+                            fileData={fileData}
+                            setFileData={setFileData}
+                            viewCollapsed={viewCollapsed}
+                            setViewCollapsed={setViewCollapsed}
+                            currentLine={currentLine}
+                            setCurrentLine={setCurrentLine}
+                            setAlert={setAlert}
+                            saveNote={() => handleSaveNote('Changes saved successfully.')}
+                            additionalExtensions={editorExtensions}
+                        />
+                    }
+                    rightContent={
+                        <Preview
+                            htmlContent={parsedContent}
+                            currentLine={currentLine}
+                            setCurrentLine={setCurrentLine}
+                        />
+                    }
                 />
-                <div className='absolute bottom-4 right-8 px-2 py-1 rounded-md backdrop-blur-lg backdrop-filter bg-cradle3 bg-opacity-50 shadow-lg text-zinc-300'>
+                <div className='absolute bottom-4 right-8 px-2 py-1 rounded-md backdrop-blur-lg backdrop-filter bg-cradle3 bg-opacity-50 shadow-lg text-zinc-300 z-50'>
                     {isValidContent()
                         ? hasUnsavedChanges
                             ? saving

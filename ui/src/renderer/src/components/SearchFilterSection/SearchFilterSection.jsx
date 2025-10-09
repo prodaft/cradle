@@ -51,7 +51,7 @@ export default function SearchFilterSection({
                 )}
             </div>
             <div
-                className={`flex-shrink-0 overflow-x-hidden overflow-y-scroll no-scrollbar backdrop-blur-lg rounded-lg my-2 transition-all duration-300 ease-in-out ${showFilters ? 'h-48' : 'h-0 opacity-0'}`}
+                className={`flex-shrink-0 overflow-x-hidden overflow-y-scroll no-scrollbar backdrop-blur-lg rounded-lg my-2   ${showFilters ? 'h-48' : 'h-0 opacity-0'}`}
             >
                 <div className='flex flex-col md:flex-row justify-start items-start space-y-4 md:space-y-0 md:space-x-4 p-4'>
                     <div className='w-auto flex flex-col'>

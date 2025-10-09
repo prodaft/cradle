@@ -29,11 +29,12 @@ export default function NoteListCard({ title = '', notes = [] }) {
                     return (
                         <div
                             key={index}
-                            className='opacity-90 hover:opacity-70 active:opacity-50 hover:cursor-pointer 
-                                card p-2 bg-gray-4 hover:bg-gray-6 active:bg-gray-8 !max-w-none'
+                            className='cradle-card cradle-card-hover cradle-card-brackets mb-3 cursor-pointer'
                             onClick={navigateLink(`/notes/${note.id}`)}
                         >
-                            <Preview htmlContent={result.html} />
+                            <div className='cradle-card-body'>
+                                <Preview htmlContent={result.html} />
+                            </div>
                         </div>
                     );
                 });
@@ -46,9 +47,11 @@ export default function NoteListCard({ title = '', notes = [] }) {
     return (
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
-            <div className='card bg-gray-2 overflow-auto !max-w-none'>
-                <div className='card-body'>
-                    <h2 className='card-header'>{title}</h2>
+            <div className='cradle-card overflow-auto cradle-scrollbar'>
+                <div className='cradle-card-header'>
+                    <span>{title}</span>
+                </div>
+                <div className='cradle-card-body space-y-3'>
                     {noteCards}
                 </div>
             </div>

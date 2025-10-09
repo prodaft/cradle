@@ -1,8 +1,24 @@
 // eslint-disable-next-line no-undef
 const EXTENDED_COLORS = {
-    cradle1: '#02111a',
-    cradle2: '#f68d2e',
-    cradle3: '#253746',
+    cradle1: '#151515',
+    cradle2: '#FF8C00',
+    cradle3: '#151515',
+};
+
+// Minimal Design System Colors - separate from rippleui
+const CRADLE_GRAY_COLORS = {
+    'cradle-gray': {
+        50: '#FAFAFA',
+        100: '#F5F5F5',
+        200: '#EFEFEF',
+        300: '#D4D4D4',
+        400: '#A0A0A0',
+        500: '#808080',
+        600: '#6A6A6A',
+        700: '#5A5A5A',
+        800: '#3A3A3A',
+        900: '#1A1A1A',
+    },
 };
 
 module.exports = {
@@ -12,10 +28,19 @@ module.exports = {
         './src/index.html',
         './node_modules/react-tailwindcss-datepicker/dist/index.esm.js',
     ],
+    safelist: [
+        // Preserve all cradle-* classes from being purged
+        {
+            pattern: /^cradle-.*/,
+        },
+    ],
     plugins: [],
     theme: {
         extend: {
-            colors: EXTENDED_COLORS,
+            colors: {
+                ...EXTENDED_COLORS,
+                ...CRADLE_GRAY_COLORS,
+            },
             typography: (theme) => ({
                 DEFAULT: {
                     css: {

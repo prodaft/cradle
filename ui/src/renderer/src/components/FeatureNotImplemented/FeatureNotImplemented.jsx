@@ -17,7 +17,7 @@ export default function FeatureNotImplemented() {
                 We're sorry, but this feature is not yet implemented.
             </p>
             <Link to='/' className='underline text-cradle2 text-center w-full'>
-                Go back to Home
+                Go back to Welcome
             </Link>
         </div>
     );

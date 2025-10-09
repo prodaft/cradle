@@ -38,7 +38,7 @@ export function addCopyButtonsToCodeBlocks(container, onCopy) {
 
         // Create the button
         const button = document.createElement('button');
-        button.className = 'btn btn-sm btn-ghost-secondary opacity-60 hover:opacity-100 transition-opacity';
+        button.className = 'btn btn-sm btn-ghost-secondary opacity-60 hover:opacity-100';
         button.setAttribute('aria-label', 'Copy code to clipboard');
         button.innerHTML = `
             <svg class="copy-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

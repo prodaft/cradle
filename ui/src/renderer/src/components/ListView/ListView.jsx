@@ -1,6 +1,6 @@
 import { Sort, SortDown, SortUp } from 'iconoir-react';
 import PropTypes from 'prop-types';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 
 /**
@@ -21,6 +21,8 @@ import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
  * @param {string} props.tableClassName - Additional className for table
  * @param {boolean} props.enableMultiSelect - Enable row selection with checkboxes
  * @param {Function} props.setSelected - Callback with array of selected item IDs
+ * @param {Object} props.filterableColumns - Object mapping column keys to filter handlers {columnKey: onFilterChange}
+ * @param {Object} props.filterValues - Object with current filter values {columnKey: value}
  * @returns {JSX.Element}
  */
 export default function ListView({
@@ -38,9 +40,13 @@ export default function ListView({
     tableClassName = 'table table-hover',
     enableMultiSelect = false,
     setSelected = () => {},
+    filterableColumns = {},
+    filterValues = {},
 }) {
     const { profile } = useProfile();
     const [selectedIds, setSelectedIds] = useState([]);
+    const [activeFilterColumn, setActiveFilterColumn] = useState(null);
+    const filterInputRefs = useRef({});
 
     const handleSelectAll = (checked) => {
         if (checked) {
@@ -94,24 +100,127 @@ export default function ListView({
         );
     };
 
-    const SortableTableHeader = ({ column, children, className = '' }) => {
+    // Handle clicks outside filter inputs to close them
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (activeFilterColumn && filterInputRefs.current[activeFilterColumn]) {
+                if (!filterInputRefs.current[activeFilterColumn].contains(event.target)) {
+                    setActiveFilterColumn(null);
+                }
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [activeFilterColumn]);
+
+    const handleFilterChange = (column, value) => {
+        if (filterableColumns[column]) {
+            filterableColumns[column](value);
+        }
+    };
+
+    const handleFilterKeyDown = (e, column) => {
+        if (e.key === 'Enter') {
+            setActiveFilterColumn(null);
+        } else if (e.key === 'Escape') {
+            setActiveFilterColumn(null);
+        }
+    };
+
+    const SortableTableHeader = ({ column, children, className = '', filterType = 'text' }) => {
         const isSortable = sortFieldMapping[column] && onSort;
+        const isFilterable = filterableColumns[column];
+        const isFilterActive = activeFilterColumn === column;
+
+        const handleHeaderClick = (e) => {
+            // If filterable and clicked on the text, activate filter
+            if (isFilterable && e.target.closest('.header-text')) {
+                e.stopPropagation();
+                setActiveFilterColumn(column);
+                setTimeout(() => {
+                    filterInputRefs.current[column]?.focus();
+                }, 0);
+            } else if (isSortable && !isFilterActive) {
+                // Sort functionality
+                handleSort(column);
+            }
+        };
+
+        const handleDateRangeChange = (field, value) => {
+            const currentValue = filterValues[column] || {};
+            const newValue = { ...currentValue, [field]: value };
+            handleFilterChange(column, newValue);
+        };
+
+        const hasDateRangeFilter = filterType === 'date' && filterValues[column] && 
+            (filterValues[column].from || filterValues[column].to);
 
         return (
             <th
-                className={isSortable ? `cursor-pointer select-none ${className}` : className}
-                onClick={isSortable ? () => handleSort(column) : undefined}
+                className={`${isSortable || isFilterable ? 'select-none' : ''} ${className}`}
+                onClick={handleHeaderClick}
             >
-                {isSortable ? (
-                    <div className='flex items-center justify-between !border-b-0 !border-t-0'>
-                        <span className='!border-b-0 !border-t-0'>{children}</span>
-                        {getSortIcon(
-                            column,
-                            'w-4 h-4 text-zinc-600 dark:text-zinc-400 !border-b-0 !border-t-0',
+                {isFilterActive ? (
+                    <div ref={(el) => (filterInputRefs.current[column] = el)} className='p-1'>
+                        {filterType === 'date' ? (
+                            <div className='flex flex-col gap-1'>
+                                <input
+                                    type='date'
+                                    value={filterValues[column]?.from || ''}
+                                    onChange={(e) => handleDateRangeChange('from', e.target.value)}
+                                    onKeyDown={(e) => handleFilterKeyDown(e, column)}
+                                    className='cradle-search text-xs py-1 px-2 w-full'
+                                    placeholder='From'
+                                    autoFocus
+                                />
+                                <input
+                                    type='date'
+                                    value={filterValues[column]?.to || ''}
+                                    onChange={(e) => handleDateRangeChange('to', e.target.value)}
+                                    onKeyDown={(e) => handleFilterKeyDown(e, column)}
+                                    className='cradle-search text-xs py-1 px-2 w-full'
+                                    placeholder='To'
+                                />
+                            </div>
+                        ) : (
+                            <input
+                                type='text'
+                                value={filterValues[column] || ''}
+                                onChange={(e) => handleFilterChange(column, e.target.value)}
+                                onKeyDown={(e) => handleFilterKeyDown(e, column)}
+                                className='cradle-search text-xs py-1 px-2 w-full'
+                                placeholder={`Filter ${children}...`}
+                                autoFocus
+                            />
                         )}
                     </div>
                 ) : (
-                    children
+                    <div className='flex items-center justify-between'>
+                        <span 
+                            className={`cradle-label ${isFilterable ? 'cursor-text hover:underline decoration-dotted header-text' : ''}`}
+                            title={isFilterable ? `Click to filter by ${children}` : ''}
+                        >
+                            {children}
+                            {(filterValues[column] && 
+                              (typeof filterValues[column] === 'string' ? filterValues[column] : hasDateRangeFilter)) && (
+                                <span className='ml-1 text-xs text-blue-600 dark:text-blue-400'>●</span>
+                            )}
+                        </span>
+                        {isSortable && (
+                            <button
+                                className='cursor-pointer hover:cradle-bg-tertiary p-1 rounded '
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSort(column);
+                                }}
+                            >
+                                {getSortIcon(column, 'w-4 h-4 cradle-text-tertiary')}
+                            </button>
+                        )}
+                    </div>
                 )}
             </th>
         );
@@ -127,38 +236,36 @@ export default function ListView({
         );
     }
 
-    if (data.length === 0) {
-        return (
-            <div className='container mx-auto flex flex-col items-center'>
-                <p className='mt-6 !text-sm !font-normal text-zinc-500'>
-                    {emptyMessage}
-                </p>
-            </div>
-        );
-    }
-
-    const showTableView = !forceCardView && profile?.compact_mode;
+    const showTableView = !forceCardView;
 
     return (
         <>
             {showTableView ? (
-                <div className='overflow-x-auto w-full'>
-                        <table className={tableClassName}>
+                <div className='overflow-x-auto w-full cradle-scrollbar'>
+                        <table className='cradle-table'>
                             <thead>
                                 <tr>
                                     {enableMultiSelect && (
                                         <th className='w-12'>
-                                            <input
-                                                type='checkbox'
-                                                className='checkbox checkbox-sm'
-                                                checked={
-                                                    data.length > 0 &&
-                                                    selectedIds.length === data.length
-                                                }
-                                                onChange={(e) =>
-                                                    handleSelectAll(e.target.checked)
-                                                }
-                                            />
+                                            <div className='flex items-center gap-2'>
+                                                <input
+                                                    type='checkbox'
+                                                    className='checkbox checkbox-sm'
+                                                    checked={
+                                                        data.length > 0 &&
+                                                        selectedIds.length === data.length
+                                                    }
+                                                    onChange={(e) =>
+                                                        handleSelectAll(e.target.checked)
+                                                    }
+                                                    disabled={data.length === 0}
+                                                />
+                                                {selectedIds.length > 0 && (
+                                                    <span className='text-xs font-semibold text-blue-600 dark:text-blue-400'>
+                                                        {selectedIds.length}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </th>
                                     )}
                                     {columns.map((column) => (
@@ -166,6 +273,7 @@ export default function ListView({
                                             key={column.key}
                                             column={column.key}
                                             className={column.className || ''}
+                                            filterType={column.filterType || 'text'}
                                         >
                                             {column.label}
                                         </SortableTableHeader>
@@ -173,19 +281,37 @@ export default function ListView({
                                 </tr>
                             </thead>
                             <tbody>
-                                {data.map((item, index) =>
-                                    renderRow ? renderRow(item, index, {
-                                        enableMultiSelect,
-                                        isSelected: selectedIds.includes(item.id),
-                                        onSelect: () => handleSelectRow(item.id),
-                                    }) : null
+                                {data.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={columns.length + (enableMultiSelect ? 1 : 0)} className='text-center py-8'>
+                                            <span className='text-sm text-zinc-500 cradle-text-tertiary'>
+                                                {emptyMessage}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    data.map((item, index) =>
+                                        renderRow ? renderRow(item, index, {
+                                            enableMultiSelect,
+                                            isSelected: selectedIds.includes(item.id),
+                                            onSelect: () => handleSelectRow(item.id),
+                                        }) : null
+                                    )
                                 )}
                             </tbody>
                         </table>
                 </div>
             ) : (
-                data.map((item, index) =>
-                    renderCard ? renderCard(item, index) : null
+                data.length === 0 ? (
+                    <div className='container mx-auto flex flex-col items-center'>
+                        <p className='mt-6 !text-sm !font-normal text-zinc-500'>
+                            {emptyMessage}
+                        </p>
+                    </div>
+                ) : (
+                    data.map((item, index) =>
+                        renderCard ? renderCard(item, index) : null
+                    )
                 )
             )}
         </>
@@ -213,4 +339,6 @@ ListView.propTypes = {
     tableClassName: PropTypes.string,
     enableMultiSelect: PropTypes.bool,
     setSelected: PropTypes.func,
+    filterableColumns: PropTypes.object,
+    filterValues: PropTypes.object,
 };

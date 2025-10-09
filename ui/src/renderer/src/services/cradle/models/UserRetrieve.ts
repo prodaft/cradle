@@ -65,12 +65,6 @@ export interface UserRetrieve {
      */
     vimMode?: boolean;
     /**
-     * Whether to use compact mode in the UI
-     * @type {boolean}
-     * @memberof UserRetrieve
-     */
-    compactMode?: boolean;
-    /**
      * 
      * @type {boolean}
      * @memberof UserRetrieve
@@ -147,7 +141,6 @@ export function UserRetrieveFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'twoFactorEnabled': json['two_factor_enabled'] == null ? undefined : json['two_factor_enabled'],
         'isActive': json['is_active'] == null ? undefined : json['is_active'],
         'vimMode': json['vim_mode'] == null ? undefined : json['vim_mode'],
-        'compactMode': json['compact_mode'] == null ? undefined : json['compact_mode'],
         'emailConfirmed': json['email_confirmed'] == null ? undefined : json['email_confirmed'],
         'catalystApiKey': json['catalyst_api_key'] == null ? undefined : json['catalyst_api_key'],
         'vtApiKey': json['vt_api_key'] == null ? undefined : json['vt_api_key'],
@@ -172,7 +165,6 @@ export function UserRetrieveToJSONTyped(value?: Omit<UserRetrieve, 'id'|'catalys
         'two_factor_enabled': value['twoFactorEnabled'],
         'is_active': value['isActive'],
         'vim_mode': value['vimMode'],
-        'compact_mode': value['compactMode'],
         'email_confirmed': value['emailConfirmed'],
         'theme': value['theme'],
     };

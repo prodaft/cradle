@@ -7,6 +7,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useLocation, useParams } from 'react-router-dom';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
+import { usePaneTabs } from '../../contexts/PaneTabsContext/PaneTabsContext';
+import { useLayout } from '../../contexts/LayoutContext/LayoutContext';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import {
@@ -15,10 +17,13 @@ import {
     updateNote,
 } from '../../services/notesService/notesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
+import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
 import NavbarButton from '../NavbarButton/NavbarButton';
-import TextEditor from '../TextEditor/TextEditor';
+import Preview from '../Preview/Preview';
+import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
+import Editor from '../Editor/Editor';
 
 export default function NoteEditor() {
     const [initialMarkdown, setInitialMarkdown] = useState('');
@@ -36,6 +41,18 @@ export default function NoteEditor() {
     const { id } = useParams();
     const location = useLocation();
     const { from, state } = location.state || { from: { pathname: '/' } };
+    const { updateCurrentTabTitle } = usePaneTabs();
+    const { activePaneId } = useLayout();
+    const [viewCollapsed, setViewCollapsed] = useState(false);
+    const [currentLine, setCurrentLine] = useState(1);
+    const [parsedContent, setParsedContent] = useState('');
+
+    // Parse markdown content for preview
+    useEffect(() => {
+        parseContent(markdownContent, fileData).then((result) => {
+            setParsedContent(result.html);
+        });
+    }, [markdownContent, fileData]);
 
     // Ensure the ref to the markdown content is correct
     useEffect(() => {
@@ -59,10 +76,14 @@ export default function NoteEditor() {
                 setMarkdownContent(response.data.content);
                 setInitialMarkdown(response.data.content);
                 setFileData(response.data.files);
+                // Update tab title with note title
+                if (response.data.title && activePaneId) {
+                    updateCurrentTabTitle(activePaneId, `${response.data.title} (Edit)`);
+                }
                 setIsLoading(false);
             })
             .catch(displayError(setAlert, navigate));
-    }, [id]);
+    }, [id, updateCurrentTabTitle, activePaneId, navigate, setAlert]);
 
     const isValidContent = () =>
         markdownContentRef.current && markdownContentRef.current.trim().length > 0;
@@ -186,13 +207,32 @@ export default function NoteEditor() {
                     </div>
                 </div>
             ) : (
-                <TextEditor
-                    markdownContent={markdownContent}
-                    setMarkdownContent={setMarkdownContent}
-                    fileData={fileData}
-                    saveNote={() => handleSaveNote('Changes saved successfully.')}
-                    setFileData={setFileData}
-                    editorExtensions={editorExtensions} // Pass the extensions to the TextEditor
+                <ResizableSplitPane
+                    initialSplitPosition={50}
+                    showRightPane={!viewCollapsed}
+                    leftContent={
+                        <Editor
+                            noteid={id}
+                            markdownContent={markdownContent}
+                            setMarkdownContent={setMarkdownContent}
+                            fileData={fileData}
+                            setFileData={setFileData}
+                            viewCollapsed={viewCollapsed}
+                            setViewCollapsed={setViewCollapsed}
+                            currentLine={currentLine}
+                            setCurrentLine={setCurrentLine}
+                            setAlert={setAlert}
+                            saveNote={() => handleSaveNote('Changes saved successfully.')}
+                            additionalExtensions={editorExtensions}
+                        />
+                    }
+                    rightContent={
+                        <Preview
+                            htmlContent={parsedContent}
+                            currentLine={currentLine}
+                            setCurrentLine={setCurrentLine}
+                        />
+                    }
                 />
             )}
         </div>

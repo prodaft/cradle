@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useContext, useEffect } from 'react';
+import { OutletContext } from '../../components/TabsContainer/TabsContainer';
 
 /**
  * useNavbarContents hook - sets the contents of the navbar
@@ -12,9 +12,13 @@ import { useOutletContext } from 'react-router-dom';
  *                       render multiple components simultaneously)
  */
 const useNavbarContents = (contents, dependencies) => {
-    const { setNavbarContents } = useOutletContext();
+    // Use our custom outlet context from TabsContainer
+    const context = useContext(OutletContext) || {};
+    const { setNavbarContents } = context;
 
     return useEffect(() => {
+        if (!setNavbarContents) return;
+        
         if (contents instanceof Function) {
             setNavbarContents(contents());
         } else {
@@ -22,9 +26,12 @@ const useNavbarContents = (contents, dependencies) => {
         }
 
         return () => {
-            setNavbarContents([]);
+            if (setNavbarContents) {
+                setNavbarContents([]);
+            }
         };
-    }, dependencies);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [setNavbarContents, ...dependencies]);
 };
 
 export default useNavbarContents;

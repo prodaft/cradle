@@ -52,13 +52,13 @@ function DigestList({
     };
 
     const columns = [
+        { key: 'type', label: 'Type' },
         { key: 'status', label: 'Status' },
         { key: 'title', label: 'Title' },
-        { key: 'type', label: 'Type' },
-        { key: 'createdAt', label: 'Created At' },
         { key: 'user', label: 'User' },
         { key: 'warnings', label: 'Warnings' },
         { key: 'errors', label: 'Errors' },
+        { key: 'createdAt', label: 'Created At' },
         { key: 'actions', label: 'Actions' },
     ];
 
@@ -77,6 +77,9 @@ function DigestList({
                         />
                     </td>
                 )}
+            <td className='truncate w-24' title={digest.display_name}>
+                {truncateText(digest.display_name, 24)}
+            </td>
             <td className='w-16'>
                 <span
                     className={`badge ${
@@ -93,10 +96,6 @@ function DigestList({
             <td className='truncate max-w-xs' title={digest.title}>
                 {digest.title}
             </td>
-            <td className='truncate w-24' title={digest.display_name}>
-                {truncateText(digest.display_name, 24)}
-            </td>
-            <td className='w-36'>{formatDate(new Date(digest.created_at))}</td>
             <td className='truncate w-32' title={digest.user_detail.username}>
                 {truncateText(digest.user_detail.username, 16)}
             </td>
@@ -126,10 +125,11 @@ function DigestList({
                     {digest.errors?.length || 0}
                 </span>
             </td>
+            <td className='w-36'>{formatDate(new Date(digest.created_at))}</td>
             <td className='w-8'>
                 <button
                     title='Delete Digest'
-                    className='btn btn-ghost btn-xs text-red-600 hover:text-red-500 transition-colors p-1'
+                    className='btn btn-ghost btn-xs text-red-600 hover:text-red-500  p-1'
                     onClick={() =>
                         setModal(ConfirmDeletionModal, {
                             title: 'Delete Digest',
@@ -248,29 +248,6 @@ function DigestList({
                 enableMultiSelect={true}
                 setSelected={setSelectedDigests}
             />
-
-            {!loading && digests.length > 0 && (
-                <div className='flex items-center justify-between gap-4'>
-                    <div className='flex-1'>
-                        <ActionBar
-                            actions={actions}
-                            selectedItems={selectedDigests}
-                            itemLabel='row'
-                        />
-                    </div>
-                    <Pagination
-                        currentPage={page}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                        pageSize={pageSize}
-                        onPageSizeChange={(newSize) => {
-                            setPageSize(newSize);
-                            handlePageChange(1);
-                        }}
-                    />
-                    <div className='flex-1'></div>
-                </div>
-            )}
         </>
     );
 }

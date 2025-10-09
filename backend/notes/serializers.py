@@ -289,6 +289,7 @@ class NoteListSerializer:
         data = {
             "id": str(note.id),
             "publishable": note.publishable,
+            "fleeting": note.fleeting,
             "status": note.status,
             "status_message": note.status_message,
             "status_timestamp": note.status_timestamp.isoformat()
@@ -398,6 +399,7 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "publishable",
+            "fleeting",
             "status",
             "status_message",
             "status_timestamp",

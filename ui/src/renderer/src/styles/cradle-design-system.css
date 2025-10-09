@@ -1,0 +1,1035 @@
+/* ============================================
+   CRADLE MINIMAL DESIGN SYSTEM
+   Inspired by terminal/technical aesthetics
+   Clean, Professional, Data-Focused
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap');
+
+/* ============================================
+   DESIGN TOKENS - MINIMAL TECH PALETTE
+   CSS Custom Properties in base layer
+   ============================================ */
+@layer base {
+:root {
+  /* Backgrounds - White and Light Greys */
+  --cradle-bg-primary: #FFFFFF;
+  --cradle-bg-secondary: #F5F5F5;
+  --cradle-bg-tertiary: #EEEEEE;
+  --cradle-bg-elevated: #FFFFFF;
+  
+  /* Sidebar & Topbar - Light Mode */
+  --cradle-bg-sidebar: #FFFFFF;
+  --cradle-bg-topbar: #FFFFFF;
+  --cradle-sidebar-text: #666666;
+  --cradle-sidebar-icon: #999999;
+  --cradle-sidebar-hover-bg: #F5F5F5;
+  
+  /* Borders & Dividers */
+  --cradle-border-primary: #E0E0E0;
+  --cradle-border-accent: #CCCCCC;
+  --cradle-border-interactive: #999999;
+  
+  /* Text - Black and Greys */
+  --cradle-text-primary: #000000;
+  --cradle-text-secondary: #333333;
+  --cradle-text-tertiary: #666666;
+  --cradle-text-muted: #999999;
+  
+  /* Accent Colors - Orange Primary */
+  --cradle-accent-primary: #FF8C00;
+  --cradle-accent-secondary: #FFA500;
+  --cradle-accent-info: #FF8C00;
+  --cradle-accent-success: #FF8C00;
+  --cradle-accent-warning: #FFA500;
+  --cradle-accent-error: #FF6B00;
+  
+  /* Glows & Shadows - Orange Glows */
+  --cradle-glow-primary: rgba(255, 140, 0, 0.2);
+  --cradle-glow-accent: rgba(255, 165, 0, 0.25);
+  --cradle-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --cradle-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.08);
+  --cradle-shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.12);
+  
+  /* Spacing System */
+  --cradle-space-unit: 0.25rem;
+  --cradle-radius-sm: 0px;
+  --cradle-radius-md: 0px;
+  --cradle-radius-lg: 0px;
+}
+
+/* ============================================
+   DARK MODE - TECHNICAL DARK THEME
+   ============================================ */
+[data-theme="dark"] {
+  /* Backgrounds - Dark Greys (not pure black) */
+  --cradle-bg-primary: #1A1A1A;
+  --cradle-bg-secondary: #0A0A0A;
+  --cradle-bg-tertiary: #1A1A1A;
+  --cradle-bg-elevated: #1F1F1F;
+  
+  /* Sidebar & Topbar - Dark Mode */
+  --cradle-bg-sidebar: #151515;
+  --cradle-bg-topbar: #151515;
+  --cradle-sidebar-text: #999999;
+  --cradle-sidebar-icon: #999999;
+  --cradle-sidebar-hover-bg: #1F1F1F;
+  
+  /* Borders & Dividers */
+  --cradle-border-primary: #2A2A2A;
+  --cradle-border-accent: #404040;
+  --cradle-border-interactive: #555555;
+  
+  /* Text - White and Light Greys */
+  --cradle-text-primary: #FFFFFF;
+  --cradle-text-secondary: #CCCCCC;
+  --cradle-text-tertiary: #999999;
+  --cradle-text-muted: #666666;
+  
+  /* Accent Colors - Orange Primary (same in dark mode) */
+  --cradle-accent-primary: #FF8C00;
+  --cradle-accent-secondary: #FFA500;
+  --cradle-accent-info: #FF8C00;
+  --cradle-accent-success: #FF8C00;
+  --cradle-accent-warning: #FFA500;
+  --cradle-accent-error: #FF6B00;
+  
+  /* Glows & Shadows */
+  --cradle-glow-primary: rgba(255, 140, 0, 0.3);
+  --cradle-glow-accent: rgba(255, 165, 0, 0.35);
+  --cradle-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --cradle-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.6);
+  --cradle-shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.7);
+}
+} /* End @layer base */
+
+/* ============================================
+   TYPOGRAPHY SYSTEM
+   ============================================ */
+@layer components {
+.cradle-mono {
+  font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Source Code Pro', monospace;
+  letter-spacing: 0.025em;
+}
+
+.cradle-heading {
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  color: var(--cradle-text-primary);
+}
+
+.cradle-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  color: var(--cradle-text-tertiary);
+}
+
+.cradle-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  background: var(--cradle-bg-tertiary);
+  padding: 0.125rem 0.375rem;
+  border: 1px solid var(--cradle-border-primary);
+}
+
+/* ============================================
+   CARD SYSTEM - TERMINAL AESTHETIC
+   ============================================ */
+.cradle-card {
+  position: relative;
+  background: var(--cradle-bg-elevated);
+  border: 1px solid var(--cradle-border-primary);
+  overflow: hidden;
+}
+
+.cradle-card-hover:hover {
+  border-color: var(--cradle-border-interactive);
+  box-shadow: var(--cradle-shadow-md);
+}
+
+/* Corner Brackets - Signature Element */
+.cradle-card-brackets::before,
+.cradle-card-brackets::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--cradle-accent-primary);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.cradle-card-brackets:hover::before,
+.cradle-card-brackets:hover::after {
+  opacity: 1;
+}
+
+.cradle-card-brackets::before {
+  top: -1px;
+  left: -1px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.cradle-card-brackets::after {
+  bottom: -1px;
+  right: -1px;
+  border-left: none;
+  border-top: none;
+}
+
+/* Card Header */
+.cradle-card-header {
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid var(--cradle-border-primary);
+  background: var(--cradle-bg-elevated);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 600;
+  color: var(--cradle-text-secondary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cradle-card-body {
+  padding: 1.25rem;
+}
+
+.cradle-card-compact .cradle-card-body {
+  padding: 0.875rem;
+}
+
+/* ============================================
+   GRID SYSTEM - DATA LAYOUT
+   ============================================ */
+.cradle-grid {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1.25rem;
+}
+
+.cradle-grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.cradle-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.cradle-grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 1024px) {
+  .cradle-grid-3, .cradle-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .cradle-grid-2, .cradle-grid-3, .cradle-grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Node Grid - Technical Layout */
+.cradle-node-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1px;
+  background: var(--cradle-border-primary);
+  border: 1px solid var(--cradle-border-primary);
+}
+
+.cradle-node-item {
+  background: var(--cradle-bg-elevated);
+  padding: 1rem;
+  position: relative;
+}
+
+.cradle-node-item:hover {
+  background: var(--cradle-bg-secondary);
+  z-index: 1;
+}
+
+.cradle-node-item::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: var(--cradle-accent-primary);
+  border-radius: 50%;
+  opacity: 0.4;
+}
+
+/* ============================================
+   STATUS SYSTEM - TECHNICAL INDICATORS
+   ============================================ */
+.cradle-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: 1px solid;
+  font-weight: 600;
+}
+
+/* Status Light - Animated Indicator */
+.cradle-status-light {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.cradle-status-light::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+
+/* Status Variants */
+.cradle-status-success,
+.cradle-status-light.cradle-status-success {
+  color: var(--cradle-accent-success);
+  border-color: var(--cradle-accent-success);
+  background: rgba(96, 96, 96, 0.08);
+}
+
+.cradle-status-light.cradle-status-success::before {
+  background: var(--cradle-accent-success);
+}
+
+.cradle-status-warning,
+.cradle-status-light.cradle-status-warning {
+  color: var(--cradle-accent-warning);
+  border-color: var(--cradle-accent-warning);
+  background: rgba(112, 112, 112, 0.08);
+}
+
+.cradle-status-light.cradle-status-warning::before {
+  background: var(--cradle-accent-warning);
+}
+
+.cradle-status-error,
+.cradle-status-light.cradle-status-error {
+  color: var(--cradle-accent-error);
+  border-color: var(--cradle-accent-error);
+  background: rgba(128, 128, 128, 0.08);
+}
+
+.cradle-status-light.cradle-status-error::before {
+  background: var(--cradle-accent-error);
+}
+
+.cradle-status-info,
+.cradle-status-light.cradle-status-info {
+  color: var(--cradle-accent-info);
+  border-color: var(--cradle-accent-info);
+  background: rgba(74, 74, 74, 0.08);
+}
+
+.cradle-status-light.cradle-status-info::before {
+  background: var(--cradle-accent-info);
+}
+
+/* ============================================
+   BUTTON SYSTEM - TECHNICAL INTERFACE
+   ============================================ */
+.cradle-btn {
+  padding: 0.625rem 1.25rem;
+  border: 1px solid var(--cradle-border-accent);
+  background: transparent;
+  color: var(--cradle-accent-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.cradle-btn:hover {
+  border-color: var(--cradle-accent-primary);
+  background: transparent !important;
+}
+
+.cradle-btn:active {
+  opacity: 0.8;
+}
+
+/* Button Variants */
+.cradle-btn-primary {
+  border-color: var(--cradle-border-accent);
+  background: transparent;
+  color: var(--cradle-accent-primary);
+}
+
+.cradle-btn-primary:hover {
+  border-color: var(--cradle-accent-primary);
+  background: transparent !important;
+}
+
+.cradle-btn-secondary {
+  border-color: var(--cradle-border-accent);
+  background: transparent;
+  color: var(--cradle-accent-primary);
+}
+
+.cradle-btn-secondary:hover {
+  border-color: var(--cradle-accent-primary);
+  background: transparent !important;
+}
+
+.cradle-btn-ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--cradle-accent-primary);
+}
+
+.cradle-btn-ghost:hover {
+  border-color: var(--cradle-accent-primary);
+  background: transparent !important;
+}
+
+/* Button text color logic: grey/white when icons are orange, orange when no icons */
+.cradle-btn:has(svg) {
+  color: var(--cradle-text-secondary);
+}
+
+.cradle-btn:has(svg):hover {
+  color: var(--cradle-text-primary);
+}
+
+.cradle-btn:not(:has(svg)) {
+  color: var(--cradle-accent-primary);
+}
+
+.cradle-btn:not(:has(svg)):hover {
+  color: var(--cradle-accent-primary);
+}
+
+.cradle-btn-error {
+  border-color: var(--cradle-border-accent);
+  background: transparent;
+  color: var(--cradle-accent-error);
+}
+
+.cradle-btn-error:hover {
+  border-color: var(--cradle-accent-error);
+  background: transparent !important;
+}
+
+/* Button Sizes */
+.cradle-btn-sm {
+  padding: 0.375rem 0.875rem;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+
+/* ============================================
+   MODAL/DIALOG SYSTEM - TECHNICAL INTERFACE
+   ============================================ */
+.modal {
+  display: none;
+}
+
+.modal-state:checked ~ .modal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+
+.modal-content {
+  position: relative;
+  z-index: 10000;
+  background: var(--cradle-bg-elevated);
+  border: 1px solid var(--cradle-border-accent);
+  padding: 2rem;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 0 30px var(--cradle-glow-primary);
+}
+
+.modal-content h2,
+.modal-content h3 {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--cradle-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.modal-content label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  color: var(--cradle-text-tertiary);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.modal-content p {
+  color: var(--cradle-text-secondary);
+  line-height: 1.6;
+}
+
+.modal-close {
+  position: absolute;
+  right: 0.5rem;
+  top: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--cradle-border-accent);
+  background: transparent;
+  color: var(--cradle-accent-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.modal-close:hover {
+  border-color: var(--cradle-accent-primary);
+  background: transparent !important;
+}
+
+/* Modal State Checkbox - Hide it */
+.modal-state {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ============================================
+   DATA DISPLAY - METRICS & CHARTS
+   ============================================ */
+.cradle-metric {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--cradle-accent-primary);
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+.cradle-metric-label {
+  font-size: 0.7rem;
+  color: var(--cradle-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-top: 0.5rem;
+  font-weight: 600;
+}
+
+/* Progress Bar */
+.cradle-progress {
+  width: 100%;
+  height: 6px;
+  background: var(--cradle-bg-tertiary);
+  border: 1px solid var(--cradle-border-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+.cradle-progress-fill {
+  height: 100%;
+  background: var(--cradle-accent-primary);
+  position: relative;
+}
+
+.cradle-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent
+  );
+}
+
+
+/* ============================================
+   TABLE SYSTEM - DATA TABLES
+   ============================================ */
+.cradle-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--cradle-border-primary);
+  background: var(--cradle-bg-elevated);
+  font-size: 0.875rem;
+}
+
+.cradle-table thead {
+  background: var(--cradle-bg-elevated);
+  border-bottom: 1px solid var(--cradle-border-primary);
+}
+
+.cradle-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.75rem;
+  color: var(--cradle-text-tertiary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid var(--cradle-border-primary);
+}
+
+.cradle-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--cradle-border-primary);
+  color: var(--cradle-text-secondary);
+}
+
+.cradle-table tbody tr {
+  border-bottom: 1px solid var(--cradle-border-primary);
+}
+
+.cradle-table tbody tr:hover {
+  /* Add subtle orange border highlight on hover */
+  border-left: 3px solid var(--cradle-accent-primary);
+  background: rgba(255, 140, 0, 0.05);
+}
+
+/* Table hover text color kept as original */
+
+/* ============================================
+   COSMOGRAPH SEARCH - OVERRIDE MDC STYLES
+   ============================================ */
+.search .mdc-text-field {
+  background: var(--cradle-bg-elevated) !important;
+  border: 1px solid var(--cradle-border-primary) !important;
+  border-radius: 0 !important;
+  height: 2rem !important;
+  min-height: 2rem !important;
+}
+
+.search .mdc-text-field__input {
+  color: var(--cradle-text-secondary) !important;
+  font-size: 0.875rem !important;
+  padding: 0.5rem 0.75rem !important;
+  background: transparent !important;
+}
+
+.search .mdc-floating-label {
+  color: var(--cradle-text-tertiary) !important;
+  font-size: 0.875rem !important;
+}
+
+.search .mdc-text-field__icon {
+  color: var(--cradle-text-tertiary) !important;
+}
+
+.search .mdc-text-field:hover {
+  border-color: var(--cradle-border-interactive) !important;
+}
+
+.search .mdc-text-field:focus-within {
+  border-color: var(--cradle-accent-primary) !important;
+  box-shadow: 0 0 0 1px var(--cradle-accent-primary) !important;
+}
+
+.search .mdc-line-ripple {
+  display: none !important;
+}
+
+.search .mdc-menu {
+  background: var(--cradle-bg-elevated) !important;
+  border: 1px solid var(--cradle-border-primary) !important;
+  border-radius: 0 !important;
+  box-shadow: var(--cradle-shadow-md) !important;
+}
+
+.search .mdc-deprecated-list-item {
+  color: var(--cradle-text-secondary) !important;
+  font-size: 0.875rem !important;
+  padding: 0.5rem 0.75rem !important;
+}
+
+.search .mdc-deprecated-list-item:hover {
+  background: rgba(255, 140, 0, 0.05) !important;
+  border-left: 2px solid var(--cradle-accent-primary) !important;
+}
+
+.search .cosmograph-search-accessor {
+  color: var(--cradle-text-tertiary) !important;
+  font-size: 0.75rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* ============================================
+   ACTIVITY LOG - TERMINAL STYLE
+   ============================================ */
+.cradle-activity {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 1rem;
+  background: var(--cradle-bg-elevated);
+  border: 1px solid var(--cradle-border-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+}
+
+.cradle-activity-item {
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-left: 2px solid var(--cradle-border-primary);
+}
+
+.cradle-activity-item:hover {
+  border-left-color: var(--cradle-accent-primary);
+  background: var(--cradle-bg-tertiary);
+  padding-left: 1rem;
+}
+
+.cradle-activity-time {
+  color: var(--cradle-text-muted);
+  font-size: 0.75rem;
+  margin-right: 1rem;
+}
+
+/* ============================================
+   SEARCH INPUT - TECHNICAL STYLE
+   ============================================ */
+.cradle-search {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--cradle-border-primary);
+  background: var(--cradle-bg-elevated);
+  color: var(--cradle-text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.cradle-search:focus {
+  border-color: var(--cradle-border-interactive);
+  box-shadow: 0 0 0 3px var(--cradle-glow-primary);
+}
+
+.cradle-search::placeholder {
+  color: var(--cradle-text-muted);
+  opacity: 0.6;
+}
+
+/* Helper classes to accommodate absolutely positioned icons inside input wrappers */
+.cradle-search-with-icon-left {
+  padding-left: 2.25rem; /* matches Tailwind pl-9 */
+}
+
+.cradle-search-with-icon-right {
+  padding-right: 2.5rem; /* matches Tailwind pr-10 */
+}
+
+/* ============================================
+   INPUT FIELDS - TECHNICAL STYLE
+   ============================================ */
+.cradle-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--cradle-border-accent);
+  background: var(--cradle-bg-elevated);
+  color: var(--cradle-text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.cradle-input:hover {
+  border-color: var(--cradle-border-interactive);
+}
+
+.cradle-input:focus {
+  border-color: var(--cradle-accent-primary);
+  box-shadow: none;
+}
+
+.cradle-input::placeholder {
+  color: var(--cradle-text-muted);
+  opacity: 0.6;
+}
+
+.cradle-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--cradle-bg-tertiary);
+}
+
+/* ============================================
+   TEXTAREA - TECHNICAL STYLE
+   ============================================ */
+.cradle-textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--cradle-border-accent);
+  background: var(--cradle-bg-elevated);
+  color: var(--cradle-text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  outline: none;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.cradle-textarea:hover {
+  border-color: var(--cradle-border-interactive);
+}
+
+.cradle-textarea:focus {
+  border-color: var(--cradle-accent-primary);
+  box-shadow: none;
+}
+
+.cradle-textarea::placeholder {
+  color: var(--cradle-text-muted);
+  opacity: 0.6;
+}
+
+.cradle-textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--cradle-bg-tertiary);
+}
+
+/* ============================================
+   SELECT INPUT - TECHNICAL STYLE
+   ============================================ */
+.cradle-select {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--cradle-border-accent);
+  background: var(--cradle-bg-elevated);
+  color: var(--cradle-text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.cradle-select:hover {
+  border-color: var(--cradle-border-interactive);
+}
+
+.cradle-select:focus {
+  border-color: var(--cradle-accent-primary);
+  box-shadow: none;
+}
+
+.cradle-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cradle-select option {
+  background: var(--cradle-bg-elevated);
+  color: var(--cradle-text-primary);
+}
+
+/* ============================================
+   SEPARATOR & DIVIDERS
+   ============================================ */
+.cradle-separator {
+  width: 100%;
+  height: 1px;
+  background: var(--cradle-border-primary);
+  margin: 1.5rem 0;
+  position: relative;
+}
+
+.cradle-separator-labeled {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.cradle-separator-labeled::before,
+.cradle-separator-labeled::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--cradle-border-primary);
+}
+
+.cradle-separator-labeled span {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--cradle-text-muted);
+}
+
+/* ============================================
+   SCROLLBAR CUSTOMIZATION
+   ============================================ */
+.cradle-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.cradle-scrollbar::-webkit-scrollbar-track {
+  background: var(--cradle-bg-elevated);
+  border-left: 1px solid var(--cradle-border-primary);
+}
+
+.cradle-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--cradle-bg-tertiary);
+  border-radius: 0;
+}
+
+.cradle-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--cradle-accent-primary);
+}
+
+/* Thin scrollbar variant for tabs and compact areas */
+.cradle-scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.cradle-scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cradle-scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--cradle-bg-tertiary);
+  border-radius: 0;
+}
+
+.cradle-scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--cradle-accent-primary);
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+.cradle-text-primary { color: var(--cradle-text-primary); }
+.cradle-text-secondary { color: var(--cradle-text-secondary); }
+.cradle-text-tertiary { color: var(--cradle-text-tertiary); }
+.cradle-text-muted { color: var(--cradle-text-muted); }
+
+.cradle-bg-primary { background: var(--cradle-bg-primary); }
+.cradle-bg-secondary { background: var(--cradle-bg-secondary); }
+.cradle-bg-tertiary { background: var(--cradle-bg-tertiary); }
+.cradle-bg-elevated { background: var(--cradle-bg-elevated); }
+
+.cradle-border { border: 1px solid var(--cradle-border-primary); }
+.cradle-border-t { border-top: 1px solid var(--cradle-border-primary); }
+.cradle-border-b { border-bottom: 1px solid var(--cradle-border-primary); }
+.cradle-border-l { border-left: 1px solid var(--cradle-border-primary); }
+.cradle-border-r { border-right: 1px solid var(--cradle-border-primary); }
+
+.cradle-shadow-sm { box-shadow: var(--cradle-shadow-sm); }
+.cradle-shadow-md { box-shadow: var(--cradle-shadow-md); }
+.cradle-shadow-lg { box-shadow: var(--cradle-shadow-lg); }
+
+.cradle-glow { box-shadow: 0 0 15px var(--cradle-glow-primary); }
+
+/* ============================================
+   RESPONSIVE UTILITIES
+   ============================================ */
+@media (max-width: 768px) {
+  .cradle-grid {
+    padding: 0.875rem;
+  }
+  
+  .cradle-card-body {
+    padding: 1rem;
+  }
+  
+  .cradle-metric {
+    font-size: 2rem;
+  }
+}
+
+/* ============================================
+   HOVER EFFECTS - INTERACTIVE ELEMENTS
+   ============================================ */
+.cradle-interactive {
+  cursor: pointer;
+}
+
+/* Interactive hover and active effects can be added to .cradle-interactive when needed */
+
+/* Circuit Connector Lines */
+.cradle-connector {
+  position: relative;
+}
+
+.cradle-connector::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: 50%;
+  width: 20px;
+  height: 1px;
+  background: var(--cradle-border-primary);
+}
+
+.cradle-connector:hover::after {
+  background: var(--cradle-accent-primary);
+}
+
+/* Grid Background Pattern */
+.cradle-grid-bg {
+  position: relative;
+  background: var(--cradle-bg-primary);
+  background-image:
+    linear-gradient(var(--cradle-border-primary) 1px, transparent 1px),
+    linear-gradient(90deg, var(--cradle-border-primary) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Outline Boxes */
+.cradle-outline {
+  border: 1px solid var(--cradle-border-primary);
+  background: transparent;
+  padding: 1rem;
+}
+
+.cradle-outline:hover {
+  border-color: var(--cradle-accent-primary);
+  background: rgba(106, 106, 106, 0.03);
+}
+
+} /* End @layer components */
+

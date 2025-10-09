@@ -141,7 +141,7 @@ class NoteList(APIView):
 
     def get(self, request: Request) -> Response:
         user = cast(CradleUser, request.user)
-        queryset = Note.objects.get_accessible_notes(user).non_fleeting()
+        queryset = Note.objects.get_accessible_notes(user)
 
         try:
             page_size = int(request.query_params.get("page_size", 10))
@@ -386,7 +386,6 @@ class NoteDetail(APIView):
         try:
             note: Note = (
                 Note.objects.get_accessible_notes(request.user)
-                .non_fleeting()
                 .get(id=note_id)
             )
         except Note.DoesNotExist:
@@ -550,7 +549,7 @@ class NoteFiles(APIView):
 
     def get(self, request: Request) -> Response:
         user = cast(CradleUser, request.user)
-        queryset = Note.objects.get_accessible_notes(user).non_fleeting()
+        queryset = Note.objects.get_accessible_notes(user)
 
         try:
             page_size = int(request.query_params.get("page_size", 10))
@@ -719,7 +718,6 @@ class NoteGraph(APIView):
         try:
             note: Note = (
                 Note.objects.get_accessible_notes(request.user)
-                .non_fleeting()
                 .get(id=note_id)
             )
         except Note.DoesNotExist:

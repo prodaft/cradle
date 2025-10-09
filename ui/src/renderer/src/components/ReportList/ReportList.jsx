@@ -105,7 +105,7 @@ export function ReportCard({ report, setAlert }) {
     if (!visible) return null;
 
     return (
-        <div className='bg-white dark:bg-gray-800 dark:bg-opacity-75 p-4 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 m-2'>
+        <div className='bg-white dark:bg-gray-800 dark:bg-opacity-75 p-4 rounded-lg shadow-lg hover:shadow-xl  m-2'>
             <div className='flex justify-between items-center mb-2'>
                 <div className='flex items-center space-x-2'>
                     <h2 className='text-lg font-bold text-gray-900 dark:text-white'>
@@ -116,7 +116,7 @@ export function ReportCard({ report, setAlert }) {
                             {localReport.status === 'done' && (
                                 <button
                                     title='View Report'
-                                    className='text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors'
+                                    className='text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 '
                                     onClick={() => handleView(localReport.id)}
                                 >
                                     <Eye className='w-5 h-5' />
@@ -125,7 +125,7 @@ export function ReportCard({ report, setAlert }) {
                             {localReport.status !== 'working' && (
                                 <button
                                     title='Edit Report'
-                                    className='text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 transition-colors'
+                                    className='text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 '
                                     onClick={() => handleEdit(localReport.id)}
                                 >
                                     <Edit className='w-5 h-5' />
@@ -134,7 +134,7 @@ export function ReportCard({ report, setAlert }) {
                             {localReport.status === 'error' && (
                                 <button
                                     title='Retry Report'
-                                    className='text-yellow-600 dark:text-yellow-400 hover:text-yellow-500 dark:hover:text-yellow-300 transition-colors'
+                                    className='text-yellow-600 dark:text-yellow-400 hover:text-yellow-500 dark:hover:text-yellow-300 '
                                     onClick={() => handleRetry(localReport.id)}
                                 >
                                     <RefreshCircle className='w-5 h-5' />
@@ -144,7 +144,7 @@ export function ReportCard({ report, setAlert }) {
                     )}
                     <button
                         title='Delete Report'
-                        className='text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 transition-colors'
+                        className='text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 '
                         onClick={() =>
                             setModal(ConfirmDeletionModal, {
                                 text: `Are you sure you want to delete this report?`,
@@ -239,7 +239,7 @@ export default function ReportList({ setAlert = null }) {
     const [selectedReports, setSelectedReports] = useState([]);
     const [pageSize, setPageSize] = useState(
         Number(searchParams.get('reports_pagesize')) ||
-        (profile?.compact_mode ? 25 : 10)
+        25
     );
 
     let [alert, setAlertState] = useState({ show: false, message: '', color: 'red' });
@@ -544,27 +544,29 @@ export default function ReportList({ setAlert = null }) {
                 <>
                     {!loading && reports.length > 0 && (
                         <div className='flex items-center justify-between gap-4'>
-                            <div className='flex-1'>
+                            <div className='flex-shrink-0'>
                                 <ActionBar
                                     actions={actions}
                                     selectedItems={selectedReports}
                                     itemLabel='row'
                                 />
                             </div>
-                            <Pagination
-                                currentPage={page}
-                                totalPages={totalPages}
-                                onPageChange={handlePageChange}
-                                pageSize={pageSize}
-                                onPageSizeChange={(newSize) => {
-                                    setPageSize(newSize);
-                                    setPage(1);
-                                    const newParams = new URLSearchParams(searchParams);
-                                    newParams.set('reports_pagesize', String(newSize));
-                                    setSearchParams(newParams, { replace: true });
-                                }}
-                            />
-                            <div className='flex-1'></div>
+                            <div className='flex-shrink-0'>
+                                <Pagination
+                                    currentPage={page}
+                                    totalPages={totalPages}
+                                    onPageChange={handlePageChange}
+                                    pageSize={pageSize}
+                                    onPageSizeChange={(newSize) => {
+                                        setPageSize(newSize);
+                                        setPage(1);
+                                        const newParams = new URLSearchParams(searchParams);
+                                        newParams.set('reports_page', '1');
+                                        newParams.set('reports_pagesize', String(newSize));
+                                        setSearchParams(newParams, { replace: true });
+                                    }}
+                                />
+                            </div>
                         </div>
                     )}
 
@@ -583,32 +585,6 @@ export default function ReportList({ setAlert = null }) {
                         enableMultiSelect={true}
                         setSelected={setSelectedReports}
                     />
-
-                    {!loading && reports.length > 0 && (
-                        <div className='flex items-center justify-between gap-4'>
-                            <div className='flex-1'>
-                                <ActionBar
-                                    actions={actions}
-                                    selectedItems={selectedReports}
-                                    itemLabel='row'
-                                />
-                            </div>
-                            <Pagination
-                                currentPage={page}
-                                totalPages={totalPages}
-                                onPageChange={handlePageChange}
-                                pageSize={pageSize}
-                                onPageSizeChange={(newSize) => {
-                                    setPageSize(newSize);
-                                    setPage(1);
-                                    const newParams = new URLSearchParams(searchParams);
-                                    newParams.set('reports_pagesize', String(newSize));
-                                    setSearchParams(newParams, { replace: true });
-                                }}
-                            />
-                            <div className='flex-1'></div>
-                        </div>
-                    )}
                 </>
             ) : loading ? (
                 <p className='text-gray-300'>Loading reports...</p>

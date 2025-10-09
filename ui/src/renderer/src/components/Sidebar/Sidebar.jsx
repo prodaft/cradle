@@ -1,11 +1,12 @@
 import { Graph } from '@phosphor-icons/react';
 import {
+    Archive,
     Bell,
     BellNotification,
-    DataTransferBoth,
-    Edit,
+    DatabaseBackup,
     LogOut,
     Notes,
+    Page,
     Settings,
     UserCrown,
 } from 'iconoir-react';
@@ -49,39 +50,17 @@ export default function Sidebar({
         isHoveredRef.current = isHovered;
     }, [isHovered]);
 
-    useEffect(() => {
-        if (profile?.compact_mode) {
-            return;
-        }
-
-        const handleMouseDown = (e) => {
-            if (e.button === 0) {
-                setIsRightMouseDown(!isHoveredRef.current);
-            }
-        };
-
-        const handleMouseUp = (e) => {
-            if (e.button === 0) {
-                setIsRightMouseDown(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleMouseDown);
-        document.addEventListener('mouseup', handleMouseUp);
-
-        return () => {
-            document.removeEventListener('mousedown', handleMouseDown);
-            document.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, [profile?.compact_mode]);
-
-    const newNoteLocation = '/editor/new';
-    const handleNewNote = useCallback(navigateLink(newNoteLocation), [navigateLink]);
 
     const documentsLocation = '/documents';
     const handleDocuments = useCallback(navigateLink(documentsLocation), [
         navigateLink,
     ]);
+
+    const filesLocation = '/files';
+    const handleFiles = useCallback(navigateLink(filesLocation), [navigateLink]);
+
+    const digestDataLocation = '/digest-data';
+    const handleDigestData = useCallback(navigateLink(digestDataLocation), [navigateLink]);
 
     const graphViewLocation = '/knowledge-graph';
     const handleGraphView = useCallback(navigateLink(graphViewLocation), [
@@ -105,14 +84,18 @@ export default function Sidebar({
         auth.logOut();
     }, [auth, navigate, location]);
 
-    let notificationIconColor = showNotifications ? 'text-gray-500' : '';
+    const notificationIconStyle = showNotifications 
+        ? { color: '#FF8C00' } 
+        : { color: 'var(--cradle-sidebar-icon)' };
 
     return (
         <div className='h-full sticky top-0' data-testid='sidebar-test'>
             <aside
-                className={`sidebar !h-full w-14 text-gray-400 transition-all duration-300 overflow-visible group/sidebar ${
-                    !profile?.compact_mode && !isRightMouseDown ? 'hover:w-48' : ''
-                }`}
+                className={`cradle-border-r !h-full w-14 overflow-visible group/sidebar`}
+                style={{ 
+                    backgroundColor: 'var(--cradle-bg-sidebar)', 
+                    color: 'var(--cradle-sidebar-text)' 
+                }}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
             >
@@ -124,32 +107,34 @@ export default function Sidebar({
                             justify='start'
                         >
                             <SidebarItem
-                                handleClick={handleNewNote}
-                                icon={<Edit />}
-                                text='New Note'
-                                highlightedLocation={newNoteLocation}
-                                compact={profile?.compact_mode}
-                            />
-                            <SidebarItem
                                 handleClick={handleDocuments}
                                 icon={<Notes />}
                                 text='Documents'
                                 highlightedLocation={documentsLocation}
-                                compact={profile?.compact_mode}
+                            />
+                            <SidebarItem
+                                handleClick={handleFiles}
+                                icon={<Archive />}
+                                text='Files'
+                                highlightedLocation={filesLocation}
+                            />
+                            <SidebarItem
+                                handleClick={handleDigestData}
+                                icon={<DatabaseBackup />}
+                                text='Digest Data'
+                                highlightedLocation={digestDataLocation}
                             />
                             <SidebarItem
                                 handleClick={handleGraphView}
                                 icon={<Graph height={24} width={24} />}
                                 text='Graph Explorer'
                                 highlightedLocation={graphViewLocation}
-                                compact={profile?.compact_mode}
                             />
                             <SidebarItem
                                 handleClick={handleConnectivity}
-                                icon={<DataTransferBoth />}
-                                text='Import/Export'
+                                icon={<Page />}
+                                text='Reports'
                                 highlightedLocation={connectivityLocation}
-                                compact={profile?.compact_mode}
                             />
                         </SidebarSection>
                     </div>
@@ -159,7 +144,6 @@ export default function Sidebar({
                             icon={<Settings />}
                             text='Settings'
                             highlightedLocation={accountSettingsLocation}
-                            compact={profile?.compact_mode}
                         />
                         {isEntryManager() && (
                             <SidebarSection type='content' height='fit' justify='start'>
@@ -168,7 +152,6 @@ export default function Sidebar({
                                     icon={<UserCrown />}
                                     text='Manage'
                                     highlightedLocation={adminLocation}
-                                    compact={profile?.compact_mode}
                                 />
                             </SidebarSection>
                         )}
@@ -180,7 +163,6 @@ export default function Sidebar({
                             icon={<QuestionMark height={24} width={24} />}
                             text='User Guide'
                             highlightedLocation='_blank'
-                            compact={profile?.compact_mode}
                         />
                         */}
                         <SidebarItem
@@ -188,20 +170,18 @@ export default function Sidebar({
                             icon={
                                 unreadNotificationsCount > 0 ? (
                                     <BellNotification
-                                        className={notificationIconColor}
+                                        style={notificationIconStyle}
                                     />
                                 ) : (
-                                    <Bell className={notificationIconColor} />
+                                    <Bell style={notificationIconStyle} />
                                 )
                             }
                             text={`${unreadNotificationsCount} Notifications`}
-                            compact={profile?.compact_mode}
                         />
                         <SidebarItem
                             handleClick={handleLogout}
                             icon={<LogOut />}
                             text='Logout'
-                            compact={profile?.compact_mode}
                         />
                     </SidebarSection>
                 </div>

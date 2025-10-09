@@ -1,10 +1,20 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
-@plugin "@tailwindcss/typography";
 
-body {
-    font-family: 'Roboto', sans-serif;
+/* Cradle Minimal Design System - Must come after Tailwind utilities */
+@import './cradle-design-system.css';
+
+@layer base {
+    body {
+        font-family: 'Roboto', sans-serif;
+        @apply cradle-bg-primary cradle-text-primary;
+    }
+    
+    /* Apply mono font to specific elements */
+    code, pre, .mono {
+        @apply cradle-mono;
+    }
 }
 
 .CodeMirror {
@@ -50,4 +60,196 @@ h4:hover .header-anchor-icon,
 h5:hover .header-anchor-icon,
 h6:hover .header-anchor-icon {
     opacity: 1;
+}
+
+/* ============================================
+   GLOBAL DESIGN SYSTEM OVERRIDES
+   Apply minimal design to existing components
+   ============================================ */
+
+/* Card Components */
+.card {
+    @apply cradle-card;
+}
+
+.card-header {
+    @apply cradle-card-header;
+}
+
+.card-body {
+    @apply cradle-card-body;
+}
+
+/* Table Components */
+.table {
+    @apply cradle-table;
+}
+
+.table thead th {
+    @apply cradle-label;
+}
+
+/* Input Components */
+.input,
+.form-input,
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    @apply cradle-input;
+}
+
+input[type="search"] {
+    @apply cradle-search;
+}
+
+textarea,
+.textarea {
+    @apply cradle-textarea;
+}
+
+select,
+.select {
+    @apply cradle-select;
+}
+
+/* Input modifiers */
+.input-block,
+.input-bordered {
+    /* Already covered by cradle-input */
+}
+
+/* Button Components */
+.btn {
+    @apply cradle-btn;
+}
+
+.btn-primary {
+    @apply cradle-btn-primary;
+}
+
+.btn-secondary {
+    @apply cradle-btn-secondary;
+}
+
+.btn-ghost {
+    @apply cradle-btn-ghost;
+}
+
+.btn-error {
+    @apply cradle-btn-error;
+}
+
+.btn-sm {
+    @apply cradle-btn-sm;
+}
+
+.btn-circle {
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Lists */
+ul.menu {
+    @apply list-none;
+}
+
+/* Panels and Sections */
+.panel {
+    @apply cradle-card;
+}
+
+/* Status Badges */
+.badge {
+    @apply cradle-status;
+}
+
+/* Scrollbars */
+.overflow-auto,
+.overflow-y-auto,
+.overflow-x-auto {
+    @apply cradle-scrollbar;
+}
+
+/* ============================================
+   SQUARE CORNERS - REMOVE ALL BORDER RADIUS
+   Applied to all components except sidebar
+   ============================================ */
+
+/* Remove rounded corners from all elements except sidebar */
+*:not(.sidebar):not(.sidebar *):not(.menu *):not(.menu-item *):not([class*="rounded"]) {
+    border-radius: 0 !important;
+}
+
+/* Explicitly allow sidebar elements to have rounded corners */
+.sidebar,
+.sidebar *,
+.menu-item {
+    /* Sidebar elements can have rounded corners as specified in their classes */
+}
+
+/* Ensure buttons are square */
+button:not(.sidebar *),
+.btn:not(.sidebar *) {
+    border-radius: 0 !important;
+}
+
+/* Ensure inputs are square */
+input:not(.sidebar *),
+textarea:not(.sidebar *),
+select:not(.sidebar *) {
+    border-radius: 0 !important;
+}
+
+/* Ensure cards are square */
+.card:not(.sidebar *),
+.cradle-card:not(.sidebar *) {
+    border-radius: 0 !important;
+}
+
+/* Ensure modals are square */
+.modal:not(.sidebar *),
+.dialog:not(.sidebar *) {
+    border-radius: 0 !important;
+}
+
+/* Ensure dropdowns are square */
+.dropdown:not(.sidebar *),
+.dropdown-content:not(.sidebar *) {
+    border-radius: 0 !important;
+}
+
+/* Ensure badges and status indicators are square */
+.badge:not(.sidebar *),
+.status:not(.sidebar *) {
+    border-radius: 0 !important;
+}
+
+/* ============================================
+   ICON COLORS - ORANGE PRIMARY
+   ============================================ */
+
+/* All icons use orange as primary color */
+svg:not(.sidebar svg) {
+    color: var(--cradle-accent-primary);
+}
+
+/* Icon links and buttons */
+a svg,
+button svg {
+    /* No transitions for strict square style */
+}
+
+a:hover svg,
+button:hover svg {
+    color: var(--cradle-accent-secondary);
+}
+
+/* Icons in text */
+.text-primary svg,
+.cradle-text-primary svg {
+    color: var(--cradle-accent-primary);
 }

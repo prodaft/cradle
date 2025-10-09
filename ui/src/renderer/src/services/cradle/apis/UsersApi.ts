@@ -69,7 +69,6 @@ export interface UsersCreateRequest {
     vtApiKey?: string | null;
     vimMode?: boolean;
     theme?: UsersCreateThemeEnum;
-    compactMode?: boolean;
 }
 
 export interface UsersDefaultNoteTemplateCreateRequest {
@@ -125,7 +124,6 @@ export interface UsersUpdateRequest {
     twoFactorEnabled?: boolean;
     isActive?: boolean;
     vimMode?: boolean;
-    compactMode?: boolean;
     emailConfirmed?: boolean;
     theme?: UsersUpdateThemeEnum;
 }
@@ -555,9 +553,6 @@ export class UsersApi extends runtime.BaseAPI {
             formParams.append('theme', requestParameters['theme'] as any);
         }
 
-        if (requestParameters['compactMode'] != null) {
-            formParams.append('compact_mode', requestParameters['compactMode'] as any);
-        }
 
 
         let urlPath = `/users/`;
@@ -1293,9 +1288,6 @@ export class UsersApi extends runtime.BaseAPI {
             formParams.append('vim_mode', requestParameters['vimMode'] as any);
         }
 
-        if (requestParameters['compactMode'] != null) {
-            formParams.append('compact_mode', requestParameters['compactMode'] as any);
-        }
 
         if (requestParameters['emailConfirmed'] != null) {
             formParams.append('email_confirmed', requestParameters['emailConfirmed'] as any);

@@ -231,7 +231,7 @@ export default function Relations({ obj }) {
                 </div>
                 <button
                     onClick={copyToCSV}
-                    className={`btn flex items-center gap-2 transition-all duration-300 ${isCopied ? 'bg-green-800 text-white' : ''}`}
+                    className={`btn flex items-center gap-2  ${isCopied ? 'bg-green-800 text-white' : ''}`}
                 >
                     {isCopied ? (
                         <>
@@ -269,75 +269,53 @@ export default function Relations({ obj }) {
                                 onPageChange={setPage}
                             />
 
-                            {profile?.compact_mode ? (
-                                <div className='overflow-x-auto w-full'>
-                                    <table className='table table-zebra'>
-                                        <thead>
-                                            <tr>
-                                                <th className='w-32'>Type</th>
-                                                <th className=''>Name</th>
-                                                <th className='w-20'>Depth</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {results.map((result) => {
-                                                const dashboardLink =
-                                                    createDashboardLink(result);
-                                                return (
-                                                    <tr
-                                                        key={result.id}
-                                                        className='cursor-pointer hover:bg-zinc-100 hover:dark:bg-zinc-800'
-                                                        onClick={navigateLink(
-                                                            dashboardLink,
-                                                        )}
-                                                    >
-                                                        <td className=''>
-                                                            <span
-                                                                className='badge text-white'
-                                                                style={{
-                                                                    backgroundColor:
-                                                                        result.color ||
-                                                                        '#ccc',
-                                                                }}
-                                                            >
-                                                                {result.subtype}
-                                                            </span>
-                                                        </td>
-                                                        <td className=''>
-                                                            {result.name}
-                                                        </td>
-                                                        <td className=''>
-                                                            <span className='badge badge-xs'>
-                                                                {result.depth}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            ) : (
-                                results.map((result) => {
-                                    const dashboardLink = createDashboardLink(result);
-                                    return (
-                                        <SearchResult
-                                            key={result.id}
-                                            name={result.name}
-                                            type={result.type}
-                                            subtype={result.subtype}
-                                            onClick={handleResultClick(dashboardLink)}
-                                            depth={result.depth}
-                                        />
-                                    );
-                                })
-                            )}
-
-                            <LazyPagination
-                                currentPage={page}
-                                hasNextPage={hasNextPage}
-                                onPageChange={setPage}
-                            />
+                            <div className='overflow-x-auto w-full'>
+                                <table className='table table-zebra'>
+                                    <thead>
+                                        <tr>
+                                            <th className='w-32'>Type</th>
+                                            <th className=''>Name</th>
+                                            <th className='w-20'>Depth</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {results.map((result) => {
+                                            const dashboardLink =
+                                                createDashboardLink(result);
+                                            return (
+                                                <tr
+                                                    key={result.id}
+                                                    className='cursor-pointer hover:bg-zinc-100 hover:dark:bg-zinc-800'
+                                                    onClick={navigateLink(
+                                                        dashboardLink,
+                                                    )}
+                                                >
+                                                    <td className=''>
+                                                        <span
+                                                            className='badge text-white'
+                                                            style={{
+                                                                backgroundColor:
+                                                                    result.color ||
+                                                                    '#ccc',
+                                                            }}
+                                                        >
+                                                            {result.subtype}
+                                                        </span>
+                                                    </td>
+                                                    <td className=''>
+                                                        {result.name}
+                                                    </td>
+                                                    <td className=''>
+                                                        <span className='badge badge-xs'>
+                                                            {result.depth}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     ) : (
                         <div className='w-full text-center text-zinc-500'>

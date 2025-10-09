@@ -89,7 +89,7 @@ const ResizableSplitPane = ({
         >
             {showLeftPane && (
                 <div
-                    className={`rounded-md transition-[width,height] duration-200 ease-out ${leftClassName}`}
+                    className={`rounded-md    ${leftClassName}`}
                     style={{
                         width: !isVertical ? `${splitPosition}%` : '100%',
                         height: isVertical ? `${splitPosition}%` : '100%',
@@ -105,7 +105,7 @@ const ResizableSplitPane = ({
                     className={`
                       ${isVertical ? 'h-1.5 w-full' : 'w-1.5 h-full'}
                       bg-gray-3 hover:bg-gray-4 active:bg-gray-5
-                      transition-colors duration-200
+                       
                       ${isResizing ? 'bg-gray-5' : ''}
                       ${isVertical ? 'cursor-row-resize' : 'cursor-col-resize'}
                       relative group
@@ -130,7 +130,7 @@ const ResizableSplitPane = ({
                         <div
                             className={`
                             w-1 h-6 bg-gray-6 rounded-full opacity-0
-                            group-hover:opacity-100 transition-opacity duration-200 z-0
+                            group-hover:opacity-100  z-0
                             ${isVertical ? 'rotate-90' : ''}
                           `}
                         />
@@ -140,7 +140,7 @@ const ResizableSplitPane = ({
 
             {showRightPane && (
                 <div
-                    className={`rounded-md transition-[width,height] duration-200 ease-out ${rightClassName}`}
+                    className={`rounded-md    ${rightClassName}`}
                     style={{
                         width: !isVertical
                             ? showLeftPane

@@ -22,12 +22,12 @@ function Collapsible({
             {/* Header with toggle and optional extra button */}
             <div className='flex justify-between items-center'>
                 <button
-                    className='flex items-center text-left dark:text-zinc-300 transition-colors'
+                    className='flex items-center text-left dark:text-zinc-300 '
                     onClick={toggle}
                 >
                     {/* Arrow rotation */}
                     <span
-                        className={`mr-2 transform transition-transform duration-200 ${
+                        className={`mr-2 transform  ${
                             isOpen ? 'rotate-90' : ''
                         }`}
                     >

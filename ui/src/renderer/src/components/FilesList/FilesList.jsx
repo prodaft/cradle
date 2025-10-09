@@ -135,12 +135,12 @@ export default function FilesList({
 
     const columns = [
         { key: 'name', label: 'Name', className: 'w-64' },
-        { key: 'uploadedAt', label: 'Uploaded At', className: 'w-32' },
         { key: 'entities', label: 'Entities', className: 'w-32' },
         { key: 'mimetype', label: 'MimeType', className: 'w-32' },
         { key: 'md5', label: 'MD5' },
         { key: 'sha1', label: 'SHA1' },
         { key: 'sha256', label: 'SHA256' },
+        { key: 'uploadedAt', label: 'Uploaded At', className: 'w-32' },
         { key: 'actions', label: 'Actions', className: 'w-32' },
     ];
 
@@ -153,9 +153,6 @@ export default function FilesList({
             <tr key={file.id || index}>
                 <td className='truncate w-32'>
                     {truncateText(file.file_name, 32)}
-                </td>
-                <td className=''>
-                    {formatDate(new Date(file.timestamp))}
                 </td>
                 <td className=''>
                     <div className='flex flex-wrap gap-1'>
@@ -213,6 +210,9 @@ export default function FilesList({
                     ) : (
                         '-'
                     )}
+                </td>
+                <td className=''>
+                    {formatDate(new Date(file.timestamp))}
                 </td>
                 <td className='w-32'>
                     <div className='flex space-x-1'>
@@ -290,24 +290,39 @@ export default function FilesList({
             <div className='flex flex-col space-y-4'>
                 <AlertBox alert={alert} setAlert={setAlert} />
 
+                {/* Compact Control Bar - Pagination */}
                 {!loading && files.length > 0 && (
-                    <Pagination
-                        currentPage={page}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                        pageSize={pageSize}
-                        onPageSizeChange={(newSize) => {
-                            setPageSize(newSize);
-                            setPage(1);
-                            const newParams = new URLSearchParams(searchParams);
-                            newParams.set('files_page', '1');
-                            newParams.set('files_pagesize', String(newSize));
-                            setSearchParams(newParams, { replace: true });
-                        }}
-                    />
+                    <div className='cradle-card cradle-card-compact'>
+                        <div className='cradle-card-body p-3'>
+                            <div className='flex flex-wrap items-center justify-between gap-4'>
+                                {/* Left: File count */}
+                                <div className='flex-shrink-0 text-sm text-gray-500'>
+                                    {files.length} file{files.length !== 1 ? 's' : ''} found
+                                </div>
+
+                                {/* Right: Pagination */}
+                                <div className='flex-shrink-0'>
+                                    <Pagination
+                                        currentPage={page}
+                                        totalPages={totalPages}
+                                        onPageChange={handlePageChange}
+                                        pageSize={pageSize}
+                                        onPageSizeChange={(newSize) => {
+                                            setPageSize(newSize);
+                                            setPage(1);
+                                            const newParams = new URLSearchParams(searchParams);
+                                            newParams.set('files_page', '1');
+                                            newParams.set('files_pagesize', String(newSize));
+                                            setSearchParams(newParams, { replace: true });
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 )}
 
-                <div ref={setNodeRef} className='grid grid-cols-1 gap-2 p-4'>
+                <div ref={setNodeRef} className='grid grid-cols-1 gap-2'>
                     <ListView
                         data={files}
                         columns={columns}
@@ -322,23 +337,6 @@ export default function FilesList({
                         tableClassName="table"
                     />
                 </div>
-
-                {!loading && files.length > 0 && (
-                    <Pagination
-                        currentPage={page}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                        pageSize={pageSize}
-                        onPageSizeChange={(newSize) => {
-                            setPageSize(newSize);
-                            setPage(1);
-                            const newParams = new URLSearchParams(searchParams);
-                            newParams.set('files_page', '1');
-                            newParams.set('files_pagesize', String(newSize));
-                            setSearchParams(newParams, { replace: true });
-                        }}
-                    />
-                )}
             </div>
         </>
     );

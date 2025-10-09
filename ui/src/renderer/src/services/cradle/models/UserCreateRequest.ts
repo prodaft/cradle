@@ -64,12 +64,6 @@ export interface UserCreateRequest {
      * @memberof UserCreateRequest
      */
     theme?: UserCreateRequestThemeEnum;
-    /**
-     * Whether to use compact mode in the UI
-     * @type {boolean}
-     * @memberof UserCreateRequest
-     */
-    compactMode?: boolean;
 }
 
 
@@ -110,7 +104,6 @@ export function UserCreateRequestFromJSONTyped(json: any, ignoreDiscriminator: b
         'vtApiKey': json['vt_api_key'] == null ? undefined : json['vt_api_key'],
         'vimMode': json['vim_mode'] == null ? undefined : json['vim_mode'],
         'theme': json['theme'] == null ? undefined : json['theme'],
-        'compactMode': json['compact_mode'] == null ? undefined : json['compact_mode'],
     };
 }
 
@@ -132,7 +125,6 @@ export function UserCreateRequestToJSONTyped(value?: UserCreateRequest | null, i
         'vt_api_key': value['vtApiKey'],
         'vim_mode': value['vimMode'],
         'theme': value['theme'],
-        'compact_mode': value['compactMode'],
     };
 }
 

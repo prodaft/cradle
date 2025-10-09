@@ -83,7 +83,7 @@ export default function GraphViewer({ setSelectedEntries, config = {}, nodes = [
             }}
         >
             <CosmographProvider>
-                <div className='absolute top-2 right-2 z-10 flex items-center gap-2 bg-[#222222] px-2 rounded-xl'>
+                <div className='absolute top-2 right-2 z-10 flex items-center gap-2 cradle-bg-elevated cradle-border px-3 py-2'>
                     <CosmographSearch
                         accessors={[
                             {
@@ -101,7 +101,7 @@ export default function GraphViewer({ setSelectedEntries, config = {}, nodes = [
                     />
                     <button
                         type='button'
-                        className='btn btn-sm btn-ghost'
+                        className='cradle-btn cradle-btn-secondary p-2 hover:border-[#FF8C00] border border-transparent'
                         title='Clear graph elements'
                         onClick={() => onClearGraph && onClearGraph()}
                     >
@@ -109,15 +109,15 @@ export default function GraphViewer({ setSelectedEntries, config = {}, nodes = [
                     </button>
                     <button
                         type='button'
-                        className='btn btn-sm btn-ghost'
-                        title='Clear graph elements'
+                        className='cradle-btn cradle-btn-secondary p-2 hover:border-[#FF8C00] border border-transparent'
+                        title='Toggle simulation'
                         onClick={() => setDisableSimulation(!disableSimulation)}
                     >
                         {disableSimulation ? <PlaySolid /> : <PauseSolid />}
                     </button>
                     <button
                         type='button'
-                        className='btn btn-sm btn-ghost'
+                        className='cradle-btn cradle-btn-secondary p-2 hover:border-[#FF8C00] border border-transparent'
                         title='Refresh graph'
                         onClick={() => setGraphInstanceKey((k) => k + 1)}
                     >

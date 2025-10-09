@@ -24,7 +24,7 @@ export default function NotFound({ message }) {
                 </p>
             )}
             <Link to='/' className='underline text-cradle2 text-center w-full'>
-                Go back to Home
+                Go back to Welcome
             </Link>
         </div>
     );

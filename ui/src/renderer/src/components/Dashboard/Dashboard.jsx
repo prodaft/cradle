@@ -185,37 +185,43 @@ export default function Dashboard() {
                         </div>
                     </div>
                 ) : (
-                    <div className='w-[95%] h-full flex flex-col p-6 space-y-3 '>
+                    <div className='w-[95%] h-full flex flex-col p-6 space-y-4'>
                         {contentObject.name && (
-                            <div className='flex justify-between items-center w-full border-b border-gray-700 px-4 pb-3'>
-                                <h1 className='text-4xl font-bold break-all'>
-                                    {contentObject.type && (
-                                        <span className='text-4xl text-zinc-500'>{`${contentObject.subtype ? contentObject.subtype : contentObject.type}: `}</span>
+                            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4'>
+                                <div>
+                                    <h1 className='text-3xl font-medium break-all cradle-text-primary cradle-mono tracking-tight'>
+                                        {contentObject.type && (
+                                            <span className='cradle-text-tertiary text-2xl mr-2'>{`${contentObject.subtype ? contentObject.subtype : contentObject.type}:`}</span>
+                                        )}
+                                        {contentObject.name}
+                                    </h1>
+                                    {contentObject.description && (
+                                        <p className='text-sm cradle-text-secondary mt-2 cradle-mono'>
+                                            {contentObject.description}
+                                        </p>
                                     )}
-                                    {contentObject.name}
-                                </h1>
+                                </div>
                             </div>
                         )}
-                        {contentObject.description && (
-                            <p className='text-sm text-zinc-400'>{`Description: ${contentObject.description}`}</p>
-                        )}
                         {contentObject.id && (
-                            <Tabs
-                                defaultTab={0}
-                                queryParam={'tab'}
-                                tabClasses='tabs-underline w-full'
-                                perTabClass='w-[33%] justify-center'
-                            >
-                                <Tab title='Notes' classes='pt-2'>
-                                    <Notes setAlert={setAlert} obj={contentObject} />
-                                </Tab>
-                                <Tab title='Relations' classes='pt-2'>
-                                    <Relations obj={contentObject} />
-                                </Tab>
-                                <Tab title='Files' classes='pt-2'>
-                                    <Files obj={contentObject} setAlert={setAlert} />
-                                </Tab>
-                            </Tabs>
+                            <div className='cradle-card'>
+                                <Tabs
+                                    defaultTab={0}
+                                    queryParam={'tab'}
+                                    tabClasses='tabs-underline w-full'
+                                    perTabClass='w-[33%] justify-center'
+                                >
+                                    <Tab title='Notes' classes='pt-4'>
+                                        <Notes setAlert={setAlert} obj={contentObject} />
+                                    </Tab>
+                                    <Tab title='Relations' classes='pt-4'>
+                                        <Relations obj={contentObject} />
+                                    </Tab>
+                                    <Tab title='Files' classes='pt-4'>
+                                        <Files obj={contentObject} setAlert={setAlert} />
+                                    </Tab>
+                                </Tabs>
+                            </div>
                         )}
                     </div>
                 )}

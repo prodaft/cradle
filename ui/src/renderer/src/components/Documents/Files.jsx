@@ -46,34 +46,64 @@ export default function Files({ setAlert }) {
     };
 
     return (
-        <div className='w-full h-full flex flex-col space-y-3'>
-            <div className='flex justify-between items-center w-full border-b border-gray-700 px-4 pb-3'>
-                <h1 className='text-4xl font-bold w-full break-all'>All Files</h1>
+        <div className='w-full h-full flex flex-col space-y-4'>
+            {/* Header Section - Minimal Design */}
+            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+                <div>
+                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
+                        All Files
+                    </h1>
+                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
+                        Search & Manage Your Files
+                    </p>
+                </div>
             </div>
-            <div className='p-4 backdrop-filter backdrop-blur-lg rounded-xl mb-4'>
-                <form onSubmit={handleSearchSubmit} className='flex space-x-4'>
-                    <input
-                        type='text'
-                        name='keyword'
-                        value={searchFilters.keyword}
-                        onChange={handleSearchChange}
-                        placeholder='Search by name or hash'
-                        className='input input-block'
-                    />
-                    <input
-                        type='text'
-                        name='mimetype'
-                        value={searchFilters.mimetype}
-                        onChange={handleSearchChange}
-                        placeholder='Search by mimetype'
-                        className='input input-block'
-                    />
-                    <div className='flex items-center space-x-2'>
-                        <button type='submit' className='btn'>
-                            <Search /> Search
-                        </button>
+
+            {/* Compact Search and Actions Bar */}
+            <div className='px-4'>
+                <form 
+                    onSubmit={handleSearchSubmit} 
+                    className='cradle-card cradle-card-compact'
+                >
+                    <div className='cradle-card-body p-3'>
+                        <div className='flex flex-wrap items-end gap-3'>
+                            {/* Keyword Filter */}
+                            <div className='flex flex-col gap-1 min-w-[200px] flex-1'>
+                                <label className='cradle-label text-xs'>Keyword</label>
+                                <input
+                                    type='text'
+                                    name='keyword'
+                                    value={searchFilters.keyword}
+                                    onChange={handleSearchChange}
+                                    placeholder='Search by name or hash...'
+                                    className='cradle-search text-sm py-1.5 px-2'
+                                />
+                            </div>
+
+                            {/* MIME Type Filter */}
+                            <div className='flex flex-col gap-1 min-w-[200px] flex-1'>
+                                <label className='cradle-label text-xs'>MIME Type</label>
+                                <input
+                                    type='text'
+                                    name='mimetype'
+                                    value={searchFilters.mimetype}
+                                    onChange={handleSearchChange}
+                                    placeholder='Search by mimetype...'
+                                    className='cradle-search text-sm py-1.5 px-2'
+                                />
+                            </div>
+
+                            {/* Search Button */}
+                            <button type='submit' className='cradle-btn cradle-btn-primary cradle-btn-sm px-6'>
+                                <Search className='inline-block mr-1' size={14} /> Search
+                            </button>
+                        </div>
                     </div>
                 </form>
+            </div>
+
+            {/* Results Section */}
+            <div className='px-4'>
                 {searchFilters && (
                     <FilesList
                         query={searchFilters}

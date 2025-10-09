@@ -50,7 +50,7 @@ export default function DashboardHorizontalSection({
                 )}
             </div>
             <div
-                className={`transition-max-height duration-300 ease-in-out overflow-y-auto ${
+                className={`overflow-y-auto ${
                     expanded ? 'max-h-screen' : 'max-h-0'
                 }`}
             >

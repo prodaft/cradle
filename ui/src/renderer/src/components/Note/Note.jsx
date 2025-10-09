@@ -4,6 +4,7 @@ import {
     NavArrowUp,
     WarningCircleSolid,
     WarningTriangleSolid,
+    DesignNib,
 } from 'iconoir-react';
 import React, { forwardRef, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -87,67 +88,55 @@ const Note = forwardRef(function (
         <div ref={ref} {...props}>
             <div
                 style={style}
-                className='bg-cradle3 bg-opacity-10 z-10 p-4 backdrop-blur-lg rounded-xl m-3 shadow-md'
+                className='mb-4'
             >
                 {/* Header row with timestamp and configurable controls */}
-                <div className='flex flex-row justify-between'>
-                    <div className='text-xs text-zinc-500 border-b-1 dark:border-b-zinc-800'>
+                <div className='flex items-center justify-between border-b border-cradle-border-primary pb-3 mb-4'>
+                    <div className='flex items-center gap-3 cradle-mono text-xs'>
+                        {note.fleeting && (
+                            <span
+                                className='inline-flex items-center align-middle tooltip-right tooltip tooltip-primary'
+                                data-tooltip='Fleeting Note'
+                            >
+                                <DesignNib className='text-[#FF8C00]' width='18' height='18' />
+                            </span>
+                        )}
+                        {note.status && (
+                            <span
+                                className='inline-flex items-center align-middle tooltip-right tooltip tooltip-primary'
+                                data-tooltip={
+                                    note.status_message ||
+                                    capitalizeString(note.status) ||
+                                    null
+                                }
+                            >
+                                {getStatusIcon()}
+                            </span>
+                        )}
                         {!note.editor && (
-                            <span className='flex items-center'>
-                                {note.status && (
-                                    <span
-                                        className={
-                                            'inline-flex items-center align-middle tooltip-right tooltip tooltip-primary'
-                                        }
-                                        data-tooltip={
-                                            note.status_message ||
-                                            capitalizeString(note.status) ||
-                                            null
-                                        }
-                                    >
-                                        {getStatusIcon()}
-                                    </span>
-                                )}
-                                <span className='text-xs text-zinc-500 px-2'>
-                                    <strong>Created on:</strong>{' '}
+                            <>
+                                <span className='cradle-text-tertiary'>
                                     {formatDate(new Date(note.timestamp))}
                                 </span>
-                                <span className='text-xs text-zinc-700'>|</span>
-                                <span className='text-xs text-zinc-500 pl-2'>
-                                    <strong>Created by:</strong>{' '}
+                                <span className='cradle-text-muted'>·</span>
+                                <span className='cradle-text-secondary'>
                                     {note?.author ? note.author.username : 'Unknown'}
                                 </span>
-                            </span>
+                            </>
                         )}
                         {note.editor && (
-                            <span className='flex items-center'>
-                                {note.status && (
-                                    <span
-                                        className={
-                                            'inline-flex items-center align-middle tooltip-right tooltip tooltip-primary'
-                                        }
-                                        data-tooltip={
-                                            note.status_message ||
-                                            capitalizeString(note.status) ||
-                                            null
-                                        }
-                                    >
-                                        {getStatusIcon()}
-                                    </span>
-                                )}
-                                <span className='text-xs text-zinc-500 px-2'>
-                                    <strong>Edited on:</strong>{' '}
+                            <>
+                                <span className='cradle-text-tertiary'>
                                     {formatDate(new Date(note.edit_timestamp))}
                                 </span>
-                                <span className='text-xs text-zinc-700'>|</span>
-                                <span className='text-xs text-zinc-500 pl-2'>
-                                    <strong>Edited by:</strong>{' '}
+                                <span className='cradle-text-muted'>·</span>
+                                <span className='cradle-text-secondary'>
                                     {note?.editor ? note.editor.username : 'Unknown'}
                                 </span>
-                            </span>
+                            </>
                         )}
                     </div>
-                    <div className='flex items-center'>
+                    <div className='flex items-center gap-2'>
                         {actions.map(({ Component, props }, index) => (
                             <Component
                                 key={index}
@@ -167,69 +156,64 @@ const Note = forwardRef(function (
                     </div>
                 )}
 
-                {note.metadata && Object.keys(note.metadata).length > 0 && (
-                    <div className=''>
-                        <div
-                            className='flex items-center cursor-pointer p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded'
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setMetadataExpanded(!metadataExpanded);
-                            }}
-                        >
-                            <span className='text-sm font-medium text-zinc-700 dark:text-zinc-300 flex items-center'>
-                                {metadataExpanded ? (
-                                    <NavArrowUp
-                                        className='inline mr-1'
-                                        width='16'
-                                        height='16'
-                                    />
-                                ) : (
-                                    <NavArrowDown
-                                        className='inline mr-1'
-                                        width='16'
-                                        height='16'
-                                    />
-                                )}
-                                Metadata
-                            </span>
-                        </div>
-
-                        {metadataExpanded && (
-                            <div className='bg-gray-50 dark:bg-gray-800 rounded-md p-2 mt-1'>
-                                <div className='grid grid-cols-[auto_1fr] gap-x-1 gap-y-2'>
-                                    {Object.entries(note.metadata).map(
-                                        ([key, value]) => (
-                                            <React.Fragment key={key}>
-                                                <div className='text-sm font-bold text-gray-700 dark:text-gray-300 pr-2'>
-                                                    {capitalizeString(key)}:
-                                                </div>
-                                                <div className='text-sm text-gray-600 dark:text-gray-400'>
-                                                    {typeof value === 'object'
-                                                        ? JSON.stringify(value)
-                                                        : parseMarkdownInline(
-                                                              String(value),
-                                                          )}
-                                                </div>
-                                            </React.Fragment>
-                                        ),
+                <div>
+                    {note.metadata && Object.keys(note.metadata).length > 0 && (
+                        <div className='mb-4'>
+                            <div
+                                className='flex items-center cursor-pointer p-2 cradle-interactive rounded hover:bg-opacity-50'
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setMetadataExpanded(!metadataExpanded);
+                                }}
+                            >
+                                <span className='cradle-label flex items-center gap-2'>
+                                    {metadataExpanded ? (
+                                        <NavArrowUp width='14' height='14' />
+                                    ) : (
+                                        <NavArrowDown width='14' height='14' />
                                     )}
-                                </div>
+                                    Metadata
+                                </span>
                             </div>
-                        )}
-                    </div>
-                )}
 
-                <div
-                    className='bg-transparent h-fit p-2 backdrop-filter overflow-hidden flex-grow flex flex-col cursor-pointer'
-                    onClick={(e) =>
-                        navigate(`/notes/${note.id}`, {
-                            event: e,
-                            state: { from: location, state: location.state },
-                        })
-                    }
-                >
-                    <div className='max-h-[36rem] overflow-y-auto opacity-100'>
-                        <Preview htmlContent={parsedContent} />
+                            {metadataExpanded && (
+                                <div className='border border-cradle-border-primary bg-transparent p-4 mt-2'>
+                                    <div className='grid grid-cols-[auto_1fr] gap-x-4 gap-y-2'>
+                                        {Object.entries(note.metadata).map(
+                                            ([key, value]) => (
+                                                <React.Fragment key={key}>
+                                                    <div className='text-sm font-semibold cradle-text-secondary cradle-mono'>
+                                                        {capitalizeString(key)}:
+                                                    </div>
+                                                    <div className='text-sm cradle-text-tertiary'>
+                                                        {typeof value === 'object'
+                                                            ? JSON.stringify(value)
+                                                            : parseMarkdownInline(
+                                                                  String(value),
+                                                              )}
+                                                    </div>
+                                                </React.Fragment>
+                                            ),
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                            <div className='cradle-separator my-4'></div>
+                        </div>
+                    )}
+
+                    <div
+                        className='cursor-pointer'
+                        onClick={(e) =>
+                            navigate(`/notes/${note.id}`, {
+                                event: e,
+                                state: { from: location, state: location.state },
+                            })
+                        }
+                    >
+                        <div className='max-h-[36rem] overflow-y-auto cradle-scrollbar'>
+                            <Preview htmlContent={parsedContent} />
+                        </div>
                     </div>
                 </div>
 

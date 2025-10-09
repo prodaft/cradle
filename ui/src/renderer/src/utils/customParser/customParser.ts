@@ -14,7 +14,7 @@ const LINK_SVG = `
 
 // Custom permalink object that creates proper URLs with fragment routing
 const customPermalink = anchor.permalink.linkInsideHeader({
-    symbol: `<span class="header-anchor-icon inline-block align-middle text-gray-500 opacity-0 transition-opacity duration-200">${LINK_SVG}</span>`,
+    symbol: `<span class="header-anchor-icon inline-block align-middle text-gray-500 opacity-0">${LINK_SVG}</span>`,
     placement: 'after',
     renderHref: (slug: string) => {
 

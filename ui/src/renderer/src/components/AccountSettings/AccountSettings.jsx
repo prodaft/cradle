@@ -1,5 +1,6 @@
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Edit } from 'iconoir-react';
+import { Edit, Key, Lock, Settings, User } from 'iconoir-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useEffect, useId, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
@@ -9,6 +10,7 @@ import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useAuth from '../../hooks/useAuth/useAuth';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import {
+    changePassword,
     createUser,
     deleteUser,
     generateApiKey,
@@ -21,12 +23,9 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
 import AlertDismissible from '../AlertDismissible/AlertDismissible.jsx';
 import FormField from '../FormField/FormField';
-import ActionConfirmationModal from '../Modals/ActionConfirmationModal.jsx';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import MarkdownEditorModal from '../Modals/MarkdownEditorModal.jsx';
-import TwoFactorSetupModal from '../Modals/TwoFactorSetupModal';
 import SnippetList from '../SnippetList/SnippetList';
-import { Tab, Tabs } from '../Tabs/Tabs';
 
 const accountSettingsSchema = Yup.object().shape({
     username: Yup.string().required('Username is required'),
@@ -45,7 +44,6 @@ const accountSettingsSchema = Yup.object().shape({
     }),
     email_confirmed: Yup.boolean(),
     is_active: Yup.boolean(),
-    compact_mode: Yup.boolean(),
     vim_mode: Yup.boolean(),
 });
 
@@ -54,6 +52,16 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
     const auth = useAuth();
     const { profile, setProfile, isAdmin } = useProfile();
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+    const [showChangePassword, setShowChangePassword] = useState(false);
+    const [showApiKeyGenerate, setShowApiKeyGenerate] = useState(false);
+    const [show2FASetup, setShow2FASetup] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [passwordError, setPasswordError] = useState('');
+    const [twoFactorCode, setTwoFactorCode] = useState('');
+    const [qrCodeUrl, setQrCodeUrl] = useState('');
+    const [activeSection, setActiveSection] = useState('account');
     const isOwnAccount = isEdit ? target === 'me' || profile?.userId === target : false;
     const isAdminAndNotOwn = isAdmin() && !isOwnAccount;
     const { setModal } = useModal();
@@ -69,7 +77,6 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
               catalystKey: 'apikey',
               role: 'user',
               vim_mode: false,
-              compact_mode: false,
               email_confirmed: false,
               is_active: false,
           }
@@ -82,7 +89,6 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
               catalystKey: '',
               role: 'user',
               vim_mode: false,
-              compact_mode: false,
               email_confirmed: false,
               is_active: false,
           };
@@ -115,7 +121,6 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                         password: 'password',
                         vtKey: res.data.vt_api_key ? 'apikey' : '',
                         vimMode: res.data.vim_mode || false,
-                        compactMode: res.data.compact_mode || false,
                         theme: res.data.theme || 'dark',
                         catalystKey: res.data.catalyst_api_key ? 'apikey' : '',
                         role: res.data.role || 'user',
@@ -143,7 +148,6 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                 payload.catalyst_api_key = data.catalystKey;
             }
             payload.vim_mode = data.vimMode;
-            payload.compact_mode = data.compactMode;
             payload.theme = data.theme;
             if (isAdminAndNotOwn) {
                 payload.username = data.username;
@@ -166,7 +170,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                     }));
                 }
 
-                setAlert({
+                setPopup({
                     show: true,
                     message: 'User updated successfully',
                     color: 'green',
@@ -185,14 +189,13 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                 email_confirmed: data.email_confirmed,
                 is_active: data.is_active,
                 vim_mode: data.vimMode,
-                compact_mode: data.compactMode,
                 theme: data.theme,
             };
             try {
                 let result = await createUser(payload);
 
                 if (result.status === 200) {
-                    setAlert({
+                    setPopup({
                         show: true,
                         message: 'User created successfully',
                         color: 'green',
@@ -219,25 +222,51 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
         }
     };
 
-    const handleGenerateApiKey = () => {
-        setModal(ActionConfirmationModal, {
-            text: 'Are you sure you want to generate a new API key? This will invalidate the current key.',
-            onConfirm: async () => {
-                try {
-                    const response = await generateApiKey(getValues('id'));
-                    if (response.status === 200) {
-                        setAlert({
-                            show: true,
-                            message: 'API key generated successfully!',
-                            color: 'green',
-                            code: response.data.api_key,
-                        });
-                    }
-                } catch (err) {
-                    displayError(setAlert)(err);
-                }
-            },
-        });
+    const handleGenerateApiKey = async () => {
+        try {
+            const response = await generateApiKey(getValues('id'));
+            if (response.status === 200) {
+                setPopup({
+                    show: true,
+                    message: 'API key generated successfully!',
+                    color: 'green',
+                    code: response.data.api_key,
+                });
+                setShowApiKeyGenerate(false);
+            }
+        } catch (err) {
+            displayError(setAlert)(err);
+        }
+    };
+
+    const handleChangePassword = async (e) => {
+        e.preventDefault();
+        setPasswordError('');
+
+        if (newPassword !== confirmPassword) {
+            setPasswordError('Passwords do not match');
+            return;
+        }
+
+        if (newPassword.length < 8) {
+            setPasswordError('Password must be at least 8 characters');
+            return;
+        }
+
+        try {
+            await changePassword(currentPassword, newPassword);
+            setPopup({
+                show: true,
+                message: 'Password changed successfully!',
+                color: 'green',
+            });
+            setShowChangePassword(false);
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+        } catch (err) {
+            setPasswordError(err.response?.data?.message || 'Failed to change password');
+        }
     };
 
     const editDefaultNoteTemplate = async () => {
@@ -275,27 +304,16 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
         });
     };
 
-    const handle2FASetup = () => {
+    const handle2FASetup = async () => {
         if (twoFactorEnabled) {
             if (isOwnAccount) {
-                setModal(TwoFactorSetupModal, {
-                    isDisabling: true,
-                    onSuccess: () => {
-                        setTwoFactorEnabled(false);
-                        setAlert({
-                            show: true,
-                            message:
-                                '2FA has been successfully disabled for your account',
-                            color: 'green',
-                        });
-                    },
-                });
+                setShow2FASetup(true);
             } else {
                 updateUser(target, {
                     two_factor_enabled: false,
                 });
                 setTwoFactorEnabled(false);
-                setAlert({
+                setPopup({
                     show: true,
                     message:
                         '2FA has been successfully disabled for the selected account!',
@@ -303,311 +321,709 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                 });
             }
         } else {
-            setModal(TwoFactorSetupModal, {
-                isDisabling: false,
-                onSuccess: () => {
-                    setTwoFactorEnabled(true);
-                    setAlert({
-                        show: true,
-                        message: '2FA has been successfully enabled for your account',
-                        color: 'green',
-                    });
-                },
-            });
+            setShow2FASetup(true);
+            // Initiate 2FA setup
+            try {
+                const { initiate2FA } = await import('../../services/userService/userService');
+                const response = await initiate2FA();
+                setQrCodeUrl(response.data.config_url);
+            } catch (err) {
+                displayError(setAlert)(err);
+            }
+        }
+    };
+
+    const handle2FASubmit = async (e) => {
+        e.preventDefault();
+        try {
+            if (twoFactorEnabled) {
+                const { disable2FA } = await import('../../services/userService/userService');
+                await disable2FA(twoFactorCode);
+                setTwoFactorEnabled(false);
+                setPopup({
+                    show: true,
+                    message: '2FA has been successfully disabled for your account',
+                    color: 'green',
+                });
+            } else {
+                const { enable2FA } = await import('../../services/userService/userService');
+                await enable2FA(twoFactorCode);
+                setTwoFactorEnabled(true);
+                setPopup({
+                    show: true,
+                    message: '2FA has been successfully enabled for your account',
+                    color: 'green',
+                });
+            }
+            setShow2FASetup(false);
+            setTwoFactorCode('');
+            setQrCodeUrl('');
+        } catch (err) {
+            displayError(setAlert)(err);
+        }
+    };
+
+
+    const sidebarItems = [
+        { id: 'account', label: 'Account', icon: User },
+        ...(isEdit && (twoFactorEnabled || isOwnAccount) ? [{ id: 'security', label: 'Security', icon: Lock }] : []),
+        { id: 'apikeys', label: 'API Keys', icon: Key },
+        { id: 'interface', label: 'Interface', icon: Settings },
+    ];
+
+    const renderSection = () => {
+        switch (activeSection) {
+            case 'account':
+                return (
+                    <div className='p-6'>
+                        <div className='mb-6'>
+                            <h2 className='text-lg font-semibold cradle-text-primary cradle-mono mb-2'>
+                                Account Information
+                            </h2>
+                            <p className='text-sm cradle-text-tertiary cradle-mono'>
+                                Basic account details and credentials
+                            </p>
+                        </div>
+
+                        <div className='space-y-4'>
+
+                            {/* User ID - Read Only */}
+                            <div className='w-full'>
+                                <label className='cradle-label cradle-text-tertiary block mb-2'>
+                                    User ID
+                                </label>
+                                <input
+                                    type='text'
+                                    value={profile?.id || ''}
+                                    className='cradle-search w-full'
+                                    disabled
+                                    readOnly
+                                />
+                                <p className='text-xs cradle-text-muted mt-1'>
+                                    Unique identifier for this account
+                                </p>
+                            </div>
+
+                            <FormField
+                                name='username'
+                                type='text'
+                                labelText='Username'
+                                placeholder='Username'
+                                {...register('username')}
+                                error={errors.username?.message}
+                                disabled={!isAdminAndNotOwn && isEdit}
+                            />
+
+                            <FormField
+                                name='email'
+                                type='text'
+                                labelText='Email'
+                                placeholder='Email'
+                                {...register('email')}
+                                error={errors.email?.message}
+                                disabled={!isAdminAndNotOwn && isEdit}
+                            />
+
+                            {/* Role - Read Only */}
+                            <div className='w-full'>
+                                <label className='cradle-label cradle-text-tertiary block mb-2'>
+                                    Role
+                                </label>
+                                <input
+                                    type='text'
+                                    value={profile?.role || ''}
+                                    className='cradle-search w-full'
+                                    disabled
+                                    readOnly
+                                />
+                                <p className='text-xs cradle-text-muted mt-1'>
+                                    Current user role and permissions level
+                                </p>
+                            </div>
+
+                            {isEdit ? (
+                                isAdminAndNotOwn && (
+                                    <FormField
+                                        name='password'
+                                        type='password'
+                                        labelText='Password'
+                                        placeholder='Password'
+                                        {...register('password')}
+                                        error={errors.password?.message}
+                                    />
+                                )
+                            ) : (
+                                <FormField
+                                    name='password'
+                                    type='password'
+                                    labelText='Password'
+                                    placeholder='Password'
+                                    {...register('password')}
+                                    error={errors.password?.message}
+                                />
+                            )}
+
+                            {isAdmin() && (!isEdit || isAdminAndNotOwn) && (
+                                <>
+                                    <div className='cradle-separator my-6'></div>
+                                    <div className='mb-4'>
+                                        <h3 className='text-lg font-semibold cradle-text-secondary cradle-mono mb-1'>
+                                            Administrative Settings
+                                        </h3>
+                                        <p className='text-sm cradle-text-tertiary'>
+                                            Administrative controls for this account
+                                        </p>
+                                    </div>
+
+                                    <div className='w-full'>
+                                        <label className='cradle-label cradle-text-tertiary block mb-2'>
+                                            Role
+                                        </label>
+                                        <select
+                                            className='cradle-search w-full'
+                                            {...register('role')}
+                                        >
+                                            <option value='author'>User</option>
+                                            <option value='entrymanager'>Entry Manager</option>
+                                            <option value='admin'>Admin</option>
+                                        </select>
+                                        {errors.role && (
+                                            <p className='cradle-status-error text-sm mt-2'>
+                                                {errors.role.message}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <FormField
+                                        type='checkbox'
+                                        labelText='Email Confirmed'
+                                        className='switch switch-ghost-primary'
+                                        {...register('email_confirmed')}
+                                        row={true}
+                                        error={errors.email_confirmed?.message}
+                                    />
+
+                                    <FormField
+                                        type='checkbox'
+                                        labelText='Account Active'
+                                        className='switch switch-ghost-primary'
+                                        {...register('is_active')}
+                                        row={true}
+                                        error={errors.is_active?.message}
+                                    />
+                                </>
+                            )}
+                        </div>
+
+                        <div className='cradle-border-t pt-6 mt-6'>
+                            <button
+                                type='submit'
+                                className='cradle-btn cradle-btn-primary w-full'
+                                disabled={!isDirty}
+                            >
+                                {isEdit ? 'Save Changes' : 'Create User'}
+                            </button>
+                        </div>
+                    </div>
+                );
+            case 'security':
+                return (
+                    <div className='p-6'>
+                        <div className='mb-6'>
+                            <h2 className='text-lg font-semibold cradle-text-primary cradle-mono mb-2'>
+                                Security Settings
+                            </h2>
+                            <p className='text-sm cradle-text-tertiary cradle-mono'>
+                                Manage authentication and account security
+                            </p>
+                        </div>
+
+                        <div className='space-y-3'>
+
+                                {isOwnAccount && (
+                                    <>
+                                        {/* Change Password Section */}
+                                        <div className='py-3'>
+                                            <div className='flex items-center justify-between mb-3'>
+                                                <div>
+                                                    <label className='cradle-label cradle-text-tertiary block mb-1'>
+                                                        Password
+                                                    </label>
+                                                    <p className='text-xs cradle-text-muted'>
+                                                        Change your account password
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    type='button'
+                                                    className='cradle-btn cradle-btn-ghost'
+                                                    onClick={() => {
+                                                        setShowChangePassword(!showChangePassword);
+                                                        setPasswordError('');
+                                                    }}
+                                                >
+                                                    {showChangePassword ? 'Cancel' : 'Change Password'}
+                                                </button>
+                                            </div>
+
+                                            {showChangePassword && (
+                                                <div className='mt-4 p-4 border cradle-border rounded'>
+                                                    <form onSubmit={handleChangePassword} className='space-y-4'>
+                                                        <div>
+                                                            <label className='cradle-label cradle-text-tertiary block mb-2'>
+                                                                Current Password
+                                                            </label>
+                                                            <input
+                                                                type='password'
+                                                                className='cradle-search w-full'
+                                                                value={currentPassword}
+                                                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                                                required
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className='cradle-label cradle-text-tertiary block mb-2'>
+                                                                New Password
+                                                            </label>
+                                                            <input
+                                                                type='password'
+                                                                className='cradle-search w-full'
+                                                                value={newPassword}
+                                                                onChange={(e) => setNewPassword(e.target.value)}
+                                                                required
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className='cradle-label cradle-text-tertiary block mb-2'>
+                                                                Confirm New Password
+                                                            </label>
+                                                            <input
+                                                                type='password'
+                                                                className='cradle-search w-full'
+                                                                value={confirmPassword}
+                                                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                                                required
+                                                            />
+                                                        </div>
+                                                        {passwordError && (
+                                                            <p className='cradle-status-error text-sm'>{passwordError}</p>
+                                                        )}
+                                                        <div className='flex justify-end'>
+                                                            <button
+                                                                type='submit'
+                                                                className='cradle-btn cradle-btn-primary'
+                                                            >
+                                                                Update Password
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className='cradle-separator'></div>
+
+                                        {/* API Key Section */}
+                                        <div className='py-3'>
+                                            <div className='flex items-center justify-between mb-3'>
+                                                <div>
+                                                    <label className='cradle-label cradle-text-tertiary block mb-1'>
+                                                        API Key
+                                                    </label>
+                                                    <p className='text-xs cradle-text-muted'>
+                                                        Generate a new API key for programmatic access
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    type='button'
+                                                    className='cradle-btn cradle-btn-ghost'
+                                                    onClick={() => setShowApiKeyGenerate(!showApiKeyGenerate)}
+                                                >
+                                                    {showApiKeyGenerate ? 'Cancel' : 'Generate API Key'}
+                                                </button>
+                                            </div>
+
+                                            {showApiKeyGenerate && (
+                                                <div className='mt-4 p-4 border cradle-border rounded'>
+                                                    <p className='cradle-text-secondary mb-4'>
+                                                        Are you sure you want to generate a new API key? This will invalidate the current key.
+                                                    </p>
+                                                    <div className='flex justify-end gap-2'>
+                                                        <button
+                                                            type='button'
+                                                            className='cradle-btn cradle-btn-ghost'
+                                                            onClick={() => setShowApiKeyGenerate(false)}
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                        <button
+                                                            type='button'
+                                                            className='cradle-btn cradle-btn-primary'
+                                                            onClick={handleGenerateApiKey}
+                                                        >
+                                                            Confirm
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className='cradle-separator'></div>
+                                    </>
+                                )}
+
+                                {(twoFactorEnabled || isOwnAccount) && (
+                                    <>
+                                        {/* Two-Factor Authentication Section */}
+                                        <div className='py-3'>
+                                            <div className='flex items-center justify-between mb-3'>
+                                                <div>
+                                                    <label className='cradle-label cradle-text-tertiary block mb-1'>
+                                                        Two-Factor Authentication
+                                                    </label>
+                                                    <p className='text-xs cradle-text-muted'>
+                                                        {twoFactorEnabled
+                                                            ? 'Two-factor authentication is currently enabled'
+                                                            : 'Add an extra layer of security to your account'}
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    type='button'
+                                                    className={`cradle-btn ${twoFactorEnabled ? 'cradle-status-error !bg-opacity-10' : 'cradle-btn-ghost'}`}
+                                                    onClick={() => {
+                                                        if (show2FASetup) {
+                                                            setShow2FASetup(false);
+                                                            setTwoFactorCode('');
+                                                            setQrCodeUrl('');
+                                                        } else {
+                                                            handle2FASetup();
+                                                        }
+                                                    }}
+                                                >
+                                                    {show2FASetup ? 'Cancel' : (isEdit && twoFactorEnabled ? 'Disable 2FA' : 'Enable 2FA')}
+                                                </button>
+                                            </div>
+
+                                            {show2FASetup && (
+                                                <div className='mt-4 p-4 border cradle-border rounded'>
+                                                    <form onSubmit={handle2FASubmit} className='space-y-4'>
+                                                        {!twoFactorEnabled && qrCodeUrl && (
+                                                            <>
+                                                                <div className='flex justify-center mb-4'>
+                                                                    <div className='p-4 bg-white rounded'>
+                                                                        <QRCodeSVG value={qrCodeUrl} size={200} level='H' />
+                                                                    </div>
+                                                                </div>
+                                                                <div className='mb-4 p-3 cradle-bg-secondary rounded'>
+                                                                    <p className='text-sm cradle-text-tertiary mb-2'>
+                                                                        Can't scan the QR code? Enter this secret key manually:
+                                                                    </p>
+                                                                    <code className='block cradle-bg-elevated p-2 rounded text-center select-all cradle-text-primary'>
+                                                                        {new URL(qrCodeUrl).searchParams.get('secret')}
+                                                                    </code>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                        <div>
+                                                            <label className='cradle-label cradle-text-tertiary block mb-2'>
+                                                                {twoFactorEnabled 
+                                                                    ? 'Enter verification code to disable 2FA'
+                                                                    : 'Enter verification code from your authenticator app'}
+                                                            </label>
+                                                            <input
+                                                                type='text'
+                                                                className='cradle-search w-full'
+                                                                placeholder='000000'
+                                                                value={twoFactorCode}
+                                                                onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                                                pattern='[0-9]*'
+                                                                maxLength='6'
+                                                                required
+                                                            />
+                                                        </div>
+                                                        <div className='flex justify-end'>
+                                                            <button
+                                                                type='submit'
+                                                                className={`cradle-btn ${twoFactorEnabled ? 'cradle-status-error !bg-opacity-10' : 'cradle-btn-primary'}`}
+                                                                disabled={twoFactorCode.length !== 6}
+                                                            >
+                                                                {twoFactorEnabled ? 'Disable 2FA' : 'Verify and Enable'}
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className='cradle-separator'></div>
+                                    </>
+                                )}
+
+                                {isOwnAccount && (
+                                    <div className='mt-6'>
+                                        <div className='mb-4'>
+                                            <h3 className='text-lg font-semibold cradle-status-error cradle-mono mb-1'>
+                                                Danger Zone
+                                            </h3>
+                                            <p className='text-sm cradle-text-tertiary'>
+                                                Irreversible actions require confirmation
+                                            </p>
+                                        </div>
+                                        <div className='flex items-center justify-between py-3 border-2 border-red-500/20 rounded px-4'>
+                                            <div>
+                                                <label className='cradle-label cradle-text-tertiary block mb-1'>
+                                                    Delete Account
+                                                </label>
+                                                <p className='text-xs cradle-text-muted'>
+                                                    Permanently delete your account and all associated data
+                                                </p>
+                                            </div>
+                                            <button
+                                                type='button'
+                                                className='cradle-btn cradle-status-error !bg-opacity-10'
+                                                onClick={() =>
+                                                    setModal(ConfirmDeletionModal, {
+                                                        text: 'Are you sure you want to delete your account? All data related to you will be deleted.',
+                                                        onConfirm: handleDelete,
+                                                    })
+                                                }
+                                            >
+                                                Delete Account
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                        </div>
+                    </div>
+                );
+            case 'apikeys':
+                return (
+                    <div className='p-6'>
+                        <div className='mb-6'>
+                            <h2 className='text-lg font-semibold cradle-text-primary cradle-mono mb-2'>
+                                API Integration
+                            </h2>
+                            <p className='text-sm cradle-text-tertiary cradle-mono'>
+                                Configure third-party service API keys
+                            </p>
+                        </div>
+
+                        <div className='space-y-4'>
+
+                            <FormField
+                                name='vtKey'
+                                type='password'
+                                labelText='VirusTotal API Key'
+                                placeholder='VirusTotal API Key'
+                                {...register('vtKey')}
+                                error={errors.vtKey?.message}
+                            />
+
+                            <FormField
+                                name='catalystKey'
+                                type='password'
+                                labelText='Catalyst API Key'
+                                placeholder='Catalyst API Key'
+                                {...register('catalystKey')}
+                                error={errors.catalystKey?.message}
+                            />
+                        </div>
+
+                        <div className='cradle-border-t pt-6 mt-6'>
+                            <button
+                                type='submit'
+                                className='cradle-btn cradle-btn-primary w-full'
+                                disabled={!isDirty}
+                            >
+                                {isEdit ? 'Save Changes' : 'Create User'}
+                            </button>
+                        </div>
+                    </div>
+                );
+            case 'interface':
+                return (
+                    <div className='p-6'>
+                        <div className='mb-6'>
+                            <h2 className='text-lg font-semibold cradle-text-primary cradle-mono mb-2'>
+                                Interface Preferences
+                            </h2>
+                            <p className='text-sm cradle-text-tertiary cradle-mono'>
+                                Customize your editing and viewing experience
+                            </p>
+                        </div>
+
+                        <div className='space-y-6'>
+                            {/* Editor Settings */}
+                            <div>
+                                <h3 className='text-sm font-semibold cradle-text-secondary cradle-mono mb-4'>
+                                    Editor Settings
+                                </h3>
+                                <div className='flex items-center justify-between py-3'>
+                                <label
+                                    htmlFor={vimModeId}
+                                    className='flex items-center gap-3 cursor-pointer flex-1'
+                                >
+                                    <img
+                                        src={vimIcon}
+                                        alt='Vim'
+                                        className='w-6 h-6'
+                                    />
+                                    <div>
+                                        <span className='cradle-label cradle-text-tertiary block mb-1'>
+                                            Vim Mode
+                                        </span>
+                                        <p className='text-xs cradle-text-muted'>
+                                            Enable Vim keybindings in the editor
+                                        </p>
+                                    </div>
+                                </label>
+                                <input
+                                    id={vimModeId}
+                                    data-testid='vim-toggle'
+                                    name='vim-toggle'
+                                    type='checkbox'
+                                    className='switch switch-ghost-primary'
+                                    {...register('vimMode')}
+                                />
+                                </div>
+                            </div>
+
+                            {/* Appearance */}
+                            <div>
+                                <h3 className='text-sm font-semibold cradle-text-secondary cradle-mono mb-4'>
+                                    Appearance
+                                </h3>
+                                <div className='w-full'>
+                                <label className='cradle-label cradle-text-tertiary block mb-2'>
+                                    Theme
+                                </label>
+                                <select
+                                    className='cradle-search w-full'
+                                    {...register('theme')}
+                                >
+                                    <option value='dark'>Dark</option>
+                                    <option value='light'>Light</option>
+                                </select>
+                                {errors.theme && (
+                                    <p className='cradle-status-error text-sm mt-2'>
+                                        {errors.theme.message}
+                                    </p>
+                                )}
+                                <p className='text-xs cradle-text-muted mt-1'>
+                                    Choose your preferred color scheme
+                                </p>
+                                </div>
+                            </div>
+
+                            {/* Note Templates */}
+                            <div>
+                                <h3 className='text-sm font-semibold cradle-text-secondary cradle-mono mb-4'>
+                                    Note Templates
+                                </h3>
+                                <div className='flex items-center justify-between py-3'>
+                                <div>
+                                    <label className='cradle-label cradle-text-tertiary block mb-1'>
+                                        Default Note Template
+                                    </label>
+                                    <p className='text-xs cradle-text-muted'>
+                                        Customize the template used for new notes
+                                    </p>
+                                </div>
+                                <button
+                                    type='button'
+                                    className='cradle-btn cradle-btn-ghost flex items-center gap-2'
+                                    onClick={editDefaultNoteTemplate}
+                                >
+                                    <Edit className='w-4 h-4' />
+                                    Edit Template
+                                </button>
+                                </div>
+                            </div>
+
+                            {/* Snippets */}
+                            <div>
+                                <h3 className='text-sm font-semibold cradle-text-secondary cradle-mono mb-4'>
+                                    Code Snippets
+                                </h3>
+                                <SnippetList userId={target} />
+                            </div>
+                        </div>
+
+                        <div className='cradle-border-t pt-6 mt-6'>
+                            <button
+                                type='submit'
+                                className='cradle-btn cradle-btn-primary w-full'
+                                disabled={!isDirty}
+                            >
+                                {isEdit ? 'Save Changes' : 'Create User'}
+                            </button>
+                        </div>
+                    </div>
+                );
+            default:
+                return null;
         }
     };
 
     return (
         <>
             <AlertDismissible alert={popup} setAlert={setPopup} />
-            <div className='flex items-center justify-center min-h-screen'>
-                <div className='w-full max-w-2xl px-4'>
-                    <h1 className='text-center text-xl font-bold text-primary mb-4'>
-                        {isEdit ? 'Settings' : 'Add New User'}
-                    </h1>
-                    <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
-                        <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
-                            <Tabs
-                                tabClasses='tabs gap-1 !bg-opacity-0'
-                                perTabClass='tab-pill'
-                            >
-                                <Tab title='Account'>
-                                    <div className='mt-4' />
-                                    <FormField
-                                        name='username'
-                                        type='text'
-                                        labelText='Username'
-                                        placeholder='Username'
-                                        {...register('username')}
-                                        error={errors.username?.message}
-                                        disabled={!isAdminAndNotOwn && isEdit}
-                                    />
-                                    <div className='mt-4' />
-                                    <FormField
-                                        name='email'
-                                        type='text'
-                                        labelText='Email'
-                                        placeholder='Email'
-                                        {...register('email')}
-                                        error={errors.email?.message}
-                                        disabled={!isAdminAndNotOwn && isEdit}
-                                    />
+            <div className='w-full h-full'>
+                {/* Page Header */}
+                <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+                    <div>
+                        <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
+                            {isEdit ? 'Settings' : 'Add New User'}
+                        </h1>
+                        <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
+                            {isEdit ? 'Manage your account preferences and security' : 'Create a new user account'}
+                        </p>
+                    </div>
+                </div>
 
-                                    {isEdit ? (
-                                        isAdminAndNotOwn && (
-                                            <div className='mt-4'>
-                                                <FormField
-                                                    name='password'
-                                                    type='password'
-                                                    labelText='Password'
-                                                    placeholder='Password'
-                                                    {...register('password')}
-                                                    error={errors.password?.message}
-                                                />
-                                            </div>
-                                        )
-                                    ) : (
-                                        <div className='mt-4'>
-                                            <FormField
-                                                name='password'
-                                                type='password'
-                                                labelText='Password'
-                                                placeholder='Password'
-                                                {...register('password')}
-                                                error={errors.password?.message}
-                                            />
-                                        </div>
-                                    )}
-                                    {isAdmin() && (!isEdit || isAdminAndNotOwn) && (
-                                        <>
-                                            <div className='w-full mt-4'>
-                                                <label className='block text-sm font-medium'>
-                                                    Role
-                                                </label>
-                                                <div className='mt-1'>
-                                                    <select
-                                                        className='form-select select select-ghost-primary select-block focus:ring-0'
-                                                        {...register('role')}
-                                                    >
-                                                        <option value='author'>
-                                                            User
-                                                        </option>
-                                                        <option value='entrymanager'>
-                                                            Entry Manager
-                                                        </option>
-                                                        <option value='admin'>
-                                                            Admin
-                                                        </option>
-                                                    </select>
-                                                </div>
-                                                {errors.role && (
-                                                    <p className='text-red-600 text-sm'>
-                                                        {errors.role.message}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <div className='mt-4' />
-                                            <FormField
-                                                type='checkbox'
-                                                labelText='Email Confirmed'
-                                                className='switch switch-ghost-primary'
-                                                {...register('email_confirmed')}
-                                                row={true}
-                                                error={errors.email_confirmed?.message}
-                                            />
-                                            <div className='mt-4' />
-                                            <FormField
-                                                type='checkbox'
-                                                labelText='Account Active'
-                                                className='switch switch-ghost-primary'
-                                                {...register('is_active')}
-                                                row={true}
-                                                error={errors.is_active?.message}
-                                            />
-                                        </>
-                                    )}
-
-                                    <button
-                                        type='submit'
-                                        className='btn btn-primary btn-block mt-4'
-                                        disabled={!isDirty}
-                                    >
-                                        {isEdit ? 'Save' : 'Add'}
-                                    </button>
-                                </Tab>
-                                <Tab title='API Keys'>
-                                    <div className='mt-4' />
-                                    <FormField
-                                        name='vtKey'
-                                        type='password'
-                                        labelText='VirusTotal API Key'
-                                        placeholder='VirusTotal API Key'
-                                        {...register('vtKey')}
-                                        error={errors.vtKey?.message}
-                                    />
-                                    <div className='mt-4' />
-                                    <FormField
-                                        name='catalystKey'
-                                        type='password'
-                                        labelText='Catalyst API Key'
-                                        placeholder='Catalyst API Key'
-                                        {...register('catalystKey')}
-                                        error={errors.catalystKey?.message}
-                                    />
-
-                                    <button
-                                        type='submit'
-                                        className='btn btn-primary btn-block mt-4'
-                                        disabled={!isDirty}
-                                    >
-                                        {isEdit ? 'Save' : 'Add'}
-                                    </button>
-                                </Tab>
-                                {isEdit && (twoFactorEnabled || isOwnAccount) && (
-                                    <Tab title='Security'>
-                                        <div className='space-y-4'>
-                                            <div className='mt-4' />
-                                            <div className='flex flex-col space-y-4'>
-                                                {isOwnAccount && (
-                                                    <>
-                                                        <button
-                                                            type='button'
-                                                            className='btn btn-primary btn-block'
-                                                            onClick={navigateLink(
-                                                                '/change-password',
-                                                            )}
-                                                        >
-                                                            Change Password
-                                                        </button>
-
-                                                        <button
-                                                            type='button'
-                                                            className='btn btn-primary btn-block'
-                                                            onClick={
-                                                                handleGenerateApiKey
-                                                            }
-                                                        >
-                                                            Generate API Key
-                                                        </button>
-                                                    </>
-                                                )}
-
-                                                {(twoFactorEnabled || isOwnAccount) && (
-                                                    <button
-                                                        type='button'
-                                                        className={`btn btn-primary btn-block ${twoFactorEnabled ? 'bg-red-500' : ''}`}
-                                                        onClick={handle2FASetup}
-                                                    >
-                                                        {isEdit && twoFactorEnabled
-                                                            ? 'Disable Two-Factor Authentication'
-                                                            : 'Enable Two-Factor Authentication'}
-                                                    </button>
-                                                )}
-
-                                                {isOwnAccount && (
-                                                    <button
-                                                        type='button'
-                                                        className='btn btn-primary btn-block bg-red-500'
-                                                        onClick={() =>
-                                                            setModal(
-                                                                ConfirmDeletionModal,
-                                                                {
-                                                                    text: 'Are you sure you want to delete your account? All data related to you will be deleted.',
-                                                                    onConfirm:
-                                                                        handleDelete,
-                                                                },
-                                                            )
-                                                        }
-                                                    >
-                                                        Delete Account
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </Tab>
-                                )}
-                                <Tab title='Interface'>
-                                    <div className='mt-4' />
-                                    <div className='form-control flex flex-column justify-between items-center'>
-                                        <label
-                                            htmlFor={vimModeId}
-                                            className='flex flex-row items-center cursor-pointer w-full'
-                                        >
-                                            <img
-                                                src={vimIcon}
-                                                alt=''
-                                                style={{
-                                                    width: '25px',
-                                                    marginRight: '5px',
-                                                }}
-                                            />
-                                            Vim Mode
-                                            <input
-                                                id={vimModeId}
-                                                data-testid='vim-toggle'
-                                                name='vim-toggle'
-                                                type='checkbox'
-                                                className='switch switch-ghost-primary ml-auto'
-                                                {...register('vimMode')}
-                                            />
-                                        </label>
-                                    </div>
-                                    <div className='mt-4' />
-                                    <FormField
-                                        type='checkbox'
-                                        labelText='Compact UI'
-                                        className='switch switch-ghost-primary'
-                                        {...register('compactMode')}
-                                        row={true}
-                                        error={errors.compact_mode?.message}
-                                    />
-                                    <div className='mt-4' />
-                                    <div className='w-full mt-4'>
-                                        <label className='block text-sm font-medium'>
-                                            Theme
-                                        </label>
-                                        <div className='mt-1'>
-                                            <select
-                                                className='form-select select select-ghost-primary select-block focus:ring-0'
-                                                {...register('theme')}
+                {/* Content Area - Sidebar Layout */}
+                <div className='flex flex-col space-y-4 p-4'>
+                    <div className='flex gap-4'>
+                        {/* Sidebar */}
+                        <div className='w-64 flex-shrink-0'>
+                            <div className='cradle-border cradle-border-l cradle-border-r cradle-bg-elevated sticky top-6'>
+                                <nav className='p-4 space-y-2'>
+                                    {sidebarItems.map((item) => {
+                                        const Icon = item.icon;
+                                        return (
+                                            <button
+                                                key={item.id}
+                                                type='button'
+                                                onClick={() => setActiveSection(item.id)}
+                                                className={`cradle-btn w-full flex items-center gap-3 ${
+                                                    activeSection === item.id
+                                                        ? 'cradle-btn-primary'
+                                                        : 'cradle-btn-ghost'
+                                                }`}
                                             >
-                                                <option value='dark'>Dark</option>
-                                                <option value='light'>Light</option>
-                                            </select>
+                                                <Icon className='w-5 h-5 flex-shrink-0' />
+                                                <span className='text-left flex-1'>{item.label}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </nav>
+                            </div>
+                        </div>
+
+                        {/* Main Content */}
+                        <div className='flex-1'>
+                            <div className='cradle-border cradle-border-l cradle-border-r cradle-bg-elevated'>
+                                <form onSubmit={handleSubmit(onSubmit)}>
+                                    {renderSection()}
+                                    
+                                    {/* Alert at bottom */}
+                                    {alert.show && (
+                                        <div className='p-6 cradle-border-t'>
+                                            <AlertBox alert={alert} />
                                         </div>
-                                        {errors.theme && (
-                                            <p className='text-red-600 text-sm'>
-                                                {errors.theme.message}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className='mt-4' />
-
-                                    <SnippetList userId={target} />
-
-                                    <div className='mt-4' />
-
-                                    <button
-                                        type='button'
-                                        className={'btn btn-solid btn-block'}
-                                        onClick={editDefaultNoteTemplate}
-                                    >
-                                        <span className='flex items-center'>
-                                            <Edit className='w-4 h-4 mr-2' />
-                                            Edit Default Note Template
-                                        </span>
-                                    </button>
-                                    <button
-                                        type='submit'
-                                        className='btn btn-primary btn-block mt-4'
-                                        disabled={!isDirty}
-                                    >
-                                        {isEdit ? 'Save' : 'Add'}
-                                    </button>
-                                </Tab>
-                            </Tabs>
-                            <AlertBox alert={alert} />
-                        </form>
+                                    )}
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
