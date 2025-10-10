@@ -46,7 +46,7 @@ export default function Pagination({
     };
 
     return (
-        <div className='pagination flex justify-end items-center text-sm'>
+        <div className='pagination flex justify-end items-center text-sm w-full min-w-0'>
             {/* First */}
             {totalPages > 1 && currentPage !== 1 && (
                 <span
@@ -70,7 +70,7 @@ export default function Pagination({
             )}
 
             {/* Current Page / Total */}
-            <div className='flex items-center font-medium whitespace-nowrap text-sm'>
+            <div className='flex items-center font-medium text-sm flex-shrink-0'>
                 <input
                     type='text'
                     value={inputValue}

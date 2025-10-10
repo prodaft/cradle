@@ -70,7 +70,7 @@ export const PaneTabsProvider = ({ children }) => {
         if (activePaneId && !paneTabsState[activePaneId]) {
             initializePaneIfNeeded(activePaneId);
         }
-    }, [activePaneId, paneTabsState, initializePaneIfNeeded]);
+    }, [activePaneId, initializePaneIfNeeded]);
 
     // Update active pane's tab when location changes
     useEffect(() => {

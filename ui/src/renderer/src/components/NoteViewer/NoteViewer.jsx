@@ -1,7 +1,7 @@
-import { Code, Download, EditPencil, RefreshCircle, User, Clock, Link, Page, HistoricShield } from 'iconoir-react';
+import { Code, Download, EditPencil, RefreshCircle, User, Clock, Link, Page, HistoricShield, MoreVert, Check } from 'iconoir-react';
 import { StatsReport, Trash } from 'iconoir-react/regular';
 import { Graph } from '@phosphor-icons/react';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import { usePaneTabs } from '../../contexts/PaneTabsContext/PaneTabsContext';
@@ -26,7 +26,7 @@ import Prism from 'prismjs';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import '../../utils/customParser/prism-config.js';
-import { addCopyButtonsToCodeBlocks } from '../../utils/prismCopyButton';
+import { addCopyButtonsToCodeBlocks, removeCopyButtonsFromCodeBlocks } from '../../utils/prismCopyButton';
 
 import {
     InfoCircleSolid,
@@ -66,7 +66,9 @@ export default function NoteViewer() {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [parsedContent, setParsedContent] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState(0); // 0: Content, 1: Graph, 2: Files, 3: History
+    const [activeView, setActiveView] = useState(0); // 0: Content, 1: Graph, 2: History
+    const [showActionsMenu, setShowActionsMenu] = useState(false);
+    const rawContentRef = useRef(null);
     const { setModal } = useModal();
     const { managementApi } = useApi();
     const { updateCurrentTabTitle } = usePaneTabs();
@@ -185,13 +187,17 @@ export default function NoteViewer() {
 
     useEffect(() => {
         Prism.highlightAll();
-        if (isRaw) {
+        if (isRaw && rawContentRef.current) {
             // Add copy buttons to raw markdown view
-            const container = document.querySelector('.language-markdown');
-            if (container && container.parentElement) {
-                addCopyButtonsToCodeBlocks(container.parentElement.parentElement, null);
-            }
+            addCopyButtonsToCodeBlocks(rawContentRef.current, null);
         }
+        
+        // Cleanup function to remove copy buttons when component unmounts or view changes
+        return () => {
+            if (rawContentRef.current) {
+                removeCopyButtonsFromCodeBlocks(rawContentRef.current);
+            }
+        };
     }, [isRaw, note.content]);
 
     // Conditionally render spinner or component
@@ -282,128 +288,164 @@ export default function NoteViewer() {
                         )}
                     </div>
 
-                    {/* Right side - Tab navigation icons and action buttons */}
+                    {/* Right side - Action buttons */}
                     <div className='flex items-center gap-2'>
-                        {/* Tab navigation buttons */}
-                        <button
-                            onClick={() => setActiveTab(0)}
-                            className={`p-2  tooltip tooltip-bottom tooltip-primary ${
-                                activeTab === 0
-                                    ? 'cradle-text-secondary border-b-2 border-cradle-accent-primary'
-                                    : 'cradle-text-tertiary hover:cradle-text-primary'
-                            }`}
-                            data-tooltip='Content'
-                            data-testid='content-tab-btn'
-                        >
-                            <Page width='20' height='20' />
-                        </button>
-                        <button
-                            onClick={() => setActiveTab(1)}
-                            className={`p-2  tooltip tooltip-bottom tooltip-primary ${
-                                activeTab === 1
-                                    ? 'cradle-text-secondary border-b-2 border-cradle-accent-primary'
-                                    : 'cradle-text-tertiary hover:cradle-text-primary'
-                            }`}
-                            data-tooltip='Graph'
-                            data-testid='graph-tab-btn'
-                        >
-                            <Graph width='20' height='20' />
-                        </button>
-                        {isAdmin() && (
-                            <button
-                                onClick={() => setActiveTab(2)}
-                                className={`p-2  tooltip tooltip-bottom tooltip-primary ${
-                                    activeTab === 2
-                                        ? 'cradle-text-secondary border-b-2 border-cradle-accent-primary'
-                                        : 'cradle-text-tertiary hover:cradle-text-primary'
-                                }`}
-                                data-tooltip='History'
-                                data-testid='history-tab-btn'
-                            >
-                                <HistoricShield width='20' height='20' />
-                            </button>
-                        )}
-
                         {/* Action buttons */}
                         {!id?.startsWith('guide_') && (
                             <>
-                                <div className='w-px h-6 bg-cradle-border-primary mx-1'></div>
                                 {isPublishable && (
                                     <button
                                         onClick={navigateLink(`/publish?notes=${id}`)}
-                                        className='p-2 cradle-text-tertiary hover:cradle-text-primary  tooltip tooltip-bottom tooltip-primary'
+                                        className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:cradle-text-primary cradle-border hover:border-[#FF8C00] tooltip tooltip-bottom tooltip-primary'
                                         data-tooltip='Publish Report'
                                         data-testid='publish-btn'
                                     >
                                         <StatsReport width='20' height='20' />
                                     </button>
                                 )}
-                                {isAdmin() && (
+                                {/* Three-dots menu for note actions */}
+                                <div className='relative'>
                                     <button
-                                        onClick={() =>
-                                            managementApi.managementActionsCreate({
-                                                actionName: 'relinkNotes',
-                                                requestBody: {
-                                                    note_id: id,
-                                                },
-                                            }).then(() => {
-                                                setAlert({
-                                                    show: true,
-                                                    message: 'Relinking note...',
-                                                    color: 'green',
-                                                });
-                                            })
-                                        }
-                                        className='p-2 cradle-text-tertiary hover:cradle-text-primary  tooltip tooltip-bottom tooltip-primary'
-                                        data-tooltip='Relink Note'
-                                        data-testid='relink-btn'
+                                        onClick={() => setShowActionsMenu(!showActionsMenu)}
+                                        className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:cradle-text-primary cradle-border hover:border-[#FF8C00] tooltip tooltip-bottom tooltip-primary'
+                                        data-tooltip='More Actions'
+                                        data-testid='more-actions-btn'
                                     >
-                                        <RefreshCircle width='20' height='20' />
+                                        <MoreVert width='20' height='20' />
                                     </button>
-                                )}
-                                <button
-                                    onClick={toggleView}
-                                    className='p-2 cradle-text-tertiary hover:cradle-text-primary  tooltip tooltip-bottom tooltip-primary'
-                                    data-tooltip='Toggle View'
-                                    data-testid='toggle-view-btn'
-                                >
-                                    <Code width='20' height='20' />
-                                </button>
-                                <button
-                                    onClick={navigateLink(`/notes/${id}/edit`, { state: { from } })}
-                                    className='p-2 cradle-text-tertiary hover:cradle-text-primary  tooltip tooltip-bottom tooltip-primary'
-                                    data-tooltip='Edit Note'
-                                    data-testid='edit-btn'
-                                >
-                                    <EditPencil width='20' height='20' />
-                                </button>
-                                <button
-                                    onClick={() =>
-                                        setModal(ConfirmDeletionModal, {
-                                            onConfirm: handleDelete,
-                                            text: 'Are you sure you want to delete this note? This action is irreversible.',
-                                        })
-                                    }
-                                    className='p-2 cradle-text-tertiary hover:text-red-500  tooltip tooltip-bottom tooltip-primary'
-                                    data-tooltip='Delete Note'
-                                    data-testid='delete-btn'
-                                >
-                                    <Trash width='20' height='20' />
-                                </button>
+                                    {showActionsMenu && (
+                                        <>
+                                            <div
+                                                className='fixed inset-0 z-10'
+                                                onClick={() => setShowActionsMenu(false)}
+                                            />
+                                            <div className='absolute right-0 mt-2 w-48 cradle-bg-elevated cradle-border z-20'>
+                                                <div className='py-1' role='menu'>
+                                                    {/* View Options */}
+                                                    <button
+                                                        onClick={() => {
+                                                            setShowActionsMenu(false);
+                                                            setActiveView(0);
+                                                        }}
+                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2'
+                                                        data-testid='content-tab-menu-item'
+                                                    >
+                                                        <Page width='16' height='16' />
+                                                        <span className='flex-1'>Content</span>
+                                                        {activeView === 0 && <Check width='16' height='16' />}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setShowActionsMenu(false);
+                                                            setActiveView(1);
+                                                        }}
+                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2'
+                                                        data-testid='graph-tab-menu-item'
+                                                    >
+                                                        <Graph width='16' height='16' />
+                                                        <span className='flex-1'>Graph</span>
+                                                        {activeView === 1 && <Check width='16' height='16' />}
+                                                    </button>
+                                                    {isAdmin() && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowActionsMenu(false);
+                                                                setActiveView(2);
+                                                            }}
+                                                            className='w-full text-left px-4 py-2 text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2'
+                                                            data-testid='history-tab-menu-item'
+                                                        >
+                                                            <HistoricShield width='16' height='16' />
+                                                            <span className='flex-1'>History</span>
+                                                            {activeView === 2 && <Check width='16' height='16' />}
+                                                        </button>
+                                                    )}
+                                                    
+                                                    {/* Divider */}
+                                                    <div className='my-1 h-px bg-cradle-border-primary'></div>
+                                                    
+                                                    {/* Actions */}
+                                                    {isAdmin() && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowActionsMenu(false);
+                                                                managementApi.managementActionsCreate({
+                                                                    actionName: 'relinkNotes',
+                                                                    requestBody: {
+                                                                        note_id: id,
+                                                                    },
+                                                                }).then(() => {
+                                                                    setAlert({
+                                                                        show: true,
+                                                                        message: 'Relinking note...',
+                                                                        color: 'green',
+                                                                    });
+                                                                });
+                                                            }}
+                                                            className='w-full text-left px-4 py-2 text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2 '
+                                                            data-testid='relink-menu-item'
+                                                        >
+                                                            <RefreshCircle width='16' height='16' />
+                                                            Relink Note
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => {
+                                                            setShowActionsMenu(false);
+                                                            toggleView();
+                                                        }}
+                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2 '
+                                                        data-testid='toggle-view-menu-item'
+                                                    >
+                                                        <Code width='16' height='16' />
+                                                        <span className='flex-1'>Source mode</span>
+                                                        {isRaw && <Check width='16' height='16' />}
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            setShowActionsMenu(false);
+                                                            navigateLink(`/notes/${id}/edit`, { state: { from } })(e);
+                                                        }}
+                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2 '
+                                                        data-testid='edit-menu-item'
+                                                    >
+                                                        <EditPencil width='16' height='16' />
+                                                        Edit Note
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setShowActionsMenu(false);
+                                                            setModal(ConfirmDeletionModal, {
+                                                                onConfirm: handleDelete,
+                                                                text: 'Are you sure you want to delete this note? This action is irreversible.',
+                                                            });
+                                                        }}
+                                                        className='w-full text-left px-4 py-2 text-sm text-red-500 hover:cradle-bg-secondary flex items-center gap-2'
+                                                        data-testid='delete-menu-item'
+                                                    >
+                                                        <Trash width='16' height='16' />
+                                                        Delete Note
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             </>
                         )}
                     </div>
                 </div>
 
-                {/* Tab content */}
+                {/* View content */}
                 <div className='flex-1 overflow-hidden'>
-                    {/* Content Tab */}
-                    {activeTab === 0 && (
+                    {/* Content View */}
+                    {activeView === 0 && (
                         <div className='w-full h-full overflow-hidden flex flex-col px-4 pb-4'>
                             <div className='h-full w-full px-4 pb-4 pt-4 overflow-y-auto'>
                                 {isRaw ? (
                                     <pre
-                                        className='line-numbers h-full w-full p-4 bg-transparent prose-md max-w-none dark:prose-invert break-all overflow-y-auto rounded-lg flex-1 overflow-x-hidden whitespace-pre-wrap'
+                                        ref={rawContentRef}
+                                        className='line-numbers h-full w-full p-4 bg-transparent prose-md max-w-none dark:prose-invert break-words overflow-y-auto rounded-lg flex-1 overflow-x-hidden whitespace-pre-wrap'
                                         data-start='1'
                                     >
                                         <code className='language-markdown'>
@@ -424,13 +466,13 @@ export default function NoteViewer() {
                         </div>
                     )}
 
-                    {/* Graph Tab */}
-                    {activeTab === 1 && (
+                    {/* Graph View */}
+                    {activeView === 1 && (
                         <GraphExplorer GraphSearchComponent={NoteGraphSearch(note.id)} />
                     )}
 
-                    {/* Files Tab (removed as per new design) */}
-                    {note.files && note.files.length > 0 && activeTab === 999 && (
+                    {/* Files View (removed as per new design) */}
+                    {note.files && note.files.length > 0 && activeView === 999 && (
                         <div>
                             <div className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'>
                                 <div className='w-[95%] h-full flex flex-col p-6'>
@@ -570,8 +612,8 @@ export default function NoteViewer() {
                         </div>
                     )}
 
-                    {/* History Tab */}
-                    {isAdmin() && activeTab === 2 && (
+                    {/* History View */}
+                    {isAdmin() && activeView === 2 && (
                         <div className='pt-2'>
                             <ActivityList content_type='note' objectId={id} />
                         </div>

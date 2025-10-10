@@ -85,14 +85,14 @@ const Note = forwardRef(function (
     if (hidden) return null;
 
     return (
-        <div ref={ref} {...props}>
+        <div ref={ref} {...props} className='w-full min-w-0'>
             <div
                 style={style}
-                className='mb-4'
+                className='mb-4 w-full min-w-0'
             >
                 {/* Header row with timestamp and configurable controls */}
-                <div className='flex items-center justify-between border-b border-cradle-border-primary pb-3 mb-4'>
-                    <div className='flex items-center gap-3 cradle-mono text-xs'>
+                <div className='flex items-center justify-between border-b border-cradle-border-primary pb-3 mb-4 w-full min-w-0'>
+                    <div className='flex items-center gap-3 cradle-mono text-xs min-w-0 flex-1'>
                         {note.fleeting && (
                             <span
                                 className='inline-flex items-center align-middle tooltip-right tooltip tooltip-primary'
@@ -136,7 +136,7 @@ const Note = forwardRef(function (
                             </>
                         )}
                     </div>
-                    <div className='flex items-center gap-2'>
+                    <div className='flex items-center gap-2 flex-shrink-0'>
                         {actions.map(({ Component, props }, index) => (
                             <Component
                                 key={index}
@@ -211,7 +211,7 @@ const Note = forwardRef(function (
                             })
                         }
                     >
-                        <div className='max-h-[36rem] overflow-y-auto cradle-scrollbar'>
+                        <div className='max-h-[36rem] overflow-y-auto overflow-x-hidden cradle-scrollbar w-full min-w-0'>
                             <Preview htmlContent={parsedContent} />
                         </div>
                     </div>

@@ -87,9 +87,9 @@ export default function NoteSelector({
     return (
         <div
             ref={setNodeRef}
-            className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'
+            className='w-full h-full flex justify-center items-center overflow-y-scroll overflow-x-hidden'
         >
-            <div className='w-[95%] h-full flex flex-col p-6 space-y-3'>
+            <div className='w-full max-w-6xl h-full flex flex-col p-6 space-y-3 min-w-0'>
                 <AlertDismissible
                     alert={{ show: false, message: '', color: 'red' }}
                     setAlert={setAlert}
@@ -97,7 +97,7 @@ export default function NoteSelector({
 
                 <form
                     onSubmit={handleSearchSubmit}
-                    className='flex space-x-4 px-3 pb-2'
+                    className='flex flex-col sm:flex-row gap-4 px-3 pb-2 w-full min-w-0'
                 >
                     <input
                         type='text'
@@ -105,7 +105,7 @@ export default function NoteSelector({
                         value={searchFilters.content}
                         onChange={handleSearchChange}
                         placeholder='Search by content'
-                        className='input !max-w-full w-full'
+                        className='input flex-1 min-w-0'
                     />
                     <input
                         type='text'
@@ -113,18 +113,20 @@ export default function NoteSelector({
                         value={searchFilters.author__username}
                         onChange={handleSearchChange}
                         placeholder='Search by author'
-                        className='input !max-w-full w-full'
+                        className='input flex-1 min-w-0'
                     />
-                    <button type='submit' className='btn w-1/2'>
+                    <button type='submit' className='btn flex-shrink-0 whitespace-nowrap'>
                         <Search /> Search
                     </button>
                 </form>
 
-                <Pagination
-                    currentPage={page}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                />
+                <div className='w-full min-w-0'>
+                    <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                    />
+                </div>
 
                 <div>
                     <div className='flex flex-col space-y-4'>
@@ -135,7 +137,7 @@ export default function NoteSelector({
                                 </div>
                             </div>
                         ) : notes.length > 0 ? (
-                            <div className='notes-list'>
+                            <div className='notes-list w-full min-w-0'>
                                 {notes.map(
                                     (note) =>
                                         !isNoteSelected(note.id) && (

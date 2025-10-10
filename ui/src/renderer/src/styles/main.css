@@ -253,3 +253,24 @@ button:hover svg {
 .cradle-text-primary svg {
     color: var(--cradle-accent-primary);
 }
+
+/* Force word breaking in preview content to prevent horizontal overflow */
+#preview-pane {
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Only apply to text content, not code blocks or links */
+#preview-pane p,
+#preview-pane h1,
+#preview-pane h2,
+#preview-pane h3,
+#preview-pane h4,
+#preview-pane h5,
+#preview-pane h6,
+#preview-pane li,
+#preview-pane td,
+#preview-pane th {
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
