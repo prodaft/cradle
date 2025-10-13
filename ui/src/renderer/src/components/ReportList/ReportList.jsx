@@ -14,11 +14,9 @@ import {
     getReports,
     importReport,
 } from '../../services/publishService/publishService';
-import ActionBar from '../ActionBar/ActionBar';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import ActionsTable from '../ActionsTable/ActionsTable';
+import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import ListView from '../ListView/ListView';
-import Pagination from '../Pagination/Pagination';
 import PaginationWrapper from '../PaginationWrapper/PaginationWrapper';
 import TableCard from '../TableCard/TableCard';
 
@@ -33,7 +31,6 @@ import {
     truncateText,
 } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
-import ActionBar from '../ActionBar/ActionBar';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 
 /**
