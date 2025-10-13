@@ -1,4 +1,4 @@
-import { InputField, PasteClipboard, Trash } from 'iconoir-react';
+import { InputField, PasteClipboard, Trash, Download } from 'iconoir-react';
 import { useState } from 'react';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { createDownloadPath } from '../../utils/textEditorUtils/textEditorUtils';
@@ -43,6 +43,18 @@ export default function FileTable({ fileData, setFileData, insertTextCallback })
             localStorage.setItem('minio-cache', JSON.stringify(minioCache));
         }
     };
+
+    // Downloads a file
+    const handleDownload = (data) => {
+        const url = createDownloadPath(data);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = data.file_name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
 
     return (
         <>
@@ -110,6 +122,19 @@ export default function FileTable({ fileData, setFileData, insertTextCallback })
                                                 }
                                             >
                                                 <PasteClipboard width='20px' />
+                                            </button>
+                                        </span>
+                                        <span
+                                            className='tooltip tooltip-top'
+                                            data-tooltip='Download'
+                                        >
+                                            <button
+                                                id={`download-${index}`}
+                                                data-testid={`download-${index}`}
+                                                className='px-2 py-1 rounded hover:opacity-60 bg-zinc-3'
+                                                onClick={() => handleDownload(data)}
+                                            >
+                                                <Download width='20px' />
                                             </button>
                                         </span>
                                         <span

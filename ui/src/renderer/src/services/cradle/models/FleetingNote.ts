@@ -52,6 +52,24 @@ export interface FleetingNote {
      * @memberof FleetingNote
      */
     files?: Array<FileReference>;
+    /**
+     * 
+     * @type {string}
+     * @memberof FleetingNote
+     */
+    title?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FleetingNote
+     */
+    description?: string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof FleetingNote
+     */
+    fleeting?: boolean;
 }
 
 /**

@@ -1,133 +1,158 @@
-import React, { Suspense, useEffect, useRef, useState } from 'react';
-import { matchPath, UNSAFE_RouteContext as RouteContext, useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState, useCallback, memo } from 'react';
 import { Xmark, NavArrowDown, Plus, SplitArea } from 'iconoir-react';
 import * as Iconoir from 'iconoir-react';
 import { usePaneTabs } from '../../contexts/PaneTabsContext/PaneTabsContext';
 import { useLayout } from '../../contexts/LayoutContext/LayoutContext';
+import { useTabHost } from '../../contexts/TabHostContext/TabHostContext';
 
-// Create outlet context for passing props to child components
-const OutletContext = React.createContext(null);
-const OutletContextProvider = OutletContext.Provider;
+// Constants
+const ZONE_MIN = 72;
+const ZONE_MAX = 220;
+const ZONE_RATIO = 0.22;
+const TABBAR_TOP_OVERRIDE = 18;
+const STICKY_PX = 24;
 
-// Global variable to track current drag operation
-let currentDragInfo = null;
+// DND constants and helpers
+const DND_MIME = 'application/x-cradle-tab';
 
-// Import all route components
-const NoteEditor = React.lazy(() => import('../NoteEditor/NoteEditor.jsx'));
-const Documents = React.lazy(() => import('../Documents/Documents.jsx'));
-const Files = React.lazy(() => import('../Files/Files.jsx'));
-const FeatureNotImplemented = React.lazy(() => import('../FeatureNotImplemented/FeatureNotImplemented.jsx'));
-const Dashboard = React.lazy(() => import('../Dashboard/Dashboard.jsx'));
-const NoteViewer = React.lazy(() => import('../NoteViewer/NoteViewer.jsx'));
-const NoteSelector = React.lazy(() => import('../NoteSelector/NoteSelector.jsx'));
-const Welcome = React.lazy(() => import('../Welcome/Welcome.jsx'));
-const ActivityList = React.lazy(() => import('../ActivityList/ActivityList.jsx'));
-const GraphSearch = React.lazy(() => import('../GraphQuery/GraphSearch.jsx'));
-const GraphExplorer = React.lazy(() => import('../GraphExplorer/GraphExplorer.jsx'));
-const Reports = React.lazy(() => import('../Reports/Reports.jsx'));
-const ReportList = React.lazy(() => import('../ReportList/ReportList.jsx'));
-const Publish = React.lazy(() => import('../Publish/Publish.jsx'));
-const FleetingNoteEditor = React.lazy(() => import('../FleetingNoteEditor/FleetingNoteEditor.jsx'));
-const AccountSettings = React.lazy(() => import('../AccountSettings/AccountSettings.jsx'));
-const AdminPanel = React.lazy(() => import('../AdminPanel/AdminPanel.jsx'));
-const DigestData = React.lazy(() => import('../DigestData/DigestData.jsx'));
+const setCradleTab = (dt, payload) => dt.setData(DND_MIME, JSON.stringify(payload));
+const getCradleTab = (dt) => {
+    try { return JSON.parse(dt.getData(DND_MIME)); } catch { return null; }
+};
+const hasCradleTab = (dt) => {
+    const t = dt?.types || [];
+    return (typeof t.contains === 'function' ? t.contains(DND_MIME) : Array.from(t).includes(DND_MIME)) || !!dt?.getData(DND_MIME);
+};
 
-/**
- * Define route configurations
- */
-const routeConfigs = [
-    { path: '/notes/:id/edit', component: NoteEditor },
-    { path: '/notes/:id', component: NoteViewer },
-    { path: '/notes', component: NoteSelector },
-    { path: '/editor/:id', component: FleetingNoteEditor },
-    { path: '/dashboards/:subtype/:name', component: Dashboard },
-    { path: '/admin/add/user', component: () => <AccountSettings isEdit={false} /> },
-    { path: '/admin', component: AdminPanel },
-    { path: '/reports/:report_id', component: ReportList },
-    { path: '/knowledge-graph', component: () => <GraphExplorer GraphSearchComponent={GraphSearch} /> },
-    { path: '/not-implemented', component: FeatureNotImplemented },
-    { path: '/documents', component: Documents },
-    { path: '/files', component: Files },
-    { path: '/digest-data', component: DigestData },
-    { path: '/connectivity', component: Reports },
-    { path: '/publish', component: Publish },
-    { path: '/activity/:username', component: ActivityList },
-    { path: '/activity', component: ActivityList },
-    { path: '/account', component: () => <AccountSettings target='me' /> },
-    { path: '/', exact: true, component: Welcome },
-];
-
-/**
- * Find the matching route configuration for a given path
- */
-const findMatchingRoute = (path) => {
-    for (const route of routeConfigs) {
-        const match = matchPath({ path: route.path, end: route.exact !== false }, path);
-        if (match) {
-            return { route, match };
-        }
-    }
-    return null;
+// Global drag flag helpers
+const setGlobalDragFlag = (value) => {
+    try { window.__cradleTabDragging = value; } catch {}
+};
+const clearGlobalDragFlag = () => {
+    try { window.__cradleTabDragging = false; } catch {}
 };
 
 /**
- * CachedTabContent - Renders and caches a single tab's content
+ * Robust helper to detect if we're dragging a Cradle tab
+ * Handles various browser quirks with dataTransfer.types
  */
-const CachedTabContent = ({ path, outletContext }) => {
-    const [routeInfo, setRouteInfo] = useState(null);
-    
-    useEffect(() => {
-        const matched = findMatchingRoute(path);
-        if (matched) {
-            setRouteInfo(matched);
-        }
-    }, [path]);
-    
-    if (!routeInfo) {
-        return null;
-    }
-    
-    const Component = routeInfo.route.component;
-    const params = routeInfo.match.params || {};
-    const { pathname, pathnameBase, pattern } = routeInfo.match;
-    
-    const matches = [
-        {
-            id: pattern.path,
-            pathname: pathname,
-            params: params,
-            pathnameBase: pathnameBase || pathname,
-            route: {
-                path: pattern.path,
-                id: pattern.path,
-            }
-        }
-    ];
-    
-    const routeContextValue = {
-        outlet: null,
-        matches: matches,
-        isDataRoute: false,
-    };
-    
+function isCradleTabDrag(e) {
+    if (typeof window !== 'undefined' && window.__cradleTabDragging) return true;
+    const dt = e.dataTransfer;
+    if (!dt) return false;
+    return hasCradleTab(dt);
+}
+
+/**
+ * Helper to compute reorder target index with consistent logic
+ */
+const computeReorderTarget = ({ sourceIndex, hoverIndex, dropBefore }) => {
+    let target = dropBefore ? hoverIndex : hoverIndex + 1;
+    if (sourceIndex < hoverIndex && target > sourceIndex) target -= 1;
+    if (sourceIndex > hoverIndex && target <= sourceIndex) target += 0; // no change
+    return target;
+};
+
+
+
+/**
+ * Tab component - Individual tab with drag and drop support
+ */
+const Tab = memo(({ 
+    tab, 
+    index, 
+    isTabActive, 
+    isActive, 
+    isDragging, 
+    showDropBefore, 
+    showDropAfter, 
+    onTabClick, 
+    onCloseClick, 
+    onContextMenu, 
+    onDragStart, 
+    onDragOver, 
+    onDragLeave, 
+    onDrop, 
+    onDragEnd, 
+    onKeyDown 
+}) => {
+    const getIconComponent = useCallback((iconName) => {
+        const IconComponent = Iconoir[iconName];
+        const iconProps = { width: '1em', height: '1em', strokeWidth: 1.5 };
+        return IconComponent ? <IconComponent {...iconProps} /> : <Iconoir.Page {...iconProps} />;
+    }, []);
+
     return (
-        <RouteContext.Provider value={routeContextValue}>
-            <OutletContextProvider value={outletContext}>
-                <Suspense fallback={null}>
-                    <Component />
-                </Suspense>
-            </OutletContextProvider>
-        </RouteContext.Provider>
+        <div key={`tab-wrapper-${tab.id}`} className='relative flex items-center h-full'>
+            {showDropBefore && (
+                <div className='absolute left-0 top-0 bottom-0 w-0.5 z-10' style={{ backgroundColor: 'var(--cradle-accent-primary)' }} />
+            )}
+            
+            <div
+                role="tab"
+                aria-selected={isTabActive}
+                tabIndex={isTabActive ? 0 : -1}
+                draggable
+                className={`
+                    flex items-center gap-2 px-4 h-full min-w-[120px] max-w-[200px]
+                    cursor-move group relative focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+                    ${isTabActive 
+                        ? 'cradle-bg-primary border-l border-r cradle-border cradle-text-secondary border-b border-cradle-bg-primary' 
+                        : 'cradle-bg-elevated cradle-text-tertiary cradle-border'
+                    }
+                    ${isDragging ? 'opacity-50' : ''}
+                    ${isTabActive && isActive ? 'border-t-2' : 'border-t cradle-border'}
+                `}
+                style={isTabActive && isActive ? {
+                    borderTopColor: 'var(--cradle-accent-primary)'
+                } : {}}
+                onClick={() => onTabClick(index)}
+                onContextMenu={(e) => onContextMenu(e, index)}
+                onKeyDown={(e) => onKeyDown(e, index)}
+                onDragStart={(e) => onDragStart(e, index)}
+                onDragOver={(e) => onDragOver(e, index)}
+                onDragLeave={onDragLeave}
+                onDrop={(e) => onDrop(e, index)}
+                onDragEnd={onDragEnd}
+                title={tab.title}
+            >
+                <div className='flex-shrink-0' style={{ width: '1em', height: '1em' }}>
+                    {getIconComponent(tab.icon)}
+                </div>
+                
+                <span className='flex-1 truncate text-sm cradle-mono'>
+                    {tab.title}
+                </span>
+                
+                <button
+                    aria-label={`Close tab: ${tab.title}`}
+                    className={`
+                        flex-shrink-0 rounded p-0.5
+                        border border-transparent hover:cradle-border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+                        ${isTabActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
+                    `}
+                    onClick={(e) => onCloseClick(e, index)}
+                    title='Close'
+                >
+                    <Xmark width='0.9em' height='0.9em' />
+                </button>
+            </div>
+            
+            {showDropAfter && (
+                <div className='absolute right-0 top-0 bottom-0 w-0.5 z-10' style={{ backgroundColor: 'var(--cradle-accent-primary)' }} />
+            )}
+        </div>
     );
-};
+});
+
+Tab.displayName = 'Tab';
 
 /**
  * PaneTabs component - Tab bar for a single pane
  */
-const PaneTabs = ({ paneId, isActive }) => {
+const PaneTabs = ({ paneId, isActive, onRootRef }) => {
     const { getPaneTabsState, switchToTab, closeTab, closeOtherTabs, closeTabsToRight, reorderTabs, createNewTab, moveTabBetweenPanes } = usePaneTabs();
     const { splitPane, setActivePaneId } = useLayout();
-    const navigate = useNavigate();
     const paneState = getPaneTabsState(paneId);
     const { tabs, activeTabIndex } = paneState;
     
@@ -138,6 +163,7 @@ const PaneTabs = ({ paneId, isActive }) => {
     const [isDraggedOver, setIsDraggedOver] = useState(false);
     const contextMenuRef = useRef(null);
     const tabBarRef = useRef(null);
+    const tabbarDragDepthRef = useRef(0);
 
     const handleContextMenu = (e, index) => {
         e.preventDefault();
@@ -170,7 +196,7 @@ const PaneTabs = ({ paneId, isActive }) => {
         };
     }, [contextMenuTab]);
 
-    const handleTabClick = (index) => {
+    const handleTabClick = useCallback((index) => {
         if (isActive) {
             // Pane is already active - just switch tabs (switchToTab will navigate)
             switchToTab(paneId, index);
@@ -185,19 +211,23 @@ const PaneTabs = ({ paneId, isActive }) => {
             
             // Then activate pane (with a small delay to ensure state is updated)
             requestAnimationFrame(() => {
-                setActivePaneId(paneId);
+                if (isMountedRef.current) {
+                    setActivePaneId(paneId);
+                }
             });
         }
-    };
+    }, [isActive, switchToTab, paneId, setActivePaneId]);
 
-    const handleCloseClick = (e, index) => {
+    const handleCloseClick = useCallback((e, index) => {
         e.stopPropagation();
         closeTab(paneId, index);
-    };
+    }, [closeTab, paneId]);
 
-    const handleDragStart = (e, index) => {
+    const handleDragStart = useCallback((e, index) => {
+        if (!e.dataTransfer) return;
         setDraggedTab(index);
         e.dataTransfer.effectAllowed = 'move';
+        setGlobalDragFlag(true);
         
         const dragInfo = {
             paneId: paneId,
@@ -205,14 +235,11 @@ const PaneTabs = ({ paneId, isActive }) => {
             tabCount: tabs.length,
         };
         
-        // Store in global variable for drop zone calculations
-        currentDragInfo = dragInfo;
-        
-        // Store the pane ID and tab index for cross-pane dragging
-        e.dataTransfer.setData('application/x-cradle-tab', JSON.stringify(dragInfo));
-    };
+        setCradleTab(e.dataTransfer, dragInfo);
+    }, [paneId, tabs.length]);
 
-    const handleDragOver = (e, index) => {
+    const handleDragOver = useCallback((e, index) => {
+        if (!e.dataTransfer) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
         
@@ -225,26 +252,19 @@ const PaneTabs = ({ paneId, isActive }) => {
             const dropBefore = e.clientX < midPoint;
             setDragOverTab({ index, dropBefore });
         }
-    };
+    }, [draggedTab]);
 
-    const handleDragLeave = () => {
+    const handleDragLeave = useCallback(() => {
         setDragOverTab(null);
-    };
+    }, []);
 
-    const handleDrop = (e, index) => {
+    const handleDrop = useCallback((e, index) => {
+        if (!e.dataTransfer) return;
         e.preventDefault();
         e.stopPropagation();
         
-        const dataStr = e.dataTransfer.getData('application/x-cradle-tab');
-        if (!dataStr) return;
-        
-        let dragData;
-        try {
-            dragData = JSON.parse(dataStr);
-        } catch (error) {
-            console.error('Failed to parse drag data:', error);
-            return;
-        }
+        const dragData = getCradleTab(e.dataTransfer);
+        if (!dragData) return;
         
         const { paneId: sourcePaneId, tabIndex: sourceIndex } = dragData;
         
@@ -255,29 +275,19 @@ const PaneTabs = ({ paneId, isActive }) => {
         }
         
         if (dragOverTab) {
-            let targetIndex = index;
-            
             if (sourcePaneId === paneId) {
                 // Same pane - reorder
-                if (sourceIndex !== index) {
-                    if (!dragOverTab.dropBefore && index < sourceIndex) {
-                        targetIndex = index;
-                    } else if (!dragOverTab.dropBefore && index > sourceIndex) {
-                        targetIndex = index;
-                    } else if (dragOverTab.dropBefore && index > sourceIndex) {
-                        targetIndex = index - 1;
-                    } else if (dragOverTab.dropBefore && index < sourceIndex) {
-                        targetIndex = index;
-                    }
+                const targetIndex = computeReorderTarget({
+                    sourceIndex,
+                    hoverIndex: index,
+                    dropBefore: dragOverTab.dropBefore,
+                });
+                if (targetIndex !== sourceIndex) {
                     reorderTabs(paneId, sourceIndex, targetIndex);
                 }
             } else {
                 // Different pane - move between panes
-                if (dragOverTab.dropBefore) {
-                    targetIndex = index;
-                } else {
-                    targetIndex = index + 1;
-                }
+                const targetIndex = dragOverTab.dropBefore ? index : index + 1;
                 moveTabBetweenPanes(sourcePaneId, sourceIndex, paneId, targetIndex);
                 setActivePaneId(paneId);
             }
@@ -285,31 +295,52 @@ const PaneTabs = ({ paneId, isActive }) => {
         
         setDraggedTab(null);
         setDragOverTab(null);
-        setIsDraggedOver(false);
-    };
+        clearGlobalDragFlag();
+    }, [dragOverTab, paneId, reorderTabs, moveTabBetweenPanes, setActivePaneId]);
 
-    const handleDragEnd = () => {
+    const handleDragEnd = useCallback(() => {
         setDraggedTab(null);
         setDragOverTab(null);
-        setIsDraggedOver(false);
-        currentDragInfo = null; // Clear global drag info
+        clearGlobalDragFlag();
+    }, []);
+
+    const handleKeyDown = useCallback((e, index) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleTabClick(index);
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'w') {
+            e.preventDefault();
+            handleCloseClick(e, index);
+        }
+    }, [handleTabClick, handleCloseClick]);
+
+    /**
+     * Handles drag enter on tab bar
+     */
+    const handleTabBarDragEnter = (e) => {
+        if (!isCradleTabDrag(e)) return;
+        tabbarDragDepthRef.current += 1;
+        setIsDraggedOver(true);
     };
 
     /**
      * Handles drag over the tab bar (for dropping at the end)
      */
     const handleTabBarDragOver = (e) => {
+        if (!e.dataTransfer) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
-        setIsDraggedOver(true);
     };
 
     /**
      * Handles drag leave from tab bar
      */
     const handleTabBarDragLeave = (e) => {
-        // Only set to false if we're leaving the tab bar itself
-        if (e.currentTarget === e.target || !e.currentTarget.contains(e.relatedTarget)) {
+        if (!isCradleTabDrag(e)) return;
+        tabbarDragDepthRef.current -= 1;
+        if (tabbarDragDepthRef.current <= 0) {
+            tabbarDragDepthRef.current = 0;
             setIsDraggedOver(false);
         }
     };
@@ -318,13 +349,13 @@ const PaneTabs = ({ paneId, isActive }) => {
      * Handles drop on the tab bar (at the end)
      */
     const handleTabBarDrop = (e) => {
+        if (!e.dataTransfer) return;
         e.preventDefault();
         e.stopPropagation();
         
-        const dataStr = e.dataTransfer.getData('application/x-cradle-tab');
-        if (!dataStr) return;
+        const dragData = getCradleTab(e.dataTransfer);
+        if (!dragData) return;
         
-        const dragData = JSON.parse(dataStr);
         const { paneId: sourcePaneId, tabIndex: sourceIndex } = dragData;
         
         if (sourcePaneId !== paneId) {
@@ -335,14 +366,9 @@ const PaneTabs = ({ paneId, isActive }) => {
         
         setDraggedTab(null);
         setDragOverTab(null);
-        setIsDraggedOver(false);
+        clearGlobalDragFlag();
     };
 
-    const getIconComponent = (iconName) => {
-        const IconComponent = Iconoir[iconName];
-        const iconProps = { width: '1em', height: '1em', strokeWidth: 1.5 };
-        return IconComponent ? <IconComponent {...iconProps} /> : <Iconoir.Page {...iconProps} />;
-    };
 
     if (!tabs || tabs.length === 0) {
         return null;
@@ -350,8 +376,13 @@ const PaneTabs = ({ paneId, isActive }) => {
 
     return (
         <div 
-            ref={tabBarRef}
-            className={`flex items-center h-10 cradle-bg-elevated overflow-x-auto overflow-y-hidden cradle-scrollbar-thin ${isActive ? 'cradle-border-b' : 'cradle-border-b border-opacity-50'} ${isDraggedOver ? 'ring-2 ring-inset ring-[#FF8C00]' : ''}`}
+            ref={(el) => {
+                tabBarRef.current = el;
+                if (onRootRef) onRootRef(el);
+            }}
+            role="tablist"
+            className={`flex items-center h-10 cradle-bg-elevated overflow-x-auto overflow-y-hidden cradle-scrollbar-thin ${isActive ? 'cradle-border-b' : 'cradle-border-b border-opacity-50'}`}
+            onDragEnter={handleTabBarDragEnter}
             onDragOver={handleTabBarDragOver}
             onDragLeave={handleTabBarDragLeave}
             onDrop={handleTabBarDrop}
@@ -363,62 +394,37 @@ const PaneTabs = ({ paneId, isActive }) => {
                 const showDropAfter = dragOverTab?.index === index && !dragOverTab?.dropBefore;
                 
                 return (
-                    <div key={`tab-wrapper-${tab.id}`} className='relative flex items-center h-full'>
-                        {showDropBefore && (
-                            <div className='absolute left-0 top-0 bottom-0 w-0.5 bg-[#FF8C00] z-10' />
-                        )}
-                        
-                        <div
-                            draggable
-                            className={`
-                                flex items-center gap-2 px-4 h-full min-w-[120px] max-w-[200px]
-                                cursor-move group relative
-                                ${isTabActive 
-                                    ? 'cradle-bg-primary border-l border-r cradle-border cradle-text-secondary border-b border-cradle-bg-primary' 
-                                    : 'cradle-bg-elevated cradle-text-tertiary cradle-border'
-                                }
-                                ${isDragging ? 'opacity-50' : ''}
-                                ${isTabActive && isActive ? 'border-t-2 border-t-[#FF8C00]' : 'border-t cradle-border'}
-                            `}
-                            onClick={() => handleTabClick(index)}
-                            onContextMenu={(e) => handleContextMenu(e, index)}
-                            onDragStart={(e) => handleDragStart(e, index)}
-                            onDragOver={(e) => handleDragOver(e, index)}
-                            onDragLeave={handleDragLeave}
-                            onDrop={(e) => handleDrop(e, index)}
-                            onDragEnd={handleDragEnd}
-                            title={tab.title}
-                        >
-                            <div className='flex-shrink-0' style={{ width: '1em', height: '1em' }}>
-                                {getIconComponent(tab.icon)}
-                            </div>
-                            
-                            <span className='flex-1 truncate text-sm cradle-mono'>
-                                {tab.title}
-                            </span>
-                            
-                            <button
-                                className={`
-                                    flex-shrink-0 rounded p-0.5
-                                    border border-transparent hover:cradle-border
-                                    ${isTabActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
-                                `}
-                                onClick={(e) => handleCloseClick(e, index)}
-                                title='Close'
-                            >
-                                <Xmark width='0.9em' height='0.9em' />
-                            </button>
-                        </div>
-                        
-                        {showDropAfter && (
-                            <div className='absolute right-0 top-0 bottom-0 w-0.5 bg-[#FF8C00] z-10' />
-                        )}
-                    </div>
+                    <Tab
+                        key={tab.id}
+                        tab={tab}
+                        index={index}
+                        isTabActive={isTabActive}
+                        isActive={isActive}
+                        isDragging={isDragging}
+                        showDropBefore={showDropBefore}
+                        showDropAfter={showDropAfter}
+                        onTabClick={handleTabClick}
+                        onCloseClick={handleCloseClick}
+                        onContextMenu={handleContextMenu}
+                        onDragStart={handleDragStart}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        onDragEnd={handleDragEnd}
+                        onKeyDown={handleKeyDown}
+                    />
                 );
             })}
 
             <button
-                className='flex items-center justify-center h-full w-10 flex-shrink-0 cradle-text-tertiary hover:border-[#FF8C00] border border-transparent cradle-border-l'
+                aria-label="Create new tab"
+                className='flex items-center justify-center h-full w-10 flex-shrink-0 cradle-text-tertiary border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
+                style={{ 
+                    borderColor: 'var(--cradle-border-primary)',
+                    '--hover-border-color': 'var(--cradle-accent-primary)'
+                }}
+                onMouseEnter={(e) => e.target.style.borderColor = 'var(--cradle-accent-primary)'}
+                onMouseLeave={(e) => e.target.style.borderColor = 'var(--cradle-border-primary)'}
                 onClick={() => createNewTab(paneId)}
                 title='New Tab'
             >
@@ -430,7 +436,14 @@ const PaneTabs = ({ paneId, isActive }) => {
             {isActive && (
                 <>
                     <button
-                        className='flex items-center justify-center h-full w-10 flex-shrink-0 cradle-text-tertiary hover:cradle-text-secondary hover:cradle-bg-secondary cradle-border-l'
+                        aria-label="Split pane horizontally"
+                        className='flex items-center justify-center h-full w-10 flex-shrink-0 cradle-text-tertiary hover:cradle-text-secondary border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
+                        style={{ 
+                            borderColor: 'var(--cradle-border-primary)',
+                            '--hover-border-color': 'var(--cradle-accent-primary)'
+                        }}
+                        onMouseEnter={(e) => e.target.style.borderColor = 'var(--cradle-accent-primary)'}
+                        onMouseLeave={(e) => e.target.style.borderColor = 'var(--cradle-border-primary)'}
                         onClick={() => splitPane(paneId, 'horizontal', 'after')}
                         title='Split Horizontally'
                     >
@@ -438,7 +451,14 @@ const PaneTabs = ({ paneId, isActive }) => {
                     </button>
 
                     <button
-                        className='flex items-center justify-center h-full w-10 flex-shrink-0 cradle-text-tertiary hover:cradle-text-secondary hover:cradle-bg-secondary cradle-border-l'
+                        aria-label="Split pane vertically"
+                        className='flex items-center justify-center h-full w-10 flex-shrink-0 cradle-text-tertiary hover:cradle-text-secondary border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
+                        style={{ 
+                            borderColor: 'var(--cradle-border-primary)',
+                            '--hover-border-color': 'var(--cradle-accent-primary)'
+                        }}
+                        onMouseEnter={(e) => e.target.style.borderColor = 'var(--cradle-accent-primary)'}
+                        onMouseLeave={(e) => e.target.style.borderColor = 'var(--cradle-border-primary)'}
                         onClick={() => splitPane(paneId, 'vertical', 'after')}
                         title='Split Vertically'
                     >
@@ -451,6 +471,7 @@ const PaneTabs = ({ paneId, isActive }) => {
             {contextMenuTab !== null && (
                 <div
                     ref={contextMenuRef}
+                    role="menu"
                     className='fixed z-50 cradle-bg-elevated cradle-border rounded shadow-lg py-1 min-w-[180px]'
                     style={{
                         left: `${contextMenuPosition.x}px`,
@@ -458,7 +479,8 @@ const PaneTabs = ({ paneId, isActive }) => {
                     }}
                 >
                     <button
-                        className='w-full px-4 py-2 text-left text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2'
+                        role="menuitem"
+                        className='w-full px-4 py-2 text-left text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
                         onClick={() => {
                             closeTab(paneId, contextMenuTab);
                             handleCloseContextMenu();
@@ -469,7 +491,8 @@ const PaneTabs = ({ paneId, isActive }) => {
                     </button>
                     {tabs.length > 1 && (
                         <button
-                            className='w-full px-4 py-2 text-left text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2'
+                            role="menuitem"
+                            className='w-full px-4 py-2 text-left text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
                             onClick={() => {
                                 closeOtherTabs(paneId, contextMenuTab);
                                 handleCloseContextMenu();
@@ -481,7 +504,8 @@ const PaneTabs = ({ paneId, isActive }) => {
                     )}
                     {contextMenuTab < tabs.length - 1 && (
                         <button
-                            className='w-full px-4 py-2 text-left text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2'
+                            role="menuitem"
+                            className='w-full px-4 py-2 text-left text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
                             onClick={() => {
                                 closeTabsToRight(paneId, contextMenuTab);
                                 handleCloseContextMenu();
@@ -502,13 +526,24 @@ const PaneTabs = ({ paneId, isActive }) => {
  */
 const LayoutPane = ({ paneId, outletContext }) => {
     const { activePaneId, setActivePaneId, splitPane } = useLayout();
-    const { getPaneTabsState, initializePaneIfNeeded, activatePane, handleSplitWithTab } = usePaneTabs();
+    const { getPaneTabsState, initializePaneIfNeeded, activatePane, handleSplitWithTab, moveTabBetweenPanes } = usePaneTabs();
+    const { attach } = useTabHost();
     const isActive = activePaneId === paneId;
     const mountedTabsRef = useRef(new Set());
     const wasActiveRef = useRef(isActive);
     const paneRef = useRef(null);
     const isMountedRef = useRef(true);
-    const [dropZone, setDropZone] = useState(null); // 'top', 'bottom', 'left', 'right', or null
+    const mountRefs = useRef(new Map());
+    const [dropZone, setDropZone] = useState(null); // 'top', 'bottom', 'left', 'right', 'tabbar', or null
+    const [showOverlay, setShowOverlay] = useState(false);
+    const [tabbarH, setTabbarH] = useState(0);
+    const [paneSize, setPaneSize] = useState({ w: 0, h: 0 });
+    const dragDepthRef = useRef(0);
+    const layoutTabBarRef = useRef(null);
+    const rafIdRef = useRef(null);
+    const lastInsideRef = useRef(false);
+    const lastZoneRef = useRef(null);
+    const lastPointRef = useRef({ x: 0, y: 0 });
 
     useEffect(() => {
         initializePaneIfNeeded(paneId);
@@ -520,6 +555,22 @@ const LayoutPane = ({ paneId, outletContext }) => {
         return () => {
             isMountedRef.current = false;
         };
+    }, []);
+
+    // ResizeObserver for tabbar height
+    useEffect(() => {
+        if (!layoutTabBarRef.current) return;
+        const ro = new ResizeObserver(([e]) => setTabbarH(e.contentRect.height));
+        ro.observe(layoutTabBarRef.current);
+        return () => ro.disconnect();
+    }, []);
+
+    // ResizeObserver for pane size
+    useEffect(() => {
+        if (!paneRef.current) return;
+        const ro = new ResizeObserver(([e]) => setPaneSize({ w: e.contentRect.width, h: e.contentRect.height }));
+        ro.observe(paneRef.current);
+        return () => ro.disconnect();
     }, []);
 
     const paneState = getPaneTabsState(paneId);
@@ -556,6 +607,47 @@ const LayoutPane = ({ paneId, outletContext }) => {
         };
     }, [tabs]);
 
+    // Proactive overlay with document-level sentinel and rAF throttling
+    useEffect(() => {
+        const onGlobalDragOver = (ev) => {
+            if (!window.__cradleTabDragging || !paneRef.current) return;
+            const r = paneRef.current.getBoundingClientRect();
+            const { clientX: x, clientY: y } = ev;
+            const inside = x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+
+            if (rafIdRef.current == null) {
+                rafIdRef.current = requestAnimationFrame(() => {
+                    rafIdRef.current = null;
+                    if (inside !== lastInsideRef.current) {
+                        lastInsideRef.current = inside;
+                        setShowOverlay(inside);
+                        if (!inside) setDropZone(null);
+                    }
+                    if (inside) {
+                        let zone = calculateDropZone(ev);
+                        zone = pickZoneSticky(zone, ev);
+                        setDropZone((prev) => (prev !== zone ? zone : prev));
+                    }
+                });
+            }
+        };
+        const onGlobalDragEnd = () => {
+            lastInsideRef.current = false;
+            setShowOverlay(false);
+            setDropZone(null);
+            if (rafIdRef.current) { cancelAnimationFrame(rafIdRef.current); rafIdRef.current = null; }
+        };
+        document.addEventListener('dragover', onGlobalDragOver, { passive: false });
+        document.addEventListener('drop', onGlobalDragEnd, { passive: false });
+        document.addEventListener('dragend', onGlobalDragEnd, { passive: true });
+        return () => {
+            document.removeEventListener('dragover', onGlobalDragOver);
+            document.removeEventListener('drop', onGlobalDragEnd);
+            document.removeEventListener('dragend', onGlobalDragEnd);
+            if (rafIdRef.current) { cancelAnimationFrame(rafIdRef.current); rafIdRef.current = null; }
+        };
+    }, []);
+
     const handlePaneClick = (e) => {
         if (!isActive) {
             // Activate this pane (the effect will handle navigation)
@@ -564,106 +656,184 @@ const LayoutPane = ({ paneId, outletContext }) => {
     };
 
     /**
-     * Calculates drop zone based on cursor position
+     * Calculates drop zone based on cursor position using beefed-up area zones
      */
     const calculateDropZone = (e) => {
         if (!paneRef.current) return null;
-        
-        const rect = paneRef.current.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const threshold = 100; // pixels from edge
-        
-        // Check edges in priority order
-        if (y < threshold) return 'top';
-        if (y > rect.height - threshold) return 'bottom';
-        if (x < threshold) return 'left';
-        if (x > rect.width - threshold) return 'right';
-        
+
+        const paneRect = paneRef.current.getBoundingClientRect();
+        const x = e.clientX - paneRect.left;
+        const y = e.clientY - paneRect.top;
+        const w = paneSize.w || paneRect.width;
+        const h = paneSize.h || paneRect.height;
+
+        // --- Sizing (clamped, bigger than before) ---
+        const currentTabbarH = tabbarH || (layoutTabBarRef.current?.getBoundingClientRect().height || 0);
+
+        const wStrip = Math.min(Math.max(ZONE_MIN, w * ZONE_RATIO), ZONE_MAX);
+        const hTopContentStrip = Math.min(Math.max(ZONE_MIN, (h - currentTabbarH) * ZONE_RATIO), ZONE_MAX);
+        const hBottomStrip     = Math.min(Math.max(ZONE_MIN, h * ZONE_RATIO), ZONE_MAX);
+
+        const yContent = Math.max(0, y - currentTabbarH); // y inside content area
+
+        // --- Priority: TAB BAR vs TOP override ---
+        if (layoutTabBarRef.current) {
+            const t = layoutTabBarRef.current.getBoundingClientRect();
+
+            // if we're over the tabbar at all...
+            if (e.clientX >= t.left && e.clientX <= t.right && e.clientY >= t.top && e.clientY <= t.bottom) {
+                // ...but within a small band at the *bottom* of it, treat as TOP split (so "responds on tabs")
+                const distFromBottom = t.bottom - e.clientY;
+                if (distFromBottom <= TABBAR_TOP_OVERRIDE) {
+                    return 'top';
+                }
+                // otherwise, it's a normal tabbar drop target
+                return 'tabbar';
+            }
+        }
+
+        // --- Area zones (big blocks) ---
+        if (y >= currentTabbarH && yContent <= hTopContentStrip) return 'top';         // content-only for top
+        if (y >= h - hBottomStrip) return 'bottom';                              // whole pane for bottom
+        if (x <= wStrip) return 'left';
+        if (x >= w - wStrip) return 'right';
+
         return null;
     };
 
     /**
-     * Handles drag over the pane content area
+     * Sticky zone picker that prevents flicker on small cursor movements
      */
-    const handlePaneDragOver = (e) => {
-        // Check if we're dragging a tab
-        const types = e.dataTransfer.types;
-        if (!types.includes('application/x-cradle-tab')) return;
-        
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Check if splitting is possible using the global drag info
-        if (currentDragInfo) {
-            const { paneId: sourcePaneId, tabCount } = currentDragInfo;
-            
-            // If dragging from the same pane and it only has one tab, don't show drop zones
-            if (sourcePaneId === paneId && tabCount <= 1) {
-                setDropZone(null);
-                return;
-            }
+    const pickZoneSticky = (zone, e) => {
+        if (!lastZoneRef.current || !lastPointRef.current) {
+            lastZoneRef.current = zone;
+            lastPointRef.current = { x: e.clientX, y: e.clientY };
+            return zone;
         }
-        
-        const zone = calculateDropZone(e);
-        setDropZone(zone);
+        const dx = e.clientX - lastPointRef.current.x;
+        const dy = e.clientY - lastPointRef.current.y;
+        const dist2 = dx*dx + dy*dy;
+        if (dist2 <= STICKY_PX * STICKY_PX) {
+            // keep previous zone if still meaningful
+            return lastZoneRef.current ?? zone;
+        }
+        lastZoneRef.current = zone;
+        lastPointRef.current = { x: e.clientX, y: e.clientY };
+        return zone;
     };
 
     /**
-     * Handles drag leave from pane
+     * Handles drag enter on pane (capture phase)
      */
-    const handlePaneDragLeave = (e) => {
-        if (e.currentTarget === e.target || !e.currentTarget.contains(e.relatedTarget)) {
+    const handlePaneDragEnterCapture = (e) => {
+        if (!isCradleTabDrag(e)) return;
+        dragDepthRef.current += 1;
+        setShowOverlay(true);
+    };
+
+    /**
+     * Handles drag leave from pane (capture phase)
+     */
+    const handlePaneDragLeaveCapture = (e) => {
+        if (!isCradleTabDrag(e)) return;
+        dragDepthRef.current -= 1;
+        if (dragDepthRef.current <= 0) {
+            dragDepthRef.current = 0;
             setDropZone(null);
+            setShowOverlay(false);
         }
+    };
+
+    /**
+     * Handles drag over the pane content area (capture phase)
+     */
+    const handlePaneDragOverCapture = (e) => {
+        if (!isCradleTabDrag(e)) return;
+        
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        
+        // Get drag data from dataTransfer instead of global
+        const meta = getCradleTab(e.dataTransfer);
+        
+        if (meta && meta.paneId === paneId && meta.tabCount <= 1) {
+            setDropZone(null);
+            return;
+        }
+        
+        let zone = calculateDropZone(e);
+        zone = pickZoneSticky(zone, e);
+        if (zone !== dropZone) setDropZone(zone);
     };
 
     /**
      * Handles drop on the pane (for split creation)
      */
     const handlePaneDrop = (e) => {
+        if (!e.dataTransfer) return;
         e.preventDefault();
         e.stopPropagation();
         
-        const dataStr = e.dataTransfer.getData('application/x-cradle-tab');
-        if (!dataStr || !dropZone) {
+        const dragData = getCradleTab(e.dataTransfer);
+        if (!dragData) {
             setDropZone(null);
-            currentDragInfo = null;
+            setShowOverlay(false);
             return;
         }
         
-        const dragData = JSON.parse(dataStr);
-        const { paneId: sourcePaneId, tabIndex: sourceIndex } = dragData;
+        // Recompute drop zone synchronously to avoid stale state
+        const liveZone = calculateDropZone(e);
         
-        // Validate source pane exists
-        if (!sourcePaneId || sourceIndex === undefined || sourceIndex < 0) {
-            console.warn('Invalid drag data:', dragData);
+        if (!dragData || typeof dragData.paneId !== 'string' || typeof dragData.tabIndex !== 'number') {
+            console.warn('Invalid drag data structure:', dragData);
             setDropZone(null);
+            setShowOverlay(false);
             return;
         }
         
-        // Prevent dragging the only tab to split the same pane
-        // (You can't split a pane by dragging its only tab to itself - it would leave it empty)
-        if (sourcePaneId === paneId) {
-            const sourcePaneState = getPaneTabsState(sourcePaneId);
-            if (sourcePaneState.tabs.length === 1) {
-                console.warn('[LayoutPane handlePaneDrop] Cannot split pane with only one tab by dragging to itself');
-                setDropZone(null);
-                return;
+        const { paneId: sourcePaneId, tabIndex: sourceIndex, tabCount } = dragData;
+        
+        // Validate source pane exists and tab index is valid
+        if (!sourcePaneId || sourceIndex < 0 || sourceIndex >= tabCount) {
+            console.warn('Invalid drag data values:', dragData);
+            setDropZone(null);
+            setShowOverlay(false);
+            return;
+        }
+        
+        // same-pane single-tab guard for split only — moving within same pane center is a no-op
+        if (sourcePaneId === paneId && tabCount <= 1 && liveZone) {
+            console.warn('[LayoutPane handlePaneDrop] Cannot split pane with only one tab by dragging to itself');
+            setDropZone(null);
+            setShowOverlay(false);
+            return;
+        }
+        
+        // --- TAB BAR DROP: move tab into this pane's tab bar (end) ---
+        if (liveZone === 'tabbar') {
+            if (sourcePaneId !== paneId) {
+                moveTabBetweenPanes(sourcePaneId, sourceIndex, paneId, -1);
+                setActivePaneId(paneId);
             }
+            setDropZone(null);
+            setShowOverlay(false);
+            clearGlobalDragFlag();
+            return;
+        }
+
+        if (!liveZone) {
+            setDropZone(null);
+            setShowOverlay(false);
+            return;
         }
         
-        // Debug logging removed for production
-        
-        // Split the pane and get the new IDs
-        const direction = (dropZone === 'top' || dropZone === 'bottom') ? 'horizontal' : 'vertical';
-        const position = (dropZone === 'top' || dropZone === 'left') ? 'before' : 'after';
+        // --- EDGE DROP: split ---
+        const direction = (liveZone === 'top' || liveZone === 'bottom') ? 'horizontal' : 'vertical';
+        const position = (liveZone === 'top' || liveZone === 'left') ? 'before' : 'after';
         const { originalPaneId, newPaneId } = splitPane(paneId, direction, position);
         
-        // Debug logging removed for production
-        
         setDropZone(null);
-        currentDragInfo = null;
+        setShowOverlay(false);
         
         // Call handleSplitWithTab IMMEDIATELY before component unmounts
         // (splitting causes this component to unmount)
@@ -671,7 +841,9 @@ const LayoutPane = ({ paneId, outletContext }) => {
         
         // Activate the new pane after state settles
         requestAnimationFrame(() => {
-            setActivePaneId(newPaneId);
+            if (isMountedRef.current) {
+                setActivePaneId(newPaneId);
+            }
         });
     };
 
@@ -681,43 +853,115 @@ const LayoutPane = ({ paneId, outletContext }) => {
             className='flex flex-col h-full w-full relative'
             onClick={handlePaneClick}
             onMouseDown={handlePaneClick}
-            onDragOver={handlePaneDragOver}
-            onDragLeave={handlePaneDragLeave}
+            onDragEnterCapture={handlePaneDragEnterCapture}
+            onDragOverCapture={handlePaneDragOverCapture}
+            onDragLeaveCapture={handlePaneDragLeaveCapture}
             onDrop={handlePaneDrop}
         >
-            {/* Drop zone indicators */}
+            {/* Drag overlay that actually captures events over iframes/canvases */}
+            {showOverlay && (
+                <div
+                    className="absolute inset-0"
+                    style={{ zIndex: 900, pointerEvents: 'auto' }}
+                    onDragEnter={handlePaneDragEnterCapture}
+                    onDragOver={handlePaneDragOverCapture}
+                    onDragLeave={handlePaneDragLeaveCapture}
+                    onDrop={(e) => {
+                        handlePaneDrop(e);
+                        clearGlobalDragFlag();
+                        setShowOverlay(false);
+                    }}
+                />
+            )}
+
+            {/* Drop zone indicators — BIG AREAS */}
             {dropZone === 'top' && (
-                <div className='absolute top-0 left-0 right-0 h-1/3 bg-[#FF8C00] bg-opacity-20 border-2 border-[#FF8C00] border-dashed z-50 pointer-events-none' />
+                <div className='absolute left-0 right-0 pointer-events-none'
+                     style={{ 
+                         top: tabbarH,
+                         height: Math.min(Math.max(ZONE_MIN, (paneSize.h - tabbarH) * ZONE_RATIO), ZONE_MAX),
+                         background: 'var(--cradle-glow-primary)',
+                         borderTop: '2px dashed var(--cradle-accent-primary)', 
+                         borderBottom: '2px dashed var(--cradle-accent-primary)',
+                         zIndex: 1000 
+                     }}
+                />
             )}
+
             {dropZone === 'bottom' && (
-                <div className='absolute bottom-0 left-0 right-0 h-1/3 bg-[#FF8C00] bg-opacity-20 border-2 border-[#FF8C00] border-dashed z-50 pointer-events-none' />
+                <div className='absolute left-0 right-0 pointer-events-none'
+                     style={{ 
+                         bottom: 0,
+                         height: Math.min(Math.max(ZONE_MIN, paneSize.h * ZONE_RATIO), ZONE_MAX),
+                         background: 'var(--cradle-glow-primary)',
+                         borderTop: '2px dashed var(--cradle-accent-primary)', 
+                         borderBottom: '2px dashed var(--cradle-accent-primary)',
+                         zIndex: 1000 
+                     }}
+                />
             )}
+
             {dropZone === 'left' && (
-                <div className='absolute top-0 left-0 bottom-0 w-1/3 bg-[#FF8C00] bg-opacity-20 border-2 border-[#FF8C00] border-dashed z-50 pointer-events-none' />
+                <div className='absolute top-0 bottom-0 pointer-events-none'
+                     style={{ 
+                         left: 0,
+                         width: Math.min(Math.max(ZONE_MIN, paneSize.w * ZONE_RATIO), ZONE_MAX),
+                         background: 'var(--cradle-glow-primary)',
+                         borderLeft: '2px dashed var(--cradle-accent-primary)', 
+                         borderRight: '2px dashed var(--cradle-accent-primary)',
+                         zIndex: 1000 
+                     }}
+                />
             )}
+
             {dropZone === 'right' && (
-                <div className='absolute top-0 right-0 bottom-0 w-1/3 bg-[#FF8C00] bg-opacity-20 border-2 border-[#FF8C00] border-dashed z-50 pointer-events-none' />
+                <div className='absolute top-0 bottom-0 pointer-events-none'
+                     style={{ 
+                         right: 0,
+                         width: Math.min(Math.max(ZONE_MIN, paneSize.w * ZONE_RATIO), ZONE_MAX),
+                         background: 'var(--cradle-glow-primary)',
+                         borderLeft: '2px dashed var(--cradle-accent-primary)', 
+                         borderRight: '2px dashed var(--cradle-accent-primary)',
+                         zIndex: 1000 
+                     }}
+                />
             )}
             
-            <PaneTabs paneId={paneId} isActive={isActive} />
-            <div className='flex-1 overflow-y-auto overflow-x-hidden cradle-scrollbar'>
+            <PaneTabs paneId={paneId} isActive={isActive} onRootRef={(el) => (layoutTabBarRef.current = el)} />
+            <div className='flex-1 overflow-y-auto overflow-x-hidden cradle-scrollbar relative'>
                 {tabs && tabs.map((tab, index) => {
                     const isTabActive = index === activeTabIndex;
                     
                     return (
                         <div
-                            key={tab.id}
-                            style={{
-                                display: isTabActive ? 'block' : 'none',
-                                height: '100%',
-                                width: '100%',
+                            key={`mount-${tab.id}`}
+                            ref={(el) => { 
+                                if (el) { 
+                                    mountRefs.current.set(tab.id, el); 
+                                    // Only log when this specific tab is first attached to this pane
+                                    const attachmentKey = `${tab.id}-${paneId}`;
+                                    if (!LayoutPane.attachedTabs) {
+                                        LayoutPane.attachedTabs = new Set();
+                                    }
+                                    if (!LayoutPane.attachedTabs.has(attachmentKey)) {
+                                        console.log('[LayoutPane] First attachment of tab:', tab.id, 'to pane:', paneId);
+                                        LayoutPane.attachedTabs.add(attachmentKey);
+                                    }
+                                    // Use requestAnimationFrame to ensure styles are applied
+                                    requestAnimationFrame(() => {
+                                        if (isMountedRef.current) {
+                                            attach(tab.id, el); 
+                                        }
+                                    });
+                                } 
                             }}
-                        >
-                            <CachedTabContent 
-                                path={tab.path}
-                                outletContext={outletContext}
-                            />
-                        </div>
+                            className='absolute inset-0'
+                            style={{ 
+                                opacity: isTabActive ? 1 : 0, 
+                                pointerEvents: isTabActive ? 'auto' : 'none',
+                                zIndex: isTabActive ? 1 : 0
+                            }}
+                        />
                     );
                 })}
             </div>

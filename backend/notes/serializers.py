@@ -8,6 +8,7 @@ from entries.serializers import (
 )
 from file_transfer.models import FileReference
 from file_transfer.serializers import FileReferenceSerializer
+from management.settings import cradle_settings
 from rest_framework import serializers
 from user.models import CradleUser
 from user.serializers import EssentialUserRetrieveSerializer, UserRetrieveSerializer
@@ -18,6 +19,7 @@ from .exceptions import (
     NoteIsEmptyException,
     NoteNotPublishableException,
 )
+from .markdown.to_metadata import infer_metadata
 from .models import Note, Snippet
 from .processor.task_scheduler import TaskScheduler
 
@@ -94,6 +96,11 @@ class NoteCreateSerializer(serializers.ModelSerializer):
                 FileReference(note=note, **file_data) for file_data in files
             ]
             FileReference.objects.bulk_create(file_reference_models)
+            
+            # Trigger automatic processing for all created files
+            if cradle_settings.files.autoprocess_files:
+                for file_ref in file_reference_models:
+                    file_ref.process_file()
 
         return note
 
@@ -129,6 +136,11 @@ class NoteEditSerializer(serializers.ModelSerializer):
                 if file_data.get("id", None) not in existing_files
             ]
             FileReference.objects.bulk_create(new_files)
+            
+            # Trigger automatic processing for new files
+            if cradle_settings.files.autoprocess_files:
+                for file_ref in new_files:
+                    file_ref.process_file()
 
         if content is not None:
             TaskScheduler(user, content=content, **validated_data).run_pipeline(
@@ -542,8 +554,8 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Note
-        fields = ["id", "content", "timestamp", "files"]
-        read_only_fields = ["id", "timestamp"]
+        fields = ["id", "content", "timestamp", "files", "title", "description", "fleeting"]
+        read_only_fields = ["id", "timestamp", "fleeting"]
 
     def create(self, validated_data):
         files_data = validated_data.pop("files", [])
@@ -554,6 +566,15 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
         validated_data["fleeting"] = True
         validated_data["author"] = user
         validated_data["editor"] = user
+
+        # Extract title and description from content if not provided
+        content = validated_data.get("content", "")
+        if not validated_data.get("title"):
+            offset, metadata = infer_metadata(content)
+            validated_data["title"] = metadata.get("title", "")
+            validated_data["description"] = metadata.get("description", "")
+            validated_data["metadata"] = metadata
+            validated_data["content_offset"] = offset
 
         note = Note.objects.create(**validated_data)
 
@@ -574,8 +595,20 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
 
         # Update basic fields
         instance.content = validated_data.get("content", instance.content)
+        instance.title = validated_data.get("title", instance.title)
+        instance.description = validated_data.get("description", instance.description)
         instance.editor = user
         instance.fleeting = True
+        
+        # Extract title and description from content if not provided
+        content = instance.content
+        if not instance.title:
+            offset, metadata = infer_metadata(content)
+            instance.title = metadata.get("title", "")
+            instance.description = metadata.get("description", "")
+            instance.metadata = metadata
+            instance.content_offset = offset
+        
         instance.save()
 
         if updated_files is not None:

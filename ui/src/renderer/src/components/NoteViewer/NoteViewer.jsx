@@ -1,19 +1,24 @@
-import { Code, Download, EditPencil, RefreshCircle, User, Clock, Link, Page, HistoricShield, MoreVert, Check } from 'iconoir-react';
-import { StatsReport, Trash } from 'iconoir-react/regular';
+import { Code, Download, EditPencil, RefreshCircle, User, Clock, Link, Page, HistoricShield, MoreVert, Check, CloudUpload } from 'iconoir-react';
+import { StatsReport, Trash, FloppyDisk } from 'iconoir-react/regular';
 import { Graph } from '@phosphor-icons/react';
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import { usePaneTabs } from '../../contexts/PaneTabsContext/PaneTabsContext';
 import { useLayout } from '../../contexts/LayoutContext/LayoutContext';
-import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import { authAxios } from '../../services/axiosInstance/axiosInstance';
 import {
     deleteNote,
     getNote,
     setPublishable,
+    updateNote,
 } from '../../services/notesService/notesService';
-import { deleteFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
+import { 
+    deleteFleetingNote, 
+    getFleetingNoteById, 
+    updateFleetingNote,
+    saveFleetingNoteAsFinal
+} from '../../services/fleetingNotesService/fleetingNotesService';
 import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { createDownloadPath, parseContent } from '../../utils/textEditorUtils/textEditorUtils';
@@ -21,6 +26,8 @@ import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import ListView from '../ListView/ListView';
 import Preview from '../Preview/Preview';
 import ReferenceTree from '../ReferenceTree/ReferenceTree';
+import RichEditor from '../RichEditor/RichEditor';
+import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
 
 import Prism from 'prismjs';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
@@ -41,6 +48,7 @@ import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import ActivityList from '../ActivityList/ActivityList';
 import FileItem from '../FileItem/FileItem';
+import FileInput from '../FileInput/FileInput';
 import GraphExplorer from '../GraphExplorer/GraphExplorer.jsx';
 import NoteGraphSearch from '../GraphQuery/NoteGraphSearch.jsx';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
@@ -63,11 +71,20 @@ export default function NoteViewer() {
     const [note, setNote] = useState({});
     const [isPublishable, setIsPublishable] = useState(false);
     const [isRaw, setIsRaw] = useState(false);
+    const [markdownContent, setMarkdownContent] = useState('');
+    const [fileData, setFileData] = useState([]);
+    const [currentLine, setCurrentLine] = useState(1);
+    const [initialMarkdown, setInitialMarkdown] = useState('');
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [parsedContent, setParsedContent] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [activeView, setActiveView] = useState(0); // 0: Content, 1: Graph, 2: History
     const [showActionsMenu, setShowActionsMenu] = useState(false);
+    const [isFleeting, setIsFleeting] = useState(false);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [pendingFiles, setPendingFiles] = useState([]);
+    const [showFileUpload, setShowFileUpload] = useState(false);
     const rawContentRef = useRef(null);
     const { setModal } = useModal();
     const { managementApi } = useApi();
@@ -89,12 +106,29 @@ export default function NoteViewer() {
             });
     };
 
+    const getSaveStatus = () => {
+        if (!markdownContent || markdownContent.trim().length === 0) {
+            return 'empty'; // Cannot save empty note
+        }
+        if (saving) {
+            return 'saving'; // Currently saving
+        }
+        if (hasUnsavedChanges) {
+            return 'unsaved'; // Has unsaved changes
+        }
+        return 'saved'; // All changes saved
+    };
+
     const getStatusIcon = () => {
         if (!note.status) return null;
 
         switch (note.status) {
             case 'healthy':
-                return null;
+                return (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-green-500">
+                        <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                );
             case 'processing':
                 return (
                     <InfoCircleSolid className='text-blue-500' width='18' height='18' />
@@ -122,11 +156,47 @@ export default function NoteViewer() {
 
     useEffect(() => {
         setIsLoading(true);
-        getNote(id, false)
+        
+        // Try to load as regular note first, then fallback to fleeting note if it fails
+        const loadNote = async () => {
+            try {
+                // First try to load as a regular note
+                const response = await getNote(id, false);
+                const responseNote = response.data;
+                
+                // Check if this is a fleeting note using the fleeting field
+                const isFleetingNote = responseNote.fleeting === true;
+                setIsFleeting(isFleetingNote);
+                
+                // Debug logging
+                console.log('NoteViewer - Note type detection:', {
+                    id: id,
+                    isFleetingNote: isFleetingNote,
+                    fleeting: responseNote.fleeting,
+                    hasAuthor: !!responseNote.author,
+                    hasEditor: !!responseNote.editor,
+                    hasEntries: !!responseNote.entries
+                });
+                
+                return response;
+            } catch (error) {
+                // If regular note fails, try as fleeting note
+                console.log('NoteViewer - Regular note failed, trying fleeting note:', error);
+                const response = await getFleetingNoteById(id);
+                setIsFleeting(true);
+                return response;
+            }
+        };
+        
+        loadNote()
             .then((response) => {
                 const responseNote = response.data;
                 setNote(responseNote);
-                setIsPublishable(responseNote.publishable);
+                setMarkdownContent(responseNote.content);
+                setInitialMarkdown(responseNote.content);
+                setFileData(responseNote.files || []);
+                setIsPublishable(responseNote.publishable || false);
+                setHasUnsavedChanges(false);
                 // Update tab title with note title
                 if (responseNote.title && activePaneId) {
                     updateCurrentTabTitle(activePaneId, responseNote.title);
@@ -143,7 +213,7 @@ export default function NoteViewer() {
                 // Turn off loading spinner regardless of success or failure
                 setIsLoading(false);
             });
-    }, [id, navigate, setAlert, updateCurrentTabTitle, activePaneId]);
+    }, [id, navigate, setAlert, updateCurrentTabTitle, activePaneId, profile]);
 
     const toggleView = useCallback(() => {
         setIsRaw((prevIsRaw) => !prevIsRaw);
@@ -182,8 +252,97 @@ export default function NoteViewer() {
             .catch(displayError(setAlert, navigate));
     }, [id, navigate, note.fleeting]);
 
-    // Clear navbar contents - buttons will be in tabs area
-    useNavbarContents([], []);
+    const handleSaveNote = useCallback(async () => {
+        if (!markdownContent || markdownContent.trim().length === 0) {
+            setAlert({ show: true, message: 'Cannot save empty note.', color: 'red' });
+            return;
+        }
+
+        setSaving(true);
+        try {
+            let response;
+            if (isFleeting) {
+                // Update existing fleeting note
+                response = await updateFleetingNote(id, markdownContent, fileData);
+            } else {
+                // Update regular note
+                response = await updateNote(id, {
+                    content: markdownContent,
+                    files: fileData,
+                });
+            }
+            
+            if (response.status === 200) {
+                setInitialMarkdown(markdownContent);
+                setHasUnsavedChanges(false);
+                setAlert({
+                    show: true,
+                    message: 'Changes saved successfully.',
+                    color: 'green',
+                });
+                // Update the parsed content for preview
+                parseContent(markdownContent, fileData, true).then((result) =>
+                    setParsedContent(result.html),
+                );
+            }
+        } catch (error) {
+            displayError(setAlert, navigate)(error);
+        } finally {
+            setSaving(false);
+        }
+    }, [id, markdownContent, fileData, navigate, isFleeting]);
+
+    const handleSaveAsFinal = useCallback(async () => {
+        if (!markdownContent || markdownContent.trim().length === 0) {
+            setAlert({ show: true, message: 'Cannot save empty note.', color: 'red' });
+            return;
+        }
+
+        setSaving(true);
+        try {
+            const response = await saveFleetingNoteAsFinal(id, isPublishable);
+            
+            if (response.status === 200) {
+                setAlert({
+                    show: true,
+                    message: 'Note finalized successfully.',
+                    color: 'green',
+                });
+                // Navigate to the regular note view
+                navigate(`/notes/${response.data.id}`, { replace: true });
+            }
+        } catch (error) {
+            displayError(setAlert, navigate)(error);
+        } finally {
+            setSaving(false);
+        }
+    }, [id, isPublishable, markdownContent, fileData, navigate]);
+
+
+    // Track changes for both note types
+    useEffect(() => {
+        if (!markdownContent || markdownContent === initialMarkdown) {
+            setHasUnsavedChanges(false);
+            return;
+        }
+
+        setHasUnsavedChanges(true);
+    }, [markdownContent, initialMarkdown]);
+
+    // Auto-save for fleeting notes only
+    useEffect(() => {
+        if (!isFleeting || !markdownContent || markdownContent === initialMarkdown) {
+            return;
+        }
+
+        const autosaveTimer = setTimeout(() => {
+            handleSaveNote();
+        }, 1000); // Auto-save after 1 second of inactivity
+
+        return () => {
+            clearTimeout(autosaveTimer);
+        };
+    }, [markdownContent, fileData, isFleeting, initialMarkdown, handleSaveNote]);
 
     useEffect(() => {
         Prism.highlightAll();
@@ -221,18 +380,6 @@ export default function NoteViewer() {
                 <div className='w-full cradle-border-b px-4 py-3 flex items-center justify-between'>
                     {/* Left side - Metadata with icons */}
                     <div className='flex items-center gap-4 cradle-mono text-xs cradle-text-tertiary'>
-                        {note.status && (
-                            <span
-                                className='inline-flex items-center tooltip tooltip-bottom tooltip-primary'
-                                data-tooltip={
-                                    note.status_message ||
-                                    capitalizeString(note.status) ||
-                                    null
-                                }
-                            >
-                                {getStatusIcon()}
-                            </span>
-                        )}
                         <span
                             className='inline-flex items-center gap-1.5 tooltip tooltip-bottom tooltip-primary'
                             data-tooltip='Created'
@@ -242,16 +389,18 @@ export default function NoteViewer() {
                                 {formatDate(new Date(note.timestamp))}
                             </span>
                         </span>
-                        <span
-                            className='inline-flex items-center gap-1.5 tooltip tooltip-bottom tooltip-primary'
-                            data-tooltip='Creator'
-                        >
-                            <User width='16' height='16' />
-                            <span className='cradle-text-secondary'>
-                                {note?.author ? note.author.username : 'Unknown'}
+                        {!isFleeting && (
+                            <span
+                                className='inline-flex items-center gap-1.5 tooltip tooltip-bottom tooltip-primary'
+                                data-tooltip='Creator'
+                            >
+                                <User width='16' height='16' />
+                                <span className='cradle-text-secondary'>
+                                    {note?.author ? note.author.username : 'Unknown'}
+                                </span>
                             </span>
-                        </span>
-                        {note.editor && (
+                        )}
+                        {!isFleeting && note.editor && (
                             <>
                                 <span
                                     className='inline-flex items-center gap-1.5 tooltip tooltip-bottom tooltip-primary'
@@ -303,6 +452,39 @@ export default function NoteViewer() {
                                         <StatsReport width='20' height='20' />
                                     </button>
                                 )}
+                                {/* Save status indicator button */}
+                                <button 
+                                    className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:cradle-text-primary cradle-border hover:border-[#FF8C00] tooltip tooltip-bottom tooltip-primary'
+                                    data-tooltip={
+                                        getSaveStatus() === 'saved' ? 'All changes saved' :
+                                        getSaveStatus() === 'saving' ? 'Saving...' :
+                                        getSaveStatus() === 'unsaved' ? 'Unsaved changes' :
+                                        'Cannot save empty note'
+                                    }
+                                    data-testid='save-status-dot'
+                                >
+                                    <div 
+                                        className={`w-2 h-2 rounded-full ${
+                                            getSaveStatus() === 'saved' ? 'bg-green-500' :
+                                            getSaveStatus() === 'saving' ? 'bg-yellow-500' :
+                                            getSaveStatus() === 'unsaved' ? 'bg-red-500' :
+                                            'bg-gray-400'
+                                        }`}
+                                    />
+                                </button>
+                                {/* Status indicator button */}
+                                {note.status && (
+                                    <button
+                                        className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:cradle-text-primary cradle-border hover:border-[#FF8C00] tooltip tooltip-bottom tooltip-primary'
+                                        data-tooltip={
+                                            note.status_message ||
+                                            capitalizeString(note.status) ||
+                                            null
+                                        }
+                                    >
+                                        {getStatusIcon()}
+                                    </button>
+                                )}
                                 {/* Three-dots menu for note actions */}
                                 <div className='relative'>
                                     <button
@@ -320,14 +502,14 @@ export default function NoteViewer() {
                                                 onClick={() => setShowActionsMenu(false)}
                                             />
                                             <div className='absolute right-0 mt-2 w-48 cradle-bg-elevated cradle-border z-20'>
-                                                <div className='py-1' role='menu'>
+                                                <div role='menu'>
                                                     {/* View Options */}
                                                     <button
                                                         onClick={() => {
                                                             setShowActionsMenu(false);
                                                             setActiveView(0);
                                                         }}
-                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2'
+                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
                                                         data-testid='content-tab-menu-item'
                                                     >
                                                         <Page width='16' height='16' />
@@ -339,7 +521,7 @@ export default function NoteViewer() {
                                                             setShowActionsMenu(false);
                                                             setActiveView(1);
                                                         }}
-                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2'
+                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
                                                         data-testid='graph-tab-menu-item'
                                                     >
                                                         <Graph width='16' height='16' />
@@ -352,7 +534,7 @@ export default function NoteViewer() {
                                                                 setShowActionsMenu(false);
                                                                 setActiveView(2);
                                                             }}
-                                                            className='w-full text-left px-4 py-2 text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2'
+                                                            className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
                                                             data-testid='history-tab-menu-item'
                                                         >
                                                             <HistoricShield width='16' height='16' />
@@ -382,7 +564,7 @@ export default function NoteViewer() {
                                                                     });
                                                                 });
                                                             }}
-                                                            className='w-full text-left px-4 py-2 text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2 '
+                                                            className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2 '
                                                             data-testid='relink-menu-item'
                                                         >
                                                             <RefreshCircle width='16' height='16' />
@@ -392,9 +574,20 @@ export default function NoteViewer() {
                                                     <button
                                                         onClick={() => {
                                                             setShowActionsMenu(false);
+                                                            setShowFileUpload(!showFileUpload);
+                                                        }}
+                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                                        data-testid='upload-files-menu-item'
+                                                    >
+                                                        <CloudUpload width='16' height='16' />
+                                                        <span className='flex-1'>Upload Files</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setShowActionsMenu(false);
                                                             toggleView();
                                                         }}
-                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2 '
+                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2 '
                                                         data-testid='toggle-view-menu-item'
                                                     >
                                                         <Code width='16' height='16' />
@@ -402,16 +595,32 @@ export default function NoteViewer() {
                                                         {isRaw && <Check width='16' height='16' />}
                                                     </button>
                                                     <button
-                                                        onClick={(e) => {
+                                                        onClick={() => {
                                                             setShowActionsMenu(false);
-                                                            navigateLink(`/notes/${id}/edit`, { state: { from } })(e);
+                                                            handleSaveNote();
                                                         }}
-                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2 '
-                                                        data-testid='edit-menu-item'
+                                                        disabled={saving || !hasUnsavedChanges}
+                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed'
+                                                        data-testid='save-menu-item'
                                                     >
-                                                        <EditPencil width='16' height='16' />
-                                                        Edit Note
+                                                        <FloppyDisk width='16' height='16' />
+                                                        <span className='flex-1'>Save</span>
+                                                        {saving && <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900' />}
                                                     </button>
+                                                    {isFleeting && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowActionsMenu(false);
+                                                                handleSaveAsFinal();
+                                                            }}
+                                                            className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                                            data-testid='save-as-final-menu-item'
+                                                        >
+                                                            <FloppyDisk width='16' height='16' />
+                                                            <span className='flex-1'>Save As Final</span>
+                                                            {saving && <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900' />}
+                                                        </button>
+                                                    )}
                                                     <button
                                                         onClick={() => {
                                                             setShowActionsMenu(false);
@@ -420,7 +629,7 @@ export default function NoteViewer() {
                                                                 text: 'Are you sure you want to delete this note? This action is irreversible.',
                                                             });
                                                         }}
-                                                        className='w-full text-left px-4 py-2 text-sm text-red-500 hover:cradle-bg-secondary flex items-center gap-2'
+                                                        className='w-full text-left px-4 py-2 text-sm text-red-500 cradle-border hover:border-[#FF8C00] flex items-center gap-2'
                                                         data-testid='delete-menu-item'
                                                     >
                                                         <Trash width='16' height='16' />
@@ -435,6 +644,18 @@ export default function NoteViewer() {
                         )}
                     </div>
                 </div>
+
+                {/* File Upload Section */}
+                {showFileUpload && (
+                    <div className='w-full px-4 py-2 cradle-border-b bg-gray-50 dark:bg-gray-800'>
+                        <FileInput
+                            fileData={fileData}
+                            setFileData={setFileData}
+                            pendingFiles={pendingFiles}
+                            setPendingFiles={setPendingFiles}
+                        />
+                    </div>
+                )}
 
                 {/* View content */}
                 <div className='flex-1 overflow-hidden'>
@@ -453,13 +674,29 @@ export default function NoteViewer() {
                                         </code>
                                     </pre>
                                 ) : (
-                                    <div className='mt-2'>
-                                        <Preview htmlContent={parsedContent} />
+                                    <div className='mt-2 h-full flex flex-col'>
+                                        {/* Embedded Rich Editor */}
+                                        <div className='flex-1 min-h-0'>
+                                            <RichEditor
+                                                noteid={id}
+                                                markdownContent={markdownContent}
+                                                setMarkdownContent={setMarkdownContent}
+                                                fileData={fileData}
+                                                setFileData={setFileData}
+                                                currentLine={currentLine}
+                                                setCurrentLine={setCurrentLine}
+                                                setAlert={setAlert}
+                                                saveNote={handleSaveNote}
+                                            />
+                                        </div>
 
-                                        <ReferenceTree
-                                            note={note}
-                                            setAlert={setAlert}
-                                        />
+                                        {/* Reference Tree below the editor */}
+                                        <div className='mt-4'>
+                                            <ReferenceTree
+                                                note={note}
+                                                setAlert={setAlert}
+                                            />
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -482,8 +719,6 @@ export default function NoteViewer() {
                                             { key: 'name', label: 'Name', className: 'w-64' },
                                             { key: 'entities', label: 'Entities', className: 'w-32' },
                                             { key: 'mimetype', label: 'MimeType', className: 'w-32' },
-                                            { key: 'md5', label: 'MD5' },
-                                            { key: 'sha1', label: 'SHA1' },
                                             { key: 'sha256', label: 'SHA256' },
                                             { key: 'uploadedAt', label: 'Uploaded At', className: 'w-32' },
                                             { key: 'actions', label: 'Actions', className: 'w-32' },
@@ -512,39 +747,13 @@ export default function NoteViewer() {
                                                     {truncateText(file.mimetype, 32)}
                                                 </td>
                                                 <td className=''>
-                                                    {file.md5_hash ? (
-                                                        <span
-                                                            className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
-                                                            onClick={() => copyToClipboard(file.md5_hash)}
-                                                            title='Click to copy'
-                                                        >
-                                                            {file.md5_hash.substring(0, 16)}...
-                                                        </span>
-                                                    ) : (
-                                                        '-'
-                                                    )}
-                                                </td>
-                                                <td className=''>
-                                                    {file.sha1_hash ? (
-                                                        <span
-                                                            className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
-                                                            onClick={() => copyToClipboard(file.sha1_hash)}
-                                                            title='Click to copy'
-                                                        >
-                                                            {file.sha1_hash.substring(0, 32)}...
-                                                        </span>
-                                                    ) : (
-                                                        '-'
-                                                    )}
-                                                </td>
-                                                <td className=''>
                                                     {file.sha256_hash ? (
                                                         <span
                                                             className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
                                                             onClick={() => copyToClipboard(file.sha256_hash)}
                                                             title='Click to copy'
                                                         >
-                                                            {file.sha256_hash.substring(0, 32)}...
+                                                            {file.sha256_hash.substring(0, 21)}...
                                                         </span>
                                                     ) : (
                                                         '-'
@@ -619,6 +828,7 @@ export default function NoteViewer() {
                         </div>
                     )}
                 </div>
+                
             </div>
         </>
     );

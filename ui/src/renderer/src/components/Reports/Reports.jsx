@@ -10,6 +10,9 @@ import { useEffect } from 'react';
 import ListView from '../ListView/ListView';
 import Pagination from '../Pagination/Pagination';
 import ActionBar from '../ActionBar/ActionBar';
+import ActionsTable from '../ActionsTable/ActionsTable';
+import TableCard from '../TableCard/TableCard';
+import PaginationWrapper from '../PaginationWrapper/PaginationWrapper';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import { capitalizeString, truncateText } from '../../utils/dashboardUtils/dashboardUtils';
@@ -37,6 +40,10 @@ export default function Reports() {
         20
     );
     const [selectedReports, setSelectedReports] = useState([]);
+    const [columnFilters, setColumnFilters] = useState({
+        user: '',
+        createdAt: { from: '', to: '' },
+    });
 
     const sortFieldMapping = {
         title: 'title',
@@ -47,7 +54,7 @@ export default function Reports() {
 
     useEffect(() => {
         fetchReports();
-    }, [page, sortField, sortDirection, pageSize]);
+    }, [page, sortField, sortDirection, pageSize, columnFilters]);
 
     const fetchReports = async () => {
         setLoading(true);
@@ -58,6 +65,17 @@ export default function Reports() {
             };
             const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
             queryParams.order_by = orderBy;
+
+            // Add filter parameters
+            if (columnFilters.user) {
+                queryParams.user__username = columnFilters.user;
+            }
+            if (columnFilters.createdAt.from) {
+                queryParams.created_at__gte = columnFilters.createdAt.from;
+            }
+            if (columnFilters.createdAt.to) {
+                queryParams.created_at__lte = columnFilters.createdAt.to;
+            }
 
             const response = await getReports(queryParams);
             setReports(response.data.results);
@@ -140,13 +158,27 @@ export default function Reports() {
         }
     };
 
+    const handleColumnFilterChange = (column, value) => {
+        setColumnFilters(prev => ({
+            ...prev,
+            [column]: value,
+        }));
+        setPage(1); // Reset to first page when filters change
+    };
+
     const columns = [
         { key: 'title', label: 'Title', sortable: true },
         { key: 'status', label: 'Status', sortable: true },
-        { key: 'user', label: 'User', sortable: true },
-        { key: 'createdAt', label: 'Created At', sortable: true },
+        { key: 'user', label: 'User', sortable: true, filterType: 'text' },
+        { key: 'createdAt', label: 'Created At', sortable: true, filterType: 'date' },
         { key: 'actions', label: 'Actions', sortable: false },
     ];
+
+    // Define filterable columns with their handlers
+    const filterableColumns = {
+        user: (value) => handleColumnFilterChange('user', value),
+        createdAt: (value) => handleColumnFilterChange('createdAt', value),
+    };
 
     const actions = [
         {
@@ -245,36 +277,37 @@ export default function Reports() {
 
             {/* Content Area */}
             <div className='flex flex-col space-y-4 p-4'>
-                {!loading && reports.length > 0 && (
-                    <div className='cradle-card cradle-card-compact'>
-                        <div className='cradle-card-body p-3'>
-                            <div className='flex items-center justify-between gap-4'>
-                                <div className='flex-shrink-0'>
-                                    <ActionBar
-                                        actions={actions}
-                                        selectedItems={selectedReports}
-                                        itemLabel='report'
-                                    />
-                                </div>
-                                <div className='flex-shrink-0'>
-                                    <Pagination
-                                        currentPage={page}
-                                        totalPages={totalPages}
-                                        onPageChange={handlePageChange}
-                                        pageSize={pageSize}
-                                        onPageSizeChange={(newSize) => {
-                                            setPageSize(newSize);
-                                            setPage(1);
-                                            const newParams = new URLSearchParams(searchParams);
-                                            newParams.set('reports_page', '1');
-                                            newParams.set('reports_pagesize', String(newSize));
-                                            setSearchParams(newParams, { replace: true });
-                                        }}
-                                    />
-                                </div>
+                {!loading && (
+                    <TableCard>
+                        <div className='flex flex-wrap items-center justify-between gap-4'>
+                            {/* Left: Actions */}
+                            <div className='flex items-center gap-4 flex-shrink-0'>
+                                <ActionsTable
+                                    actions={actions}
+                                    selectedItems={selectedReports}
+                                    itemLabel='report'
+                                    disabled={reports.length === 0}
+                                />
                             </div>
+
+                            {/* Right: Pagination */}
+                            <PaginationWrapper
+                                currentPage={page}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}
+                                pageSize={pageSize}
+                                onPageSizeChange={(newSize) => {
+                                    setPageSize(newSize);
+                                    setPage(1);
+                                    const newParams = new URLSearchParams(searchParams);
+                                    newParams.set('reports_page', '1');
+                                    newParams.set('reports_pagesize', String(newSize));
+                                    setSearchParams(newParams, { replace: true });
+                                }}
+                                disabled={reports.length === 0}
+                            />
                         </div>
-                    </div>
+                    </TableCard>
                 )}
 
                 <ListView
@@ -290,6 +323,8 @@ export default function Reports() {
                     tableClassName="table table-zebra"
                     enableMultiSelect={true}
                     setSelected={setSelectedReports}
+                    filterableColumns={filterableColumns}
+                    filterValues={columnFilters}
                 />
             </div>
         </div>

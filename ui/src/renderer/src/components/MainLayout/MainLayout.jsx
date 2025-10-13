@@ -4,6 +4,7 @@ import Sidebar from '../Sidebar/Sidebar';
 import Navbar from '../Navbar/Navbar';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
+import GlobalTabPortals from '../GlobalTabPortals/GlobalTabPortals';
 
 /**
  * MainLayout component - The main layout that includes sidebar and content area
@@ -39,6 +40,9 @@ export default function MainLayout() {
                     <LayoutManager outletContext={{}} />
                 </div>
             </div>
+            
+            {/* Global Tab Portals - Always mounted */}
+            <GlobalTabPortals />
         </div>
     );
 }

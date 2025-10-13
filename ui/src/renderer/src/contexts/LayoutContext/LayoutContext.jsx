@@ -47,40 +47,42 @@ export const LayoutProvider = ({ children }) => {
      * @returns {Object} Object with originalPaneId (keeps content) and newPaneId (empty)
      */
     const splitPane = useCallback((paneId, direction, position = 'after') => {
-        const originalPaneId = generatePaneId();
-        const newPaneId = generatePaneId();
-        
+        const newPaneId = generatePaneId();       // only the new empty pane needs a new ID
+        const newContainerId = generatePaneId();  // container must not reuse the leaf's ID
+
         setLayout(currentLayout => {
             const split = (node) => {
-                if (node.id === paneId) {
-                    // Convert this pane into a split container
-                    const originalPane = { ...node, id: originalPaneId };
+                // Only split leaf panes
+                if (node.id === paneId && node.type === 'pane') {
+                    // Keep the original pane object & its ID to avoid remounting/recreating tabs
+                    const originalPane = node; // keep reference & id (no cloning, no id change)
                     const newPane = { type: 'pane', id: newPaneId };
-                    
+
                     return {
                         type: direction === 'horizontal' ? 'split-horizontal' : 'split-vertical',
-                        id: node.id,
-                        children: position === 'before' 
-                            ? [newPane, originalPane]  // New pane first (top/left)
-                            : [originalPane, newPane], // New pane second (bottom/right)
-                        sizes: [50, 50], // Equal split
+                        id: newContainerId,
+                        children: position === 'before'
+                            ? [newPane, originalPane]
+                            : [originalPane, newPane],
+                        sizes: [50, 50],
                     };
                 }
-                
+
                 if (node.children) {
                     return {
                         ...node,
                         children: node.children.map(child => split(child)),
                     };
                 }
-                
+
                 return node;
             };
-            
+
             return split(currentLayout);
         });
-        
-        return { originalPaneId, newPaneId };
+
+        // The original keeps its ID, so we return that as originalPaneId
+        return { originalPaneId: paneId, newPaneId };
     }, []);
 
     /**

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import 'tailwindcss/tailwind.css';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
-import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import { getNote } from '../../services/notesService/notesService';
 import {
     editReport,
@@ -17,15 +16,12 @@ import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
 
 import { closestCenter, DndContext, DragOverlay, useSensor } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { Download, Eye, EyeClosed, FloppyDisk, Upload } from 'iconoir-react';
 import { useSearchParams } from 'react-router-dom';
 import { NoButtonsSensor } from '../../utils/dndUtils/dndUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import FormModal from '../Modals/FormModal';
 
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import NavbarButton from '../NavbarButton/NavbarButton';
-import NavbarDropdown from '../NavbarDropdown/NavbarDropdown';
 
 export default function Publish() {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -211,61 +207,7 @@ export default function Publish() {
         }
     };
 
-    const navbarContents = () => {
-        if (isEditing) {
-            return [
-                <NavbarButton
-                    key='edit-report'
-                    icon={<FloppyDisk />}
-                    text={'Edit Report'}
-                    onClick={() =>
-                        setModal(FormModal, {
-                            title: 'Enter Report Title',
-                            fields: [
-                                {
-                                    name: 'title',
-                                    label: 'Report Title',
-                                    type: 'text',
-                                    placeholder: 'Enter report title',
-                                    initialValue: title,
-                                },
-                            ],
-                            onSubmit: (data) => handleTitleSubmit(data.title, null),
-                        })
-                    }
-                />,
-            ];
-        } else {
-            return [
-                <NavbarDropdown
-                    key='-publish'
-                    icon={<Upload />}
-                    text={'Upload Report'}
-                    contents={publishOptions.upload.map((option) => ({
-                        label: option.label,
-                        handler: publishReportWithStrategy(option.strategy),
-                    }))}
-                />,
-                <NavbarDropdown
-                    key='download-publish'
-                    icon={<Download />}
-                    text={'Download Report'}
-                    contents={publishOptions.download.map((option) => ({
-                        label: option.label,
-                        handler: publishReportWithStrategy(option.strategy),
-                    }))}
-                />,
-                <NavbarButton
-                    key='anonymous-publish'
-                    icon={anonymize ? <EyeClosed /> : <Eye />}
-                    text={anonymize ? 'Anonymized' : 'Transparent'}
-                    onClick={() => setAnonymize(!anonymize)}
-                />,
-            ];
-        }
-    };
 
-    useNavbarContents(navbarContents, [publishOptions, anonymize, isEditing, title]);
 
     return (
         <div className='w-full h-full overflow-y-hidden relative'>

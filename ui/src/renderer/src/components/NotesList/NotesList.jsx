@@ -20,6 +20,7 @@ import {
 } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import ActionBar from '../ActionBar/ActionBar';
+import ActionsTable from '../ActionsTable/ActionsTable';
 import AlertBox from '../AlertBox/AlertBox';
 import { HoverPreview } from '../HoverPreview/HoverPreview';
 import ListView from '../ListView/ListView';
@@ -28,6 +29,8 @@ import Note from '../Note/Note';
 import DeleteNote from '../NoteActions/DeleteNote';
 import EditNote from '../NoteActions/EditNote';
 import Pagination from '../Pagination/Pagination';
+import PaginationWrapper from '../PaginationWrapper/PaginationWrapper';
+import TableCard from '../TableCard/TableCard';
 
 export default function NotesList({
     query,
@@ -116,7 +119,11 @@ export default function NotesList({
 
         switch (status) {
             case 'healthy':
-                return null;
+                return (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-green-500">
+                        <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                );
             case 'processing':
                 return (
                     <InfoCircleSolid className='text-blue-500' width='18' height='18' />
@@ -301,14 +308,12 @@ export default function NotesList({
     ];
 
     const columns = [
-        { key: 'status', label: '' },
         { key: 'title', label: 'Title' },
         { key: 'description', label: 'Description' },
         { key: 'author', label: 'Author', filterType: 'text' },
         { key: 'editor', label: 'Editor', filterType: 'text' },
         { key: 'createdAt', label: 'Created At', filterType: 'date' },
         { key: 'lastChanged', label: 'Updated At', filterType: 'date' },
-        { key: 'actions', label: 'Actions', className: 'w-16' },
     ];
 
     const renderRow = (note, index, selectProps = {}) => {
@@ -337,38 +342,37 @@ export default function NotesList({
                         />
                     </td>
                 )}
-                <td className='w-8'>
-                    {note.status && (
-                        <span
-                            className='inline-flex items-center align-middle tooltip tooltip-right tooltip-primary'
-                            data-tooltip={
-                                note.status_message ||
-                                capitalizeString(note.status)
-                            }
-                        >
-                            {getStatusIcon(note.status)}
-                        </span>
-                    )}
-                </td>
                 <td
                     className={`truncate w-64`}
                     data-tooltip={note.metadata?.title}
                 >
-                    <div className='flex items-center justify-between gap-2'>
+                    <div className='flex items-center gap-2'>
+                        {note.fleeting ? (
+                            <span
+                                className='inline-flex items-center align-middle tooltip tooltip-right tooltip-primary flex-shrink-0'
+                                data-tooltip='Fleeting Note'
+                            >
+                                <DesignNib className='text-[#FF8C00]' width='18' height='18' />
+                            </span>
+                        ) : (
+                            note.status && (
+                                <span
+                                    className='inline-flex items-center align-middle tooltip tooltip-right tooltip-primary flex-shrink-0'
+                                    data-tooltip={
+                                        note.status_message ||
+                                        capitalizeString(note.status)
+                                    }
+                                >
+                                    {getStatusIcon(note.status)}
+                                </span>
+                            )
+                        )}
                         <span className='truncate'>
                             {truncateText(
                                 parseMarkdownInline(note.metadata?.title),
                                 64,
                             )}
                         </span>
-                        {note.fleeting && (
-                            <span
-                                className='inline-flex items-center align-middle tooltip tooltip-left tooltip-primary flex-shrink-0'
-                                data-tooltip='Fleeting Note'
-                            >
-                                <DesignNib className='text-[#FF8C00]' width='18' height='18' />
-                            </span>
-                        )}
                     </div>
                 </td>
                 <td className='truncate max-w-xs'>
@@ -389,24 +393,6 @@ export default function NotesList({
                     {note.edit_timestamp
                         ? formatDate(new Date(note.edit_timestamp))
                         : '-'}
-                </td>
-                <td className='w-16'>
-                    <div className='flex items-center space-x-1'>
-                        <EditNote
-                            note={note}
-                            setAlert={setAlert}
-                            setHidden={() => { }}
-                            key={`${note.id}-edit`}
-                            classNames='w-4 h-4'
-                        />
-                        <DeleteNote
-                            note={note}
-                            setAlert={setAlert}
-                            setHidden={() => { }}
-                            key={`${note.id}-delete`}
-                            classNames='w-4 h-4'
-                        />
-                    </div>
                 </td>
             </tr>
         );
@@ -434,95 +420,91 @@ export default function NotesList({
 
                 {/* Compact Control Bar - Actions and Pagination */}
                 {!loading && (
-                    <div className='cradle-card cradle-card-compact'>
-                        <div className='cradle-card-body p-3'>
-                            <div className='flex flex-wrap items-center justify-between gap-4'>
-                                {/* Left: Action Bar and Search */}
-                                <div className='flex items-center gap-4 flex-shrink-0'>
-                                    {!hideActionBar && (
-                                        <div className={`${notes.length === 0 ? 'opacity-50 pointer-events-none' : ''}`}>
-                                            <ActionBar
-                                                actions={actions}
-                                                selectedItems={selectedNotes}
-                                                itemLabel='note'
-                                            />
-                                        </div>
-                                    )}
+                    <TableCard>
+                        <div className='flex flex-wrap items-center justify-between gap-4'>
+                            {/* Left: Action Bar and Search */}
+                            <div className='flex items-center gap-4 flex-shrink-0'>
+                                {!hideActionBar && (
+                                    <ActionsTable
+                                        actions={actions}
+                                        selectedItems={selectedNotes}
+                                        itemLabel='note'
+                                        disabled={notes.length === 0}
+                                    />
+                                )}
 
-                                    {/* Content Search */}
-                                    {contentSearch && (
-                                        <div className='flex items-stretch gap-2 min-w-[280px]'>
-                                            <div className='relative flex-1'>
-                                                <input
-                                                    type='text'
-                                                    value={searchInputValue}
-                                                    onChange={(e) => {
-                                                        setSearchInputValue(e.target.value);
-                                                        if (contentSearch?.onChange) {
-                                                            contentSearch.onChange(e.target.value);
-                                                        }
-                                                    }}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter' && contentSearch?.onSubmit) {
-                                                            contentSearch.onSubmit();
-                                                        }
-                                                    }}
-                                                    placeholder='Search content...'
-                                                    className='cradle-search text-sm py-2 px-3 w-full pr-8 h-full'
-                                                />
-                                                {searchInputValue && (
-                                                    <button
-                                                        onClick={() => {
-                                                            setSearchInputValue('');
-                                                            if (contentSearch?.onChange) {
-                                                                contentSearch.onChange('');
-                                                            }
-                                                            if (contentSearch?.onSubmit) {
-                                                                contentSearch.onSubmit();
-                                                            }
-                                                        }}
-                                                        className='absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:cradle-bg-secondary rounded '
-                                                        title='Clear search'
-                                                    >
-                                                        <Xmark className='w-4 h-4 cradle-text-tertiary' />
-                                                    </button>
-                                                )}
-                                            </div>
-                                            <button
-                                                onClick={() => {
-                                                    if (contentSearch?.onSubmit) {
+                                {/* Content Search */}
+                                {contentSearch && (
+                                    <div className='flex items-stretch gap-2 min-w-[280px]'>
+                                        <div className='relative flex-1'>
+                                            <input
+                                                type='text'
+                                                value={searchInputValue}
+                                                onChange={(e) => {
+                                                    setSearchInputValue(e.target.value);
+                                                    if (contentSearch?.onChange) {
+                                                        contentSearch.onChange(e.target.value);
+                                                    }
+                                                }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && contentSearch?.onSubmit) {
                                                         contentSearch.onSubmit();
                                                     }
                                                 }}
-                                                className='cradle-btn cradle-btn-secondary px-3 py-2 hover:cradle-bg-secondary rounded  flex items-center justify-center'
-                                                title='Search'
-                                            >
-                                                <Search className='w-4 h-4' />
-                                            </button>
+                                                placeholder='Search content...'
+                                                className='cradle-search text-sm py-2 px-3 w-full pr-8 h-full'
+                                            />
+                                            {searchInputValue && (
+                                                <button
+                                                    onClick={() => {
+                                                        setSearchInputValue('');
+                                                        if (contentSearch?.onChange) {
+                                                            contentSearch.onChange('');
+                                                        }
+                                                        if (contentSearch?.onSubmit) {
+                                                            contentSearch.onSubmit();
+                                                        }
+                                                    }}
+                                                    className='absolute right-2 top-1/2 -translate-y-1/2 p-1 cradle-btn cradle-btn-secondary rounded '
+                                                    title='Clear search'
+                                                >
+                                                    <Xmark className='w-4 h-4 cradle-text-tertiary' />
+                                                </button>
+                                            )}
                                         </div>
-                                    )}
-                                </div>
-
-                                {/* Right: Pagination */}
-                                <div className={`flex-shrink-0 ${notes.length === 0 ? 'opacity-50 pointer-events-none' : ''}`}>
-                                    <Pagination
-                                        currentPage={page}
-                                        totalPages={totalPages}
-                                        onPageChange={handlePageChange}
-                                        pageSize={pageSize}
-                                        onPageSizeChange={(newSize) => {
-                                            setPageSize(newSize);
-                                            setPage(1);
-                                            const newParams = new URLSearchParams(searchParams);
-                                            newParams.set('notes_page', '1');
-                                            newParams.set('notes_pagesize', String(newSize));
-                                            setSearchParams(newParams, { replace: true });
-                                        }}
-                                    />
-                                </div>
+                                        <button
+                                            onClick={() => {
+                                                if (contentSearch?.onSubmit) {
+                                                    contentSearch.onSubmit();
+                                                }
+                                            }}
+                                            className='cradle-btn cradle-btn-secondary px-3 py-2 hover:cradle-bg-secondary rounded  flex items-center justify-center'
+                                            title='Search'
+                                        >
+                                            <Search className='w-4 h-4' />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
+
+                            {/* Right: Pagination */}
+                            <PaginationWrapper
+                                currentPage={page}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}
+                                pageSize={pageSize}
+                                onPageSizeChange={(newSize) => {
+                                    setPageSize(newSize);
+                                    setPage(1);
+                                    const newParams = new URLSearchParams(searchParams);
+                                    newParams.set('notes_page', '1');
+                                    newParams.set('notes_pagesize', String(newSize));
+                                    setSearchParams(newParams, { replace: true });
+                                }}
+                                disabled={notes.length === 0}
+                            />
                         </div>
-                    </div>
+                    </TableCard>
                 )}
 
                 <ListView

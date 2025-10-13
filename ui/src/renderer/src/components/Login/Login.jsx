@@ -146,7 +146,7 @@ export default function Login() {
                                                 setBackendUrl(getBaseUrl());
                                                 setShowSettings(false);
                                             }}
-                                            className='p-1.5 hover:text-cradle2  cradle-text-tertiary'
+                                            className='p-1.5 hover:text-cradle2 cradle-text-tertiary border border-[var(--cradle-border-accent)] hover:border-[var(--cradle-accent-primary)]'
                                             data-testid='back-button'
                                             title='Back'
                                         >
@@ -155,7 +155,7 @@ export default function Login() {
                                     )}
                                     <button
                                         onClick={toggleTheme}
-                                        className='p-1.5 hover:text-cradle2  cradle-text-tertiary'
+                                        className='p-1.5 hover:text-cradle2 cradle-text-tertiary border border-[var(--cradle-border-accent)] hover:border-[var(--cradle-accent-primary)]'
                                         data-testid='theme-button'
                                         title='Toggle Theme'
                                     >
@@ -166,7 +166,7 @@ export default function Login() {
                                 !requiresTwoFactor && (
                                     <button
                                         onClick={() => setShowSettings(!showSettings)}
-                                        className='p-1.5 hover:text-cradle2  cradle-text-tertiary'
+                                        className='p-1.5 hover:text-cradle2 cradle-text-tertiary border border-[var(--cradle-border-accent)] hover:border-[var(--cradle-accent-primary)]'
                                         data-testid='settings-button'
                                         title='Settings'
                                     >
@@ -315,7 +315,7 @@ export default function Login() {
                         {/* Version/Status Indicator */}
                         <div className='mt-6 text-center'>
                             <span className='text-xs cradle-text-muted cradle-mono tracking-wider'>
-                                v1.0.0
+                                v2.10.2
                             </span>
                         </div>
                     </div>

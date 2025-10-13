@@ -14,9 +14,13 @@ import {
     getReports,
     importReport,
 } from '../../services/publishService/publishService';
+import ActionBar from '../ActionBar/ActionBar';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import ActionsTable from '../ActionsTable/ActionsTable';
 import ListView from '../ListView/ListView';
 import Pagination from '../Pagination/Pagination';
+import PaginationWrapper from '../PaginationWrapper/PaginationWrapper';
+import TableCard from '../TableCard/TableCard';
 
 import { useModal } from '../../contexts/ModalContext/ModalContext.jsx';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
@@ -542,17 +546,21 @@ export default function ReportList({ setAlert = null }) {
 
             {!report_id ? (
                 <>
-                    {!loading && reports.length > 0 && (
-                        <div className='flex items-center justify-between gap-4'>
-                            <div className='flex-shrink-0'>
-                                <ActionBar
-                                    actions={actions}
-                                    selectedItems={selectedReports}
-                                    itemLabel='row'
-                                />
-                            </div>
-                            <div className='flex-shrink-0'>
-                                <Pagination
+                    {!loading && (
+                        <TableCard>
+                            <div className='flex flex-wrap items-center justify-between gap-4'>
+                                {/* Left: Actions */}
+                                <div className='flex items-center gap-4 flex-shrink-0'>
+                                    <ActionsTable
+                                        actions={actions}
+                                        selectedItems={selectedReports}
+                                        itemLabel='row'
+                                        disabled={reports.length === 0}
+                                    />
+                                </div>
+
+                                {/* Right: Pagination */}
+                                <PaginationWrapper
                                     currentPage={page}
                                     totalPages={totalPages}
                                     onPageChange={handlePageChange}
@@ -565,9 +573,10 @@ export default function ReportList({ setAlert = null }) {
                                         newParams.set('reports_pagesize', String(newSize));
                                         setSearchParams(newParams, { replace: true });
                                     }}
+                                    disabled={reports.length === 0}
                                 />
                             </div>
-                        </div>
+                        </TableCard>
                     )}
 
                     <ListView

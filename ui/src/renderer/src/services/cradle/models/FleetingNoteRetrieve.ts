@@ -51,6 +51,24 @@ export interface FleetingNoteRetrieve {
      * @memberof FleetingNoteRetrieve
      */
     readonly files?: Array<FileReference>;
+    /**
+     * 
+     * @type {string}
+     * @memberof FleetingNoteRetrieve
+     */
+    readonly title?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FleetingNoteRetrieve
+     */
+    readonly description?: string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof FleetingNoteRetrieve
+     */
+    readonly fleeting?: boolean;
 }
 
 /**

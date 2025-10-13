@@ -1,13 +1,9 @@
-import { Graph } from '@phosphor-icons/react';
-import { SparksSolid } from 'iconoir-react';
-import { Trash } from 'iconoir-react/regular';
 import pluralize from 'pluralize';
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
 import { deleteEntry } from '../../services/adminService/adminService';
 import {
     enrichEntry,
@@ -18,8 +14,6 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import ActionConfirmationModal from '../Modals/ActionConfirmationModal.jsx';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
-import NavbarButton from '../NavbarButton/NavbarButton';
-import NavbarDropdown from '../NavbarDropdown/NavbarDropdown.jsx';
 import NotFound from '../NotFound/NotFound';
 import { Tab, Tabs } from '../Tabs/Tabs';
 import Files from './Files.jsx';
@@ -107,59 +101,6 @@ export default function Dashboard() {
         });
     };
 
-    const navbarContents = () => [
-        // Add graph visualization button
-        enrichers.length > 0 && contentObject?.id && (
-            <NavbarDropdown
-                key='-enrich'
-                icon={<SparksSolid />}
-                text={'Enrich'}
-                contents={enrichers.map((option) => ({
-                    label: option.name,
-                    handler: () =>
-                        setModal(ActionConfirmationModal, {
-                            text: `Are you sure you want to enrich this entry with ${option.name}? Results will be visible to everyone.`,
-                            onConfirm: handleEnrich(contentObject.id, option.id),
-                        }),
-                }))}
-            />
-        ),
-        contentObject && (
-            <NavbarButton
-                key='view-graph-btn'
-                icon={<Graph height={24} width={24} />}
-                text='Explore in Graph'
-                onClick={navigateLink(
-                    `/knowledge-graph?&pf_src={"value": "${contentObject?.id}", "label": "${contentObject?.name}"}&pgf_src={"value": "${contentObject.id}", "label": "${contentObject.name}"}`,
-                )}
-                data-testid='view-graph-btn'
-            />
-        ),
-
-        // If the user is an admin and the dashboard is not for an artifact, add a delete button to the navbar
-        isAdmin() && contentObject && contentObject.type !== 'artifact' && (
-            <NavbarButton
-                key='delete-entry-btn'
-                icon={<Trash />}
-                text='Delete'
-                onClick={() =>
-                    setModal(ConfirmDeletionModal, {
-                        text: `Are you sure you want to delete this entity? This action is irreversible.`,
-                        onConfirm: handleDelete,
-                        confirmText: `${contentObject.subtype}:${contentObject.name}`,
-                    })
-                }
-                data-testid='delete-entry-btn'
-            />
-        ),
-    ];
-    useNavbarContents(!entryMissing && navbarContents, [
-        contentObject,
-        enrichers,
-        location,
-        profile,
-        entryMissing,
-    ]);
 
     if (entryMissing) {
         return (

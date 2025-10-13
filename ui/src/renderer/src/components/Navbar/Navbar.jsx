@@ -2,6 +2,9 @@ import { ArrowLeft, ArrowRight, Search } from 'iconoir-react';
 import { useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import { addFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
+import { displayError } from '../../utils/responseUtils/responseUtils';
 import Logo from '../Logo/Logo';
 import NavbarButton from '../NavbarButton/NavbarButton';
 import SearchDialog from '../SearchDialog/SearchDialog';
@@ -20,6 +23,19 @@ export default function Navbar({
 }) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const { navigate, navigateLink } = useCradleNavigate();
+    const { profile } = useProfile();
+
+    const handleCreateNewNote = async () => {
+        try {
+            const defaultContent = profile?.defaultNoteTemplate || '# Untitled\n\nStart writing your note here...';
+            const response = await addFleetingNote(defaultContent, []);
+            if (response.status === 200) {
+                navigate(`/notes/${response.data.id}`);
+            }
+        } catch (error) {
+            displayError(() => {}, navigate)(error);
+        }
+    };
 
     useHotkeys(
         'ctrl+k, cmd+k',
@@ -39,7 +55,7 @@ export default function Navbar({
         'ctrl+l, cmd+l',
         (event) => {
             event.preventDefault();
-            navigate('/editor/new');
+            handleCreateNewNote();
         },
         {
             enableOnFormTags: true,

@@ -1,7 +1,6 @@
 import React, { Suspense } from 'react';
 import { HashRouter, Outlet, Route, Routes } from 'react-router-dom';
 
-const NoteEditor = React.lazy(() => import('./components/NoteEditor/NoteEditor.jsx'));
 const Login = React.lazy(() => import('./components/Login/Login.jsx'));
 const Documents = React.lazy(() => import('./components/Documents/Documents.jsx'));
 const Files = React.lazy(() => import('./components/Files/Files.jsx'));
@@ -39,9 +38,6 @@ const ForgotPassword = React.lazy(
 const GraphExplorer = React.lazy(
     () => import('./components/GraphExplorer/GraphExplorer.jsx'),
 );
-const FleetingNoteEditor = React.lazy(
-    () => import('./components/FleetingNoteEditor/FleetingNoteEditor.jsx'),
-);
 const ReportList = React.lazy(() => import('./components/ReportList/ReportList.jsx'));
 const Reports = React.lazy(
     () => import('./components/Reports/Reports.jsx'),
@@ -57,6 +53,8 @@ import { ProfileProvider } from './contexts/ProfileContext/ProfileContext.jsx';
 import { ThemeProvider } from './contexts/ThemeContext/ThemeContext.jsx';
 import { LayoutProvider } from './contexts/LayoutContext/LayoutContext.jsx';
 import { PaneTabsProvider } from './contexts/PaneTabsContext/PaneTabsContext.jsx';
+import { TabHostProvider } from './contexts/TabHostContext/TabHostContext.jsx';
+import { RouteConfigProvider } from './contexts/RouteConfigContext/RouteConfigContext.jsx';
 
 function App() {
     return (
@@ -65,9 +63,11 @@ function App() {
                 <ApiProvider>
                     <ProfileProvider>
                         <ThemeProvider>
-                            <LayoutProvider>
-                                <PaneTabsProvider>
-                                    <ModalProvider>
+                            <TabHostProvider>
+                                <RouteConfigProvider>
+                                    <LayoutProvider>
+                                        <PaneTabsProvider>
+                                            <ModalProvider>
                                         <Suspense fallback={<CradleLoading />}>
                                             <Routes>
                                         <Route
@@ -94,20 +94,12 @@ function App() {
                                                     element={<DigestData />}
                                                 />
                                                 <Route
-                                                    path='/editor/:id'
-                                                    element={<FleetingNoteEditor />}
-                                                />
-                                                <Route
                                                     path='/dashboards/:subtype/:name'
                                                     element={<Dashboard />}
                                                 />
                                                 <Route
                                                     path='/notes/:id'
                                                     element={<NoteViewer />}
-                                                />
-                                                <Route
-                                                    path='/notes/:id/edit'
-                                                    element={<NoteEditor />}
                                                 />
                                                 <Route
                                                     path='/notes'
@@ -195,11 +187,13 @@ function App() {
                                     </ModalProvider>
                                 </PaneTabsProvider>
                             </LayoutProvider>
-                        </ThemeProvider>
-                    </ProfileProvider>
-                </ApiProvider>
-            </AuthProvider>
-        </HashRouter>
+                            </RouteConfigProvider>
+                        </TabHostProvider>
+                    </ThemeProvider>
+                </ProfileProvider>
+            </ApiProvider>
+        </AuthProvider>
+    </HashRouter>
     );
 }
 

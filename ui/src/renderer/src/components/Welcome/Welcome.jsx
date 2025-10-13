@@ -5,8 +5,10 @@ import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { getStatistics } from '../../services/statisticsService/statisticsService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
+import { addFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
 import { parseMarkdownInline } from '../../utils/customParser/customParser';
 import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Logo from '../Logo/Logo';
 
@@ -119,6 +121,7 @@ export default function Welcome() {
     const [entities, setEntities] = useState([]);
     const [notes, setNotes] = useState([]);
     const { navigate, navigateLink } = useCradleNavigate();
+    const { profile } = useProfile();
 
     useEffect(() => {
         getStatistics()
@@ -131,12 +134,24 @@ export default function Welcome() {
             .catch(displayError(setAlert, navigate));
     }, []);
 
+    const handleCreateNewNote = async () => {
+        try {
+            const defaultContent = profile?.defaultNoteTemplate || '# Untitled\n\nStart writing your note here...';
+            const response = await addFleetingNote(defaultContent, []);
+            if (response.status === 200) {
+                navigate(`/notes/${response.data.id}`);
+            }
+        } catch (error) {
+            displayError(setAlert, navigate)(error);
+        }
+    };
+
     const quickActions = [
         {
             title: 'New Note',
             description: 'Create a new note',
             icon: <PlusCircle width={24} height={24} />,
-            onClick: navigateLink('/editor/new'),
+            onClick: handleCreateNewNote,
             color: 'cradle-status-success'
         },
         {

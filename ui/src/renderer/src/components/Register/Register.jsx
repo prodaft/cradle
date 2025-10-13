@@ -46,7 +46,6 @@ export default function Register() {
                 {/* Left Side - Branding */}
                 <div className='hidden lg:flex lg:w-1/2 cradle-bg-secondary relative overflow-hidden'>
                     <div className='absolute inset-0 cradle-grid-bg opacity-30'></div>
-                    <div className='absolute top-0 left-0 w-32 h-32 border-l-2 border-t-2 border-cradle2'></div>
                     
                     <div className='relative z-10 flex flex-col justify-center items-start px-16 py-12'>
                         <h1 className='text-4xl font-bold cradle-text-primary cradle-mono mb-4 tracking-tight'>
@@ -127,7 +126,7 @@ export default function Register() {
 
                         <div className='mt-6 text-center'>
                             <span className='text-xs cradle-text-muted cradle-mono tracking-wider'>
-                                v1.0.0
+                                v2.10.2
                             </span>
                         </div>
                     </div>

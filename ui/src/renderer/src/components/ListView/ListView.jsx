@@ -206,7 +206,7 @@ export default function ListView({
                             {children}
                             {(filterValues[column] && 
                               (typeof filterValues[column] === 'string' ? filterValues[column] : hasDateRangeFilter)) && (
-                                <span className='ml-1 text-xs text-blue-600 dark:text-blue-400'>●</span>
+                                <span className='ml-1 text-xs text-orange-600 dark:text-orange-400'>●</span>
                             )}
                         </span>
                         {isSortable && (
@@ -260,11 +260,6 @@ export default function ListView({
                                                     }
                                                     disabled={data.length === 0}
                                                 />
-                                                {selectedIds.length > 0 && (
-                                                    <span className='text-xs font-semibold text-blue-600 dark:text-blue-400'>
-                                                        {selectedIds.length}
-                                                    </span>
-                                                )}
                                             </div>
                                         </th>
                                     )}

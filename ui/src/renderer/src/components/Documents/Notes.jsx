@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { PlusCircle } from 'iconoir-react';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import { addFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
+import { displayError } from '../../utils/responseUtils/responseUtils';
 import DeleteNote from '../NoteActions/DeleteNote';
 import Publishable from '../NoteActions/Publishable';
 import NotesList from '../NotesList/NotesList';
@@ -19,6 +22,7 @@ import NotesList from '../NotesList/NotesList';
 export default function Notes({ setAlert }) {
     const [searchParams, setSearchParams] = useSearchParams();
     const { navigate, navigateLink } = useCradleNavigate();
+    const { profile } = useProfile();
 
     const [searchFilters, setSearchFilters] = useState({
         content: searchParams.get('content') || '',
@@ -64,6 +68,18 @@ export default function Notes({ setAlert }) {
 
         setSearchParams(newParams, { replace: true });
         setSubmittedFilters(filters);
+    };
+
+    const handleCreateNewNote = async () => {
+        try {
+            const defaultContent = profile?.defaultNoteTemplate || '# Untitled\n\nStart writing your note here...';
+            const response = await addFleetingNote(defaultContent, []);
+            if (response.status === 200) {
+                navigate(`/notes/${response.data.id}`);
+            }
+        } catch (error) {
+            displayError(setAlert, navigate)(error);
+        }
     };
 
     // Auto-update search when filters change
@@ -131,11 +147,10 @@ export default function Notes({ setAlert }) {
                     </p>
                 </div>
                 <button
-                    className='cradle-btn cradle-btn-primary flex items-center gap-2'
-                    onClick={navigateLink('/editor/new')}
+                    className='cradle-btn cradle-btn-primary flex items-center justify-center w-10 h-10 text-white text-xl font-bold'
+                    onClick={handleCreateNewNote}
                 >
-                    <PlusCircle width={20} height={20} />
-                    <span>New Note</span>
+                    +
                 </button>
             </div>
 

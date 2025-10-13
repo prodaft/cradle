@@ -2,9 +2,10 @@ import uuid
 from typing import TYPE_CHECKING
 
 from django.db import models
-from django_lifecycle import AFTER_DELETE, LifecycleModelMixin, hook
+from django_lifecycle import AFTER_CREATE, AFTER_DELETE, LifecycleModelMixin, hook
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
+from management.settings import cradle_settings
 
 from .utils import MinioClient
 
@@ -98,8 +99,22 @@ class FileReference(models.Model, LifecycleModelMixin):
             return
 
         from .tasks import process_file_task
+        
+        try:
+            # Try to run asynchronously first
+            process_file_task.apply_async(args=(str(self.id),))
+        except Exception:
+            # If async fails (no Celery workers), run synchronously
+            process_file_task(str(self.id))
 
-        process_file_task.apply_async(args=(str(self.id),))
+    @hook(AFTER_CREATE)
+    def auto_process_file(self):
+        """
+        Automatically process the file after it is created.
+        This ensures hashes are calculated immediately upon file creation.
+        """  
+        if cradle_settings.files.autoprocess_files:
+            self.process_file()
 
     @hook(AFTER_DELETE)
     def delete_file(self):

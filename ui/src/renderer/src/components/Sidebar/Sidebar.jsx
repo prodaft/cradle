@@ -125,16 +125,16 @@ export default function Sidebar({
                                 highlightedLocation={digestDataLocation}
                             />
                             <SidebarItem
-                                handleClick={handleGraphView}
-                                icon={<Graph height={24} width={24} />}
-                                text='Graph Explorer'
-                                highlightedLocation={graphViewLocation}
-                            />
-                            <SidebarItem
                                 handleClick={handleConnectivity}
                                 icon={<Page />}
                                 text='Reports'
                                 highlightedLocation={connectivityLocation}
+                            />
+                            <SidebarItem
+                                handleClick={handleGraphView}
+                                icon={<Graph height={24} width={24} />}
+                                text='Graph Explorer'
+                                highlightedLocation={graphViewLocation}
                             />
                         </SidebarSection>
                     </div>

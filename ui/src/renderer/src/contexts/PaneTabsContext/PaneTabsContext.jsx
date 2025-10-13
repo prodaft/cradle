@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useLayout } from '../LayoutContext/LayoutContext';
+import { useTabHost } from '../TabHostContext/TabHostContext';
 import { shouldExcludeFromTabs, getTitleForPath, getIconForPath, createTab, createPaneState, validatePaneState } from '../../utils/tabUtils/tabUtils';
 
 const PaneTabsContext = createContext();
@@ -27,6 +28,7 @@ export const PaneTabsProvider = ({ children }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const { activePaneId, getAllPaneIds, closePane } = useLayout();
+    const { destroy: destroyTabContainer } = useTabHost();
     const closePaneRef = useRef(closePane);
     const previousActivePaneIdRef = useRef(activePaneId);
     
@@ -244,6 +246,12 @@ export const PaneTabsProvider = ({ children }) => {
             const newTabs = tabs.filter((_, i) => i !== index);
             let newActiveIndex = activeTabIndex;
 
+            // Clean up the tab container for the closed tab
+            const closedTab = tabs[index];
+            if (closedTab && closedTab.id) {
+                destroyTabContainer(closedTab.id);
+            }
+
             // Adjust active tab index
             if (index === activeTabIndex) {
                 newActiveIndex = index > 0 ? index - 1 : 0;
@@ -302,6 +310,13 @@ export const PaneTabsProvider = ({ children }) => {
 
             const tabToKeep = paneState.tabs[index];
             
+            // Clean up containers for all tabs except the one to keep
+            paneState.tabs.forEach((tab, i) => {
+                if (i !== index && tab.id) {
+                    destroyTabContainer(tab.id);
+                }
+            });
+            
             // Only navigate if this is the active pane
             if (paneId === activePaneId) {
                 safeNavigate(tabToKeep.path);
@@ -329,6 +344,13 @@ export const PaneTabsProvider = ({ children }) => {
 
             const newTabs = paneState.tabs.slice(0, index + 1);
             let newActiveIndex = paneState.activeTabIndex;
+            
+            // Clean up containers for tabs to the right
+            paneState.tabs.forEach((tab, i) => {
+                if (i > index && tab.id) {
+                    destroyTabContainer(tab.id);
+                }
+            });
             
             // Adjust active tab if needed
             if (paneState.activeTabIndex > index) {
@@ -627,8 +649,9 @@ export const PaneTabsProvider = ({ children }) => {
                 return current;
             }
             
-            // Get the tab to move
-            const tabToMove = { ...actualSourceState.tabs[sourceIndex] };
+            // Get the tab to move (keep original ID - we're moving, not copying)
+            const tabToMove = actualSourceState.tabs[sourceIndex];
+            console.log('[TabSplit] Moving tab:', tabToMove.id, 'from pane:', sourcePaneId, 'to new pane');
             
             // Build new state
             const newState = { ...current };
@@ -690,6 +713,8 @@ export const PaneTabsProvider = ({ children }) => {
                 activeTabIndex: 0,
             };
             
+            console.log('[TabSplit] Final state - Original pane tabs:', newState[originalPaneId]?.tabs.map(t => t.id), 'New pane tabs:', newState[newPaneId]?.tabs.map(t => t.id));
+            
             return newState;
         });
     }, [getAllPaneIds]);
@@ -750,6 +775,7 @@ export const PaneTabsProvider = ({ children }) => {
         transferTabs,
         preInitializePanes,
         handleSplitWithTab,
+        safeNavigate,
     }), [
         paneTabsState,
         openTab,
@@ -767,6 +793,7 @@ export const PaneTabsProvider = ({ children }) => {
         transferTabs,
         preInitializePanes,
         handleSplitWithTab,
+        safeNavigate,
     ]);
 
     return <PaneTabsContext.Provider value={contextValue}>{children}</PaneTabsContext.Provider>;

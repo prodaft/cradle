@@ -41,9 +41,18 @@ export default function DigestData() {
         endDate: searchParams.get('created_at_lte') || null,
     });
 
+    // Column filters for table header
+    const [columnFilters, setColumnFilters] = useState({
+        user: searchParams.get('author') || '',
+        createdAt: { 
+            from: searchParams.get('created_at_gte') ? new Date(searchParams.get('created_at_gte')).toISOString().split('T')[0] : '', 
+            to: searchParams.get('created_at_lte') ? new Date(searchParams.get('created_at_lte')).toISOString().split('T')[0] : '' 
+        },
+    });
+
     useEffect(() => {
         fetchDigests();
-    }, [page, submittedFilters, sortField, sortDirection, pageSize]);
+    }, [page, submittedFilters, sortField, sortDirection, pageSize, columnFilters]);
 
     // Initialize filters from URL parameters
     useEffect(() => {
@@ -165,6 +174,19 @@ export default function DigestData() {
                 ...submittedFilters,
             };
 
+            // Add column filter parameters
+            if (columnFilters.user) {
+                searchQueryParams.author = columnFilters.user;
+            }
+            if (columnFilters.createdAt.from) {
+                searchQueryParams.created_at_gte = new Date(columnFilters.createdAt.from).toISOString();
+            }
+            if (columnFilters.createdAt.to) {
+                const endDate = new Date(columnFilters.createdAt.to);
+                endDate.setHours(23, 59, 59, 999);
+                searchQueryParams.created_at_lte = endDate.toISOString();
+            }
+
             const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
             searchQueryParams.order_by = orderBy;
 
@@ -209,6 +231,14 @@ export default function DigestData() {
         setSearchParams(newParams, { replace: true });
     };
 
+    const handleColumnFilterChange = (column, value) => {
+        setColumnFilters(prev => ({
+            ...prev,
+            [column]: value,
+        }));
+        setPage(1); // Reset to first page when filters change
+    };
+
     return (
         <div className='w-full h-full'>
             <AlertDismissible alert={alert} setAlert={setAlert} />
@@ -227,45 +257,6 @@ export default function DigestData() {
 
             {/* Content Area */}
             <div className='flex flex-col space-y-4 p-4'>
-                {/* Search Section */}
-                <div className='cradle-card cradle-card-compact'>
-                    <div className='cradle-card-body p-3'>
-                        <form
-                            onSubmit={handleSearchSubmit}
-                            className='flex flex-wrap items-center gap-3'
-                        >
-                            <div className='flex-1 min-w-[200px]'>
-                                <Datepicker
-                                    value={dateRange}
-                                    onChange={handleDateRangeChange}
-                                    inputClassName='cradle-search text-sm py-2 px-3 w-full'
-                                    toggleClassName='hidden'
-                                    placeholder='Select date range'
-                                />
-                            </div>
-                            <input
-                                type='text'
-                                name='title'
-                                value={searchFilters.title}
-                                onChange={handleSearchChange}
-                                placeholder='Search by title'
-                                className='cradle-search text-sm py-2 px-3 flex-1 min-w-[150px]'
-                            />
-                            <input
-                                type='text'
-                                name='author'
-                                value={searchFilters.author}
-                                onChange={handleSearchChange}
-                                placeholder='Search by user'
-                                className='cradle-search text-sm py-2 px-3 flex-1 min-w-[150px]'
-                            />
-                            <button type='submit' className='cradle-btn cradle-btn-secondary px-4 py-2 flex items-center gap-2'>
-                                <Search className='w-4 h-4' /> Search
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
                 {/* Digest List */}
                 <DigestList
                     digests={digests}
@@ -280,6 +271,11 @@ export default function DigestData() {
                     onSort={handleSort}
                     pageSize={pageSize}
                     setPageSize={handlePageSizeChange}
+                    onColumnFilterChange={handleColumnFilterChange}
+                    columnFilters={columnFilters}
+                    searchFilters={searchFilters}
+                    onSearchChange={handleSearchChange}
+                    onSearchSubmit={handleSearchSubmit}
                 />
             </div>
         </div>
