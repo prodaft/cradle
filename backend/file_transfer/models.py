@@ -99,7 +99,7 @@ class FileReference(models.Model, LifecycleModelMixin):
             return
 
         from .tasks import process_file_task
-        
+
         try:
             # Try to run asynchronously first
             process_file_task.apply_async(args=(str(self.id),))
@@ -112,7 +112,7 @@ class FileReference(models.Model, LifecycleModelMixin):
         """
         Automatically process the file after it is created.
         This ensures hashes are calculated immediately upon file creation.
-        """  
+        """
         if cradle_settings.files.autoprocess_files:
             self.process_file()
 

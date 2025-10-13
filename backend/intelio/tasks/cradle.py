@@ -48,7 +48,7 @@ def download_file_for_note(note_id, file_identifier, file_url, bucket_name):
         )
         note.files.add(fr)
         note.save()
-        
+
         # Trigger automatic processing
         if cradle_settings.files.autoprocess_files:
             fr.process_file()

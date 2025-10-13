@@ -96,7 +96,7 @@ class NoteCreateSerializer(serializers.ModelSerializer):
                 FileReference(note=note, **file_data) for file_data in files
             ]
             FileReference.objects.bulk_create(file_reference_models)
-            
+
             # Trigger automatic processing for all created files
             if cradle_settings.files.autoprocess_files:
                 for file_ref in file_reference_models:
@@ -136,7 +136,7 @@ class NoteEditSerializer(serializers.ModelSerializer):
                 if file_data.get("id", None) not in existing_files
             ]
             FileReference.objects.bulk_create(new_files)
-            
+
             # Trigger automatic processing for new files
             if cradle_settings.files.autoprocess_files:
                 for file_ref in new_files:
@@ -554,7 +554,15 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Note
-        fields = ["id", "content", "timestamp", "files", "title", "description", "fleeting"]
+        fields = [
+            "id",
+            "content",
+            "timestamp",
+            "files",
+            "title",
+            "description",
+            "fleeting",
+        ]
         read_only_fields = ["id", "timestamp", "fleeting"]
 
     def create(self, validated_data):
@@ -599,7 +607,7 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
         instance.description = validated_data.get("description", instance.description)
         instance.editor = user
         instance.fleeting = True
-        
+
         # Extract title and description from content if not provided
         content = instance.content
         if not instance.title:
@@ -608,7 +616,7 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
             instance.description = metadata.get("description", "")
             instance.metadata = metadata
             instance.content_offset = offset
-        
+
         instance.save()
 
         if updated_files is not None:

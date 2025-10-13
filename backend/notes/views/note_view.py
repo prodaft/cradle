@@ -384,10 +384,7 @@ class NoteDetail(APIView):
 
     def get(self, request: Request, note_id: UUID) -> Response:
         try:
-            note: Note = (
-                Note.objects.get_accessible_notes(request.user)
-                .get(id=note_id)
-            )
+            note: Note = Note.objects.get_accessible_notes(request.user).get(id=note_id)
         except Note.DoesNotExist:
             return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
 
@@ -716,10 +713,7 @@ class NoteGraph(APIView):
             )
 
         try:
-            note: Note = (
-                Note.objects.get_accessible_notes(request.user)
-                .get(id=note_id)
-            )
+            note: Note = Note.objects.get_accessible_notes(request.user).get(id=note_id)
         except Note.DoesNotExist:
             return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
 
