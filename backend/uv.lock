@@ -737,7 +737,7 @@ requires-dist = [
     { name = "django-lifecycle" },
     { name = "django-model-utils" },
     { name = "django-otp" },
-    { name = "django-silk", extras = ["formatting"] },
+    { name = "django-silk", extras = ["formatting"], specifier = "==5.4.3" },
     { name = "django-stubs" },
     { name = "django-stubs-ext" },
     { name = "djangorestframework", specifier = "==3.15.1" },
@@ -938,16 +938,16 @@ wheels = [
 
 [[package]]
 name = "django-silk"
-version = "5.4.2"
+version = "5.4.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django" },
     { name = "gprof2dot" },
     { name = "sqlparse" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3a/03/6094b030f7f874bedc5726f36ebd23d6ad6ad4596b199ad850ecf887f9a6/django_silk-5.4.2.tar.gz", hash = "sha256:f3b2be63c0b92a660b7aaee591c8a505bb0757e2de55f6914cb95c1ee9ea2138", size = 4495504, upload-time = "2025-08-26T06:55:07.309Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c5/13/ef9344e4ed6ab6ed0f15d7743e9509545e95f3336ac9bbef4b39aefbabeb/django_silk-5.4.3.tar.gz", hash = "sha256:bedb17c8fd9c029a7746cb947864f5c9ea943ae33d6a9581e60f67c45e4490ad", size = 4495552, upload-time = "2025-09-09T07:13:30.229Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a3/e8/b45d7b141afe735ee10244ec69b5d43e25755281ed02196126ad14ee2d71/django_silk-5.4.2-py3-none-any.whl", hash = "sha256:8154203fae904dc66e99ede75a2bad9410abd672dbba6cb5b07b22f8b5577253", size = 1944482, upload-time = "2025-08-26T06:55:33.786Z" },
+    { url = "https://files.pythonhosted.org/packages/ec/97/bc1f1d0f922144a3807ad15531b93ba474c7538d6f006e98bf8ab77a2f82/django_silk-5.4.3-py3-none-any.whl", hash = "sha256:f7920ae91a34716654296140b2cbf449e9798237a0c6eb7cf2cd79c2cfb39321", size = 1944434, upload-time = "2025-09-09T07:13:50.846Z" },
 ]
 
 [package.optional-dependencies]

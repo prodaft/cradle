@@ -1,12 +1,13 @@
 from rest_framework import serializers
+
 from access.enums import AccessType
 from access.models import Access
-from entries.enums import EntryType
-from entries.models import Entry, Edge, Relation
 from core.utils import flatten
+from entries.enums import EntryType
+from entries.models import Edge, Entry, Relation
 from entries.serializers import (
-    EntryListCompressedTreeSerializer,
     EntryClassSerializerNoChildren,
+    EntryListCompressedTreeSerializer,
     EntrySerializer,
 )
 
@@ -82,7 +83,7 @@ class SubGraphSerializer(serializers.Serializer):
         """
         Create a SubGraphSerializer instance from a Relation queryset.
         """
-        entries = flatten([(r.e1, r.e2) for r in relations])
+        entries = set(flatten([(r.e1, r.e2) for r in relations]))
 
         colors = {
             e.entry_class.subtype: e.entry_class.color

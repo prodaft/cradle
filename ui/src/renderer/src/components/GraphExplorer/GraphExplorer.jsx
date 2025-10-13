@@ -38,6 +38,7 @@ export default function GraphExplorer({ GraphSearchComponent }) {
             }
             return !nodeIds.has(node.id);
         });
+
         if (nodesToAdd.length > 0) {
             setNodes((prevNodes) => [...prevNodes, ...nodesToAdd]);
 

@@ -42,7 +42,7 @@ dependencies = [
     "fa2-modified",
     "networkx",
     "scipy",
-    "django-silk[formatting]",
+    "django-silk[formatting]==5.4.3",
     "gunicorn",
 ]
 
