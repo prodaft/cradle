@@ -73,7 +73,7 @@ export default function AdminPanelUserPermissions({ username, id }) {
                                     <AdminPanelPermissionCard
                                         key={c['name']}
                                         userId={id}
-                                        entityName={c['name']}
+                                        text={c['name']}
                                         entityId={c['id']}
                                         searchKey={c['name']}
                                         accessLevel={c['access_type']}

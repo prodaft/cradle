@@ -1,15 +1,16 @@
+import datetime
 from typing import Match
+
+import frontmatter
+from django.utils.timezone import make_aware
 from mistune import InlineParser, InlineState, Markdown
 from mistune.helpers import LINK_LABEL
-import datetime
-from django.utils.timezone import make_aware
-from ..exceptions import InvalidDateFormatException
-import frontmatter
 
+from ..exceptions import InvalidDateFormatException
 
 # Common regex patterns
 LINK_REGEX = (
-    r"\[\[(?P<cl_type>[^:\|\]]+?):(?P<cl_value>(?:\\[\[\]\|]|[^\[\]\|])+?)"
+    r"(?P<cl_hidden>~)?\[\[(?P<cl_type>[^:\|\]]+?):(?P<cl_value>(?:\\[\[\]\|]|[^\[\]\|])+?)"
     + r"(?:\|(?P<cl_alias>(?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]"
     + r"(?:\((?:(?P<cl_time>\d{2}:\d{2}\s+)?(?P<cl_date>\d{2}-\d{2}-\d{4}))\))?"
 )
@@ -54,6 +55,7 @@ def parse_cradle_link(
                 "attrs": {
                     "key": m.group("cl_type").strip(),
                     "value": m.group("cl_value").strip(),
+                    "hidden": True if m.group("cl_hidden") else False,
                     "alias": m.group("cl_alias").strip()
                     if m.group("cl_alias")
                     else None,

@@ -10,6 +10,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
+
 from user.models import CradleUser
 from user.permissions import HasAdminRole, HasEntryManagerRole
 
@@ -26,6 +27,14 @@ from ..serializers import (
         operation_id="entry_classes_list",
         summary="List Entry Classes",
         description="Retrieve a list of all entry classes.",
+        parameters=[
+            OpenApiParameter(
+                name="show_count",
+                type=bool,
+                location=OpenApiParameter.QUERY,
+                description="Show the count of entries in each class",
+            )
+        ],
         responses={
             200: EntryClassSerializer(many=True),
             401: {"description": "User is not authenticated"},

@@ -1,6 +1,8 @@
 from rest_framework import serializers
-from .models import Access
+
 from .enums import AccessType
+from .models import Access
+from user.serializers import UserRetrieveSerializer
 
 
 class AccessSerializer(serializers.ModelSerializer):
@@ -48,6 +50,14 @@ class AccessEntitySerializer(serializers.Serializer):
                 AccessType.NONE if data["access_type"] is None else data["access_type"]
             )
         return data
+
+
+class AccessUserSerializer(serializers.Serializer):
+    user = UserRetrieveSerializer()
+    access_type = serializers.ChoiceField(choices=AccessType, required=True)
+
+    class Meta:
+        fields = ["user", "access_type"]
 
 
 class RequestAccessSerializer(serializers.Serializer):

@@ -216,7 +216,7 @@ export async function deleteArtifactClass(type) {
 export async function changeAccess(userId, entityId, accessLevel) {
     return authAxios({
         method: 'put',
-        url: `/access/${userId}/${entityId}/`,
+        url: `/access/user/${userId}/${entityId}/`,
         data: { access_type: accessLevel },
     });
 }
@@ -230,7 +230,7 @@ export async function changeAccess(userId, entityId, accessLevel) {
 export async function getPermissions(userId) {
     return authAxios({
         method: 'get',
-        url: `/access/${userId}/`,
+        url: `/access/user/${userId}/`,
     });
 }
 

@@ -1,21 +1,23 @@
-from collections.abc import Iterable
-import enum
-from typing import Any, Dict, List, Optional, Set, Tuple
-import mistune
-from mistune.core import BaseRenderer, BlockState
-from django.utils.timezone import make_aware
-from ..exceptions import InvalidDateFormatException
-import uuid
-import hashlib
 import datetime
-import frontmatter
+import enum
+import hashlib
 import itertools
+import uuid
+from collections.abc import Iterable
+from typing import Any, Dict, List, Optional, Set, Tuple
+
+import frontmatter
+import mistune
+from django.utils.timezone import make_aware
+from mistune.core import BaseRenderer, BlockState
+
+from ..exceptions import InvalidDateFormatException
 
 if __name__ == "__main__":
-    from common import cradle_link_plugin, footnote_plugin, ErrorBypassYAMLHandler
+    from common import ErrorBypassYAMLHandler, cradle_link_plugin, footnote_plugin
     from table import table
 else:
-    from .common import cradle_link_plugin, footnote_plugin, ErrorBypassYAMLHandler
+    from .common import ErrorBypassYAMLHandler, cradle_link_plugin, footnote_plugin
     from .table import table
 
 
@@ -442,10 +444,14 @@ class LinksRenderer(BaseRenderer):
         self,
         key: str,
         value: str,
+        hidden: bool,
         alias: Optional[str],
         date: Optional[datetime.datetime],
         time: Optional[datetime.datetime],
-    ) -> Node:
+    ) -> Node | None:
+        if hidden:
+            return None
+
         if date and time:
             date = date.replace(hour=time.hour, minute=time.minute)
 
