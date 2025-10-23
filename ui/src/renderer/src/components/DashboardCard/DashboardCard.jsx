@@ -17,11 +17,19 @@ export default function DashboardCard({ name, link, type }) {
     const { navigate, navigateLink } = useCradleNavigate();
     return (
         <div
-            className={`bg-cradle3 p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg shadow-md rounded-xl ${link ? 'cursor-pointer' : ''}`}
+            className={`cradle-card cradle-card-hover cradle-card-brackets ${link ? 'cursor-pointer' : ''}`}
             onClick={link ? navigateLink(link) : undefined}
         >
-            {name}
-            <div className='text-zinc-300'>{type ? type : ''}</div>
+            <div className='cradle-card-body'>
+                <div className='cradle-text-primary cradle-mono font-medium mb-2'>
+                    {name}
+                </div>
+                {type && (
+                    <div className='cradle-label text-xs'>
+                        {type}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

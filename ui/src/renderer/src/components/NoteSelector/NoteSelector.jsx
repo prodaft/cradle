@@ -17,6 +17,17 @@ export default function NoteSelector({
     activeNote,
     setAlert,
 }) {
+    // Handle case where component is used as a standalone route component
+    const [internalNotes, setInternalNotes] = useState([]);
+    const [internalSelectedNotes, setInternalSelectedNotes] = useState([]);
+    const [internalAlert, setInternalAlert] = useState({ show: false, message: '' });
+
+    // Use provided props or fall back to internal state
+    const finalNotes = notes || internalNotes;
+    const finalSetNotes = setNotes || setInternalNotes;
+    const finalSelectedNotes = selectedNotes || internalSelectedNotes;
+    const finalSetSelectedNotes = setSelectedNotes || setInternalSelectedNotes;
+    const finalAlert = setAlert || setInternalAlert;
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -40,19 +51,19 @@ export default function NoteSelector({
         setLoading(true);
         searchNote({ page, ...submittedFilters })
             .then((response) => {
-                setNotes(response.data.results);
+                finalSetNotes(response.data.results);
                 setTotalPages(response.data.total_pages);
                 setLoading(false);
             })
             .catch(() => {
-                setAlert({
+                finalAlert({
                     show: true,
                     message: 'Failed to fetch notes. Please try again.',
                     color: 'red',
                 });
                 setLoading(false);
             });
-    }, [page, submittedFilters, setNotes, setAlert]);
+    }, [page, submittedFilters, finalSetNotes, finalAlert]);
 
     const handleSearchSubmit = (e) => {
         e.preventDefault();
@@ -81,23 +92,23 @@ export default function NoteSelector({
     }, [fetchNotes]);
 
     const isNoteSelected = (noteId) => {
-        return selectedNotes.some((note) => note.id === noteId);
+        return finalSelectedNotes.some((note) => note.id === noteId);
     };
 
     return (
         <div
             ref={setNodeRef}
-            className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'
+            className='w-full h-full flex justify-center items-center overflow-y-scroll overflow-x-hidden'
         >
-            <div className='w-[95%] h-full flex flex-col p-6 space-y-3'>
+            <div className='w-full max-w-6xl h-full flex flex-col p-6 space-y-3 min-w-0'>
                 <AlertDismissible
                     alert={{ show: false, message: '', color: 'red' }}
-                    setAlert={setAlert}
+                    setAlert={finalAlert}
                 />
 
                 <form
                     onSubmit={handleSearchSubmit}
-                    className='flex space-x-4 px-3 pb-2'
+                    className='flex flex-col sm:flex-row gap-4 px-3 pb-2 w-full min-w-0'
                 >
                     <input
                         type='text'
@@ -105,7 +116,7 @@ export default function NoteSelector({
                         value={searchFilters.content}
                         onChange={handleSearchChange}
                         placeholder='Search by content'
-                        className='input !max-w-full w-full'
+                        className='input flex-1 min-w-0'
                     />
                     <input
                         type='text'
@@ -113,18 +124,20 @@ export default function NoteSelector({
                         value={searchFilters.author__username}
                         onChange={handleSearchChange}
                         placeholder='Search by author'
-                        className='input !max-w-full w-full'
+                        className='input flex-1 min-w-0'
                     />
-                    <button type='submit' className='btn w-1/2'>
+                    <button type='submit' className='btn flex-shrink-0 whitespace-nowrap'>
                         <Search /> Search
                     </button>
                 </form>
 
-                <Pagination
-                    currentPage={page}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                />
+                <div className='w-full min-w-0'>
+                    <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                    />
+                </div>
 
                 <div>
                     <div className='flex flex-col space-y-4'>
@@ -134,16 +147,16 @@ export default function NoteSelector({
                                     <div className='spinner-pulse-dot'></div>
                                 </div>
                             </div>
-                        ) : notes.length > 0 ? (
-                            <div className='notes-list'>
-                                {notes.map(
+                        ) : finalNotes.length > 0 ? (
+                            <div className='notes-list w-full min-w-0'>
+                                {finalNotes.map(
                                     (note) =>
                                         !isNoteSelected(note.id) && (
                                             <DraggableNote
                                                 id={note.id}
                                                 key={note.id}
                                                 note={note}
-                                                setAlert={setAlert}
+                                                setAlert={finalAlert}
                                                 ghost={
                                                     activeNote &&
                                                     activeNote.id === note.id

@@ -91,7 +91,7 @@ def process_file_task(file_id):
         from notes.tasks import link_files_task
 
         transaction.on_commit(
-            lambda: link_files_task.apply_async(args=(file_ref.note.id))
+            lambda: link_files_task.apply_async(args=(file_ref.note.id,))
         )
 
     except Exception as e:

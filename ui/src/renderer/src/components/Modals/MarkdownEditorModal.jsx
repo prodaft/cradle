@@ -2,7 +2,6 @@ import { markdown } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
 import { EditorView } from '@codemirror/view';
 import { eclipse } from '@uiw/codemirror-theme-eclipse';
-import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import CodeMirror from '@uiw/react-codemirror';
 import { useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
@@ -61,7 +60,7 @@ const MarkdownEditorModal = ({
                     <CodeMirror
                         value={userInput}
                         onChange={handleContentChange}
-                        theme={isDarkMode ? vscodeDark : eclipse}
+                        theme={isDarkMode ? 'dark' : eclipse}
                         height='300px'
                         extensions={extensions}
                         placeholder='Write your markdown content here...'

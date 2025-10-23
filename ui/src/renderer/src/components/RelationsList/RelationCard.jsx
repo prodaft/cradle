@@ -49,7 +49,7 @@ export default function RelationCard({ relation, onDelete, setAlert }) {
     if (!visible) return null;
 
     return (
-        <div className='bg-white dark:bg-gray-800 dark:bg-opacity-75 p-4 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 m-2 relative'>
+        <div className='bg-white dark:bg-gray-800 dark:bg-opacity-75 p-4 rounded-lg shadow-lg hover:shadow-xl  m-2 relative'>
             <div className='flex justify-between items-center mb-2'>
                 <h2 className='text-lg font-bold text-gray-900 dark:text-white'>
                     {capitalizeString(relation.reason || 'Relation')}
@@ -57,7 +57,7 @@ export default function RelationCard({ relation, onDelete, setAlert }) {
                 {isAdmin() && (
                     <button
                         title='Delete Relation'
-                        className='text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 transition-colors'
+                        className='text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 '
                         onClick={handleDelete}
                     >
                         <Trash className='w-5 h-5' />

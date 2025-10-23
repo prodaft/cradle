@@ -79,3 +79,5 @@ USE_SILK = env.bool("USE_SILK", False)
 if USE_SILK:
     MIDDLEWARE = ["silk.middleware.SilkyMiddleware"] + MIDDLEWARE
     INSTALLED_APPS.append("silk")
+    # Disable EXPLAIN analysis which can break parameterized JSON updates
+    SILKY_ANALYZE_QUERIES = False

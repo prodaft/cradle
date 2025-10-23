@@ -1,4 +1,3 @@
-import { Search } from 'iconoir-react';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
@@ -32,48 +31,24 @@ export default function Files({ setAlert }) {
         displayError(setAlert, navigate)(error);
     };
 
-    const handleSearchChange = (e) => {
-        const { name, value } = e.target;
-        setSearchFilters((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const handleSearchSubmit = (e) => {
-        e.preventDefault();
-        // Reset page to 1 when search is submitted
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('page', '1');
-        setSearchParams(newParams);
-    };
 
     return (
-        <div className='w-full h-full flex flex-col space-y-3'>
-            <div className='flex justify-between items-center w-full border-b border-gray-700 px-4 pb-3'>
-                <h1 className='text-4xl font-bold w-full break-all'>All Files</h1>
+        <div className='w-full h-full flex flex-col space-y-4'>
+            {/* Header Section - Minimal Design */}
+            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+                <div>
+                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
+                        All Files
+                    </h1>
+                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
+                        Search & Manage Your Files
+                    </p>
+                </div>
             </div>
-            <div className='p-4 backdrop-filter backdrop-blur-lg rounded-xl mb-4'>
-                <form onSubmit={handleSearchSubmit} className='flex space-x-4'>
-                    <input
-                        type='text'
-                        name='keyword'
-                        value={searchFilters.keyword}
-                        onChange={handleSearchChange}
-                        placeholder='Search by name or hash'
-                        className='input input-block'
-                    />
-                    <input
-                        type='text'
-                        name='mimetype'
-                        value={searchFilters.mimetype}
-                        onChange={handleSearchChange}
-                        placeholder='Search by mimetype'
-                        className='input input-block'
-                    />
-                    <div className='flex items-center space-x-2'>
-                        <button type='submit' className='btn'>
-                            <Search /> Search
-                        </button>
-                    </div>
-                </form>
+
+
+            {/* Results Section */}
+            <div className='px-4'>
                 {searchFilters && (
                     <FilesList
                         query={searchFilters}

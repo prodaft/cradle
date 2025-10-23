@@ -134,31 +134,6 @@ const FileItem = forwardRef(function ({ id, file, setAlert, ...props }, ref) {
                             {formatDate(new Date(file.timestamp))}
                         </span>
 
-                        {file.md5_hash && (
-                            <>
-                                <span className='text-zinc-700 mx-1'>|</span>
-                                <span
-                                    className='text-zinc-500 cursor-pointer hover:dark:bg-zinc-800 hover:bg-zinc-400'
-                                    onClick={() => copyToClipboard(file.md5_hash)}
-                                    title='Click to copy'
-                                >
-                                    <strong>MD5:</strong> {file.md5_hash}
-                                </span>
-                            </>
-                        )}
-
-                        {file.sha1_hash && (
-                            <>
-                                <span className='text-zinc-700 mx-1'>|</span>
-                                <span
-                                    className='text-zinc-500 cursor-pointer hover:dark:bg-zinc-800 hover:bg-zinc-400'
-                                    onClick={() => copyToClipboard(file.sha1_hash)}
-                                    title='Click to copy'
-                                >
-                                    <strong>SHA1:</strong> {file.sha1_hash}
-                                </span>
-                            </>
-                        )}
 
                         {file.sha256_hash && (
                             <>
@@ -168,7 +143,7 @@ const FileItem = forwardRef(function ({ id, file, setAlert, ...props }, ref) {
                                     onClick={() => copyToClipboard(file.sha256_hash)}
                                     title='Click to copy'
                                 >
-                                    <strong>SHA256:</strong> {file.sha256_hash}
+                                    <strong>SHA256:</strong> {file.sha256_hash.substring(0, 21)}...
                                 </span>
                             </>
                         )}
@@ -179,14 +154,14 @@ const FileItem = forwardRef(function ({ id, file, setAlert, ...props }, ref) {
                         onClick={() =>
                             downloadFile(file.bucket_name, file.minio_file_name)
                         }
-                        className='text-white hover:bg-white/20 p-2 rounded-full transition-colors'
+                        className='text-white hover:bg-white/20 p-2 rounded-full '
                         title='Download file'
                     >
                         <Download />
                     </button>
                     {/*
                     <button
-                        className='text-white p-2 rounded-full transition-colors hover:bg-white/20'
+                        className='text-white p-2 rounded-full  hover:bg-white/20'
                         title='Process file'
                         onClick={processFile}
                     >

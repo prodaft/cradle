@@ -97,15 +97,17 @@ export function prependLinks(
 }
 
 const LINK_REGEX =
-    /^\[\[([^:|]+?):((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\](?:\((?:(\d{2}:\d{2}\s+)?(\d{2}-\d{2}-\d{4}))\))?/;
+    /^(?:~)?\[\[([^:|]+?):((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\](?:\((?:(\d{2}:\d{2}\s+)?(\d{2}-\d{2}-\d{4}))\))?/;
 
 export function cradleLinkRule(state: any, silent: boolean): boolean {
-    const match = LINK_REGEX.exec(state.src.slice(state.pos));
+    let str = state.src.slice(state.pos);
+    const match = LINK_REGEX.exec(str);
     if (!match) return false;
     if (silent) return false;
 
     const token = state.push('cradle_link', '', 0);
     token.markup = match[0];
+    token.hidden = str[0] === '~';
     token.cradle_type = match[1];
     token.cradle_name = match[2];
     token.cradle_alias = match[3];
@@ -126,6 +128,7 @@ export function renderCradleLink(
     const alias = (token as any).cradle_alias;
     const time = (token as any).cradle_time;
     const date = (token as any).cradle_date;
+    const hidden = (token as any).hidden;
     const displayedName = alias || name;
     const url = createDashboardLink({ name, subtype: type });
     const colorClass = entryColors.get(type) || '#000000';
@@ -416,10 +419,13 @@ function extractInlineText(tokens: Token[]): string {
             case 'em_close':
             case 's_open':
             case 's_close':
+                break;
             case 'cradle_link':
                 text += renderCradleLink(new Map(), token, true);
+                break;
             case 'footnote_ref':
                 text += token.content;
+                break;
             case 'html_inline':
                 // Skip formatting tags
                 break;

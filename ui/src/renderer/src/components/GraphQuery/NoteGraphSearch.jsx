@@ -58,6 +58,7 @@ export default function NoteGraphSearch(noteId) {
                     return;
                 }
 
+                console.log('entries', entries);
                 const flattenedEntries = LinkTreeFlattener.flatten(entries);
                 let nodes = flattenedEntries.map((e) => ({
                     id: String(e.id),

@@ -8,6 +8,8 @@ const Tabs = ({
     defaultTab = 0,
     queryParam = null, // URL parameter name
     stickyTop = 0, // Distance from top when sticky (default 0)
+    actions = null, // Action buttons to display on the right
+    metadata = null, // Metadata to display between tabs and actions
 }) => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [activeTab, setActiveTab] = useState(defaultTab);
@@ -51,46 +53,51 @@ const Tabs = ({
     }, [searchParams, queryParam]);
 
     return (
-        <div className='flex-col'>
+        <div className='flex-col h-full'>
             {/* Only show tab navigation if there's more than one tab */}
             {tabs.length > 1 && (
                 <div
-                    className={`tabs ${tabClasses} sticky bg-backgroundPrimary z-10 pt-2`}
+                    className={`flex items-center justify-between sticky cradle-bg-elevated z-10 px-4 border-b cradle-border-primary ${tabClasses}`}
                     style={{
                         top: `${stickyTop}px`,
-                        margin: '0 0.5rem',
                     }}
                 >
-                    {tabs.map((tab, index) => {
-                        const tabId = `tab-${index}-${groupId}`;
-                        const groupName = `tab-group-${groupId}`;
-                        return (
-                            <React.Fragment key={tabId}>
-                                <input
-                                    type='radio'
-                                    id={tabId}
-                                    name={groupName}
-                                    className='tab-toggle'
-                                    checked={activeTab === index}
-                                    onChange={() => handleTabChange(index)}
-                                />
-                                <label
-                                    htmlFor={tabId}
-                                    className={`mb-2 tab px-6 cursor-pointer ${perTabClass}`}
+                    <div className='flex gap-0'>
+                        {tabs.map((tab, index) => {
+                            const tabId = `tab-${index}-${groupId}`;
+                            const isActive = activeTab === index;
+                            return (
+                                <button
+                                    key={tabId}
                                     onClick={() => handleTabChange(index)}
+                                    className={`px-6 py-3  relative ${perTabClass} ${
+                                        isActive
+                                            ? 'cradle-text-secondary cradle-bg-primary border-b-2 border-cradle-bg-primary'
+                                            : 'cradle-text-muted hover:cradle-text-tertiary border-b-2 border-transparent hover:border-cradle-border-primary'
+                                    }`}
                                 >
                                     {tab.props.title}
-                                </label>
-                            </React.Fragment>
-                        );
-                    })}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    {metadata && (
+                        <div className='flex-1 flex items-center px-6 py-3 cradle-mono text-xs cradle-text-tertiary'>
+                            {metadata}
+                        </div>
+                    )}
+                    {actions && (
+                        <div className='flex items-center gap-2'>
+                            {actions}
+                        </div>
+                    )}
                 </div>
             )}
-            <div>
+            <div className='flex-1 overflow-hidden'>
                 {tabs.map((tab, index) => (
                     <div
                         key={`tab-content-${index}`}
-                        className={tab.props.classes || ''}
+                        className={`h-full ${tab.props.classes || ''}`}
                         style={{
                             display: activeTab === index ? 'block' : 'none',
                         }}

@@ -47,10 +47,12 @@ const uploadFile = (url, file) => {
  */
 const getDownloadLink = (path) => {
     return authAxios({
-        url: path,
+        url: '/file-transfer/download/',
         method: 'GET',
+        params: path,
     });
 };
+
 
 /**
  * Make a GET request to download a file

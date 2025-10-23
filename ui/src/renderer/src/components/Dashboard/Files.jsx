@@ -52,30 +52,39 @@ export default function Files({ obj, setAlert }) {
 
     return (
         <div className='w-full h-full flex flex-col'>
-            <div className='bg-cradle3 bg-opacity-20 p-4 backdrop-filter backdrop-blur-lg rounded-xl mb-4'>
-                <form onSubmit={handleSearchSubmit} className='flex space-x-4'>
-                    <input
-                        type='text'
-                        name='keyword'
-                        value={searchFilters.keyword}
-                        onChange={handleSearchChange}
-                        placeholder='Search by name or hash'
-                        className='input input-block'
-                    />
-                    <input
-                        type='text'
-                        name='mimetype'
-                        value={searchFilters.mimetype}
-                        onChange={handleSearchChange}
-                        placeholder='Search by mimetype'
-                        className='input input-block'
-                    />
-                    <div className='flex items-center space-x-2'>
-                        <button type='submit' className='btn'>
-                            <Search /> Search
-                        </button>
+            <div className='cradle-card cradle-card-compact mb-4'>
+                <div className='cradle-card-header'>
+                    <span>Search Files</span>
+                </div>
+                <div className='cradle-card-body'>
+                    <form onSubmit={handleSearchSubmit} className='space-y-4'>
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+                            <div className='flex flex-col gap-2'>
+                                <label className='cradle-label'>Keyword</label>
+                                <input
+                                    type='text'
+                                    name='keyword'
+                                    value={searchFilters.keyword}
+                                    onChange={handleSearchChange}
+                                    placeholder='Search by name or hash...'
+                                    className='cradle-search'
+                                />
+                            </div>
+                            <div className='flex flex-col gap-2'>
+                                <label className='cradle-label'>MIME Type</label>
+                                <input
+                                    type='text'
+                                    name='mimetype'
+                                    value={searchFilters.mimetype}
+                                    onChange={handleSearchChange}
+                                    placeholder='Search by mimetype...'
+                                    className='cradle-search'
+                                />
+                            </div>
+                        </div>
+                        
                         {obj.type === 'entity' && (
-                            <div className='flex items-center'>
+                            <div className='flex items-center space-x-2'>
                                 <input
                                     type='checkbox'
                                     id='exactMatch'
@@ -84,15 +93,22 @@ export default function Files({ obj, setAlert }) {
                                     checked={exactMatch}
                                     onChange={(e) => setExactMatch(e.target.checked)}
                                 />
-                                <label htmlFor='exactMatch' className='ml-2 text-sm'>
+                                <label htmlFor='exactMatch' className='text-sm'>
                                     Exact match
                                 </label>
                             </div>
                         )}
-                    </div>
-                </form>
-                <FilesList query={query} setAlert={setAlert} onError={handleError} />
+                        
+                        <div className='cradle-separator'></div>
+                        
+                        <button type='submit' className='cradle-btn cradle-btn-primary w-full md:w-auto px-8'>
+                            <Search className='inline-block mr-2' size={16} /> Search Files
+                        </button>
+                    </form>
+                </div>
             </div>
+            
+            <FilesList query={query} setAlert={setAlert} onError={handleError} />
         </div>
     );
 }

@@ -1,17 +1,5 @@
 import { authAxios } from '../axiosInstance/axiosInstance';
 
-/**
- * Function to get fleeting notes from the API
- * Passes the token to the API
- *
- * @returns {Promise<AxiosResponse<any, any>>}
- */
-export function getFleetingNotes() {
-    return authAxios({
-        method: 'GET',
-        url: '/fleeting-notes/',
-    });
-}
 
 /**
  * Function to add a fleeting note
@@ -93,3 +81,4 @@ export function saveFleetingNoteAsFinal(id, publishable) {
         },
     });
 }
+

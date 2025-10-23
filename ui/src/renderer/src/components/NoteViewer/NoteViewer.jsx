@@ -1,35 +1,42 @@
-import { Code, Download, EditPencil, RefreshCircle } from 'iconoir-react';
-import { StatsReport, Trash } from 'iconoir-react/regular';
-import React, { useCallback, useEffect, useState } from 'react';
+import { Code, Download, EditPencil, RefreshCircle, User, Clock, Link, Page, HistoricShield, MoreVert, Check, CloudUpload } from 'iconoir-react';
+import { StatsReport, Trash, FloppyDisk } from 'iconoir-react/regular';
+import { Graph } from '@phosphor-icons/react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
-import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
+import { usePaneTabs } from '../../contexts/PaneTabsContext/PaneTabsContext';
+import { useLayout } from '../../contexts/LayoutContext/LayoutContext';
 import { authAxios } from '../../services/axiosInstance/axiosInstance';
 import {
     deleteNote,
     getNote,
     setPublishable,
+    updateNote,
 } from '../../services/notesService/notesService';
+import { 
+    deleteFleetingNote, 
+    getFleetingNoteById, 
+    updateFleetingNote,
+    saveFleetingNoteAsFinal
+} from '../../services/fleetingNotesService/fleetingNotesService';
 import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { createDownloadPath, parseContent } from '../../utils/textEditorUtils/textEditorUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import ListView from '../ListView/ListView';
-import NavbarButton from '../NavbarButton/NavbarButton';
-import NavbarSwitch from '../NavbarSwitch/NavbarSwitch';
 import Preview from '../Preview/Preview';
 import ReferenceTree from '../ReferenceTree/ReferenceTree';
+import RichEditor from '../RichEditor/RichEditor';
+import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
 
 import Prism from 'prismjs';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import '../../utils/customParser/prism-config.js';
-import { addCopyButtonsToCodeBlocks } from '../../utils/prismCopyButton';
+import { addCopyButtonsToCodeBlocks, removeCopyButtonsFromCodeBlocks } from '../../utils/prismCopyButton';
 
 import {
     InfoCircleSolid,
-    NavArrowDown,
-    NavArrowUp,
     WarningCircleSolid,
     WarningTriangleSolid,
 } from 'iconoir-react';
@@ -41,10 +48,11 @@ import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import ActivityList from '../ActivityList/ActivityList';
 import FileItem from '../FileItem/FileItem';
+import FileInput from '../FileInput/FileInput';
 import GraphExplorer from '../GraphExplorer/GraphExplorer.jsx';
 import NoteGraphSearch from '../GraphQuery/NoteGraphSearch.jsx';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
-import { Tab, Tabs } from '../Tabs/Tabs';
+import ReportGenerationModal from '../Modals/ReportGenerationModal';
 
 /**
  * NoteViewer component
@@ -64,12 +72,26 @@ export default function NoteViewer() {
     const [note, setNote] = useState({});
     const [isPublishable, setIsPublishable] = useState(false);
     const [isRaw, setIsRaw] = useState(false);
+    const [markdownContent, setMarkdownContent] = useState('');
+    const [fileData, setFileData] = useState([]);
+    const [currentLine, setCurrentLine] = useState(1);
+    const [initialMarkdown, setInitialMarkdown] = useState('');
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [parsedContent, setParsedContent] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [metadataExpanded, setMetadataExpanded] = useState(true);
+    const [activeView, setActiveView] = useState(0); // 0: Content, 1: Graph, 2: History
+    const [showActionsMenu, setShowActionsMenu] = useState(false);
+    const [isFleeting, setIsFleeting] = useState(false);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [pendingFiles, setPendingFiles] = useState([]);
+    const [showFileUpload, setShowFileUpload] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
+    const rawContentRef = useRef(null);
     const { setModal } = useModal();
     const { managementApi } = useApi();
+    const { updateCurrentTabTitle } = usePaneTabs();
+    const { activePaneId } = useLayout();
 
     const copyToClipboard = (text) => {
         navigator.clipboard
@@ -86,12 +108,29 @@ export default function NoteViewer() {
             });
     };
 
+    const getSaveStatus = () => {
+        if (!markdownContent || markdownContent.trim().length === 0) {
+            return 'empty'; // Cannot save empty note
+        }
+        if (saving) {
+            return 'saving'; // Currently saving
+        }
+        if (hasUnsavedChanges) {
+            return 'unsaved'; // Has unsaved changes
+        }
+        return 'saved'; // All changes saved
+    };
+
     const getStatusIcon = () => {
         if (!note.status) return null;
 
         switch (note.status) {
             case 'healthy':
-                return null;
+                return (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-green-500">
+                        <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                );
             case 'processing':
                 return (
                     <InfoCircleSolid className='text-blue-500' width='18' height='18' />
@@ -119,11 +158,51 @@ export default function NoteViewer() {
 
     useEffect(() => {
         setIsLoading(true);
-        getNote(id, false)
+        
+        // Try to load as regular note first, then fallback to fleeting note if it fails
+        const loadNote = async () => {
+            try {
+                // First try to load as a regular note
+                const response = await getNote(id, false);
+                const responseNote = response.data;
+                
+                // Check if this is a fleeting note using the fleeting field
+                const isFleetingNote = responseNote.fleeting === true;
+                setIsFleeting(isFleetingNote);
+                
+                // Debug logging
+                console.log('NoteViewer - Note type detection:', {
+                    id: id,
+                    isFleetingNote: isFleetingNote,
+                    fleeting: responseNote.fleeting,
+                    hasAuthor: !!responseNote.author,
+                    hasEditor: !!responseNote.editor,
+                    hasEntries: !!responseNote.entries
+                });
+                
+                return response;
+            } catch (error) {
+                // If regular note fails, try as fleeting note
+                console.log('NoteViewer - Regular note failed, trying fleeting note:', error);
+                const response = await getFleetingNoteById(id);
+                setIsFleeting(true);
+                return response;
+            }
+        };
+        
+        loadNote()
             .then((response) => {
                 const responseNote = response.data;
                 setNote(responseNote);
-                setIsPublishable(responseNote.publishable);
+                setMarkdownContent(responseNote.content);
+                setInitialMarkdown(responseNote.content);
+                setFileData(responseNote.files || []);
+                setIsPublishable(responseNote.publishable || false);
+                setHasUnsavedChanges(false);
+                // Update tab title with note title
+                if (responseNote.title && activePaneId) {
+                    updateCurrentTabTitle(activePaneId, responseNote.title);
+                }
                 return responseNote;
             })
             .then((note) => {
@@ -136,7 +215,7 @@ export default function NoteViewer() {
                 // Turn off loading spinner regardless of success or failure
                 setIsLoading(false);
             });
-    }, [id, navigate, setAlert]);
+    }, [id, navigate, setAlert, updateCurrentTabTitle, activePaneId, profile]);
 
     const toggleView = useCallback(() => {
         setIsRaw((prevIsRaw) => !prevIsRaw);
@@ -156,7 +235,9 @@ export default function NoteViewer() {
     }, [id, isPublishable]);
 
     const handleDelete = useCallback(() => {
-        deleteNote(id)
+        // Use the appropriate delete function based on whether the note is fleeting
+        const deleteFunction = note.fleeting ? deleteFleetingNote : deleteNote;
+        deleteFunction(id)
             .then(() => {
                 if (!state) {
                     navigate(from, { replace: true });
@@ -171,99 +252,113 @@ export default function NoteViewer() {
                 navigate(from, { replace: true, state: newState });
             })
             .catch(displayError(setAlert, navigate));
-    }, [id, navigate]);
+    }, [id, navigate, note.fleeting]);
 
-    const navbarContents = id?.startsWith('guide_')
-        ? []
-        : [
-            isPublishable && (
-                <NavbarButton
-                    icon={<StatsReport />}
-                    text='Publish Report'
-                    data-testid='publish-btn'
-                    key='publish-btn'
-                    onClick={navigateLink(`/publish?notes=${id}`)}
-                />
-            ),
-            <NavbarSwitch
-                key='publishable-btn'
-                text='Publishable'
-                checked={isPublishable}
-                onChange={togglePublishable}
-                testid='publishable-btn'
-            />,
-            isAdmin() && (
-                <NavbarButton
-                    key='relink-btn'
-                    text='Relink Note'
-                    icon={<RefreshCircle />}
-                    onClick={() =>
-                        managementApi.managementActionsCreate({
-                            actionName: 'relinkNotes',
-                            requestBody: {
-                                note_id: id,
-                            },
-                        }).then(() => {
-                            setAlert({
-                                show: true,
-                                message: 'Relinking note...',
-                                color: 'green',
-                            });
-                        })
-                    }
-                    tesid='relink-btn'
-                />
-            ),
-            <NavbarButton
-                key='edit-btn'
-                text='Edit Note'
-                icon={<EditPencil />}
-                onClick={navigateLink(`/notes/${id}/edit`, { state: { from } })}
-                tesid='edit-btn'
-            />,
-            <NavbarButton
-                key='delete-btn'
-                text='Delete Note'
-                icon={<Trash />}
-                onClick={() =>
-                    setModal(ConfirmDeletionModal, {
-                        onConfirm: handleDelete,
-                        text: 'Are you sure you want to delete this note? This action is irreversible.',
-                    })
-                }
-                tesid='delete-btn'
-            />,
-        ];
+    const handleSaveNote = useCallback(async () => {
+        if (!markdownContent || markdownContent.trim().length === 0) {
+            setAlert({ show: true, message: 'Cannot save empty note.', color: 'red' });
+            return;
+        }
 
-    navbarContents.push(
-        <NavbarButton
-            key='toggle-view-btn'
-            text='Toggle View'
-            icon={<Code />}
-            onClick={toggleView}
-            tesid='toggle-view-btn'
-        />,
-    );
+        setSaving(true);
+        try {
+            let response;
+            if (isFleeting) {
+                // Update existing fleeting note
+                response = await updateFleetingNote(id, markdownContent, fileData);
+            } else {
+                // Update regular note
+                response = await updateNote(id, {
+                    content: markdownContent,
+                    files: fileData,
+                });
+            }
+            
+            if (response.status === 200) {
+                setInitialMarkdown(markdownContent);
+                setHasUnsavedChanges(false);
+                setAlert({
+                    show: true,
+                    message: 'Changes saved successfully.',
+                    color: 'green',
+                });
+                // Update the parsed content for preview
+                parseContent(markdownContent, fileData, true).then((result) =>
+                    setParsedContent(result.html),
+                );
+            }
+        } catch (error) {
+            displayError(setAlert, navigate)(error);
+        } finally {
+            setSaving(false);
+        }
+    }, [id, markdownContent, fileData, navigate, isFleeting]);
 
-    useNavbarContents(navbarContents, [
-        toggleView,
-        id,
-        isPublishable,
-        togglePublishable,
-        handleDelete,
-        alert,
-        setAlert,
-    ]);
+    const handleSaveAsFinal = useCallback(async () => {
+        if (!markdownContent || markdownContent.trim().length === 0) {
+            setAlert({ show: true, message: 'Cannot save empty note.', color: 'red' });
+            return;
+        }
+
+        setSaving(true);
+        try {
+            const response = await saveFleetingNoteAsFinal(id, isPublishable);
+            
+            if (response.status === 200) {
+                setAlert({
+                    show: true,
+                    message: 'Note finalized successfully.',
+                    color: 'green',
+                });
+                // Navigate to the regular note view
+                navigate(`/notes/${response.data.id}`, { replace: true });
+            }
+        } catch (error) {
+            displayError(setAlert, navigate)(error);
+        } finally {
+            setSaving(false);
+        }
+    }, [id, isPublishable, markdownContent, fileData, navigate]);
+
+
+    // Track changes for both note types
+    useEffect(() => {
+        if (!markdownContent || markdownContent === initialMarkdown) {
+            setHasUnsavedChanges(false);
+            return;
+        }
+
+        setHasUnsavedChanges(true);
+    }, [markdownContent, initialMarkdown]);
+
+    // Auto-save for fleeting notes only
+    useEffect(() => {
+        if (!isFleeting || !markdownContent || markdownContent === initialMarkdown) {
+            return;
+        }
+
+        const autosaveTimer = setTimeout(() => {
+            handleSaveNote();
+        }, 1000); // Auto-save after 1 second of inactivity
+
+        return () => {
+            clearTimeout(autosaveTimer);
+        };
+    }, [markdownContent, fileData, isFleeting, initialMarkdown, handleSaveNote]);
 
     useEffect(() => {
         Prism.highlightAll();
-        if (isRaw) {
+        if (isRaw && rawContentRef.current) {
             // Add copy buttons to raw markdown view
-            const container = document.querySelector('.language-markdown');
-            if (container && container.parentElement) {
-                addCopyButtonsToCodeBlocks(container.parentElement.parentElement, null);
-            }
+            addCopyButtonsToCodeBlocks(rawContentRef.current, null);
         }
+        
+        // Cleanup function to remove copy buttons when component unmounts or view changes
+        return () => {
+            if (rawContentRef.current) {
+                removeCopyButtonsFromCodeBlocks(rawContentRef.current);
+            }
+        };
     }, [isRaw, note.content]);
 
     // Conditionally render spinner or component
@@ -282,80 +377,300 @@ export default function NoteViewer() {
                 setAlert={setAlert}
                 onClose={() => setAlert('')}
             />
-            <div className='w-[100%] h-full flex flex-col space-y-3'>
-                <Tabs
-                    defaultTab={0}
-                    queryParam={'tab'}
-                    tabClasses='tabs-underline w-full'
-                    perTabClass={`justify-center ${note.files && note.files.length > 0 ? (isAdmin() ? 'w-[25%]' : 'w-[33%]') : isAdmin() ? 'w-[33%]' : 'w-[50%]'}`}
-                >
-                    <Tab title='Content'>
-                        <div className='w-full h-full overflow-hidden flex flex-col items-center px-4 pb-4 pt-1'>
-                            <div className='h-full w-full rounded-md bg-cradle3 bg-opacity-20 backdrop-blur-lg backdrop-filter px-4 pb-4 pt-1 overflow-y-auto'>
-                                <div className='text-sm text-zinc-500 p-2 border-b-2 dark:border-b-zinc-800'>
-                                    {note.status && (
-                                        <span
-                                            className={
-                                                'inline-flex items-center align-middle tooltip-right tooltip tooltip-primary'
-                                            }
-                                            data-tooltip={
-                                                note.status_message ||
-                                                capitalizeString(note.status) ||
-                                                null
-                                            }
-                                        >
-                                            {getStatusIcon()}
-                                        </span>
-                                    )}
-                                    <span className='text-sm text-zinc-500 p-2'>
-                                        <strong>Created on:</strong>{' '}
-                                        {formatDate(new Date(note.timestamp))}
+            <div className='w-[100%] h-full flex flex-col'>
+                {/* Custom header with metadata and tab/action buttons */}
+                <div className='w-full cradle-border-b px-4 py-3 flex items-center justify-between'>
+                    {/* Left side - Metadata with icons */}
+                    <div className='flex items-center gap-4 cradle-mono text-xs cradle-text-tertiary'>
+                        <span
+                            className='inline-flex items-center gap-1.5 tooltip tooltip-bottom tooltip-primary'
+                            data-tooltip='Created'
+                        >
+                            <Clock width='16' height='16' />
+                            <span className='cradle-text-tertiary'>
+                                {formatDate(new Date(note.timestamp))}
+                            </span>
+                        </span>
+                        {!isFleeting && (
+                            <span
+                                className='inline-flex items-center gap-1.5 tooltip tooltip-bottom tooltip-primary'
+                                data-tooltip='Creator'
+                            >
+                                <User width='16' height='16' />
+                                <span className='cradle-text-secondary'>
+                                    {note?.author ? note.author.username : 'Unknown'}
+                                </span>
+                            </span>
+                        )}
+                        {!isFleeting && note.editor && (
+                            <>
+                                <span
+                                    className='inline-flex items-center gap-1.5 tooltip tooltip-bottom tooltip-primary'
+                                    data-tooltip='Edited'
+                                >
+                                    <Clock width='16' height='16' />
+                                    <span className='cradle-text-tertiary'>
+                                        {formatDate(new Date(note.edit_timestamp))}
                                     </span>
-                                    <span className='text-sm text-zinc-700'>|</span>
-                                    <span className='text-sm text-zinc-500 p-2'>
-                                        <strong>Created by:</strong>{' '}
-                                        {note?.author
-                                            ? note.author.username
-                                            : 'Unknown'}
+                                </span>
+                                <span
+                                    className='inline-flex items-center gap-1.5 tooltip tooltip-bottom tooltip-primary'
+                                    data-tooltip='Editor'
+                                >
+                                    <User width='16' height='16' />
+                                    <span className='cradle-text-secondary'>
+                                        {note?.editor ? note.editor.username : 'Unknown'}
                                     </span>
-                                    {note.editor && (
-                                        <span>
-                                            <span className='text-sm text-zinc-700'>
-                                                |
-                                            </span>
-                                            <span className='text-sm text-zinc-500 p-2'>
-                                                <strong>Edited on:</strong>{' '}
-                                                {formatDate(
-                                                    new Date(note.edit_timestamp),
-                                                )}
-                                            </span>
-                                            <span className='text-sm text-zinc-700'>
-                                                |
-                                            </span>
-                                            <span className='text-sm text-zinc-500 p-2'>
-                                                <strong>Edited by:</strong>{' '}
-                                                {note?.editor
-                                                    ? note.editor.username
-                                                    : 'Unknown'}
-                                            </span>
-                                        </span>
-                                    )}
-                                    {note.last_linked && (
-                                        <span>
-                                            <span className='text-sm text-zinc-700'>
-                                                |
-                                            </span>
-                                            <span className='text-sm text-zinc-500 p-2'>
-                                                <strong>Linked on:</strong>{' '}
-                                                {formatDate(new Date(note.last_linked))}
-                                            </span>
-                                        </span>
+                                </span>
+                            </>
+                        )}
+                        {note.last_linked && (
+                            <>
+                                <span
+                                    className='inline-flex items-center gap-1.5 tooltip tooltip-bottom tooltip-primary'
+                                    data-tooltip='Last Linked'
+                                >
+                                    <Link width='16' height='16' />
+                                    <span className='cradle-text-tertiary'>
+                                        {formatDate(new Date(note.last_linked))}
+                                    </span>
+                                </span>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Right side - Action buttons */}
+                    <div className='flex items-center gap-2'>
+                        {/* Action buttons */}
+                        {!id?.startsWith('guide_') && (
+                            <>
+                                {/* Save status indicator button */}
+                                <button 
+                                    className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:cradle-text-primary cradle-border hover:border-[#FF8C00] tooltip tooltip-bottom tooltip-primary'
+                                    data-tooltip={
+                                        getSaveStatus() === 'saved' ? 'All changes saved' :
+                                        getSaveStatus() === 'saving' ? 'Saving...' :
+                                        getSaveStatus() === 'unsaved' ? 'Unsaved changes' :
+                                        'Cannot save empty note'
+                                    }
+                                    data-testid='save-status-dot'
+                                >
+                                    <div 
+                                        className={`w-2 h-2 rounded-full ${
+                                            getSaveStatus() === 'saved' ? 'bg-green-500' :
+                                            getSaveStatus() === 'saving' ? 'bg-yellow-500' :
+                                            getSaveStatus() === 'unsaved' ? 'bg-red-500' :
+                                            'bg-gray-400'
+                                        }`}
+                                    />
+                                </button>
+                                {/* Status indicator button */}
+                                {note.status && (
+                                    <button
+                                        className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:cradle-text-primary cradle-border hover:border-[#FF8C00] tooltip tooltip-bottom tooltip-primary'
+                                        data-tooltip={
+                                            note.status_message ||
+                                            capitalizeString(note.status) ||
+                                            null
+                                        }
+                                    >
+                                        {getStatusIcon()}
+                                    </button>
+                                )}
+                                {/* Three-dots menu for note actions */}
+                                <div className='relative'>
+                                    <button
+                                        onClick={() => setShowActionsMenu(!showActionsMenu)}
+                                        className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:cradle-text-primary cradle-border hover:border-[#FF8C00] tooltip tooltip-bottom tooltip-primary'
+                                        data-tooltip='More Actions'
+                                        data-testid='more-actions-btn'
+                                    >
+                                        <MoreVert width='20' height='20' />
+                                    </button>
+                                    {showActionsMenu && (
+                                        <>
+                                            <div
+                                                className='fixed inset-0 z-10'
+                                                onClick={() => setShowActionsMenu(false)}
+                                            />
+                                            <div className='absolute right-0 mt-2 w-48 cradle-bg-elevated cradle-border z-20'>
+                                                <div role='menu'>
+                                                    {/* View Options */}
+                                                    <button
+                                                        onClick={() => {
+                                                            setShowActionsMenu(false);
+                                                            setActiveView(0);
+                                                        }}
+                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                                        data-testid='content-tab-menu-item'
+                                                    >
+                                                        <Page width='16' height='16' />
+                                                        <span className='flex-1'>Content</span>
+                                                        {activeView === 0 && <Check width='16' height='16' />}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setShowActionsMenu(false);
+                                                            setActiveView(1);
+                                                        }}
+                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                                        data-testid='graph-tab-menu-item'
+                                                    >
+                                                        <Graph width='16' height='16' />
+                                                        <span className='flex-1'>Graph</span>
+                                                        {activeView === 1 && <Check width='16' height='16' />}
+                                                    </button>
+                                                    {isAdmin() && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowActionsMenu(false);
+                                                                setActiveView(2);
+                                                            }}
+                                                            className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                                            data-testid='history-tab-menu-item'
+                                                        >
+                                                            <HistoricShield width='16' height='16' />
+                                                            <span className='flex-1'>History</span>
+                                                            {activeView === 2 && <Check width='16' height='16' />}
+                                                        </button>
+                                                    )}
+                                                    
+                                                    {/* Divider */}
+                                                    <div className='my-1 h-px bg-cradle-border-primary'></div>
+                                                    
+                                                    {/* Actions */}
+                                                    {isAdmin() && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowActionsMenu(false);
+                                                                managementApi.managementActionsCreate({
+                                                                    actionName: 'relinkNotes',
+                                                                    requestBody: {
+                                                                        note_id: id,
+                                                                    },
+                                                                }).then(() => {
+                                                                    setAlert({
+                                                                        show: true,
+                                                                        message: 'Relinking note...',
+                                                                        color: 'green',
+                                                                    });
+                                                                });
+                                                            }}
+                                                            className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2 '
+                                                            data-testid='relink-menu-item'
+                                                        >
+                                                            <RefreshCircle width='16' height='16' />
+                                                            Relink Note
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => {
+                                                            setShowActionsMenu(false);
+                                                            setShowFileUpload(!showFileUpload);
+                                                        }}
+                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                                        data-testid='upload-files-menu-item'
+                                                    >
+                                                        <CloudUpload width='16' height='16' />
+                                                        <span className='flex-1'>Upload Files</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setShowActionsMenu(false);
+                                                            toggleView();
+                                                        }}
+                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2 '
+                                                        data-testid='toggle-view-menu-item'
+                                                    >
+                                                        <Code width='16' height='16' />
+                                                        <span className='flex-1'>Source mode</span>
+                                                        {isRaw && <Check width='16' height='16' />}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setShowActionsMenu(false);
+                                                            togglePublishable();
+                                                        }}
+                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                                        data-testid='publishable-menu-item'
+                                                    >
+                                                        <CloudUpload width='16' height='16' />
+                                                        <span className='flex-1'>Publishable</span>
+                                                        {isPublishable && <Check width='16' height='16' />}
+                                                    </button>
+                                                    {isPublishable && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowActionsMenu(false);
+                                                                setShowReportModal(true);
+                                                            }}
+                                                            className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                                            data-testid='create-report-menu-item'
+                                                        >
+                                                            <StatsReport width='16' height='16' />
+                                                            <span className='flex-1'>Create Report</span>
+                                                        </button>
+                                                    )}
+                                                    {isFleeting && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowActionsMenu(false);
+                                                                handleSaveAsFinal();
+                                                            }}
+                                                            className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                                            data-testid='save-as-final-menu-item'
+                                                        >
+                                                            <FloppyDisk width='16' height='16' />
+                                                            <span className='flex-1'>Save As Final</span>
+                                                            {saving && <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900' />}
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => {
+                                                            setShowActionsMenu(false);
+                                                            setModal(ConfirmDeletionModal, {
+                                                                onConfirm: handleDelete,
+                                                                text: 'Are you sure you want to delete this note? This action is irreversible.',
+                                                            });
+                                                        }}
+                                                        className='w-full text-left px-4 py-2 text-sm text-red-500 cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                                        data-testid='delete-menu-item'
+                                                    >
+                                                        <Trash width='16' height='16' />
+                                                        Delete Note
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </>
                                     )}
                                 </div>
+                            </>
+                        )}
+                    </div>
+                </div>
 
+                {/* File Upload Section */}
+                {showFileUpload && (
+                    <div className='w-full px-4 py-2 cradle-border-b bg-gray-50 dark:bg-gray-800'>
+                        <FileInput
+                            fileData={fileData}
+                            setFileData={setFileData}
+                            pendingFiles={pendingFiles}
+                            setPendingFiles={setPendingFiles}
+                        />
+                    </div>
+                )}
+
+                {/* View content */}
+                <div className='flex-1 overflow-hidden'>
+                    {/* Content View */}
+                    {activeView === 0 && (
+                        <div className='w-full h-full overflow-hidden flex flex-col px-4 pb-4'>
+                            <div className='h-full w-full px-4 pb-4 pt-4 overflow-y-auto'>
                                 {isRaw ? (
                                     <pre
-                                        className='line-numbers h-full w-full p-4 bg-transparent prose-md max-w-none dark:prose-invert break-all overflow-y-auto rounded-lg flex-1 overflow-x-hidden whitespace-pre-wrap'
+                                        ref={rawContentRef}
+                                        className='line-numbers h-full w-full p-4 bg-transparent prose-md max-w-none dark:prose-invert break-words overflow-y-auto rounded-lg flex-1 overflow-x-hidden whitespace-pre-wrap'
                                         data-start='1'
                                     >
                                         <code className='language-markdown'>
@@ -363,118 +678,59 @@ export default function NoteViewer() {
                                         </code>
                                     </pre>
                                 ) : (
-                                    <div className='mt-2'>
-                                        <div className='flex-grow'>
-                                            {note.metadata &&
-                                                Object.keys(note.metadata).length >
-                                                0 && (
-                                                    <div className='mt-2'>
-                                                        <div
-                                                            className='flex items-center cursor-pointer p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded'
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setMetadataExpanded(
-                                                                    !metadataExpanded,
-                                                                );
-                                                            }}
-                                                        >
-                                                            <span className='text-sm font-medium text-zinc-700 dark:text-zinc-300 flex items-center'>
-                                                                {metadataExpanded ? (
-                                                                    <NavArrowUp
-                                                                        className='inline mr-1'
-                                                                        width='16'
-                                                                        height='16'
-                                                                    />
-                                                                ) : (
-                                                                    <NavArrowDown
-                                                                        className='inline mr-1'
-                                                                        width='16'
-                                                                        height='16'
-                                                                    />
-                                                                )}
-                                                                Metadata
-                                                            </span>
-                                                        </div>
-
-                                                        {metadataExpanded && (
-                                                            <div className='bg-gray-50 dark:bg-gray-800 rounded-md p-2 mt-1'>
-                                                                <div className='grid grid-cols-[auto_1fr] gap-x-1 gap-y-2'>
-                                                                    {Object.entries(
-                                                                        note.metadata,
-                                                                    ).map(
-                                                                        ([
-                                                                            key,
-                                                                            value,
-                                                                        ]) => (
-                                                                            <React.Fragment
-                                                                                key={
-                                                                                    key
-                                                                                }
-                                                                            >
-                                                                                <div className='text-sm font-bold text-gray-700 dark:text-gray-300 pr-2'>
-                                                                                    {capitalizeString(
-                                                                                        key,
-                                                                                    )}
-                                                                                    :
-                                                                                </div>
-                                                                                <div className='text-sm text-gray-600 dark:text-gray-400'>
-                                                                                    {typeof value ===
-                                                                                        'object'
-                                                                                        ? JSON.stringify(
-                                                                                            value,
-                                                                                        )
-                                                                                        : parseMarkdownInline(
-                                                                                            String(
-                                                                                                value,
-                                                                                            ),
-                                                                                        )}
-                                                                                </div>
-                                                                            </React.Fragment>
-                                                                        ),
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
+                                    <div className='mt-2 h-full flex flex-col'>
+                                        {/* Embedded Rich Editor */}
+                                        <div className='flex-1 min-h-0'>
+                                            <RichEditor
+                                                noteid={id}
+                                                markdownContent={markdownContent}
+                                                setMarkdownContent={setMarkdownContent}
+                                                fileData={fileData}
+                                                setFileData={setFileData}
+                                                currentLine={currentLine}
+                                                setCurrentLine={setCurrentLine}
+                                                setAlert={setAlert}
+                                                saveNote={handleSaveNote}
+                                            />
                                         </div>
-                                        <Preview htmlContent={parsedContent} />
 
-                                        <ReferenceTree
-                                            note={note}
-                                            setAlert={setAlert}
-                                        />
+                                        {/* Reference Tree below the editor */}
+                                        <div className='mt-4'>
+                                            <ReferenceTree
+                                                note={note}
+                                                setAlert={setAlert}
+                                            />
+                                        </div>
                                     </div>
                                 )}
                             </div>
                         </div>
-                    </Tab>
-                    <Tab title='Graph'>
+                    )}
+
+                    {/* Graph View */}
+                    {activeView === 1 && (
                         <GraphExplorer GraphSearchComponent={NoteGraphSearch(note.id)} />
-                    </Tab>
-                    {note.files && note.files.length > 0 && (
-                        <Tab title='Files'>
+                    )}
+
+                    {/* Files View (removed as per new design) */}
+                    {note.files && note.files.length > 0 && activeView === 999 && (
+                        <div>
                             <div className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'>
                                 <div className='w-[95%] h-full flex flex-col p-6'>
                                     <ListView
                                         data={note.files}
                                         columns={[
                                             { key: 'name', label: 'Name', className: 'w-64' },
-                                            { key: 'uploadedAt', label: 'Uploaded At', className: 'w-32' },
                                             { key: 'entities', label: 'Entities', className: 'w-32' },
                                             { key: 'mimetype', label: 'MimeType', className: 'w-32' },
-                                            { key: 'md5', label: 'MD5' },
-                                            { key: 'sha1', label: 'SHA1' },
                                             { key: 'sha256', label: 'SHA256' },
+                                            { key: 'uploadedAt', label: 'Uploaded At', className: 'w-32' },
                                             { key: 'actions', label: 'Actions', className: 'w-32' },
                                         ]}
                                         renderRow={(file, index) => (
                                             <tr key={file.id || index}>
                                                 <td className='truncate w-32'>
                                                     {truncateText(file.file_name, 32)}
-                                                </td>
-                                                <td className=''>
-                                                    {formatDate(new Date(file.timestamp))}
                                                 </td>
                                                 <td className=''>
                                                     <div className='flex flex-wrap gap-1'>
@@ -495,43 +751,20 @@ export default function NoteViewer() {
                                                     {truncateText(file.mimetype, 32)}
                                                 </td>
                                                 <td className=''>
-                                                    {file.md5_hash ? (
-                                                        <span
-                                                            className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
-                                                            onClick={() => copyToClipboard(file.md5_hash)}
-                                                            title='Click to copy'
-                                                        >
-                                                            {file.md5_hash.substring(0, 16)}...
-                                                        </span>
-                                                    ) : (
-                                                        '-'
-                                                    )}
-                                                </td>
-                                                <td className=''>
-                                                    {file.sha1_hash ? (
-                                                        <span
-                                                            className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
-                                                            onClick={() => copyToClipboard(file.sha1_hash)}
-                                                            title='Click to copy'
-                                                        >
-                                                            {file.sha1_hash.substring(0, 32)}...
-                                                        </span>
-                                                    ) : (
-                                                        '-'
-                                                    )}
-                                                </td>
-                                                <td className=''>
                                                     {file.sha256_hash ? (
                                                         <span
                                                             className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
                                                             onClick={() => copyToClipboard(file.sha256_hash)}
                                                             title='Click to copy'
                                                         >
-                                                            {file.sha256_hash.substring(0, 32)}...
+                                                            {file.sha256_hash.substring(0, 21)}...
                                                         </span>
                                                     ) : (
                                                         '-'
                                                     )}
+                                                </td>
+                                                <td className=''>
+                                                    {formatDate(new Date(file.timestamp))}
                                                 </td>
                                                 <td className='w-32'>
                                                     <div className='flex space-x-1'>
@@ -583,21 +816,33 @@ export default function NoteViewer() {
                                             />
                                         )}
                                         loading={false}
-                                        forceCardView={!profile?.compact_mode}
+                                        forceCardView={false}
                                         emptyMessage="No files found!"
                                         tableClassName="table"
                                     />
                                 </div>
                             </div>
-                        </Tab>
+                        </div>
                     )}
-                    {isAdmin() && (
-                        <Tab title='History' classes='pt-2'>
+
+                    {/* History View */}
+                    {isAdmin() && activeView === 2 && (
+                        <div className='pt-2'>
                             <ActivityList content_type='note' objectId={id} />
-                        </Tab>
+                        </div>
                     )}
-                </Tabs>
+                </div>
+                
             </div>
+            
+            {/* Report Generation Modal */}
+            <ReportGenerationModal
+                isOpen={showReportModal}
+                onClose={() => setShowReportModal(false)}
+                noteId={id}
+                noteTitle={note.title}
+                setAlert={setAlert}
+            />
         </>
     );
 }

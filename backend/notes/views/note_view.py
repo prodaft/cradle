@@ -141,7 +141,7 @@ class NoteList(APIView):
 
     def get(self, request: Request) -> Response:
         user = cast(CradleUser, request.user)
-        queryset = Note.objects.get_accessible_notes(user).non_fleeting()
+        queryset = Note.objects.get_accessible_notes(user)
 
         try:
             page_size = int(request.query_params.get("page_size", 10))
@@ -384,11 +384,7 @@ class NoteDetail(APIView):
 
     def get(self, request: Request, note_id: UUID) -> Response:
         try:
-            note: Note = (
-                Note.objects.get_accessible_notes(request.user)
-                .non_fleeting()
-                .get(id=note_id)
-            )
+            note: Note = Note.objects.get_accessible_notes(request.user).get(id=note_id)
         except Note.DoesNotExist:
             return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
 
@@ -550,7 +546,7 @@ class NoteFiles(APIView):
 
     def get(self, request: Request) -> Response:
         user = cast(CradleUser, request.user)
-        queryset = Note.objects.get_accessible_notes(user).non_fleeting()
+        queryset = Note.objects.get_accessible_notes(user)
 
         try:
             page_size = int(request.query_params.get("page_size", 10))
@@ -717,11 +713,7 @@ class NoteGraph(APIView):
             )
 
         try:
-            note: Note = (
-                Note.objects.get_accessible_notes(request.user)
-                .non_fleeting()
-                .get(id=note_id)
-            )
+            note: Note = Note.objects.get_accessible_notes(request.user).get(id=note_id)
         except Note.DoesNotExist:
             return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
 

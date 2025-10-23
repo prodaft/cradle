@@ -24,7 +24,7 @@ export default function EditNote({ note, classNames }) {
             <button className=''>
                 <EditPencil
                     className={classNames}
-                    onClick={navigateLink(`/notes/${note.id}/edit`)}
+                    onClick={navigateLink(`/notes/${note.id}`)}
                 />
             </button>
         </span>

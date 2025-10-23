@@ -1,0 +1,21 @@
+#!/bin/bash
+
+if [ -f .git/BUMPVERSION_AMENDING ]; then
+    rm .git/BUMPVERSION_AMENDING
+    exit 0
+fi
+
+CURRENT=$(uv run --project backend bump-my-version show current_version 2> /dev/null)
+BASE_VERSION=$(echo $CURRENT | sed 's/-beta\..*//')
+GIT_HASH=$(git rev-parse --short HEAD)
+NEW_VERSION="$BASE_VERSION-beta.$GIT_HASH"
+
+if [ "$CURRENT" != "$NEW_VERSION" ]; then
+  echo "Updating version to $NEW_VERSION"
+  touch .git/BUMPVERSION_AMENDING
+
+  uv run --project backend bump-my-version --version "$NEW_VERSION" --allow-dirty --no-commit --no-tag 2> /dev/null
+
+  git add -u
+  git commit --amend --no-edit --no-verify
+fi

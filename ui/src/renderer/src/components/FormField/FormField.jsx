@@ -35,12 +35,12 @@ const FormField = forwardRef(function (
     ref,
 ) {
     return (
-        <div className='form-control flex flex-column justify-between items-center'>
+        <div className='w-full'>
             <label
-                className={`label flex ${row ? 'flex-row' : 'flex-col'} justify-between w-full`}
+                className={`flex ${row ? 'flex-row items-center' : 'flex-col'} justify-between w-full gap-2`}
             >
-                <span className='label-text my-auto'>{labelText}</span>
-                <div className='mt-2'>
+                <span className='cradle-label cradle-text-tertiary'>{labelText}</span>
+                <div className={`${row ? '' : 'w-full'}`}>
                     <input
                         id={name}
                         name={name}
@@ -48,7 +48,7 @@ const FormField = forwardRef(function (
                         autoComplete={name}
                         onChange={(e) => handleInput(e.target.value)}
                         disabled={disabled}
-                        className='form-input input-ghost-primary input-block input focus:ring-0'
+                        className='cradle-search w-full disabled:opacity-50 disabled:cursor-not-allowed'
                         autoFocus={autofocus}
                         placeholder={placeholder}
                         value={value}

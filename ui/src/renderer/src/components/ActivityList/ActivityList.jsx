@@ -164,12 +164,6 @@ export default function ActivityList({ name, objectId, content_type, username })
                                     <Activity log={event} key={index} />
                                 ))}
                             </div>
-
-                            <Pagination
-                                currentPage={page}
-                                totalPages={totalPages}
-                                onPageChange={handlePageChange}
-                            />
                         </div>
                     ) : (
                         <div className='container mx-auto flex flex-col items-center'>

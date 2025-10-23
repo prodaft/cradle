@@ -86,19 +86,36 @@ export default function UserSettingsForm({ onAdd }) {
     };
 
     return (
-        <div className='flex items-center justify-center min-h-screen'>
-            <div className='w-full max-w-2xl px-4'>
-                <h1 className='text-center text-xl font-bold text-primary mb-4'>
-                    Account Settings
-                </h1>
-                <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
-                    <form onSubmit={handleSubmit(onSubmit)} className='space-y-6 mb-3'>
-                        <Tabs
-                            tabClasses='tabs gap-1 !bg-opacity-0'
-                            perTabClass='tab-pill'
-                        >
-                            <Tab title='Settings'>
-                                <div className='flex flex-col gap-3 pt-2'>
+        <div className='min-h-screen cradle-bg-primary'>
+            {/* Page Header - Full Width */}
+            <div className='cradle-border-b cradle-bg-elevated'>
+                <div className='max-w-6xl mx-auto px-6 py-6'>
+                    <div className='flex items-center justify-between'>
+                        <div>
+                            <h1 className='text-2xl font-bold cradle-text-primary cradle-mono tracking-tight'>
+                                System Settings
+                            </h1>
+                            <p className='text-sm cradle-text-tertiary cradle-mono mt-1'>
+                                Configure system-wide preferences and policies
+                            </p>
+                        </div>
+                        <div className='text-xs cradle-text-muted cradle-mono tracking-wider'>
+                            SYSTEM SETTINGS
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Content Area */}
+            <div className='max-w-6xl mx-auto px-6 py-8'>
+                <form onSubmit={handleSubmit(onSubmit)}>
+                    <Tabs
+                        tabClasses='tabs gap-1 !bg-opacity-0'
+                        perTabClass='tab-pill'
+                    >
+                        <Tab title='User Management'>
+                            <div className='cradle-border cradle-bg-elevated p-6 mt-6'>
+                                <div className='space-y-4'>
                                     <FormField
                                         type='checkbox'
                                         name='allowRegistration'
@@ -126,20 +143,24 @@ export default function UserSettingsForm({ onAdd }) {
                                         {...register('requireAdminConfirmation')}
                                         error={errors.requireAdminConfirmation?.message}
                                     />
-                                    <div className='flex gap-2 pt-4'>
-                                        <button
-                                            type='submit'
-                                            className='btn btn-primary btn-block'
-                                        >
-                                            Save Settings
-                                        </button>
-                                    </div>
+                                    <button
+                                        type='submit'
+                                        className='cradle-btn cradle-btn-primary w-full mt-6'
+                                    >
+                                        Save Settings
+                                    </button>
                                 </div>
-                            </Tab>
-                        </Tabs>
-                    </form>
-                    <AlertBox alert={alert} />
-                </div>
+                            </div>
+                        </Tab>
+                    </Tabs>
+                    
+                    {/* Alert at bottom */}
+                    {alert.show && (
+                        <div className='mt-6'>
+                            <AlertBox alert={alert} />
+                        </div>
+                    )}
+                </form>
             </div>
         </div>
     );

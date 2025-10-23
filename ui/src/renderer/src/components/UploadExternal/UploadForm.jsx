@@ -281,7 +281,7 @@ function UploadForm({ dataTypeOptions, onUpload }) {
                         onChange={handleTitleChange}
                         className={getFieldErrorClasses(
                             titleError,
-                            'w-full input input-block border-2 transition-colors duration-200',
+                            'w-full input input-block border-2  ',
                         )}
                         placeholder='Enter digest title'
                         aria-invalid={titleError ? 'true' : 'false'}
@@ -335,7 +335,7 @@ function UploadForm({ dataTypeOptions, onUpload }) {
                     </label>
                     <div
                         {...getRootProps()}
-                        className={`border-2 border-dashed rounded-md p-2 text-center cursor-pointer h-10 flex items-center justify-center transition-all duration-200 ${
+                        className={`border-2 border-dashed rounded-md p-2 text-center cursor-pointer h-10 flex items-center justify-center  ${
                             filesError
                                 ? 'border-red-300 bg-red-50 hover:border-red-400'
                                 : isDragActive
@@ -407,7 +407,7 @@ function UploadForm({ dataTypeOptions, onUpload }) {
                     <button
                         type='submit'
                         disabled={isUploading}
-                        className={`w-full btn flex items-center justify-center transition-all duration-200 ${
+                        className={`w-full btn flex items-center justify-center  ${
                             isUploading
                                 ? 'opacity-50 cursor-not-allowed'
                                 : hasErrors

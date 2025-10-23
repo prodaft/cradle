@@ -1,16 +1,23 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from uuid import UUID
+
+from access.enums import AccessType
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from user.models import CradleUser
+from django.db.models import Q
+
+from user.models import CradleUser, UserRoles
 from user.permissions import HasAdminRole
+
 from ..models import Access
-from ..serializers import AccessEntitySerializer
-from uuid import UUID
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from ..serializers import AccessEntitySerializer, AccessUserSerializer
+from entries.models import Entry
+from entries.enums import EntryType
 
 
 @extend_schema_view(
@@ -33,7 +40,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
         },
     )
 )
-class AccessList(APIView):
+class UserAccessList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
     serializer_class = AccessEntitySerializer
@@ -69,5 +76,57 @@ class AccessList(APIView):
         serializer = AccessEntitySerializer(
             entities_with_access, context={"is_admin": user.is_cradle_admin}, many=True
         )
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema_view(
+    get=extend_schema(
+        summary="Get entity access privileges",
+        description="Returns a list of all users with their access types for a specific entity. Only available to admin users.",  # noqa: E501
+        parameters=[
+            OpenApiParameter(
+                name="entity_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the entity to get access privileges for",
+            )
+        ],
+        responses={
+            200: AccessUserSerializer(many=True),
+            401: {"description": "User is not authenticated"},
+            403: {"description": "User is not an admin"},
+            404: {"description": "Entity not found"},
+        },
+    )
+)
+class EntityAccessList(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, HasAdminRole]
+
+    def get(self, request: Request, entity_id: int) -> Response:
+        """Allows an admin to get the access priviliges of a User
+            on an entity.
+
+        Args:
+            request: The request that was sent
+            entity_id: Id of the entity whose access is updated
+
+        Returns:
+            Response(body, status=200):
+        """
+        entity = Entry.objects.filter(
+            id=entity_id, entry_class__type=EntryType.ENTITY
+        ).first()
+
+        if not entity:
+            return Response("Entity does not exist", status=status.HTTP_404_NOT_FOUND)
+
+        accesses = Access.objects.filter(
+            Q(entity=entity)
+            & ~Q(access_type=AccessType.NONE)
+            & ~Q(user__role=UserRoles.ADMIN)
+        )
+        serializer = AccessUserSerializer(accesses, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)

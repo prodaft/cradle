@@ -5,9 +5,12 @@ import { deleteDigest } from '../../services/intelioService/intelioService';
 import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import ActionBar from '../ActionBar/ActionBar';
+import ActionsTable from '../ActionsTable/ActionsTable';
+import TableCard from '../TableCard/TableCard';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import ListView from '../ListView/ListView';
 import Pagination from '../Pagination/Pagination';
+import PaginationWrapper from '../PaginationWrapper/PaginationWrapper';
 import DigestCard from './DigestCard';
 
 function DigestList({
@@ -25,6 +28,11 @@ function DigestList({
     setSelectedDigests = () => {},
     pageSize = 10,
     setPageSize = () => {},
+    onColumnFilterChange = null,
+    columnFilters = {},
+    searchFilters = {},
+    onSearchChange = () => {},
+    onSearchSubmit = () => {},
 }) {
     const { setModal } = useModal();
 
@@ -52,15 +60,21 @@ function DigestList({
     };
 
     const columns = [
+        { key: 'type', label: 'Type' },
         { key: 'status', label: 'Status' },
         { key: 'title', label: 'Title' },
-        { key: 'type', label: 'Type' },
-        { key: 'createdAt', label: 'Created At' },
-        { key: 'user', label: 'User' },
+        { key: 'user', label: 'User', filterType: 'text' },
         { key: 'warnings', label: 'Warnings' },
         { key: 'errors', label: 'Errors' },
+        { key: 'createdAt', label: 'Created At', filterType: 'date' },
         { key: 'actions', label: 'Actions' },
     ];
+
+    // Define filterable columns with their handlers
+    const filterableColumns = onColumnFilterChange ? {
+        user: (value) => onColumnFilterChange('user', value),
+        createdAt: (value) => onColumnFilterChange('createdAt', value),
+    } : {};
 
     const renderRow = (digest, index, selectProps = {}) => {
         const { enableMultiSelect, isSelected, onSelect } = selectProps;
@@ -71,12 +85,15 @@ function DigestList({
                     <td className='w-12' onClick={(e) => e.stopPropagation()}>
                         <input
                             type='checkbox'
-                            className='checkbox checkbox-sm'
+                            className='cradle-checkbox'
                             checked={isSelected}
                             onChange={onSelect}
                         />
                     </td>
                 )}
+            <td className='truncate w-24' title={digest.display_name}>
+                {truncateText(digest.display_name, 24)}
+            </td>
             <td className='w-16'>
                 <span
                     className={`badge ${
@@ -93,10 +110,6 @@ function DigestList({
             <td className='truncate max-w-xs' title={digest.title}>
                 {digest.title}
             </td>
-            <td className='truncate w-24' title={digest.display_name}>
-                {truncateText(digest.display_name, 24)}
-            </td>
-            <td className='w-36'>{formatDate(new Date(digest.created_at))}</td>
             <td className='truncate w-32' title={digest.user_detail.username}>
                 {truncateText(digest.user_detail.username, 16)}
             </td>
@@ -126,10 +139,11 @@ function DigestList({
                     {digest.errors?.length || 0}
                 </span>
             </td>
+            <td className='w-36'>{formatDate(new Date(digest.created_at))}</td>
             <td className='w-8'>
                 <button
                     title='Delete Digest'
-                    className='btn btn-ghost btn-xs text-red-600 hover:text-red-500 transition-colors p-1'
+                    className='btn btn-ghost btn-xs text-red-600 hover:text-red-500  p-1'
                     onClick={() =>
                         setModal(ConfirmDeletionModal, {
                             title: 'Delete Digest',
@@ -208,29 +222,84 @@ function DigestList({
         },
     ];
 
+    // Search component for the actions bar
+    const searchComponent = (
+        <div className='flex items-stretch gap-2 min-w-[280px]'>
+            <div className='relative flex-1'>
+                <input
+                    type='text'
+                    name='title'
+                    placeholder='Search by title'
+                    className='cradle-search text-sm py-2 px-3 w-full pr-8 h-full'
+                    value={searchFilters.title || ''}
+                    onChange={onSearchChange}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && onSearchSubmit) {
+                            onSearchSubmit(e);
+                        }
+                    }}
+                />
+                {searchFilters.title && (
+                    <button
+                        onClick={() => {
+                            const event = { target: { name: 'title', value: '' } };
+                            onSearchChange(event);
+                            if (onSearchSubmit) {
+                                onSearchSubmit(event);
+                            }
+                        }}
+                        className='absolute right-2 top-1/2 -translate-y-1/2 p-1 cradle-btn cradle-btn-secondary rounded'
+                        title='Clear search'
+                    >
+                        <svg className='w-4 h-4 cradle-text-tertiary' fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                )}
+            </div>
+            <button
+                onClick={onSearchSubmit}
+                className='cradle-btn cradle-btn-secondary px-3 py-2 hover:cradle-bg-secondary rounded flex items-center justify-center'
+                title='Search'
+            >
+                <svg width="1.5em" height="1.5em" viewBox="0 0 24 24" strokeWidth="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor" className='w-4 h-4'>
+                    <path d="M17 17L21 21" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"></path>
+                    <path d="M3 11C3 15.4183 6.58172 19 11 19C13.213 19 15.2161 18.1015 16.6644 16.6493C18.1077 15.2022 19 13.2053 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"></path>
+                </svg>
+            </button>
+        </div>
+    );
+
     return (
         <>
-            {!loading && digests.length > 0 && (
-                <div className='flex items-center justify-between gap-4'>
-                    <div className='flex-1'>
-                        <ActionBar
-                            actions={actions}
-                            selectedItems={selectedDigests}
-                            itemLabel='row'
+            {!loading && (
+                <TableCard>
+                    <div className='flex flex-wrap items-center justify-between gap-4'>
+                        {/* Left: Actions and Search */}
+                        <div className='flex items-center gap-4 flex-shrink-0'>
+                            <ActionsTable
+                                actions={actions}
+                                selectedItems={selectedDigests}
+                                itemLabel='row'
+                                disabled={digests.length === 0}
+                            />
+                            {searchComponent}
+                        </div>
+
+                        {/* Right: Pagination */}
+                        <PaginationWrapper
+                            currentPage={page}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                            pageSize={pageSize}
+                            onPageSizeChange={(newSize) => {
+                                setPageSize(newSize);
+                                handlePageChange(1);
+                            }}
+                            disabled={digests.length === 0}
                         />
                     </div>
-                    <Pagination
-                        currentPage={page}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                        pageSize={pageSize}
-                        onPageSizeChange={(newSize) => {
-                            setPageSize(newSize);
-                            handlePageChange(1);
-                        }}
-                    />
-                    <div className='flex-1'></div>
-                </div>
+                </TableCard>
             )}
 
             <ListView
@@ -247,30 +316,9 @@ function DigestList({
                 tableClassName="table table-zebra"
                 enableMultiSelect={true}
                 setSelected={setSelectedDigests}
+                filterableColumns={filterableColumns}
+                filterValues={columnFilters}
             />
-
-            {!loading && digests.length > 0 && (
-                <div className='flex items-center justify-between gap-4'>
-                    <div className='flex-1'>
-                        <ActionBar
-                            actions={actions}
-                            selectedItems={selectedDigests}
-                            itemLabel='row'
-                        />
-                    </div>
-                    <Pagination
-                        currentPage={page}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                        pageSize={pageSize}
-                        onPageSizeChange={(newSize) => {
-                            setPageSize(newSize);
-                            handlePageChange(1);
-                        }}
-                    />
-                    <div className='flex-1'></div>
-                </div>
-            )}
         </>
     );
 }

@@ -58,6 +58,9 @@ USE_SILK = True
 MIDDLEWARE = ["silk.middleware.SilkyMiddleware"] + MIDDLEWARE
 INSTALLED_APPS.append("silk")
 
+# Silk: disable query analysis (EXPLAIN) to avoid param mangling on JSON fields
+SILKY_ANALYZE_QUERIES = False
+
 DEFAULT_SETTINGS = {
     "users": {
         "allow_registration": True,

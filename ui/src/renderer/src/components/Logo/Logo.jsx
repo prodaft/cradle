@@ -51,27 +51,8 @@ export default function Logo({
                 width: width,
                 height: height,
                 cursor: onClick ? 'pointer' : 'default',
-                transition: onClick
-                    ? 'transform 0.2s ease-in-out, opacity 0.2s ease-in-out'
-                    : 'none',
             }}
             className={onClick ? 'logo-clickable' : ''}
-            onMouseEnter={
-                onClick
-                    ? (e) => {
-                          e.target.style.transform = 'scale(1.1)';
-                          e.target.style.opacity = '0.8';
-                      }
-                    : undefined
-            }
-            onMouseLeave={
-                onClick
-                    ? (e) => {
-                          e.target.style.transform = 'scale(1)';
-                          e.target.style.opacity = '1';
-                      }
-                    : undefined
-            }
         />
     );
 }

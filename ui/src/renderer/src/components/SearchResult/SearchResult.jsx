@@ -47,7 +47,7 @@ export default function SearchResult({
                                 e.stopPropagation(); // Prevent triggering parent onClick
                                 action.callback();
                             }}
-                            className='text-white hover:bg-white/20 p-2 rounded-full transition-colors'
+                            className='text-white hover:bg-white/20 p-2 rounded-full '
                         >
                             {action.icon}
                         </button>

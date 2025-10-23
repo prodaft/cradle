@@ -17,7 +17,7 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
  * @param {React.ReactNode} props.customControls - Custom controls to display in the header
  * @param {boolean} props.hideDefaultControls - Whether to hide the default controls
  */
-export default function Publishable({ note, setAlert, compact }) {
+export default function Publishable({ note, setAlert }) {
     const [isPublishable, setIsPublishable] = useState(note.publishable);
     const { navigate, navigateLink } = useCradleNavigate();
 
@@ -50,7 +50,7 @@ export default function Publishable({ note, setAlert, compact }) {
                 checked={isPublishable}
                 id={`publishable-switch-${note.id}`}
                 type='checkbox'
-                className={compact ? '' : 'switch switch-ghost-primary'}
+                className='switch switch-ghost-primary'
                 onChange={() => handleTogglePublishable(note.id)}
             />
         </span>

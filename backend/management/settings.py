@@ -118,7 +118,7 @@ class FileSettings(BaseSettingsSection):
 
     @property
     def autoprocess_files(self):
-        return self.get("autoprocess_files", False)
+        return self.get("autoprocess_files", True)
 
     @property
     def md5_subtype(self):

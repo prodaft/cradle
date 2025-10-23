@@ -29,13 +29,13 @@ const TreeNode: React.FC<TreeNodeProps> = ({
     return (
         <div className='ml-4'>
             <div
-                className='flex items-center py-1 hover:bg-gray-700 hover:bg-opacity-50 rounded transition-colors duration-200 cursor-pointer'
+                className='flex items-center py-1 hover:bg-gray-700 hover:bg-opacity-50 rounded   cursor-pointer'
                 onClick={handleNodeClick}
             >
                 {hasChildren ? (
                     <button
                         onClick={toggleExpand}
-                        className={`w-4 flex items-center justify-center mr-2 text-cradle2 transition-colors focus:outline-none ${expanded ? 'rotate-90' : ''}`}
+                        className={`w-4 flex items-center justify-center mr-2 text-cradle2  focus:outline-none ${expanded ? 'rotate-90' : ''}`}
                         title={expanded ? 'Collapse' : 'Expand'}
                     >
                         ▶

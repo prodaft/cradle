@@ -26,7 +26,7 @@ import AlertDismissible from '../AlertDismissible/AlertDismissible';
  */
 export default function AdminPanelPermissionCard({
     userId,
-    entityName,
+    text,
     entityId,
     accessLevel,
     searchKey,
@@ -51,7 +51,7 @@ export default function AdminPanelPermissionCard({
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='h-fit w-full bg-cradle3 p-4 my-1 bg-opacity-20 rounded-xl flex flex-row justify-start'>
-                <h2 className='card-header w-full mx-2'>{entityName}</h2>
+                <h2 className='card-header w-full mx-2'>{text}</h2>
                 <div className='w-full flex flex-row justify-end'>
                     <div className='dropdown'>
                         <label

@@ -1,6 +1,6 @@
 import { useDroppable } from '@dnd-kit/core';
 import { Download, Notes } from 'iconoir-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { authAxios } from '../../services/axiosInstance/axiosInstance';
 import { getFiles } from '../../services/notesService/notesService';
@@ -8,9 +8,12 @@ import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import { createDownloadPath } from '../../utils/textEditorUtils/textEditorUtils';
 import AlertBox from '../AlertBox/AlertBox';
+import ActionsTable from '../ActionsTable/ActionsTable';
 import FileItem from '../FileItem/FileItem';
 import ListView from '../ListView/ListView';
 import Pagination from '../Pagination/Pagination';
+import PaginationWrapper from '../PaginationWrapper/PaginationWrapper';
+import TableCard from '../TableCard/TableCard';
 
 /**
  * FilesList component - This component is used to display a list of files.
@@ -48,6 +51,9 @@ export default function FilesList({
     const [sortField, setSortField] = useState(searchParams.get('files_sort_field') || 'timestamp');
     const [sortDirection, setSortDirection] = useState(searchParams.get('files_sort_direction') || 'desc');
     const [pageSize, setPageSize] = useState(Number(searchParams.get('files_pagesize')) || 10);
+    const [selectedFiles, setSelectedFiles] = useState([]);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
 
     // Mapping of table columns to API field names
     const sortFieldMapping = {
@@ -120,6 +126,59 @@ export default function FilesList({
             });
     };
 
+    // Download selected files
+    const handleDownloadSelected = async () => {
+        if (selectedFiles.length === 0) return;
+
+        try {
+            for (const fileId of selectedFiles) {
+                const file = files.find(f => f.id === fileId);
+                if (file && file.bucket_name && file.minio_file_name) {
+                    const url = createDownloadPath({
+                        bucket_name: file.bucket_name,
+                        minio_file_name: file.minio_file_name,
+                    });
+
+                    const response = await authAxios.get(url);
+                    const { presigned } = response.data;
+                    const link = document.createElement('a');
+                    link.href = presigned;
+                    const fileName = file.minio_file_name.split('/').pop() || file.minio_file_name;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            }
+            setAlert({
+                show: true,
+                message: `Downloaded ${selectedFiles.length} file(s)`,
+                color: 'green',
+            });
+        } catch (error) {
+            setAlert({
+                show: true,
+                message: 'Failed to download files. Please try again.',
+                color: 'red',
+            });
+        }
+        setIsDropdownOpen(false);
+    };
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
     useEffect(() => {
         setPage(Number(searchParams.get('files_page')) || 1);
         fetchFiles();
@@ -135,27 +194,33 @@ export default function FilesList({
 
     const columns = [
         { key: 'name', label: 'Name', className: 'w-64' },
-        { key: 'uploadedAt', label: 'Uploaded At', className: 'w-32' },
         { key: 'entities', label: 'Entities', className: 'w-32' },
         { key: 'mimetype', label: 'MimeType', className: 'w-32' },
-        { key: 'md5', label: 'MD5' },
-        { key: 'sha1', label: 'SHA1' },
-        { key: 'sha256', label: 'SHA256' },
-        { key: 'actions', label: 'Actions', className: 'w-32' },
+        { key: 'sha256', label: 'SHA256', className: 'w-48' },
+        { key: 'uploadedAt', label: 'Uploaded At', className: 'w-32' },
     ];
 
-    const renderRow = (file, index) => {
+    const renderRow = (file, index, selectProps = {}) => {
         for (const f of filteredFiles) {
             if (f.id === file.id) return null;
         }
 
+        const { enableMultiSelect, isSelected, onSelect } = selectProps;
+
         return (
             <tr key={file.id || index}>
+                {enableMultiSelect && (
+                    <td className='w-12' onClick={(e) => e.stopPropagation()}>
+                        <input
+                            type='checkbox'
+                            className='cradle-checkbox'
+                            checked={isSelected}
+                            onChange={onSelect}
+                        />
+                    </td>
+                )}
                 <td className='truncate w-32'>
                     {truncateText(file.file_name, 32)}
-                </td>
-                <td className=''>
-                    {formatDate(new Date(file.timestamp))}
                 </td>
                 <td className=''>
                     <div className='flex flex-wrap gap-1'>
@@ -175,96 +240,21 @@ export default function FilesList({
                 <td className='truncate w-32'>
                     {truncateText(file.mimetype, 32)}
                 </td>
-                <td className=''>
-                    {file.md5_hash ? (
-                        <span
-                            className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
-                            onClick={() => copyToClipboard(file.md5_hash)}
-                            title='Click to copy'
-                        >
-                            {file.md5_hash.substring(0, 16)}...
-                        </span>
-                    ) : (
-                        '-'
-                    )}
-                </td>
-                <td className=''>
-                    {file.sha1_hash ? (
-                        <span
-                            className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
-                            onClick={() => copyToClipboard(file.sha1_hash)}
-                            title='Click to copy'
-                        >
-                            {file.sha1_hash.substring(0, 32)}...
-                        </span>
-                    ) : (
-                        '-'
-                    )}
-                </td>
-                <td className=''>
+                <td className='w-48'>
                     {file.sha256_hash ? (
                         <span
-                            className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
+                            className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded truncate block'
                             onClick={() => copyToClipboard(file.sha256_hash)}
                             title='Click to copy'
                         >
-                            {file.sha256_hash.substring(0, 32)}...
+                            {file.sha256_hash.substring(0, 21)}...
                         </span>
                     ) : (
                         '-'
                     )}
                 </td>
-                <td className='w-32'>
-                    <div className='flex space-x-1'>
-                        <button
-                            onClick={() => {
-                                const navigate = window.location.hash.includes('#')
-                                    ? (path) => (window.location.hash = path)
-                                    : (path) => (window.location.href = path);
-                                navigate(`/notes/${file.note_id}`);
-                            }}
-                            className='btn btn-ghost btn-xs text-blue-600 hover:text-blue-500'
-                            title='View Note'
-                        >
-                            <Notes className='w-4 h-4' aria-hidden='true' />
-                        </button>
-                        {file.bucket_name && file.minio_file_name && (
-                            <button
-                                onClick={() => {
-                                    const url = createDownloadPath({
-                                        bucket_name: file.bucket_name,
-                                        minio_file_name: file.minio_file_name,
-                                    });
-
-                                    authAxios
-                                        .get(url)
-                                        .then((response) => {
-                                            const { presigned } = response.data;
-                                            const link = document.createElement('a');
-                                            link.href = presigned;
-                                            const fileName =
-                                                file.minio_file_name.split('/').pop() ||
-                                                file.minio_file_name;
-                                            link.download = fileName;
-                                            document.body.appendChild(link);
-                                            link.click();
-                                            document.body.removeChild(link);
-                                        })
-                                        .catch((error) => {
-                                            setAlert({
-                                                show: true,
-                                                message: 'Failed to download file. Please try again.',
-                                                color: 'red',
-                                            });
-                                        });
-                                }}
-                                className='btn btn-ghost btn-xs text-green-600 hover:text-green-500'
-                                title='Download'
-                            >
-                                <Download className='w-4 h-4' aria-hidden='true' />
-                            </button>
-                        )}
-                    </div>
+                <td className=''>
+                    {formatDate(new Date(file.timestamp))}
                 </td>
             </tr>
         );
@@ -290,24 +280,66 @@ export default function FilesList({
             <div className='flex flex-col space-y-4'>
                 <AlertBox alert={alert} setAlert={setAlert} />
 
-                {!loading && files.length > 0 && (
-                    <Pagination
-                        currentPage={page}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                        pageSize={pageSize}
-                        onPageSizeChange={(newSize) => {
-                            setPageSize(newSize);
-                            setPage(1);
-                            const newParams = new URLSearchParams(searchParams);
-                            newParams.set('files_page', '1');
-                            newParams.set('files_pagesize', String(newSize));
-                            setSearchParams(newParams, { replace: true });
-                        }}
-                    />
+                {/* Compact Control Bar - Actions and Pagination */}
+                {!loading && (
+                    <TableCard>
+                        <div className='flex flex-wrap items-center justify-between gap-4'>
+                            {/* Left: Actions Dropdown */}
+                            <div className='flex items-center gap-4 flex-shrink-0'>
+                                <div className={`${files.length === 0 ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <div className="cradle-dropdown" ref={dropdownRef}>
+                                        <button 
+                                            type="button" 
+                                            className={`cradle-select text-sm flex items-center justify-between gap-2 min-w-[120px] ${selectedFiles.length > 0 ? 'opacity-100 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+                                            disabled={selectedFiles.length === 0}
+                                            title={selectedFiles.length > 0 ? `${selectedFiles.length} file(s) selected` : "Select files to perform actions"}
+                                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                        >
+                                            <span className="truncate">
+                                                {selectedFiles.length > 0 ? `${selectedFiles.length} selected` : 'Actions'}
+                                            </span>
+                                            <svg className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </button>
+                                        
+                                        {isDropdownOpen && selectedFiles.length > 0 && (
+                                            <div className="cradle-dropdown-menu">
+                                                <button
+                                                    type="button"
+                                                    className="cradle-dropdown-option flex items-center gap-2"
+                                                    onClick={handleDownloadSelected}
+                                                >
+                                                    <Download className="w-4 h-4" />
+                                                    Download
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right: Pagination */}
+                            <PaginationWrapper
+                                currentPage={page}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}
+                                pageSize={pageSize}
+                                onPageSizeChange={(newSize) => {
+                                    setPageSize(newSize);
+                                    setPage(1);
+                                    const newParams = new URLSearchParams(searchParams);
+                                    newParams.set('files_page', '1');
+                                    newParams.set('files_pagesize', String(newSize));
+                                    setSearchParams(newParams, { replace: true });
+                                }}
+                                disabled={files.length === 0}
+                            />
+                        </div>
+                    </TableCard>
                 )}
 
-                <div ref={setNodeRef} className='grid grid-cols-1 gap-2 p-4'>
+                <div ref={setNodeRef} className='grid grid-cols-1 gap-2'>
                     <ListView
                         data={files}
                         columns={columns}
@@ -320,25 +352,10 @@ export default function FilesList({
                         sortFieldMapping={sortFieldMapping}
                         emptyMessage="No files found!"
                         tableClassName="table"
+                        enableMultiSelect={true}
+                        setSelected={setSelectedFiles}
                     />
                 </div>
-
-                {!loading && files.length > 0 && (
-                    <Pagination
-                        currentPage={page}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                        pageSize={pageSize}
-                        onPageSizeChange={(newSize) => {
-                            setPageSize(newSize);
-                            setPage(1);
-                            const newParams = new URLSearchParams(searchParams);
-                            newParams.set('files_page', '1');
-                            newParams.set('files_pagesize', String(newSize));
-                            setSearchParams(newParams, { replace: true });
-                        }}
-                    />
-                )}
             </div>
         </>
     );

@@ -35,7 +35,7 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
     if (!visible) return null;
 
     return (
-        <div className='bg-white dark:bg-gray-800 dark:bg-opacity-75 p-4 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 m-2'>
+        <div className='bg-white dark:bg-gray-800 dark:bg-opacity-75 p-4 rounded-lg shadow-lg hover:shadow-xl  m-2'>
             <div className='flex justify-between items-center mb-2'>
                 <div className='flex items-center space-x-2'>
                     <h2 className='text-lg font-bold text-gray-900 dark:text-white'>
@@ -43,7 +43,7 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
                     </h2>
                     <button
                         title='Delete Digest'
-                        className='text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 transition-colors'
+                        className='text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 '
                         onClick={() =>
                             setModal(ConfirmDeletionModal, {
                                 title: 'Delete Digest',
@@ -103,11 +103,11 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
                 {localDigest.errors && localDigest.errors.length > 0 && (
                     <div className='mt-2'>
                         <button
-                            className='flex items-center w-full text-left text-red-700 dark:text-red-300 hover:text-red-600 dark:hover:text-red-200 transition-colors'
+                            className='flex items-center w-full text-left text-red-700 dark:text-red-300 hover:text-red-600 dark:hover:text-red-200 '
                             onClick={() => setShowErrors(!showErrors)}
                         >
                             <span
-                                className={`mr-2 transform transition-transform duration-200 ${
+                                className={`mr-2 transform  ${
                                     showErrors ? 'rotate-90' : ''
                                 }`}
                             >
@@ -132,10 +132,10 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
                     <div className='mt-2'>
                         <button
                             onClick={() => setShowWarnings(!showWarnings)}
-                            className='flex items-center text-yellow-600 dark:text-yellow-300 hover:text-yellow-500 dark:hover:text-yellow-200 transition-colors'
+                            className='flex items-center text-yellow-600 dark:text-yellow-300 hover:text-yellow-500 dark:hover:text-yellow-200 '
                         >
                             <span
-                                className={`mr-2 transform transition-transform duration-200 ${
+                                className={`mr-2 transform  ${
                                     showWarnings ? 'rotate-90' : ''
                                 }`}
                             >

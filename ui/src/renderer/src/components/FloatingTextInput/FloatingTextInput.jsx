@@ -30,7 +30,7 @@ const FloatingTextInput = ({
                 <div className='fixed inset-0 flex items-center justify-center z-50'>
                     {/* Backdrop overlay */}
                     <div
-                        className='absolute inset-0 bg-black bg-opacity-60 transition-opacity'
+                        className='absolute inset-0 bg-black bg-opacity-60 '
                         onClick={handleOpen}
                     ></div>
 

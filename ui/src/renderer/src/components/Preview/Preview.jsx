@@ -132,7 +132,8 @@ export default function Preview({
                 </div>
             ) : (
                 <div
-                    className='h-full w-full p-4 bg-transparent prose max-w-none break-normal whitespace-normal dark:prose-invert overflow-y-auto rounded-lg flex-1 overflow-x-hidden line-numbers'
+                    className='h-full w-full p-4 bg-transparent prose max-w-none break-words whitespace-normal dark:prose-invert overflow-y-auto rounded-lg flex-1 overflow-x-hidden line-numbers'
+                    style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
                     data-testid='preview'
                     ref={previewRef}
                     onClick={handleLineClick}

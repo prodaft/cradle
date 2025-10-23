@@ -42,7 +42,7 @@ dependencies = [
     "fa2-modified",
     "networkx",
     "scipy",
-    "django-silk[formatting]",
+    "django-silk[formatting]==5.4.3",
     "gunicorn",
 ]
 
@@ -63,15 +63,10 @@ dev = [
 namespace_packages = true
 warn_unused_ignores = false
 files = "**/*.py"
-exclude = "*/migrations/*.py,*/tests/*.py"
+exclude = ["*/migrations/*.py","*/tests/*.py"]
 
 [tool.mypy.plugins.django-stubs]
 django_settings_module = "cradle.settings"
-
-[tool.flake8]
-exclude = ".git,__pycache__,.vscode,cradle,manage.py,env,venv,.venv,*/migrations/*"
-max-line-length = 120
-extend-ignore = "E203"
 
 [tool.black]
 exclude = '''

@@ -19,39 +19,25 @@ export default function SidebarItem({
     text = '',
     handleClick,
     highlightedLocation = '',
-    compact = false,
 }) {
     const location = useLocation();
     const isHighlighted = location.pathname === highlightedLocation;
 
-    if (compact) {
-        return (
-            <Tooltip content={text} position='right'>
-                <li
-                    className={`menu-item p-4 cursor-pointer group-hover/sidebar:flex items-center z-50 relative
-                    ${isHighlighted ? 'menu-active' : ''}`}
-                    onClick={handleClick}
-                >
-                    <div className='icon flex-shrink-0 text-primary hover:bg-gray-4'>
-                        {icon}
-                    </div>
-                </li>
-            </Tooltip>
-        );
-    } else {
-        return (
+    const itemStyle = isHighlighted 
+        ? { color: 'var(--cradle-accent-primary)' } 
+        : { color: 'var(--cradle-sidebar-icon)' };
+
+    return (
+        <Tooltip content={text} position='right'>
             <li
-                className={`menu-item p-4 cursor-pointer group-hover/sidebar:flex items-center z-50 relative
-                    ${isHighlighted ? 'menu-active' : ''}`}
+                className='p-4 cursor-pointer flex items-center justify-center z-50 relative  cradle-mono rounded-lg'
+                style={itemStyle}
                 onClick={handleClick}
             >
-                <div className='icon flex-shrink-0 text-primary hover:bg-gray-4'>
+                <div className='icon flex items-center justify-center flex-shrink-0'>
                     {icon}
                 </div>
-                <div className='hidden whitespace-nowrap ml-2 group-hover/sidebar:block'>
-                    {text}
-                </div>
             </li>
-        );
-    }
+        </Tooltip>
+    );
 }

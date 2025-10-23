@@ -1,7 +1,10 @@
 [tool.bumpversion]
-current_version = "2.10.2"
-parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
-serialize = ["{major}.{minor}.{patch}"]
+current_version = "2.10.2-beta.5327a0f1"
+parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)(-beta\\.(?P<beta>[a-f0-9]+))?"
+serialize = [
+    "{major}.{minor}.{patch}-beta.{beta}",
+    "{major}.{minor}.{patch}"
+]
 search = "{current_version}"
 replace = "{new_version}"
 regex = false
@@ -11,18 +14,21 @@ tag = false
 sign_tags = false
 tag_name = "v{new_version}"
 tag_message = "Bump version: {current_version} → {new_version}"
-allow_dirty = false
-commit = true
-commit_args = "--no-verify"
+allow_dirty = true
+commit = false
 message = "Bump version: {current_version} → {new_version}"
-moveable_tags = []
-setup_hooks = []
-pre_commit_hooks = []
-post_commit_hooks = []
+
+[tool.bumpversion.parts.major]
+[tool.bumpversion.parts.minor]
+[tool.bumpversion.parts.patch]
+
+[tool.bumpversion.parts.beta]
+optional_value = "gamma"
+values = ["gamma"]
+independent = false
 
 [[tool.bumpversion.files]]
 filename = "docs/content/_index.md"
-
 
 [[tool.bumpversion.files]]
 filename = "backend/cradle/settings_common.py"
