@@ -75,6 +75,7 @@ class FalconDigest(BaseDigest):
     def digest_chunk(self, start, end):
         rels = []
         typemapping: dict[str, EntryClass] = FalconMapping.get_typemapping_rev()
+        digest_entry = self.entry
         entities = {}
 
         for obj in self.digest_data()[start:end]:
@@ -160,19 +161,12 @@ class FalconDigest(BaseDigest):
             else:
                 timestamp = timezone.now()
 
-            access_vector = calculate_acvec(
-                [
-                    parent_entry,
-                    entity,
-                ]
-            )
-
             rels.append(
                 Relation(
                     content_object=self,
-                    e1=entity,
+                    e1=digest_entry,
                     e2=parent_entry,
-                    access_vector=access_vector,
+                    access_vector=entity.get_acvec(),
                     created_at=timestamp,
                     reason=RelationReason.DIGEST,
                     details={"tags": obj.get("tags", None), "title": self.title},
@@ -227,7 +221,7 @@ class FalconDigest(BaseDigest):
                         content_object=self,
                         e1=parent_entry,
                         e2=child_entry,
-                        access_vector=access_vector,
+                        access_vector=entity.get_acvec(),
                         created_at=timestamp,
                         reason=RelationReason.DIGEST,
                         details={"tags": obj.get("tags", None), "title": self.title},
@@ -245,3 +239,19 @@ class FalconDigest(BaseDigest):
         if len(rels) > 0:
             # Save all relations in bulk for performance
             Relation.objects.bulk_create(rels)
+
+        rels = [
+            Relation(
+                content_object=self,
+                e1=digest_entry,
+                e2=entity,
+                access_vector=entity.get_acvec(),
+                created_at=timezone.now(),
+                reason=RelationReason.DIGEST,
+            )
+            for entity in entities.values()
+        ]
+
+        Relation.objects.bulk_create(rels)
+        for entity in entities.values():
+            self.entities.add(entity)

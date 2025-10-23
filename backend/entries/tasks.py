@@ -4,7 +4,7 @@ from core.decorators import debounce_task, distributed_lock
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.geos import Point
 from django.db import connection, transaction
-from intelio.tasks import propagate_acvec as propagate_digest_acvec
+from intelio.tasks import propagate_acvec_digest, propagate_acvec_enrich
 from management.settings import cradle_settings
 from notes.markdown.to_markdown import remap_links
 from notes.models import Note
@@ -45,15 +45,18 @@ def update_accesses(entry_id):
         note_model.objects.bulk_update(update_notes, ["access_vector"])
 
     digest_ids = entry.digests.all().values_list("id", flat=True)
+    enrich_ids = entry.enrichments.all().values_list("id", flat=True)
 
     # Reset the status field.
     entry.save()
 
     g_notes = group(*[propagate_acvec.si(n.id) for n in update_notes])
-    g_digests = group(*[propagate_digest_acvec.si(d) for d in digest_ids])
+    g_digests = group(*[propagate_acvec_digest.si(d) for d in digest_ids])
+    g_enrichs = group(*[propagate_acvec_enrich.si(e) for e in enrich_ids])
 
     transaction.on_commit(lambda: g_notes.apply_async())
     transaction.on_commit(lambda: g_digests.apply_async())
+    transaction.on_commit(lambda: g_enrichs.apply_async())
 
     return f"Updated {len(update_notes)} notes"
 

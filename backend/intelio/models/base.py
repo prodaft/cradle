@@ -3,6 +3,8 @@ import uuid
 from collections import defaultdict
 from datetime import timedelta
 from typing import Any, Optional
+from entries.enums import EntryType
+from pydantic import BaseModel, ValidationError as PydanticValidationError
 
 from core.fields import BitStringField
 from django.conf import settings
@@ -18,7 +20,7 @@ from django_lifecycle import (
 from entries.models import Entry, EntryClass, Relation
 from user.models import CradleUser
 
-from ..enums import DigestStatus, EnrichmentStatus, EnrichmentStrategy
+from ..enums import DigestStatus, EnrichmentStatus
 
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
@@ -71,6 +73,25 @@ class BaseDigest(LifecycleModel):
         self.digest_type = (
             self.__class__.__name__ if not self.digest_type else self.digest_type
         )
+
+    @property
+    def entry(self) -> Entry:
+        """
+        Return the entry representing this digest.
+        """
+        entry_class, _ = EntryClass.objects.get_or_create(
+            subtype="digest", type=EntryType.ARTIFACT
+        )
+        entry, _ = Entry.objects.create(
+            name=f"{self.digest_type} Digest {self.title}", entry_class=entry_class
+        )
+        return entry
+
+    @property
+    def access_vector(self):
+        from notes.utils import calculate_acvec
+
+        return calculate_acvec(self.entities.all())
 
     @classmethod
     def from_db(cls, db, field_names, values):
@@ -179,14 +200,19 @@ class BaseEnricher:
     display_name = None
     settings_fields = {}
 
-    def __init__(self, settings: dict):
+    def __init__(self, settings: dict, request: "EnrichmentRequest"):
         self.settings = settings
+        self.request = request
 
-    def pre_enrich(self, entries: list[Entry], user) -> Optional[str]:
+    def pre_enrich(self, entries: list[Entry]) -> Optional[str]:
         raise NotImplementedError
 
-    def enrich(self, entries: list[Entry], content_object, user) -> None:
+    def enrich(self, entries: list[Entry]) -> None:
         raise NotImplementedError
+
+    @property
+    def name(self):
+        return self.__class__.__name__
 
     @classmethod
     def get_subclass(cls, name):
@@ -236,14 +262,6 @@ class EnricherSettings(models.Model):
 
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
-    strategy = models.CharField(
-        max_length=255,
-        choices=EnrichmentStrategy.choices,
-        default=EnrichmentStrategy.MANUAL,
-    )
-    periodicity = models.DurationField(null=False, default=timedelta(days=1))
-    last_run = models.DateTimeField(null=True, blank=True)
-
     for_eclasses = models.ManyToManyField(
         EntryClass, related_name="enrichers", blank=True
     )
@@ -268,15 +286,14 @@ class EnricherSettings(models.Model):
         if errors:
             raise ValidationError(errors)
 
-    @property
-    def enricher(self):
+    def enricher(self, request: "EnrichmentRequest"):
         """
         Return the enricher class based on the enricher_type.
         """
         config = BaseEnricher.get_subclass(self.enricher_type)
         if config is None:
             raise ValidationError(f"Unknown enricher type: {self.enricher_type}")
-        return config(settings=self.settings)
+        return config(settings=self.settings, request=request)
 
 
 class ClassMapping(models.Model):
@@ -318,15 +335,24 @@ class ClassMapping(models.Model):
         return typemapping
 
 
+class EnrichmentRequestSchema(BaseModel):
+    """
+    Schema for enrichment requests.
+    """
+
+    entry_class: str
+    name: str
+
+
 class EnrichmentRequest(LifecycleModel):
-    enrichment_settings = models.ForeignKey(
+    enrichers_settings = models.ManyToManyField(
         EnricherSettings,
         on_delete=models.SET_NULL,
-        null=True,
     )
+
     title = models.CharField(max_length=255)
     automated = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
     status = models.CharField(
         max_length=255,
@@ -340,47 +366,183 @@ class EnrichmentRequest(LifecycleModel):
         null=True,
         related_name="enrichment_requests",
     )
-    entity = models.ForeignKey(
-        Entry, on_delete=models.CASCADE, related_name="enrichments"
+    entities = models.ManyToManyField(
+        Entry,
+        related_name="enrichment_requests",
     )
-    relations = GenericRelation(Relation, related_query_name="enrichment")
+    enricher_status = models.JSONField(default=dict, blank=True)
 
+    relations = GenericRelation(Relation, related_query_name="enrichment")
     request = models.JSONField(default=list, blank=False)
     errors = models.JSONField(default=list, blank=True)
+    warnings = models.JSONField(default=list, blank=True)
 
     def clean(self):
         if not self.enrichment_settings:
-            return
+            raise ValidationError("At least one enricher must be selected")
 
-        config = BaseEnricher.get_subclass(self.enrichment_settings.enricher_type)
-        if config is None:
+        for enricher in self.enrichers_settings.all():
+            config = BaseEnricher.get_subclass(enricher.enricher_type)
+            if config is None:
+                raise ValidationError(
+                    f"Unknown enricher type: {enricher.enricher_type}"
+                )
+
+        if not isinstance(self.request, list):
+            raise ValidationError({"request": "Must be a list"})
+
+        classes = set()
+        try:
+            for req in self.request:
+                classes.add(EnrichmentRequestSchema(**req).entry_class)
+        except PydanticValidationError as e:
+            raise ValidationError({"request": str(e)})
+
+        if EntryClass.objects.filter(
+            subtype__in=classes, type=EntryType.ARTIFACT
+        ).count() != len(classes):
+            invalid_classes = classes - set(
+                EntryClass.objects.filter(
+                    subtype__in=classes, type=EntryType.ARTIFACT
+                ).values_list("subtype", flat=True)
+            )
             raise ValidationError(
-                f"Unknown enricher type: {self.enrichment_settings.enricher_type}"
+                {"request": f"Invalid entry classes: {invalid_classes}"}
             )
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     @property
-    def enricher(self):
+    def entry(self):
+        """
+        Return the entry representing this enrichment request.
+        """
+        entry_class, _ = EntryClass.objects.get_or_create(
+            subtype="enrichment", type=EntryType.ARTIFACT
+        )
+        entry, _ = Entry.objects.get_or_create(
+            name=f"Enrichment Request {self.title} [{self.id}]", entry_class=entry_class
+        )
+        return entry
+
+    @property
+    def enrichers(self):
         """
         Return the enricher class based on the enrichment_settings.
         """
-        if not self.enrichment_settings:
-            return None
+        enrichers = []
 
-        config = BaseEnricher.get_subclass(self.enrichment_settings.enricher_type)
-        if config is None:
-            raise ValidationError(
-                f"Unknown enricher type: {self.enrichment_settings.enricher_type}"
-            )
-        return config(settings=self.enrichment_settings.settings)
+        for enricher_settings in self.enrichers_settings.all():
+            subclass = BaseEnricher.get_subclass(enricher_settings.enricher_type)
+
+            if subclass is None:
+                raise ValidationError(
+                    f"Unknown enricher type: {enricher_settings.enricher_type}"
+                )
+            config = subclass(settings=enricher_settings.settings, request=self)
+            enrichers.append(config)
+
+        return enrichers
+
+    def entries(self, classes: set[str] | None = None):
+        entries = []
+        entry_classes = {}
+
+        for req in self.request:
+            if classes is None or req["entry_class"] in classes:
+                if req["entry_class"] not in entry_classes:
+                    entry_classes[req["entry_class"]] = EntryClass.objects.get(
+                        subtype=req["entry_class"], type=EntryType.ARTIFACT
+                    )
+                entry_class = entry_classes[req["entry_class"]]
+
+                entry, _ = Entry.objects.get_or_create(
+                    name=req["name"], entry_class=entry_class
+                )
+                entries.append(entry)
+
+        return entries
 
     @hook(AFTER_CREATE)
     def start_enrichment(self):
         """
         Start the enrichment process after creation.
         """
+        from ..tasks import start_enrich
+
         self.id = self._initial_state.get_value(self, "id")
 
         # Trigger the enrichment process
         # This could be handled by a background task or Celery
         self.status = EnrichmentStatus.WORKING
         self.save(update_fields=["status"])
+        transaction.on_commit(lambda: start_enrich.apply_async(self.id))
+
+    @property
+    def access_vector(self):
+        from notes.utils import calculate_acvec
+
+        return calculate_acvec(self.entities.all())
+
+    def update_access_vector(self):
+        self.relations.update(access_vector=self.access_vector)
+
+    def _set_enricher_status(self, enricher_type: str, status: EnrichmentStatus):
+        if self.finished_enrichers and enricher_type in self.finished_enrichers:
+            return
+        with transaction.atomic():
+            instance = EnrichmentRequest.objects.select_for_update().get(pk=self.pk)
+            instance.finished_enrichers = instance.finished_enrichers or {}
+            if enricher_type not in instance.finished_enrichers:
+                instance.finished_enrichers[enricher_type] = status
+
+                if (
+                    len(instance.finished_enrichers)
+                    == instance.enrichers_settings.count()
+                ):
+                    instance.completed_at = models.DateTimeField(auto_now=True)
+                    err_count, succes_count = 0, 0
+                    for stat in instance.finished_enrichers.values():
+                        if stat == EnrichmentStatus.ERROR:
+                            err_count += 1
+                        else:
+                            succes_count += 1
+
+                    if err_count > 0 and succes_count == 0:
+                        instance.status = EnrichmentStatus.ERROR
+                    elif err_count > 0:
+                        instance.status = EnrichmentStatus.WARNING
+                    else:
+                        instance.status = EnrichmentStatus.COMPLETED
+
+                    instance.save(
+                        update_fields=["finished_enrichers", "completed_at", "status"]
+                    )
+                else:
+                    instance.save(update_fields=["finished_enrichers"])
+
+    def _append_error(self, error):
+        if error in self.errors:
+            return
+        with transaction.atomic():
+            # Use select_for_update to lock the row and prevent race conditions
+            instance = BaseDigest.objects.select_for_update().get(pk=self.pk)
+            if error not in instance.errors:
+                instance.errors.append(error)
+                instance.save(update_fields=["errors"])
+            # Update the current instance to reflect the change
+            self.errors = instance.errors
+
+    def _append_warning(self, warning):
+        if warning in self.warnings:
+            return
+        with transaction.atomic():
+            # Use select_for_update to lock the row and prevent race conditions
+            instance = BaseDigest.objects.select_for_update().get(pk=self.pk)
+            if warning not in instance.warnings:
+                instance.warnings.append(warning)
+                instance.save(update_fields=["warnings"])
+            # Update the current instance to reflect the change
+            self.warnings = instance.warnings

@@ -5,6 +5,7 @@ from intelio.views.digest import DigestAPIView, DigestSubclassesAPIView
 from .views.enrichment import (
     EnrichmentAPIView,
     EnrichmentDetailAPIView,
+    EnrichmentRelationsAPIView,
     EnrichmentSettingsAPIView,
     EnrichmentSubclassesAPIView,
 )
@@ -59,5 +60,10 @@ urlpatterns = [
         "enrich/<uuid:pk>/",
         EnrichmentDetailAPIView.as_view(),
         name="enrichment-detail",
+    ),
+    path(
+        "enrich/<uuid:pk>/<str:enricher_type>/",
+        EnrichmentRelationsAPIView.as_view(),
+        name="enrichment-relations",
     ),
 ]

@@ -450,6 +450,9 @@ class Relation(LifecycleModel):
     reason: models.CharField = models.CharField(
         max_length=255, null=False, blank=False, choices=RelationReason.choices
     )
+    reason_context: models.CharField = models.CharField(
+        max_length=255, null=True, blank=True
+    )
 
     details: models.JSONField = models.JSONField(default=dict, blank=True)
 

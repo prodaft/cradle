@@ -11,6 +11,8 @@ from user.permissions import HasAdminRole
 
 from ..models.base import BaseEnricher, EnricherSettings, EnrichmentRequest
 from ..serializers import (
+    EnrichmentRequestDetailSerializer,
+    EnrichmentRequestListSerializer,
     EnrichmentRequestSerializer,
     EnrichmentSettingsSerializer,
     EnrichmentSubclassSerializer,
@@ -125,9 +127,49 @@ class EnrichmentSettingsAPIView(GenericAPIView):
     get=extend_schema(
         operation_id="enrichment_request_list",
         summary="List enrichment requests",
-        description="Returns a list of all enrichment requests for the current user or entity.",
+        description="Returns a paginated list of enrichment requests for the current user. Can filter by user and title. Results are ordered by created_at descending.",
+        parameters=[
+            OpenApiParameter(
+                name="user__username",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by user username (case-insensitive partial match)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="title",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by title (case-insensitive partial match)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="page_size",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Number of enrichment requests to return per page. Max 100.",
+                default=10,
+            ),
+            OpenApiParameter(
+                name="page",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Page number for pagination",
+            ),
+            OpenApiParameter(
+                name="order_by",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Order enrichment requests by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: created_at, title, user__username, status. Default: -created_at",
+                required=False,
+                default="-created_at",
+            ),
+        ],
         responses={
-            200: EnrichmentRequestSerializer(many=True),
+            200: TotalPagesPagination().get_paginated_response_serializer(
+                EnrichmentRequestListSerializer
+            ),
+            400: {"description": "Invalid filter parameters"},
             401: {"description": "User is not authenticated"},
         },
     ),
@@ -150,7 +192,7 @@ class EnrichmentAPIView(APIView):
     """
     API view for enrichment-related actions.
 
-    GET: List all enrichment requests for the current user or filtered by entity.
+    GET: List all enrichment requests for the current user with filtering and pagination.
     POST: Create a new enrichment request for an entity.
     """
 
@@ -159,23 +201,67 @@ class EnrichmentAPIView(APIView):
     serializer_class = EnrichmentRequestSerializer
 
     def get(self, request):
-        """List enrichment requests with optional entity filter"""
-        entity_id = request.query_params.get("entity")
+        """List enrichment requests with optional filters, sorting, and pagination"""
+        from core.utils import validate_order_by
 
-        if entity_id:
-            enrichment_requests = EnrichmentRequest.objects.filter(
-                entity_id=entity_id
-            ).order_by("-created_at")
+        # Start with user's enrichment requests
+        queryset = EnrichmentRequest.objects.filter(user=request.user)
+
+        # Handle page_size parameter
+        try:
+            page_size = int(request.query_params.get("page_size", 10))
+        except ValueError:
+            return Response(
+                "Invalid page_size value. Must be an integer.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if page_size > 100:
+            return Response(
+                "page_size cannot be greater than 100.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Filter by user username
+        user_username = request.query_params.get("user__username")
+        if user_username:
+            queryset = queryset.filter(user__username__icontains=user_username)
+
+        # Filter by title
+        title = request.query_params.get("title")
+        if title:
+            queryset = queryset.filter(title__icontains=title)
+
+        # Handle ordering
+        order_by = request.query_params.get("order_by", "-created_at")
+        valid_order_fields = [
+            "created_at",
+            "title",
+            "user__username",
+            "status",
+        ]
+
+        # Parse and validate order_by parameter
+        order_fields, error_response = validate_order_by(order_by, valid_order_fields)
+        if error_response:
+            return error_response
+
+        if order_fields:
+            queryset = queryset.order_by(*order_fields)
         else:
-            # Default to user's requests
-            enrichment_requests = EnrichmentRequest.objects.filter(
-                user=request.user
-            ).order_by("-created_at")
+            queryset = queryset.order_by("-created_at")
 
-        serializer = EnrichmentRequestSerializer(
-            enrichment_requests, many=True, context={"request": request}
+        # Optimize query with select_related
+        queryset = queryset.select_related("user", "enrichment_settings")
+
+        # Apply pagination
+        paginator = TotalPagesPagination(page_size=page_size)
+        result_page = paginator.paginate_queryset(queryset, request)
+
+        serializer = EnrichmentRequestListSerializer(
+            result_page, many=True, context={"request": request}
         )
-        return Response(serializer.data)
+        return paginator.get_paginated_response(serializer.data)
 
     def post(self, request, *args, **kwargs):
         """Create a new enrichment request"""
@@ -197,9 +283,63 @@ class EnrichmentAPIView(APIView):
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="enrichment_detail_retrieve",
+        summary="Retrieve enrichment request details",
+        description="Retrieve detailed information about a specific enrichment request including enricher types, entries requested, warnings, and errors.",
+        responses={
+            200: EnrichmentRequestDetailSerializer,
+            401: {"description": "User is not authenticated"},
+            403: {"description": "Forbidden - insufficient permissions"},
+            404: {"description": "Enrichment request not found"},
+        },
+    ),
+)
+class EnrichmentDetailAPIView(APIView):
+    """
+    API view for retrieving detailed information about a specific enrichment request.
+
+    GET: Retrieve enrichment request details.
+    """
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            return EnrichmentRequest.objects.prefetch_related(
+                "enrichers_settings", "entities"
+            ).get(pk=pk)
+        except EnrichmentRequest.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        """Retrieve enrichment request details"""
+        enrichment_request = self.get_object(pk)
+
+        if enrichment_request is None:
+            return Response(
+                {"detail": "Enrichment request not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Check if user has access to this request
+        if enrichment_request.user != request.user and not request.user.is_staff:
+            return Response(
+                {
+                    "detail": "You don't have permission to view this enrichment request."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = EnrichmentRequestDetailSerializer(enrichment_request)
+        return Response(serializer.data)
+
+
+@extend_schema_view(
+    get=extend_schema(
         operation_id="enrichment_relations_retrieve",
         summary="Retrieve relations created by enrichment",
-        description="Retrieve the relations created by a specific enrichment request.",
+        description="Retrieve the relations created by a specific enrichment request, filtered by enricher type.",
         parameters=[
             OpenApiParameter(
                 name="page_size",
@@ -222,6 +362,27 @@ class EnrichmentAPIView(APIView):
                 required=False,
                 default="-created_at",
             ),
+            OpenApiParameter(
+                name="reason",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by reason (case-insensitive partial match)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="from_entry",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by source entry ID",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="to_entry",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by target entry ID",
+                required=False,
+            ),
         ],
         responses={
             200: TotalPagesPagination().get_paginated_response_serializer(
@@ -229,15 +390,16 @@ class EnrichmentAPIView(APIView):
             ),
             401: {"description": "User is not authenticated"},
             403: {"description": "Forbidden - insufficient permissions"},
-            404: {"description": "Enrichment request not found"},
+            404: {"description": "Enrichment request not found or enricher type not found"},
         },
     ),
 )
-class EnrichmentDetailAPIView(APIView):
+class EnrichmentRelationsAPIView(APIView):
     """
-    API view for retrieving relations created by a specific enrichment request.
+    API view for retrieving relations created by a specific enrichment request,
+    filtered by enricher type.
 
-    GET: Retrieve relations created by a specific enrichment request.
+    GET: Retrieve relations created by an enrichment request with a specific enricher type.
     """
 
     authentication_classes = [JWTAuthentication]
@@ -245,12 +407,14 @@ class EnrichmentDetailAPIView(APIView):
 
     def get_object(self, pk):
         try:
-            return EnrichmentRequest.objects.get(pk=pk)
+            return EnrichmentRequest.objects.prefetch_related(
+                "enrichers_settings"
+            ).get(pk=pk)
         except EnrichmentRequest.DoesNotExist:
             return None
 
-    def get(self, request, pk):
-        """Retrieve relations created by an enrichment request"""
+    def get(self, request, pk, enricher_type):
+        """Retrieve relations created by an enrichment request filtered by enricher type"""
         from core.utils import validate_order_by
         from entries.serializers import RelationSerializer
 
@@ -271,8 +435,19 @@ class EnrichmentDetailAPIView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Get relations associated with this enrichment request
-        relations = enrichment_request.relations.all()
+        # Verify enricher_type is valid for this enrichment request
+        enricher_types = [
+            settings.enricher_type
+            for settings in enrichment_request.enrichers_settings.all()
+        ]
+        if enricher_type not in enricher_types:
+            return Response(
+                {"detail": f"Enricher type '{enricher_type}' not found in this enrichment request."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Get relations associated with this enrichment request and enricher type
+        relations = enrichment_request.relations.filter(reason_context=enricher_type)
 
         # Handle page_size parameter
         try:
@@ -288,6 +463,19 @@ class EnrichmentDetailAPIView(APIView):
                 "page_size cannot be greater than 100.",
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        # Apply filters
+        reason = request.query_params.get("reason")
+        if reason:
+            relations = relations.filter(reason__icontains=reason)
+
+        from_entry = request.query_params.get("from_entry")
+        if from_entry:
+            relations = relations.filter(from_entry_id=from_entry)
+
+        to_entry = request.query_params.get("to_entry")
+        if to_entry:
+            relations = relations.filter(to_entry_id=to_entry)
 
         # Handle ordering
         order_by = request.query_params.get("order_by", "-created_at")
@@ -306,6 +494,9 @@ class EnrichmentDetailAPIView(APIView):
             relations = relations.order_by(*order_fields)
         else:
             relations = relations.order_by("-created_at")
+
+        # Optimize query
+        relations = relations.select_related("from_entry", "to_entry")
 
         # Apply pagination
         paginator = TotalPagesPagination(page_size=page_size)

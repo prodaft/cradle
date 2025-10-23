@@ -8,7 +8,12 @@ from .digest.falcon import FalconDigest as FalconDigest  # noqa:F401
 
 # Digests
 from .digest.stix import StixDigest as StixDigest  # noqa:F401
+
+# Enricher implementations
+from .enrichments.abuseipdb import AbuseIPDBEnricher as AbuseIPDBEnricher  # noqa:F401
+from .enrichments.circl_pdns import CIRCLPDNSEnricher as CIRCLPDNSEnricher  # noqa:F401
 from .enrichments.dns import DNSEnricher as DNSEnricher  # noqa:F401
+from .enrichments.virustotal import VirusTotalEnricher as VirusTotalEnricher  # noqa:F401
 
 # Mappings
 from .mappings.catalyst import CatalystMapping as CatalystMapping  # noqa:F401

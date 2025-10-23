@@ -96,7 +96,6 @@ class EnrichmentSettingsSerializer(serializers.ModelSerializer):
         model = EnricherSettings
         fields = [
             "id",
-            "strategy",
             "enabled",
             "periodicity",
             "for_eclasses",
@@ -222,6 +221,88 @@ class BaseDigestCreateSerializer(serializers.ModelSerializer):
         # Remove file from validated_data as it's handled separately in the view
         validated_data.pop("file", None)
         return super().create(validated_data)
+
+
+class EnrichmentRequestListSerializer(serializers.ModelSerializer):
+    """Serializer for listing enrichment requests with limited details."""
+
+    user_detail = EssentialUserRetrieveSerializer(source="user", read_only=True)
+    enricher_class = serializers.SerializerMethodField(read_only=True)
+    enricher_name = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = EnrichmentRequest
+        fields = [
+            "id",
+            "title",
+            "automated",
+            "created_at",
+            "status",
+            "user_detail",
+            "enricher_class",
+            "enricher_name",
+        ]
+        read_only_fields = fields
+
+    def get_enricher_class(self, obj):
+        """Return the class name of the enricher"""
+        if obj.enrichment_settings:
+            return obj.enrichment_settings.enricher_type
+        return None
+
+    def get_enricher_name(self, obj):
+        """Return the display name of the enricher"""
+        if obj.enrichment_settings:
+            config = BaseEnricher.get_subclass(obj.enrichment_settings.enricher_type)
+            return (
+                config.display_name if config else obj.enrichment_settings.enricher_type
+            )
+        return None
+
+
+class EnrichmentRequestDetailSerializer(serializers.ModelSerializer):
+    """Serializer for detailed enrichment request information."""
+
+    user_detail = EssentialUserRetrieveSerializer(source="user", read_only=True)
+    enricher_types = serializers.SerializerMethodField(read_only=True)
+    enrichers_detail = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = EnrichmentRequest
+        fields = [
+            "id",
+            "title",
+            "automated",
+            "created_at",
+            "completed_at",
+            "status",
+            "user_detail",
+            "enricher_types",
+            "enrichers_detail",
+            "request",
+            "errors",
+            "warnings",
+            "enricher_status",
+        ]
+        read_only_fields = fields
+
+    def get_enricher_types(self, obj):
+        """Return list of enricher class names"""
+        return [
+            settings.enricher_type for settings in obj.enrichers_settings.all()
+        ]
+
+    def get_enrichers_detail(self, obj):
+        """Return detailed information about each enricher"""
+        enrichers = []
+        for settings in obj.enrichers_settings.all():
+            config = BaseEnricher.get_subclass(settings.enricher_type)
+            enrichers.append({
+                "enricher_type": settings.enricher_type,
+                "display_name": config.display_name if config else settings.enricher_type,
+                "enabled": settings.enabled,
+            })
+        return enrichers
 
 
 class EnrichmentRequestSerializer(serializers.ModelSerializer):

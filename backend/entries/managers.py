@@ -1,4 +1,5 @@
 from core.fields import BitStringField
+from cradle.settings_common import INTERNAL_SUBTYPES
 from django.apps import apps
 from django.db import models
 from django.db.models.expressions import F
@@ -48,9 +49,7 @@ class EntryQuerySet(models.QuerySet):
         """
         Get non virtual entries
         """
-        return self.exclude(
-            Q(entry_class__subtype="virtual") | Q(entry_class__subtype="file")
-        )
+        return self.exclude(entry_class__subtype__in=INTERNAL_SUBTYPES)
 
 
 class RelationQuerySet(models.QuerySet):

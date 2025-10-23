@@ -15,10 +15,10 @@ class DNSEnricher(BaseEnricher):
         "ipv6_type": models.CharField(default="ipv6"),
     }
 
-    def pre_enrich(self, entries: list[Entry], user) -> Optional[str]:
+    def pre_enrich(self, entries: list[Entry]) -> Optional[str]:
         return None
 
-    def enrich(self, entries: list[Entry], content_object, user) -> bool:
+    def enrich(self, entries: list[Entry]) -> None:
         created = False
         dns_server = self.settings["dns_server"]
         ipv4_type = self.settings.get("ipv4_type", "ip")
@@ -47,7 +47,9 @@ class DNSEnricher(BaseEnricher):
                         created = created or new
                         ipv4s.append(ip)
                 except Exception:
-                    pass
+                    self.request._append_warning(
+                        f"DNS A record lookup failed for {hostname}"
+                    )
 
             if ipv6:
                 try:
@@ -59,18 +61,22 @@ class DNSEnricher(BaseEnricher):
                         created = created or new
                         ipv6s.append(ip)
                 except Exception:
-                    pass
+                    self.request._append_warning(
+                        f"DNS AAAA record lookup failed for {hostname}"
+                    )
 
+            av = self.request.access_vector
             rels.extend(
                 [
                     Relation(
                         e1=entry,
                         e2=i,
                         inherit_av=True,
-                        content_object=content_object,
-                        access_vector=1,
+                        content_object=self.request,
+                        access_vector=av,
                         reason=RelationReason.ENRICHMENT,
-                        details={"enricher": "DNS", "record": "A"},
+                        reason_context=self.name,
+                        details={"record": "A"},
                     )
                     for i in ipv4s
                 ]
@@ -82,15 +88,14 @@ class DNSEnricher(BaseEnricher):
                         e1=entry,
                         e2=i,
                         inherit_av=True,
-                        content_object=content_object,
-                        access_vector=1,
+                        content_object=self.request,
+                        access_vector=av,
                         reason=RelationReason.ENRICHMENT,
-                        details={"enricher": "DNS", "record": "AAAA"},
+                        reason_context=self.name,
+                        details={"record": "AAAA"},
                     )
                     for i in ipv6s
                 ]
             )
 
         Relation.objects.bulk_create(rels)
-
-        return created

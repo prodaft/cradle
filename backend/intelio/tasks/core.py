@@ -1,9 +1,11 @@
-from celery import shared_task
+import uuid
+from celery import shared_task, group
 from django.contrib.contenttypes.models import ContentType
 
-from entries.models import Entry
-from intelio.enums import EnrichmentStrategy
-from intelio.models.base import BaseDigest, EnricherSettings
+from entries.enums import EntryType
+from entries.models import Entry, EntryClass
+from intelio.enums import EnrichmentStatus
+from intelio.models.base import BaseDigest, EnricherSettings, EnrichmentRequest
 from user.models import CradleUser
 
 from django.utils import timezone
@@ -12,74 +14,54 @@ BATCH_SIZE = 2048
 
 
 @shared_task
-def enrich_entries(enricher_id, entry_ids, content_type_id, content_id, user_id=None):
+def run_enricher(enricher_id: uuid.UUID, request_id: uuid.UUID):
     from entries.tasks import refresh_edges_materialized_view
 
+    request = EnrichmentRequest.objects.get(id=request_id)
     settings = EnricherSettings.objects.get(id=enricher_id)
+    enricher = settings.enricher(request)
 
-    user = None
-    if user_id:
-        user = CradleUser.objects.get(id=user_id)
+    entries = request.entries(
+        set(settings.for_eclasses.all().values_list("subtype", flat=True))
+    )
+    try:
+        enricher.enrich(entries)
+    except Exception as e:
+        request._append_error(f"Enricher {settings.name} failed: {str(e)}")
+        request._set_enricher_status(enricher_id, EnrichmentStatus.ERROR)
+        return
 
-    content_type = ContentType.objects.get(id=content_type_id)
-    content_object = content_type.get_object_for_this_type(pk=content_id)
+    request._set_enricher_status(enricher_id, EnrichmentStatus.DONE)
 
-    entries = Entry.objects.filter(id__in=entry_ids)
-
-    created = settings.enricher.enrich(entries, content_object, user)
-
-    refresh_edges_materialized_view.apply_async(simulate=created)
-
+    refresh_edges_materialized_view.apply_async()
     return
 
 
 @shared_task
-def enrich_periodic():
-    now = timezone.now()
-    periodic_enrichers = EnricherSettings.objects.filter(
-        strategy=EnrichmentStrategy.PERIODIC,
-        enabled=True,
-    )
-
-    due_enrichers = []
-
-    for enricher in periodic_enrichers:
-        if enricher.last_run is None:
-            due_enrichers.append(enricher)
-        elif (
-            enricher.periodicity is not None
-            and (enricher.last_run + enricher.periodicity) <= now
-        ):
-            due_enrichers.append(enricher)
-
-    for enricher in due_enrichers:
-        enricher.last_run = now
-        enricher.save()
-
-        content_type = ContentType.objects.get_for_model(EnricherSettings)
-
-        for eclass in enricher.for_eclasses.all():
-            entries = Entry.objects.filter(entry_class=eclass).order_by("id")
-
-            if not entries.exists():
-                continue
-
-            for i in range(0, entries.count(), BATCH_SIZE):
-                entries = entries[i : i + BATCH_SIZE]
-                entry_ids = list(entries.values_list("id", flat=True))
-
-                enrich_entries.apply_async(
-                    args=(enricher.id, entry_ids, content_type.id, enricher.id)
-                )
-
-
-@shared_task
 def start_digest(digest_id):
+    EntryClass.objects.get_or_create(type=EntryType.ARTIFACT, subtype="digest")
     digest = BaseDigest.objects.get(id=digest_id)
     digest.digest()
 
 
 @shared_task
-def propagate_acvec(digest_id):
+def start_enrich(enrich_id):
+    EntryClass.objects.get_or_create(type=EntryType.ARTIFACT, subtype="enrichment")
+    request = EnrichmentRequest.objects.get(id=enrich_id)
+    tasks = []
+    for enricher in request.enrichers:
+        tasks.append(run_enricher.si(enricher.id, request.id))
+
+    group(*tasks).apply_async()
+
+
+@shared_task
+def propagate_acvec_digest(digest_id):
     digest = BaseDigest.objects.get(id=digest_id)
     digest.update_access_vector()
+
+
+@shared_task
+def propagate_acvec_enrich(enrich_id):
+    request = EnrichmentRequest.objects.get(id=enrich_id)
+    request.update_access_vector()
