@@ -14,7 +14,7 @@ if [ "$CURRENT" != "$NEW_VERSION" ]; then
   echo "Updating version to $NEW_VERSION"
   touch .git/BUMPVERSION_AMENDING
 
-  uv run --project backend bump-my-version --version "$NEW_VERSION" --allow-dirty --no-commit --no-tag 2> /dev/null
+  uv run --project backend bump-my-version bump --new-version "$NEW_VERSION" --allow-dirty --no-commit --no-tag 2> /dev/null
 
   git add -u
   git commit --amend --no-edit --no-verify
