@@ -567,7 +567,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
 
                                             {showChangePassword && (
                                                 <div className='mt-4 p-4 border cradle-border rounded'>
-                                                    <form onSubmit={handleChangePassword} className='space-y-4'>
+                                                    <div className='space-y-4'>
                                                         <div>
                                                             <label className='cradle-label cradle-text-tertiary block mb-2'>
                                                                 Current Password
@@ -609,13 +609,14 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                                         )}
                                                         <div className='flex justify-end'>
                                                             <button
-                                                                type='submit'
+                                                                type='button'
                                                                 className='cradle-btn cradle-btn-primary'
+                                                                onClick={handleChangePassword}
                                                             >
                                                                 Update Password
                                                             </button>
                                                         </div>
-                                                    </form>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
@@ -705,7 +706,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
 
                                             {show2FASetup && (
                                                 <div className='mt-4 p-4 border cradle-border rounded'>
-                                                    <form onSubmit={handle2FASubmit} className='space-y-4'>
+                                                    <div className='space-y-4'>
                                                         {!twoFactorEnabled && qrCodeUrl && (
                                                             <>
                                                                 <div className='flex justify-center mb-4'>
@@ -729,27 +730,62 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                                                     ? 'Enter verification code to disable 2FA'
                                                                     : 'Enter verification code from your authenticator app'}
                                                             </label>
-                                                            <input
-                                                                type='text'
-                                                                className='cradle-search w-full'
-                                                                placeholder='000000'
-                                                                value={twoFactorCode}
-                                                                onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                                                pattern='[0-9]*'
-                                                                maxLength='6'
-                                                                required
-                                                            />
+                                                            <div className='flex gap-2 justify-center'>
+                                                                {[0, 1, 2, 3, 4, 5].map((index) => (
+                                                                    <input
+                                                                        key={index}
+                                                                        id={`twoFactorToken-${index}`}
+                                                                        name={`twoFactorToken-${index}`}
+                                                                        type='text'
+                                                                        autoComplete='twoFactorToken'
+                                                                        className='cradle-search w-12 h-12 text-center text-lg font-mono disabled:opacity-50 disabled:cursor-not-allowed'
+                                                                        placeholder=''
+                                                                        pattern='[0-9]*'
+                                                                        maxLength='1'
+                                                                        value={twoFactorCode[index] || ''}
+                                                                        onChange={(e) => {
+                                                                            const value = e.target.value.replace(/\D/g, '');
+                                                                            if (value.length <= 1) {
+                                                                                const newCode = twoFactorCode.split('');
+                                                                                newCode[index] = value;
+                                                                                setTwoFactorCode(newCode.join(''));
+                                                                                
+                                                                                // Auto-focus next input
+                                                                                if (value && index < 5) {
+                                                                                    document.getElementById(`twoFactorToken-${index + 1}`)?.focus();
+                                                                                }
+                                                                            }
+                                                                        }}
+                                                                        onKeyDown={(e) => {
+                                                                            // Handle backspace to go to previous input
+                                                                            if (e.key === 'Backspace' && !twoFactorCode[index] && index > 0) {
+                                                                                document.getElementById(`twoFactorToken-${index - 1}`)?.focus();
+                                                                            }
+                                                                        }}
+                                                                        onPaste={(e) => {
+                                                                            e.preventDefault();
+                                                                            const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                                                                            setTwoFactorCode(pastedData);
+                                                                            // Focus the last filled input or the first empty one
+                                                                            const focusIndex = Math.min(pastedData.length, 5);
+                                                                            document.getElementById(`twoFactorToken-${focusIndex}`)?.focus();
+                                                                        }}
+                                                                        required
+                                                                    />
+                                                                ))}
+                                                            </div>
                                                         </div>
                                                         <div className='flex justify-end'>
                                                             <button
-                                                                type='submit'
+                                                                type='button'
                                                                 className={`cradle-btn ${twoFactorEnabled ? 'cradle-status-error !bg-opacity-10' : 'cradle-btn-primary'}`}
                                                                 disabled={twoFactorCode.length !== 6}
+                                                                onClick={handle2FASubmit}
                                                             >
                                                                 {twoFactorEnabled ? 'Disable 2FA' : 'Verify and Enable'}
                                                             </button>
                                                         </div>
-                                                    </form>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>

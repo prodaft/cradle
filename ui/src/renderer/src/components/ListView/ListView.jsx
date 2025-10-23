@@ -250,7 +250,7 @@ export default function ListView({
                                             <div className='flex items-center gap-2'>
                                                 <input
                                                     type='checkbox'
-                                                    className='checkbox checkbox-sm'
+                                                    className='cradle-checkbox'
                                                     checked={
                                                         data.length > 0 &&
                                                         selectedIds.length === data.length

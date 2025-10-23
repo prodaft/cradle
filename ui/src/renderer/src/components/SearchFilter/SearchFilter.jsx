@@ -28,7 +28,7 @@ export default function SearchFilter({ text, option, filters, setFilters }) {
         <label key={option} className='flex items-center space-x-3 w-36'>
             <input
                 type='checkbox'
-                className='form-checkbox checkbox focus:ring-0'
+                className='cradle-checkbox'
                 name={option}
                 checked={filters.includes(option)}
                 onChange={handleCheckboxChange}

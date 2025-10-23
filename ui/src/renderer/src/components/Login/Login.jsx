@@ -211,18 +211,56 @@ export default function Login() {
                                             <div className='cradle-separator-labeled my-6'>
                                                 <span>Two-Factor Authentication</span>
                                             </div>
-                                            <FormField
-                                                name='twoFactorToken'
-                                                labelText='Authentication Code'
-                                                key='twoFactorToken'
-                                                type='text'
-                                                value={twoFactorToken}
-                                                handleInput={setTwoFactorToken}
-                                                autofocus={true}
-                                                pattern='[0-9]*'
-                                                maxLength='6'
-                                                placeholder='000000'
-                                            />
+                                            <div>
+                                                <label className='cradle-label cradle-text-tertiary block mb-2'>
+                                                    Authentication Code
+                                                </label>
+                                                <div className='flex gap-2 justify-center'>
+                                                    {[0, 1, 2, 3, 4, 5].map((index) => (
+                                                        <input
+                                                            key={index}
+                                                            id={`twoFactorToken-${index}`}
+                                                            name={`twoFactorToken-${index}`}
+                                                            type='text'
+                                                            autoComplete='twoFactorToken'
+                                                            className='cradle-search w-12 h-12 text-center text-lg font-mono disabled:opacity-50 disabled:cursor-not-allowed'
+                                                            placeholder=''
+                                                            pattern='[0-9]*'
+                                                            maxLength='1'
+                                                            value={twoFactorToken[index] || ''}
+                                                            onChange={(e) => {
+                                                                const value = e.target.value.replace(/\D/g, '');
+                                                                if (value.length <= 1) {
+                                                                    const newCode = twoFactorToken.split('');
+                                                                    newCode[index] = value;
+                                                                    setTwoFactorToken(newCode.join(''));
+                                                                    
+                                                                    // Auto-focus next input
+                                                                    if (value && index < 5) {
+                                                                        document.getElementById(`twoFactorToken-${index + 1}`)?.focus();
+                                                                    }
+                                                                }
+                                                            }}
+                                                            onKeyDown={(e) => {
+                                                                // Handle backspace to go to previous input
+                                                                if (e.key === 'Backspace' && !twoFactorToken[index] && index > 0) {
+                                                                    document.getElementById(`twoFactorToken-${index - 1}`)?.focus();
+                                                                }
+                                                            }}
+                                                            onPaste={(e) => {
+                                                                e.preventDefault();
+                                                                const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                                                                setTwoFactorToken(pastedData);
+                                                                // Focus the last filled input or the first empty one
+                                                                const focusIndex = Math.min(pastedData.length, 5);
+                                                                document.getElementById(`twoFactorToken-${focusIndex}`)?.focus();
+                                                            }}
+                                                            autoFocus={index === 0}
+                                                            required
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
                                             <p className='text-xs cradle-text-muted cradle-mono'>
                                                 Enter the 6-digit code from your authenticator app
                                             </p>

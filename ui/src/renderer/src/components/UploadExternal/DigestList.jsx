@@ -85,7 +85,7 @@ function DigestList({
                     <td className='w-12' onClick={(e) => e.stopPropagation()}>
                         <input
                             type='checkbox'
-                            className='checkbox checkbox-sm'
+                            className='cradle-checkbox'
                             checked={isSelected}
                             onChange={onSelect}
                         />

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { PlusCircle } from 'iconoir-react';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
@@ -48,6 +47,8 @@ export default function Reports() {
     const sortFieldMapping = {
         title: 'title',
         status: 'status',
+        strategy: 'strategy',
+        anonymized: 'anonymized',
         createdAt: 'created_at',
         user: 'user__username',
     };
@@ -167,11 +168,11 @@ export default function Reports() {
     };
 
     const columns = [
-        { key: 'title', label: 'Title', sortable: true },
         { key: 'status', label: 'Status', sortable: true },
-        { key: 'user', label: 'User', sortable: true, filterType: 'text' },
+        { key: 'title', label: 'Title', sortable: true },
+        { key: 'strategy', label: 'Strategy', sortable: true },
+        { key: 'anonymized', label: 'Anonymized', sortable: true },
         { key: 'createdAt', label: 'Created At', sortable: true, filterType: 'date' },
-        { key: 'actions', label: 'Actions', sortable: false },
     ];
 
     // Define filterable columns with their handlers
@@ -180,11 +181,68 @@ export default function Reports() {
         createdAt: (value) => handleColumnFilterChange('createdAt', value),
     };
 
+    const handleDownload = async (reportIds) => {
+        const idsArray = Array.isArray(reportIds) ? reportIds : [reportIds];
+        
+        try {
+            // Download each report
+            for (const id of idsArray) {
+                const report = reports.find(r => r.id === id);
+                if (report && report.report_url) {
+                    // Fetch the file content
+                    const response = await fetch(report.report_url);
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch report: ${response.statusText}`);
+                    }
+                    
+                    // Get the file content as blob
+                    const blob = await response.blob();
+                    
+                    // Create download link
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    
+                    // Set filename with proper extension
+                    const extension = report.strategy === 'json' ? 'json' : 
+                                    report.strategy === 'plain' ? 'txt' : 'html';
+                    link.download = `${report.title || 'report'}.${extension}`;
+                    
+                    // Trigger download
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // Clean up the object URL
+                    window.URL.revokeObjectURL(url);
+                }
+            }
+            
+            setAlert({
+                show: true,
+                message: `${idsArray.length > 1 ? 'Reports' : 'Report'} downloaded successfully`,
+                color: 'green',
+            });
+        } catch (error) {
+            console.error('Download failed:', error);
+            setAlert({
+                show: true,
+                message: 'Failed to download report(s)',
+                color: 'red',
+            });
+        }
+    };
+
     const actions = [
         {
+            value: 'download',
+            label: 'Download',
+            handler: (items) => handleDownload(items),
+        },
+        {
+            value: 'delete',
             label: 'Delete',
-            onClick: (items) => handleDelete(items.map(item => item.id)),
-            variant: 'danger',
+            handler: (items) => handleDelete(items),
         },
     ];
 
@@ -196,8 +254,18 @@ export default function Reports() {
             failed: 'text-red-500',
         };
 
+        const handleRowClick = () => {
+            if (report.report_url) {
+                window.open(report.report_url, '_blank');
+            }
+        };
+
         return (
-            <tr key={report.id}>
+            <tr 
+                key={report.id} 
+                className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${report.report_url ? 'hover:cursor-pointer' : 'cursor-default'}`}
+                onClick={handleRowClick}
+            >
                 {enableMultiSelect && (
                     <td className='w-12' onClick={(e) => e.stopPropagation()}>
                         <input
@@ -208,45 +276,14 @@ export default function Reports() {
                         />
                     </td>
                 )}
-                <td className='cradle-text-primary'>{truncateText(report.title, 50)}</td>
                 <td className={statusColors[report.status] || 'cradle-text-secondary'}>
                     {capitalizeString(report.status)}
                 </td>
-                <td className='cradle-text-secondary'>{report.user?.username || 'N/A'}</td>
+                <td className='cradle-text-primary'>{truncateText(report.title, 50)}</td>
+                <td className='cradle-text-secondary'>{capitalizeString(report.strategy || 'N/A')}</td>
+                <td className='cradle-text-secondary'>{report.anonymized ? 'Yes' : 'No'}</td>
                 <td className='cradle-text-secondary'>
                     {formatDate(new Date(report.created_at))}
-                </td>
-                <td>
-                    <div className='flex gap-2'>
-                        {report.report_url && (
-                            <button
-                                onClick={() => window.open(report.report_url, '_blank')}
-                                className='cradle-btn cradle-btn-sm cradle-btn-secondary'
-                            >
-                                View
-                            </button>
-                        )}
-                        <button
-                            onClick={() => navigate(`/publish?report=${report.id}`)}
-                            className='cradle-btn cradle-btn-sm cradle-btn-secondary'
-                        >
-                            Edit
-                        </button>
-                        {report.status === 'failed' && (
-                            <button
-                                onClick={() => handleRetry(report.id)}
-                                className='cradle-btn cradle-btn-sm cradle-btn-secondary'
-                            >
-                                Retry
-                            </button>
-                        )}
-                        <button
-                            onClick={() => handleDelete(report.id)}
-                            className='cradle-btn cradle-btn-sm cradle-btn-danger'
-                        >
-                            Delete
-                        </button>
-                    </div>
                 </td>
             </tr>
         );
@@ -266,13 +303,6 @@ export default function Reports() {
                         Manage & View Your Reports
                     </p>
                 </div>
-                <button
-                    className='cradle-btn cradle-btn-primary flex items-center gap-2'
-                    onClick={navigateLink('/publish')}
-                >
-                    <PlusCircle width={20} height={20} />
-                    <span>New Report</span>
-                </button>
             </div>
 
             {/* Content Area */}

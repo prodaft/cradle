@@ -52,6 +52,7 @@ import FileInput from '../FileInput/FileInput';
 import GraphExplorer from '../GraphExplorer/GraphExplorer.jsx';
 import NoteGraphSearch from '../GraphQuery/NoteGraphSearch.jsx';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
+import ReportGenerationModal from '../Modals/ReportGenerationModal';
 
 /**
  * NoteViewer component
@@ -85,6 +86,7 @@ export default function NoteViewer() {
     const [saving, setSaving] = useState(false);
     const [pendingFiles, setPendingFiles] = useState([]);
     const [showFileUpload, setShowFileUpload] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
     const rawContentRef = useRef(null);
     const { setModal } = useModal();
     const { managementApi } = useApi();
@@ -442,16 +444,6 @@ export default function NoteViewer() {
                         {/* Action buttons */}
                         {!id?.startsWith('guide_') && (
                             <>
-                                {isPublishable && (
-                                    <button
-                                        onClick={navigateLink(`/publish?notes=${id}`)}
-                                        className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:cradle-text-primary cradle-border hover:border-[#FF8C00] tooltip tooltip-bottom tooltip-primary'
-                                        data-tooltip='Publish Report'
-                                        data-testid='publish-btn'
-                                    >
-                                        <StatsReport width='20' height='20' />
-                                    </button>
-                                )}
                                 {/* Save status indicator button */}
                                 <button 
                                     className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:cradle-text-primary cradle-border hover:border-[#FF8C00] tooltip tooltip-bottom tooltip-primary'
@@ -597,16 +589,28 @@ export default function NoteViewer() {
                                                     <button
                                                         onClick={() => {
                                                             setShowActionsMenu(false);
-                                                            handleSaveNote();
+                                                            togglePublishable();
                                                         }}
-                                                        disabled={saving || !hasUnsavedChanges}
-                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed'
-                                                        data-testid='save-menu-item'
+                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                                        data-testid='publishable-menu-item'
                                                     >
-                                                        <FloppyDisk width='16' height='16' />
-                                                        <span className='flex-1'>Save</span>
-                                                        {saving && <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900' />}
+                                                        <CloudUpload width='16' height='16' />
+                                                        <span className='flex-1'>Publishable</span>
+                                                        {isPublishable && <Check width='16' height='16' />}
                                                     </button>
+                                                    {isPublishable && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowActionsMenu(false);
+                                                                setShowReportModal(true);
+                                                            }}
+                                                            className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                                            data-testid='create-report-menu-item'
+                                                        >
+                                                            <StatsReport width='16' height='16' />
+                                                            <span className='flex-1'>Create Report</span>
+                                                        </button>
+                                                    )}
                                                     {isFleeting && (
                                                         <button
                                                             onClick={() => {
@@ -830,6 +834,15 @@ export default function NoteViewer() {
                 </div>
                 
             </div>
+            
+            {/* Report Generation Modal */}
+            <ReportGenerationModal
+                isOpen={showReportModal}
+                onClose={() => setShowReportModal(false)}
+                noteId={id}
+                noteTitle={note.title}
+                setAlert={setAlert}
+            />
         </>
     );
 }
