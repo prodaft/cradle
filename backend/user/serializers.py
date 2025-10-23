@@ -24,7 +24,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
             "email",
             "password",
             "catalyst_api_key",
-            "vt_api_key",
             "vim_mode",
             "theme",
         ]
@@ -86,7 +85,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
         if validated_data.get("email", instance.email) != instance.email:
             raise DisallowedActionException("You cannot change your email")
 
-        instance.vt_api_key = validated_data.get("vt_api_key", instance.vt_api_key)
         instance.catalyst_api_key = validated_data.get(
             "catalyst_api_key", instance.catalyst_api_key
         )
@@ -109,7 +107,6 @@ class UserCreateSerializerAdmin(UserCreateSerializer):
             "catalyst_api_key",
             "vim_mode",
             "theme",
-            "vt_api_key",
             "role",
             "email_confirmed",
             "is_active",
@@ -146,7 +143,6 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 class UserRetrieveSerializer(serializers.ModelSerializer):
     catalyst_api_key = serializers.SerializerMethodField()
-    vt_api_key = serializers.SerializerMethodField()
 
     class Meta:
         model = CradleUser
@@ -160,15 +156,11 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
             "vim_mode",
             "email_confirmed",
             "catalyst_api_key",
-            "vt_api_key",
             "theme",
         ]
 
     def get_catalyst_api_key(self, obj) -> bool:
         return True if obj.catalyst_api_key else False
-
-    def get_vt_api_key(self, obj) -> bool:
-        return True if obj.vt_api_key else False
 
 
 class EssentialUserRetrieveSerializer(serializers.ModelSerializer):

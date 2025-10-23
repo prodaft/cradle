@@ -97,7 +97,6 @@ class EnrichmentSettingsSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "enabled",
-            "periodicity",
             "for_eclasses",
             "for_eclasses_detail",
             "enricher_type",
@@ -288,20 +287,22 @@ class EnrichmentRequestDetailSerializer(serializers.ModelSerializer):
 
     def get_enricher_types(self, obj):
         """Return list of enricher class names"""
-        return [
-            settings.enricher_type for settings in obj.enrichers_settings.all()
-        ]
+        return [settings.enricher_type for settings in obj.enrichers_settings.all()]
 
     def get_enrichers_detail(self, obj):
         """Return detailed information about each enricher"""
         enrichers = []
         for settings in obj.enrichers_settings.all():
             config = BaseEnricher.get_subclass(settings.enricher_type)
-            enrichers.append({
-                "enricher_type": settings.enricher_type,
-                "display_name": config.display_name if config else settings.enricher_type,
-                "enabled": settings.enabled,
-            })
+            enrichers.append(
+                {
+                    "enricher_type": settings.enricher_type,
+                    "display_name": config.display_name
+                    if config
+                    else settings.enricher_type,
+                    "enabled": settings.enabled,
+                }
+            )
         return enrichers
 
 

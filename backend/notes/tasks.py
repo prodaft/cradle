@@ -11,7 +11,6 @@ from django.utils import timezone
 from entries.enums import EntryType, RelationReason
 from entries.exceptions import InvalidEntryException
 from entries.models import Entry, EntryClass, Relation
-from intelio.enums import EnrichmentStrategy
 from management.settings import cradle_settings
 from user.models import CradleUser
 
@@ -332,7 +331,6 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
         note.entries.add(*objs)
 
         childscan = []
-        enrich = defaultdict(list)
         for entry in objs:
             content_type = ContentType.objects.get_for_model(note)
 
@@ -343,21 +341,12 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
             if entry is None:
                 continue
 
-            for e in entry.entry_class.enrichers.filter(
-                strategy=EnrichmentStrategy.ON_CREATE, enabled=True
-            ):
-                enrich[e.id].append(entry.id)
-
             if user_id:
                 entry.save()
                 entry.log_create(user)  # Pass user_id for logging
 
         if len(childscan):
             scan_for_children.delay(childscan, content_type.id, note.id)
-
-        if len(enrich):
-            for k, v in enrich:
-                enrich_entries.delay(k, v, content_type.id, note.id)
 
         note.save()
     except EntriesDoNotExistException as e:

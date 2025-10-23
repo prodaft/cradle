@@ -266,44 +266,6 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
                         >
                             <Tab title='General' classes='space-y-4'>
                                 <div className='mt-4' />
-                                <div className='w-full'>
-                                    <label
-                                        htmlFor='strategy'
-                                        className='block text-sm font-medium'
-                                    >
-                                        Strategy
-                                    </label>
-                                    <div className='mt-1'>
-                                        <select
-                                            className='form-select select select-ghost-primary select-block focus:ring-0'
-                                            {...register('strategy')}
-                                        >
-                                            <option value='manual'>Manual</option>
-                                            <option value='on_create'>On Create</option>
-                                            <option value='periodic'>Periodic</option>
-                                        </select>
-                                        {errors.strategy && (
-                                            <p className='text-red-600 text-sm'>
-                                                {errors.strategy.message}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {watchStrategy === 'periodic' && (
-                                    <div className='mt-4'>
-                                        <FormField
-                                            type='string'
-                                            name='periodicity'
-                                            labelText='Interval'
-                                            className='form-input input input-ghost-primary input-block focus:ring-0'
-                                            {...register('periodicity')}
-                                            error={errors.periodicity?.message}
-                                        />
-                                    </div>
-                                )}
-
-                                <div className='mt-4' />
 
                                 <FormField
                                     type='checkbox'

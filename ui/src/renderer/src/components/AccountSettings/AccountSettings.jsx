@@ -35,7 +35,6 @@ const accountSettingsSchema = Yup.object().shape({
         then: () => Yup.string().required('Password is required'),
         otherwise: () => Yup.string(),
     }),
-    vtKey: Yup.string(),
     catalystKey: Yup.string(),
     role: Yup.string().when('$isAdminAndNotOwn', {
         is: true,
@@ -73,7 +72,6 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
               username: '',
               email: '',
               password: 'password',
-              vtKey: 'apikey',
               catalystKey: 'apikey',
               role: 'user',
               vim_mode: false,
@@ -85,7 +83,6 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
               username: '',
               email: '',
               password: '',
-              vtKey: '',
               catalystKey: '',
               role: 'user',
               vim_mode: false,
@@ -119,7 +116,6 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                         username: res.data.username,
                         email: res.data.email,
                         password: 'password',
-                        vtKey: res.data.vt_api_key ? 'apikey' : '',
                         vimMode: res.data.vim_mode || false,
                         theme: res.data.theme || 'dark',
                         catalystKey: res.data.catalyst_api_key ? 'apikey' : '',
@@ -140,9 +136,6 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
             const payload = {};
             if (data.password !== 'password') {
                 payload.password = data.password;
-            }
-            if (data.vtKey !== 'apikey') {
-                payload.vt_api_key = data.vtKey;
             }
             if (data.catalystKey !== 'apikey') {
                 payload.catalyst_api_key = data.catalystKey;
@@ -183,7 +176,6 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                 username: data.username,
                 email: data.email,
                 password: data.password,
-                vt_api_key: data.vtKey,
                 catalyst_api_key: data.catalystKey,
                 role: data.role,
                 email_confirmed: data.email_confirmed,
@@ -844,16 +836,6 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                         </div>
 
                         <div className='space-y-4'>
-
-                            <FormField
-                                name='vtKey'
-                                type='password'
-                                labelText='VirusTotal API Key'
-                                placeholder='VirusTotal API Key'
-                                {...register('vtKey')}
-                                error={errors.vtKey?.message}
-                            />
-
                             <FormField
                                 name='catalystKey'
                                 type='password'

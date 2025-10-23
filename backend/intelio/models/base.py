@@ -347,7 +347,6 @@ class EnrichmentRequestSchema(BaseModel):
 class EnrichmentRequest(LifecycleModel):
     enrichers_settings = models.ManyToManyField(
         EnricherSettings,
-        on_delete=models.SET_NULL,
     )
 
     title = models.CharField(max_length=255)

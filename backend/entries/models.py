@@ -12,7 +12,6 @@ from django.utils import timezone
 from django_lifecycle import AFTER_CREATE, AFTER_UPDATE, LifecycleModel, hook
 from django_lifecycle.conditions import WhenFieldHasChanged
 from django_lifecycle.mixins import LifecycleModelMixin, transaction
-from intelio.enums import EnrichmentStrategy
 from logs.models import LoggableModelMixin
 
 from .enums import EntryType, EntryTypeFormat, RelationReason
@@ -374,23 +373,6 @@ class Entry(LifecycleModel, LoggableModelMixin):
         from .tasks import update_accesses
 
         transaction.on_commit(lambda: update_accesses.apply_async((self.id,)))
-
-    @hook(AFTER_CREATE)
-    def enrich(self):
-        from intelio.tasks import enrich_entries
-
-        content_type = ContentType.objects.get_for_model(self)
-
-        for e in self.entry_class.enrichers.filter(
-            strategy=EnrichmentStrategy.ON_CREATE, enabled=True
-        ):
-            enrich_entries.apply_async(
-                e.id,
-                [self.id],
-                content_type.id,
-                self.id,
-                None,
-            )
 
     def get_acvec(self):
         return 1 | (1 << self.acvec_offset)

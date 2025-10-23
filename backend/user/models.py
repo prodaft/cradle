@@ -36,7 +36,6 @@ class CradleUser(AbstractUser, LoggableModelMixin):
 
     api_key: Optional[str] = models.CharField(max_length=128, blank=True, null=True)
 
-    vt_api_key: Optional[str] = models.TextField(null=True, blank=True)
     catalyst_api_key: Optional[str] = models.TextField(null=True, blank=True)
 
     password_reset_token: Optional[str] = models.TextField(null=True, blank=True)
