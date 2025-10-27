@@ -280,7 +280,7 @@ export default function Welcome() {
                                 className='text-sm cradle-text-muted cursor-pointer'
                                 onClick={() => window.open('https://prodaft.com')}
                             >
-                                Copyright &copy; 2025 PRODAFT | v2.10.2-beta.a699cc87
+                                Copyright &copy; 2025 PRODAFT | v2.10.2-beta.266b8001
                             </p>
                         </div>
                     </div>

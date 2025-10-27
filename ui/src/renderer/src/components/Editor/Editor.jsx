@@ -2,7 +2,6 @@ import { acceptCompletion, completionKeymap } from '@codemirror/autocomplete';
 import { languages } from '@codemirror/language-data';
 import { EditorView, keymap } from '@codemirror/view';
 import { vim, Vim } from '@replit/codemirror-vim';
-import * as events from '@uiw/codemirror-extensions-events';
 import { eclipse } from '@uiw/codemirror-theme-eclipse';
 import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import CodeMirror, { drawSelection, Prec } from '@uiw/react-codemirror';
@@ -49,8 +48,13 @@ const Editor = forwardRef(function Editor({
     const editorRef = useRef(null);
     const markdownContentRef = useRef(markdownContent);
 
-    // Expose editor ref to parent
-    useImperativeHandle(ref, () => editorRef.current, []);
+    // Expose editor view to parent through ref
+    // Use a getter to always return the current value
+    useImperativeHandle(ref, () => ({
+        get view() {
+            return editorRef.current?.view || null;
+        },
+    }), []);
 
     // Update refs when props change to avoid using stale values in callbacks
     useEffect(() => {

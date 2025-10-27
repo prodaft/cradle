@@ -155,10 +155,9 @@ export default function NoteViewer() {
                 to,
                 onlyTimestamps,
             );
+
             // Update the editor content first
             view.dispatch({
-                from: 0,
-                to: content.length,
                 changes: { from: 0, to: content.length, insert: linked },
             });
 

@@ -506,8 +506,11 @@ const RichEditor = forwardRef(function RichEditor({
     );
 
     // Expose editorViewRef to parent through ref
+    // Use a getter to always return the current value
     useImperativeHandle(ref, () => ({
-        view: editorViewRef.current,
+        get view() {
+            return editorViewRef.current;
+        },
     }), []);
 
     // Update refs when props change to avoid using stale values in callbacks
