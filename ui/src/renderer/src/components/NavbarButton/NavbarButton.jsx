@@ -1,3 +1,4 @@
+import { Tooltip } from '@radix-ui/react-tooltip';
 import { useState } from 'react';
 
 /**
@@ -37,18 +38,19 @@ export default function NavbarButton({
                     <div className='spinner-pulse-dot'></div>
                 </div>
             ) : (
-                <button
-                    className={`p-2 group flex items-center justify-center cradle-border hover:border-[#FF8C00] ${text ? `tooltip tooltip-${tooltipDirection} tooltip-primary` : ''}`}
-                    style={{ 
-                        color: 'var(--cradle-sidebar-icon)',
-                        backgroundColor: 'transparent'
-                    }}
-                    onClick={handleClick}
-                    data-tooltip={text}
-                    data-testid={testid || ''}
-                >
-                    {icon}
-                </button>
+                <Tooltip content={text}>
+                    <button
+                        className={'p-2 group flex items-center justify-center cradle-border hover:border-[#FF8C00]'}
+                        style={{
+                            color: 'var(--cradle-sidebar-icon)',
+                            backgroundColor: 'transparent'
+                        }}
+                        onClick={handleClick}
+                        data-testid={testid || ''}
+                    >
+                        {icon}
+                    </button>
+                </Tooltip>
             )}
         </>
     );

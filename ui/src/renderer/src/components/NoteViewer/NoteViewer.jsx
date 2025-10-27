@@ -28,6 +28,7 @@ import ListView from '../ListView/ListView';
 import NoteOutline from '../NoteOutline/NoteOutline';
 import ReferenceTree from '../ReferenceTree/ReferenceTree';
 import RichEditor from '../RichEditor/RichEditor';
+import Tooltip from '../Tooltip/Tooltip';
 
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
@@ -79,6 +80,7 @@ export default function NoteViewer() {
     const [parsedContent, setParsedContent] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [activeView, setActiveView] = useState(0); // 0: Content, 1: Graph, 2: History
+    const [showViewsMenu, setShowViewsMenu] = useState(false);
     const [showActionsMenu, setShowActionsMenu] = useState(false);
     const [isFleeting, setIsFleeting] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -427,140 +429,163 @@ export default function NoteViewer() {
             <div className='w-[100%] h-full flex flex-col'>
                 {/* Custom header with metadata and tab/action buttons */}
                 <div className='w-full cradle-border-b px-4 py-3 flex items-center justify-between'>
-                    {/* Left side - Metadata with icons */}
-                    <div className='flex items-center gap-4 cradle-mono text-xs cradle-text-tertiary'>
-                        <span
-                            className='inline-flex items-center gap-1.5 tooltip tooltip-bottom tooltip-primary'
-                            data-tooltip='Created'
-                        >
-                            <Clock width='16' height='16' />
-                            <span className='cradle-text-tertiary'>
-                                {formatDate(new Date(note.timestamp))}
-                            </span>
-                        </span>
-                        {!isFleeting && (
-                            <span
-                                className='inline-flex items-center gap-1.5 tooltip tooltip-bottom tooltip-primary'
-                                data-tooltip='Creator'
-                            >
-                                <User width='16' height='16' />
-                                <span className='cradle-text-secondary'>
-                                    {note?.author ? note.author.username : 'Unknown'}
-                                </span>
-                            </span>
-                        )}
-                        {!isFleeting && note.editor && (
-                            <>
-                                <span
-                                    className='inline-flex items-center gap-1.5 tooltip tooltip-bottom tooltip-primary'
-                                    data-tooltip='Edited'
-                                >
-                                    <Clock width='16' height='16' />
-                                    <span className='cradle-text-tertiary'>
-                                        {formatDate(new Date(note.edit_timestamp))}
-                                    </span>
-                                </span>
-                                <span
-                                    className='inline-flex items-center gap-1.5 tooltip tooltip-bottom tooltip-primary'
-                                    data-tooltip='Editor'
-                                >
-                                    <User width='16' height='16' />
-                                    <span className='cradle-text-secondary'>
-                                        {note?.editor ? note.editor.username : 'Unknown'}
-                                    </span>
-                                </span>
-                            </>
-                        )}
-                        {note.last_linked && (
-                            <>
-                                <span
-                                    className='inline-flex items-center gap-1.5 tooltip tooltip-bottom tooltip-primary'
-                                    data-tooltip='Last Linked'
-                                >
-                                    <Link width='16' height='16' />
-                                    <span className='cradle-text-tertiary'>
-                                        {formatDate(new Date(note.last_linked))}
-                                    </span>
-                                </span>
-                            </>
-                        )}
-                    </div>
-
-                    {/* Right side - Action buttons */}
-                    <div className='flex items-center gap-2'>
-                        {/* Action buttons */}
+                    {/* Left side - Status indicators and metadata */}
+                    <div className='flex items-center gap-4'>
                         {!id?.startsWith('guide_') && (
                             <>
-                                {/* Save status indicator button */}
-                                <button
-                                    className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:cradle-text-primary cradle-border hover:border-[#FF8C00] tooltip tooltip-bottom tooltip-primary'
-                                    data-tooltip={
+                                {/* Save status indicator */}
+                                <Tooltip
+                                    content={
                                         getSaveStatus() === 'saved' ? 'All changes saved' :
                                             getSaveStatus() === 'saving' ? 'Saving...' :
                                                 getSaveStatus() === 'unsaved' ? 'Unsaved changes' :
                                                     'Cannot save empty note'
                                     }
-                                    data-testid='save-status-dot'
                                 >
                                     <div
-                                        className={`w-2 h-2 rounded-full ${getSaveStatus() === 'saved' ? 'bg-green-500' :
-                                            getSaveStatus() === 'saving' ? 'bg-yellow-500' :
-                                                getSaveStatus() === 'unsaved' ? 'bg-red-500' :
-                                                    'bg-gray-400'
-                                            }`}
-                                    />
-                                </button>
-                                {/* Status indicator button */}
+                                        className='flex items-center justify-center'
+                                        data-testid='save-status-dot'
+                                    >
+                                        <div
+                                            className={`w-1.5 h-1.5 rounded-full ${getSaveStatus() === 'saved' ? 'bg-green-500' :
+                                                getSaveStatus() === 'saving' ? 'bg-yellow-500' :
+                                                    getSaveStatus() === 'unsaved' ? 'bg-red-500' :
+                                                        'bg-gray-400'
+                                                }`}
+                                        />
+                                    </div>
+                                </Tooltip>
+
+                                {/* Status indicator */}
                                 {note.status && (
-                                    <button
-                                        className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:cradle-text-primary cradle-border hover:border-[#FF8C00] tooltip tooltip-bottom tooltip-primary'
-                                        data-tooltip={
-                                            note.status_message ||
-                                            capitalizeString(note.status) ||
-                                            null
+                                    <Tooltip content={note.status_message || capitalizeString(note.status)}>
+                                        <div className='flex items-center justify-center cradle-text-tertiary'>
+                                            {getStatusIcon()}
+                                        </div>
+                                    </Tooltip>
+                                )}
+                            </>
+                        )}
+
+                        {/* Metadata with icons */}
+                        <div className='flex items-center gap-4 cradle-mono text-xs cradle-text-tertiary'>
+                            <Tooltip content="Created">
+                                <span className='inline-flex items-center gap-1.5'>
+                                    <Clock width='16' height='16' />
+                                    <span className='cradle-text-tertiary'>
+                                        {formatDate(new Date(note.timestamp))}
+                                    </span>
+                                </span>
+                            </Tooltip>
+                            {!isFleeting && (
+                                <Tooltip content="Creator">
+                                    <span className='inline-flex items-center gap-1.5'>
+                                        <User width='16' height='16' />
+                                        <span className='cradle-text-secondary'>
+                                            {note?.author ? note.author.username : 'Unknown'}
+                                        </span>
+                                    </span>
+                                </Tooltip>
+                            )}
+                            {!isFleeting && note.editor && (
+                                <>
+                                    <Tooltip content="Edited">
+                                        <span className='inline-flex items-center gap-1.5'>
+                                            <Clock width='16' height='16' />
+                                            <span className='cradle-text-tertiary'>
+                                                {formatDate(new Date(note.edit_timestamp))}
+                                            </span>
+                                        </span>
+                                    </Tooltip>
+                                    <Tooltip content="Editor">
+                                        <span className='inline-flex items-center gap-1.5'>
+                                            <User width='16' height='16' />
+                                            <span className='cradle-text-secondary'>
+                                                {note?.editor ? note.editor.username : 'Unknown'}
+                                            </span>
+                                        </span>
+                                    </Tooltip>
+                                </>
+                            )}
+                            {note.last_linked && (
+                                <Tooltip content="Last Linked">
+                                    <span className='inline-flex items-center gap-1.5'>
+                                        <Link width='16' height='16' />
+                                        <span className='cradle-text-tertiary'>
+                                            {formatDate(new Date(note.last_linked))}
+                                        </span>
+                                    </span>
+                                </Tooltip>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Right side - Dropdowns */}
+                    <div className='flex items-center gap-2'>
+                        {!id?.startsWith('guide_') && (
+                            <>
+                                {/* Views Dropdown - Icon only */}
+                                <div className='relative'>
+                                    <Tooltip
+                                        content={
+                                            activeView === 0 && richEditor ? 'Rich Editor' :
+                                                activeView === 0 && !richEditor ? 'Markdown Editor' :
+                                                    activeView === 1 ? 'Graph' :
+                                                        activeView === 2 ? 'History' : 'View'
                                         }
                                     >
-                                        {getStatusIcon()}
-                                    </button>
-                                )}
-                                {/* Three-dots menu for note actions */}
-                                <div className='relative'>
-                                    <button
-                                        onClick={() => setShowActionsMenu(!showActionsMenu)}
-                                        className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:cradle-text-primary cradle-border hover:border-[#FF8C00] tooltip tooltip-bottom tooltip-primary'
-                                        data-tooltip='More Actions'
-                                        data-testid='more-actions-btn'
-                                    >
-                                        <MoreVert width='20' height='20' />
-                                    </button>
-                                    {showActionsMenu && (
+                                        <button
+                                            onClick={() => setShowViewsMenu(!showViewsMenu)}
+                                            className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:cradle-text-primary cradle-border hover:border-[#FF8C00]'
+                                            data-testid='views-dropdown-btn'
+                                        >
+                                            {activeView === 0 && richEditor && <Page width='16' height='16' />}
+                                            {activeView === 0 && !richEditor && <Code width='16' height='16' />}
+                                            {activeView === 1 && <Graph width='16' height='16' />}
+                                            {activeView === 2 && <HistoricShield width='16' height='16' />}
+                                        </button>
+                                    </Tooltip>
+                                    {showViewsMenu && (
                                         <>
                                             <div
                                                 className='fixed inset-0 z-10'
-                                                onClick={() => setShowActionsMenu(false)}
+                                                onClick={() => setShowViewsMenu(false)}
                                             />
                                             <div className='absolute right-0 mt-2 w-48 cradle-bg-elevated cradle-border z-20'>
                                                 <div role='menu'>
-                                                    {/* View Options */}
                                                     <button
                                                         onClick={() => {
-                                                            setShowActionsMenu(false);
+                                                            setShowViewsMenu(false);
                                                             setActiveView(0);
+                                                            setRichEditor(true);
                                                         }}
                                                         className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
-                                                        data-testid='content-tab-menu-item'
+                                                        data-testid='rich-editor-menu-item'
                                                     >
                                                         <Page width='16' height='16' />
-                                                        <span className='flex-1'>Content</span>
-                                                        {activeView === 0 && <Check width='16' height='16' />}
+                                                        <span className='flex-1'>Rich Editor</span>
+                                                        {activeView === 0 && richEditor && <Check width='16' height='16' />}
                                                     </button>
                                                     <button
                                                         onClick={() => {
-                                                            setShowActionsMenu(false);
+                                                            setShowViewsMenu(false);
+                                                            setActiveView(0);
+                                                            setRichEditor(false);
+                                                        }}
+                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                                        data-testid='markdown-editor-menu-item'
+                                                    >
+                                                        <Code width='16' height='16' />
+                                                        <span className='flex-1'>Markdown Editor</span>
+                                                        {activeView === 0 && !richEditor && <Check width='16' height='16' />}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setShowViewsMenu(false);
                                                             setActiveView(1);
                                                         }}
                                                         className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
-                                                        data-testid='graph-tab-menu-item'
+                                                        data-testid='graph-view-menu-item'
                                                     >
                                                         <Graph width='16' height='16' />
                                                         <span className='flex-1'>Graph</span>
@@ -569,69 +594,86 @@ export default function NoteViewer() {
                                                     {isAdmin() && (
                                                         <button
                                                             onClick={() => {
-                                                                setShowActionsMenu(false);
+                                                                setShowViewsMenu(false);
                                                                 setActiveView(2);
                                                             }}
                                                             className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
-                                                            data-testid='history-tab-menu-item'
+                                                            data-testid='history-view-menu-item'
                                                         >
                                                             <HistoricShield width='16' height='16' />
                                                             <span className='flex-1'>History</span>
                                                             {activeView === 2 && <Check width='16' height='16' />}
                                                         </button>
                                                     )}
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
 
-                                                    {/* Divider */}
-                                                    <div className='my-1 h-px bg-cradle-border-primary'></div>
-
-                                                    {/* Editor Actions - Available for both source and rich editor */}
+                                {/* Actions Dropdown - Three dots menu */}
+                                <div className='relative'>
+                                    <Tooltip content="Actions">
+                                        <button
+                                            onClick={() => setShowActionsMenu(!showActionsMenu)}
+                                            className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:cradle-text-primary cradle-border hover:border-[#FF8C00]'
+                                            data-testid='actions-dropdown-btn'
+                                        >
+                                            <MoreVert width='20' height='20' />
+                                        </button>
+                                    </Tooltip>
+                                    {showActionsMenu && (
+                                        <>
+                                            <div
+                                                className='fixed inset-0 z-10'
+                                                onClick={() => setShowActionsMenu(false)}
+                                            />
+                                            <div className='absolute right-0 mt-2 w-48 cradle-bg-elevated cradle-border z-20'>
+                                                <div role='menu'>
+                                                    {/* Toggle Outline - only show on content view */}
                                                     {activeView === 0 && (
-                                                        <>
-                                                            {/* Outline toggle - available for both editors */}
-                                                            <button
-                                                                onClick={() => {
-                                                                    setShowActionsMenu(false);
-                                                                    toggleOutline();
-                                                                }}
-                                                                className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
-                                                                data-testid='toggle-outline-menu-item'
-                                                            >
-                                                                <TreeView width='16' height='16' />
-                                                                <span className='flex-1'>Toggle Outline</span>
-                                                                {showOutline && <Check width='16' height='16' />}
-                                                            </button>
-                                                            {/* Autolink - available for both editors */}
-                                                            {lspLoaded && (
-                                                                <>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            setShowActionsMenu(false);
-                                                                            smartLink(true);
-                                                                        }}
-                                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
-                                                                        data-testid='timestamp-links-menu-item'
-                                                                    >
-                                                                        <LightBulb width='16' height='16' />
-                                                                        <span className='flex-1'>Add Timestamps To Links</span>
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            setShowActionsMenu(false);
-                                                                            smartLink(false);
-                                                                        }}
-                                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
-                                                                        data-testid='find-links-menu-item'
-                                                                    >
-                                                                        <LightBulb width='16' height='16' />
-                                                                        <span className='flex-1'>Find Links in Text</span>
-                                                                    </button>
-                                                                </>
-                                                            )}
-                                                            <div className='my-1 h-px bg-cradle-border-primary'></div>
-                                                        </>
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowActionsMenu(false);
+                                                                toggleOutline();
+                                                            }}
+                                                            className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                                            data-testid='toggle-outline-menu-item'
+                                                        >
+                                                            <TreeView width='16' height='16' />
+                                                            <span className='flex-1'>Toggle Outline</span>
+                                                            {showOutline && <Check width='16' height='16' />}
+                                                        </button>
                                                     )}
-
-                                                    {/* Actions */}
+                                                    {/* Auto Link - only show if LSP is loaded and on content view */}
+                                                    {lspLoaded && activeView === 0 && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowActionsMenu(false);
+                                                                smartLink(false);
+                                                            }}
+                                                            className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                                            data-testid='auto-link-menu-item'
+                                                        >
+                                                            <LightBulb width='16' height='16' />
+                                                            <span className='flex-1'>Auto Link</span>
+                                                        </button>
+                                                    )}
+                                                    {/* Add Timestamps - only show if LSP is loaded and on content view */}
+                                                    {lspLoaded && activeView === 0 && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowActionsMenu(false);
+                                                                smartLink(true);
+                                                            }}
+                                                            className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                                            data-testid='add-timestamps-menu-item'
+                                                        >
+                                                            <LightBulb width='16' height='16' />
+                                                            <span className='flex-1'>Add Timestamps</span>
+                                                        </button>
+                                                    )}
+                                                    {/* Relink Note - admin only */}
                                                     {isAdmin() && (
                                                         <button
                                                             onClick={() => {
@@ -649,13 +691,14 @@ export default function NoteViewer() {
                                                                     });
                                                                 });
                                                             }}
-                                                            className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2 '
-                                                            data-testid='relink-menu-item'
+                                                            className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                                            data-testid='relink-note-menu-item'
                                                         >
                                                             <RefreshCircle width='16' height='16' />
-                                                            Relink Note
+                                                            <span className='flex-1'>Relink Note</span>
                                                         </button>
                                                     )}
+                                                    {/* Upload Files */}
                                                     <button
                                                         onClick={() => {
                                                             setShowActionsMenu(false);
@@ -667,18 +710,7 @@ export default function NoteViewer() {
                                                         <CloudUpload width='16' height='16' />
                                                         <span className='flex-1'>Upload Files</span>
                                                     </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            setShowActionsMenu(false);
-                                                            toggleView();
-                                                        }}
-                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2 '
-                                                        data-testid='toggle-view-menu-item'
-                                                    >
-                                                        <Code width='16' height='16' />
-                                                        <span className='flex-1'>Source mode</span>
-                                                        {!richEditor && <Check width='16' height='16' />}
-                                                    </button>
+                                                    {/* Save As Final - only for fleeting notes */}
                                                     {isFleeting && (
                                                         <button
                                                             onClick={() => {
@@ -693,6 +725,23 @@ export default function NoteViewer() {
                                                             {saving && <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900' />}
                                                         </button>
                                                     )}
+                                                    {/* Publish - placeholder for now */}
+                                                    <button
+                                                        onClick={() => {
+                                                            setShowActionsMenu(false);
+                                                            setAlert({
+                                                                show: true,
+                                                                message: 'Publish feature coming soon...',
+                                                                color: 'blue',
+                                                            });
+                                                        }}
+                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                                        data-testid='publish-menu-item'
+                                                    >
+                                                        <CloudUpload width='16' height='16' />
+                                                        <span className='flex-1'>Publish</span>
+                                                    </button>
+                                                    {/* Delete */}
                                                     <button
                                                         onClick={() => {
                                                             setShowActionsMenu(false);
@@ -702,10 +751,10 @@ export default function NoteViewer() {
                                                             });
                                                         }}
                                                         className='w-full text-left px-4 py-2 text-sm text-red-500 cradle-border hover:border-[#FF8C00] flex items-center gap-2'
-                                                        data-testid='delete-menu-item'
+                                                        data-testid='delete-note-menu-item'
                                                     >
                                                         <Trash width='16' height='16' />
-                                                        Delete Note
+                                                        <span className='flex-1'>Delete</span>
                                                     </button>
                                                 </div>
                                             </div>

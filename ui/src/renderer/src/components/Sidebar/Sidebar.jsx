@@ -84,17 +84,17 @@ export default function Sidebar({
         auth.logOut();
     }, [auth, navigate, location]);
 
-    const notificationIconStyle = showNotifications 
-        ? { color: '#FF8C00' } 
+    const notificationIconStyle = showNotifications
+        ? { color: '#FF8C00' }
         : { color: 'var(--cradle-sidebar-icon)' };
 
     return (
         <div className='h-full sticky top-0' data-testid='sidebar-test'>
             <aside
                 className={`cradle-border-r !h-full w-14 overflow-visible group/sidebar`}
-                style={{ 
-                    backgroundColor: 'var(--cradle-bg-sidebar)', 
-                    color: 'var(--cradle-sidebar-text)' 
+                style={{
+                    backgroundColor: 'var(--cradle-bg-sidebar)',
+                    color: 'var(--cradle-sidebar-text)'
                 }}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}

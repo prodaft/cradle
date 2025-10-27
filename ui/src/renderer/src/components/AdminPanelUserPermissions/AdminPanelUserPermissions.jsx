@@ -7,6 +7,7 @@ import { naturalSort } from '../../utils/dashboardUtils/dashboardUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AdminPanelPermissionCard from '../AdminPanelPermissionCard/AdminPanelPermissionCard';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import Tooltip from '../Tooltip/Tooltip';
 
 /**
  * AdminPanelUserPermissions component - This component is used to display the permissions for a specific user.
@@ -105,39 +106,42 @@ export default function AdminPanelUserPermissions({ username, id }) {
                             id='actions'
                             className='w-full h-fit mt-1 flex flex-row justify-start items-center text-zinc-400 pb-2'
                         >
-                            <button
-                                id='simulate-user'
-                                data-testid='simulate-user'
-                                name='simulate-user'
-                                type='button'
-                                className='btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 tooltip tooltip-bottom tooltip-primary ml-2'
-                                data-tooltip={'Jump into a session for this user'}
-                                onClick={simulateSession}
-                            >
-                                Simulate
-                            </button>
-                            <button
-                                id='email-confirmation'
-                                data-testid='email-confirmation'
-                                name='email-confirmation'
-                                type='button'
-                                className='btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 tooltip tooltip-bottom tooltip-primary ml-2'
-                                data-tooltip={'Send email confirmation'}
-                                onClick={sendEmailConfirmation}
-                            >
-                                Email Confirmation
-                            </button>
-                            <button
-                                id='password-reset'
-                                data-testid='password-reset'
-                                name='password-reset'
-                                type='button'
-                                className='btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 tooltip tooltip-bottom tooltip-primary ml-2'
-                                data-tooltip={'Send password reset email'}
-                                onClick={sendPasswordResetEmail}
-                            >
-                                Password Reset
-                            </button>
+                            <Tooltip content={'Jump into a session for this user'}>
+                                <button
+                                    id='simulate-user'
+                                    data-testid='simulate-user'
+                                    name='simulate-user'
+                                    type='button'
+                                    className='btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 ml-2'
+                                    onClick={simulateSession}
+                                >
+                                    Simulate
+                                </button>
+                            </Tooltip>
+                            <Tooltip content={'Send email confirmation'}>
+                                <button
+                                    id='email-confirmation'
+                                    data-testid='email-confirmation'
+                                    name='email-confirmation'
+                                    type='button'
+                                    className='btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 ml-2'
+                                    onClick={sendEmailConfirmation}
+                                >
+                                    Email Confirmation
+                                </button>
+                            </Tooltip>
+                            <Tooltip content={'Send password reset email'}>
+                                <button
+                                    id='password-reset'
+                                    data-testid='password-reset'
+                                    name='password-reset'
+                                    type='button'
+                                    className='btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 ml-2'
+                                    onClick={sendPasswordResetEmail}
+                                >
+                                    Password Reset
+                                </button>
+                            </Tooltip>
                         </div>
 
                         <div className='w-full h-12 my-2'>

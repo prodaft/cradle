@@ -1,3 +1,5 @@
+import Tooltip from "../Tooltip/Tooltip";
+
 /**
  * NavbarDropdown
  * A dropdown menu component for the navbar.
@@ -13,14 +15,15 @@
 export default function NavbarDropdown({ contents, icon, text, testid }) {
     return (
         <div className='dropdown'>
-            <button
-                className={`navbar-item hover:bg-gray-4 ${text ? 'tooltip tooltip-bottom tooltip-primary' : ''}`}
-                tabIndex='0'
-                data-tooltip={text}
-                data-testid={testid || ''}
-            >
-                {icon}
-            </button>
+            <Tooltip content={text}>
+                <button
+                    className={'navbar-item hover:bg-gray-4'}
+                    tabIndex='0'
+                    data-testid={testid || ''}
+                >
+                    {icon}
+                </button>
+            </Tooltip>
             <div
                 className='dropdown-menu border border-gray-10'
                 data-testid='dropdown-menu'

@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react';
-import { PlusCircle, Notes, User, DatabaseBackup, Search, Clock } from 'iconoir-react';
+import { Clock, DatabaseBackup, Notes, PlusCircle, Search, User } from 'iconoir-react';
 import { StatsReport } from 'iconoir-react/regular';
+import { useEffect, useState } from 'react';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { getStatistics } from '../../services/statisticsService/statisticsService';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import { formatDate } from '../../utils/dateUtils/dateUtils';
 import { addFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
+import { getStatistics } from '../../services/statisticsService/statisticsService';
 import { parseMarkdownInline } from '../../utils/customParser/customParser';
 import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
-import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import { formatDate } from '../../utils/dateUtils/dateUtils';
+import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Logo from '../Logo/Logo';
 
@@ -37,7 +37,7 @@ function RecentItemsCard({ title, items, icon, emptyMessage, onItemClick, color,
                     items.map((item, index) => (
                         <div
                             key={index}
-                            onClick={() => onItemClick(item)}
+                            onClick={onItemClick(item)}
                             className='cradle-card p-3 cursor-pointer hover:border-orange-500'
                         >
                             <div className='flex items-center justify-between'>
@@ -78,7 +78,7 @@ function RecentNotesCard({ title, notes, icon, emptyMessage, onNoteClick, color,
                     notes.map((note, index) => (
                         <div
                             key={index}
-                            onClick={() => onNoteClick(note)}
+                            onClick={onNoteClick(note)}
                             className='cradle-card p-3 cursor-pointer hover:border-orange-500'
                         >
                             <div className='space-y-1'>
@@ -187,10 +187,10 @@ export default function Welcome() {
                         <div className='flex items-center justify-between'>
                             <div>
                                 <h1 className='text-4xl font-medium cradle-text-primary cradle-mono tracking-tight mb-2'>
-                                    Knowledge System
+                                    CRADLE
                                 </h1>
                                 <p className='text-sm cradle-text-tertiary uppercase tracking-wider'>
-                                    Welcome to your knowledge workspace
+                                    Welcome to your intelligence workspace
                                 </p>
                             </div>
                             <div className='hidden md:block'>
@@ -234,7 +234,7 @@ export default function Welcome() {
                         <h2 className='text-xl font-medium cradle-text-primary cradle-mono mb-6'>
                             Recent Activity
                         </h2>
-                        
+
                         <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
                             {/* Recent Entities */}
                             <RecentItemsCard
@@ -243,7 +243,7 @@ export default function Welcome() {
                                 totalCount={entities.length}
                                 icon={<User width={18} height={18} />}
                                 emptyMessage='No entities yet'
-                                onItemClick={(item) => navigateLink(`/entities/${item.id}`)}
+                                onItemClick={(item) => navigateLink(`/dashboards/${item.subtype}/${item.name}`)}
                                 color='cradle-status-success'
                             />
 
@@ -254,7 +254,7 @@ export default function Welcome() {
                                 totalCount={artifacts.length}
                                 icon={<DatabaseBackup width={18} height={18} />}
                                 emptyMessage='No artifacts yet'
-                                onItemClick={(item) => navigateLink(`/artifacts/${item.id}`)}
+                                onItemClick={(item) => navigateLink(`/dashboards/${item.subtype}/${item.name}`)}
                                 color='cradle-status-warning'
                             />
 
@@ -280,7 +280,7 @@ export default function Welcome() {
                                 className='text-sm cradle-text-muted cursor-pointer'
                                 onClick={() => window.open('https://prodaft.com')}
                             >
-                                Copyright &copy; 2025 PRODAFT | v2.10.2-beta.266b8001
+                                Copyright &copy; 2025 PRODAFT | v2.10.2-beta.57779b09
                             </p>
                         </div>
                     </div>

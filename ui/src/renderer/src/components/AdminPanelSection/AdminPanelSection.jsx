@@ -1,5 +1,6 @@
 import { PlusCircle } from 'iconoir-react';
 import { useMemo, useState } from 'react';
+import Tooltip from '../../components/Tooltip/Tooltip';
 import useFrontendSearch from '../../hooks/useFrontendSearch/useFrontendSearch';
 import { naturalSort } from '../../utils/dashboardUtils/dashboardUtils';
 /**
@@ -40,11 +41,11 @@ export default function AdminPanelSection({
     // Sort the filtered children based on their key property
     const sortedFilteredChildren = filteredChildren
         ? filteredChildren.sort((a, b) => {
-              // Convert keys to strings to ensure proper lexicographical comparison
-              const aKey = a.key?.toString() || '';
-              const bKey = b.key?.toString() || '';
-              return naturalSort(aKey, bKey);
-          })
+            // Convert keys to strings to ensure proper lexicographical comparison
+            const aKey = a.key?.toString() || '';
+            const bKey = b.key?.toString() || '';
+            return naturalSort(aKey, bKey);
+        })
         : [];
     return (
         <div className='w-full h-full flex flex-col rounded-md px-3'>
@@ -56,19 +57,18 @@ export default function AdminPanelSection({
                     onChange={(e) => setSearchVal(e.target.value)}
                 />
                 {addEnabled && (
-                    <span
-                        className='tooltip tooltip-bottom'
-                        data-tooltip={addTooltipText}
-                    >
-                        <button
-                            className='h-fit mx-2 pt-1'
-                            onClick={() =>
-                                handleAdd((x) => setAddedItems((prev) => [...prev, x]))
-                            }
-                        >
-                            <PlusCircle />
-                        </button>
-                    </span>
+                    <Tooltip content={addTooltipText}>
+                        <span>
+                            <button
+                                className='h-fit mx-2 pt-1'
+                                onClick={() =>
+                                    handleAdd((x) => setAddedItems((prev) => [...prev, x]))
+                                }
+                            >
+                                <PlusCircle />
+                            </button>
+                        </span>
+                    </Tooltip>
                 )}
             </div>
             <div className='w-full flex-grow overflow-y-auto flex flex-col space-y-2 gap-1 h-[80vh]'>

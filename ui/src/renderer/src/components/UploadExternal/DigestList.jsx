@@ -4,13 +4,12 @@ import { useModal } from '../../contexts/ModalContext/ModalContext';
 import { deleteDigest } from '../../services/intelioService/intelioService';
 import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
-import ActionBar from '../ActionBar/ActionBar';
 import ActionsTable from '../ActionsTable/ActionsTable';
-import TableCard from '../TableCard/TableCard';
-import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import ListView from '../ListView/ListView';
-import Pagination from '../Pagination/Pagination';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import PaginationWrapper from '../PaginationWrapper/PaginationWrapper';
+import TableCard from '../TableCard/TableCard';
+import Tooltip from '../Tooltip/Tooltip';
 import DigestCard from './DigestCard';
 
 function DigestList({
@@ -25,14 +24,14 @@ function DigestList({
     sortDirection = 'desc',
     onSort,
     selectedDigests = [],
-    setSelectedDigests = () => {},
+    setSelectedDigests = () => { },
     pageSize = 10,
-    setPageSize = () => {},
+    setPageSize = () => { },
     onColumnFilterChange = null,
     columnFilters = {},
     searchFilters = {},
-    onSearchChange = () => {},
-    onSearchSubmit = () => {},
+    onSearchChange = () => { },
+    onSearchSubmit = () => { },
 }) {
     const { setModal } = useModal();
 
@@ -91,71 +90,58 @@ function DigestList({
                         />
                     </td>
                 )}
-            <td className='truncate w-24' title={digest.display_name}>
-                {truncateText(digest.display_name, 24)}
-            </td>
-            <td className='w-16'>
-                <span
-                    className={`badge ${
-                        digest.status === 'done'
+                <td className='truncate w-24' title={digest.display_name}>
+                    {truncateText(digest.display_name, 24)}
+                </td>
+                <td className='w-16'>
+                    <span
+                        className={`badge ${digest.status === 'done'
                             ? 'badge-success'
                             : digest.status === 'error'
-                              ? 'badge-error'
-                              : 'badge-secondary'
-                    }`}
-                >
-                    {digest.status.charAt(0).toUpperCase() + digest.status.slice(1)}
-                </span>
-            </td>
-            <td className='truncate max-w-xs' title={digest.title}>
-                {digest.title}
-            </td>
-            <td className='truncate w-32' title={digest.user_detail.username}>
-                {truncateText(digest.user_detail.username, 16)}
-            </td>
-            <td className='w-8'>
-                <span
-                    className={`badge badge-warning ${digest.warnings?.length > 0 ? 'tooltip tooltip-left tooltip-warning' : ''}`}
-                    data-tooltip={
-                        digest.warnings?.length > 0
-                            ? digest.warnings.slice(0, 10).join('\n') +
-                              (digest.warnings.length > 10 ? '\n...' : '')
-                            : undefined
-                    }
-                >
-                    {digest.warnings?.length || 0}
-                </span>
-            </td>
-            <td className='w-8'>
-                <span
-                    className={`badge badge-error ${digest.errors?.length > 0 ? 'tooltip tooltip-left tooltip-error' : ''}`}
-                    data-tooltip={
-                        digest.errors?.length > 0
-                            ? digest.errors.slice(0, 10).join(', ') +
-                              (digest.errors.length > 10 ? ', ...' : '')
-                            : undefined
-                    }
-                >
-                    {digest.errors?.length || 0}
-                </span>
-            </td>
-            <td className='w-36'>{formatDate(new Date(digest.created_at))}</td>
-            <td className='w-8'>
-                <button
-                    title='Delete Digest'
-                    className='btn btn-ghost btn-xs text-red-600 hover:text-red-500  p-1'
-                    onClick={() =>
-                        setModal(ConfirmDeletionModal, {
-                            title: 'Delete Digest',
-                            message: 'Are you sure you want to delete this digest?',
-                            onConfirm: () => handleDelete(digest.id),
-                        })
-                    }
-                >
-                    <Trash className='w-4 h-4' />
-                </button>
-            </td>
-        </tr>
+                                ? 'badge-error'
+                                : 'badge-secondary'
+                            }`}
+                    >
+                        {digest.status.charAt(0).toUpperCase() + digest.status.slice(1)}
+                    </span>
+                </td>
+                <td className='truncate max-w-xs' title={digest.title}>
+                    {digest.title}
+                </td>
+                <td className='truncate w-32' title={digest.user_detail.username}>
+                    {truncateText(digest.user_detail.username, 16)}
+                </td>
+                <td className='w-8'>
+                    <Tooltip content={digest.warnings?.length > 0 ? digest.warnings.slice(0, 10).join('\n') + (digest.warnings.length > 10 ? '...' : '') : undefined} side='left' color='warning'>
+                        <span className={`badge badge-warning`}>
+                            {digest.warnings?.length || 0}
+                        </span>
+                    </Tooltip>
+                </td>
+                <td className='w-8'>
+                    <Tooltip content={digest.errors?.length > 0 ? digest.errors.slice(0, 10).join('\n') + (digest.errors.length > 10 ? '\n...' : '') : undefined} side='left' color='error'>
+                        <span className={`badge badge-error`}>
+                            {digest.errors?.length || 0}
+                        </span>
+                    </Tooltip>
+                </td>
+                <td className='w-36'>{formatDate(new Date(digest.created_at))}</td>
+                <td className='w-8'>
+                    <button
+                        title='Delete Digest'
+                        className='btn btn-ghost btn-xs text-red-600 hover:text-red-500  p-1'
+                        onClick={() =>
+                            setModal(ConfirmDeletionModal, {
+                                title: 'Delete Digest',
+                                message: 'Are you sure you want to delete this digest?',
+                                onConfirm: () => handleDelete(digest.id),
+                            })
+                        }
+                    >
+                        <Trash className='w-4 h-4' />
+                    </button>
+                </td>
+            </tr>
         );
     };
 

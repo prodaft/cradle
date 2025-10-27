@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { usePaneTabs } from '../../contexts/PaneTabsContext/PaneTabsContext';
 import { useLayout } from '../../contexts/LayoutContext/LayoutContext';
+import { usePaneTabs } from '../../contexts/PaneTabsContext/PaneTabsContext';
 
 interface NavigateOptions {
     event?: React.MouseEvent;

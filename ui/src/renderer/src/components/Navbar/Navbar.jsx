@@ -1,8 +1,8 @@
 import { ArrowLeft, ArrowRight, Search } from 'iconoir-react';
 import { useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
-import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { addFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import Logo from '../Logo/Logo';
@@ -33,7 +33,7 @@ export default function Navbar({
                 navigate(`/notes/${response.data.id}`);
             }
         } catch (error) {
-            displayError(() => {}, navigate)(error);
+            displayError(() => { }, navigate)(error);
         }
     };
 
@@ -67,7 +67,7 @@ export default function Navbar({
     return (
         <div
             className='sticky top-0 w-full z-40 cradle-border-b h-14'
-            style={{ 
+            style={{
                 backgroundColor: 'var(--cradle-bg-topbar)',
                 color: 'var(--cradle-sidebar-text)'
             }}
@@ -105,8 +105,8 @@ export default function Navbar({
                     <div className='relative w-full max-w-lg'>
                         <input
                             className='w-full py-1.5 pl-10 pr-3 text-sm border bg-transparent'
-                            style={{ 
-                                borderColor: 'var(--cradle-border-accent)', 
+                            style={{
+                                borderColor: 'var(--cradle-border-accent)',
                                 color: 'var(--cradle-sidebar-text)',
                                 outline: 'none'
                             }}

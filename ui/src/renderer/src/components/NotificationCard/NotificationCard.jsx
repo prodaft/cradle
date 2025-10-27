@@ -1,5 +1,6 @@
 import { Mail, MailOpen } from 'iconoir-react';
 import { useState } from 'react';
+import Tooltip from '../../components/Tooltip/Tooltip';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { activateUser, changeAccess } from '../../services/adminService/adminService';
 import { markUnread } from '../../services/notificationsService/notificationsService';
@@ -119,28 +120,27 @@ export default function NotificationCard({
                 <div className='text-zinc-500 text-xs w-full'>
                     {formatDate(new Date(timestamp))}
                 </div>
-                <span
-                    className='pb-1 space-x-1 flex flex-row tooltip tooltip-left'
-                    data-tooltip={isMarkedUnread ? 'Mark as read' : 'Mark as unread'}
-                >
-                    {isMarkedUnread ? (
-                        <Mail
-                            width='1.2em'
-                            height='1.2em'
-                            className='text-cradle2 cursor-pointer'
-                            data-testid='mark-read'
-                            onClick={() => handleMarkUnread(id)}
-                        />
-                    ) : (
-                        <MailOpen
-                            width='1.2em'
-                            height='1.2em'
-                            className='text-zinc-500 cursor-pointer'
-                            data-testid='mark-unread'
-                            onClick={() => handleMarkUnread(id)}
-                        />
-                    )}
-                </span>
+                <Tooltip content={isMarkedUnread ? 'Mark as read' : 'Mark as unread'}>
+                    <span className='pb-1 space-x-1 flex flex-row'>
+                        {isMarkedUnread ? (
+                            <Mail
+                                width='1.2em'
+                                height='1.2em'
+                                className='text-cradle2 cursor-pointer'
+                                data-testid='mark-read'
+                                onClick={() => handleMarkUnread(id)}
+                            />
+                        ) : (
+                            <MailOpen
+                                width='1.2em'
+                                height='1.2em'
+                                className='text-zinc-500 cursor-pointer'
+                                data-testid='mark-unread'
+                                onClick={() => handleMarkUnread(id)}
+                            />
+                        )}
+                    </span>
+                </Tooltip>
             </div>
             <p>{message}</p>
             {notification_type === 'request_access_notification' && (

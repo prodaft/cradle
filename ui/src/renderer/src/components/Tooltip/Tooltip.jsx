@@ -1,95 +1,98 @@
-import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import * as RadixTooltip from '@radix-ui/react-tooltip';
+import { strip } from '../../utils/linkUtils/linkUtils';
 
-// Custom Tooltip component that uses React Portal
-const Tooltip = ({ children, content, position = 'top', className = '' }) => {
-    const [isVisible, setIsVisible] = useState(false);
-    const [coords, setCoords] = useState({ top: 0, left: 0 });
-    const targetRef = useRef(null);
-    const tooltipRef = useRef(null);
+/**
+ * Tooltip component using Radix UI with customizable styling
+ * 
+ * @param {Object} props
+ * @param {React.ReactNode} props.children - The trigger element
+ * @param {React.ReactNode} props.content - The tooltip content
+ * @param {'top' | 'bottom' | 'left' | 'right'} [props.side='bottom'] - Preferred side for tooltip
+ * @param {'start' | 'center' | 'end'} [props.align='center'] - Alignment of tooltip
+ * @param {'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info'} [props.color='primary'] - Color scheme
+ * @param {'sm' | 'md' | 'lg'} [props.size='md'] - Size of tooltip
+ * @param {string} [props.className=''] - Additional CSS classes for tooltip content
+ * @param {number} [props.sideOffset=8] - Distance from trigger element
+ * @param {boolean} [props.showArrow=true] - Whether to show arrow
+ * @returns {JSX.Element}
+ */
+const Tooltip = ({
+    children,
+    content,
+    side = 'bottom',
+    align = 'center',
+    color = 'primary',
+    size = 'md',
+    className = '',
+    sideOffset = 4,
+    showArrow = true,
+}) => {
+    content = strip(content || '');
+    if (!content) return children;
+    // Color variants
+    const colorClasses = {
+        primary: 'bg-primary text-white fill-primary',
+        secondary: 'bg-secondary text-white fill-secondary',
+        success: 'bg-success text-white fill-success',
+        error: 'bg-error text-white fill-error',
+        warning: 'bg-warning text-white fill-warning',
+        info: 'bg-info text-white fill-info',
+    };
 
-    useEffect(() => {
-        if (isVisible && targetRef.current && tooltipRef.current) {
-            const targetRect = targetRef.current.getBoundingClientRect();
-            const tooltipRect = tooltipRef.current.getBoundingClientRect();
+    // Size variants
+    const sizeClasses = {
+        sm: 'px-2 py-1 text-xs',
+        md: 'px-3 py-2 text-sm',
+        lg: 'px-4 py-3 text-base',
+    };
 
-            let top = 0;
-            let left = 0;
-
-            switch (position) {
-                case 'top':
-                    top = targetRect.top - tooltipRect.height - 8;
-                    left = targetRect.left + (targetRect.width - tooltipRect.width) / 2;
-                    break;
-                case 'bottom':
-                    top = targetRect.bottom + 8;
-                    left = targetRect.left + (targetRect.width - tooltipRect.width) / 2;
-                    break;
-                case 'left':
-                    top = targetRect.top + (targetRect.height - tooltipRect.height) / 2;
-                    left = targetRect.left - tooltipRect.width - 8;
-                    break;
-                case 'right':
-                    top = targetRect.top + (targetRect.height - tooltipRect.height) / 2;
-                    left = targetRect.right + 8;
-                    break;
-            }
-
-            // Keep tooltip within viewport
-            if (top < 0) top = 8;
-            if (left < 0) left = 8;
-            if (left + tooltipRect.width > window.innerWidth) {
-                left = window.innerWidth - tooltipRect.width - 8;
-            }
-
-            setCoords({ top, left });
-        }
-    }, [isVisible, position]);
-
-    const tooltipElement =
-        isVisible &&
-        createPortal(
-            <div
-                ref={tooltipRef}
-                className='fixed z-[99999] px-3 py-2 text-sm text-white bg-primary rounded-lg shadow-lg pointer-events-none '
-                style={{
-                    top: `${coords.top}px`,
-                    left: `${coords.left}px`,
-                    opacity: coords.top ? 1 : 0,
-                }}
-            >
-                {content}
-                {/* Arrow */}
-                <div
-                    className={`absolute w-0 h-0 border-4 border-transparent ${
-                        position === 'top'
-                            ? 'border-t-primary -bottom-2 left-1/2 -translate-x-1/2'
-                            : position === 'bottom'
-                              ? 'border-b-primary -top-2 left-1/2 -translate-x-1/2'
-                              : position === 'left'
-                                ? 'border-l-primary -right-2 top-1/2 -translate-y-1/2'
-                                : 'border-r-primary -left-2 top-1/2 -translate-y-1/2'
-                    }`}
-                />
-            </div>,
-            document.body,
-        );
+    const colorClass = colorClasses[color] || colorClasses.primary;
+    const sizeClass = sizeClasses[size] || sizeClasses.md;
+    const [bgClass, textClass, fillClass] = colorClass.split(' ');
 
     return (
-        <>
-            <span
-                ref={targetRef}
-                className={className}
-                onMouseEnter={() => setIsVisible(true)}
-                onMouseLeave={() => setIsVisible(false)}
-                onFocus={() => setIsVisible(true)}
-                onBlur={() => setIsVisible(false)}
-            >
+        <RadixTooltip.Root>
+            <RadixTooltip.Trigger asChild>
                 {children}
-            </span>
-            {tooltipElement}
-        </>
+            </RadixTooltip.Trigger>
+            <RadixTooltip.Portal>
+                <RadixTooltip.Content
+                    side={side}
+                    align={align}
+                    sideOffset={sideOffset}
+                    className={`z-[99999] ${bgClass} ${textClass} ${sizeClass} rounded-lg shadow-lg ${className}`}
+                    style={{ whiteSpace: 'pre-line' }}
+                >
+                    {content}
+                    {showArrow && (
+                        <RadixTooltip.Arrow className={fillClass} />
+                    )}
+                </RadixTooltip.Content>
+            </RadixTooltip.Portal>
+        </RadixTooltip.Root>
     );
 };
+
+/**
+ * TooltipProvider component - wrap your app or component tree with this
+ * 
+ * @param {Object} props
+ * @param {React.ReactNode} props.children
+ * @param {number} [props.delayDuration=100] - Global delay duration for all tooltips
+ * @param {number} [props.skipDelayDuration=300] - Skip delay when moving between tooltips
+ * @returns {JSX.Element}
+ */
+export const TooltipProvider = ({
+    children,
+    delayDuration = 100,
+    skipDelayDuration = 300
+}) => (
+    <RadixTooltip.Provider
+        delayDuration={delayDuration}
+        skipDelayDuration={skipDelayDuration}
+    >
+        {children}
+    </RadixTooltip.Provider>
+);
 
 export default Tooltip;

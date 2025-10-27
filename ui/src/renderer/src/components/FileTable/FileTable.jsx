@@ -1,8 +1,9 @@
-import { InputField, PasteClipboard, Trash, Download } from 'iconoir-react';
+import { Download, InputField, PasteClipboard, Trash } from 'iconoir-react';
 import { useState } from 'react';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { createDownloadPath } from '../../utils/textEditorUtils/textEditorUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import Tooltip from '../Tooltip/Tooltip';
 
 /**
  * This component is used to display a table of fileData.
@@ -90,66 +91,62 @@ export default function FileTable({ fileData, setFileData, insertTextCallback })
                                         {data.file_name}
                                     </div>
                                     <div className='dark:text-zinc-200 flex items-center justify-end pr-4'>
-                                        <span
-                                            className='tooltip tooltip-top'
-                                            data-tooltip='Insert link into text'
-                                        >
-                                            <button
-                                                id={`insert-${index}`}
-                                                data-testid={`insert-${index}`}
-                                                className='px-2 py-1 rounded hover:opacity-60 bg-zinc-3'
-                                                onClick={() =>
-                                                    insertTextCallback(
-                                                        `[${data.file_name}][${data.minio_file_name}]`,
-                                                    )
-                                                }
-                                            >
-                                                <InputField width='20px' />
-                                            </button>
-                                        </span>
-                                        <span
-                                            className='tooltip tooltip-top'
-                                            data-tooltip='Copy to clipboard'
-                                        >
-                                            <button
-                                                id={`copy-${index}`}
-                                                data-testid={`copy-${index}`}
-                                                className='px-2 py-1 rounded hover:opacity-60 bg-zinc-3'
-                                                onClick={() =>
-                                                    copyToClipboard(
-                                                        `[${data.file_name}][${data.minio_file_name}]`,
-                                                    )
-                                                }
-                                            >
-                                                <PasteClipboard width='20px' />
-                                            </button>
-                                        </span>
-                                        <span
-                                            className='tooltip tooltip-top'
-                                            data-tooltip='Download'
-                                        >
-                                            <button
-                                                id={`download-${index}`}
-                                                data-testid={`download-${index}`}
-                                                className='px-2 py-1 rounded hover:opacity-60 bg-zinc-3'
-                                                onClick={() => handleDownload(data)}
-                                            >
-                                                <Download width='20px' />
-                                            </button>
-                                        </span>
-                                        <span
-                                            className='tooltip tooltip-top'
-                                            data-tooltip='Remove'
-                                        >
-                                            <button
-                                                id={`delete-${index}`}
-                                                data-testid={`delete-${index}`}
-                                                className='px-2 py-1 rounded hover:opacity-60 bg-zinc-3'
-                                                onClick={() => handleDelete(data)}
-                                            >
-                                                <Trash width='20px' />
-                                            </button>
-                                        </span>
+                                        <Tooltip content='Insert link into text'>
+                                            <span>
+                                                <button
+                                                    id={`insert-${index}`}
+                                                    data-testid={`insert-${index}`}
+                                                    className='px-2 py-1 rounded hover:opacity-60 bg-zinc-3'
+                                                    onClick={() =>
+                                                        insertTextCallback(
+                                                            `[${data.file_name}][${data.minio_file_name}]`,
+                                                        )
+                                                    }
+                                                >
+                                                    <InputField width='20px' />
+                                                </button>
+                                            </span>
+                                        </Tooltip>
+                                        <Tooltip content='Copy to clipboard'>
+                                            <span>
+                                                <button
+                                                    id={`copy-${index}`}
+                                                    data-testid={`copy-${index}`}
+                                                    className='px-2 py-1 rounded hover:opacity-60 bg-zinc-3'
+                                                    onClick={() =>
+                                                        copyToClipboard(
+                                                            `[${data.file_name}][${data.minio_file_name}]`,
+                                                        )
+                                                    }
+                                                >
+                                                    <PasteClipboard width='20px' />
+                                                </button>
+                                            </span>
+                                        </Tooltip>
+                                        <Tooltip content='Download'>
+                                            <span>
+                                                <button
+                                                    id={`download-${index}`}
+                                                    data-testid={`download-${index}`}
+                                                    className='px-2 py-1 rounded hover:opacity-60 bg-zinc-3'
+                                                    onClick={() => handleDownload(data)}
+                                                >
+                                                    <Download width='20px' />
+                                                </button>
+                                            </span>
+                                        </Tooltip>
+                                        <Tooltip content='Remove'>
+                                            <span>
+                                                <button
+                                                    id={`delete-${index}`}
+                                                    data-testid={`delete-${index}`}
+                                                    className='px-2 py-1 rounded hover:opacity-60 bg-zinc-3'
+                                                    onClick={() => handleDelete(data)}
+                                                >
+                                                    <Trash width='20px' />
+                                                </button>
+                                            </span>
+                                        </Tooltip>
                                     </div>
                                 </div>
                             </div>

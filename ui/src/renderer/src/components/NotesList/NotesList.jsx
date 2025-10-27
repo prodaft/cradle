@@ -1,36 +1,33 @@
 import {
+    DesignNib,
     InfoCircleSolid,
+    Search,
     WarningCircleSolid,
     WarningTriangleSolid,
-    Search,
     Xmark,
-    DesignNib,
 } from 'iconoir-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { deleteNote, searchNote } from '../../services/notesService/notesService';
 import { deleteFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
+import { deleteNote, searchNote } from '../../services/notesService/notesService';
 import { parseMarkdownInline } from '../../utils/customParser/customParser';
 import {
     capitalizeString,
     truncateText,
 } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
-import ActionBar from '../ActionBar/ActionBar';
 import ActionsTable from '../ActionsTable/ActionsTable';
 import AlertBox from '../AlertBox/AlertBox';
 import { HoverPreview } from '../HoverPreview/HoverPreview';
 import ListView from '../ListView/ListView';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
 import Note from '../Note/Note';
-import DeleteNote from '../NoteActions/DeleteNote';
-import EditNote from '../NoteActions/EditNote';
-import Pagination from '../Pagination/Pagination';
 import PaginationWrapper from '../PaginationWrapper/PaginationWrapper';
 import TableCard from '../TableCard/TableCard';
+import Tooltip from '../Tooltip/Tooltip';
 
 export default function NotesList({
     query,
@@ -65,13 +62,13 @@ export default function NotesList({
     const [columnFilters, setColumnFilters] = useState({
         author: query?.author__username || '',
         editor: query?.editor__username || '',
-        createdAt: { 
-            from: query?.created_date_from || '', 
-            to: query?.created_date_to || '' 
+        createdAt: {
+            from: query?.created_date_from || '',
+            to: query?.created_date_to || ''
         },
-        lastChanged: { 
-            from: query?.updated_date_from || '', 
-            to: query?.updated_date_to || '' 
+        lastChanged: {
+            from: query?.updated_date_from || '',
+            to: query?.updated_date_to || ''
         },
     });
     const [searchInputValue, setSearchInputValue] = useState(contentSearch?.value || '');
@@ -121,7 +118,7 @@ export default function NotesList({
             case 'healthy':
                 return (
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-green-500">
-                        <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                 );
             case 'processing':
@@ -187,13 +184,13 @@ export default function NotesList({
         setColumnFilters({
             author: query?.author__username || '',
             editor: query?.editor__username || '',
-            createdAt: { 
-                from: query?.created_date_from || '', 
-                to: query?.created_date_to || '' 
+            createdAt: {
+                from: query?.created_date_from || '',
+                to: query?.created_date_to || ''
             },
-            lastChanged: { 
-                from: query?.updated_date_from || '', 
-                to: query?.updated_date_to || '' 
+            lastChanged: {
+                from: query?.updated_date_from || '',
+                to: query?.updated_date_to || ''
             },
         });
     }, [query?.author__username, query?.editor__username, query?.created_date_from, query?.created_date_to, query?.updated_date_from, query?.updated_date_to]);
@@ -342,38 +339,36 @@ export default function NotesList({
                         />
                     </td>
                 )}
-                <td
-                    className={`truncate w-64`}
-                    data-tooltip={note.metadata?.title}
-                >
-                    <div className='flex items-center gap-2'>
-                        {note.fleeting ? (
-                            <span
-                                className='inline-flex items-center align-middle tooltip tooltip-right tooltip-primary flex-shrink-0'
-                                data-tooltip='Fleeting Note'
-                            >
-                                <DesignNib className='text-[#FF8C00]' width='18' height='18' />
-                            </span>
-                        ) : (
-                            note.status && (
-                                <span
-                                    className='inline-flex items-center align-middle tooltip tooltip-right tooltip-primary flex-shrink-0'
-                                    data-tooltip={
-                                        note.status_message ||
-                                        capitalizeString(note.status)
-                                    }
-                                >
-                                    {getStatusIcon(note.status)}
-                                </span>
-                            )
-                        )}
-                        <span className='truncate'>
-                            {truncateText(
-                                parseMarkdownInline(note.metadata?.title),
-                                64,
+                <td className={`truncate w-64`}>
+                    <Tooltip content={note.metadata?.title}>
+                        <div className='flex items-center gap-2'>
+                            {note.fleeting ? (
+                                <Tooltip content='Fleeting Note'>
+                                    <span
+                                        className='inline-flex items-center align-middle flex-shrink-0'
+                                    >
+                                        <DesignNib className='text-[#FF8C00]' width='18' height='18' />
+                                    </span>
+                                </Tooltip>
+                            ) : (
+                                note.status && (
+                                    <Tooltip content={note.status_message || capitalizeString(note.status)}>
+                                        <span
+                                            className='inline-flex items-center align-middle flex-shrink-0'
+                                        >
+                                            {getStatusIcon(note.status)}
+                                        </span>
+                                    </Tooltip>
+                                )
                             )}
-                        </span>
-                    </div>
+                            <span className='truncate'>
+                                {truncateText(
+                                    parseMarkdownInline(note.metadata?.title),
+                                    64,
+                                )}
+                            </span>
+                        </div>
+                    </Tooltip>
                 </td>
                 <td className='truncate max-w-xs'>
                     {note.metadata?.description

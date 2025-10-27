@@ -23,12 +23,12 @@ export default function SidebarItem({
     const location = useLocation();
     const isHighlighted = location.pathname === highlightedLocation;
 
-    const itemStyle = isHighlighted 
-        ? { color: 'var(--cradle-accent-primary)' } 
+    const itemStyle = isHighlighted
+        ? { color: 'var(--cradle-accent-primary)' }
         : { color: 'var(--cradle-sidebar-icon)' };
 
     return (
-        <Tooltip content={text} position='right'>
+        <Tooltip content={text} side='right'>
             <li
                 className='p-4 cursor-pointer flex items-center justify-center z-50 relative  cradle-mono rounded-lg'
                 style={itemStyle}

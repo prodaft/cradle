@@ -103,8 +103,8 @@ export default function Login() {
                 <div className='hidden lg:flex lg:w-1/2 cradle-bg-secondary relative overflow-hidden'>
                     {/* Grid Pattern Background */}
                     <div className='absolute inset-0 cradle-grid-bg opacity-30'></div>
-                    
-                    
+
+
                     <div className='relative z-10 flex flex-col justify-center items-start px-16 py-12'>
                         {windowSize.height > 700 && (
                             <div className='mb-12'>
@@ -112,10 +112,10 @@ export default function Login() {
                             </div>
                         )}
                         <h1 className='text-4xl font-bold cradle-text-primary cradle-mono mb-4 tracking-tight'>
-                            Knowledge System
+                            CRADLE
                         </h1>
                         <p className='text-lg cradle-text-tertiary cradle-mono leading-relaxed max-w-md'>
-                            A minimal, technical interface for organizing and connecting your knowledge.
+                            A knowledge workspace for threat intelligence analysts.
                         </p>
                     </div>
                 </div>
@@ -134,192 +134,192 @@ export default function Login() {
                         <div className='cradle-border cradle-bg-elevated'>
                             {/* Top Control Bar */}
                             <div className='cradle-card-header cradle-border-b'>
-                        <span className='cradle-mono text-xs tracking-widest'>
-                            {showSettings ? 'CONFIGURATION' : requiresTwoFactor ? 'AUTHENTICATION' : 'SYSTEM ACCESS'}
-                        </span>
-                        <div className='flex items-center gap-2'>
-                            {showSettings ? (
-                                <>
-                                    {getBaseUrl() && (
-                                        <button
-                                            onClick={() => {
-                                                setBackendUrl(getBaseUrl());
-                                                setShowSettings(false);
-                                            }}
-                                            className='p-1.5 hover:text-cradle2 cradle-text-tertiary border border-[var(--cradle-border-accent)] hover:border-[var(--cradle-accent-primary)]'
-                                            data-testid='back-button'
-                                            title='Back'
-                                        >
-                                            <Undo size={18} />
-                                        </button>
+                                <span className='cradle-mono text-xs tracking-widest'>
+                                    {showSettings ? 'CONFIGURATION' : requiresTwoFactor ? 'AUTHENTICATION' : 'SYSTEM ACCESS'}
+                                </span>
+                                <div className='flex items-center gap-2'>
+                                    {showSettings ? (
+                                        <>
+                                            {getBaseUrl() && (
+                                                <button
+                                                    onClick={() => {
+                                                        setBackendUrl(getBaseUrl());
+                                                        setShowSettings(false);
+                                                    }}
+                                                    className='p-1.5 hover:text-cradle2 cradle-text-tertiary border border-[var(--cradle-border-accent)] hover:border-[var(--cradle-accent-primary)]'
+                                                    data-testid='back-button'
+                                                    title='Back'
+                                                >
+                                                    <Undo size={18} />
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={toggleTheme}
+                                                className='p-1.5 hover:text-cradle2 cradle-text-tertiary border border-[var(--cradle-border-accent)] hover:border-[var(--cradle-accent-primary)]'
+                                                data-testid='theme-button'
+                                                title='Toggle Theme'
+                                            >
+                                                {isDarkMode ? <SunLight size={18} /> : <HalfMoon size={18} />}
+                                            </button>
+                                        </>
+                                    ) : (
+                                        !requiresTwoFactor && (
+                                            <button
+                                                onClick={() => setShowSettings(!showSettings)}
+                                                className='p-1.5 hover:text-cradle2 cradle-text-tertiary border border-[var(--cradle-border-accent)] hover:border-[var(--cradle-accent-primary)]'
+                                                data-testid='settings-button'
+                                                title='Settings'
+                                            >
+                                                <Settings size={18} />
+                                            </button>
+                                        )
                                     )}
-                                    <button
-                                        onClick={toggleTheme}
-                                        className='p-1.5 hover:text-cradle2 cradle-text-tertiary border border-[var(--cradle-border-accent)] hover:border-[var(--cradle-accent-primary)]'
-                                        data-testid='theme-button'
-                                        title='Toggle Theme'
-                                    >
-                                        {isDarkMode ? <SunLight size={18} /> : <HalfMoon size={18} />}
-                                    </button>
-                                </>
-                            ) : (
-                                !requiresTwoFactor && (
-                                    <button
-                                        onClick={() => setShowSettings(!showSettings)}
-                                        className='p-1.5 hover:text-cradle2 cradle-text-tertiary border border-[var(--cradle-border-accent)] hover:border-[var(--cradle-accent-primary)]'
-                                        data-testid='settings-button'
-                                        title='Settings'
-                                    >
-                                        <Settings size={18} />
-                                    </button>
-                                )
-                            )}
-                        </div>
-                    </div>
+                                </div>
+                            </div>
 
                             {/* Form Body */}
                             <div className='p-8'>
                                 {/* Form Section */}
                                 <form
-                            className='space-y-5'
-                            onSubmit={showSettings ? handleSaveSettings : handleSubmit}
-                        >
-                            {showSettings ? (
-                                <>
-                                    <FormField
-                                        key='backendUrl'
-                                        name='backendUrl'
-                                        labelText='Backend URL'
-                                        type='text'
-                                        value={backendUrl}
-                                        handleInput={setBackendUrl}
-                                        autofocus={true}
-                                        required={true}
-                                    />
-                                    <AlertBox alert={alert} />
-                                    <button
-                                        type='submit'
-                                        className='cradle-btn cradle-btn-primary w-full'
-                                    >
-                                        Save Configuration
-                                    </button>
-                                </>
-                            ) : (
-                                <>
-                                    {requiresTwoFactor ? (
-                                        <div className='space-y-5'>
-                                            <div className='cradle-separator-labeled my-6'>
-                                                <span>Two-Factor Authentication</span>
-                                            </div>
-                                            <div>
-                                                <label className='cradle-label cradle-text-tertiary block mb-2'>
-                                                    Authentication Code
-                                                </label>
-                                                <div className='flex gap-2 justify-center'>
-                                                    {[0, 1, 2, 3, 4, 5].map((index) => (
-                                                        <input
-                                                            key={index}
-                                                            id={`twoFactorToken-${index}`}
-                                                            name={`twoFactorToken-${index}`}
-                                                            type='text'
-                                                            autoComplete='twoFactorToken'
-                                                            className='cradle-search w-12 h-12 text-center text-lg font-mono disabled:opacity-50 disabled:cursor-not-allowed'
-                                                            placeholder=''
-                                                            pattern='[0-9]*'
-                                                            maxLength='1'
-                                                            value={twoFactorToken[index] || ''}
-                                                            onChange={(e) => {
-                                                                const value = e.target.value.replace(/\D/g, '');
-                                                                if (value.length <= 1) {
-                                                                    const newCode = twoFactorToken.split('');
-                                                                    newCode[index] = value;
-                                                                    setTwoFactorToken(newCode.join(''));
-                                                                    
-                                                                    // Auto-focus next input
-                                                                    if (value && index < 5) {
-                                                                        document.getElementById(`twoFactorToken-${index + 1}`)?.focus();
-                                                                    }
-                                                                }
-                                                            }}
-                                                            onKeyDown={(e) => {
-                                                                // Handle backspace to go to previous input
-                                                                if (e.key === 'Backspace' && !twoFactorToken[index] && index > 0) {
-                                                                    document.getElementById(`twoFactorToken-${index - 1}`)?.focus();
-                                                                }
-                                                            }}
-                                                            onPaste={(e) => {
-                                                                e.preventDefault();
-                                                                const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-                                                                setTwoFactorToken(pastedData);
-                                                                // Focus the last filled input or the first empty one
-                                                                const focusIndex = Math.min(pastedData.length, 5);
-                                                                document.getElementById(`twoFactorToken-${focusIndex}`)?.focus();
-                                                            }}
-                                                            autoFocus={index === 0}
-                                                            required
-                                                        />
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <p className='text-xs cradle-text-muted cradle-mono'>
-                                                Enter the 6-digit code from your authenticator app
-                                            </p>
-                                            <AlertBox alert={alert} />
-                                            <button
-                                                type='submit'
-                                                data-testid='login-register-button'
-                                                className='cradle-btn cradle-btn-primary w-full'
-                                            >
-                                                Verify Code
-                                            </button>
-                                            <button
-                                                type='button'
-                                                className='cradle-btn cradle-btn-ghost w-full'
-                                                onClick={() => {
-                                                    setRequiresTwoFactor(false);
-                                                    setTwoFactorToken('');
-                                                    setAlert({
-                                                        show: false,
-                                                        message: '',
-                                                        color: 'red',
-                                                    });
-                                                }}
-                                            >
-                                                Back to Login
-                                            </button>
-                                        </div>
-                                    ) : (
+                                    className='space-y-5'
+                                    onSubmit={showSettings ? handleSaveSettings : handleSubmit}
+                                >
+                                    {showSettings ? (
                                         <>
                                             <FormField
-                                                name='username'
-                                                labelText='Username'
-                                                key='username'
+                                                key='backendUrl'
+                                                name='backendUrl'
+                                                labelText='Backend URL'
                                                 type='text'
-                                                value={username}
-                                                handleInput={setUsername}
+                                                value={backendUrl}
+                                                handleInput={setBackendUrl}
                                                 autofocus={true}
-                                            />
-                                            <FormField
-                                                name='password'
-                                                labelText='Password'
-                                                key='password'
-                                                type='password'
-                                                value={password}
-                                                handleInput={setPassword}
+                                                required={true}
                                             />
                                             <AlertBox alert={alert} />
                                             <button
                                                 type='submit'
-                                                data-testid='login-register-button'
                                                 className='cradle-btn cradle-btn-primary w-full'
                                             >
-                                                Authenticate
+                                                Save Configuration
                                             </button>
                                         </>
+                                    ) : (
+                                        <>
+                                            {requiresTwoFactor ? (
+                                                <div className='space-y-5'>
+                                                    <div className='cradle-separator-labeled my-6'>
+                                                        <span>Two-Factor Authentication</span>
+                                                    </div>
+                                                    <div>
+                                                        <label className='cradle-label cradle-text-tertiary block mb-2'>
+                                                            Authentication Code
+                                                        </label>
+                                                        <div className='flex gap-2 justify-center'>
+                                                            {[0, 1, 2, 3, 4, 5].map((index) => (
+                                                                <input
+                                                                    key={index}
+                                                                    id={`twoFactorToken-${index}`}
+                                                                    name={`twoFactorToken-${index}`}
+                                                                    type='text'
+                                                                    autoComplete='twoFactorToken'
+                                                                    className='cradle-search w-12 h-12 text-center text-lg font-mono disabled:opacity-50 disabled:cursor-not-allowed'
+                                                                    placeholder=''
+                                                                    pattern='[0-9]*'
+                                                                    maxLength='1'
+                                                                    value={twoFactorToken[index] || ''}
+                                                                    onChange={(e) => {
+                                                                        const value = e.target.value.replace(/\D/g, '');
+                                                                        if (value.length <= 1) {
+                                                                            const newCode = twoFactorToken.split('');
+                                                                            newCode[index] = value;
+                                                                            setTwoFactorToken(newCode.join(''));
+
+                                                                            // Auto-focus next input
+                                                                            if (value && index < 5) {
+                                                                                document.getElementById(`twoFactorToken-${index + 1}`)?.focus();
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                    onKeyDown={(e) => {
+                                                                        // Handle backspace to go to previous input
+                                                                        if (e.key === 'Backspace' && !twoFactorToken[index] && index > 0) {
+                                                                            document.getElementById(`twoFactorToken-${index - 1}`)?.focus();
+                                                                        }
+                                                                    }}
+                                                                    onPaste={(e) => {
+                                                                        e.preventDefault();
+                                                                        const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                                                                        setTwoFactorToken(pastedData);
+                                                                        // Focus the last filled input or the first empty one
+                                                                        const focusIndex = Math.min(pastedData.length, 5);
+                                                                        document.getElementById(`twoFactorToken-${focusIndex}`)?.focus();
+                                                                    }}
+                                                                    autoFocus={index === 0}
+                                                                    required
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    <p className='text-xs cradle-text-muted cradle-mono'>
+                                                        Enter the 6-digit code from your authenticator app
+                                                    </p>
+                                                    <AlertBox alert={alert} />
+                                                    <button
+                                                        type='submit'
+                                                        data-testid='login-register-button'
+                                                        className='cradle-btn cradle-btn-primary w-full'
+                                                    >
+                                                        Verify Code
+                                                    </button>
+                                                    <button
+                                                        type='button'
+                                                        className='cradle-btn cradle-btn-ghost w-full'
+                                                        onClick={() => {
+                                                            setRequiresTwoFactor(false);
+                                                            setTwoFactorToken('');
+                                                            setAlert({
+                                                                show: false,
+                                                                message: '',
+                                                                color: 'red',
+                                                            });
+                                                        }}
+                                                    >
+                                                        Back to Login
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <FormField
+                                                        name='username'
+                                                        labelText='Username'
+                                                        key='username'
+                                                        type='text'
+                                                        value={username}
+                                                        handleInput={setUsername}
+                                                        autofocus={true}
+                                                    />
+                                                    <FormField
+                                                        name='password'
+                                                        labelText='Password'
+                                                        key='password'
+                                                        type='password'
+                                                        value={password}
+                                                        handleInput={setPassword}
+                                                    />
+                                                    <AlertBox alert={alert} />
+                                                    <button
+                                                        type='submit'
+                                                        data-testid='login-register-button'
+                                                        className='cradle-btn cradle-btn-primary w-full'
+                                                    >
+                                                        Authenticate
+                                                    </button>
+                                                </>
+                                            )}
+                                        </>
                                     )}
-                                </>
-                            )}
-                        </form>
+                                </form>
 
                                 {/* Footer Links */}
                                 {!requiresTwoFactor && !showSettings && getBaseUrl() && (
