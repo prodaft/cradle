@@ -1,4 +1,4 @@
-import { acceptCompletion, completionKeymap } from '@codemirror/autocomplete';
+import { acceptCompletion, autocompletion, closeBrackets, completionKeymap } from '@codemirror/autocomplete';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { defaultHighlightStyle, indentOnInput, syntaxHighlighting, syntaxTree } from '@codemirror/language';
 
@@ -171,6 +171,11 @@ function cradleLinksPlugin(entryColors, navigate) {
                             return;
                         }
 
+                        // Don't render widget if the link is empty (no type or name)
+                        if (!type && !name) {
+                            return;
+                        }
+
                         const color = this.entryColors.get(type);
 
                         widgets.push(
@@ -247,6 +252,11 @@ function cradleLinkColorPlugin(entryColors) {
                         const isInTimestamp = linkEnd > to && cursorPos >= timestampFrom && cursorPos <= timestampTo;
 
                         if (isInLink || isInTimestamp) {
+                            // Don't apply special styling if the link is empty (no type)
+                            if (!type) {
+                                return;
+                            }
+
                             const color = this.entryColors.get(type) || '#FF8C00';
 
                             // Color the entire link including brackets and timestamp in the entry class color
@@ -262,35 +272,35 @@ function cradleLinkColorPlugin(entryColors) {
                             // Apply additional styling to specific parts (on top of base color)
                             child = node.node.firstChild;
                             while (child) {
-                                if (child.type.name === 'CradleLinkPrefix') {
+                                if (child.type.name === 'CradleLinkPrefix' && child.from !== child.to) {
                                     // Prefix (~) - style with color and opacity
                                     marks.push(
                                         Decoration.mark({
                                             attributes: { style: `color: ${color} !important; opacity: 0.8; font-weight: 600;` }
                                         }).range(child.from, child.to)
                                     );
-                                } else if (child.type.name === 'CradleLinkType') {
+                                } else if (child.type.name === 'CradleLinkType' && child.from !== child.to) {
                                     // Type part - explicitly set color to override syntax highlighting
                                     marks.push(
                                         Decoration.mark({
                                             attributes: { style: `color: ${color} !important; opacity: 0.9;` }
                                         }).range(child.from, child.to)
                                     );
-                                } else if (child.type.name === 'CradleLinkValue') {
+                                } else if (child.type.name === 'CradleLinkValue' && child.from !== child.to) {
                                     // Value is bold with explicit color
                                     marks.push(
                                         Decoration.mark({
                                             attributes: { style: `color: ${color} !important; font-weight: 600;` }
                                         }).range(child.from, child.to)
                                     );
-                                } else if (child.type.name === 'CradleLinkAlias') {
+                                } else if (child.type.name === 'CradleLinkAlias' && child.from !== child.to) {
                                     // Alias is italic with explicit color
                                     marks.push(
                                         Decoration.mark({
                                             attributes: { style: `color: ${color} !important; font-style: italic;` }
                                         }).range(child.from, child.to)
                                     );
-                                } else if (child.type.name === 'CradleLinkTimestamp') {
+                                } else if (child.type.name === 'CradleLinkTimestamp' && child.from !== child.to) {
                                     // Timestamp is italic with opacity and underlined
                                     marks.push(
                                         Decoration.mark({
@@ -506,6 +516,7 @@ const RichEditor = forwardRef(function RichEditor({
             highlightActiveLine(),
             indentOnInput(),
             syntaxHighlighting(defaultHighlightStyle),
+            closeBrackets(),
             // Add autocomplete with proper keybindings
             Prec.highest(
                 keymap.of([
@@ -517,7 +528,8 @@ const RichEditor = forwardRef(function RichEditor({
                 ]),
             ),
             keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
-            ...editorUtils.autocomplete(),  // Add autocomplete
+            autocompletion(),
+            ...editorUtils.autocomplete(),
             editorUtils.lint(),            // Add linting
             ...additionalExtensions,
         ];
