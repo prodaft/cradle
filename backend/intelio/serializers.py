@@ -1,13 +1,13 @@
-from core.utils import fields_to_form
 from drf_spectacular.utils import extend_schema_field
-from entries.models import Entry, EntryClass
-from entries.serializers import EntryClassSerializer, EntrySerializer
 from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
+
+from core.utils import fields_to_form
+from entries.models import Entry, EntryClass
+from entries.serializers import EntryClassSerializer, EntrySerializer
+from intelio.models.base import BaseDigest, EnrichmentRequest
 from user.models import CradleUser
 from user.serializers import EssentialUserRetrieveSerializer
-
-from intelio.models.base import BaseDigest, EnrichmentRequest
 
 from .models import BaseEnricher, EnricherSettings
 
@@ -234,8 +234,8 @@ class EnrichmentRequestListSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "title",
-            "automated",
             "created_at",
+            "completed_at",
             "status",
             "user_detail",
             "enricher_class",
@@ -271,7 +271,6 @@ class EnrichmentRequestDetailSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "title",
-            "automated",
             "created_at",
             "completed_at",
             "status",
@@ -340,8 +339,8 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "title",
-            "automated",
             "created_at",
+            "completed_at",
             "status",
             "user",
             "user_detail",
@@ -351,15 +350,14 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
             "enricher_class",
             "enricher_name",
             "request",
-            "results",
             "errors",
         ]
         read_only_fields = [
             "id",
             "created_at",
+            "completed_at",
             "user",
             "status",
-            "results",
             "errors",
             "enrichment_settings",
             "enricher_class",
@@ -417,8 +415,5 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
 
         # Set the user to the current user
         validated_data["user"] = self.context["request"].user
-
-        # Set automated to False by default
-        validated_data["automated"] = validated_data.get("automated", False)
 
         return super().create(validated_data)

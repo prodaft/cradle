@@ -1,12 +1,8 @@
 import os
 import uuid
 from collections import defaultdict
-from datetime import timedelta
 from typing import Any, Optional
-from entries.enums import EntryType
-from pydantic import BaseModel, ValidationError as PydanticValidationError
 
-from core.fields import BitStringField
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
@@ -17,6 +13,11 @@ from django_lifecycle import (
     LifecycleModel,
     hook,
 )
+from pydantic import BaseModel
+from pydantic import ValidationError as PydanticValidationError
+
+from core.fields import BitStringField
+from entries.enums import EntryType
 from entries.models import Entry, EntryClass, Relation
 from user.models import CradleUser
 
@@ -350,8 +351,8 @@ class EnrichmentRequest(LifecycleModel):
     )
 
     title = models.CharField(max_length=255)
-    automated = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     status = models.CharField(
         max_length=255,

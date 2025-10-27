@@ -6,10 +6,9 @@ import {
     WarningTriangleSolid,
     Xmark,
 } from 'iconoir-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
-import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { deleteFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
 import { deleteNote, searchNote } from '../../services/notesService/notesService';
@@ -21,13 +20,14 @@ import {
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import ActionsTable from '../ActionsTable/ActionsTable';
 import AlertBox from '../AlertBox/AlertBox';
-import { HoverPreview } from '../HoverPreview/HoverPreview';
 import ListView from '../ListView/ListView';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
 import Note from '../Note/Note';
 import PaginationWrapper from '../PaginationWrapper/PaginationWrapper';
+import PreviewTip, { PreviewTipProvider } from '../PreviewTip/PreviewTip';
 import TableCard from '../TableCard/TableCard';
 import Tooltip from '../Tooltip/Tooltip';
+import { NotePreviewContent } from './NotePreviewContent';
 
 export default function NotesList({
     query,
@@ -44,16 +44,11 @@ export default function NotesList({
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [loading, setLoading] = useState(false);
     const [totalPages, setTotalPages] = useState(1);
-    const { profile } = useProfile();
     const [page, setPage] = useState(Number(searchParams.get('notes_page')) || 1);
     const [sortField, setSortField] = useState(searchParams.get('notes_sort_field') || 'timestamp');
     const [sortDirection, setSortDirection] = useState(searchParams.get('notes_sort_direction') || 'desc');
-    const { navigate, navigateLink } = useCradleNavigate();
+    const { navigateLink } = useCradleNavigate();
     const { setModal } = useModal();
-    const [hoveredNote, setHoveredNote] = useState(null);
-    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-    const hoverTimeoutRef = useRef(null);
-    const HOVER_DELAY = 800;
     const [selectedNotes, setSelectedNotes] = useState([]);
     const [pageSize, setPageSize] = useState(
         Number(searchParams.get('notes_pagesize')) ||
@@ -82,34 +77,6 @@ export default function NotesList({
         createdAt: 'timestamp',
         lastChanged: 'edit_timestamp',
     };
-
-    const handleMouseEnter = (note, event) => {
-        const rect = event.currentTarget.getBoundingClientRect();
-        setMousePosition({
-            x: rect.right,
-            y: rect.top,
-        });
-
-        hoverTimeoutRef.current = setTimeout(() => {
-            setHoveredNote(note);
-        }, HOVER_DELAY);
-    };
-
-    const handleMouseLeave = () => {
-        if (hoverTimeoutRef.current) {
-            clearTimeout(hoverTimeoutRef.current);
-            hoverTimeoutRef.current = null;
-        }
-        setHoveredNote(null);
-    };
-
-    useEffect(() => {
-        return () => {
-            if (hoverTimeoutRef.current) {
-                clearTimeout(hoverTimeoutRef.current);
-            }
-        };
-    }, []);
 
     const getStatusIcon = (status) => {
         if (!status) return null;
@@ -313,6 +280,11 @@ export default function NotesList({
         { key: 'lastChanged', label: 'Updated At', filterType: 'date' },
     ];
 
+    // Render note preview content for tooltip
+    const renderNotePreview = (note) => {
+        return <NotePreviewContent note={note} />;
+    };
+
     const renderRow = (note, index, selectProps = {}) => {
         // Skip filtered notes
         for (const n of filteredNotes) {
@@ -322,74 +294,81 @@ export default function NotesList({
         const { enableMultiSelect, isSelected, onSelect } = selectProps;
 
         return (
-            <tr
+            <PreviewTip
+                content={renderNotePreview(note)}
+                side="top"
+                align="start"
+                sideOffset={32}
+                color="primary"
+                size="lg"
                 key={note.id}
-                className='cursor-pointer'
-                onClick={navigateLink(`/notes/${note.id}`)}
-                onMouseEnter={(e) => handleMouseEnter(note, e)}
-                onMouseLeave={handleMouseLeave}
             >
-                {enableMultiSelect && (
-                    <td className='w-12' onClick={(e) => e.stopPropagation()}>
-                        <input
-                            type='checkbox'
-                            className='cradle-checkbox'
-                            checked={isSelected}
-                            onChange={onSelect}
-                        />
-                    </td>
-                )}
-                <td className={`truncate w-64`}>
-                    <Tooltip content={note.metadata?.title}>
-                        <div className='flex items-center gap-2'>
-                            {note.fleeting ? (
-                                <Tooltip content='Fleeting Note'>
-                                    <span
-                                        className='inline-flex items-center align-middle flex-shrink-0'
-                                    >
-                                        <DesignNib className='text-[#FF8C00]' width='18' height='18' />
-                                    </span>
-                                </Tooltip>
-                            ) : (
-                                note.status && (
-                                    <Tooltip content={note.status_message || capitalizeString(note.status)}>
+                <tr
+                    className='cursor-pointer'
+                    onClick={navigateLink(`/notes/${note.id}`)}
+                >
+                    {enableMultiSelect && (
+                        <td className='w-12' onClick={(e) => e.stopPropagation()}>
+                            <input
+                                type='checkbox'
+                                className='cradle-checkbox'
+                                checked={isSelected}
+                                onChange={onSelect}
+                            />
+                        </td>
+                    )}
+                    <td className={`truncate w-64`}>
+                        <Tooltip content={note.metadata?.title}>
+                            <div className='flex items-center gap-2'>
+                                {note.fleeting ? (
+                                    <Tooltip content='Fleeting Note'>
                                         <span
                                             className='inline-flex items-center align-middle flex-shrink-0'
                                         >
-                                            {getStatusIcon(note.status)}
+                                            <DesignNib className='text-[#FF8C00]' width='18' height='18' />
                                         </span>
                                     </Tooltip>
-                                )
-                            )}
-                            <span className='truncate'>
-                                {truncateText(
-                                    parseMarkdownInline(note.metadata?.title),
-                                    64,
+                                ) : (
+                                    note.status && (
+                                        <Tooltip content={note.status_message || capitalizeString(note.status)}>
+                                            <span
+                                                className='inline-flex items-center align-middle flex-shrink-0'
+                                            >
+                                                {getStatusIcon(note.status)}
+                                            </span>
+                                        </Tooltip>
+                                    )
                                 )}
-                            </span>
-                        </div>
-                    </Tooltip>
-                </td>
-                <td className='truncate max-w-xs'>
-                    {note.metadata?.description
-                        ? parseMarkdownInline(note.metadata?.description)
-                        : '-'}
-                </td>
-                <td className='truncate w-32'>
-                    {truncateText(note.author?.username, 16)}
-                </td>
-                <td className='truncate w-32'>
-                    {truncateText(note.editor?.username, 16)}
-                </td>
-                <td className='w-36'>
-                    {formatDate(new Date(note.timestamp))}
-                </td>
-                <td className='w-36'>
-                    {note.edit_timestamp
-                        ? formatDate(new Date(note.edit_timestamp))
-                        : '-'}
-                </td>
-            </tr>
+                                <span className='truncate'>
+                                    {truncateText(
+                                        parseMarkdownInline(note.metadata?.title),
+                                        64,
+                                    )}
+                                </span>
+                            </div>
+                        </Tooltip>
+                    </td>
+                    <td className='truncate max-w-xs'>
+                        {note.metadata?.description
+                            ? parseMarkdownInline(note.metadata?.description)
+                            : '-'}
+                    </td>
+                    <td className='truncate w-32'>
+                        {truncateText(note.author?.username, 16)}
+                    </td>
+                    <td className='truncate w-32'>
+                        {truncateText(note.editor?.username, 16)}
+                    </td>
+                    <td className='w-36'>
+                        {formatDate(new Date(note.timestamp))}
+                    </td>
+                    <td className='w-36'>
+                        {note.edit_timestamp
+                            ? formatDate(new Date(note.edit_timestamp))
+                            : '-'}
+                    </td>
+                </tr>
+            </PreviewTip>
         );
     };
 
@@ -409,7 +388,7 @@ export default function NotesList({
     };
 
     return (
-        <>
+        <PreviewTipProvider delayDuration={800}>
             <div className='flex flex-col space-y-4'>
                 <AlertBox alert={alert} setAlert={setAlert} />
 
@@ -521,13 +500,6 @@ export default function NotesList({
                     filterValues={columnFilters}
                 />
             </div>
-            {hoveredNote && (
-                <HoverPreview
-                    note={hoveredNote}
-                    position={mousePosition}
-                    onClose={() => setHoveredNote(null)}
-                />
-            )}
-        </>
+        </PreviewTipProvider>
     );
 }

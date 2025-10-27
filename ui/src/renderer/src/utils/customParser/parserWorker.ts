@@ -1,6 +1,5 @@
 import axios from 'axios';
 import MarkdownIt from 'markdown-it';
-import inject_line_numbers_plugin from 'markdown-it-inject-linenumbers';
 
 import { parseWithExtensions } from './markdownExtensions';
 
@@ -37,7 +36,6 @@ self.addEventListener('message', async (event) => {
             const md = new MarkdownIt({
                 html: true,
             });
-            md.use(inject_line_numbers_plugin);
             const result = await parseWithExtensions(
                 md,
                 markdown,
