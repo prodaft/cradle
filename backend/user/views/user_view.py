@@ -1,36 +1,39 @@
+import secrets
 from typing import cast
+
+import bcrypt
 from django.db import transaction
 from django.utils import timezone
-from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
+from management.settings import cradle_settings
 from notifications.models import NewUserNotification
 from user.permissions import HasAdminRole
+
 from ..authentication import APIKeyAuthentication
+from ..models import CradleUser
 from ..serializers import (
-    ChangePasswordSerializer,
-    EmailConfirmSerializer,
-    UserCreateSerializer,
-    UserCreateSerializerAdmin,
-    UserRetrieveSerializer,
     APIKeyRequestSerializer,
-    PasswordResetRequestSerializer,
     APIKeyResponseSerializer,
-    UserManageResponseSerializer,
     ChangePasswordRequestSerializer,
     ChangePasswordResponseSerializer,
-    DefaultNoteTemplateSerializer,
+    ChangePasswordSerializer,
     DefaultNoteTemplateResponseSerializer,
+    DefaultNoteTemplateSerializer,
+    EmailConfirmSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
+    UserCreateSerializer,
+    UserCreateSerializerAdmin,
+    UserManageResponseSerializer,
+    UserRetrieveSerializer,
 )
-from ..models import CradleUser
-from management.settings import cradle_settings
-import secrets
-import bcrypt
 
 
 @extend_schema_view(
@@ -506,6 +509,7 @@ class EmailConfirm(APIView):
         operation_id="users_reset_password_update",
         summary="Reset password with token",
         description="Resets user password using a valid reset token and new password.",
+        request=PasswordResetConfirmSerializer,
         responses={
             200: {"description": "Password reset successfully"},
             400: {
@@ -541,13 +545,13 @@ class PasswordReset(APIView):
         return Response("Password reset email sent.", status=status.HTTP_200_OK)
 
     def put(self, request):
-        token = request.data.get("token")
-        password = request.data.get("password")
+        serializer = PasswordResetConfirmSerializer(data=request.data)
 
-        if not token or not password:
-            return Response(
-                "Token and password are required.", status=status.HTTP_400_BAD_REQUEST
-            )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        token = serializer.validated_data["token"]
+        password = serializer.validated_data["password"]
 
         if CradleUser.objects.active().filter(password_reset_token=token).exists():
             user = CradleUser.objects.active().get(password_reset_token=token)
@@ -559,18 +563,12 @@ class PasswordReset(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+            # Reset the token and set new password
             user.password_reset_token = ""
-            serializer = UserCreateSerializer(
-                user, data={"password": password}, partial=True
-            )
+            user.set_password(password)
+            user.save()
 
-            if serializer.is_valid():
-                user = serializer.save()
-                return Response(
-                    "Password reset successfully.", status=status.HTTP_200_OK
-                )
-
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response("Password reset successfully.", status=status.HTTP_200_OK)
 
         return Response("Token not found!", status=status.HTTP_400_BAD_REQUEST)
 

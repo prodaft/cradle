@@ -2,7 +2,7 @@ import { useWindowSize } from '@uidotdev/usehooks';
 import { useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { resetPasswordReq } from '../../services/authReqService/authReqService';
+import useApi from '../../hooks/useApi/useApi';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
@@ -24,6 +24,7 @@ export default function ResetPassword() {
     const token = searchParams.get('token');
 
     const { navigate, navigateLink } = useCradleNavigate();
+    const { usersApi } = useApi();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -46,13 +47,12 @@ export default function ResetPassword() {
             return;
         }
 
-        const data = { password: password, token: token };
-
-        resetPasswordReq(data)
-            .then((res) => {
-                navigate('/login', { replace: true });
-            })
-            .catch(displayError(setAlert));
+        try {
+            await usersApi.usersResetPasswordUpdate({ token, password });
+            navigate('/login', { replace: true });
+        } catch (error) {
+            displayError(setAlert)(error);
+        }
     };
 
     return (

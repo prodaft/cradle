@@ -37,7 +37,7 @@ export function ProfileProvider({ children }) {
     };
 
     useEffect(() => {
-        if (auth.isAuthenticated()) {
+        if (auth.isLoggedIn()) {
             getUserProfile();
         } else {
             setProfile(null); // Clear profile if not authenticated

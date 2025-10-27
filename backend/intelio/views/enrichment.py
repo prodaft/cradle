@@ -1,16 +1,17 @@
-from core.pagination import TotalPagesPagination
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
-from entries.serializers import RelationSerializer
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
+
+from core.pagination import TotalPagesPagination
 from user.permissions import HasAdminRole
 
 from ..models.base import BaseEnricher, EnricherSettings, EnrichmentRequest
 from ..serializers import (
+    EnrichmentRelationSerializer,
     EnrichmentRequestDetailSerializer,
     EnrichmentRequestListSerializer,
     EnrichmentRequestSerializer,
@@ -386,11 +387,13 @@ class EnrichmentDetailAPIView(APIView):
         ],
         responses={
             200: TotalPagesPagination().get_paginated_response_serializer(
-                RelationSerializer
+                EnrichmentRelationSerializer
             ),
             401: {"description": "User is not authenticated"},
             403: {"description": "Forbidden - insufficient permissions"},
-            404: {"description": "Enrichment request not found or enricher type not found"},
+            404: {
+                "description": "Enrichment request not found or enricher type not found"
+            },
         },
     ),
 )
@@ -407,16 +410,15 @@ class EnrichmentRelationsAPIView(APIView):
 
     def get_object(self, pk):
         try:
-            return EnrichmentRequest.objects.prefetch_related(
-                "enrichers_settings"
-            ).get(pk=pk)
+            return EnrichmentRequest.objects.prefetch_related("enrichers_settings").get(
+                pk=pk
+            )
         except EnrichmentRequest.DoesNotExist:
             return None
 
     def get(self, request, pk, enricher_type):
         """Retrieve relations created by an enrichment request filtered by enricher type"""
         from core.utils import validate_order_by
-        from entries.serializers import RelationSerializer
 
         enrichment_request = self.get_object(pk)
 
@@ -442,7 +444,9 @@ class EnrichmentRelationsAPIView(APIView):
         ]
         if enricher_type not in enricher_types:
             return Response(
-                {"detail": f"Enricher type '{enricher_type}' not found in this enrichment request."},
+                {
+                    "detail": f"Enricher type '{enricher_type}' not found in this enrichment request."
+                },
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -502,5 +506,5 @@ class EnrichmentRelationsAPIView(APIView):
         paginator = TotalPagesPagination(page_size=page_size)
         result_page = paginator.paginate_queryset(relations, request)
 
-        serializer = RelationSerializer(result_page, many=True)
+        serializer = EnrichmentRelationSerializer(result_page, many=True)
         return paginator.get_paginated_response(serializer.data)

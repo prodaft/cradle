@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { registerReq } from '../../services/authReqService/authReqService';
+import useApi from '../../hooks/useApi/useApi';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
@@ -24,6 +24,7 @@ export default function Register() {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const { navigate, navigateLink } = useCradleNavigate();
     const location = useLocation();
+    const { usersApi } = useApi();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -33,11 +34,12 @@ export default function Register() {
             return;
         }
 
-        const data = { username: username, email: email, password: password };
-
-        registerReq(data)
-            .then(() => navigate('/login', { state: location.state, replace: true }))
-            .catch(displayError(setAlert));
+        try {
+            await usersApi.usersCreate({ username, email, password });
+            navigate('/login', { state: location.state, replace: true });
+        } catch (error) {
+            displayError(setAlert)(error);
+        }
     };
 
     return (

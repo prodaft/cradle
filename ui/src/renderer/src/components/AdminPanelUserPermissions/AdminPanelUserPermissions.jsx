@@ -31,7 +31,8 @@ export default function AdminPanelUserPermissions({ username, id }) {
     const simulateSession = () => {
         manageUser(id, 'simulate')
             .then((res) => {
-                auth.logIn(res.data['access'], res.data['refresh']);
+                // Backend returns access, refresh, and expiration times
+                auth.setTokensDirectly(res.data);
                 navigate('/', { replace: true });
             })
             .catch(displayError(setAlert, navigate));

@@ -1,16 +1,18 @@
+from typing import Any, Dict, List, cast
+
+from django.contrib.auth import password_validation
+from django.core.exceptions import ValidationError
 from rest_framework import serializers
+from rest_framework_simplejwt.authentication import AuthUser
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
-from rest_framework_simplejwt.authentication import AuthUser
-from django.core.exceptions import ValidationError
-from django.contrib.auth import password_validation
-from .models import CradleUser
+
 from .exceptions import (
     DisallowedActionException,
     DuplicateUserException,
     InvalidPasswordException,
 )
-from typing import Dict, List, cast, Any
+from .models import CradleUser
 from .utils.validators import password_validator
 
 
@@ -169,7 +171,29 @@ class EssentialUserRetrieveSerializer(serializers.ModelSerializer):
         fields = ["id", "username"]
 
 
+class TokenPairRetrieveSerializer(serializers.Serializer):
+    access = serializers.CharField(required=True)
+    refresh = serializers.CharField(required=True)
+    role = serializers.CharField(required=True)
+    access_expires_at = serializers.DateTimeField(required=True)
+    refresh_expires_at = serializers.DateTimeField(required=True)
+
+
+class TokenRefreshRetrieveSerializer(serializers.Serializer):
+    access = serializers.CharField(required=True)
+    refresh = serializers.CharField(required=True)
+    role = serializers.CharField(required=True)
+    access_expires_at = serializers.DateTimeField(required=True)
+    refresh_expires_at = serializers.DateTimeField(required=True)
+
+
 class TokenObtainSerializer(TokenObtainPairSerializer):
+    two_factor_token = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="2FA token (required if 2FA is enabled)",
+    )
+
     @classmethod
     def get_token(cls, user: AuthUser) -> Token:
         """Retrieves a JWT token for a given CradleUser instance.
@@ -243,6 +267,16 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
     token = serializers.CharField(required=True)
     password = serializers.CharField(required=True)
+
+    def validate_password(self, value):
+        """Validate the password using Django's password validators"""
+        try:
+            password_validation.validate_password(
+                value, password_validators=password_validator()
+            )
+        except ValidationError as e:
+            raise serializers.ValidationError(e.messages)
+        return value
 
 
 class APIKeyResponseSerializer(serializers.Serializer):

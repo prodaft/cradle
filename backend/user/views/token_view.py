@@ -1,43 +1,36 @@
+from datetime import datetime, timezone
+
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
-from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.request import Request
 from rest_framework.response import Response
-from drf_spectacular.utils import extend_schema
-from rest_framework_simplejwt.serializers import (
-    TokenObtainPairSerializer,
-    TokenRefreshSerializer,
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+from ..serializers import (
+    TokenObtainSerializer,
+    TokenPairRetrieveSerializer,
+    TokenRefreshRetrieveSerializer,
 )
-from drf_spectacular.utils import extend_schema_view
 
 
-@extend_schema_view(
-    post=extend_schema(
-        summary="Obtain JWT Pair",
-        description="Obtain a new pair of access and refresh tokens by providing valid user credentials.",  # noqa: E501
-        request=TokenObtainPairSerializer,
-        responses={
-            200: TokenObtainPairSerializer,
-            400: {"description": "Bad Request: Invalid credentials"},
-            401: {
-                "description": "Unauthorized: Authentication failed or email not confirmed or account not activated"  # noqa: E501
-            },
-        },
-    )
-)
 class TokenObtainPairLogView(TokenObtainPairView):
+    serializer_class = TokenObtainSerializer
+
     @extend_schema(
-        description="Obtain a new pair of access and refresh tokens by providing valid user credentials.",  # noqa: E501
-        request=TokenObtainPairSerializer,
+        description="Obtain a new pair of access and refresh tokens by providing valid user credentials. If 2FA is enabled for the user, a two_factor_token must be provided.",  # noqa: E501
+        request=TokenObtainSerializer,
         responses={
-            200: TokenObtainPairSerializer,
+            200: TokenPairRetrieveSerializer,
             400: "Bad Request: Invalid credentials",
-            401: "Unauthorized: Authentication failed",
+            401: "Unauthorized: Authentication failed or invalid 2FA token",
         },
         summary="Obtain JWT Pair",
     )
     def post(self, request: Request, *args, **kwargs) -> Response:
-        serializer: TokenObtainPairSerializer = self.get_serializer(data=request.data)
+        serializer: TokenObtainSerializer = self.get_serializer(data=request.data)
 
         try:
             serializer.is_valid(raise_exception=True)
@@ -71,7 +64,23 @@ class TokenObtainPairLogView(TokenObtainPairView):
                     {"error": "Invalid 2FA token"}, status=status.HTTP_401_UNAUTHORIZED
                 )
 
-        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+        # Add role and token expiry times to response
+        response_data = serializer.validated_data.copy()
+        response_data["role"] = user.role
+
+        # Decode access token to get expiry time
+        access_token = AccessToken(serializer.validated_data["access"])
+        access_expires_at = datetime.fromtimestamp(access_token["exp"], tz=timezone.utc)
+        response_data["access_expires_at"] = access_expires_at
+
+        # Decode refresh token to get expiry time
+        refresh_token = RefreshToken(serializer.validated_data["refresh"])
+        refresh_expires_at = datetime.fromtimestamp(
+            refresh_token["exp"], tz=timezone.utc
+        )
+        response_data["refresh_expires_at"] = refresh_expires_at
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
@@ -80,7 +89,7 @@ class TokenObtainPairLogView(TokenObtainPairView):
         description="Refresh the access token using a valid refresh token.",
         request=TokenRefreshSerializer,
         responses={
-            200: TokenRefreshSerializer,
+            200: TokenRefreshRetrieveSerializer,
             400: {"description": "Bad Request: Invalid refresh token"},
             401: {"description": "Unauthorized: Refresh token expired or invalid"},
         },
@@ -91,7 +100,7 @@ class TokenRefreshLogView(TokenRefreshView):
         description="Refresh the access token using a valid refresh token.",
         request=TokenRefreshSerializer,
         responses={
-            200: TokenRefreshSerializer,
+            200: TokenRefreshRetrieveSerializer,
             400: "Bad Request: Invalid refresh token",
             401: "Unauthorized: Refresh token expired or invalid",
         },
@@ -109,9 +118,35 @@ class TokenRefreshLogView(TokenRefreshView):
         Returns:
             Response(body, status=200): If the request is successful. The
             body has a field "access" with the new access type JSON web
-            token.
+            token, along with role, access_expires_at, and refresh_expires_at.
             Response(status=400): If the request body is invalid.
             Response(status=401): If the provided refresh type JSON web
             token is invalid.
         """
-        return super().post(request, *args, **kwargs)
+        response = super().post(request, *args, **kwargs)
+
+        if response.status_code == 200:
+            # Get the refresh token from request
+            refresh_token_str = request.data.get("refresh")
+            refresh_token = RefreshToken(refresh_token_str)
+
+            # Extract role from the refresh token payload
+            role = refresh_token.get("role", "")
+
+            # Get access token expiry time from the newly generated access token
+            access_token = AccessToken(response.data["access"])
+            access_expires_at = datetime.fromtimestamp(
+                access_token["exp"], tz=timezone.utc
+            )
+
+            # Get refresh token expiry time
+            refresh_expires_at = datetime.fromtimestamp(
+                refresh_token["exp"], tz=timezone.utc
+            )
+
+            # Add additional fields to response
+            response.data["role"] = role
+            response.data["access_expires_at"] = access_expires_at
+            response.data["refresh_expires_at"] = refresh_expires_at
+
+        return response

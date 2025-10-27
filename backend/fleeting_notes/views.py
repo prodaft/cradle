@@ -296,6 +296,8 @@ class FleetingNotesDetail(APIView):
 @extend_schema(
     summary="Convert fleeting note to regular note",
     description="Converts a fleeting note to a regular note. Only the owner can convert it.",
+    # Empty request body
+    request=None,
     responses={
         200: NoteRetrieveSerializer,
         400: {"description": "Invalid request data"},

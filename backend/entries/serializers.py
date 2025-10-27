@@ -660,6 +660,7 @@ class RelationSerializer(serializers.ModelSerializer):
             "details",
         ]
         read_only_fields = ["created_at", "last_seen", "id"]
+        ref_name = "Relation"
 
 
 class EnricherListSerializer(serializers.Serializer):

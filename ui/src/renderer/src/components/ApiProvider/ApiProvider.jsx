@@ -33,25 +33,55 @@ export const ApiContext = createContext();
  *
  * @function ApiProvider
  * @param {Array<React.ReactElement>} children - the children components
- * @param {string} [basePath] - optional override for API base path
  * @returns {ApiProvider}
  * @constructor
  */
 export default function ApiProvider({ children }) {
-    const { access, isAuthenticated } = useAuth();
+    const { getAccessToken, isLoggedIn } = useAuth();
     const [basePath, setBasePath] = useState(getBaseUrl());
+
+    /**
+     * Middleware: Convert URLSearchParams to JSON body
+     */
+    const bodyConverterMiddleware = {
+        pre: (context) => {
+            const isJsonRequest = context.init.headers['Content-Type'] === 'application/json';
+            const hasFormData = context.init.body instanceof URLSearchParams;
+
+            if (!isJsonRequest || !hasFormData) {
+                return context;
+            }
+
+            // Convert form data to clean JSON object
+            const jsonBody = {};
+            for (const [key, value] of context.init.body.entries()) {
+                if (value != null && value !== 'undefined') {
+                    jsonBody[key] = value;
+                }
+            }
+
+            return {
+                ...context,
+                init: {
+                    ...context.init,
+                    body: JSON.stringify(jsonBody),
+                },
+            };
+        },
+    };
 
     // Create configuration with authentication
     const configuration = useMemo(() => {
-        const config = new Configuration({
+        return new Configuration({
             basePath: basePath,
-            accessToken: isAuthenticated() ? () => access : undefined,
+            // Use getAccessToken which handles refresh automatically
+            accessToken: isLoggedIn() ? getAccessToken : undefined,
             headers: {
                 'Content-Type': 'application/json',
             },
+            middleware: [bodyConverterMiddleware],
         });
-        return config;
-    }, [access, isAuthenticated, basePath]);
+    }, [getAccessToken, isLoggedIn, basePath]);
 
     // Create API instances with the configuration
     const apis = useMemo(

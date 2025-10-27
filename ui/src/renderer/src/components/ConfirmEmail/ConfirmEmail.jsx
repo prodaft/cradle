@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { confirmReq } from '../../services/authReqService/authReqService';
+import useApi from '../../hooks/useApi/useApi';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
 
@@ -17,6 +17,7 @@ export default function ConfirmEmail() {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [searchParams, setSearchParams] = useSearchParams();
     const token = searchParams.get('token');
+    const { usersApi } = useApi();
 
     const handleConfirm = async () => {
         if (!token) {
@@ -28,19 +29,16 @@ export default function ConfirmEmail() {
             return;
         }
 
-        const data = { token: token };
-
-        confirmReq(data)
-            .then((res) => {
-                if (res.status === 200) {
-                    setAlert({
-                        show: true,
-                        message: 'Email confirmed successfully.',
-                        color: 'green',
-                    });
-                }
-            })
-            .catch(displayError(setAlert));
+        try {
+            await usersApi.usersEmailConfirmCreate({ token });
+            setAlert({
+                show: true,
+                message: 'Email confirmed successfully.',
+                color: 'green',
+            });
+        } catch (error) {
+            displayError(setAlert)(error);
+        }
     };
 
     useEffect(() => {

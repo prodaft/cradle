@@ -2,7 +2,7 @@ import { useWindowSize } from '@uidotdev/usehooks';
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { forgotPasswordReq } from '../../services/authReqService/authReqService';
+import useApi from '../../hooks/useApi/useApi';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
@@ -23,6 +23,7 @@ export default function ForgotPassword() {
     const { from, state } = location.state || { from: { pathname: '/' } };
 
     const { navigate, navigateLink } = useCradleNavigate();
+    const { usersApi } = useApi();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -36,19 +37,19 @@ export default function ForgotPassword() {
             return;
         }
 
-        const data = { username: username, email: email };
-
-        forgotPasswordReq(data)
-            .then((res) => {
-                if (res.status === 200) {
-                    setAlert({
-                        show: true,
-                        message: 'Password change email sent to your inbox!',
-                        color: 'green',
-                    });
-                }
-            })
-            .catch(displayError(setAlert));
+        try {
+            await usersApi.usersResetPasswordCreate({
+                username: username || undefined,
+                email: email || undefined,
+            });
+            setAlert({
+                show: true,
+                message: 'Password change email sent to your inbox!',
+                color: 'green',
+            });
+        } catch (error) {
+            displayError(setAlert)(error);
+        }
     };
 
     return (

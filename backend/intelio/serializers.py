@@ -3,8 +3,12 @@ from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
 
 from core.utils import fields_to_form
-from entries.models import Entry, EntryClass
-from entries.serializers import EntryClassSerializer, EntrySerializer
+from entries.models import Entry, EntryClass, Relation
+from entries.serializers import (
+    EntryClassSerializer,
+    EntrySerializer,
+    EntrySerializerMinimal,
+)
 from intelio.models.base import BaseDigest, EnrichmentRequest
 from user.models import CradleUser
 from user.serializers import EssentialUserRetrieveSerializer
@@ -243,19 +247,25 @@ class EnrichmentRequestListSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_enricher_class(self, obj):
         """Return the class name of the enricher"""
-        if obj.enrichment_settings:
-            return obj.enrichment_settings.enricher_type
+        # Note: EnrichmentRequest uses enrichers_settings (plural) ManyToMany field
+        # We get the first one for backward compatibility with single enricher display
+        first_setting = obj.enrichers_settings.first()
+        if first_setting:
+            return first_setting.enricher_type
         return None
 
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_enricher_name(self, obj):
         """Return the display name of the enricher"""
-        if obj.enrichment_settings:
-            config = BaseEnricher.get_subclass(obj.enrichment_settings.enricher_type)
-            return (
-                config.display_name if config else obj.enrichment_settings.enricher_type
-            )
+        # Note: EnrichmentRequest uses enrichers_settings (plural) ManyToMany field
+        # We get the first one for backward compatibility with single enricher display
+        first_setting = obj.enrichers_settings.first()
+        if first_setting:
+            config = BaseEnricher.get_subclass(first_setting.enricher_type)
+            return config.display_name if config else first_setting.enricher_type
         return None
 
 
@@ -284,10 +294,16 @@ class EnrichmentRequestDetailSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_enricher_types(self, obj):
         """Return list of enricher class names"""
         return [settings.enricher_type for settings in obj.enrichers_settings.all()]
 
+    @extend_schema_field(
+        serializers.ListField(
+            child=serializers.DictField(child=serializers.CharField())
+        )
+    )
     def get_enrichers_detail(self, obj):
         """Return detailed information about each enricher"""
         enrichers = []
@@ -314,7 +330,8 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
     )
 
     # Make enrichment_settings read-only as it will be set automatically
-    enrichment_settings = serializers.PrimaryKeyRelatedField(
+    # Note: This is a custom field representing the first enricher setting from enrichers_settings
+    enrichment_settings = serializers.SerializerMethodField(
         read_only=True, help_text="The enrichment settings used for this request"
     )
 
@@ -332,7 +349,7 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
 
     # Add enricher class and name fields for response
     enricher_class = serializers.SerializerMethodField(read_only=True)
-    enricher_name = serializers.SerializerMethodField(read_only=True)
+    enricher_name_display = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = EnrichmentRequest
@@ -346,9 +363,10 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
             "user_detail",
             "entity",
             "entity_detail",
+            "enricher_name",  # write-only input field
             "enrichment_settings",
             "enricher_class",
-            "enricher_name",
+            "enricher_name_display",
             "request",
             "errors",
         ]
@@ -361,22 +379,38 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
             "errors",
             "enrichment_settings",
             "enricher_class",
-            "enricher_name",
+            "enricher_name_display",
         ]
 
-    def get_enricher_class(self, obj):
-        """Return the class name of the enricher"""
-        if obj.enrichment_settings:
-            return obj.enrichment_settings.enricher_type
+    @extend_schema_field(serializers.UUIDField(allow_null=True))
+    def get_enrichment_settings(self, obj):
+        """Return the ID of the first enrichment settings"""
+        # Note: EnrichmentRequest uses enrichers_settings (plural) ManyToMany field
+        # We get the first one for backward compatibility with single enricher display
+        first_setting = obj.enrichers_settings.first()
+        if first_setting:
+            return first_setting.id
         return None
 
-    def get_enricher_name(self, obj):
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_enricher_class(self, obj):
+        """Return the class name of the enricher"""
+        # Note: EnrichmentRequest uses enrichers_settings (plural) ManyToMany field
+        # We get the first one for backward compatibility with single enricher display
+        first_setting = obj.enrichers_settings.first()
+        if first_setting:
+            return first_setting.enricher_type
+        return None
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_enricher_name_display(self, obj):
         """Return the display name of the enricher"""
-        if obj.enrichment_settings:
-            config = BaseEnricher.get_subclass(obj.enrichment_settings.enricher_type)
-            return (
-                config.display_name if config else obj.enrichment_settings.enricher_type
-            )
+        # Note: EnrichmentRequest uses enrichers_settings (plural) ManyToMany field
+        # We get the first one for backward compatibility with single enricher display
+        first_setting = obj.enrichers_settings.first()
+        if first_setting:
+            config = BaseEnricher.get_subclass(first_setting.enricher_type)
+            return config.display_name if config else first_setting.enricher_type
         return None
 
     def validate_enricher_name(self, value):
@@ -401,7 +435,13 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
         # Extract enricher_name
         enricher_name = validated_data.pop("enricher_name")
 
-        # Find the corresponding enrichment_settings
+        # Set the user to the current user
+        validated_data["user"] = self.context["request"].user
+
+        # Create the enrichment request first
+        instance = super().create(validated_data)
+
+        # Find the corresponding enrichment_settings and add to ManyToMany
         for subclass in BaseEnricher.__subclasses__():
             if (
                 hasattr(subclass, "display_name")
@@ -410,10 +450,32 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
                 enrichment_settings = EnricherSettings.objects.get(
                     enricher_type=subclass.__name__, enabled=True
                 )
-                validated_data["enrichment_settings"] = enrichment_settings
+                instance.enrichers_settings.add(enrichment_settings)
                 break
 
-        # Set the user to the current user
-        validated_data["user"] = self.context["request"].user
+        return instance
 
-        return super().create(validated_data)
+
+class EnrichmentRelationSerializer(serializers.ModelSerializer):
+    """Serializer for relations created by enrichment requests.
+
+    This is a separate serializer to avoid naming conflicts with the main RelationSerializer
+    when generating OpenAPI schema pagination wrappers.
+    """
+
+    e1 = EntrySerializerMinimal(read_only=True)
+    e2 = EntrySerializerMinimal(read_only=True)
+
+    class Meta:
+        model = Relation
+        fields = [
+            "id",
+            "e1",
+            "e2",
+            "created_at",
+            "last_seen",
+            "reason",
+            "details",
+        ]
+        read_only_fields = ["created_at", "last_seen", "id"]
+        ref_name = "EnrichmentRelation"

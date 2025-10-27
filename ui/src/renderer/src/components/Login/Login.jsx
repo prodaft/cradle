@@ -5,10 +5,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
 import useAuth from '../../hooks/useAuth/useAuth';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { logInReq } from '../../services/authReqService/authReqService';
 import { getBaseUrl } from '../../services/configService/configService';
 import { strip } from '../../utils/linkUtils/linkUtils';
-import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
 import Logo from '../Logo/Logo';
@@ -56,33 +54,26 @@ export default function Login() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        let data = { username: username, password: password };
+        const result = await auth.logIn(
+            username,
+            password,
+            requiresTwoFactor && twoFactorToken ? twoFactorToken : null,
+        );
 
-        // Include 2FA token if it's provided
-        if (requiresTwoFactor && twoFactorToken) {
-            data.two_factor_token = twoFactorToken;
+        if (result.result === 'success') {
+            navigate(from, { replace: true });
+        } else if (result.result === 'requires_2fa') {
+            setRequiresTwoFactor(true);
+            setAlert({ show: true, message: result.message, color: 'yellow' });
+        } else if (result.result === 'unconfirmed_email') {
+            setAlert({ show: true, message: result.message, color: 'red' });
+        } else if (result.result === 'inactive_account') {
+            setAlert({ show: true, message: result.message, color: 'red' });
+        } else if (result.result === 'network_error') {
+            setAlert({ show: true, message: result.message, color: 'red' });
+        } else {
+            setAlert({ show: true, message: result.message, color: 'red' });
         }
-
-        logInReq(data)
-            .then((res) => {
-                if (res.status === 200) {
-                    auth.logIn(res.data['access'], res.data['refresh']);
-                    navigate(from, { replace: true });
-                }
-            })
-            .catch((error) => {
-                // Check if the error indicates 2FA is required
-                if (
-                    error.response &&
-                    error.response.status === 401 &&
-                    error.response.data &&
-                    error.response.data.requires_2fa
-                ) {
-                    setRequiresTwoFactor(true);
-                } else {
-                    displayError(setAlert)(error);
-                }
-            });
     };
 
     const handleSaveSettings = (e) => {
@@ -313,7 +304,7 @@ export default function Login() {
                                                         data-testid='login-register-button'
                                                         className='cradle-btn cradle-btn-primary w-full'
                                                     >
-                                                        Authenticate
+                                                        Log in
                                                     </button>
                                                 </>
                                             )}

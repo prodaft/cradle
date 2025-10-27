@@ -14,9 +14,9 @@ import useAuth from '../../hooks/useAuth/useAuth';
  * @constructor
  */
 export default function PrivateRoute({ fallback }) {
-    const user = useAuth();
+    const auth = useAuth();
     const location = useLocation();
-    if (!user.isAuthenticated()) {
+    if (!auth.isLoggedIn()) {
         return <Navigate to={fallback} state={{ from: location }} replace={true} />;
     }
     return <Outlet />;
