@@ -1,12 +1,12 @@
 import { acceptCompletion, autocompletion, closeBrackets, completionKeymap } from '@codemirror/autocomplete';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { defaultHighlightStyle, indentOnInput, syntaxHighlighting, syntaxTree } from '@codemirror/language';
+import { languages } from '@codemirror/language-data';
 import { forEachDiagnostic } from '@codemirror/lint';
 import { EditorState } from '@codemirror/state';
-import { Decoration, EditorView, ViewPlugin, WidgetType, drawSelection, highlightActiveLine, keymap, rectangularSelection } from '@codemirror/view';
+import { Decoration, drawSelection, EditorView, highlightActiveLine, keymap, lineNumbers, rectangularSelection, ViewPlugin, WidgetType } from '@codemirror/view';
 import { Prec } from '@uiw/react-codemirror';
 import { NavArrowDown, NavArrowUp } from 'iconoir-react';
-import { debounce } from 'lodash';
 import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
@@ -16,7 +16,7 @@ import { CradleEditor } from '../../utils/editorUtils/editorUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import FileTable from '../FileTable/FileTable';
 
-import { purrmd, purrmdTheme } from 'purrmd';
+import { purrmd, PurrMDFeatures, purrmdTheme } from 'purrmd';
 
 // Widget to render Cradle links as clickable elements
 class CradleLinkWidget extends WidgetType {
@@ -104,11 +104,12 @@ class CradleLinkWidget extends WidgetType {
 }
 
 // Create ViewPlugin to render CradleLink nodes as widgets
-function cradleLinksPlugin(entryColors, navigate) {
+function cradleLinksPlugin(entryColors, navigate, sourceMode) {
     return ViewPlugin.fromClass(class {
         constructor(view) {
             this.entryColors = entryColors;
             this.navigate = navigate;
+            this.sourceMode = sourceMode;
             this.decorations = this.buildDecorations(view);
         }
 
@@ -128,6 +129,11 @@ function cradleLinksPlugin(entryColors, navigate) {
         }
 
         buildDecorations(view) {
+            // In source mode, never render widgets - always show raw text
+            if (this.sourceMode) {
+                return Decoration.set([], true);
+            }
+
             const widgets = [];
             const doc = view.state.doc;
             const text = doc.toString();
@@ -222,11 +228,12 @@ function cradleLinksPlugin(entryColors, navigate) {
     });
 }
 
-// Create ViewPlugin to style CradleLink text when uncollapsed (cursor inside or has lint issues)
-function cradleLinkColorPlugin(entryColors) {
+// Create ViewPlugin to style CradleLink text when uncollapsed (cursor inside or has lint issues or in source mode)
+function cradleLinkColorPlugin(entryColors, sourceMode) {
     return ViewPlugin.fromClass(class {
         constructor(view) {
             this.entryColors = entryColors;
+            this.sourceMode = sourceMode;
             this.decorations = this.buildDecorations(view);
         }
 
@@ -259,7 +266,7 @@ function cradleLinkColorPlugin(entryColors) {
                 diagnostics.push(diagnostic);
             });
 
-            // Find CradleLink nodes where cursor is inside OR has lint issues
+            // Find CradleLink nodes where cursor is inside OR has lint issues OR in source mode
             tree.iterate({
                 enter: (node) => {
                     if (node.type.name === 'CradleLink') {
@@ -297,8 +304,8 @@ function cradleLinkColorPlugin(entryColors) {
                             return (diagnostic.from < linkEnd && diagnostic.to > from);
                         });
 
-                        // Style if cursor IS inside OR if link has lint issues
-                        if (isInLink || isInTimestamp || hasLintIssues) {
+                        // Style if cursor IS inside OR if link has lint issues OR in source mode (always styled)
+                        if (isInLink || isInTimestamp || hasLintIssues || this.sourceMode) {
                             // Don't apply special styling if the link is empty (no type)
                             if (!type) {
                                 return;
@@ -379,11 +386,10 @@ const RichEditor = forwardRef(function RichEditor({
     setMarkdownContent,
     fileData,
     setFileData,
-    currentLine,
-    setCurrentLine,
     setAlert,
     saveNote,
     additionalExtensions = [],
+    source = false,
 }, ref) {
     const [showFileList, setShowFileList] = useState(false);
     const { profile } = useProfile();
@@ -393,7 +399,6 @@ const RichEditor = forwardRef(function RichEditor({
     const editorRef = useRef(null);
     const editorViewRef = useRef(null);
     const markdownContentRef = useRef(markdownContent);
-    const currentLineRef = useRef(currentLine);
     const [entryColors, setEntryColors] = useState(new Map());
 
     // Fetch entry colors on mount
@@ -415,7 +420,7 @@ const RichEditor = forwardRef(function RichEditor({
         fetchEntryColors();
     }, []);
 
-    const cradleTheme = EditorView.theme(
+    const cradleTheme = useMemo(() => EditorView.theme(
         {
             '&': {
                 backgroundColor: 'var(--cradle-bg-primary)',
@@ -499,11 +504,32 @@ const RichEditor = forwardRef(function RichEditor({
             '.cm-scroller': {
                 backgroundColor: 'var(--cradle-bg-primary)',
             },
+            '&.cm-focused .cm-selectionBackground, ::selection': {
+                backgroundColor: isDarkMode ? 'rgba(255, 140, 0, 0.3) !important' : 'rgba(255, 140, 0, 0.2) !important',
+            },
+            // Line numbers styling
+            '.cm-lineNumbers': {
+                backgroundColor: 'var(--cradle-bg-primary)',
+                color: 'var(--cradle-text-tertiary)',
+                borderRight: '1px solid var(--cradle-border-primary)',
+            },
+            '.cm-lineNumbers .cm-gutterElement': {
+                padding: '0 8px',
+                minWidth: '40px',
+                textAlign: 'right',
+            },
+            '.cm-gutter': {
+                backgroundColor: 'var(--cradle-bg-primary)',
+            },
+            '.cm-gutters': {
+                backgroundColor: 'var(--cradle-bg-primary)',
+                borderRight: '1px solid var(--cradle-border-primary)',
+            },
         },
         {
             dark: isDarkMode,
         },
-    );
+    ), [isDarkMode]);
 
     // Expose editorViewRef to parent through ref
     // Use a getter to always return the current value
@@ -517,20 +543,6 @@ const RichEditor = forwardRef(function RichEditor({
     useEffect(() => {
         markdownContentRef.current = markdownContent;
     }, [markdownContent]);
-
-    useEffect(() => {
-        currentLineRef.current = currentLine;
-    }, [currentLine]);
-
-    // Stabilized callback for setCurrentLine to prevent re-rendering
-    const debouncedSetCurrentLine = useRef(
-        debounce((lineNumber) => {
-            // Only update if the value is actually different
-            if (currentLineRef.current !== lineNumber) {
-                setCurrentLine(lineNumber);
-            }
-        }, 50),
-    ).current;
 
 
     // Adjusted instantiation to pass an empty options object and the error handler
@@ -546,18 +558,40 @@ const RichEditor = forwardRef(function RichEditor({
         }
 
         let exts = [
-            cradleTheme,
-            // Add Cradle links rendering plugin (shows widget when cursor outside)
-            cradleLinksPlugin(entryColors, navigate),
-            // Add Cradle link color plugin (styles text when cursor inside)
-            cradleLinkColorPlugin(entryColors),
+            // Add Cradle links rendering plugin (shows widget when cursor outside, disabled in source mode)
+            cradleLinksPlugin(entryColors, navigate, source),
+            // Add Cradle link color plugin (styles text when cursor inside or in source mode)
+            cradleLinkColorPlugin(entryColors, source),
             // Use PurrMD with Cradle link extension to prevent [[...]] being parsed as regular links
             purrmd({
                 markdownExtConfig: {
-                    extensions: [editorUtils.extension()]
+                    extensions: [editorUtils.extension()],
+                    codeLanguages: languages,
+                },
+                formattingDisplayMode: source ? 'show' : 'auto',
+                defaultSlashMenu: {
+                    show: false,
+                },
+                featuresConfigs: {
+                    [PurrMDFeatures.CodeBlock]: {
+                        onCodeBlockInfoClick: (lang, code, event) => {
+                            if (event && event.target) {
+                                const originalText = event.target.innerText;
+                                event.target.innerText = 'Copied!';
+                                setTimeout(() => {
+                                    event.target.innerText = originalText;
+                                }, 900);
+                            }
+                            if (typeof code === 'string') {
+                                navigator.clipboard.writeText(code);
+                            }
+                        }
+                    }
                 }
             }),
             purrmdTheme(),
+            // Apply our custom CRADLE theme after purrmd to ensure our styles take precedence
+            Prec.high(cradleTheme),
             // Other extensions
             EditorView.lineWrapping,
             history(),
@@ -584,6 +618,11 @@ const RichEditor = forwardRef(function RichEditor({
             ...additionalExtensions,
         ];
 
+        // Add line numbers when in source mode
+        if (source) {
+            exts.push(lineNumbers());
+        }
+
         if (profile?.vim_mode) {
             exts = exts.concat(editorUtils.vim());
         }
@@ -596,6 +635,7 @@ const RichEditor = forwardRef(function RichEditor({
         isDarkMode,
         entryColors,
         navigate,
+        source,
     ]);
 
     // Initialize the editor when the component mounts and extensions are ready
@@ -645,51 +685,6 @@ const RichEditor = forwardRef(function RichEditor({
             });
         }
     }, [markdownContent]);
-
-    // Cleanup on unmount
-    useEffect(() => {
-        return () => {
-            // Cancel any pending debounced calls
-            debouncedSetCurrentLine.cancel?.();
-
-            // Destroy editor view
-            if (editorViewRef.current) {
-                editorViewRef.current.destroy();
-                editorViewRef.current = null;
-            }
-        };
-    }, [debouncedSetCurrentLine]);
-
-    useEffect(() => {
-        if (!editorViewRef.current) {
-            return;
-        }
-
-        // Skip if current line hasn't actually changed
-        if (currentLineRef.current === currentLine) {
-            return;
-        }
-
-        const view = editorViewRef.current;
-        const state = view.state;
-        const cursor = state.selection.main.to;
-        const currentCursorLine = state.doc.lineAt(cursor);
-
-        if (currentLine === currentCursorLine.number) {
-            return;
-        }
-
-        const totalLines = state.doc.lines;
-        const targetLine = Math.min(Math.max(1, currentLine), totalLines);
-
-        const targetLinePos = state.doc.line(targetLine).from;
-
-        const selection = { anchor: targetLinePos, head: targetLinePos };
-        view.dispatch({
-            selection,
-            scrollIntoView: true,
-        });
-    }, [currentLine]);
 
     const insertTextToCodeMirror = useCallback((text) => {
         if (editorViewRef.current) {
@@ -763,8 +758,8 @@ export default memo(RichEditor, (prevProps, nextProps) => {
     return (
         prevProps.noteid === nextProps.noteid &&
         prevProps.markdownContent === nextProps.markdownContent &&
-        prevProps.currentLine === nextProps.currentLine &&
         prevProps.fileData === nextProps.fileData &&
-        prevProps.additionalExtensions === nextProps.additionalExtensions
+        prevProps.additionalExtensions === nextProps.additionalExtensions &&
+        prevProps.source === nextProps.source
     );
 });

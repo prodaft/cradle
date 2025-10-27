@@ -1,7 +1,9 @@
 import { Graph, TreeView } from '@phosphor-icons/react';
-import { Check, Clock, CloudUpload, Code, Download, HistoricShield, Link, MoreVert, Page, RefreshCircle, User } from 'iconoir-react';
+import { Check, Clock, ClockRotateRight, CloudUpload, Code, Download, Link, MoreVert, Page, RefreshCircle, User } from 'iconoir-react';
 import { FloppyDisk, LightBulb, Trash } from 'iconoir-react/regular';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { debounce } from 'lodash';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useLocation, useParams } from 'react-router-dom';
 import { useLayout } from '../../contexts/LayoutContext/LayoutContext';
 import { usePaneTabs } from '../../contexts/PaneTabsContext/PaneTabsContext';
@@ -45,13 +47,20 @@ import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import ActivityList from '../ActivityList/ActivityList';
-import Editor from '../Editor/Editor.jsx';
 import FileInput from '../FileInput/FileInput';
 import FileItem from '../FileItem/FileItem';
 import GraphExplorer from '../GraphExplorer/GraphExplorer.jsx';
 import NoteGraphSearch from '../GraphQuery/NoteGraphSearch.jsx';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
 import ReportGenerationModal from '../Modals/ReportGenerationModal';
+
+// View modes enum
+const ViewMode = {
+    CONTENT: 'CONTENT',
+    GRAPH: 'GRAPH',
+    HISTORY: 'HISTORY',
+    FILES: 'FILES',
+};
 
 /**
  * NoteViewer component
@@ -73,13 +82,13 @@ export default function NoteViewer() {
         localStorage.getItem('richEditor') ? localStorage.getItem('richEditor') === 'true' : true
     );
     const [markdownContent, setMarkdownContent] = useState('');
+    const { setModal } = useModal();
     const [fileData, setFileData] = useState([]);
-    const [currentLine, setCurrentLine] = useState(1);
     const [initialMarkdown, setInitialMarkdown] = useState('');
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [parsedContent, setParsedContent] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeView, setActiveView] = useState(0); // 0: Content, 1: Graph, 2: History
+    const [activeView, setActiveView] = useState(ViewMode.CONTENT);
     const [showViewsMenu, setShowViewsMenu] = useState(false);
     const [showActionsMenu, setShowActionsMenu] = useState(false);
     const [isFleeting, setIsFleeting] = useState(false);
@@ -96,7 +105,6 @@ export default function NoteViewer() {
     const [lspLoaded, setLspLoaded] = useState(false);
     const rawContentRef = useRef(null);
     const editorRef = useRef(null);
-    const { setModal } = useModal();
     const { managementApi } = useApi();
     const { updateCurrentTabTitle } = usePaneTabs();
     const { activePaneId } = useLayout();
@@ -306,8 +314,17 @@ export default function NoteViewer() {
             .catch(displayError(setAlert, navigate));
     }, [id, navigate, note.fleeting]);
 
+    // Use a ref to store the latest values for the save function
+    const saveDataRef = useRef({ markdownContent, fileData, isFleeting });
+
+    useEffect(() => {
+        saveDataRef.current = { markdownContent, fileData, isFleeting };
+    }, [markdownContent, fileData, isFleeting]);
+
     const handleSaveNote = useCallback(async () => {
-        if (!markdownContent || markdownContent.trim().length === 0) {
+        const { markdownContent: content, fileData: files, isFleeting: fleeting } = saveDataRef.current;
+
+        if (!content || content.trim().length === 0) {
             setAlert({ show: true, message: 'Cannot save empty note.', color: 'red' });
             return;
         }
@@ -315,27 +332,25 @@ export default function NoteViewer() {
         setSaving(true);
         try {
             let response;
-            if (isFleeting) {
+            if (fleeting) {
                 // Update existing fleeting note
-                response = await updateFleetingNote(id, markdownContent, fileData);
+                response = await updateFleetingNote(id, content, files);
             } else {
                 // Update regular note
                 response = await updateNote(id, {
-                    content: markdownContent,
-                    files: fileData,
+                    content: content,
+                    files: files,
                 });
             }
 
             if (response.status === 200) {
-                setInitialMarkdown(markdownContent);
+                setInitialMarkdown(content);
                 setHasUnsavedChanges(false);
                 setAlert({
-                    show: true,
-                    message: 'Changes saved successfully.',
-                    color: 'green',
+                    show: false,
                 });
                 // Update the parsed content for preview
-                parseContent(markdownContent, fileData, true).then((result) =>
+                parseContent(content, files, true).then((result) =>
                     setParsedContent(result.html),
                 );
             }
@@ -344,7 +359,7 @@ export default function NoteViewer() {
         } finally {
             setSaving(false);
         }
-    }, [id, markdownContent, fileData, navigate, isFleeting]);
+    }, [id, navigate, setAlert]);
 
     const handleSaveAsFinal = useCallback(async () => {
         if (!markdownContent || markdownContent.trim().length === 0) {
@@ -373,30 +388,30 @@ export default function NoteViewer() {
     }, [id, markdownContent, fileData, navigate]);
 
 
-    // Track changes for both note types
-    useEffect(() => {
-        if (!markdownContent || markdownContent === initialMarkdown) {
-            setHasUnsavedChanges(false);
-            return;
-        }
-
-        setHasUnsavedChanges(true);
-    }, [markdownContent, initialMarkdown]);
+    // Debounced autosave function using lodash - stable reference with longer delay
+    const debouncedSaveNote = useMemo(
+        () => debounce(handleSaveNote, 1500),
+        [handleSaveNote]
+    );
 
     // Auto-save for fleeting notes only
     useEffect(() => {
-        if (!isFleeting || !markdownContent || markdownContent === initialMarkdown) {
+        if (!markdownContent || markdownContent === initialMarkdown) {
+            // Clear any pending debounced calls if content matches initial
+            debouncedSaveNote.cancel();
             return;
         }
 
-        const autosaveTimer = setTimeout(() => {
-            handleSaveNote();
-        }, 1000); // Auto-save after 1 second of inactivity
+        // Update unsaved status after a short delay
+        setHasUnsavedChanges(true);
+        // Trigger save after a longer delay
+        debouncedSaveNote();
 
+        // Cleanup function to cancel pending debounced calls
         return () => {
-            clearTimeout(autosaveTimer);
+            debouncedSaveNote.cancel();
         };
-    }, [markdownContent, fileData, isFleeting, initialMarkdown, handleSaveNote]);
+    }, [markdownContent, initialMarkdown, debouncedSaveNote]);
 
     useEffect(() => {
         localStorage.setItem('richEditor', richEditor);
@@ -406,9 +421,27 @@ export default function NoteViewer() {
     useEffect(() => {
         const content = markdownContent || '';
         setNoteOutline(extractHeaderHierarchy(content, (lineNumber) => {
-            setCurrentLine(lineNumber);
+            console.log(editorRef.current.view);
+            const view = editorRef.current.view;
+            if (view && typeof lineNumber === 'number') {
+                const state = view.state;
+                if (lineNumber == 1) {
+                    view.dispatch({
+                        selection: { anchor: 0, head: 0 },
+                        scrollIntoView: true,
+                    });
+                } else {
+                    const targetLinePos = state.doc.line(Math.max(1, lineNumber + 2)).from;
+                    const selection = { anchor: targetLinePos, head: targetLinePos };
+
+                    view.dispatch({
+                        selection,
+                        scrollIntoView: true,
+                    });
+                }
+            }
         }));
-    }, [markdownContent, setCurrentLine]);
+    }, [markdownContent, editorRef]);
 
     // Conditionally render spinner or component
     if (isLoading) {
@@ -528,10 +561,10 @@ export default function NoteViewer() {
                                 <div className='relative'>
                                     <Tooltip
                                         content={
-                                            activeView === 0 && richEditor ? 'Rich Editor' :
-                                                activeView === 0 && !richEditor ? 'Markdown Editor' :
-                                                    activeView === 1 ? 'Graph' :
-                                                        activeView === 2 ? 'History' : 'View'
+                                            activeView === ViewMode.CONTENT && richEditor ? 'Rich Editor' :
+                                                activeView === ViewMode.CONTENT && !richEditor ? 'Markdown Editor' :
+                                                    activeView === ViewMode.GRAPH ? 'Graph' :
+                                                        activeView === ViewMode.HISTORY ? 'History' : 'View'
                                         }
                                     >
                                         <button
@@ -539,10 +572,10 @@ export default function NoteViewer() {
                                             className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:cradle-text-primary cradle-border hover:border-[#FF8C00]'
                                             data-testid='views-dropdown-btn'
                                         >
-                                            {activeView === 0 && richEditor && <Page width='16' height='16' />}
-                                            {activeView === 0 && !richEditor && <Code width='16' height='16' />}
-                                            {activeView === 1 && <Graph width='16' height='16' />}
-                                            {activeView === 2 && <HistoricShield width='16' height='16' />}
+                                            {activeView === ViewMode.CONTENT && richEditor && <Page width='16' height='16' />}
+                                            {activeView === ViewMode.CONTENT && !richEditor && <Code width='16' height='16' />}
+                                            {activeView === ViewMode.GRAPH && <Graph width='16' height='16' />}
+                                            {activeView === ViewMode.HISTORY && <ClockRotateRight width='16' height='16' />}
                                         </button>
                                     </Tooltip>
                                     {showViewsMenu && (
@@ -551,12 +584,12 @@ export default function NoteViewer() {
                                                 className='fixed inset-0 z-10'
                                                 onClick={() => setShowViewsMenu(false)}
                                             />
-                                            <div className='absolute right-0 mt-2 w-48 cradle-bg-elevated cradle-border z-20'>
+                                            <div className='absolute right-0 w-48 mt-2 cradle-bg-elevated cradle-border z-20'>
                                                 <div role='menu'>
                                                     <button
                                                         onClick={() => {
                                                             setShowViewsMenu(false);
-                                                            setActiveView(0);
+                                                            setActiveView(ViewMode.CONTENT);
                                                             setRichEditor(true);
                                                         }}
                                                         className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
@@ -564,12 +597,12 @@ export default function NoteViewer() {
                                                     >
                                                         <Page width='16' height='16' />
                                                         <span className='flex-1'>Rich Editor</span>
-                                                        {activeView === 0 && richEditor && <Check width='16' height='16' />}
+                                                        {activeView === ViewMode.CONTENT && richEditor && <Check width='16' height='16' />}
                                                     </button>
                                                     <button
                                                         onClick={() => {
                                                             setShowViewsMenu(false);
-                                                            setActiveView(0);
+                                                            setActiveView(ViewMode.CONTENT);
                                                             setRichEditor(false);
                                                         }}
                                                         className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
@@ -577,32 +610,45 @@ export default function NoteViewer() {
                                                     >
                                                         <Code width='16' height='16' />
                                                         <span className='flex-1'>Markdown Editor</span>
-                                                        {activeView === 0 && !richEditor && <Check width='16' height='16' />}
+                                                        {activeView === ViewMode.CONTENT && !richEditor && <Check width='16' height='16' />}
                                                     </button>
                                                     <button
                                                         onClick={() => {
                                                             setShowViewsMenu(false);
-                                                            setActiveView(1);
+                                                            setActiveView(ViewMode.GRAPH);
                                                         }}
                                                         className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
                                                         data-testid='graph-view-menu-item'
                                                     >
                                                         <Graph width='16' height='16' />
                                                         <span className='flex-1'>Graph</span>
-                                                        {activeView === 1 && <Check width='16' height='16' />}
+                                                        {activeView === ViewMode.GRAPH && <Check width='16' height='16' />}
                                                     </button>
                                                     {isAdmin() && (
                                                         <button
                                                             onClick={() => {
                                                                 setShowViewsMenu(false);
-                                                                setActiveView(2);
+                                                                setActiveView(ViewMode.HISTORY);
                                                             }}
                                                             className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
                                                             data-testid='history-view-menu-item'
                                                         >
-                                                            <HistoricShield width='16' height='16' />
+                                                            <ClockRotateRight width='16' height='16' />
                                                             <span className='flex-1'>History</span>
-                                                            {activeView === 2 && <Check width='16' height='16' />}
+                                                            {activeView === ViewMode.HISTORY && <Check width='16' height='16' />}
+                                                        </button>
+                                                    )}
+                                                    {note.files && note.files.length > 0 && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowViewsMenu(false);
+                                                                setActiveView(ViewMode.FILES);
+                                                            }}
+                                                            className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                                            data-testid='files-view-menu-item'
+                                                        >
+                                                            <span className='flex-1'>Files</span>
+                                                            {activeView === ViewMode.FILES && <Check width='16' height='16' />}
                                                         </button>
                                                     )}
                                                 </div>
@@ -631,7 +677,7 @@ export default function NoteViewer() {
                                             <div className='absolute right-0 mt-2 w-48 cradle-bg-elevated cradle-border z-20'>
                                                 <div role='menu'>
                                                     {/* Toggle Outline - only show on content view */}
-                                                    {activeView === 0 && (
+                                                    {activeView === ViewMode.CONTENT && (
                                                         <button
                                                             onClick={() => {
                                                                 setShowActionsMenu(false);
@@ -646,7 +692,7 @@ export default function NoteViewer() {
                                                         </button>
                                                     )}
                                                     {/* Auto Link - only show if LSP is loaded and on content view */}
-                                                    {lspLoaded && activeView === 0 && (
+                                                    {lspLoaded && activeView === ViewMode.CONTENT && (
                                                         <button
                                                             onClick={() => {
                                                                 setShowActionsMenu(false);
@@ -660,7 +706,7 @@ export default function NoteViewer() {
                                                         </button>
                                                     )}
                                                     {/* Add Timestamps - only show if LSP is loaded and on content view */}
-                                                    {lspLoaded && activeView === 0 && (
+                                                    {lspLoaded && activeView === ViewMode.CONTENT && (
                                                         <button
                                                             onClick={() => {
                                                                 setShowActionsMenu(false);
@@ -729,10 +775,10 @@ export default function NoteViewer() {
                                                     <button
                                                         onClick={() => {
                                                             setShowActionsMenu(false);
-                                                            setAlert({
-                                                                show: true,
-                                                                message: 'Publish feature coming soon...',
-                                                                color: 'blue',
+                                                            setModal(ReportGenerationModal, {
+                                                                noteId: id,
+                                                                noteTitle: note.title,
+                                                                setAlert: setAlert,
                                                             });
                                                         }}
                                                         className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
@@ -779,51 +825,55 @@ export default function NoteViewer() {
                 )}
 
                 {/* View content */}
-                <div className='flex-1 overflow-hidden'>
+                <div className='flex-1'>
                     {/* Content View */}
-                    {activeView === 0 && (
-                        <div className='w-full h-full overflow-hidden flex flex-col px-4 pb-4'>
-                            <div className='h-full w-full px-4 pb-4 pt-4 overflow-y-auto'>
-                                {!richEditor ? (
-                                    <div className='mt-2 h-full flex flex-row'>
-                                        {/* Outline sidebar */}
-                                        {showOutline && (
-                                            <div className='w-1/5 pr-2 overflow-y-auto'>
+                    {activeView === ViewMode.CONTENT && (
+                        <div className='w-full h-full overflow-hidden flex flex-col'>
+                            <div className='h-full w-full pb-4 overflow-y-hidden'>
+                                {showOutline ? (
+                                    <PanelGroup direction='horizontal' className='h-full'>
+                                        {/* Outline sidebar - rendered once */}
+                                        <Panel defaultSize={15} minSize={10} maxSize={30}>
+                                            <div className='h-full pr-2 overflow-y-auto'>
                                                 <NoteOutline
                                                     data={noteOutline}
                                                     title='Note Outline'
                                                     showSeparators={true}
                                                 />
                                             </div>
-                                        )}
-                                        {/* Source Editor */}
-                                        <div className={showOutline ? 'w-4/5 flex-1 min-h-0' : 'flex-1 min-h-0'}>
-                                            <Editor
-                                                ref={editorRef}
-                                                noteid={id}
-                                                markdownContent={markdownContent}
-                                                setMarkdownContent={setMarkdownContent}
-                                                fileData={fileData}
-                                                setFileData={setFileData}
-                                                setAlert={setAlert}
-                                                saveNote={handleSaveNote}
-                                            />
-                                        </div>
-                                    </div>
+                                        </Panel>
+                                        <PanelResizeHandle className='w-[2px] cradle-border-x hover:bg-[#FF8C00] hover:bg-opacity-50 transition-colors' />
+                                        {/* Editor Panel - conditionally renders Rich or Normal editor */}
+                                        <Panel defaultSize={85} minSize={50}>
+                                            <div className='h-full flex flex-col border-l cradle-border'>
+                                                {/* Embedded Rich Editor */}
+                                                <div className='flex-1 min-h-0'>
+                                                    <RichEditor
+                                                        ref={editorRef}
+                                                        noteid={id}
+                                                        markdownContent={markdownContent}
+                                                        setMarkdownContent={setMarkdownContent}
+                                                        fileData={fileData}
+                                                        setFileData={setFileData}
+                                                        source={!richEditor}
+                                                        setAlert={setAlert}
+                                                        saveNote={handleSaveNote}
+                                                    />
+                                                </div>
+
+                                                {/* Reference Tree below the editor */}
+                                                <div className='mt-4'>
+                                                    <ReferenceTree
+                                                        note={note}
+                                                        setAlert={setAlert}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </Panel>
+                                    </PanelGroup>
                                 ) : (
-                                    <div className='mt-2 h-full flex flex-row'>
-                                        {/* Outline sidebar */}
-                                        {showOutline && (
-                                            <div className='w-1/5 pr-2 overflow-y-auto'>
-                                                <NoteOutline
-                                                    data={noteOutline}
-                                                    title='Note Outline'
-                                                    showSeparators={true}
-                                                />
-                                            </div>
-                                        )}
-                                        {/* Rich Editor and Reference Tree */}
-                                        <div className={showOutline ? 'w-4/5 flex-1 min-h-0 flex flex-col' : 'flex-1 min-h-0 flex flex-col'}>
+                                    <div className='h-full'>
+                                        <div className='h-full flex flex-col border-l cradle-border'>
                                             {/* Embedded Rich Editor */}
                                             <div className='flex-1 min-h-0'>
                                                 <RichEditor
@@ -833,8 +883,7 @@ export default function NoteViewer() {
                                                     setMarkdownContent={setMarkdownContent}
                                                     fileData={fileData}
                                                     setFileData={setFileData}
-                                                    currentLine={currentLine}
-                                                    setCurrentLine={setCurrentLine}
+                                                    source={!richEditor}
                                                     setAlert={setAlert}
                                                     saveNote={handleSaveNote}
                                                 />
@@ -855,12 +904,12 @@ export default function NoteViewer() {
                     )}
 
                     {/* Graph View */}
-                    {activeView === 1 && (
+                    {activeView === ViewMode.GRAPH && (
                         <GraphExplorer GraphSearchComponent={NoteGraphSearch(note.id)} />
                     )}
 
-                    {/* Files View (removed as per new design) */}
-                    {note.files && note.files.length > 0 && activeView === 999 && (
+                    {/* Files View */}
+                    {note.files && note.files.length > 0 && activeView === ViewMode.FILES && (
                         <div>
                             <div className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'>
                                 <div className='w-[95%] h-full flex flex-col p-6'>
@@ -973,7 +1022,7 @@ export default function NoteViewer() {
                     )}
 
                     {/* History View */}
-                    {isAdmin() && activeView === 2 && (
+                    {isAdmin() && activeView === ViewMode.HISTORY && (
                         <div className='pt-2'>
                             <ActivityList content_type='note' objectId={id} />
                         </div>
@@ -981,15 +1030,6 @@ export default function NoteViewer() {
                 </div>
 
             </div>
-
-            {/* Report Generation Modal */}
-            <ReportGenerationModal
-                isOpen={showReportModal}
-                onClose={() => setShowReportModal(false)}
-                noteId={id}
-                noteTitle={note.title}
-                setAlert={setAlert}
-            />
         </>
     );
 }
