@@ -69,16 +69,12 @@ export function getFleetingNoteById(id) {
  * Function to save a fleeting note as final
  *
  * @param {string} id - The id of the note to update
- * @param {boolean} publishable - Whether the note is publishable
  * @returns {Promise<AxiosResponse<any, any>>}
  */
-export function saveFleetingNoteAsFinal(id, publishable) {
+export function saveFleetingNoteAsFinal(id) {
     return authAxios({
         method: 'PUT',
         url: `/fleeting-notes/${id}/final/`,
-        data: {
-            publishable: publishable,
-        },
     });
 }
 

@@ -1,18 +1,156 @@
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { defaultHighlightStyle, indentOnInput, syntaxHighlighting } from '@codemirror/language';
+import { syntaxTree } from '@codemirror/language';
 import { EditorState } from '@codemirror/state';
-import { EditorView, drawSelection, highlightActiveLine, keymap, rectangularSelection } from '@codemirror/view';
+import { Decoration, EditorView, ViewPlugin, WidgetType, drawSelection, highlightActiveLine, keymap, rectangularSelection } from '@codemirror/view';
 import { NavArrowDown, NavArrowUp } from 'iconoir-react';
 import { debounce } from 'lodash';
 import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import { getEntryClasses } from '../../services/adminService/adminService';
 import { CradleEditor } from '../../utils/editorUtils/editorUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import FileTable from '../FileTable/FileTable';
 
-// Import PurrMD
 import { purrmd, purrmdTheme } from 'purrmd';
+
+// Widget to render Cradle links as clickable elements
+class CradleLinkWidget extends WidgetType {
+    constructor(type, name, alias, color, navigate, fullText) {
+        super();
+        this.type = type;
+        this.name = name;
+        this.alias = alias;
+        this.color = color;
+        this.navigate = navigate;
+        this.fullText = fullText;
+    }
+
+    eq(other) {
+        return other.type === this.type &&
+            other.name === this.name &&
+            other.alias === this.alias &&
+            other.color === this.color;
+    }
+
+    toDOM(view) {
+        const span = document.createElement('span');
+        const displayName = this.alias || this.name;
+        const url = `/dashboards/${encodeURIComponent(this.type)}/${encodeURIComponent(this.name)}/`;
+
+        span.textContent = displayName;
+        span.style.color = this.color || '#FF8C00';
+        span.style.cursor = 'pointer';
+        span.style.textDecoration = 'none';
+        span.style.display = 'inline';
+        span.setAttribute('data-link-url', url);
+        span.setAttribute('data-link-full-text', this.fullText);
+        span.className = 'cradle-link-widget';
+
+        span.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // Only navigate on Ctrl+Click (or Cmd+Click on Mac)
+            if (e.ctrlKey || e.metaKey) {
+                this.navigate(url);
+            }
+        });
+
+        span.addEventListener('mouseenter', () => {
+            span.style.textDecoration = 'underline';
+            span.style.opacity = '0.8';
+        });
+
+        span.addEventListener('mouseleave', () => {
+            span.style.textDecoration = 'none';
+            span.style.opacity = '1';
+        });
+
+        return span;
+    }
+
+    ignoreEvent(e) {
+        // Return true for mousedown to allow the editor to handle cursor placement
+        return e.type === 'mousedown';
+    }
+}
+
+// Create ViewPlugin to render CradleLink nodes as widgets
+function cradleLinksPlugin(entryColors, navigate) {
+    return ViewPlugin.fromClass(class {
+        constructor(view) {
+            this.entryColors = entryColors;
+            this.navigate = navigate;
+            this.decorations = this.buildDecorations(view);
+        }
+
+        update(update) {
+            if (update.docChanged || update.viewportChanged || update.selectionSet) {
+                this.decorations = this.buildDecorations(update.view);
+            }
+        }
+
+        buildDecorations(view) {
+            const widgets = [];
+            const doc = view.state.doc;
+            const text = doc.toString();
+            const selection = view.state.selection.main;
+            const cursorPos = selection.head;
+            const tree = syntaxTree(view.state);
+
+            // Iterate through the syntax tree to find CradleLink nodes
+            tree.iterate({
+                enter: (node) => {
+                    if (node.type.name === 'CradleLink') {
+                        const from = node.from;
+                        const to = node.to;
+
+                        // Don't render widget if cursor is inside or on the border of the link
+                        if (cursorPos >= from && cursorPos <= to) {
+                            return;
+                        }
+
+                        // Extract the link parts from child nodes
+                        const linkText = text.slice(from, to);
+                        let type = '';
+                        let name = '';
+                        let alias = '';
+
+                        // Parse child nodes
+                        let child = node.node.firstChild;
+                        while (child) {
+                            const childText = text.slice(child.from, child.to);
+                            if (child.type.name === 'CradleLinkType') {
+                                type = childText;
+                            } else if (child.type.name === 'CradleLinkValue') {
+                                name = childText;
+                            } else if (child.type.name === 'CradleLinkAlias') {
+                                alias = childText;
+                            }
+                            child = child.nextSibling;
+                        }
+
+                        const color = this.entryColors.get(type);
+
+                        widgets.push(
+                            Decoration.replace({
+                                widget: new CradleLinkWidget(type, name, alias, color, this.navigate, linkText),
+                                inclusive: false,
+                                block: false,
+                            }).range(from, to)
+                        );
+                    }
+                }
+            });
+
+            return Decoration.set(widgets, true);
+        }
+    }, {
+        decorations: v => v.decorations
+    });
+}
 
 /**
  * RichEditor component that uses PurrMD for WYSIWYG markdown editing
@@ -34,11 +172,31 @@ const RichEditor = forwardRef(function RichEditor({
     const { profile } = useProfile();
     const [lspLoaded, setLspLoaded] = useState(false);
     const { isDarkMode } = useTheme();
+    const { navigate } = useCradleNavigate();
     const editorRef = useRef(null);
     const editorViewRef = useRef(null);
     const markdownContentRef = useRef(markdownContent);
     const currentLineRef = useRef(currentLine);
+    const [entryColors, setEntryColors] = useState(new Map());
 
+    // Fetch entry colors on mount
+    useEffect(() => {
+        const fetchEntryColors = async () => {
+            try {
+                const response = await getEntryClasses();
+                if (response.status === 200) {
+                    const colorMap = new Map();
+                    for (const entry of response.data) {
+                        colorMap.set(entry.subtype, entry.color);
+                    }
+                    setEntryColors(colorMap);
+                }
+            } catch (error) {
+                console.error('Failed to fetch entry colors:', error);
+            }
+        };
+        fetchEntryColors();
+    }, []);
 
     const cradleTheme = EditorView.theme(
         {
@@ -162,12 +320,23 @@ const RichEditor = forwardRef(function RichEditor({
     }, [setAlert]);
 
     const extensions = useMemo(() => {
+        // Don't initialize extensions until we have entry colors
+        if (entryColors.size === 0) {
+            return [];
+        }
+
         let exts = [
-            // Use PurrMD for WYSIWYG editing
             cradleTheme,
-            purrmd(),
+            // Add Cradle links rendering plugin
+            cradleLinksPlugin(entryColors, navigate),
+            // Use PurrMD with Cradle link extension to prevent [[...]] being parsed as regular links
+            purrmd({
+                markdownExtConfig: {
+                    extensions: [editorUtils.extension()]
+                }
+            }),
             purrmdTheme(),
-            // Custom Cradle theme that replaces PurrMD's default theme
+            // Other extensions
             EditorView.lineWrapping,
             history(),
             drawSelection(),
@@ -191,11 +360,13 @@ const RichEditor = forwardRef(function RichEditor({
         profile?.vim_mode,
         additionalExtensions,
         isDarkMode,
+        entryColors,
+        navigate,
     ]);
 
-    // Initialize the editor when the component mounts
+    // Initialize the editor when the component mounts and extensions are ready
     useEffect(() => {
-        if (!editorViewRef.current && editorRef.current) {
+        if (!editorViewRef.current && editorRef.current && extensions.length > 0) {
             try {
                 const state = EditorState.create({
                     doc: markdownContent,
@@ -226,7 +397,7 @@ const RichEditor = forwardRef(function RichEditor({
                 });
             }
         }
-    }, [extensions, setMarkdownContent, setAlert]);
+    }, [extensions, setMarkdownContent, setAlert, markdownContent]);
 
     // Update editor content when markdownContent changes externally
     useEffect(() => {

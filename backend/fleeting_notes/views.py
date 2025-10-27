@@ -1,27 +1,24 @@
 from typing import cast
+from uuid import UUID
 
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.response import Response
-from rest_framework.request import Request
-from rest_framework import status
 from django.db import transaction
 from django.http import QueryDict
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from notes.models import Note
 from notes.serializers import (
+    FleetingNoteRetrieveSerializer,
+    FleetingNoteSerializer,
     NoteCreateSerializer,
     NoteRetrieveSerializer,
-    FleetingNoteSerializer,
-    FleetingNoteRetrieveSerializer,
 )
 from user.models import CradleUser
-from .serializers import FleetingNoteFinalRequestSerializer
-
-from uuid import UUID
-
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
 
 @extend_schema_view(
@@ -274,8 +271,7 @@ class FleetingNotesDetail(APIView):
 @extend_schema_view(
     put=extend_schema(
         summary="Convert fleeting note to regular note",
-        description="Converts a fleeting note to a regular note. Only the owner can convert it. "
-        + "Optionally specify if the note is publishable - defaults to not publishable if unspecified.",
+        description="Converts a fleeting note to a regular note. Only the owner can convert it.",
         parameters=[
             OpenApiParameter(
                 name="id",
@@ -300,7 +296,6 @@ class FleetingNotesDetail(APIView):
 @extend_schema(
     summary="Convert fleeting note to regular note",
     description="Converts a fleeting note to a regular note. Only the owner can convert it.",
-    request=FleetingNoteFinalRequestSerializer,
     responses={
         200: NoteRetrieveSerializer,
         400: {"description": "Invalid request data"},
@@ -314,8 +309,6 @@ class FleetingNotesFinal(APIView):
 
     def put(self, request: Request, id: UUID) -> Response:
         """Convert a fleeting note to a regular note. Only the owner can convert it.
-        Optionally specify if the note is publishable - defaults to not publishable
-        if unspecified.
 
         Args:
             request: The request that was sent
@@ -350,7 +343,6 @@ class FleetingNotesFinal(APIView):
         note_data = {
             "content": note.content,
             "files": [file.to_dict() for file in note.files.all()],
-            "publishable": request.data.get("publishable", False),
         }
 
         with transaction.atomic():

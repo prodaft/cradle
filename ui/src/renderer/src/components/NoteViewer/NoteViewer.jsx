@@ -1,8 +1,6 @@
-import { Graph } from '@phosphor-icons/react';
-import { TreeView } from '@phosphor-icons/react';
+import { Graph, TreeView } from '@phosphor-icons/react';
 import { Check, Clock, CloudUpload, Code, Download, HistoricShield, Link, MoreVert, Page, RefreshCircle, User } from 'iconoir-react';
-import { FloppyDisk, StatsReport, Trash } from 'iconoir-react/regular';
-import { LightBulb } from 'iconoir-react/regular';
+import { FloppyDisk, LightBulb, Trash } from 'iconoir-react/regular';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { useLayout } from '../../contexts/LayoutContext/LayoutContext';
@@ -18,14 +16,13 @@ import {
 import {
     deleteNote,
     getNote,
-    setPublishable,
     updateNote,
 } from '../../services/notesService/notesService';
 import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import { createDownloadPath, parseContent } from '../../utils/textEditorUtils/textEditorUtils';
 import { CradleEditor } from '../../utils/editorUtils/editorUtils';
 import extractHeaderHierarchy from '../../utils/editorUtils/markdownOutliner';
+import { displayError } from '../../utils/responseUtils/responseUtils';
+import { createDownloadPath, parseContent } from '../../utils/textEditorUtils/textEditorUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import ListView from '../ListView/ListView';
 import NoteOutline from '../NoteOutline/NoteOutline';
@@ -71,7 +68,6 @@ export default function NoteViewer() {
     const { isAdmin, profile } = useProfile();
     const { from, state } = location.state || { from: { pathname: '/' } };
     const [note, setNote] = useState({});
-    const [isPublishable, setIsPublishable] = useState(false);
     const [richEditor, setRichEditor] = useState(
         localStorage.getItem('richEditor') ? localStorage.getItem('richEditor') === 'true' : true
     );
@@ -266,7 +262,6 @@ export default function NoteViewer() {
                 setMarkdownContent(responseNote.content);
                 setInitialMarkdown(responseNote.content);
                 setFileData(responseNote.files || []);
-                setIsPublishable(responseNote.publishable || false);
                 setHasUnsavedChanges(false);
                 // Update tab title with note title
                 if (responseNote.title && activePaneId) {
@@ -289,19 +284,6 @@ export default function NoteViewer() {
     const toggleView = useCallback(() => {
         setRichEditor((prevRichEditor) => !prevRichEditor);
     }, []);
-
-    useEffect(() => {
-        const newNote = { ...note, publishable: isPublishable };
-        setNote(newNote);
-    }, [isPublishable]);
-
-    const togglePublishable = useCallback(() => {
-        setPublishable(id, !isPublishable)
-            .then(() => {
-                setIsPublishable((prev) => !prev);
-            })
-            .catch(displayError(setAlert, navigate));
-    }, [id, isPublishable]);
 
     const handleDelete = useCallback(() => {
         // Use the appropriate delete function based on whether the note is fleeting
@@ -371,7 +353,7 @@ export default function NoteViewer() {
 
         setSaving(true);
         try {
-            const response = await saveFleetingNoteAsFinal(id, isPublishable);
+            const response = await saveFleetingNoteAsFinal(id);
 
             if (response.status === 200) {
                 setAlert({
@@ -387,7 +369,7 @@ export default function NoteViewer() {
         } finally {
             setSaving(false);
         }
-    }, [id, isPublishable, markdownContent, fileData, navigate]);
+    }, [id, markdownContent, fileData, navigate]);
 
 
     // Track changes for both note types
@@ -698,31 +680,6 @@ export default function NoteViewer() {
                                                         <span className='flex-1'>Source mode</span>
                                                         {!richEditor && <Check width='16' height='16' />}
                                                     </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            setShowActionsMenu(false);
-                                                            togglePublishable();
-                                                        }}
-                                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
-                                                        data-testid='publishable-menu-item'
-                                                    >
-                                                        <CloudUpload width='16' height='16' />
-                                                        <span className='flex-1'>Publishable</span>
-                                                        {isPublishable && <Check width='16' height='16' />}
-                                                    </button>
-                                                    {isPublishable && (
-                                                        <button
-                                                            onClick={() => {
-                                                                setShowActionsMenu(false);
-                                                                setShowReportModal(true);
-                                                            }}
-                                                            className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
-                                                            data-testid='create-report-menu-item'
-                                                        >
-                                                            <StatsReport width='16' height='16' />
-                                                            <span className='flex-1'>Create Report</span>
-                                                        </button>
-                                                    )}
                                                     {isFleeting && (
                                                         <button
                                                             onClick={() => {

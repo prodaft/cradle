@@ -1,11 +1,12 @@
 import uuid
 
-from core.fields import BitStringField
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.utils import timezone
 from django_lifecycle import AFTER_CREATE, AFTER_UPDATE, hook
 from django_lifecycle.mixins import LifecycleModelMixin, transaction
+
+from core.fields import BitStringField
 from entries.models import Entry, Relation
 from intelio.models.base import BaseDigest
 from logs.models import LoggableModelMixin
@@ -28,7 +29,6 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
         primary_key=True, default=uuid.uuid4, editable=False
     )
     content: models.CharField = models.CharField()
-    publishable: models.BooleanField = models.BooleanField(default=False)
     timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
     fleeting: models.BooleanField = models.BooleanField(default=False)
 
@@ -124,7 +124,6 @@ class ArchivedNote(models.Model):
     )
     content: models.CharField = models.CharField()
     timestamp: models.DateTimeField = models.DateTimeField()
-    publishable: models.BooleanField = models.BooleanField(default=False)
 
 
 class Snippet(models.Model):

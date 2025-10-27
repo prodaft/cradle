@@ -19,7 +19,6 @@ from .exceptions import (
     InvalidRequestException,
     NoteDoesNotExistException,
     NoteIsEmptyException,
-    NoteNotPublishableException,
 )
 from .markdown.to_metadata import infer_metadata
 from .models import Note, Snippet
@@ -41,7 +40,7 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Note
-        fields = ["publishable", "content", "files"]
+        fields = ["content", "files"]
 
     def validate(self, data):
         """First checks whether the client sent the content of the field
@@ -116,7 +115,7 @@ class NoteEditSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Note
-        fields = ["publishable", "content", "files"]
+        fields = ["content", "files"]
 
     def update(self, instance: Note, validated_data: dict[str, Any]):
         user = self.context["request"].user
@@ -302,7 +301,6 @@ class NoteListSerializer:
         """Serialize a single note"""
         data = {
             "id": str(note.id),
-            "publishable": note.publishable,
             "fleeting": note.fleeting,
             "status": note.status,
             "status_message": note.status_message,
@@ -412,7 +410,6 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
         model = Note
         fields = [
             "id",
-            "publishable",
             "fleeting",
             "status",
             "status_message",
@@ -461,14 +458,6 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
         return data
 
 
-class NotePublishSerializer(serializers.ModelSerializer):
-    publishable = serializers.BooleanField(required=True)
-
-    class Meta:
-        model = Note
-        fields = ["publishable"]
-
-
 class NoteReportSerializer(serializers.ModelSerializer):
     files = FileReferenceSerializer(many=True)
 
@@ -488,19 +477,12 @@ class ReportQuerySerializer(serializers.Serializer):
         if notes.count() != len(value):
             raise NoteDoesNotExistException("One of the provided notes does not exist.")
 
-    def __check_publishable(self, notes) -> None:
-        if notes.filter(publishable=False).exists():
-            raise NoteNotPublishableException(
-                "Not all requested notes are publishable."
-            )
-
     def validate_note_ids(self, value: Any) -> Any:
         """Validates a list of note IDs.
 
         This method checks the following:
         1. Ensures the note IDs are unique.
         2. Checks if the notes exist in the database.
-        3. Verifies if the notes are publishable.
 
         Args:
             value (Any): The value to be validated, expected to be a list of note IDs.
@@ -511,12 +493,10 @@ class ReportQuerySerializer(serializers.Serializer):
         Raises:
             InvalidRequestException: If the note IDs are not unique.
             NoteDoesNotExistException: If one of the requested notes does not exist.
-            NoteNotPublishable: If any of the requested notes are not publishable.
         """
         required_notes = Note.objects.filter(id__in=value)
         self.__check_unique(value)
         self.__check_exists(required_notes, value)
-        self.__check_publishable(required_notes)
         return value
 
     def validate(self, data: Any) -> Any:

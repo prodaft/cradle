@@ -2,7 +2,6 @@ import { Search } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import Datepicker from 'react-tailwindcss-datepicker';
 import DeleteNote from '../NoteActions/DeleteNote';
-import Publishable from '../NoteActions/Publishable';
 import NotesList from '../NotesList/NotesList';
 
 export default function Notes({ setAlert, obj }) {
@@ -60,10 +59,10 @@ export default function Notes({ setAlert, obj }) {
                 : '',
             timestamp_lte: value.endDate
                 ? (() => {
-                      const endDate = new Date(value.endDate);
-                      endDate.setHours(23, 59, 59, 999);
-                      return endDate.toISOString();
-                  })()
+                    const endDate = new Date(value.endDate);
+                    endDate.setHours(23, 59, 59, 999);
+                    return endDate.toISOString();
+                })()
                 : '',
         }));
         setDateRange(value);
@@ -130,7 +129,6 @@ export default function Notes({ setAlert, obj }) {
                     <NotesList
                         query={submittedFilters}
                         noteActions={[
-                            { Component: Publishable, props: {} },
                             { Component: DeleteNote, props: { setAlert } },
                         ]}
                     />

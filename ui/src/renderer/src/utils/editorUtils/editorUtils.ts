@@ -1137,10 +1137,7 @@ export class CradleEditor {
     MARKDOWN LANGUAGE INTEGRATION
   =============================================================================*/
 
-    /**
-     * Creates a cradle markdown language with support for [[type:value|alias]] links.
-     */
-    markdown(config: MarkdownLanguageConfig): LanguageSupport {
+   extension(): Extension {
         const CradleLinkExtension = {
             defineNodes: [
                 {
@@ -1287,13 +1284,21 @@ export class CradleEditor {
             ],
         };
 
+        return CradleLinkExtension;
+    }
+
+
+    /**
+     * Creates a cradle markdown language with support for [[type:value|alias]] links.
+     */
+    markdown(config: MarkdownLanguageConfig): LanguageSupport {
         return yamlFrontmatter({
             content: markdown({
                 base: markdownLanguage,
                 codeLanguages: config.codeLanguages || [],
                 extensions: [
                     basicSetup,
-                    CradleLinkExtension,
+                    this.extension(),
                     ...(config.extensions || []),
                 ],
             }),

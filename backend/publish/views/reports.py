@@ -1,9 +1,10 @@
+from django.db.models import Q
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import generics, status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from django.db.models import Q
 
 from core.pagination import TotalPagesPagination
 from core.utils import validate_order_by
@@ -11,14 +12,12 @@ from notes.models import Note
 from publish.strategies import PUBLISH_STRATEGIES
 
 from ..models import PublishedReport, ReportStatus
-from ..tasks import generate_report, edit_report
 from ..serializers import (
     EditReportSerializer,
-    ReportSerializer,
     ReportRetryErrorResponseSerializer,
+    ReportSerializer,
 )
-
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from ..tasks import edit_report, generate_report
 
 
 @extend_schema_view(
@@ -199,7 +198,6 @@ class ReportRetryAPIView(APIView):
                 "description": "Invalid request data or report is already being generated"
             },
             401: {"description": "User is not authenticated"},
-            403: {"description": "Note is not publishable"},
             404: {"description": "Report or one or more notes not found"},
         },
     ),
@@ -243,18 +241,12 @@ class ReportDetailAPIView(generics.RetrieveAPIView):
         note_ids = data["note_ids"]
         title = data["title"]
 
-        notes = Note.objects.filter(publishable=True, id__in=note_ids)
+        notes = Note.objects.filter(id__in=note_ids)
         if notes.count() != len(note_ids):
             return Response(
                 {"detail": "One or more notes not found."},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        for note in notes:
-            if not note.publishable:
-                return Response(
-                    {"detail": f"Note {note.id} is not publishable."},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
 
         if report.status == ReportStatus.WORKING:
             return Response(

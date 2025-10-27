@@ -1,23 +1,24 @@
 from typing import cast
 from uuid import UUID
 
-from access.enums import AccessType
-from access.models import Access
-from core.pagination import TotalPagesPagination
-from core.utils import validate_order_by
 from django.db.models import Count, Q
 from django.http import QueryDict
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
-from entries.enums import EntryType
-from entries.models import Entry
-from file_transfer.models import FileReference
-from knowledge_graph.serializers import SubGraphSerializer
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
+
+from access.enums import AccessType
+from access.models import Access
+from core.pagination import TotalPagesPagination
+from core.utils import validate_order_by
+from entries.enums import EntryType
+from entries.models import Entry
+from file_transfer.models import FileReference
+from knowledge_graph.serializers import SubGraphSerializer
 from user.models import CradleUser
 
 from ..filters import NoteFilter
@@ -242,7 +243,6 @@ class NoteList(APIView):
                 .only(
                     "id",
                     "content",
-                    "publishable",
                     "status",
                     "status_message",
                     "status_timestamp",

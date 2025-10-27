@@ -1,7 +1,9 @@
 from typing import Dict
+
 from entries.models import Entry, EntryClass
 from notes.markdown.to_markdown import Anonymizer, anonymize_markdown
 from notes.models import Note
+
 from ..models import PublishedReport
 
 
@@ -46,7 +48,6 @@ class BasePublishStrategy:
             editor=note.editor,
             timestamp=note.timestamp,
             edit_timestamp=note.edit_timestamp,
-            publishable=note.publishable,
         )
 
     def _anonymize_entry(self, entry: Entry) -> Entry:

@@ -1,12 +1,12 @@
-from .utils import NotesTestCase
-from ..models import Note
+from uuid import UUID
+
 from ..exceptions import (
     InvalidRequestException,
     NoteDoesNotExistException,
-    NoteNotPublishableException,
 )
+from ..models import Note
 from ..serializers import ReportQuerySerializer
-from uuid import UUID
+from .utils import NotesTestCase
 
 
 class ReportQuerySerializerTest(NotesTestCase):
@@ -15,8 +15,6 @@ class ReportQuerySerializerTest(NotesTestCase):
         self.notes = []
         for i in range(0, 3):
             self.notes.append(Note.objects.create(content=f"{i}"))
-        self.notes[2].publishable = True
-        self.notes[2].save(update_fields=["publishable"])
 
     def test_serializer_empty_data(self):
         serializer = ReportQuerySerializer(data=[])
@@ -50,20 +48,7 @@ class ReportQuerySerializerTest(NotesTestCase):
                 with self.assertRaises(NoteDoesNotExistException):
                     ReportQuerySerializer(test_entity).validate_note_ids(test_entity)
 
-    def test_validate_notes_not_publishable(self):
-        note_ids = [
-            [self.notes[2].pk, self.notes[1].pk, self.notes[0].pk],
-            [self.notes[0].pk, self.notes[1].pk],
-            [self.notes[0].pk, self.notes[2].pk, self.notes[1].pk],
-        ]
-        for test_entity in note_ids:
-            with self.subTest(f"{test_entity}"):
-                with self.assertRaises(NoteNotPublishableException):
-                    ReportQuerySerializer(test_entity).validate_note_ids(test_entity)
-
     def test_validate_notes_successful(self):
-        self.notes[1].publishable = True
-        self.notes[1].save(update_fields=["publishable"])
         note_ids = [
             [self.notes[2].pk, self.notes[1].pk],
             [self.notes[1].pk, self.notes[2].pk],

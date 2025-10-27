@@ -41,7 +41,6 @@ export default function NoteSelector({
     });
 
     const [submittedFilters, setSubmittedFilters] = useState({
-        publishable: true,
         content: '',
         author__username: '',
         truncate: -1,

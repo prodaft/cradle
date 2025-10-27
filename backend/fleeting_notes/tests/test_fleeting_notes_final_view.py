@@ -1,11 +1,13 @@
-from .utils import FleetingNotesTestCase
+import uuid
+
 from django.urls import reverse
-from entries.models import Entry
-from access.models import Access
+
 from access.enums import AccessType
+from access.models import Access
+from entries.models import Entry
 from notes.models import Note
 
-import uuid
+from .utils import FleetingNotesTestCase
 
 
 class FleetingNotesFinalTest(FleetingNotesTestCase):
@@ -114,4 +116,3 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         # Check for the correct response
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["content"], self.note_user.content)
-        self.assertFalse(response.json()["publishable"])

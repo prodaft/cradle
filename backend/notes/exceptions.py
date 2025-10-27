@@ -1,8 +1,8 @@
-from typing import Iterable, TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 
-from entries.models import Entry
 from rest_framework.exceptions import APIException
 
+from entries.models import Entry
 from management.settings import cradle_settings
 
 if TYPE_CHECKING:
@@ -99,8 +99,3 @@ class NoAccessToEntriesException(APIException):
 
         self.default_detail = self.default_detail[:-1]
         super().__init__(*args, **kwargs)
-
-
-class NoteNotPublishableException(APIException):
-    status_code = 403
-    default_detail = "The note is not publishable."

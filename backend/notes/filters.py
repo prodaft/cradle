@@ -1,10 +1,10 @@
 import django_filters
+
 from .models import Note
 
 
 class NoteFilter(django_filters.FilterSet):
     content = django_filters.CharFilter(lookup_expr="icontains")
-    publishable = django_filters.BooleanFilter()
     timestamp = django_filters.DateTimeFilter()
     timestamp_gte = django_filters.DateTimeFilter(
         field_name="timestamp", lookup_expr="gte"
@@ -19,7 +19,6 @@ class NoteFilter(django_filters.FilterSet):
         model = Note
         fields = [
             "content",
-            "publishable",
             "timestamp",
             "timestamp_gte",
             "timestamp_lte",

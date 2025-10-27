@@ -23,10 +23,7 @@ In essence, CRADLE is built to help threat analysts work together efficiently by
   - **Entity**: A high-level object of investigation (e.g., a case, organization, or campaign).
   - **Artifact**: A specific piece of evidence or indicator (e.g., IP address, domain name, or file hash).
 
-- **Note**: A document containing analysis, observations, or findings related to one or more entries. Notes can be:
-  - **Publishable**: Notes marked for inclusion in reports and external sharing.
-  - **Non-publishable**: Internal working notes not intended for external distribution.
-
+- **Note**: A document containing analysis, observations, or findings related to one or more entries.
 - **Fleeting Note**: A temporary, quick-capture note that hasn't been formally organized or linked to specific entries.
 
 - **Access Types**: Different levels of permissions users can have for entries:

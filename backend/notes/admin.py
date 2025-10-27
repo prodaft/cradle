@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Note, ArchivedNote
+
+from .models import ArchivedNote, Note
 
 
 @admin.register(Note)
@@ -7,13 +8,12 @@ class NoteAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "content",
-        "publishable",
         "timestamp",
         "author",
         "editor",
         "edit_timestamp",
     )
-    list_filter = ("publishable", "timestamp", "author", "editor")
+    list_filter = ("timestamp", "author", "editor")
     search_fields = ("content", "author__username", "editor__username")
     readonly_fields = ("id", "timestamp", "edit_timestamp")
 
@@ -28,7 +28,7 @@ class NoteAdmin(admin.ModelAdmin):
 
 @admin.register(ArchivedNote)
 class ArchivedNoteAdmin(admin.ModelAdmin):
-    list_display = ("id", "content", "publishable", "timestamp")
-    list_filter = ("publishable", "timestamp")
+    list_display = ("id", "content", "timestamp")
+    list_filter = ("timestamp",)
     search_fields = ("content",)
     readonly_fields = ("id", "timestamp")

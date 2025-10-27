@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { PlusCircle } from 'iconoir-react';
-import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { addFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import DeleteNote from '../NoteActions/DeleteNote';
-import Publishable from '../NoteActions/Publishable';
 import NotesList from '../NotesList/NotesList';
 
 /**
@@ -41,7 +39,7 @@ export default function Notes({ setAlert }) {
         newParams.set('content', filters.content);
         newParams.set('author__username', filters.author__username);
         newParams.set('editor__username', filters.editor__username);
-        
+
         // Set or delete created_date_from/to filters
         if (filters.created_date_from) {
             newParams.set('created_date_from', filters.created_date_from);
@@ -53,7 +51,7 @@ export default function Notes({ setAlert }) {
         } else {
             newParams.delete('created_date_to');
         }
-        
+
         // Set or delete updated_date_from/to filters
         if (filters.updated_date_from) {
             newParams.set('updated_date_from', filters.updated_date_from);
@@ -111,7 +109,7 @@ export default function Notes({ setAlert }) {
         }
 
         setSearchFilters(updatedFilters);
-        
+
         // Auto-submit the filter after a short delay
         setTimeout(() => {
             updateSearchParams(updatedFilters);
@@ -160,7 +158,6 @@ export default function Notes({ setAlert }) {
                     <NotesList
                         query={submittedFilters}
                         noteActions={[
-                            { Component: Publishable, props: { setAlert } },
                             { Component: DeleteNote, props: { setAlert } },
                         ]}
                         onFilterChange={handleColumnFilterChange}

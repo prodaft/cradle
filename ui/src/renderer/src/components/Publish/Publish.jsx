@@ -90,7 +90,7 @@ export default function Publish() {
                     if (notes.length !== validNotes.length) {
                         throw new Error('Some notes could not be loaded.');
                     }
-                    setSelectedNotes(validNotes.filter((note) => note.publishable));
+                    setSelectedNotes(validNotes);
                 })
                 .catch(displayError(setAlert));
         }
