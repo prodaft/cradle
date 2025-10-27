@@ -1,7 +1,7 @@
 import { acceptCompletion, autocompletion, closeBrackets, completionKeymap } from '@codemirror/autocomplete';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { defaultHighlightStyle, indentOnInput, syntaxHighlighting, syntaxTree } from '@codemirror/language';
-
+import { forEachDiagnostic } from '@codemirror/lint';
 import { EditorState } from '@codemirror/state';
 import { Decoration, EditorView, ViewPlugin, WidgetType, drawSelection, highlightActiveLine, keymap, rectangularSelection } from '@codemirror/view';
 import { Prec } from '@uiw/react-codemirror';
@@ -113,7 +113,16 @@ function cradleLinksPlugin(entryColors, navigate) {
         }
 
         update(update) {
-            if (update.docChanged || update.viewportChanged || update.selectionSet) {
+            // Count diagnostics to detect changes
+            let oldDiagnosticCount = 0;
+            forEachDiagnostic(update.startState, () => { oldDiagnosticCount++; });
+
+            let newDiagnosticCount = 0;
+            forEachDiagnostic(update.state, () => { newDiagnosticCount++; });
+
+            const diagnosticsChanged = oldDiagnosticCount !== newDiagnosticCount;
+
+            if (update.docChanged || update.viewportChanged || update.selectionSet || diagnosticsChanged) {
                 this.decorations = this.buildDecorations(update.view);
             }
         }
@@ -125,6 +134,12 @@ function cradleLinksPlugin(entryColors, navigate) {
             const selection = view.state.selection.main;
             const cursorPos = selection.head;
             const tree = syntaxTree(view.state);
+
+            // Collect lint diagnostics to check if links have errors/warnings
+            const diagnostics = [];
+            forEachDiagnostic(view.state, (diagnostic) => {
+                diagnostics.push(diagnostic);
+            });
 
             // Iterate through the syntax tree to find CradleLink nodes
             tree.iterate({
@@ -176,6 +191,17 @@ function cradleLinksPlugin(entryColors, navigate) {
                             return;
                         }
 
+                        // Check if there are any diagnostics overlapping with this link
+                        const hasLintIssues = diagnostics.some(diagnostic => {
+                            // Check if diagnostic overlaps with the link range
+                            return (diagnostic.from < widgetEnd && diagnostic.to > from);
+                        });
+
+                        // Don't collapse the link if it has lint issues - show the raw text instead
+                        if (hasLintIssues) {
+                            return;
+                        }
+
                         const color = this.entryColors.get(type);
 
                         widgets.push(
@@ -196,7 +222,7 @@ function cradleLinksPlugin(entryColors, navigate) {
     });
 }
 
-// Create ViewPlugin to style CradleLink text when uncollapsed (cursor inside)
+// Create ViewPlugin to style CradleLink text when uncollapsed (cursor inside or has lint issues)
 function cradleLinkColorPlugin(entryColors) {
     return ViewPlugin.fromClass(class {
         constructor(view) {
@@ -205,7 +231,16 @@ function cradleLinkColorPlugin(entryColors) {
         }
 
         update(update) {
-            if (update.docChanged || update.viewportChanged || update.selectionSet) {
+            // Count diagnostics to detect changes
+            let oldDiagnosticCount = 0;
+            forEachDiagnostic(update.startState, () => { oldDiagnosticCount++; });
+
+            let newDiagnosticCount = 0;
+            forEachDiagnostic(update.state, () => { newDiagnosticCount++; });
+
+            const diagnosticsChanged = oldDiagnosticCount !== newDiagnosticCount;
+
+            if (update.docChanged || update.viewportChanged || update.selectionSet || diagnosticsChanged) {
                 this.decorations = this.buildDecorations(update.view);
             }
         }
@@ -218,7 +253,13 @@ function cradleLinkColorPlugin(entryColors) {
             const cursorPos = selection.head;
             const tree = syntaxTree(view.state);
 
-            // Find CradleLink nodes where cursor is inside
+            // Collect lint diagnostics
+            const diagnostics = [];
+            forEachDiagnostic(view.state, (diagnostic) => {
+                diagnostics.push(diagnostic);
+            });
+
+            // Find CradleLink nodes where cursor is inside OR has lint issues
             tree.iterate({
                 enter: (node) => {
                     if (node.type.name === 'CradleLink') {
@@ -247,11 +288,17 @@ function cradleLinkColorPlugin(entryColors) {
                             child = child.nextSibling;
                         }
 
-                        // Only style if cursor IS inside the link OR inside the timestamp
+                        // Check if cursor is inside the link OR inside the timestamp
                         const isInLink = cursorPos >= from && cursorPos <= to;
                         const isInTimestamp = linkEnd > to && cursorPos >= timestampFrom && cursorPos <= timestampTo;
 
-                        if (isInLink || isInTimestamp) {
+                        // Check if there are any diagnostics overlapping with this link
+                        const hasLintIssues = diagnostics.some(diagnostic => {
+                            return (diagnostic.from < linkEnd && diagnostic.to > from);
+                        });
+
+                        // Style if cursor IS inside OR if link has lint issues
+                        if (isInLink || isInTimestamp || hasLintIssues) {
                             // Don't apply special styling if the link is empty (no type)
                             if (!type) {
                                 return;

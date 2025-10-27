@@ -10,9 +10,9 @@ layout = "hextra-home"
   imageTitle="CRADLE Graph View"
   imageWidth="1400"
 >}}
-{{< hextra/hero-badge link="https://github.com/prodaft/cradle/tree/v2.10.2-beta.5e20e70e" >}}
+{{< hextra/hero-badge link="https://github.com/prodaft/cradle/tree/v2.10.2-beta.a699cc87" >}}
   <div class="hx-w-2 hx-h-2 hx-rounded-full hx-bg-primary-400"></div>
-  <span>Latest version: 2.10.2-beta.5e20e70e</span>
+  <span>Latest version: 2.10.2-beta.a699cc87</span>
   {{< icon name="arrow-circle-right" attributes="height=14" >}}
 {{< /hextra/hero-badge >}}
 
