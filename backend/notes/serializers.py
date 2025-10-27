@@ -1,6 +1,9 @@
 from typing import Any, Dict, cast
 
 from drf_spectacular.utils import extend_schema_field
+from rest_framework import serializers
+
+from cradle import settings
 from entries.models import Entry, EntryClass
 from entries.serializers import (
     EntryResponseSerializer,
@@ -9,7 +12,6 @@ from entries.serializers import (
 from file_transfer.models import FileReference
 from file_transfer.serializers import FileReferenceSerializer
 from management.settings import cradle_settings
-from rest_framework import serializers
 from user.models import CradleUser
 from user.serializers import EssentialUserRetrieveSerializer, UserRetrieveSerializer
 
@@ -404,7 +406,7 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
     files = FileReferenceWithNoteSerializer(many=True)
     author = EssentialUserRetrieveSerializer()
     editor = EssentialUserRetrieveSerializer()
-    entries = EntryTypesCompressedTreeSerializer()
+    entries = EntryTypesCompressedTreeSerializer(exclude=settings.INTERNAL_SUBTYPES)
 
     class Meta:
         model = Note

@@ -1,32 +1,24 @@
-import { EditorState, StateField, EditorSelection, RangeSetBuilder } from '@codemirror/state';
-import { keymap, EditorView, drawSelection, rectangularSelection, highlightActiveLine, Decoration, ViewPlugin, ViewUpdate } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
-import { defaultHighlightStyle, syntaxHighlighting, indentOnInput } from '@codemirror/language';
-import { languages } from '@codemirror/language-data';
-import { Table } from '@lezer/markdown';
+import { defaultHighlightStyle, indentOnInput, syntaxHighlighting } from '@codemirror/language';
+import { EditorState } from '@codemirror/state';
+import { EditorView, drawSelection, highlightActiveLine, keymap, rectangularSelection } from '@codemirror/view';
 import { NavArrowDown, NavArrowUp } from 'iconoir-react';
 import { debounce } from 'lodash';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
 import { CradleEditor } from '../../utils/editorUtils/editorUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import FileTable from '../FileTable/FileTable';
 
-// Import the rich editor plugin
-import richEditor from './richEditorPlugin';
-
-// Import the markdoc config
-import markdocConfig from './markdocConfig';
-
-// Import the CSS styles
-import './richEditorStyles.css';
+// Import PurrMD
+import { purrmd, purrmdTheme } from 'purrmd';
 
 /**
- * RichEditor component that uses codemirror-rich-markdoc for rich markdown editing
- * This component provides a hybrid rich-text editing mode for Markdown content
+ * RichEditor component that uses PurrMD for WYSIWYG markdown editing
+ * This component provides a rich-text editing mode for Markdown content with instant preview
  */
-function RichEditor({
+const RichEditor = forwardRef(function RichEditor({
     noteid,
     markdownContent,
     setMarkdownContent,
@@ -37,7 +29,7 @@ function RichEditor({
     setAlert,
     saveNote,
     additionalExtensions = [],
-}) {
+}, ref) {
     const [showFileList, setShowFileList] = useState(false);
     const { profile } = useProfile();
     const [lspLoaded, setLspLoaded] = useState(false);
@@ -46,6 +38,102 @@ function RichEditor({
     const editorViewRef = useRef(null);
     const markdownContentRef = useRef(markdownContent);
     const currentLineRef = useRef(currentLine);
+
+
+    const cradleTheme = EditorView.theme(
+        {
+            '&': {
+                backgroundColor: 'var(--cradle-bg-primary)',
+                color: 'var(--cradle-text-primary)',
+            },
+            '.cm-content': {
+                color: 'var(--cradle-text-primary)',
+                // Primary colors
+                '--purrmd-primary-color': 'var(--cradle-accent-primary)',
+                '--purrmd-formatting-color': 'var(--cradle-text-tertiary)',
+                '--purrmd-formatting-opacity': '0.7',
+
+                // Headings
+                '--purrmd-h1-size': '1.802em',
+                '--purrmd-h2-size': '1.602em',
+                '--purrmd-h3-size': '1.424em',
+                '--purrmd-h4-size': '1.266em',
+                '--purrmd-h5-size': '1.125em',
+                '--purrmd-h6-size': '1em',
+                '--purrmd-h1-weight': '600',
+                '--purrmd-h2-weight': '600',
+                '--purrmd-h3-weight': '600',
+                '--purrmd-h4-weight': '500',
+                '--purrmd-h5-weight': '500',
+                '--purrmd-h6-weight': '500',
+                '--purrmd-h-color': 'var(--cradle-text-primary)',
+                '--purrmd-formatting-heading-color': 'var(--cradle-text-tertiary)',
+                '--purrmd-formatting-h-opacity': '0.7',
+
+                // Links
+                '--purrmd-link-color': 'var(--cradle-accent-primary)',
+                '--purrmd-link-url-color': 'var(--cradle-accent-secondary)',
+                '--purrmd-link-title-color': 'var(--cradle-accent-primary)',
+                '--purrmd-formatting-link-color': 'var(--cradle-accent-primary)',
+                '--purrmd-formatting-link-opacity': '0.8',
+
+                // Inline code
+                '--purrmd-inline-code-bg-color': isDarkMode ? 'var(--cradle-bg-tertiary)' : 'var(--cradle-bg-secondary)',
+                '--purrmd-inline-code-color': 'var(--cradle-text-primary)',
+                '--purrmd-formatting-inline-code-color': 'var(--cradle-text-tertiary)',
+
+                // Code blocks
+                '--purrmd-code-block-bg-color': isDarkMode ? 'var(--cradle-bg-secondary)' : 'var(--cradle-bg-tertiary)',
+                '--purrmd-code-block-border-radius': '0px',
+                '--purrmd-code-block-info-bg-color': 'transparent',
+                '--purrmd-code-block-info-bg-color-hover': isDarkMode ? 'rgba(255, 140, 0, 0.1)' : 'rgba(255, 140, 0, 0.08)',
+                '--purrmd-formatting-code-block-color': 'var(--cradle-text-tertiary)',
+                '--purrmd-formatting-code-opacity': '0.7',
+
+                // Blockquotes
+                '--purrmd-formatting-blockquote-color': 'var(--cradle-accent-primary)',
+                '--purrmd-formatting-blockquote-border-thickness': '2px',
+                '--purrmd-formatting-blockquote-border-color': 'var(--cradle-accent-primary)',
+                '--purrmd-formatting-blockquote-opacity': '0.8',
+
+                // Lists
+                '--purrmd-formatting-bullet-list-item-color': 'var(--cradle-text-tertiary)',
+                '--purrmd-formatting-bullet-list-item-point-color': 'var(--cradle-accent-primary)',
+                '--purrmd-formatting-ordered-list-item-color': 'var(--cradle-text-tertiary)',
+                '--purrmd-formatting-bullet-list-task-color': 'var(--cradle-text-tertiary)',
+                '--purrmd-formatting-ordered-list-task-color': 'var(--cradle-text-tertiary)',
+                '--purrmd-formatting-bullet-list-opacity': '0.8',
+                '--purrmd-formatting-ordered-list-opacity': '0.8',
+
+                // Checkboxes
+                '--purrmd-checkbox-list-height': '2rem',
+                '--purrmd-checkbox-height': '1.0rem',
+                '--purrmd-checkbox-color': 'var(--cradle-bg-elevated)',
+                '--purrmd-checkbox-border-color': 'var(--cradle-border-accent)',
+                '--purrmd-checkbox-checked-color': 'var(--cradle-accent-primary)',
+                '--purrmd-checkbox-checked-border-color': 'var(--cradle-accent-primary)',
+
+                // Strong/Bold
+                '--purrmd-strong-weight': '600',
+                '--purrmd-formatting-strong-color': 'var(--cradle-accent-primary)',
+                '--purrmd-formatting-strong-opacity': '0.8',
+            },
+            '.cm-editor': {
+                backgroundColor: 'var(--cradle-bg-primary)',
+            },
+            '.cm-scroller': {
+                backgroundColor: 'var(--cradle-bg-primary)',
+            },
+        },
+        {
+            dark: isDarkMode,
+        },
+    );
+
+    // Expose editorViewRef to parent through ref
+    useImperativeHandle(ref, () => ({
+        view: editorViewRef.current,
+    }), []);
 
     // Update refs when props change to avoid using stale values in callbacks
     useEffect(() => {
@@ -71,226 +159,15 @@ function RichEditor({
     const editorUtils = useMemo(() => {
         CradleEditor.clearCache();
         return new CradleEditor({}, setLspLoaded, displayError(setAlert));
-    }, []); // Remove setAlert dependency to prevent unnecessary recreations
+    }, [setAlert]);
 
     const extensions = useMemo(() => {
-        // Heading decorations for each level (so CSS can target them)
-        const hDeco = [
-            Decoration.line({ attributes: { class: 'cm-renderlike-h1' } }),
-            Decoration.line({ attributes: { class: 'cm-renderlike-h2' } }),
-            Decoration.line({ attributes: { class: 'cm-renderlike-h3' } }),
-            Decoration.line({ attributes: { class: 'cm-renderlike-h4' } }),
-            Decoration.line({ attributes: { class: 'cm-renderlike-h5' } }),
-            Decoration.line({ attributes: { class: 'cm-renderlike-h6' } }),
-        ];
-
-        // Quickly examine a single line; return 0..5 for H1..H6 or -1 if not heading
-        function headingLevelForLine(text) {
-            // Trim left? no—headings must start at col 0 per ATX spec for most renderers.
-            const m = /^(#{1,6})\s(.*)$/.exec(text);
-            if (!m) return -1;
-            // Optional closing hashes are allowed; we don't care here.
-            return m[1].length - 1; // 0..5
-        }
-
-        // Line decoration for revealing hidden tokens on selected lines
-        const revealLineDeco = Decoration.line({ attributes: { class: 'cm-reveal-line' } });
-
-        const headingRenderField = StateField.define({
-            create() { 
-                return Decoration.none; 
-            },
-            update(decos, tr) {
-                // Recompute when doc, viewport, or selection might affect what we show
-                if (!(tr.docChanged || tr.selection || tr.viewportChanged)) return decos;
-
-                const b = new RangeSetBuilder();
-                const { state } = tr;
-
-                // Use current viewports for performance
-                const vp = tr.view?.visibleRanges ?? [{ from: 0, to: state.doc.length }];
-
-                for (const { from, to } of vp) {
-                    // Walk line by line within the visible slice
-                    let line = state.doc.lineAt(from);
-                    while (line.from <= to) {
-                        const lvl = headingLevelForLine(line.text);
-                        if (lvl >= 0) {
-                            b.add(line.from, line.from, hDeco[lvl]);
-                        }
-                        if (line.number >= state.doc.lines) break;
-                        line = state.doc.line(line.number + 1);
-                    }
-                }
-
-                return b.finish();
-            },
-            provide: f => EditorView.decorations.from(f),
-        });
-
-        const revealSelectedLines = StateField.define({
-            create() {
-                return Decoration.none;
-            },
-            update(decos, tr) {
-                if (!(tr.selection || tr.docChanged || tr.focusChanged)) return decos;
-
-                const sel = tr.state.selection;
-                const b = new RangeSetBuilder();
-
-                // If any non-empty selection exists, reveal all intersecting lines.
-                const hasNonEmpty = sel.ranges.some(r => !r.empty);
-
-                if (hasNonEmpty) {
-                    for (const r of sel.ranges) {
-                        let line = tr.state.doc.lineAt(r.from);
-                        const endPos = r.to;
-                        while (true) {
-                            b.add(line.from, line.from, revealLineDeco);
-                            if (line.to >= endPos) break;
-                            if (line.number >= tr.state.doc.lines) break;
-                            line = tr.state.doc.line(line.number + 1);
-                        }
-                    }
-                } else {
-                    // Empty selection(s): reveal just the caret line(s)
-                    for (const r of sel.ranges) {
-                        const line = tr.state.doc.lineAt(r.head);
-                        b.add(line.from, line.from, revealLineDeco);
-                    }
-                }
-
-                return b.finish();
-            },
-            provide: f => EditorView.decorations.from(f),
-        });
-
-        // Make sure we trigger recompute on viewport changes (when scrolling)
-        const headingRenderView = ViewPlugin.fromClass(class {
-            constructor(view) {
-                this.view = view;
-            }
-            update(u) {
-                if (u.viewportChanged) {
-                    // Nudge the field to recompute by dispatching a no-op annotation
-                    this.view.dispatch({ effects: [] });
-                }
-            }
-        });
-
-        // Custom theme for transparent background and active line styling
-        const customTheme = EditorView.theme({
-            '&': {
-                backgroundColor: 'transparent',
-                color: isDarkMode ? '#FFFFFF' : '#000000',
-            },
-            '.cm-content': {
-                backgroundColor: 'transparent',
-                color: isDarkMode ? '#FFFFFF' : '#000000',
-            },
-            '.cm-focused .cm-activeLine': {
-                backgroundColor: 'transparent',
-            },
-            '.cm-activeLine': {
-                backgroundColor: 'transparent',
-            },
-            '.cm-editor': {
-                backgroundColor: 'transparent',
-            },
-            '.cm-scroller': {
-                backgroundColor: 'transparent',
-            },
-            // Default cursor color
-            '.cm-cursor': {
-                borderLeftColor: isDarkMode ? '#FFFFFF' : '#000000',
-            },
-            '.cm-dropCursor': {
-                borderLeftColor: isDarkMode ? '#FFFFFF' : '#000000',
-            },
-            // Style for markdoc rendered blocks
-            '.cm-markdoc-renderBlock': {
-                backgroundColor: 'transparent',
-                color: isDarkMode ? '#FFFFFF' : '#000000',
-            },
-            // Style for hidden markdown syntax (no color override)
-            '.cm-markdoc-hidden': {
-                opacity: 0.35,
-            },
-            // Reveal ONLY within the active line(s) — do not set color here
-            '.cm-line.cm-reveal-line .cm-markdoc-hidden, .cm-line.cm-reveal-line .cm-markdoc-hidden *': {
-                display: 'inline !important',
-                opacity: '1 !important',
-                visibility: 'visible !important',
-                filter: 'none !important',
-                fontSize: 'inherit !important',
-                lineHeight: 'inherit !important',
-                transform: 'none !important',
-                letterSpacing: 'normal !important',
-                width: 'auto !important',
-                height: 'auto !important',
-                margin: '0 !important',
-                padding: '0 !important',
-                pointerEvents: 'none !important',   // ← key change: don't intercept clicks
-            },
-            // Render-like heading styles (scoped to the line) - avoid margins to prevent dead click areas
-            '.cm-line.cm-renderlike-h1': {
-                fontSize: '1.875rem',   // ~30px
-                fontWeight: '700',
-                lineHeight: '2.25rem',
-                // avoid margin/padding left/right/top/bottom here
-            },
-            '.cm-line.cm-renderlike-h2': {
-                fontSize: '1.5rem',
-                fontWeight: '700',
-                lineHeight: '2rem',
-                // avoid margin/padding left/right/top/bottom here
-            },
-            '.cm-line.cm-renderlike-h3': {
-                fontSize: '1.25rem',
-                fontWeight: '600',
-                lineHeight: '1.75rem',
-                // avoid margin/padding left/right/top/bottom here
-            },
-            '.cm-line.cm-renderlike-h4': { 
-                fontWeight: '600' 
-            },
-            '.cm-line.cm-renderlike-h5': { 
-                fontWeight: '600' 
-            },
-            '.cm-line.cm-renderlike-h6': { 
-                fontWeight: '600' 
-            },
-        });
-
-        // Selection theme to make selections visible
-        const selectionTheme = EditorView.theme({
-            // Make sure the caret is still visible
-            '.cm-content': {
-                caretColor: isDarkMode ? '#FFFFFF' : '#000000',
-            },
-
-            /* Optional: keep selection matches visible too */
-            '.cm-selectionMatch': {
-                backgroundColor: isDarkMode
-                    ? 'rgba(255,220,0,.15)'
-                    : 'rgba(255,200,0,.18)',
-            },
-        }, { dark: isDarkMode });
-
         let exts = [
-            // Use the rich editor plugin
-            richEditor({
-                markdoc: markdocConfig,
-                lezer: {
-                    codeLanguages: languages,
-                    extensions: [Table]
-                }
-            }),
-            customTheme,
-            selectionTheme,
-            headingRenderField,      // Heading render field for viewport-aware heading detection
-            headingRenderView,       // View plugin for viewport change handling
-            revealSelectedLines,     // Line decoration for selected lines only
+            // Use PurrMD for WYSIWYG editing
+            cradleTheme,
+            purrmd(),
+            purrmdTheme(),
+            // Custom Cradle theme that replaces PurrMD's default theme
             EditorView.lineWrapping,
             history(),
             drawSelection(),
@@ -299,8 +176,8 @@ function RichEditor({
             indentOnInput(),
             syntaxHighlighting(defaultHighlightStyle),
             keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
-            ...editorUtils.autocomplete(),
-            editorUtils.lint(),
+            ...editorUtils.autocomplete(),  // Add autocomplete
+            editorUtils.lint(),            // Add linting
             ...additionalExtensions,
         ];
 
@@ -325,8 +202,8 @@ function RichEditor({
                     extensions: extensions,
                 });
 
-                const view = new EditorView({ 
-                    state, 
+                const view = new EditorView({
+                    state,
                     parent: editorRef.current,
                     dispatch: (tr) => {
                         view.update([tr]);
@@ -339,13 +216,13 @@ function RichEditor({
                         }
                     }
                 });
-                
+
                 editorViewRef.current = view;
             } catch (error) {
                 console.error('Failed to initialize RichEditor:', error);
-                setAlert({ 
-                    type: 'error', 
-                    message: 'Failed to initialize editor. Please refresh the page.' 
+                setAlert({
+                    type: 'error',
+                    message: 'Failed to initialize editor. Please refresh the page.'
                 });
             }
         }
@@ -369,7 +246,7 @@ function RichEditor({
         return () => {
             // Cancel any pending debounced calls
             debouncedSetCurrentLine.cancel?.();
-            
+
             // Destroy editor view
             if (editorViewRef.current) {
                 editorViewRef.current.destroy();
@@ -431,7 +308,7 @@ function RichEditor({
                         aria-label="Rich text editor"
                         aria-multiline="true"
                         tabIndex={0}
-                        style={{ 
+                        style={{
                             minHeight: '400px',
                             backgroundColor: 'transparent',
                             color: isDarkMode ? '#FFFFFF' : '#000000'
@@ -473,7 +350,7 @@ function RichEditor({
             )}
         </div>
     );
-}
+});
 
 // Use memo to prevent unnecessary re-renders when props haven't meaningfully changed
 export default memo(RichEditor, (prevProps, nextProps) => {
