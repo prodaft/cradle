@@ -127,7 +127,7 @@ export default function NoteViewer() {
     }, [showOutline]);
 
     const smartLink = useCallback(
-        (onlyTimestamps) => {
+        async (onlyTimestamps) => {
             if (!editorRef.current) {
                 return;
             }
@@ -148,8 +148,8 @@ export default function NoteViewer() {
                 to = content.length;
             }
 
-            // Call autoFormatLinks
-            const [changes, linked] = editorUtils.autoFormatLinks(
+            // Call autoFormatLinks (now async)
+            const [changes, linked] = await editorUtils.autoFormatLinks(
                 view,
                 from,
                 to,
@@ -404,8 +404,10 @@ export default function NoteViewer() {
     // Compute note outline from markdown content
     useEffect(() => {
         const content = markdownContent || '';
-        setNoteOutline(extractHeaderHierarchy(content, () => { }));
-    }, [markdownContent]);
+        setNoteOutline(extractHeaderHierarchy(content, (lineNumber) => {
+            setCurrentLine(lineNumber);
+        }));
+    }, [markdownContent, setCurrentLine]);
 
     // Conditionally render spinner or component
     if (isLoading) {
@@ -586,21 +588,19 @@ export default function NoteViewer() {
                                                     {/* Editor Actions - Available for both source and rich editor */}
                                                     {activeView === 0 && (
                                                         <>
-                                                            {/* Outline toggle - only for source editor */}
-                                                            {!richEditor && (
-                                                                <button
-                                                                    onClick={() => {
-                                                                        setShowActionsMenu(false);
-                                                                        toggleOutline();
-                                                                    }}
-                                                                    className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
-                                                                    data-testid='toggle-outline-menu-item'
-                                                                >
-                                                                    <TreeView width='16' height='16' />
-                                                                    <span className='flex-1'>Toggle Outline</span>
-                                                                    {showOutline && <Check width='16' height='16' />}
-                                                                </button>
-                                                            )}
+                                                            {/* Outline toggle - available for both editors */}
+                                                            <button
+                                                                onClick={() => {
+                                                                    setShowActionsMenu(false);
+                                                                    toggleOutline();
+                                                                }}
+                                                                className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                                                data-testid='toggle-outline-menu-item'
+                                                            >
+                                                                <TreeView width='16' height='16' />
+                                                                <span className='flex-1'>Toggle Outline</span>
+                                                                {showOutline && <Check width='16' height='16' />}
+                                                            </button>
                                                             {/* Autolink - available for both editors */}
                                                             {lspLoaded && (
                                                                 <>
@@ -763,29 +763,42 @@ export default function NoteViewer() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className='mt-2 h-full flex flex-col'>
-                                        {/* Embedded Rich Editor */}
-                                        <div className='flex-1 min-h-0'>
-                                            <RichEditor
-                                                ref={editorRef}
-                                                noteid={id}
-                                                markdownContent={markdownContent}
-                                                setMarkdownContent={setMarkdownContent}
-                                                fileData={fileData}
-                                                setFileData={setFileData}
-                                                currentLine={currentLine}
-                                                setCurrentLine={setCurrentLine}
-                                                setAlert={setAlert}
-                                                saveNote={handleSaveNote}
-                                            />
-                                        </div>
+                                    <div className='mt-2 h-full flex flex-row'>
+                                        {/* Outline sidebar */}
+                                        {showOutline && (
+                                            <div className='w-1/5 pr-2 overflow-y-auto'>
+                                                <NoteOutline
+                                                    data={noteOutline}
+                                                    title='Note Outline'
+                                                    showSeparators={true}
+                                                />
+                                            </div>
+                                        )}
+                                        {/* Rich Editor and Reference Tree */}
+                                        <div className={showOutline ? 'w-4/5 flex-1 min-h-0 flex flex-col' : 'flex-1 min-h-0 flex flex-col'}>
+                                            {/* Embedded Rich Editor */}
+                                            <div className='flex-1 min-h-0'>
+                                                <RichEditor
+                                                    ref={editorRef}
+                                                    noteid={id}
+                                                    markdownContent={markdownContent}
+                                                    setMarkdownContent={setMarkdownContent}
+                                                    fileData={fileData}
+                                                    setFileData={setFileData}
+                                                    currentLine={currentLine}
+                                                    setCurrentLine={setCurrentLine}
+                                                    setAlert={setAlert}
+                                                    saveNote={handleSaveNote}
+                                                />
+                                            </div>
 
-                                        {/* Reference Tree below the editor */}
-                                        <div className='mt-4'>
-                                            <ReferenceTree
-                                                note={note}
-                                                setAlert={setAlert}
-                                            />
+                                            {/* Reference Tree below the editor */}
+                                            <div className='mt-4'>
+                                                <ReferenceTree
+                                                    note={note}
+                                                    setAlert={setAlert}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 )}

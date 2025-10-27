@@ -1,8 +1,10 @@
+import { acceptCompletion, completionKeymap } from '@codemirror/autocomplete';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
-import { defaultHighlightStyle, indentOnInput, syntaxHighlighting } from '@codemirror/language';
-import { syntaxTree } from '@codemirror/language';
+import { defaultHighlightStyle, indentOnInput, syntaxHighlighting, syntaxTree } from '@codemirror/language';
+
 import { EditorState } from '@codemirror/state';
 import { Decoration, EditorView, ViewPlugin, WidgetType, drawSelection, highlightActiveLine, keymap, rectangularSelection } from '@codemirror/view';
+import { Prec } from '@uiw/react-codemirror';
 import { NavArrowDown, NavArrowUp } from 'iconoir-react';
 import { debounce } from 'lodash';
 import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
@@ -18,7 +20,7 @@ import { purrmd, purrmdTheme } from 'purrmd';
 
 // Widget to render Cradle links as clickable elements
 class CradleLinkWidget extends WidgetType {
-    constructor(type, name, alias, color, navigate, fullText) {
+    constructor(type, name, alias, color, navigate, fullText, timestamp, hasPrefix) {
         super();
         this.type = type;
         this.name = name;
@@ -26,30 +28,39 @@ class CradleLinkWidget extends WidgetType {
         this.color = color;
         this.navigate = navigate;
         this.fullText = fullText;
+        this.timestamp = timestamp;
+        this.hasPrefix = hasPrefix;
     }
 
     eq(other) {
         return other.type === this.type &&
             other.name === this.name &&
             other.alias === this.alias &&
-            other.color === this.color;
+            other.color === this.color &&
+            other.timestamp === this.timestamp &&
+            other.hasPrefix === this.hasPrefix;
     }
 
     toDOM(view) {
-        const span = document.createElement('span');
+        const container = document.createElement('span');
+        container.style.display = 'inline';
+        container.className = 'cradle-link-widget-container';
+
+        // Main link span
+        const linkSpan = document.createElement('span');
         const displayName = this.alias || this.name;
         const url = `/dashboards/${encodeURIComponent(this.type)}/${encodeURIComponent(this.name)}/`;
 
-        span.textContent = displayName;
-        span.style.color = this.color || '#FF8C00';
-        span.style.cursor = 'pointer';
-        span.style.textDecoration = 'none';
-        span.style.display = 'inline';
-        span.setAttribute('data-link-url', url);
-        span.setAttribute('data-link-full-text', this.fullText);
-        span.className = 'cradle-link-widget';
+        linkSpan.textContent = displayName;
+        linkSpan.style.color = this.color || '#FF8C00';
+        linkSpan.style.cursor = 'pointer';
+        linkSpan.style.textDecoration = 'underline';
+        linkSpan.style.display = 'inline';
+        linkSpan.setAttribute('data-link-url', url);
+        linkSpan.setAttribute('data-link-full-text', this.fullText);
+        linkSpan.className = 'cradle-link-widget';
 
-        span.addEventListener('click', (e) => {
+        linkSpan.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             // Only navigate on Ctrl+Click (or Cmd+Click on Mac)
@@ -58,17 +69,32 @@ class CradleLinkWidget extends WidgetType {
             }
         });
 
-        span.addEventListener('mouseenter', () => {
-            span.style.textDecoration = 'underline';
-            span.style.opacity = '0.8';
+        linkSpan.addEventListener('mouseenter', () => {
+            linkSpan.style.opacity = '0.8';
         });
 
-        span.addEventListener('mouseleave', () => {
-            span.style.textDecoration = 'none';
-            span.style.opacity = '1';
+        linkSpan.addEventListener('mouseleave', () => {
+            linkSpan.style.opacity = '1';
         });
 
-        return span;
+        container.appendChild(linkSpan);
+
+        // Add timestamp if present
+        if (this.timestamp) {
+            const timestampSpan = document.createElement('span');
+            timestampSpan.textContent = this.timestamp;
+            timestampSpan.style.color = this.color || '#FF8C00';
+            timestampSpan.style.fontSize = '0.85em';
+            timestampSpan.style.fontStyle = 'italic';
+            timestampSpan.style.opacity = '0.7';
+            timestampSpan.style.marginLeft = '4px';
+            timestampSpan.style.textDecoration = 'underline';
+            timestampSpan.style.display = 'inline';
+            timestampSpan.className = 'cradle-link-timestamp';
+            container.appendChild(timestampSpan);
+        }
+
+        return container;
     }
 
     ignoreEvent(e) {
@@ -107,45 +133,179 @@ function cradleLinksPlugin(entryColors, navigate) {
                         const from = node.from;
                         const to = node.to;
 
-                        // Don't render widget if cursor is inside or on the border of the link
-                        if (cursorPos >= from && cursorPos <= to) {
-                            return;
-                        }
-
-                        // Extract the link parts from child nodes
+                        // Extract the link parts and check for timestamp
                         const linkText = text.slice(from, to);
+                        let hasPrefix = false;
                         let type = '';
                         let name = '';
                         let alias = '';
+                        let timestamp = '';
+                        let widgetEnd = to;
+                        let timestampFrom = to;
+                        let timestampTo = to;
 
                         // Parse child nodes
                         let child = node.node.firstChild;
                         while (child) {
                             const childText = text.slice(child.from, child.to);
-                            if (child.type.name === 'CradleLinkType') {
+                            if (child.type.name === 'CradleLinkPrefix') {
+                                hasPrefix = true;
+                            } else if (child.type.name === 'CradleLinkType') {
                                 type = childText;
                             } else if (child.type.name === 'CradleLinkValue') {
                                 name = childText;
                             } else if (child.type.name === 'CradleLinkAlias') {
                                 alias = childText;
+                            } else if (child.type.name === 'CradleLinkTimestamp') {
+                                timestamp = childText;
+                                timestampFrom = child.from;
+                                timestampTo = child.to;
+                                widgetEnd = child.to;
                             }
                             child = child.nextSibling;
+                        }
+
+                        // Don't render widget if cursor is inside or on the border of the link OR timestamp
+                        if ((cursorPos >= from && cursorPos <= to) ||
+                            (timestamp && cursorPos >= timestampFrom && cursorPos <= timestampTo)) {
+                            return;
                         }
 
                         const color = this.entryColors.get(type);
 
                         widgets.push(
                             Decoration.replace({
-                                widget: new CradleLinkWidget(type, name, alias, color, this.navigate, linkText),
+                                widget: new CradleLinkWidget(type, name, alias, color, this.navigate, linkText, timestamp, hasPrefix),
                                 inclusive: false,
                                 block: false,
-                            }).range(from, to)
+                            }).range(from, widgetEnd)
                         );
                     }
                 }
             });
 
             return Decoration.set(widgets, true);
+        }
+    }, {
+        decorations: v => v.decorations
+    });
+}
+
+// Create ViewPlugin to style CradleLink text when uncollapsed (cursor inside)
+function cradleLinkColorPlugin(entryColors) {
+    return ViewPlugin.fromClass(class {
+        constructor(view) {
+            this.entryColors = entryColors;
+            this.decorations = this.buildDecorations(view);
+        }
+
+        update(update) {
+            if (update.docChanged || update.viewportChanged || update.selectionSet) {
+                this.decorations = this.buildDecorations(update.view);
+            }
+        }
+
+        buildDecorations(view) {
+            const marks = [];
+            const doc = view.state.doc;
+            const text = doc.toString();
+            const selection = view.state.selection.main;
+            const cursorPos = selection.head;
+            const tree = syntaxTree(view.state);
+
+            // Find CradleLink nodes where cursor is inside
+            tree.iterate({
+                enter: (node) => {
+                    if (node.type.name === 'CradleLink') {
+                        const from = node.from;
+                        const to = node.to;
+
+                        let type = '';
+                        let linkEnd = to;
+                        let timestampFrom = to;
+                        let timestampTo = to;
+                        let hasPrefix = false;
+                        let child = node.node.firstChild;
+
+                        // Find the type to get its color and detect timestamp and prefix
+                        while (child) {
+                            if (child.type.name === 'CradleLinkPrefix') {
+                                hasPrefix = true;
+                            } else if (child.type.name === 'CradleLinkType') {
+                                type = text.slice(child.from, child.to);
+                            } else if (child.type.name === 'CradleLinkTimestamp') {
+                                // Extend link range to include timestamp
+                                timestampFrom = child.from;
+                                timestampTo = child.to;
+                                linkEnd = child.to;
+                            }
+                            child = child.nextSibling;
+                        }
+
+                        // Only style if cursor IS inside the link OR inside the timestamp
+                        const isInLink = cursorPos >= from && cursorPos <= to;
+                        const isInTimestamp = linkEnd > to && cursorPos >= timestampFrom && cursorPos <= timestampTo;
+
+                        if (isInLink || isInTimestamp) {
+                            const color = this.entryColors.get(type) || '#FF8C00';
+
+                            // Color the entire link including brackets and timestamp in the entry class color
+                            // Use !important to ensure it overrides other styles
+                            marks.push(
+                                Decoration.mark({
+                                    attributes: {
+                                        style: `color: ${color} !important;`
+                                    }
+                                }).range(from, linkEnd)
+                            );
+
+                            // Apply additional styling to specific parts (on top of base color)
+                            child = node.node.firstChild;
+                            while (child) {
+                                if (child.type.name === 'CradleLinkPrefix') {
+                                    // Prefix (~) - style with color and opacity
+                                    marks.push(
+                                        Decoration.mark({
+                                            attributes: { style: `color: ${color} !important; opacity: 0.8; font-weight: 600;` }
+                                        }).range(child.from, child.to)
+                                    );
+                                } else if (child.type.name === 'CradleLinkType') {
+                                    // Type part - explicitly set color to override syntax highlighting
+                                    marks.push(
+                                        Decoration.mark({
+                                            attributes: { style: `color: ${color} !important; opacity: 0.9;` }
+                                        }).range(child.from, child.to)
+                                    );
+                                } else if (child.type.name === 'CradleLinkValue') {
+                                    // Value is bold with explicit color
+                                    marks.push(
+                                        Decoration.mark({
+                                            attributes: { style: `color: ${color} !important; font-weight: 600;` }
+                                        }).range(child.from, child.to)
+                                    );
+                                } else if (child.type.name === 'CradleLinkAlias') {
+                                    // Alias is italic with explicit color
+                                    marks.push(
+                                        Decoration.mark({
+                                            attributes: { style: `color: ${color} !important; font-style: italic;` }
+                                        }).range(child.from, child.to)
+                                    );
+                                } else if (child.type.name === 'CradleLinkTimestamp') {
+                                    // Timestamp is italic with opacity and underlined
+                                    marks.push(
+                                        Decoration.mark({
+                                            attributes: { style: `color: ${color} !important; font-style: italic; opacity: 0.7; text-decoration: underline; font-size: 0.85em;` }
+                                        }).range(child.from, child.to)
+                                    );
+                                }
+                                child = child.nextSibling;
+                            }
+                        }
+                    }
+                }
+            });
+
+            return Decoration.set(marks, true);
         }
     }, {
         decorations: v => v.decorations
@@ -327,8 +487,10 @@ const RichEditor = forwardRef(function RichEditor({
 
         let exts = [
             cradleTheme,
-            // Add Cradle links rendering plugin
+            // Add Cradle links rendering plugin (shows widget when cursor outside)
             cradleLinksPlugin(entryColors, navigate),
+            // Add Cradle link color plugin (styles text when cursor inside)
+            cradleLinkColorPlugin(entryColors),
             // Use PurrMD with Cradle link extension to prevent [[...]] being parsed as regular links
             purrmd({
                 markdownExtConfig: {
@@ -344,6 +506,16 @@ const RichEditor = forwardRef(function RichEditor({
             highlightActiveLine(),
             indentOnInput(),
             syntaxHighlighting(defaultHighlightStyle),
+            // Add autocomplete with proper keybindings
+            Prec.highest(
+                keymap.of([
+                    ...completionKeymap,
+                    {
+                        key: 'Tab',
+                        run: acceptCompletion,
+                    },
+                ]),
+            ),
             keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
             ...editorUtils.autocomplete(),  // Add autocomplete
             editorUtils.lint(),            // Add linting

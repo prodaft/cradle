@@ -1,5 +1,4 @@
 import { snippetCompletion } from '@codemirror/autocomplete';
-import { tags } from '@codemirror/highlight';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { yamlFrontmatter, yamlLanguage } from '@codemirror/lang-yaml';
 import { LanguageSupport, LRLanguage, syntaxTree } from '@codemirror/language';
@@ -818,13 +817,17 @@ export class CradleEditor {
 
     /**
      * Auto-formats plain text into cradle links where applicable.
+     * Simplified version that iterates over linting suggestions and applies them in reverse order.
      */
-    autoFormatLinks(
+    async autoFormatLinks(
         editor: any,
         start: number,
         end: number,
         onlyTimestamps: boolean,
-    ): [number, string] {
+    ): Promise<[number, string]> {
+        await this.ready();
+        if (!this.entryClasses) return [0, editor.state.doc.toString()];
+
         const text: string = editor.state.doc.toString();
         const changes: Array<{ from: number; to: number; replacement: string }> = [];
         const tree = syntaxTree(editor.state);
@@ -853,7 +856,7 @@ export class CradleEditor {
         });
 
         if (!onlyTimestamps) {
-            // Then, convert plain text to cradle links with timestamps
+            // Collect all linting suggestions for link creation
             this.traverseTreeForSuggestions(
                 editor,
                 start,
@@ -882,6 +885,7 @@ export class CradleEditor {
                 ),
         );
 
+        // Apply changes in reverse order (from end to start) to preserve positions
         filteredChanges.sort((a, b) => b.from - a.from);
         let formattedText = text;
         for (const change of filteredChanges) {
@@ -1142,27 +1146,39 @@ export class CradleEditor {
             defineNodes: [
                 {
                     name: 'CradleLink',
-                    style: [tags.squareBracket],
+                    style: [],
                     children: [
+                        { name: 'CradleLinkPrefix' },
                         { name: 'CradleLinkType' },
                         { name: 'CradleLinkValue' },
                         { name: 'CradleLinkAlias' },
                         { name: 'CradleLinkTimestamp' },
                     ],
                 },
-                { name: 'CradleLinkType', style: [tags.string] },
-                { name: 'CradleLinkValue', style: [tags.strong] },
-                { name: 'CradleLinkAlias', style: [tags.emphasis] },
-                { name: 'CradleLinkTimestamp', style: [tags.emphasis] },
+                { name: 'CradleLinkPrefix', style: [] },
+                { name: 'CradleLinkType', style: [] },
+                { name: 'CradleLinkValue', style: [] },
+                { name: 'CradleLinkAlias', style: [] },
+                { name: 'CradleLinkTimestamp', style: [] },
             ],
             parseInline: [
                 {
                     name: 'CradleLink',
                     before: 'Link',
                     parse(cx, next, pos) {
+                        // Check for optional "~" prefix before "[["
+                        let hasPrefix = false;
+                        let linkStart = pos;
+                        
+                        if (next === 126) { // 126 is "~"
+                            hasPrefix = true;
+                            linkStart = pos + 1;
+                            next = cx.char(linkStart);
+                        }
+                        
                         // Check for opening "[["
-                        if (next !== 91 || cx.char(pos + 1) !== 91) return -1;
-                        const start = pos + 2;
+                        if (next !== 91 || cx.char(linkStart + 1) !== 91) return -1;
+                        const start = linkStart + 2;
                         let end = start;
 
                         // Find the closing "]]"
@@ -1209,8 +1225,16 @@ export class CradleEditor {
                             }
                         }
 
-                        // Create the base node and add type, value, and alias
+                        // Create the base node and add prefix (if present), type, value, and alias
                         const node = cx.elt('CradleLink', pos, end + 2, []);
+                        
+                        // Add prefix node if "~" was found
+                        if (hasPrefix) {
+                            node.children.push(
+                                cx.elt('CradleLinkPrefix', pos, pos + 1),
+                            );
+                        }
+                        
                         node.children.push(
                             cx.elt('CradleLinkType', start, start + linkType.length),
                         );
