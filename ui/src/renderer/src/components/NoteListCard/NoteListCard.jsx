@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import useApi from '../../hooks/useApi/useApi';
+import useAuth from '../../hooks/useAuth/useAuth';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
@@ -19,13 +21,15 @@ import Preview from '../Preview/Preview';
  */
 export default function NoteListCard({ title = '', notes = [] }) {
     const { navigate, navigateLink } = useCradleNavigate();
+    const { entriesApi, fileTransferApi } = useApi();
+    const { basePath } = useAuth();
     const [noteCards, setNoteCards] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
 
     useEffect(() => {
         Promise.all(
             notes.map((note, index) => {
-                return parseContent(note.content, note.files).then((result) => {
+                return parseContent(note.content, entriesApi, fileTransferApi, basePath, note.files).then((result) => {
                     return (
                         <div
                             key={index}
@@ -42,7 +46,7 @@ export default function NoteListCard({ title = '', notes = [] }) {
         )
             .then((res) => setNoteCards(res))
             .catch(displayError(setAlert, navigate));
-    }, [notes, navigate]);
+    }, [notes, entriesApi, fileTransferApi, basePath, navigate, navigateLink]);
 
     return (
         <>

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
+import useApi from '../../hooks/useApi/useApi';
 import useAuth from '../../hooks/useAuth/useAuth';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import useFrontendSearch from '../../hooks/useFrontendSearch/useFrontendSearch';
-import { getPermissions, manageUser } from '../../services/adminService/adminService';
 import { naturalSort } from '../../utils/dashboardUtils/dashboardUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AdminPanelPermissionCard from '../AdminPanelPermissionCard/AdminPanelPermissionCard';
@@ -23,23 +23,26 @@ import Tooltip from '../Tooltip/Tooltip';
 export default function AdminPanelUserPermissions({ username, id }) {
     const [entities, setEntities] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { accessApi, usersApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
     const auth = useAuth();
 
     const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(entities);
 
     const simulateSession = () => {
-        manageUser(id, 'simulate')
+        usersApi
+            .usersManageRetrieve({ userId: id, actionName: 'simulate' })
             .then((res) => {
                 // Backend returns access, refresh, and expiration times
-                auth.setTokensDirectly(res.data);
+                auth.setTokensDirectly(res);
                 navigate('/', { replace: true });
             })
             .catch(displayError(setAlert, navigate));
     };
 
     const sendEmailConfirmation = () => {
-        manageUser(id, 'send_email_confirmation')
+        usersApi
+            .usersManageRetrieve({ userId: id, actionName: 'send_email_confirmation' })
             .then((res) => {
                 setAlert({
                     show: true,
@@ -51,7 +54,8 @@ export default function AdminPanelUserPermissions({ username, id }) {
     };
 
     const sendPasswordResetEmail = () => {
-        manageUser(id, 'password_reset_email')
+        usersApi
+            .usersManageRetrieve({ userId: id, actionName: 'password_reset_email' })
             .then((res) => {
                 setAlert({
                     show: true,
@@ -63,35 +67,32 @@ export default function AdminPanelUserPermissions({ username, id }) {
     };
 
     useEffect(() => {
-        getPermissions(id)
-            .then((response) => {
-                if (response.status === 200) {
-                    let permissions = response.data;
-
-                    setEntities(
-                        permissions
-                            .map((c) => {
-                                return (
-                                    <AdminPanelPermissionCard
-                                        key={c['name']}
-                                        userId={id}
-                                        text={c['name']}
-                                        entityId={c['id']}
-                                        searchKey={c['name']}
-                                        accessLevel={c['access_type']}
-                                    />
-                                );
-                            })
-                            .sort((a, b) => {
-                                const aKey = a.key?.toString() || '';
-                                const bKey = b.key?.toString() || '';
-                                return naturalSort(aKey, bKey);
-                            }),
-                    );
-                }
+        accessApi
+            .accessUserList({ userId: id })
+            .then((permissions) => {
+                setEntities(
+                    permissions
+                        .map((c) => {
+                            return (
+                                <AdminPanelPermissionCard
+                                    key={c.name}
+                                    userId={id}
+                                    text={c.name}
+                                    entityId={c.id}
+                                    searchKey={c.name}
+                                    accessLevel={c.accessType}
+                                />
+                            );
+                        })
+                        .sort((a, b) => {
+                            const aKey = a.key?.toString() || '';
+                            const bKey = b.key?.toString() || '';
+                            return naturalSort(aKey, bKey);
+                        }),
+                );
             })
             .catch(displayError(setAlert, navigate));
-    }, [id]);
+    }, [id, accessApi]);
 
     return (
         <>

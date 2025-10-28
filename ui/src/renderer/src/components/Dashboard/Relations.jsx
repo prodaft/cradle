@@ -1,19 +1,13 @@
 import { Check, Search } from 'iconoir-react';
 import { useEffect, useRef, useState } from 'react';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { getEntryClasses } from '../../services/adminService/adminService';
-import { requestEntityAccess } from '../../services/dashboardService/dashboardService';
-import {
-    getInaccessibleEntities,
-    searchRelatedEntries,
-} from '../../services/graphService/graphService';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
 import LazyPagination from '../Pagination/LazyPagination';
 import SearchFilterSection from '../SearchFilterSection/SearchFilterSection';
-import SearchResult from '../SearchResult/SearchResult';
 
 export default function Relations({ obj }) {
     const [searchQuery, setSearchQuery] = useState('');
@@ -30,6 +24,7 @@ export default function Relations({ obj }) {
     const [inaccessibleEntities, setInaccessibleEntities] = useState([]);
     const [isRequestingAccess, setIsRequestingAccess] = useState(false);
     const { profile } = useProfile();
+    const { entriesApi, knowledgeGraphApi, accessApi } = useApi();
 
     const dialogRoot = document.getElementById('portal-root');
     const { navigate, navigateLink } = useCradleNavigate();
@@ -37,10 +32,10 @@ export default function Relations({ obj }) {
     const [isLoading, setIsLoading] = useState(false);
 
     const populateEntrySubtypes = () => {
-        getEntryClasses()
-            .then((response) => {
-                if (response.status === 200) {
-                    let entities = response.data;
+        entriesApi
+            .entryClassesList({})
+            .then((entities) => {
+                if (entities) {
                     setEntrySubtypes(entities.map((c) => c.subtype));
                 }
             })
@@ -62,31 +57,42 @@ export default function Relations({ obj }) {
 
         if (entrySubtypeFilters.length === 0) {
             // Use advanced query method for direct search
-            searchRelatedEntries(obj.id, depth, page, {
-                query: searchQuery,
-                wildcard: true,
-            })
+            knowledgeGraphApi
+                .knowledgeGraphNeighborsRetrieve({
+                    src: String(obj.id),
+                    depth: depth,
+                    pageSize: page,
+                    query: searchQuery,
+                    wildcard: true,
+                })
                 .then((response) => {
-                    setHasNextPage(response.data.has_next);
-                    response.data.results.sort((a, b) => a.depth - b.depth);
-                    setResults(response.data.results);
+                    setHasNextPage(response.hasNext);
+                    response.results.sort((a, b) => a.depth - b.depth);
+                    setResults(response.results);
                 })
                 .catch(displayError(setAlert, navigate))
                 .finally(() => {
                     setIsLoading(false);
                 });
         } else {
-            // Use standard query with filters
-            searchRelatedEntries(obj.id, depth, page, {
-                name: searchQuery,
-                subtype:
-                    entrySubtypeFilters.length === 0
-                        ? entrySubtypes
-                        : entrySubtypeFilters,
-            })
+            // Use standard query with filters - note: API doesn't support subtype filtering in this endpoint
+            knowledgeGraphApi
+                .knowledgeGraphNeighborsRetrieve({
+                    src: String(obj.id),
+                    depth: depth,
+                    pageSize: page,
+                    query: searchQuery,
+                })
                 .then((response) => {
-                    setHasNextPage(response.data.has_next);
-                    setResults(response.data.results);
+                    setHasNextPage(response.hasNext);
+                    // Filter results client-side if needed
+                    const filteredResults =
+                        entrySubtypeFilters.length > 0
+                            ? response.results.filter((r) =>
+                                entrySubtypeFilters.includes(r.subtype),
+                            )
+                            : response.results;
+                    setResults(filteredResults);
                 })
                 .catch(displayError(setAlert, navigate))
                 .finally(() => {
@@ -97,22 +103,23 @@ export default function Relations({ obj }) {
         setPage(page);
 
         // Check for inaccessible entities
-        getInaccessibleEntities(obj.id, depth)
+        knowledgeGraphApi
+            .knowledgeGraphInaccessibleRetrieve({
+                src: String(obj.id),
+                depth: depth,
+            })
             .then((response) => {
-                if (
-                    response.data.inaccessible &&
-                    response.data.inaccessible.length > 0
-                ) {
-                    setInaccessibleEntities(response.data.inaccessible);
+                if (response.inaccessible && response.inaccessible.length > 0) {
+                    setInaccessibleEntities(response.inaccessible);
 
                     // Use AlertBox to show inaccessible entities warning
                     setAlert({
                         show: true,
-                        message: `${response.data.inaccessible.length} related ${response.data.inaccessible.length === 1 ? 'entity is' : 'entities are'} not accessible`,
+                        message: `${response.inaccessible.length} related ${response.inaccessible.length === 1 ? 'entity is' : 'entities are'} not accessible`,
                         color: 'yellow',
                         button: {
                             text: 'Request Access',
-                            onClick: handleRequestAccess(response.data.inaccessible),
+                            onClick: handleRequestAccess(response.inaccessible),
                         },
                     });
                 }
@@ -136,7 +143,14 @@ export default function Relations({ obj }) {
 
     const handleRequestAccess = (entities) => () => {
         setIsRequestingAccess(true);
-        Promise.all(entities.map((entity) => requestEntityAccess(entity)))
+        Promise.all(entities.map((entity) =>
+            accessApi.accessRequestCreate({
+                entityId: entity,
+                requestAccessRequest: {
+                    entityId: entity
+                }
+            })
+        ))
             .then(() => {
                 setAlert({
                     show: true,

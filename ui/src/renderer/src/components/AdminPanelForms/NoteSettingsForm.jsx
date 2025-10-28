@@ -2,11 +2,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
-import {
-    getSettings,
-    performAction,
-    setSettings,
-} from '../../services/managementService/managementService';
+import useApi from '../../hooks/useApi/useApi';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
 import SnippetList from '../SnippetList/SnippetList';
@@ -45,18 +41,19 @@ export default function NoteSettingsForm() {
     });
 
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { managementApi } = useApi();
 
     useEffect(() => {
         async function fetchSettings() {
             try {
-                const response = await getSettings();
-                if (response.status === 200 && response.data) {
+                const settings = await managementApi.managementSettingsRetrieve();
+                if (settings && settings.notes) {
                     reset({
-                        minEntries: response.data.notes.min_entries || 1,
-                        minEntities: response.data.notes.min_entities || 1,
-                        maxCliqueSize: response.data.notes.max_clique_size || 1,
+                        minEntries: settings.notes.min_entries || 1,
+                        minEntities: settings.notes.min_entities || 1,
+                        maxCliqueSize: settings.notes.max_clique_size || 1,
                         allowDynamicEntryClassCreation:
-                            response.data.notes.allow_dynamic_entry_class_creation ??
+                            settings.notes.allow_dynamic_entry_class_creation ??
                             false,
                     });
                 }
@@ -70,26 +67,26 @@ export default function NoteSettingsForm() {
             }
         }
         fetchSettings();
-    }, [reset]);
+    }, [reset, managementApi]);
 
     const onSubmit = async (data) => {
         try {
-            const response = await setSettings({
-                notes: {
-                    min_entries: data.minEntries,
-                    min_entities: data.minEntities,
-                    max_clique_size: data.maxCliqueSize,
-                    allow_dynamic_entry_class_creation:
-                        data.allowDynamicEntryClassCreation,
+            await managementApi.managementSettingsCreate({
+                requestBody: {
+                    notes: {
+                        min_entries: data.minEntries,
+                        min_entities: data.minEntities,
+                        max_clique_size: data.maxCliqueSize,
+                        allow_dynamic_entry_class_creation:
+                            data.allowDynamicEntryClassCreation,
+                    },
                 },
             });
-            if (response.status === 200) {
-                setAlert({
-                    show: true,
-                    message: 'Settings updated successfully!',
-                    color: 'green',
-                });
-            }
+            setAlert({
+                show: true,
+                message: 'Settings updated successfully!',
+                color: 'green',
+            });
         } catch (error) {
             console.error(error);
             setAlert({
@@ -102,14 +99,12 @@ export default function NoteSettingsForm() {
 
     const handleReLinkNotes = async () => {
         try {
-            const response = await performAction('relinkNotes');
-            if (response.status === 200) {
-                setAlert({
-                    show: true,
-                    message: 'Re-Link all Notes action triggered!',
-                    color: 'green',
-                });
-            }
+            await managementApi.managementActionsCreate({ actionName: 'relinkNotes' });
+            setAlert({
+                show: true,
+                message: 'Re-Link all Notes action triggered!',
+                color: 'green',
+            });
         } catch (error) {
             console.error(error);
             setAlert({

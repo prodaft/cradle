@@ -1,7 +1,7 @@
 import { Xmark } from 'iconoir-react';
 import { useEffect, useState } from 'react';
+import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { getNotifications } from '../../services/notificationsService/notificationsService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import NotificationCard from '../NotificationCard/NotificationCard';
@@ -32,6 +32,7 @@ export default function NotificationsPanel({
     unreadNotificationsCount,
     setUnreadNotificationsCount,
 }) {
+    const { notificationsApi } = useApi();
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [notifications, setNotifications] = useState([]);
     const [flaggedNotificationsCount, setFlaggedNotificationsCount] = useState(0);
@@ -43,10 +44,10 @@ export default function NotificationsPanel({
     };
 
     function fetchNotificationsAndUpdateCounts() {
-        getNotifications()
+        notificationsApi.notificationsRetrieve()
             .then((response) => {
-                setNotifications(response.data);
-                const auxFlaggedNotificationsCount = response.data.filter(
+                setNotifications(response.notifications);
+                const auxFlaggedNotificationsCount = response.notifications.filter(
                     (notification) => notification.is_marked_unread,
                 ).length;
                 updateFlaggedNotificationsCount(auxFlaggedNotificationsCount);

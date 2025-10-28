@@ -2,12 +2,8 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
+import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { getEntryClasses } from '../../services/adminService/adminService';
-import {
-    getEnrichmentSettings,
-    saveEnrichmentSettings,
-} from '../../services/intelioService/intelioService';
 import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
@@ -58,6 +54,7 @@ const createEnrichmentSchema = (form_fields) => {
  */
 export default function EnrichmentSettingsForm({ enrichment_class }) {
     const { navigate, navigateLink } = useCradleNavigate();
+    const { intelioApi, entriesApi } = useApi();
     const [displayName, setDisplayName] = useState('');
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [formFields, setFormFields] = useState({});
@@ -92,9 +89,9 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
     // Fetch all entry classes for the for_eclasses selector
     const fetchEntryClasses = async (q) => {
         try {
-            const response = await getEntryClasses();
-            if (response.status === 200 && response.data) {
-                return response.data
+            const response = await entriesApi.entryClassesList({});
+            if (response) {
+                return response
                     .filter((x) => x.subtype.startsWith(q))
                     .map((entry) => ({
                         value: entry.subtype,
@@ -113,30 +110,29 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
     useEffect(() => {
         if (enrichment_class) {
             setLoading(true);
-            getEnrichmentSettings(enrichment_class)
-                .then((response) => {
-                    if (response.status === 200 && response.data) {
-                        const settings = response.data;
-
-                        setDisplayName(settings.display_name || '');
+            intelioApi
+                .enrichmentSettingsRetrieve({ enricherType: enrichment_class })
+                .then((settings) => {
+                    if (settings) {
+                        setDisplayName(settings.displayName || '');
 
                         // Set form fields for validation schema
-                        setFormFields(settings.form_fields || {});
+                        setFormFields(settings.formFields || {});
 
                         // Update validation schema based on form_fields
                         setValidationSchema(
-                            createEnrichmentSchema(settings.form_fields || {}),
+                            createEnrichmentSchema(settings.formFields || {}),
                         );
 
                         // Initialize settings object with defaults
                         const initialSettings = {};
-                        Object.keys(settings.form_fields || {}).forEach((key) => {
+                        Object.keys(settings.formFields || {}).forEach((key) => {
                             initialSettings[key] = settings.settings?.[key] || '';
                         });
 
                         // Format for_eclasses for the selector
                         const formattedEclasses =
-                            settings.for_eclasses_detail?.map((eclass) => ({
+                            settings.forEclassesDetail?.map((eclass) => ({
                                 value: eclass.subtype,
                                 label: eclass.subtype,
                             })) || [];
@@ -158,16 +154,19 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
                     setLoading(false);
                 });
         }
-    }, [enrichment_class, reset, navigate]);
+    }, [enrichment_class, reset, navigate, intelioApi]);
 
     const onSubmit = async (data) => {
         try {
             const formatted_data = {
                 ...data,
-                for_eclasses: data.for_eclasses.map((item) => item.value),
+                forEclasses: data.for_eclasses.map((item) => item.value),
             };
 
-            await saveEnrichmentSettings(enrichment_class, formatted_data);
+            await intelioApi.enrichmentSettingsUpdate({
+                enricherType: enrichment_class,
+                enrichmentSettingsRequest: formatted_data,
+            });
             setAlert({
                 show: true,
                 message: 'Enrichment settings saved successfully!',

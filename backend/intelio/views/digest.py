@@ -1,30 +1,27 @@
-from django_lifecycle.mixins import transaction
-from rest_framework.parsers import MultiPartParser
-from rest_framework.views import APIView
-from rest_framework.generics import GenericAPIView
-from rest_framework.response import Response
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from django_lifecycle.mixins import transaction
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import status
+from rest_framework.generics import GenericAPIView
+from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.pagination import TotalPagesPagination
 from core.utils import validate_order_by
+from user.authentication import APIKeyAuthentication
 
-
+from ..filters import BaseDigestFilter
 from ..models.base import BaseDigest
-
 from ..serializers import (
+    BaseDigestCreateSerializer,
     BaseDigestSerializer,
     DigestSubclassSerializer,
-    BaseDigestCreateSerializer,
 )
 from ..tasks import start_digest
-from ..filters import BaseDigestFilter
-
-from django.shortcuts import get_object_or_404
-from user.authentication import APIKeyAuthentication
 
 
 @extend_schema(
@@ -228,6 +225,24 @@ class DigestAPIView(GenericAPIView):
         transaction.on_commit(lambda: start_digest.delay(digest.id))
         return Response(self.get_serializer(digest).data, status=201)
 
+    @extend_schema(
+        summary="Delete digest",
+        description="Delete a specific digest by ID.",
+        parameters=[
+            OpenApiParameter(
+                name="id",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="The ID of the digest to delete",
+            ),
+        ],
+        responses={
+            204: {"description": "Digest deleted successfully"},
+            400: {"description": "Bad request - missing 'id' query parameter"},
+            401: {"description": "User is not authenticated"},
+            404: {"description": "Digest not found"},
+        },
+    )
     def delete(self, request):
         """
         Delete a specific digest by ID.

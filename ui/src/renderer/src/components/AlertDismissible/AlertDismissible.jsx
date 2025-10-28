@@ -25,6 +25,10 @@ export default function AlertDismissible({ alert, setAlert, duration = 3500.0 })
 
     useEffect(() => {
         if (alert && alert.show) {
+            if (alert.color == 'red') {
+                console.log(alert)
+            }
+
             setTimeLeft(duration);
             const timer = setTimeout(() => {
                 setAlert({ ...alert, show: false });

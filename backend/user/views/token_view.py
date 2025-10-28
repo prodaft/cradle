@@ -24,8 +24,8 @@ class TokenObtainPairLogView(TokenObtainPairView):
         request=TokenObtainSerializer,
         responses={
             200: TokenPairRetrieveSerializer,
-            400: "Bad Request: Invalid credentials",
-            401: "Unauthorized: Authentication failed or invalid 2FA token",
+            400: {"description": "Invalid credentials"},
+            401: {"description": "Authentication failed or invalid 2FA token"},
         },
         summary="Obtain JWT Pair",
     )

@@ -1,21 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import 'tailwindcss/tailwind.css';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
-import { getNote } from '../../services/notesService/notesService';
-import {
-    editReport,
-    getPublishOptions,
-    getReport,
-    publishReport,
-} from '../../services/publishService/publishService';
+import useApi from '../../hooks/useApi/useApi';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Note from '../Note/Note';
 import NoteSelector from '../NoteSelector/NoteSelector';
 import PublishPreview from '../PublishPreview/PublishPreview';
-import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
 
 import { closestCenter, DndContext, DragOverlay, useSensor } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useSearchParams } from 'react-router-dom';
 import { NoButtonsSensor } from '../../utils/dndUtils/dndUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
@@ -33,6 +27,7 @@ export default function Publish() {
     const [publishOptions, setPublishOptions] = useState({ upload: [], download: [] });
     const [anonymize, setAnonymize] = useState(false);
     const { setModal } = useModal();
+    const { notesApi, reportsApi } = useApi();
 
     const [isEditing, setIsEditing] = useState(false);
     const [reportId, setReportId] = useState(null);
@@ -52,22 +47,21 @@ export default function Publish() {
         if (reportParam && reportId != reportParam) {
             setIsEditing(true);
             setReportId(reportParam);
-            getReport(reportParam)
-                .then((response) => {
-                    if (response.status === 200) {
-                        const reportData = response.data;
-                        setTitle(reportData.title);
+            reportsApi
+                .reportsRetrieve({ id: reportParam })
+                .then((reportData) => {
+                    setTitle(reportData.title);
 
-                        if (reportData.note_ids && reportData.note_ids.length > 0) {
-                            Promise.all(reportData.note_ids.map((id) => getNote(id)))
-                                .then((notes) => {
-                                    const validNotes = notes
-                                        .filter((note) => note.status === 200)
-                                        .map((note) => note.data);
-                                    setSelectedNotes(validNotes);
-                                })
-                                .catch(displayError(setAlert));
-                        }
+                    if (reportData.noteIds && reportData.noteIds.length > 0) {
+                        Promise.all(
+                            reportData.noteIds.map((id) =>
+                                notesApi.notesRetrieve({ noteId: id }),
+                            ),
+                        )
+                            .then((notes) => {
+                                setSelectedNotes(notes);
+                            })
+                            .catch(displayError(setAlert));
                     }
                 })
                 .catch(displayError(setAlert));
@@ -97,14 +91,13 @@ export default function Publish() {
     }, [searchParams]);
 
     useEffect(() => {
-        getPublishOptions()
-            .then((response) => {
-                if (response.status === 200) {
-                    setPublishOptions(response.data);
-                }
+        reportsApi
+            .reportsPublishRetrieve()
+            .then((options) => {
+                setPublishOptions(options);
             })
             .catch(displayError(setAlert));
-    }, []);
+    }, [reportsApi]);
 
     useEffect(() => {
         const noteIds = selectedNotes.map((note) => note.id).join(',');
@@ -193,13 +186,25 @@ export default function Publish() {
     const handleTitleSubmit = (enteredTitle, strategy) => {
         const noteIds = selectedNotesRef.current.map((note) => note.id);
         if (isEditing && reportId) {
-            editReport(reportId, { note_ids: noteIds, title: enteredTitle })
+            reportsApi
+                .reportsUpdate({
+                    id: reportId,
+                    editReportRequest: { noteIds, title: enteredTitle },
+                })
                 .then(() => {
                     navigate(`/connectivity/`);
                 })
                 .catch(displayError(setAlert));
         } else {
-            publishReport(strategy, noteIds, enteredTitle, anonymize)
+            reportsApi
+                .reportsPublishCreate({
+                    publishReportRequest: {
+                        strategy,
+                        noteIds,
+                        title: enteredTitle,
+                        anonymized: anonymize,
+                    },
+                })
                 .then(() => {
                     navigate(`/connectivity/`);
                 })
@@ -219,9 +224,8 @@ export default function Publish() {
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
             >
-                <ResizableSplitPane
-                    initialSplitPosition={40}
-                    leftContent={
+                <PanelGroup direction='horizontal' className='h-full'>
+                    <Panel defaultSize={40} minSize={20} maxSize={60}>
                         <NoteSelector
                             selectedNotes={selectedNotes}
                             setSelectedNotes={setSelectedNotes}
@@ -230,16 +234,17 @@ export default function Publish() {
                             activeNote={activeNote}
                             setAlert={setAlert}
                         />
-                    }
-                    rightContent={
+                    </Panel>
+                    <PanelResizeHandle className='w-[2px] cradle-border-x hover:bg-[#FF8C00] hover:bg-opacity-50 transition-colors' />
+                    <Panel defaultSize={60} minSize={40}>
                         <PublishPreview
                             selectedNotes={selectedNotes}
                             setSelectedNotes={setSelectedNotes}
                             activeNote={activeNote}
                             setAlert={setAlert}
                         />
-                    }
-                />
+                    </Panel>
+                </PanelGroup>
                 <DragOverlay>
                     {activeNote ? (
                         <Note

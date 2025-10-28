@@ -2,9 +2,8 @@ import { Clock, DatabaseBackup, Notes, PlusCircle, Search, User } from 'iconoir-
 import { StatsReport } from 'iconoir-react/regular';
 import { useEffect, useState } from 'react';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { addFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
-import { getStatistics } from '../../services/statisticsService/statisticsService';
 import { parseMarkdownInline } from '../../utils/customParser/customParser';
 import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
@@ -122,25 +121,31 @@ export default function Welcome() {
     const [notes, setNotes] = useState([]);
     const { navigate, navigateLink } = useCradleNavigate();
     const { profile } = useProfile();
+    const { fleetingNotesApi, statisticsApi } = useApi();
 
     useEffect(() => {
-        getStatistics()
-            .then((response) => {
-                const { artifacts, entities, notes } = response.data;
-                setArtifacts(artifacts);
-                setEntities(entities);
-                setNotes(notes);
-            })
-            .catch(displayError(setAlert, navigate));
+        (async () => {
+            const response = await statisticsApi.statisticsRetrieve();
+            console.log('response');
+            console.log(response);
+            const { artifacts, entities, notes } = response;
+            setArtifacts(artifacts);
+            setEntities(entities);
+            setNotes(notes);
+        }
+        )();
     }, []);
 
     const handleCreateNewNote = async () => {
         try {
             const defaultContent = profile?.defaultNoteTemplate || '# Untitled\n\nStart writing your note here...';
-            const response = await addFleetingNote(defaultContent, []);
-            if (response.status === 200) {
-                navigate(`/notes/${response.data.id}`);
-            }
+            const response = await fleetingNotesApi.fleetingNotesCreate({
+                fleetingNoteRequest: {
+                    content: defaultContent,
+                    files: []
+                }
+            });
+            navigate(`/notes/${response.id}`);
         } catch (error) {
             displayError(setAlert, navigate)(error);
         }

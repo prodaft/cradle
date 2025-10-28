@@ -3,12 +3,13 @@ import dayjs from 'dayjs';
 import { Search } from 'iconoir-react';
 import { useCallback, useEffect, useState } from 'react';
 import Datepicker from 'react-tailwindcss-datepicker';
-import { getEventLogs } from '../../services/logService/logService';
+import useApi from '../../hooks/useApi/useApi';
 import Activity from '../Activity/Activity';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Pagination from '../Pagination/Pagination';
 
 export default function ActivityList({ name, objectId, content_type, username }) {
+    const { logsApi } = useApi();
     const [searchFilters, setSearchFilters] = useState({
         username: username || '',
         start_date: dayjs(0).format('YYYY-MM-DDTHH:mm'),
@@ -28,10 +29,18 @@ export default function ActivityList({ name, objectId, content_type, username })
 
     const fetchEvents = useCallback(() => {
         setLoading(true);
-        getEventLogs({ page, ...submittedFilters })
+        logsApi.logsList({
+            page,
+            username: submittedFilters.username || undefined,
+            startDate: submittedFilters.start_date ? new Date(submittedFilters.start_date) : undefined,
+            endDate: submittedFilters.end_date ? new Date(submittedFilters.end_date) : undefined,
+            type: submittedFilters.type || undefined,
+            contentType: submittedFilters.content_type || undefined,
+            objectId: submittedFilters.object_id || undefined,
+        })
             .then((response) => {
-                setEvents(response.data.results);
-                setTotalPages(response.data.total_pages);
+                setEvents(response.results);
+                setTotalPages(response.totalPages);
                 setLoading(false);
             })
             .catch(() => {
@@ -42,7 +51,7 @@ export default function ActivityList({ name, objectId, content_type, username })
                 });
                 setLoading(false);
             });
-    }, [page, submittedFilters]);
+    }, [page, submittedFilters, logsApi]);
 
     const handlePageChange = (newPage) => {
         setPage(newPage);

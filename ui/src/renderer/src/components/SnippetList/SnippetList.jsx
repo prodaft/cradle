@@ -1,12 +1,7 @@
 import { Edit, Plus, Trash } from 'iconoir-react/regular';
 import { useEffect, useState } from 'react';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
-import {
-    createSnippet,
-    deleteSnippet,
-    getUserSnippets,
-    updateSnippet,
-} from '../../services/snippetsService/snippetsService';
+import useApi from '../../hooks/useApi/useApi';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
 import MarkdownEditorModal from '../Modals/MarkdownEditorModal';
 
@@ -14,6 +9,7 @@ export default function SnippetList({ userId = null }) {
     const [snippets, setSnippets] = useState([]);
     const [loading, setLoading] = useState(true);
     const { setModal } = useModal();
+    const { notesApi } = useApi();
 
     useEffect(() => {
         loadSnippets();
@@ -22,8 +18,8 @@ export default function SnippetList({ userId = null }) {
     const loadSnippets = async () => {
         try {
             setLoading(true);
-            const response = await getUserSnippets(userId);
-            setSnippets(response.data || []);
+            const response = await notesApi.notesSnippetsUserList({ userId: userId === null ? 'null' : String(userId) });
+            setSnippets(response || []);
         } catch (error) {
             console.error('Error loading snippets:', error);
         } finally {
@@ -46,7 +42,10 @@ export default function SnippetList({ userId = null }) {
                             content: content.trim(),
                         };
 
-                        await createSnippet(snippetData, userId);
+                        await notesApi.notesSnippetsUserCreate({
+                            userId: userId === null ? 'null' : String(userId),
+                            snippetRequest: snippetData
+                        });
                         await loadSnippets();
                     } catch (error) {
                         console.error('Error creating snippet:', error);
@@ -75,7 +74,10 @@ export default function SnippetList({ userId = null }) {
                             content: content.trim(),
                         };
 
-                        await updateSnippet(snippet.id, snippetData);
+                        await notesApi.notesSnippetsUpdate({
+                            snippetId: snippet.id,
+                            snippetRequest: snippetData
+                        });
                         await loadSnippets();
                     } catch (error) {
                         console.error('Error updating snippet:', error);
@@ -93,7 +95,7 @@ export default function SnippetList({ userId = null }) {
             text: `Are you sure you want to delete "${snippet.name}"? This action cannot be undone.`,
             onConfirm: async () => {
                 try {
-                    await deleteSnippet(snippet.id);
+                    await notesApi.notesSnippetsDestroy({ snippetId: snippet.id });
                     await loadSnippets();
                 } catch (error) {
                     console.error('Error deleting snippet:', error);

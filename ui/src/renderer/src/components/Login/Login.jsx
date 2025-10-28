@@ -5,7 +5,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
 import useAuth from '../../hooks/useAuth/useAuth';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { getBaseUrl } from '../../services/configService/configService';
 import { strip } from '../../utils/linkUtils/linkUtils';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
@@ -29,14 +28,15 @@ export default function Login() {
     const windowSize = useWindowSize();
     const location = useLocation();
 
-    const [showSettings, setShowSettings] = useState(!getBaseUrl());
-    const [backendUrl, _setBackendUrl] = useState(getBaseUrl() || '');
-
     const { isDarkMode, toggleTheme } = useTheme();
 
     const { from } = location.state || { from: { pathname: '/' } };
 
     const auth = useAuth();
+    const { basePath, setBasePath } = auth;
+
+    const [showSettings, setShowSettings] = useState(!basePath);
+    const [backendUrl, _setBackendUrl] = useState(basePath || '');
 
     const { navigate, navigateLink } = useCradleNavigate();
 
@@ -46,10 +46,10 @@ export default function Login() {
 
     useEffect(() => {
         // If backend URL is not set, force settings to be shown
-        if (!getBaseUrl()) {
+        if (!basePath) {
             setShowSettings(true);
         }
-    }, []);
+    }, [basePath]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -83,6 +83,7 @@ export default function Login() {
             return;
         }
         localStorage.setItem('backendUrl', backendUrl);
+        setBasePath(backendUrl);
         setShowSettings(false);
     };
 
@@ -131,10 +132,10 @@ export default function Login() {
                                 <div className='flex items-center gap-2'>
                                     {showSettings ? (
                                         <>
-                                            {getBaseUrl() && (
+                                            {auth.basePath && (
                                                 <button
                                                     onClick={() => {
-                                                        setBackendUrl(getBaseUrl());
+                                                        setBackendUrl(auth.basePath);
                                                         setShowSettings(false);
                                                     }}
                                                     className='p-1.5 hover:text-cradle2 cradle-text-tertiary border border-[var(--cradle-border-accent)] hover:border-[var(--cradle-accent-primary)]'
@@ -183,7 +184,7 @@ export default function Login() {
                                                 labelText='Backend URL'
                                                 type='text'
                                                 value={backendUrl}
-                                                handleInput={setBackendUrl}
+                                                handleInput={auth.setBasePath}
                                                 autofocus={true}
                                                 required={true}
                                             />
@@ -313,7 +314,7 @@ export default function Login() {
                                 </form>
 
                                 {/* Footer Links */}
-                                {!requiresTwoFactor && !showSettings && getBaseUrl() && (
+                                {!requiresTwoFactor && !showSettings && auth.basePath && (
                                     <>
                                         <div className='cradle-separator mt-8'></div>
                                         <div className='flex justify-between items-center text-xs cradle-mono mt-6'>
@@ -344,7 +345,7 @@ export default function Login() {
                         {/* Version/Status Indicator */}
                         <div className='mt-6 text-center'>
                             <span className='text-xs cradle-text-muted cradle-mono tracking-wider'>
-                                v2.10.2
+                                v2.10.2-beta.a070af1b
                             </span>
                         </div>
                     </div>

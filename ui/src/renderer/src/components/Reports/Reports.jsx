@@ -1,20 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
-import { getReports, deleteReport, retryReport } from '../../services/publishService/publishService';
 import { useModal } from '../../contexts/ModalContext/ModalContext.jsx';
-import { useEffect } from 'react';
-import ListView from '../ListView/ListView';
-import Pagination from '../Pagination/Pagination';
-import ActionBar from '../ActionBar/ActionBar';
-import ActionsTable from '../ActionsTable/ActionsTable';
-import TableCard from '../TableCard/TableCard';
-import PaginationWrapper from '../PaginationWrapper/PaginationWrapper';
-import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
-import { formatDate } from '../../utils/dateUtils/dateUtils';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useApi from '../../hooks/useApi/useApi';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { capitalizeString, truncateText } from '../../utils/dashboardUtils/dashboardUtils';
+import { formatDate } from '../../utils/dateUtils/dateUtils';
+import ActionsTable from '../ActionsTable/ActionsTable';
+import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import ListView from '../ListView/ListView';
+import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
+import PaginationWrapper from '../PaginationWrapper/PaginationWrapper';
+import TableCard from '../TableCard/TableCard';
 
 /**
  * Reports component - Displays reports for management
@@ -24,10 +21,11 @@ import { capitalizeString, truncateText } from '../../utils/dashboardUtils/dashb
 export default function Reports() {
     const [searchParams, setSearchParams] = useSearchParams();
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { reportsApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
     const { profile } = useProfile();
     const { setModal } = useModal();
-    
+
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(Number(searchParams.get('reports_page')) || 1);
@@ -78,9 +76,14 @@ export default function Reports() {
                 queryParams.created_at__lte = columnFilters.createdAt.to;
             }
 
-            const response = await getReports(queryParams);
-            setReports(response.data.results);
-            setTotalPages(response.data.total_pages);
+            const response = await reportsApi.reportsList({
+                page: queryParams.page,
+                pageSize: queryParams.page_size,
+                orderBy: queryParams.order_by,
+                search: queryParams.search,
+            });
+            setReports(response.results);
+            setTotalPages(response.totalPages);
         } catch (error) {
             console.error('Failed to fetch reports', error);
             setAlert({
@@ -115,12 +118,14 @@ export default function Reports() {
 
     const handleDelete = async (reportIds) => {
         const idsArray = Array.isArray(reportIds) ? reportIds : [reportIds];
-        
+
         setModal(ConfirmDeletionModal, {
             itemName: idsArray.length > 1 ? `${idsArray.length} reports` : 'report',
             onConfirm: async () => {
                 try {
-                    await Promise.all(idsArray.map(id => deleteReport(id)));
+                    await Promise.all(
+                        idsArray.map((id) => reportsApi.reportsDestroy({ id })),
+                    );
                     setAlert({
                         show: true,
                         message: `${idsArray.length > 1 ? 'Reports' : 'Report'} deleted successfully`,
@@ -142,7 +147,7 @@ export default function Reports() {
 
     const handleRetry = async (reportId) => {
         try {
-            await retryReport(reportId);
+            await reportsApi.reportsRetryCreate({ id: reportId, reportRequest: {} });
             setAlert({
                 show: true,
                 message: 'Retrying to build report!',
@@ -183,7 +188,7 @@ export default function Reports() {
 
     const handleDownload = async (reportIds) => {
         const idsArray = Array.isArray(reportIds) ? reportIds : [reportIds];
-        
+
         try {
             // Download each report
             for (const id of idsArray) {
@@ -194,30 +199,30 @@ export default function Reports() {
                     if (!response.ok) {
                         throw new Error(`Failed to fetch report: ${response.statusText}`);
                     }
-                    
+
                     // Get the file content as blob
                     const blob = await response.blob();
-                    
+
                     // Create download link
                     const url = window.URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;
-                    
+
                     // Set filename with proper extension
-                    const extension = report.strategy === 'json' ? 'json' : 
-                                    report.strategy === 'plain' ? 'txt' : 'html';
+                    const extension = report.strategy === 'json' ? 'json' :
+                        report.strategy === 'plain' ? 'txt' : 'html';
                     link.download = `${report.title || 'report'}.${extension}`;
-                    
+
                     // Trigger download
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
-                    
+
                     // Clean up the object URL
                     window.URL.revokeObjectURL(url);
                 }
             }
-            
+
             setAlert({
                 show: true,
                 message: `${idsArray.length > 1 ? 'Reports' : 'Report'} downloaded successfully`,
@@ -261,8 +266,8 @@ export default function Reports() {
         };
 
         return (
-            <tr 
-                key={report.id} 
+            <tr
+                key={report.id}
                 className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${report.report_url ? 'hover:cursor-pointer' : 'cursor-default'}`}
                 onClick={handleRowClick}
             >
@@ -292,7 +297,7 @@ export default function Reports() {
     return (
         <div className='w-full h-full'>
             <AlertDismissible alert={alert} setAlert={setAlert} />
-            
+
             {/* Page Header */}
             <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
                 <div>

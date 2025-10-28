@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import 'tailwindcss/tailwind.css';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Graph from '../Graph/Graph';
 import GraphQuery from '../GraphQuery/GraphQuery';
-import ResizableSplitPane from '../ResizableSplitPane/ResizableSplitPane';
 import { filterGraph } from './graphFilterUtils';
 
 export default function GraphExplorer({ GraphSearchComponent }) {
@@ -100,9 +100,8 @@ export default function GraphExplorer({ GraphSearchComponent }) {
     return (
         <div className='w-full h-full overflow-y-hidden relative'>
             <AlertDismissible alert={alert} setAlert={setAlert} />
-            <ResizableSplitPane
-                initialSplitPosition={30}
-                leftContent={
+            <PanelGroup direction='horizontal' className='h-full'>
+                <Panel defaultSize={30} minSize={20} maxSize={50}>
                     <GraphQuery
                         selectedEntries={selectedEntries}
                         setSelectedEntries={setSelectedEntries}
@@ -117,9 +116,10 @@ export default function GraphExplorer({ GraphSearchComponent }) {
                         nodes={nodes}
                         edges={edges}
                     />
-                }
-                rightContent={
-                    <div className='relative'>
+                </Panel>
+                <PanelResizeHandle className='w-[2px] cradle-border-x hover:bg-[#FF8C00] hover:bg-opacity-50 transition-colors' />
+                <Panel defaultSize={70} minSize={50}>
+                    <div className='relative h-full'>
                         <Graph
                             setSelectedEntries={setSelectedEntries}
                             onClearGraph={() => {
@@ -134,8 +134,8 @@ export default function GraphExplorer({ GraphSearchComponent }) {
                             edges={filteredEdges}
                         />
                     </div>
-                }
-            />
+                </Panel>
+            </PanelGroup>
         </div>
     );
 }

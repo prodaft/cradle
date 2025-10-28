@@ -2,10 +2,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
-import {
-    getSettings,
-    setSettings,
-} from '../../services/managementService/managementService';
+import useApi from '../../hooks/useApi/useApi';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
 import { Tab, Tabs } from '../Tabs/Tabs';
@@ -32,19 +29,20 @@ export default function UserSettingsForm({ onAdd }) {
     });
 
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { managementApi } = useApi();
 
     useEffect(() => {
         async function fetchSettings() {
             try {
-                const response = await getSettings();
-                if (response.status === 200 && response.data) {
+                const settings = await managementApi.managementSettingsRetrieve();
+                if (settings && settings.users) {
                     reset({
                         allowRegistration:
-                            response.data.users?.allow_registration ?? false,
+                            settings.users.allow_registration ?? false,
                         requireEmailActivation:
-                            response.data.users?.require_email_confirmation ?? false,
+                            settings.users.require_email_confirmation ?? false,
                         requireAdminConfirmation:
-                            response.data.users?.require_admin_confirmation ?? false,
+                            settings.users.require_admin_confirmation ?? false,
                     });
                 }
             } catch (error) {
@@ -57,24 +55,24 @@ export default function UserSettingsForm({ onAdd }) {
             }
         }
         fetchSettings();
-    }, [reset]);
+    }, [reset, managementApi]);
 
     const onSubmit = async (data) => {
         try {
-            const response = await setSettings({
-                users: {
-                    allow_registration: data.allowRegistration,
-                    require_email_confirmation: data.requireEmailActivation,
-                    require_admin_confirmation: data.requireAdminConfirmation,
+            await managementApi.managementSettingsCreate({
+                requestBody: {
+                    users: {
+                        allow_registration: data.allowRegistration,
+                        require_email_confirmation: data.requireEmailActivation,
+                        require_admin_confirmation: data.requireAdminConfirmation,
+                    },
                 },
             });
-            if (response.status === 200) {
-                setAlert({
-                    show: true,
-                    message: 'Account settings updated successfully!',
-                    color: 'green',
-                });
-            }
+            setAlert({
+                show: true,
+                message: 'Account settings updated successfully!',
+                color: 'green',
+            });
         } catch (error) {
             console.error(error);
             setAlert({
@@ -153,7 +151,7 @@ export default function UserSettingsForm({ onAdd }) {
                             </div>
                         </Tab>
                     </Tabs>
-                    
+
                     {/* Alert at bottom */}
                     {alert.show && (
                         <div className='mt-6'>

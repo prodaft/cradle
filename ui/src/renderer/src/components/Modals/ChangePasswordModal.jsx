@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { changePassword } from '../../services/userService/userService';
+import useApi from '../../hooks/useApi/useApi';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
@@ -26,6 +26,7 @@ export default function ChangePasswordModal({ closeModal }) {
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const { usersApi } = useApi();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -44,7 +45,12 @@ export default function ChangePasswordModal({ closeModal }) {
         setAlert({ show: false, message: '', color: 'red' });
 
         try {
-            await changePassword(formData.oldPassword, formData.newPassword);
+            await usersApi.usersChangePasswordCreate({
+                changePasswordRequestRequest: {
+                    oldPassword: formData.oldPassword,
+                    newPassword: formData.newPassword,
+                },
+            });
             // Reset form
             setFormData({
                 oldPassword: '',
@@ -142,8 +148,8 @@ export default function ChangePasswordModal({ closeModal }) {
 
                 <div className='cradle-border-t pt-4 mt-4'>
                     <div className='flex gap-3'>
-                        <button 
-                            type='submit' 
+                        <button
+                            type='submit'
                             className='cradle-btn cradle-btn-primary cradle-btn-sm flex-1'
                             disabled={isSubmitting}
                         >

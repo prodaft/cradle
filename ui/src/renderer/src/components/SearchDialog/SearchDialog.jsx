@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { getEntryClasses } from '../../services/adminService/adminService';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
@@ -40,7 +39,7 @@ export default function SearchDialog({ isOpen, onClose }) {
 
     const dialogRoot = document.getElementById('portal-root');
     const { navigate, navigateLink } = useCradleNavigate();
-    const { queryApi } = useApi();
+    const { queryApi, entriesApi } = useApi();
     const handleError = displayError(setAlert, navigate);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -57,12 +56,10 @@ export default function SearchDialog({ isOpen, onClose }) {
     };
 
     const populateEntrySubtypes = () => {
-        getEntryClasses()
-            .then((response) => {
-                if (response.status === 200) {
-                    let entities = response.data;
-                    setEntrySubtypes(entities.map((c) => c.subtype));
-                }
+        entriesApi
+            .entryClassesList({})
+            .then((entities) => {
+                setEntrySubtypes(entities.map((c) => c.subtype));
             })
             .catch(handleError);
     };

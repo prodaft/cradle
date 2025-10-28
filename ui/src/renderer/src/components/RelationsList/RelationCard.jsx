@@ -1,8 +1,8 @@
 import { Trash } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { deleteRelation } from '../../services/graphService/graphService';
 import {
     capitalizeString,
     createDashboardLink,
@@ -14,6 +14,7 @@ export default function RelationCard({ relation, onDelete, setAlert }) {
     const [formattedSeen, setFormattedSeen] = useState('');
     const [visible, setVisible] = useState(true);
     const { isAdmin } = useProfile();
+    const { entriesApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
 
     useEffect(() => {
@@ -23,7 +24,7 @@ export default function RelationCard({ relation, onDelete, setAlert }) {
 
     const handleDelete = async () => {
         try {
-            await deleteRelation(relation.id);
+            await entriesApi.entriesRelationsDestroy({ id: relation.id });
             setVisible(false);
             setAlert({
                 show: true,

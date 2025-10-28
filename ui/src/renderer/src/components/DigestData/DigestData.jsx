@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import Datepicker from 'react-tailwindcss-datepicker';
-import { Search } from 'iconoir-react';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
-import { getDigests } from '../../services/intelioService/intelioService';
+import useApi from '../../hooks/useApi/useApi';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import DigestList from '../UploadExternal/DigestList';
 
@@ -11,6 +9,7 @@ export default function DigestData() {
     const [searchParams, setSearchParams] = useSearchParams();
     const [alert, setAlert] = useState({ show: false, message: '', color: '' });
     const { profile } = useProfile();
+    const { intelioApi } = useApi();
 
     // Digest list state
     const [digests, setDigests] = useState([]);
@@ -44,15 +43,15 @@ export default function DigestData() {
     // Column filters for table header
     const [columnFilters, setColumnFilters] = useState({
         user: searchParams.get('author') || '',
-        createdAt: { 
-            from: searchParams.get('created_at_gte') ? new Date(searchParams.get('created_at_gte')).toISOString().split('T')[0] : '', 
-            to: searchParams.get('created_at_lte') ? new Date(searchParams.get('created_at_lte')).toISOString().split('T')[0] : '' 
+        createdAt: {
+            from: searchParams.get('created_at_gte') ? new Date(searchParams.get('created_at_gte')).toISOString().split('T')[0] : '',
+            to: searchParams.get('created_at_lte') ? new Date(searchParams.get('created_at_lte')).toISOString().split('T')[0] : ''
         },
     });
 
     useEffect(() => {
         fetchDigests();
-    }, [page, submittedFilters, sortField, sortDirection, pageSize, columnFilters]);
+    }, [page, submittedFilters, sortField, sortDirection, pageSize, columnFilters, intelioApi]);
 
     // Initialize filters from URL parameters
     useEffect(() => {
@@ -170,8 +169,11 @@ export default function DigestData() {
         try {
             const searchQueryParams = {
                 page,
-                page_size: pageSize,
-                ...submittedFilters,
+                pageSize,
+                title: submittedFilters.title || undefined,
+                author: submittedFilters.author || undefined,
+                createdAtGte: submittedFilters.created_at_gte || undefined,
+                createdAtLte: submittedFilters.created_at_lte || undefined,
             };
 
             // Add column filter parameters
@@ -179,21 +181,21 @@ export default function DigestData() {
                 searchQueryParams.author = columnFilters.user;
             }
             if (columnFilters.createdAt.from) {
-                searchQueryParams.created_at_gte = new Date(columnFilters.createdAt.from).toISOString();
+                searchQueryParams.createdAtGte = new Date(columnFilters.createdAt.from).toISOString();
             }
             if (columnFilters.createdAt.to) {
                 const endDate = new Date(columnFilters.createdAt.to);
                 endDate.setHours(23, 59, 59, 999);
-                searchQueryParams.created_at_lte = endDate.toISOString();
+                searchQueryParams.createdAtLte = endDate.toISOString();
             }
 
             const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
-            searchQueryParams.order_by = orderBy;
+            searchQueryParams.orderBy = orderBy;
 
-            const response = await getDigests(searchQueryParams);
+            const response = await intelioApi.intelioDigestRetrieve(searchQueryParams);
 
-            setDigests(response.data.results);
-            setTotalPages(response.data.total_pages);
+            setDigests(response.results);
+            setTotalPages(response.totalPages);
         } catch (error) {
             console.error('Failed to fetch digests', error);
             setAlert({
@@ -242,7 +244,7 @@ export default function DigestData() {
     return (
         <div className='w-full h-full'>
             <AlertDismissible alert={alert} setAlert={setAlert} />
-            
+
             {/* Page Header */}
             <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
                 <div>

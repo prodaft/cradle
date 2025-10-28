@@ -3,8 +3,7 @@ import { Search } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import Datepicker from 'react-tailwindcss-datepicker';
 import * as Yup from 'yup';
-import { graphPathFind } from '../../services/graphService/graphService';
-import { advancedQuery } from '../../services/queryService/queryService';
+import useApi from '../../hooks/useApi/useApi';
 import {
     LinkTreeFlattener,
     truncateText,
@@ -31,6 +30,7 @@ export default function PathFindSearch({
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const { queryApi, knowledgeGraphApi } = useApi();
 
     const [startEntry, setStartEntry] = useState(queryValues.src || null);
     const [destinationSelectors, setDestinationSelectors] = useState(
@@ -49,17 +49,20 @@ export default function PathFindSearch({
     }, [queryValues]);
 
     const fetchEntries = async (q) => {
-        const results = await advancedQuery(q, true);
-        if (results.status === 200) {
-            return results.data.results.map((alias) => ({
+        try {
+            const results = await queryApi.queryAdvancedRetrieve({
+                query: Array.isArray(q) ? q : [q],
+                wildcard: true,
+            });
+            return results.results.map((alias) => ({
                 value: alias.id,
-                id: String(e.id),
-                degree: e.degree,
-                type: e.subtype,
+                id: String(alias.id),
+                degree: alias.degree,
+                type: alias.subtype,
                 label: `${alias.subtype}:${alias.name}`,
             }));
-        } else {
-            displayError(setAlert)(results);
+        } catch (error) {
+            displayError(setAlert)(error);
             return [];
         }
     };
@@ -104,14 +107,16 @@ export default function PathFindSearch({
 
             setIsSubmitting(true);
             try {
-                const response = await graphPathFind({
-                    src: formValues.src,
-                    dsts: formValues.dst,
-                    min_date: formValues.startDate,
-                    max_date: formValues.endDate,
+                const response = await knowledgeGraphApi.knowledgeGraphPathfindCreate({
+                    pathfindQueryRequest: {
+                        src: formValues.src,
+                        dsts: formValues.dst,
+                        minDate: formValues.startDate,
+                        maxDate: formValues.endDate,
+                    },
                 });
 
-                const { entries, relations, colors } = response.data;
+                const { entries, relations, colors } = response;
                 const flattenedEntries = LinkTreeFlattener.flatten(entries);
 
                 if (flattenedEntries.length === 0) {

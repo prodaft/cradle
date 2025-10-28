@@ -1,10 +1,8 @@
 import { CloudUpload } from 'iconoir-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import {
-    getUploadLink,
-    uploadFile,
-} from '../../services/fileUploadService/fileUploadService';
+import { uploadFile } from '../../utils/fileUtils/fileUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 
@@ -30,6 +28,7 @@ export default function FileInput({
     pendingFiles,
     setPendingFiles,
 }) {
+    const { fileTransferApi } = useApi();
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [isUploading, setIsUploading] = useState(false);
     const inputRef = useRef(null);
@@ -60,17 +59,17 @@ export default function FileInput({
         const failedFiles = [];
 
         const fileUploadPromises = pendingFiles.map((file) =>
-            getUploadLink(file.name)
+            fileTransferApi.fileTransferUploadRetrieve({ fileName: file.name })
                 .then(async (res) => {
-                    const uploadUrl = res.data.presigned;
+                    const uploadUrl = res.presigned;
                     await uploadFile(uploadUrl, file);
-                    return res.data;
+                    return res;
                 })
                 .then((data) => {
                     succeededFileData.push({
-                        minio_file_name: data.minio_file_name,
+                        minio_file_name: data.minioFileName,
                         file_name: file.name,
-                        bucket_name: data.bucket_name,
+                        bucket_name: data.bucketName,
                     });
                 })
                 .catch((err) => {
@@ -90,7 +89,7 @@ export default function FileInput({
                     setPendingFiles(failedFiles);
                     throw new Error(
                         'Failed to upload files: ' +
-                            failedFiles.map((file) => file.name).join(', '),
+                        failedFiles.map((file) => file.name).join(', '),
                     );
                 } else {
                     setPendingFiles([]);

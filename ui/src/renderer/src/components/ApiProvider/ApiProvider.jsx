@@ -1,6 +1,5 @@
-import { createContext, useMemo, useState } from 'react';
+import { createContext, useMemo } from 'react';
 import useAuth from '../../hooks/useAuth/useAuth';
-import { getBaseUrl } from '../../services/configService/configService';
 import {
     AccessApi,
     EntriesApi,
@@ -37,51 +36,27 @@ export const ApiContext = createContext();
  * @constructor
  */
 export default function ApiProvider({ children }) {
-    const { getAccessToken, isLoggedIn } = useAuth();
-    const [basePath, setBasePath] = useState(getBaseUrl());
+    const { getAccessToken, isLoggedIn, tokenVersion, basePath, setBasePath } = useAuth();
 
-    /**
-     * Middleware: Convert URLSearchParams to JSON body
-     */
-    const bodyConverterMiddleware = {
-        pre: (context) => {
-            const isJsonRequest = context.init.headers['Content-Type'] === 'application/json';
-            const hasFormData = context.init.body instanceof URLSearchParams;
-
-            if (!isJsonRequest || !hasFormData) {
-                return context;
-            }
-
-            // Convert form data to clean JSON object
-            const jsonBody = {};
-            for (const [key, value] of context.init.body.entries()) {
-                if (value != null && value !== 'undefined') {
-                    jsonBody[key] = value;
-                }
-            }
-
-            return {
-                ...context,
-                init: {
-                    ...context.init,
-                    body: JSON.stringify(jsonBody),
-                },
-            };
-        },
-    };
-
-    // Create configuration with authentication
     const configuration = useMemo(() => {
         return new Configuration({
             basePath: basePath,
-            // Use getAccessToken which handles refresh automatically
-            accessToken: isLoggedIn() ? getAccessToken : undefined,
+            accessToken: isLoggedIn()
+                ? async () => {
+                    try {
+                        const token = await getAccessToken();
+                        return token;
+                    } catch (error) {
+                        console.error('Failed to get access token:', error);
+                        return undefined;
+                    }
+                }
+                : undefined,
             headers: {
                 'Content-Type': 'application/json',
             },
-            middleware: [bodyConverterMiddleware],
         });
-    }, [getAccessToken, isLoggedIn, basePath]);
+    }, [tokenVersion, basePath, getAccessToken, isLoggedIn]);
 
     // Create API instances with the configuration
     const apis = useMemo(

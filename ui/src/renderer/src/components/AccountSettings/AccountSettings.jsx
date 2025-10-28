@@ -7,18 +7,9 @@ import * as Yup from 'yup';
 import vimIcon from '../../assets/vim32x32.gif';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useApi from '../../hooks/useApi/useApi';
 import useAuth from '../../hooks/useAuth/useAuth';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import {
-    changePassword,
-    createUser,
-    deleteUser,
-    generateApiKey,
-    getDefaultNoteTemplate,
-    getUser,
-    setDefaultNoteTemplate,
-    updateUser,
-} from '../../services/userService/userService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
 import AlertDismissible from '../AlertDismissible/AlertDismissible.jsx';
@@ -48,6 +39,7 @@ const accountSettingsSchema = Yup.object().shape({
 
 export default function AccountSettings({ target, isEdit = true, onAdd }) {
     const { navigate, navigateLink } = useCradleNavigate();
+    const { usersApi } = useApi();
     const auth = useAuth();
     const { profile, setProfile, isAdmin } = useProfile();
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
@@ -68,27 +60,27 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
 
     const defaultValues = isEdit
         ? {
-              id: '',
-              username: '',
-              email: '',
-              password: 'password',
-              catalystKey: 'apikey',
-              role: 'user',
-              vim_mode: false,
-              email_confirmed: false,
-              is_active: false,
-          }
+            id: '',
+            username: '',
+            email: '',
+            password: 'password',
+            catalystKey: 'apikey',
+            role: 'user',
+            vim_mode: false,
+            email_confirmed: false,
+            is_active: false,
+        }
         : {
-              id: '',
-              username: '',
-              email: '',
-              password: '',
-              catalystKey: '',
-              role: 'user',
-              vim_mode: false,
-              email_confirmed: false,
-              is_active: false,
-          };
+            id: '',
+            username: '',
+            email: '',
+            password: '',
+            catalystKey: '',
+            role: 'user',
+            vim_mode: false,
+            email_confirmed: false,
+            is_active: false,
+        };
 
     const {
         register,
@@ -109,27 +101,28 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
     // Prepopulate form in edit mode.
     useEffect(() => {
         if (isEdit && target) {
-            getUser(target)
-                .then((res) => {
+            usersApi
+                .usersRetrieve({ userId: target })
+                .then((user) => {
                     reset({
-                        id: res.data.id,
-                        username: res.data.username,
-                        email: res.data.email,
+                        id: user.id,
+                        username: user.username,
+                        email: user.email,
                         password: 'password',
-                        vimMode: res.data.vim_mode || false,
-                        theme: res.data.theme || 'dark',
-                        catalystKey: res.data.catalyst_api_key ? 'apikey' : '',
-                        role: res.data.role || 'user',
-                        email_confirmed: res.data.email_confirmed || false,
-                        is_active: res.data.is_active || false,
+                        vimMode: user.vimMode || false,
+                        theme: user.theme || 'dark',
+                        catalystKey: user.catalystApiKey ? 'apikey' : '',
+                        role: user.role || 'user',
+                        email_confirmed: user.emailConfirmed || false,
+                        is_active: user.isActive || false,
                     });
-                    setTwoFactorEnabled(res.data.two_factor_enabled || false);
+                    setTwoFactorEnabled(user.twoFactorEnabled || false);
                 })
                 .catch(displayError(setAlert, navigate));
         } else {
             reset(defaultValues);
         }
-    }, [isEdit, target, reset, navigate]);
+    }, [isEdit, target, reset, navigate, usersApi]);
 
     const onSubmit = async (data) => {
         if (isEdit) {
@@ -150,16 +143,15 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                 payload.role = data.role;
             }
             try {
-                const response = await updateUser(data.id, payload);
-                if (response.status !== 200) {
-                    displayError(setAlert, navigate)(response.data);
-                    return;
-                }
+                const updatedUser = await usersApi.usersUpdate({
+                    userId: data.id,
+                    userRetrieveRequest: payload,
+                });
 
                 if (isOwnAccount) {
                     setProfile((prevProfile) => ({
                         ...prevProfile,
-                        ...response.data,
+                        ...updatedUser,
                     }));
                 }
 
@@ -184,19 +176,17 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                 theme: data.theme,
             };
             try {
-                let result = await createUser(payload);
+                const newUser = await usersApi.usersCreate({
+                    userCreateRequest: payload,
+                });
 
-                if (result.status === 200) {
-                    setPopup({
-                        show: true,
-                        message: 'User created successfully',
-                        color: 'green',
-                    });
-                    reset();
-                    onAdd(result.data);
-                } else {
-                    displayError(setAlert, navigate)(result.data);
-                }
+                setPopup({
+                    show: true,
+                    message: 'User created successfully',
+                    color: 'green',
+                });
+                reset();
+                onAdd(newUser);
             } catch (err) {
                 displayError(setAlert, navigate)(err);
             }
@@ -205,10 +195,8 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
 
     const handleDelete = async () => {
         try {
-            const response = await deleteUser(getValues('id'));
-            if (response.status === 200) {
-                auth.logOut();
-            }
+            await usersApi.usersDestroy({ userId: getValues('id') });
+            auth.logOut();
         } catch (err) {
             displayError(setAlert)(err);
         }
@@ -216,16 +204,16 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
 
     const handleGenerateApiKey = async () => {
         try {
-            const response = await generateApiKey(getValues('id'));
-            if (response.status === 200) {
-                setPopup({
-                    show: true,
-                    message: 'API key generated successfully!',
-                    color: 'green',
-                    code: response.data.api_key,
-                });
-                setShowApiKeyGenerate(false);
-            }
+            const response = await usersApi.usersApikeyCreate({
+                userId: getValues('id'),
+            });
+            setPopup({
+                show: true,
+                message: 'API key generated successfully!',
+                color: 'green',
+                code: response.apiKey,
+            });
+            setShowApiKeyGenerate(false);
         } catch (err) {
             displayError(setAlert)(err);
         }
@@ -246,7 +234,12 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
         }
 
         try {
-            await changePassword(currentPassword, newPassword);
+            await usersApi.usersChangePasswordCreate({
+                changePasswordRequestRequest: {
+                    oldPassword: currentPassword,
+                    newPassword: newPassword,
+                },
+            });
             setPopup({
                 show: true,
                 message: 'Password changed successfully!',
@@ -262,38 +255,44 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
     };
 
     const editDefaultNoteTemplate = async () => {
-        const defaultNoteResponse = await getDefaultNoteTemplate(target);
-        if (defaultNoteResponse.status !== 200) {
-            displayError(setAlert)(defaultNoteResponse.data);
-            return;
-        }
+        try {
+            const defaultNoteResponse = await usersApi.usersDefaultNoteTemplateRetrieve({
+                userId: target,
+            });
 
-        setModal(MarkdownEditorModal, {
-            title: 'Edit Default Note Template',
-            noteTitle: 'Default Note Template',
-            initialContent: defaultNoteResponse.data.template || '',
-            onConfirm: (content) => {
-                if (isOwnAccount) {
-                    setProfile((prevProfile) => ({
-                        ...prevProfile,
-                        defaultNoteTemplate: content,
-                    }));
-                }
-
-                setDefaultNoteTemplate(target, content).then((response) => {
-                    if (response.status === 200) {
-                        setPopup({
-                            show: true,
-                            message: 'Default note template updated successfully!',
-                            color: 'green',
-                        });
-                    } else {
-                        displayError(setAlert)(response.data);
+            setModal(MarkdownEditorModal, {
+                title: 'Edit Default Note Template',
+                noteTitle: 'Default Note Template',
+                initialContent: defaultNoteResponse.template || '',
+                onConfirm: (content) => {
+                    if (isOwnAccount) {
+                        setProfile((prevProfile) => ({
+                            ...prevProfile,
+                            defaultNoteTemplate: content,
+                        }));
                     }
-                });
-            },
-            titleEditable: false,
-        });
+
+                    usersApi
+                        .usersDefaultNoteTemplateCreate({
+                            userId: target,
+                            defaultNoteTemplateRequest: { template: content },
+                        })
+                        .then(() => {
+                            setPopup({
+                                show: true,
+                                message: 'Default note template updated successfully!',
+                                color: 'green',
+                            });
+                        })
+                        .catch((err) => {
+                            displayError(setAlert)(err);
+                        });
+                },
+                titleEditable: false,
+            });
+        } catch (err) {
+            displayError(setAlert)(err);
+        }
     };
 
     const handle2FASetup = async () => {
@@ -301,8 +300,11 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
             if (isOwnAccount) {
                 setShow2FASetup(true);
             } else {
-                updateUser(target, {
-                    two_factor_enabled: false,
+                usersApi.usersUpdate({
+                    userId: target,
+                    userRetrieveRequest: {
+                        twoFactorEnabled: false,
+                    },
                 });
                 setTwoFactorEnabled(false);
                 setPopup({
@@ -316,9 +318,10 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
             setShow2FASetup(true);
             // Initiate 2FA setup
             try {
-                const { initiate2FA } = await import('../../services/userService/userService');
-                const response = await initiate2FA();
-                setQrCodeUrl(response.data.config_url);
+                const response = await usersApi.users2faEnableCreate({
+                    enable2FARequest: {},
+                });
+                setQrCodeUrl(response.configUrl);
             } catch (err) {
                 displayError(setAlert)(err);
             }
@@ -329,8 +332,9 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
         e.preventDefault();
         try {
             if (twoFactorEnabled) {
-                const { disable2FA } = await import('../../services/userService/userService');
-                await disable2FA(twoFactorCode);
+                await usersApi.users2faDisableCreate({
+                    verify2FARequest: { token: twoFactorCode },
+                });
                 setTwoFactorEnabled(false);
                 setPopup({
                     show: true,
@@ -338,8 +342,9 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                     color: 'green',
                 });
             } else {
-                const { enable2FA } = await import('../../services/userService/userService');
-                await enable2FA(twoFactorCode);
+                await usersApi.users2faVerifyCreate({
+                    enable2FARequest: { token: twoFactorCode },
+                });
                 setTwoFactorEnabled(true);
                 setPopup({
                     show: true,
@@ -532,294 +537,294 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
 
                         <div className='space-y-3'>
 
-                                {isOwnAccount && (
-                                    <>
-                                        {/* Change Password Section */}
-                                        <div className='py-3'>
-                                            <div className='flex items-center justify-between mb-3'>
-                                                <div>
-                                                    <label className='cradle-label cradle-text-tertiary block mb-1'>
-                                                        Password
-                                                    </label>
-                                                    <p className='text-xs cradle-text-muted'>
-                                                        Change your account password
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    type='button'
-                                                    className='cradle-btn cradle-btn-ghost'
-                                                    onClick={() => {
-                                                        setShowChangePassword(!showChangePassword);
-                                                        setPasswordError('');
-                                                    }}
-                                                >
-                                                    {showChangePassword ? 'Cancel' : 'Change Password'}
-                                                </button>
-                                            </div>
-
-                                            {showChangePassword && (
-                                                <div className='mt-4 p-4 border cradle-border rounded'>
-                                                    <div className='space-y-4'>
-                                                        <div>
-                                                            <label className='cradle-label cradle-text-tertiary block mb-2'>
-                                                                Current Password
-                                                            </label>
-                                                            <input
-                                                                type='password'
-                                                                className='cradle-search w-full'
-                                                                value={currentPassword}
-                                                                onChange={(e) => setCurrentPassword(e.target.value)}
-                                                                required
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <label className='cradle-label cradle-text-tertiary block mb-2'>
-                                                                New Password
-                                                            </label>
-                                                            <input
-                                                                type='password'
-                                                                className='cradle-search w-full'
-                                                                value={newPassword}
-                                                                onChange={(e) => setNewPassword(e.target.value)}
-                                                                required
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <label className='cradle-label cradle-text-tertiary block mb-2'>
-                                                                Confirm New Password
-                                                            </label>
-                                                            <input
-                                                                type='password'
-                                                                className='cradle-search w-full'
-                                                                value={confirmPassword}
-                                                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                                                required
-                                                            />
-                                                        </div>
-                                                        {passwordError && (
-                                                            <p className='cradle-status-error text-sm'>{passwordError}</p>
-                                                        )}
-                                                        <div className='flex justify-end'>
-                                                            <button
-                                                                type='button'
-                                                                className='cradle-btn cradle-btn-primary'
-                                                                onClick={handleChangePassword}
-                                                            >
-                                                                Update Password
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className='cradle-separator'></div>
-
-                                        {/* API Key Section */}
-                                        <div className='py-3'>
-                                            <div className='flex items-center justify-between mb-3'>
-                                                <div>
-                                                    <label className='cradle-label cradle-text-tertiary block mb-1'>
-                                                        API Key
-                                                    </label>
-                                                    <p className='text-xs cradle-text-muted'>
-                                                        Generate a new API key for programmatic access
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    type='button'
-                                                    className='cradle-btn cradle-btn-ghost'
-                                                    onClick={() => setShowApiKeyGenerate(!showApiKeyGenerate)}
-                                                >
-                                                    {showApiKeyGenerate ? 'Cancel' : 'Generate API Key'}
-                                                </button>
-                                            </div>
-
-                                            {showApiKeyGenerate && (
-                                                <div className='mt-4 p-4 border cradle-border rounded'>
-                                                    <p className='cradle-text-secondary mb-4'>
-                                                        Are you sure you want to generate a new API key? This will invalidate the current key.
-                                                    </p>
-                                                    <div className='flex justify-end gap-2'>
-                                                        <button
-                                                            type='button'
-                                                            className='cradle-btn cradle-btn-ghost'
-                                                            onClick={() => setShowApiKeyGenerate(false)}
-                                                        >
-                                                            Cancel
-                                                        </button>
-                                                        <button
-                                                            type='button'
-                                                            className='cradle-btn cradle-btn-primary'
-                                                            onClick={handleGenerateApiKey}
-                                                        >
-                                                            Confirm
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className='cradle-separator'></div>
-                                    </>
-                                )}
-
-                                {(twoFactorEnabled || isOwnAccount) && (
-                                    <>
-                                        {/* Two-Factor Authentication Section */}
-                                        <div className='py-3'>
-                                            <div className='flex items-center justify-between mb-3'>
-                                                <div>
-                                                    <label className='cradle-label cradle-text-tertiary block mb-1'>
-                                                        Two-Factor Authentication
-                                                    </label>
-                                                    <p className='text-xs cradle-text-muted'>
-                                                        {twoFactorEnabled
-                                                            ? 'Two-factor authentication is currently enabled'
-                                                            : 'Add an extra layer of security to your account'}
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    type='button'
-                                                    className={`cradle-btn ${twoFactorEnabled ? 'cradle-status-error !bg-opacity-10' : 'cradle-btn-ghost'}`}
-                                                    onClick={() => {
-                                                        if (show2FASetup) {
-                                                            setShow2FASetup(false);
-                                                            setTwoFactorCode('');
-                                                            setQrCodeUrl('');
-                                                        } else {
-                                                            handle2FASetup();
-                                                        }
-                                                    }}
-                                                >
-                                                    {show2FASetup ? 'Cancel' : (isEdit && twoFactorEnabled ? 'Disable 2FA' : 'Enable 2FA')}
-                                                </button>
-                                            </div>
-
-                                            {show2FASetup && (
-                                                <div className='mt-4 p-4 border cradle-border rounded'>
-                                                    <div className='space-y-4'>
-                                                        {!twoFactorEnabled && qrCodeUrl && (
-                                                            <>
-                                                                <div className='flex justify-center mb-4'>
-                                                                    <div className='p-4 bg-white rounded'>
-                                                                        <QRCodeSVG value={qrCodeUrl} size={200} level='H' />
-                                                                    </div>
-                                                                </div>
-                                                                <div className='mb-4 p-3 cradle-bg-secondary rounded'>
-                                                                    <p className='text-sm cradle-text-tertiary mb-2'>
-                                                                        Can't scan the QR code? Enter this secret key manually:
-                                                                    </p>
-                                                                    <code className='block cradle-bg-elevated p-2 rounded text-center select-all cradle-text-primary'>
-                                                                        {new URL(qrCodeUrl).searchParams.get('secret')}
-                                                                    </code>
-                                                                </div>
-                                                            </>
-                                                        )}
-                                                        <div>
-                                                            <label className='cradle-label cradle-text-tertiary block mb-2'>
-                                                                {twoFactorEnabled 
-                                                                    ? 'Enter verification code to disable 2FA'
-                                                                    : 'Enter verification code from your authenticator app'}
-                                                            </label>
-                                                            <div className='flex gap-2 justify-center'>
-                                                                {[0, 1, 2, 3, 4, 5].map((index) => (
-                                                                    <input
-                                                                        key={index}
-                                                                        id={`twoFactorToken-${index}`}
-                                                                        name={`twoFactorToken-${index}`}
-                                                                        type='text'
-                                                                        autoComplete='twoFactorToken'
-                                                                        className='cradle-search w-12 h-12 text-center text-lg font-mono disabled:opacity-50 disabled:cursor-not-allowed'
-                                                                        placeholder=''
-                                                                        pattern='[0-9]*'
-                                                                        maxLength='1'
-                                                                        value={twoFactorCode[index] || ''}
-                                                                        onChange={(e) => {
-                                                                            const value = e.target.value.replace(/\D/g, '');
-                                                                            if (value.length <= 1) {
-                                                                                const newCode = twoFactorCode.split('');
-                                                                                newCode[index] = value;
-                                                                                setTwoFactorCode(newCode.join(''));
-                                                                                
-                                                                                // Auto-focus next input
-                                                                                if (value && index < 5) {
-                                                                                    document.getElementById(`twoFactorToken-${index + 1}`)?.focus();
-                                                                                }
-                                                                            }
-                                                                        }}
-                                                                        onKeyDown={(e) => {
-                                                                            // Handle backspace to go to previous input
-                                                                            if (e.key === 'Backspace' && !twoFactorCode[index] && index > 0) {
-                                                                                document.getElementById(`twoFactorToken-${index - 1}`)?.focus();
-                                                                            }
-                                                                        }}
-                                                                        onPaste={(e) => {
-                                                                            e.preventDefault();
-                                                                            const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-                                                                            setTwoFactorCode(pastedData);
-                                                                            // Focus the last filled input or the first empty one
-                                                                            const focusIndex = Math.min(pastedData.length, 5);
-                                                                            document.getElementById(`twoFactorToken-${focusIndex}`)?.focus();
-                                                                        }}
-                                                                        required
-                                                                    />
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                        <div className='flex justify-end'>
-                                                            <button
-                                                                type='button'
-                                                                className={`cradle-btn ${twoFactorEnabled ? 'cradle-status-error !bg-opacity-10' : 'cradle-btn-primary'}`}
-                                                                disabled={twoFactorCode.length !== 6}
-                                                                onClick={handle2FASubmit}
-                                                            >
-                                                                {twoFactorEnabled ? 'Disable 2FA' : 'Verify and Enable'}
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className='cradle-separator'></div>
-                                    </>
-                                )}
-
-                                {isOwnAccount && (
-                                    <div className='mt-6'>
-                                        <div className='mb-4'>
-                                            <h3 className='text-lg font-semibold cradle-status-error cradle-mono mb-1'>
-                                                Danger Zone
-                                            </h3>
-                                            <p className='text-sm cradle-text-tertiary'>
-                                                Irreversible actions require confirmation
-                                            </p>
-                                        </div>
-                                        <div className='flex items-center justify-between py-3 border-2 border-red-500/20 rounded px-4'>
+                            {isOwnAccount && (
+                                <>
+                                    {/* Change Password Section */}
+                                    <div className='py-3'>
+                                        <div className='flex items-center justify-between mb-3'>
                                             <div>
                                                 <label className='cradle-label cradle-text-tertiary block mb-1'>
-                                                    Delete Account
+                                                    Password
                                                 </label>
                                                 <p className='text-xs cradle-text-muted'>
-                                                    Permanently delete your account and all associated data
+                                                    Change your account password
                                                 </p>
                                             </div>
                                             <button
                                                 type='button'
-                                                className='cradle-btn cradle-status-error !bg-opacity-10'
-                                                onClick={() =>
-                                                    setModal(ConfirmDeletionModal, {
-                                                        text: 'Are you sure you want to delete your account? All data related to you will be deleted.',
-                                                        onConfirm: handleDelete,
-                                                    })
-                                                }
+                                                className='cradle-btn cradle-btn-ghost'
+                                                onClick={() => {
+                                                    setShowChangePassword(!showChangePassword);
+                                                    setPasswordError('');
+                                                }}
                                             >
-                                                Delete Account
+                                                {showChangePassword ? 'Cancel' : 'Change Password'}
                                             </button>
                                         </div>
+
+                                        {showChangePassword && (
+                                            <div className='mt-4 p-4 border cradle-border rounded'>
+                                                <div className='space-y-4'>
+                                                    <div>
+                                                        <label className='cradle-label cradle-text-tertiary block mb-2'>
+                                                            Current Password
+                                                        </label>
+                                                        <input
+                                                            type='password'
+                                                            className='cradle-search w-full'
+                                                            value={currentPassword}
+                                                            onChange={(e) => setCurrentPassword(e.target.value)}
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className='cradle-label cradle-text-tertiary block mb-2'>
+                                                            New Password
+                                                        </label>
+                                                        <input
+                                                            type='password'
+                                                            className='cradle-search w-full'
+                                                            value={newPassword}
+                                                            onChange={(e) => setNewPassword(e.target.value)}
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className='cradle-label cradle-text-tertiary block mb-2'>
+                                                            Confirm New Password
+                                                        </label>
+                                                        <input
+                                                            type='password'
+                                                            className='cradle-search w-full'
+                                                            value={confirmPassword}
+                                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                                            required
+                                                        />
+                                                    </div>
+                                                    {passwordError && (
+                                                        <p className='cradle-status-error text-sm'>{passwordError}</p>
+                                                    )}
+                                                    <div className='flex justify-end'>
+                                                        <button
+                                                            type='button'
+                                                            className='cradle-btn cradle-btn-primary'
+                                                            onClick={handleChangePassword}
+                                                        >
+                                                            Update Password
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
+
+                                    <div className='cradle-separator'></div>
+
+                                    {/* API Key Section */}
+                                    <div className='py-3'>
+                                        <div className='flex items-center justify-between mb-3'>
+                                            <div>
+                                                <label className='cradle-label cradle-text-tertiary block mb-1'>
+                                                    API Key
+                                                </label>
+                                                <p className='text-xs cradle-text-muted'>
+                                                    Generate a new API key for programmatic access
+                                                </p>
+                                            </div>
+                                            <button
+                                                type='button'
+                                                className='cradle-btn cradle-btn-ghost'
+                                                onClick={() => setShowApiKeyGenerate(!showApiKeyGenerate)}
+                                            >
+                                                {showApiKeyGenerate ? 'Cancel' : 'Generate API Key'}
+                                            </button>
+                                        </div>
+
+                                        {showApiKeyGenerate && (
+                                            <div className='mt-4 p-4 border cradle-border rounded'>
+                                                <p className='cradle-text-secondary mb-4'>
+                                                    Are you sure you want to generate a new API key? This will invalidate the current key.
+                                                </p>
+                                                <div className='flex justify-end gap-2'>
+                                                    <button
+                                                        type='button'
+                                                        className='cradle-btn cradle-btn-ghost'
+                                                        onClick={() => setShowApiKeyGenerate(false)}
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <button
+                                                        type='button'
+                                                        className='cradle-btn cradle-btn-primary'
+                                                        onClick={handleGenerateApiKey}
+                                                    >
+                                                        Confirm
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className='cradle-separator'></div>
+                                </>
+                            )}
+
+                            {(twoFactorEnabled || isOwnAccount) && (
+                                <>
+                                    {/* Two-Factor Authentication Section */}
+                                    <div className='py-3'>
+                                        <div className='flex items-center justify-between mb-3'>
+                                            <div>
+                                                <label className='cradle-label cradle-text-tertiary block mb-1'>
+                                                    Two-Factor Authentication
+                                                </label>
+                                                <p className='text-xs cradle-text-muted'>
+                                                    {twoFactorEnabled
+                                                        ? 'Two-factor authentication is currently enabled'
+                                                        : 'Add an extra layer of security to your account'}
+                                                </p>
+                                            </div>
+                                            <button
+                                                type='button'
+                                                className={`cradle-btn ${twoFactorEnabled ? 'cradle-status-error !bg-opacity-10' : 'cradle-btn-ghost'}`}
+                                                onClick={() => {
+                                                    if (show2FASetup) {
+                                                        setShow2FASetup(false);
+                                                        setTwoFactorCode('');
+                                                        setQrCodeUrl('');
+                                                    } else {
+                                                        handle2FASetup();
+                                                    }
+                                                }}
+                                            >
+                                                {show2FASetup ? 'Cancel' : (isEdit && twoFactorEnabled ? 'Disable 2FA' : 'Enable 2FA')}
+                                            </button>
+                                        </div>
+
+                                        {show2FASetup && (
+                                            <div className='mt-4 p-4 border cradle-border rounded'>
+                                                <div className='space-y-4'>
+                                                    {!twoFactorEnabled && qrCodeUrl && (
+                                                        <>
+                                                            <div className='flex justify-center mb-4'>
+                                                                <div className='p-4 bg-white rounded'>
+                                                                    <QRCodeSVG value={qrCodeUrl} size={200} level='H' />
+                                                                </div>
+                                                            </div>
+                                                            <div className='mb-4 p-3 cradle-bg-secondary rounded'>
+                                                                <p className='text-sm cradle-text-tertiary mb-2'>
+                                                                    Can't scan the QR code? Enter this secret key manually:
+                                                                </p>
+                                                                <code className='block cradle-bg-elevated p-2 rounded text-center select-all cradle-text-primary'>
+                                                                    {new URL(qrCodeUrl).searchParams.get('secret')}
+                                                                </code>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                    <div>
+                                                        <label className='cradle-label cradle-text-tertiary block mb-2'>
+                                                            {twoFactorEnabled
+                                                                ? 'Enter verification code to disable 2FA'
+                                                                : 'Enter verification code from your authenticator app'}
+                                                        </label>
+                                                        <div className='flex gap-2 justify-center'>
+                                                            {[0, 1, 2, 3, 4, 5].map((index) => (
+                                                                <input
+                                                                    key={index}
+                                                                    id={`twoFactorToken-${index}`}
+                                                                    name={`twoFactorToken-${index}`}
+                                                                    type='text'
+                                                                    autoComplete='twoFactorToken'
+                                                                    className='cradle-search w-12 h-12 text-center text-lg font-mono disabled:opacity-50 disabled:cursor-not-allowed'
+                                                                    placeholder=''
+                                                                    pattern='[0-9]*'
+                                                                    maxLength='1'
+                                                                    value={twoFactorCode[index] || ''}
+                                                                    onChange={(e) => {
+                                                                        const value = e.target.value.replace(/\D/g, '');
+                                                                        if (value.length <= 1) {
+                                                                            const newCode = twoFactorCode.split('');
+                                                                            newCode[index] = value;
+                                                                            setTwoFactorCode(newCode.join(''));
+
+                                                                            // Auto-focus next input
+                                                                            if (value && index < 5) {
+                                                                                document.getElementById(`twoFactorToken-${index + 1}`)?.focus();
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                    onKeyDown={(e) => {
+                                                                        // Handle backspace to go to previous input
+                                                                        if (e.key === 'Backspace' && !twoFactorCode[index] && index > 0) {
+                                                                            document.getElementById(`twoFactorToken-${index - 1}`)?.focus();
+                                                                        }
+                                                                    }}
+                                                                    onPaste={(e) => {
+                                                                        e.preventDefault();
+                                                                        const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                                                                        setTwoFactorCode(pastedData);
+                                                                        // Focus the last filled input or the first empty one
+                                                                        const focusIndex = Math.min(pastedData.length, 5);
+                                                                        document.getElementById(`twoFactorToken-${focusIndex}`)?.focus();
+                                                                    }}
+                                                                    required
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    <div className='flex justify-end'>
+                                                        <button
+                                                            type='button'
+                                                            className={`cradle-btn ${twoFactorEnabled ? 'cradle-status-error !bg-opacity-10' : 'cradle-btn-primary'}`}
+                                                            disabled={twoFactorCode.length !== 6}
+                                                            onClick={handle2FASubmit}
+                                                        >
+                                                            {twoFactorEnabled ? 'Disable 2FA' : 'Verify and Enable'}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className='cradle-separator'></div>
+                                </>
+                            )}
+
+                            {isOwnAccount && (
+                                <div className='mt-6'>
+                                    <div className='mb-4'>
+                                        <h3 className='text-lg font-semibold cradle-status-error cradle-mono mb-1'>
+                                            Danger Zone
+                                        </h3>
+                                        <p className='text-sm cradle-text-tertiary'>
+                                            Irreversible actions require confirmation
+                                        </p>
+                                    </div>
+                                    <div className='flex items-center justify-between py-3 border-2 border-red-500/20 rounded px-4'>
+                                        <div>
+                                            <label className='cradle-label cradle-text-tertiary block mb-1'>
+                                                Delete Account
+                                            </label>
+                                            <p className='text-xs cradle-text-muted'>
+                                                Permanently delete your account and all associated data
+                                            </p>
+                                        </div>
+                                        <button
+                                            type='button'
+                                            className='cradle-btn cradle-status-error !bg-opacity-10'
+                                            onClick={() =>
+                                                setModal(ConfirmDeletionModal, {
+                                                    text: 'Are you sure you want to delete your account? All data related to you will be deleted.',
+                                                    onConfirm: handleDelete,
+                                                })
+                                            }
+                                        >
+                                            Delete Account
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 );
@@ -876,32 +881,32 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                     Editor Settings
                                 </h3>
                                 <div className='flex items-center justify-between py-3'>
-                                <label
-                                    htmlFor={vimModeId}
-                                    className='flex items-center gap-3 cursor-pointer flex-1'
-                                >
-                                    <img
-                                        src={vimIcon}
-                                        alt='Vim'
-                                        className='w-6 h-6'
+                                    <label
+                                        htmlFor={vimModeId}
+                                        className='flex items-center gap-3 cursor-pointer flex-1'
+                                    >
+                                        <img
+                                            src={vimIcon}
+                                            alt='Vim'
+                                            className='w-6 h-6'
+                                        />
+                                        <div>
+                                            <span className='cradle-label cradle-text-tertiary block mb-1'>
+                                                Vim Mode
+                                            </span>
+                                            <p className='text-xs cradle-text-muted'>
+                                                Enable Vim keybindings in the editor
+                                            </p>
+                                        </div>
+                                    </label>
+                                    <input
+                                        id={vimModeId}
+                                        data-testid='vim-toggle'
+                                        name='vim-toggle'
+                                        type='checkbox'
+                                        className='switch switch-ghost-primary'
+                                        {...register('vimMode')}
                                     />
-                                    <div>
-                                        <span className='cradle-label cradle-text-tertiary block mb-1'>
-                                            Vim Mode
-                                        </span>
-                                        <p className='text-xs cradle-text-muted'>
-                                            Enable Vim keybindings in the editor
-                                        </p>
-                                    </div>
-                                </label>
-                                <input
-                                    id={vimModeId}
-                                    data-testid='vim-toggle'
-                                    name='vim-toggle'
-                                    type='checkbox'
-                                    className='switch switch-ghost-primary'
-                                    {...register('vimMode')}
-                                />
                                 </div>
                             </div>
 
@@ -911,24 +916,24 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                     Appearance
                                 </h3>
                                 <div className='w-full'>
-                                <label className='cradle-label cradle-text-tertiary block mb-2'>
-                                    Theme
-                                </label>
-                                <select
-                                    className='cradle-search w-full'
-                                    {...register('theme')}
-                                >
-                                    <option value='dark'>Dark</option>
-                                    <option value='light'>Light</option>
-                                </select>
-                                {errors.theme && (
-                                    <p className='cradle-status-error text-sm mt-2'>
-                                        {errors.theme.message}
+                                    <label className='cradle-label cradle-text-tertiary block mb-2'>
+                                        Theme
+                                    </label>
+                                    <select
+                                        className='cradle-search w-full'
+                                        {...register('theme')}
+                                    >
+                                        <option value='dark'>Dark</option>
+                                        <option value='light'>Light</option>
+                                    </select>
+                                    {errors.theme && (
+                                        <p className='cradle-status-error text-sm mt-2'>
+                                            {errors.theme.message}
+                                        </p>
+                                    )}
+                                    <p className='text-xs cradle-text-muted mt-1'>
+                                        Choose your preferred color scheme
                                     </p>
-                                )}
-                                <p className='text-xs cradle-text-muted mt-1'>
-                                    Choose your preferred color scheme
-                                </p>
                                 </div>
                             </div>
 
@@ -938,22 +943,22 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                     Note Templates
                                 </h3>
                                 <div className='flex items-center justify-between py-3'>
-                                <div>
-                                    <label className='cradle-label cradle-text-tertiary block mb-1'>
-                                        Default Note Template
-                                    </label>
-                                    <p className='text-xs cradle-text-muted'>
-                                        Customize the template used for new notes
-                                    </p>
-                                </div>
-                                <button
-                                    type='button'
-                                    className='cradle-btn cradle-btn-ghost flex items-center gap-2'
-                                    onClick={editDefaultNoteTemplate}
-                                >
-                                    <Edit className='w-4 h-4' />
-                                    Edit Template
-                                </button>
+                                    <div>
+                                        <label className='cradle-label cradle-text-tertiary block mb-1'>
+                                            Default Note Template
+                                        </label>
+                                        <p className='text-xs cradle-text-muted'>
+                                            Customize the template used for new notes
+                                        </p>
+                                    </div>
+                                    <button
+                                        type='button'
+                                        className='cradle-btn cradle-btn-ghost flex items-center gap-2'
+                                        onClick={editDefaultNoteTemplate}
+                                    >
+                                        <Edit className='w-4 h-4' />
+                                        Edit Template
+                                    </button>
                                 </div>
                             </div>
 
@@ -1012,11 +1017,10 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                                 key={item.id}
                                                 type='button'
                                                 onClick={() => setActiveSection(item.id)}
-                                                className={`cradle-btn w-full flex items-center gap-3 ${
-                                                    activeSection === item.id
+                                                className={`cradle-btn w-full flex items-center gap-3 ${activeSection === item.id
                                                         ? 'cradle-btn-primary'
                                                         : 'cradle-btn-ghost'
-                                                }`}
+                                                    }`}
                                             >
                                                 <Icon className='w-5 h-5 flex-shrink-0' />
                                                 <span className='text-left flex-1'>{item.label}</span>
@@ -1032,7 +1036,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                             <div className='cradle-border cradle-border-l cradle-border-r cradle-bg-elevated'>
                                 <form onSubmit={handleSubmit(onSubmit)}>
                                     {renderSection()}
-                                    
+
                                     {/* Alert at bottom */}
                                     {alert.show && (
                                         <div className='p-6 cradle-border-t'>

@@ -2,11 +2,8 @@ import { NavArrowDown, NavArrowUp, Search } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Datepicker from 'react-tailwindcss-datepicker';
+import useApi from '../../hooks/useApi/useApi';
 import { useProfile } from '../../hooks/useProfile/useProfile';
-import {
-    getDigests,
-    getDigestTypes,
-} from '../../services/intelioService/intelioService';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import DigestList from './DigestList';
 import UploadForm from './UploadForm';
@@ -16,6 +13,7 @@ export default function UploadExternal({ setAlert }) {
     const [dataTypeOptions, setDataTypeOptions] = useState([]);
     const [alert, setLocalAlert] = useState({ show: false, message: '', color: '' });
     const { profile } = useProfile();
+    const { intelioApi } = useApi();
     const [isUploadFormVisible, setIsUploadFormVisible] = useState(false);
 
     // Digest list state
@@ -52,13 +50,14 @@ export default function UploadExternal({ setAlert }) {
     };
 
     useEffect(() => {
-        getDigestTypes()
+        intelioApi
+            .intelioDigestOptionsList()
             .then((response) => {
-                if (response.status === 200) {
-                    const dataTypes = response.data.map((type) => ({
-                        value: type.class_name,
+                if (response) {
+                    const dataTypes = response.map((type) => ({
+                        value: type.className,
                         label: type.name,
-                        inferEntities: type.infer_entities,
+                        inferEntities: type.inferEntities,
                     }));
                     setDataTypeOptions(dataTypes);
                 } else {
@@ -79,7 +78,7 @@ export default function UploadExternal({ setAlert }) {
 
         // Initial fetch of digests with search params
         fetchDigests();
-    }, [page, submittedFilters, sortField, sortDirection, pageSize]);
+    }, [page, submittedFilters, sortField, sortDirection, pageSize, intelioApi]);
 
     // Add an effect to initialize filters and date range from URL parameters
     useEffect(() => {
@@ -201,18 +200,21 @@ export default function UploadExternal({ setAlert }) {
             // Add search filters to the API call
             const searchQueryParams = {
                 page,
-                page_size: pageSize,
-                ...submittedFilters,
+                pageSize,
+                title: submittedFilters.title || undefined,
+                author: submittedFilters.author || undefined,
+                createdAtGte: submittedFilters.created_at_gte || undefined,
+                createdAtLte: submittedFilters.created_at_lte || undefined,
             };
 
             // Add sorting
             const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
-            searchQueryParams.order_by = orderBy;
+            searchQueryParams.orderBy = orderBy;
 
-            const response = await getDigests(searchQueryParams);
+            const response = await intelioApi.intelioDigestRetrieve(searchQueryParams);
 
-            setDigests(response.data.results);
-            setTotalPages(response.data.total_pages);
+            setDigests(response.results);
+            setTotalPages(response.totalPages);
         } catch (error) {
             console.error('Failed to fetch digests', error);
             (setAlert || setLocalAlert)({

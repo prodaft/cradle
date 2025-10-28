@@ -2,8 +2,7 @@ import { Trash } from 'iconoir-react/regular';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 
 import { useModal } from '../../contexts/ModalContext/ModalContext';
-import { deleteNote } from '../../services/notesService/notesService';
-import { deleteFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
+import useApi from '../../hooks/useApi/useApi';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
 
@@ -24,22 +23,25 @@ import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
 export default function DeleteNote({ note, setAlert, setHidden, classNames }) {
     const { navigate, navigateLink } = useCradleNavigate();
     const { setModal } = useModal();
+    const { fleetingNotesApi, notesApi } = useApi();
 
-    const handleDelete = () => {
-        // Use the appropriate delete function based on whether the note is fleeting
-        const deleteFunction = note.fleeting ? deleteFleetingNote : deleteNote;
-        deleteFunction(note.id)
-            .then((response) => {
-                if (response.status === 200) {
-                    setAlert({
-                        show: true,
-                        color: 'green',
-                        message: 'Note deleted successfully',
-                    });
-                    setHidden(true);
-                }
-            })
-            .catch(displayError(setAlert, navigate));
+    const handleDelete = async () => {
+        try {
+            // Use the appropriate delete function based on whether the note is fleeting
+            if (note.fleeting) {
+                await fleetingNotesApi.fleetingNotesDestroy({ id: note.id });
+            } else {
+                await notesApi.notesDelete({ noteId: note.id });
+            }
+            setAlert({
+                show: true,
+                color: 'green',
+                message: 'Note deleted successfully',
+            });
+            setHidden(true);
+        } catch (error) {
+            displayError(setAlert, navigate)(error);
+        }
     };
 
     return (

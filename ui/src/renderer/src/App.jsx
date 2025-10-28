@@ -104,10 +104,6 @@ function App() {
                                                                         element={<NoteViewer />}
                                                                     />
                                                                     <Route
-                                                                        path='/notes'
-                                                                        element={<NoteSelector />}
-                                                                    />
-                                                                    <Route
                                                                         path='/knowledge-graph'
                                                                         element={<GraphExplorer GraphSearchComponent={GraphSearch} />}
                                                                     />

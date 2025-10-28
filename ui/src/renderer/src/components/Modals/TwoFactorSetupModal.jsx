@@ -1,13 +1,10 @@
 import { QRCodeSVG } from 'qrcode.react';
 import { useEffect, useState } from 'react';
-import {
-    disable2FA,
-    enable2FA,
-    initiate2FA,
-} from '../../services/userService/userService';
+import useApi from '../../hooks/useApi/useApi';
 import AlertBox from '../AlertBox/AlertBox';
 
 const TwoFactorSetupModal = ({ closeModal, onSuccess, isDisabling = false }) => {
+    const { usersApi } = useApi();
     const [otpAuthUrl, setOtpAuthUrl] = useState('');
     const [secret, setSecret] = useState('');
     const [verificationCode, setVerificationCode] = useState('');
@@ -23,11 +20,11 @@ const TwoFactorSetupModal = ({ closeModal, onSuccess, isDisabling = false }) => 
         if (!isDisabling) {
             const setup2FA = async () => {
                 try {
-                    const response = await initiate2FA();
-                    setOtpAuthUrl(response.data.config_url);
-                    const secret = new URL(response.data.config_url).searchParams.get(
-                        'secret',
-                    );
+                    const response = await usersApi.users2faEnableCreate({
+                        enable2FARequest: {},
+                    });
+                    setOtpAuthUrl(response.configUrl);
+                    const secret = new URL(response.configUrl).searchParams.get('secret');
                     setSecret(secret);
                     setLoading(false);
                 } catch (err) {
@@ -41,15 +38,19 @@ const TwoFactorSetupModal = ({ closeModal, onSuccess, isDisabling = false }) => 
             };
             setup2FA();
         }
-    }, [isDisabling]);
+    }, [isDisabling, usersApi]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             if (isDisabling) {
-                await disable2FA(verificationCode);
+                await usersApi.users2faDisableCreate({
+                    verify2FARequest: { token: verificationCode },
+                });
             } else {
-                await enable2FA(verificationCode);
+                await usersApi.users2faVerifyCreate({
+                    enable2FARequest: { token: verificationCode },
+                });
             }
             onSuccess?.();
             closeModal();

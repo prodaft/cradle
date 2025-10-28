@@ -1,7 +1,7 @@
 import { Trash } from 'iconoir-react';
 import React from 'react';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
-import { deleteDigest } from '../../services/intelioService/intelioService';
+import useApi from '../../hooks/useApi/useApi';
 import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import ActionsTable from '../ActionsTable/ActionsTable';
@@ -34,6 +34,7 @@ function DigestList({
     onSearchSubmit = () => { },
 }) {
     const { setModal } = useModal();
+    const { intelioApi } = useApi();
 
     // Mapping of table columns to API field names
     const sortFieldMapping = {
@@ -45,7 +46,7 @@ function DigestList({
 
     const handleDelete = async (digestId) => {
         try {
-            await deleteDigest(digestId);
+            await intelioApi.intelioDigestDestroy({ id: digestId });
             setAlert({
                 show: true,
                 message: 'Digest deleted successfully',
@@ -76,6 +77,7 @@ function DigestList({
     } : {};
 
     const renderRow = (digest, index, selectProps = {}) => {
+        console.log(digest);
         const { enableMultiSelect, isSelected, onSelect } = selectProps;
 
         return (
@@ -90,8 +92,8 @@ function DigestList({
                         />
                     </td>
                 )}
-                <td className='truncate w-24' title={digest.display_name}>
-                    {truncateText(digest.display_name, 24)}
+                <td className='truncate w-24' title={digest.displayName}>
+                    {truncateText(digest.displayName, 24)}
                 </td>
                 <td className='w-16'>
                     <span
@@ -108,8 +110,8 @@ function DigestList({
                 <td className='truncate max-w-xs' title={digest.title}>
                     {digest.title}
                 </td>
-                <td className='truncate w-32' title={digest.user_detail.username}>
-                    {truncateText(digest.user_detail.username, 16)}
+                <td className='truncate w-32' title={digest.userDetail.username}>
+                    {truncateText(digest.userDetail.username, 16)}
                 </td>
                 <td className='w-8'>
                     <Tooltip content={digest.warnings?.length > 0 ? digest.warnings.slice(0, 10).join('\n') + (digest.warnings.length > 10 ? '...' : '') : undefined} side='left' color='warning'>
@@ -125,7 +127,7 @@ function DigestList({
                         </span>
                     </Tooltip>
                 </td>
-                <td className='w-36'>{formatDate(new Date(digest.created_at))}</td>
+                <td className='w-36'>{formatDate(digest.createdAt)}</td>
                 <td className='w-8'>
                     <button
                         title='Delete Digest'
@@ -164,7 +166,9 @@ function DigestList({
                     onConfirm: async () => {
                         try {
                             // Send all delete requests in parallel
-                            const deletePromises = selectedIds.map(id => deleteDigest(id));
+                            const deletePromises = selectedIds.map(id =>
+                                intelioApi.intelioDigestDestroy({ id })
+                            );
                             const results = await Promise.allSettled(deletePromises);
 
                             // Count successes and failures

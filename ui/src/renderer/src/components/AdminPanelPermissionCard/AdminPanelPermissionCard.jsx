@@ -1,7 +1,7 @@
 import { NavArrowDown } from 'iconoir-react';
 import { useState } from 'react';
+import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { changeAccess } from '../../services/adminService/adminService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 
@@ -33,15 +33,19 @@ export default function AdminPanelPermissionCard({
 }) {
     const [currentAccess, setCurrentAccess] = useState(accessLevel);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { accessApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
 
     const handleChange = async (newAccess) => {
         if (currentAccess !== newAccess) {
-            changeAccess(userId, entityId, newAccess)
-                .then((response) => {
-                    if (response.status === 200) {
-                        setCurrentAccess(newAccess);
-                    }
+            accessApi
+                .accessUserUpdate({
+                    userId: userId,
+                    entityId: entityId,
+                    accessRequest: { accessType: newAccess },
+                })
+                .then(() => {
+                    setCurrentAccess(newAccess);
                 })
                 .catch(displayError(setAlert, navigate));
         }

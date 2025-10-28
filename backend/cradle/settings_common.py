@@ -6,7 +6,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-VERSION = "2.10.2-beta.a070af1b"
+VERSION = "2.10.2-beta.9bd46310"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -137,11 +137,7 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    "DEFAULT_PARSER_CLASSES": (
-        "rest_framework.parsers.FormParser",
-        "rest_framework.parsers.MultiPartParser",
-        "rest_framework.parsers.JSONParser",
-    ),
+    "DEFAULT_PARSER_CLASSES": ("rest_framework.parsers.JSONParser",),
 }
 
 SPECTACULAR_SETTINGS = {

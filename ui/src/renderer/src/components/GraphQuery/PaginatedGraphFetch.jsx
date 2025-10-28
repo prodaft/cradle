@@ -2,9 +2,8 @@ import { format, parseISO } from 'date-fns';
 import { ArrowLeft, ArrowRight, PlaySolid } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import Datepicker from 'react-tailwindcss-datepicker';
+import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { fetchGraph } from '../../services/graphService/graphService';
-import { advancedQuery } from '../../services/queryService/queryService';
 import {
     LinkTreeFlattener,
     truncateText,
@@ -26,6 +25,7 @@ export default function PaginatedGraphFetch({
     const [hasNextPage, setHasNextPage] = useState(true);
     const [loading, setLoading] = useState(false);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { queryApi, knowledgeGraphApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
     const MAX_DEPTH = 3; // Set maximum depth to 3
 
@@ -79,17 +79,14 @@ export default function PaginatedGraphFetch({
 
         try {
             // Include depth parameter in the request
-            const response = await fetchGraph(
-                currentPage,
-                pageSize,
-                dateRange.startDate,
-                dateRange.endDate,
-                sourceNode?.value, // Source node ID
-                currentDepth, // Adding depth parameter
-            );
+            const response = await knowledgeGraphApi.knowledgeGraphFetchRetrieve({
+                src: sourceNode?.value,
+                depth: currentDepth,
+                pageSize: pageSize,
+            });
 
-            has_next = response.data.has_next;
-            const { entries, relations, colors } = response.data.results;
+            has_next = response.hasNext;
+            const { entries, relations, colors } = response.results;
             const hasEntries = entries && entries.length > 0;
             const hasRelations = relations && relations.length > 0;
 
@@ -171,20 +168,14 @@ export default function PaginatedGraphFetch({
 
     const fetchEntries = async (q) => {
         try {
-            const results = await advancedQuery(q, true);
-            if (results.status === 200) {
-                return results.data.results.map((alias) => ({
-                    value: alias.id,
-                    label: `${alias.subtype}:${alias.name}`,
-                }));
-            } else {
-                setAlert({
-                    show: true,
-                    message: results.error || 'An error occurred',
-                    color: 'red',
-                });
-                return [];
-            }
+            const results = await queryApi.queryAdvancedRetrieve({
+                query: Array.isArray(q) ? q : [q],
+                wildcard: true,
+            });
+            return results.results.map((alias) => ({
+                value: alias.id,
+                label: `${alias.subtype}:${alias.name}`,
+            }));
         } catch (error) {
             displayError(setAlert, navigate)(error);
             return [];

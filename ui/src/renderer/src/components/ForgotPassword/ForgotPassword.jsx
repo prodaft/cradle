@@ -1,8 +1,8 @@
 import { useWindowSize } from '@uidotdev/usehooks';
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import useApi from '../../hooks/useApi/useApi';
+import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
@@ -58,7 +58,7 @@ export default function ForgotPassword() {
                 {/* Left Side - Branding */}
                 <div className='hidden lg:flex lg:w-1/2 cradle-bg-secondary relative overflow-hidden'>
                     <div className='absolute inset-0 cradle-grid-bg opacity-30'></div>
-                    
+
                     <div className='relative z-10 flex flex-col justify-center items-start px-16 py-12'>
                         <h1 className='text-4xl font-bold cradle-text-primary cradle-mono mb-4 tracking-tight'>
                             Password Recovery
@@ -85,35 +85,35 @@ export default function ForgotPassword() {
                                 </p>
 
                                 <form className='space-y-5' onSubmit={handleSubmit}>
-                            <FormField
-                                name='username'
-                                labelText='Username'
-                                type='text'
-                                value={username}
-                                handleInput={setUsername}
-                                autofocus={true}
-                                required={false}
-                            />
-                            <div className='cradle-separator-labeled my-4'>
-                                <span>Or</span>
-                            </div>
-                            <FormField
-                                name='email'
-                                labelText='Email'
-                                type='text'
-                                value={email}
-                                handleInput={setEmail}
-                                required={false}
-                            />
-                            <AlertBox alert={alert} />
-                            <button
-                                type='submit'
-                                data-testid='login-register-button'
-                                className='cradle-btn cradle-btn-primary w-full'
-                            >
-                                Send Reset Link
-                            </button>
-                        </form>
+                                    <FormField
+                                        name='username'
+                                        labelText='Username'
+                                        type='text'
+                                        value={username}
+                                        handleInput={setUsername}
+                                        autofocus={true}
+                                        required={false}
+                                    />
+                                    <div className='cradle-separator-labeled my-4'>
+                                        <span>Or</span>
+                                    </div>
+                                    <FormField
+                                        name='email'
+                                        labelText='Email'
+                                        type='text'
+                                        value={email}
+                                        handleInput={setEmail}
+                                        required={false}
+                                    />
+                                    <AlertBox alert={alert} />
+                                    <button
+                                        type='submit'
+                                        data-testid='login-register-button'
+                                        className='cradle-btn cradle-btn-primary w-full'
+                                    >
+                                        Send Reset Link
+                                    </button>
+                                </form>
 
                                 {/* Footer Link */}
                                 <div className='cradle-separator mt-8'></div>
@@ -131,7 +131,7 @@ export default function ForgotPassword() {
 
                         <div className='mt-6 text-center'>
                             <span className='text-xs cradle-text-muted cradle-mono tracking-wider'>
-                                v2.10.2
+                                v2.10.2-beta.a070af1b
                             </span>
                         </div>
                     </div>

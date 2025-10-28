@@ -1,12 +1,6 @@
 import { useEffect, useState } from 'react';
+import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { getEntryClasses } from '../../services/adminService/adminService';
-import {
-    deleteMapping,
-    getMappingKeys,
-    getMappings,
-    saveMapping,
-} from '../../services/intelioService/intelioService';
 import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
@@ -18,15 +12,16 @@ const TypeMappingsEditor = ({ id }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [validationErrors, setValidationErrors] = useState({});
+    const { intelioApi, entriesApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
 
     const allColumns = columnDefinitions
         ? [
-              'internal_class',
-              ...Object.keys(columnDefinitions).filter(
-                  (col) => col !== 'internal_class',
-              ),
-          ]
+            'internal_class',
+            ...Object.keys(columnDefinitions).filter(
+                (col) => col !== 'internal_class',
+            ),
+        ]
         : [];
 
     // Create a new empty row using defaults if provided; note id is null by default.
@@ -47,14 +42,14 @@ const TypeMappingsEditor = ({ id }) => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const mappingKeys = await getMappingKeys(id);
-                const entryClasses = await getEntryClasses();
-                const mappings = await getMappings(id);
+                const mappingKeys = await intelioApi.mappingsKeysSchema({ className: id });
+                const entryClasses = await entriesApi.entryClassesList({});
+                const mappings = await intelioApi.mappingsSchemaList({ className: id });
                 const cols = {
-                    ...mappingKeys.data,
+                    ...mappingKeys,
                     internal_class: {
                         type: 'options',
-                        options: entryClasses.data.map((x) => ({
+                        options: entryClasses.map((x) => ({
                             value: x.subtype,
                             label: x.subtype,
                         })),
@@ -63,7 +58,7 @@ const TypeMappingsEditor = ({ id }) => {
                 };
                 setColumnDefinitions(cols);
 
-                const mappedRows = mappings.data.map((mapping) => ({
+                const mappedRows = mappings.map((mapping) => ({
                     ...mapping,
                     internal_class: {
                         value: mapping.internal_class,
@@ -82,7 +77,7 @@ const TypeMappingsEditor = ({ id }) => {
             }
         };
         fetchData();
-    }, [id]);
+    }, [id, intelioApi, entriesApi]);
 
     // Auto-add a new empty row when the last row has been edited.
     useEffect(() => {
@@ -228,21 +223,14 @@ const TypeMappingsEditor = ({ id }) => {
         });
 
         if (row.id) {
-            deleteMapping(id, row.id)
-                .then((response) => {
-                    if (response.status === 200) {
-                        setAlert({
-                            show: true,
-                            message: 'Mapping deleted successfully',
-                            color: 'green',
-                        });
-                    } else {
-                        setAlert({
-                            show: true,
-                            message: 'Failed to delete mapping',
-                            color: 'red',
-                        });
-                    }
+            intelioApi
+                .mappingsSchemaDestroy({ className: id, mappingId: row.id })
+                .then(() => {
+                    setAlert({
+                        show: true,
+                        message: 'Mapping deleted successfully',
+                        color: 'green',
+                    });
                 })
                 .catch((err) => displayError(setAlert, navigate)(err));
         }
@@ -299,27 +287,20 @@ const TypeMappingsEditor = ({ id }) => {
             }
         }
 
-        saveMapping(id, rowData)
-            .then((response) => {
-                if (response.status === 200) {
-                    setAlert({
-                        show: true,
-                        message: 'Mapping saved successfully',
-                        color: 'green',
-                    });
-                    // Update the row to mark it as not edited
-                    setRows((prevRows) =>
-                        prevRows.map((r, idx) =>
-                            idx === rowIndex ? { ...r, edited: false } : r,
-                        ),
-                    );
-                } else {
-                    setAlert({
-                        show: true,
-                        message: 'Failed to save mapping',
-                        color: 'red',
-                    });
-                }
+        intelioApi
+            .mappingsSchemaCreateOrUpdate({ className: id, requestBody: rowData })
+            .then(() => {
+                setAlert({
+                    show: true,
+                    message: 'Mapping saved successfully',
+                    color: 'green',
+                });
+                // Update the row to mark it as not edited
+                setRows((prevRows) =>
+                    prevRows.map((r, idx) =>
+                        idx === rowIndex ? { ...r, edited: false } : r,
+                    ),
+                );
             })
             .catch((err) => displayError(setAlert, navigate)(err));
     };
@@ -378,31 +359,25 @@ const TypeMappingsEditor = ({ id }) => {
             return;
         }
 
-        for (const row of dataToSave) {
-            saveMapping(id, row)
-                .then((response) => {
-                    if (response.status === 200) {
-                        setAlert({
-                            show: true,
-                            message: 'All mappings saved successfully',
-                            color: 'green',
-                        });
-                        // Update all rows to mark them as not edited
-                        setRows((prevRows) =>
-                            prevRows.map((r) =>
-                                r.edited ? { ...r, edited: false } : r,
-                            ),
-                        );
-                    } else {
-                        setAlert({
-                            show: true,
-                            message: 'Failed to save all mappings',
-                            color: 'red',
-                        });
-                    }
-                })
-                .catch((err) => displayError(setAlert, navigate)(err));
-        }
+        Promise.all(
+            dataToSave.map((row) =>
+                intelioApi.mappingsSchemaCreateOrUpdate({ className: id, requestBody: row })
+            )
+        )
+            .then(() => {
+                setAlert({
+                    show: true,
+                    message: 'All mappings saved successfully',
+                    color: 'green',
+                });
+                // Update all rows to mark them as not edited
+                setRows((prevRows) =>
+                    prevRows.map((r) =>
+                        r.edited ? { ...r, edited: false } : r,
+                    ),
+                );
+            })
+            .catch((err) => displayError(setAlert, navigate)(err));
     };
 
     // Get used internal_class values to filter options
@@ -431,10 +406,9 @@ const TypeMappingsEditor = ({ id }) => {
                     <button
                         onClick={handleSaveAll}
                         disabled={!rows.some((row) => row.edited)}
-                        className={`btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 ${
-                            !rows.some((row) => row.edited) &&
+                        className={`btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 ${!rows.some((row) => row.edited) &&
                             'opacity-50 cursor-not-allowed'
-                        }`}
+                            }`}
                     >
                         Save All
                     </button>
@@ -519,8 +493,8 @@ const TypeMappingsEditor = ({ id }) => {
                                                         staticOptions={
                                                             column === 'internal_class'
                                                                 ? getAvailableInternalClassOptions(
-                                                                      index,
-                                                                  )
+                                                                    index,
+                                                                )
                                                                 : colDef.options
                                                         }
                                                         placeholder={

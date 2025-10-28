@@ -2,11 +2,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
-import {
-    getSettings,
-    performAction,
-    setSettings,
-} from '../../services/managementService/managementService';
+import useApi from '../../hooks/useApi/useApi';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
 import { Tab, Tabs } from '../Tabs/Tabs';
@@ -98,34 +94,35 @@ export default function GraphSettingsForm() {
     });
 
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { managementApi } = useApi();
 
     useEffect(() => {
         async function fetchGraphSettings() {
             try {
-                const response = await getSettings();
-                if (response.status === 200 && response.data) {
+                const settings = await managementApi.managementSettingsRetrieve();
+                if (settings && settings.graph) {
                     reset({
-                        dissuade_hubs: response.data.graph?.dissuade_hubs ?? false,
-                        lin_log_mode: response.data.graph?.lin_log_mode ?? false,
-                        adjust_sizes: response.data.graph?.adjust_sizes ?? true,
-                        jitter_tolerance: response.data.graph?.jitter_tolerance ?? 1.0,
+                        dissuade_hubs: settings.graph.dissuade_hubs ?? false,
+                        lin_log_mode: settings.graph.lin_log_mode ?? false,
+                        adjust_sizes: settings.graph.adjust_sizes ?? true,
+                        jitter_tolerance: settings.graph.jitter_tolerance ?? 1.0,
                         barnes_hut_optimize:
-                            response.data.graph?.barnes_hut_optimize ?? true,
-                        barnes_hut_theta: response.data.graph?.barnes_hut_theta ?? 1.2,
-                        scaling_ratio: response.data.graph?.scaling_ratio ?? 2.0,
+                            settings.graph.barnes_hut_optimize ?? true,
+                        barnes_hut_theta: settings.graph.barnes_hut_theta ?? 1.2,
+                        scaling_ratio: settings.graph.scaling_ratio ?? 2.0,
                         strong_gravity_mode:
-                            response.data.graph?.strong_gravity_mode ?? false,
-                        gravity: response.data.graph?.gravity ?? 1.0,
-                        max_iter_fa2: response.data.graph?.max_iter_fa2 ?? 1000,
+                            settings.graph.strong_gravity_mode ?? false,
+                        gravity: settings.graph.gravity ?? 1.0,
+                        max_iter_fa2: settings.graph.max_iter_fa2 ?? 1000,
                         simulate_method:
-                            response.data.graph?.simulate_method ?? 'forceatlas2',
-                        K: response.data.graph?.K ?? 300,
-                        p: response.data.graph?.p ?? 2,
-                        theta: response.data.graph?.theta ?? 0.9,
-                        max_level: response.data.graph?.max_level ?? 10,
-                        epsilon: response.data.graph?.epsilon ?? 0.001,
-                        r: response.data.graph?.r ?? 5,
-                        max_iter_gt: response.data.graph?.max_iter_gt ?? 2000,
+                            settings.graph.simulate_method ?? 'forceatlas2',
+                        K: settings.graph.K ?? 300,
+                        p: settings.graph.p ?? 2,
+                        theta: settings.graph.theta ?? 0.9,
+                        max_level: settings.graph.max_level ?? 10,
+                        epsilon: settings.graph.epsilon ?? 0.001,
+                        r: settings.graph.r ?? 5,
+                        max_iter_gt: settings.graph.max_iter_gt ?? 2000,
                     });
                 }
             } catch (error) {
@@ -138,39 +135,39 @@ export default function GraphSettingsForm() {
             }
         }
         fetchGraphSettings();
-    }, [reset]);
+    }, [reset, managementApi]);
 
     const onSubmit = async (data) => {
         try {
-            const response = await setSettings({
-                graph: {
-                    simulate_method: data.simulate_method,
-                    dissuade_hubs: data.dissuade_hubs,
-                    lin_log_mode: data.lin_log_mode,
-                    adjust_sizes: data.adjust_sizes,
-                    jitter_tolerance: data.jitter_tolerance,
-                    barnes_hut_optimize: data.barnes_hut_optimize,
-                    barnes_hut_theta: data.barnes_hut_theta,
-                    scaling_ratio: data.scaling_ratio,
-                    strong_gravity_mode: data.strong_gravity_mode,
-                    gravity: data.gravity,
-                    max_iter_fa2: data.max_iter_fa2,
-                    K: data.K,
-                    p: data.p,
-                    theta: data.theta,
-                    max_level: data.max_level,
-                    epsilon: data.epsilon,
-                    r: data.r,
-                    max_iter_gt: data.max_iter_gt,
+            await managementApi.managementSettingsCreate({
+                requestBody: {
+                    graph: {
+                        simulate_method: data.simulate_method,
+                        dissuade_hubs: data.dissuade_hubs,
+                        lin_log_mode: data.lin_log_mode,
+                        adjust_sizes: data.adjust_sizes,
+                        jitter_tolerance: data.jitter_tolerance,
+                        barnes_hut_optimize: data.barnes_hut_optimize,
+                        barnes_hut_theta: data.barnes_hut_theta,
+                        scaling_ratio: data.scaling_ratio,
+                        strong_gravity_mode: data.strong_gravity_mode,
+                        gravity: data.gravity,
+                        max_iter_fa2: data.max_iter_fa2,
+                        K: data.K,
+                        p: data.p,
+                        theta: data.theta,
+                        max_level: data.max_level,
+                        epsilon: data.epsilon,
+                        r: data.r,
+                        max_iter_gt: data.max_iter_gt,
+                    },
                 },
             });
-            if (response.status === 200) {
-                setAlert({
-                    show: true,
-                    message: 'Graph settings updated successfully!',
-                    color: 'green',
-                });
-            }
+            setAlert({
+                show: true,
+                message: 'Graph settings updated successfully!',
+                color: 'green',
+            });
         } catch (error) {
             console.error(error);
             setAlert({
@@ -183,14 +180,14 @@ export default function GraphSettingsForm() {
 
     const handleRefreshMaterializedGraph = async () => {
         try {
-            const response = await performAction('refreshMaterializedGraph');
-            if (response.status === 200) {
-                setAlert({
-                    show: true,
-                    message: 'Refresh Materialized Graph action triggered!',
-                    color: 'green',
-                });
-            }
+            await managementApi.managementActionsCreate({
+                actionName: 'refreshMaterializedGraph',
+            });
+            setAlert({
+                show: true,
+                message: 'Refresh Materialized Graph action triggered!',
+                color: 'green',
+            });
         } catch (error) {
             console.error(error);
             setAlert({
@@ -203,14 +200,14 @@ export default function GraphSettingsForm() {
 
     const handleRecalculateNodePositions = async () => {
         try {
-            const response = await performAction('recalculateNodePositions');
-            if (response.status === 200) {
-                setAlert({
-                    show: true,
-                    message: 'Re-calculate Node Positions action triggered!',
-                    color: 'green',
-                });
-            }
+            await managementApi.managementActionsCreate({
+                actionName: 'recalculateNodePositions',
+            });
+            setAlert({
+                show: true,
+                message: 'Re-calculate Node Positions action triggered!',
+                color: 'green',
+            });
         } catch (error) {
             console.error(error);
             setAlert({

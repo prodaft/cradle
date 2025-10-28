@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { addFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import DeleteNote from '../NoteActions/DeleteNote';
 import NotesList from '../NotesList/NotesList';
@@ -21,6 +21,7 @@ export default function Notes({ setAlert }) {
     const [searchParams, setSearchParams] = useSearchParams();
     const { navigate, navigateLink } = useCradleNavigate();
     const { profile } = useProfile();
+    const { fleetingNotesApi } = useApi();
 
     const [searchFilters, setSearchFilters] = useState({
         content: searchParams.get('content') || '',
@@ -71,10 +72,13 @@ export default function Notes({ setAlert }) {
     const handleCreateNewNote = async () => {
         try {
             const defaultContent = profile?.defaultNoteTemplate || '# Untitled\n\nStart writing your note here...';
-            const response = await addFleetingNote(defaultContent, []);
-            if (response.status === 200) {
-                navigate(`/notes/${response.data.id}`);
-            }
+            const response = await fleetingNotesApi.fleetingNotesCreate({
+                fleetingNoteRequest: {
+                    content: defaultContent,
+                    files: []
+                }
+            });
+            navigate(`/notes/${response.id}`);
         } catch (error) {
             displayError(setAlert, navigate)(error);
         }

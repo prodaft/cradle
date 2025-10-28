@@ -1,9 +1,10 @@
+import { Code, Download, Page, X } from 'iconoir-react';
 import React, { useState } from 'react';
-import { X, Page, Code, Download } from 'iconoir-react';
-import { authAxios } from '../../services/axiosInstance/axiosInstance';
+import useApi from '../../hooks/useApi/useApi';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 
 const ReportGenerationModal = ({ isOpen, onClose, noteId, noteTitle, setAlert }) => {
+    const { reportsApi } = useApi();
     const [title, setTitle] = useState(noteTitle || '');
     const [format, setFormat] = useState('html');
     const [mode, setMode] = useState('anonymized');
@@ -21,21 +22,21 @@ const ReportGenerationModal = ({ isOpen, onClose, noteId, noteTitle, setAlert })
 
         setIsGenerating(true);
         try {
-            const response = await authAxios.post('/reports/publish/', {
-                strategy: format,
-                note_ids: [noteId],
-                title: title.trim(),
-                anonymized: mode === 'anonymized'
+            await reportsApi.reportsPublishCreate({
+                publishReportRequest: {
+                    strategy: format,
+                    noteIds: [noteId],
+                    title: title.trim(),
+                    anonymized: mode === 'anonymized'
+                }
             });
 
-            if (response.status === 200) {
-                setAlert({
-                    show: true,
-                    message: 'Report generated successfully!',
-                    color: 'green',
-                });
-                onClose();
-            }
+            setAlert({
+                show: true,
+                message: 'Report generated successfully!',
+                color: 'green',
+            });
+            onClose();
         } catch (error) {
             displayError(setAlert)(error);
         } finally {
@@ -54,11 +55,11 @@ const ReportGenerationModal = ({ isOpen, onClose, noteId, noteTitle, setAlert })
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
             {/* Backdrop */}
-            <div 
-                className="absolute inset-0 bg-black bg-opacity-50" 
+            <div
+                className="absolute inset-0 bg-black bg-opacity-50"
                 onClick={handleClose}
             />
-            
+
             {/* Modal */}
             <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4">
                 {/* Header */}
@@ -101,11 +102,10 @@ const ReportGenerationModal = ({ isOpen, onClose, noteId, noteTitle, setAlert })
                             <button
                                 onClick={() => setFormat('html')}
                                 disabled={isGenerating}
-                                className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${
-                                    format === 'html'
+                                className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${format === 'html'
                                         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                                         : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
-                                } disabled:opacity-50`}
+                                    } disabled:opacity-50`}
                             >
                                 <Page width="20" height="20" />
                                 <span className="text-sm font-medium">HTML</span>
@@ -113,11 +113,10 @@ const ReportGenerationModal = ({ isOpen, onClose, noteId, noteTitle, setAlert })
                             <button
                                 onClick={() => setFormat('json')}
                                 disabled={isGenerating}
-                                className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${
-                                    format === 'json'
+                                className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${format === 'json'
                                         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                                         : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
-                                } disabled:opacity-50`}
+                                    } disabled:opacity-50`}
                             >
                                 <Code width="20" height="20" />
                                 <span className="text-sm font-medium">JSON</span>
@@ -125,11 +124,10 @@ const ReportGenerationModal = ({ isOpen, onClose, noteId, noteTitle, setAlert })
                             <button
                                 onClick={() => setFormat('plain')}
                                 disabled={isGenerating}
-                                className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${
-                                    format === 'plain'
+                                className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${format === 'plain'
                                         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                                         : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
-                                } disabled:opacity-50`}
+                                    } disabled:opacity-50`}
                             >
                                 <Download width="20" height="20" />
                                 <span className="text-sm font-medium">Plain Text</span>
@@ -146,22 +144,20 @@ const ReportGenerationModal = ({ isOpen, onClose, noteId, noteTitle, setAlert })
                             <button
                                 onClick={() => setMode('anonymized')}
                                 disabled={isGenerating}
-                                className={`p-3 border rounded-lg flex items-center justify-center gap-2 transition-colors ${
-                                    mode === 'anonymized'
+                                className={`p-3 border rounded-lg flex items-center justify-center gap-2 transition-colors ${mode === 'anonymized'
                                         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                                         : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
-                                } disabled:opacity-50`}
+                                    } disabled:opacity-50`}
                             >
                                 <span className="text-sm font-medium">Anonymized</span>
                             </button>
                             <button
                                 onClick={() => setMode('transparent')}
                                 disabled={isGenerating}
-                                className={`p-3 border rounded-lg flex items-center justify-center gap-2 transition-colors ${
-                                    mode === 'transparent'
+                                className={`p-3 border rounded-lg flex items-center justify-center gap-2 transition-colors ${mode === 'transparent'
                                         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                                         : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
-                                } disabled:opacity-50`}
+                                    } disabled:opacity-50`}
                             >
                                 <span className="text-sm font-medium">Transparent</span>
                             </button>

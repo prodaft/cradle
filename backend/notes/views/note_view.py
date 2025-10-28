@@ -340,6 +340,7 @@ class NoteList(APIView):
         operation_id="notes_update",
         summary="Update note",
         description="Updates an existing note. User must have read-write access to referenced entities.",  # noqa: E501
+        request=NoteEditSerializer,
         parameters=[
             OpenApiParameter(
                 name="note_id",

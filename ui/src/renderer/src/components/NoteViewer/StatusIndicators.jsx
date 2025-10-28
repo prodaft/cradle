@@ -1,4 +1,4 @@
-import { InfoCircleSolid, WarningCircleSolid, WarningTriangleSolid } from 'iconoir-react';
+import { DesignNib, InfoCircleSolid, WarningCircleSolid, WarningTriangleSolid } from 'iconoir-react';
 import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
 import Tooltip from '../Tooltip/Tooltip';
 
@@ -15,7 +15,11 @@ export function getSaveStatus(markdownContent, saving, hasUnsavedChanges) {
     return 'saved';
 }
 
-export function getStatusIcon(status) {
+export function getStatusIcon(isFleeting, status) {
+    if (isFleeting) {
+        return <DesignNib className='text-primary' width='18' height='18' />;
+    }
+
     if (!status) return null;
 
     switch (status) {
@@ -39,7 +43,7 @@ export function getStatusIcon(status) {
 /**
  * Displays save status and health status indicators
  */
-export default function StatusIndicators({ markdownContent, saving, hasUnsavedChanges, noteStatus, noteStatusMessage }) {
+export default function StatusIndicators({ markdownContent, saving, hasUnsavedChanges, noteStatus, noteStatusMessage, isFleeting }) {
     const saveStatus = getSaveStatus(markdownContent, saving, hasUnsavedChanges);
 
     return (
@@ -64,9 +68,9 @@ export default function StatusIndicators({ markdownContent, saving, hasUnsavedCh
             </Tooltip>
 
             {noteStatus && (
-                <Tooltip content={noteStatusMessage || capitalizeString(noteStatus)}>
+                <Tooltip content={isFleeting ? 'Fleeting note' : noteStatusMessage || capitalizeString(noteStatus)}>
                     <div className='flex items-center justify-center cradle-text-tertiary'>
-                        {getStatusIcon(noteStatus)}
+                        {getStatusIcon(isFleeting, noteStatus)}
                     </div>
                 </Tooltip>
             )}

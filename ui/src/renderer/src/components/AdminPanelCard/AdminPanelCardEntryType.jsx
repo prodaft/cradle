@@ -2,8 +2,8 @@ import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
 import { useState } from 'react';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { deleteArtifactClass } from '../../services/adminService/adminService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import ActivityList from '../ActivityList/ActivityList.jsx';
 import EntryTypeForm from '../AdminPanelForms/EntryTypeForm.jsx';
@@ -18,14 +18,15 @@ export default function AdminPanelCardEntryType({
     setRightPane,
 }) {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { entriesApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
     const { setModal } = useModal();
     const { isAdmin } = useProfile();
 
     const handleDelete = async () => {
         try {
-            const response = await deleteArtifactClass(id);
-            if (response.status === 200) onDelete();
+            await entriesApi.entryClassesDestroy({ classSubtype: id });
+            onDelete();
         } catch (error) {
             displayError(setAlert, navigate)(error);
         }

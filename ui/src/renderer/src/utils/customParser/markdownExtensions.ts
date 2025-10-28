@@ -1,9 +1,9 @@
-import { Axios } from 'axios';
 import matter from 'gray-matter';
 import jsYaml from 'js-yaml';
 import type MarkdownIt from 'markdown-it';
 import type { Token } from 'markdown-it';
 import QueryString from 'qs';
+import { FileTransferApi } from '../../services/cradle/apis';
 import { strip } from '../linkUtils/linkUtils';
 
 // Override block-level renderer rules to render nothing
@@ -72,8 +72,7 @@ function createDashboardLink({
         : '/not-found';
 }
 
-function createDownloadPath(file: FileData, axiosInstance: Axios): string {
-    const baseURL = axiosInstance.defaults.baseURL;
+function createDownloadPath(file: FileData, baseURL: string): string {
     const { minio_file_name, bucket_name } = file;
     const queryParams = QueryString.stringify({
         bucketName: bucket_name,
@@ -85,12 +84,12 @@ function createDownloadPath(file: FileData, axiosInstance: Axios): string {
 export function prependLinks(
     mdContent: string,
     fileData: FileData[],
-    axiosInstance: Axios,
+    baseURL: string,
 ): string {
     const mdLinks = fileData
         .map(
             (file) =>
-                `[${file.minio_file_name}]: ${createDownloadPath(file, axiosInstance)} "${file.file_name}"\n\n`,
+                `[${file.minio_file_name}]: ${createDownloadPath(file, baseURL)} "${file.file_name}"\n\n`,
         )
         .join('');
     return mdLinks + mdContent;
@@ -171,21 +170,26 @@ let DownloadLinkPromiseCache: Record<
 let MinioCache: Record<string, { presigned: string; expiry: number }> = {};
 
 export function fetchMinioDownloadLink(
-    href: string,
-    axiosInstance: Axios,
+    fileTransferApi: FileTransferApi,
+    bucketName: string,
+    minioFileName: string,
 ): Promise<{ presigned: string; expiry: number }> {
-    if (!DownloadLinkPromiseCache[href]) {
-        DownloadLinkPromiseCache[href] = axiosInstance.get(href).then((response) => {
-            const { presigned, expiry } = response.data;
-            return { presigned, expiry };
-        });
+    const cacheKey = `${bucketName}:${minioFileName}`;
+    if (!DownloadLinkPromiseCache[cacheKey]) {
+        DownloadLinkPromiseCache[cacheKey] = fileTransferApi
+            .fileTransferDownloadRetrieve({ bucketName, minioFileName })
+            .then((response) => {
+                const { presigned, expiry } = response;
+                return { presigned, expiry };
+            });
     }
-    return DownloadLinkPromiseCache[href];
+    return DownloadLinkPromiseCache[cacheKey];
 }
 
 export async function resolveMinioLinks(
     token: Token,
-    axiosInstance: Axios,
+    fileTransferApi: FileTransferApi,
+    baseURL: string,
 ): Promise<void> {
     if (token.type === 'link_open' || token.type === 'image') {
         let hrefIndex = token.attrIndex('href');
@@ -198,24 +202,28 @@ export async function resolveMinioLinks(
             return;
         }
         const url = new URL(href);
-        const baseUrlStr = axiosInstance.defaults.baseURL || '';
-        if (!baseUrlStr) return;
-        const apiBaseUrl = new URL(baseUrlStr);
+        if (!baseURL) return;
+        const apiBaseUrl = new URL(baseURL);
         const apiBasePath = apiBaseUrl.pathname.replace(/\/$/, '');
 
         if (
             url.origin === apiBaseUrl.origin &&
             url.pathname === `${apiBasePath}/file-transfer/download/`
         ) {
-            const apiDownloadPath = url.href;
-            let cached = MinioCache[apiDownloadPath];
+            const params = new URLSearchParams(url.search);
+            const bucketName = params.get('bucketName');
+            const minioFileName = params.get('minioFileName');
+            if (!bucketName || !minioFileName) return;
+
+            const cacheKey = `${bucketName}:${minioFileName}`;
+            let cached = MinioCache[cacheKey];
             let presigned: string | undefined = cached?.presigned;
             let expiry: number | undefined = cached?.expiry;
             if (!presigned || Date.now() > (expiry || 0)) {
-                const result = await fetchMinioDownloadLink(url.href, axiosInstance);
+                const result = await fetchMinioDownloadLink(fileTransferApi, bucketName, minioFileName);
                 presigned = result.presigned;
                 expiry = result.expiry;
-                MinioCache[apiDownloadPath] = { presigned, expiry };
+                MinioCache[cacheKey] = { presigned, expiry };
             }
             token.attrs![hrefIndex][1] = presigned;
         }
@@ -224,12 +232,13 @@ export async function resolveMinioLinks(
 
 export async function processTokens(
     tokens: Token[],
-    axiosInstance: Axios,
+    fileTransferApi: FileTransferApi,
+    baseURL: string,
 ): Promise<void> {
     for (const token of tokens) {
-        await resolveMinioLinks(token, axiosInstance);
+        await resolveMinioLinks(token, fileTransferApi, baseURL);
         if (token.children) {
-            await processTokens(token.children, axiosInstance);
+            await processTokens(token.children, fileTransferApi, baseURL);
         }
     }
 }
@@ -239,12 +248,17 @@ export async function parseWithExtensions(
     mdContent: string,
     fileData: FileData[] | undefined,
     entryColors: Map<string, string>,
-    axiosInstance: Axios,
+    fileTransferApi: FileTransferApi,
+    baseURL: string,
 ): Promise<{ html: string; metadata: Record<string, any> }> {
     DownloadLinkPromiseCache = {};
     md.inline.ruler.before('link', 'cradle_link', cradleLinkRule);
     md.renderer.rules.cradle_link = (tokens: Token[], idx: number) =>
         renderCradleLink(entryColors, tokens[idx]);
+
+    md.inline.ruler.before('cradle_link', 'footnote_ref', footnoteRefRule);
+    md.renderer.rules.footnote_ref = (tokens: Token[], idx: number) =>
+        renderFootnoteRef(tokens[idx]);
 
     let metadata = {};
     try {
@@ -270,10 +284,10 @@ export async function parseWithExtensions(
     }
 
     const content = fileData
-        ? prependLinks(mdContent, fileData, axiosInstance)
+        ? prependLinks(mdContent, fileData, baseURL)
         : mdContent;
     const tokens = md.parse(content, {});
-    await processTokens(tokens, axiosInstance);
+    await processTokens(tokens, fileTransferApi, baseURL);
     const html = md.renderer.render(tokens, md.options, metadata);
 
     return { html, metadata };

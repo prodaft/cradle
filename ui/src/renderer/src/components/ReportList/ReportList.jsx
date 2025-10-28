@@ -8,30 +8,21 @@ import {
 import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
-import {
-    getReport,
-    getReports,
-    importReport,
-} from '../../services/publishService/publishService';
-import ActionsTable from '../ActionsTable/ActionsTable';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import ListView from '../ListView/ListView';
-import PaginationWrapper from '../PaginationWrapper/PaginationWrapper';
-import TableCard from '../TableCard/TableCard';
-
 import { useModal } from '../../contexts/ModalContext/ModalContext.jsx';
+import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import {
-    deleteReport,
-    retryReport,
-} from '../../services/publishService/publishService';
 import {
     capitalizeString,
     truncateText,
 } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
+import ActionsTable from '../ActionsTable/ActionsTable';
+import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import ListView from '../ListView/ListView';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
+import PaginationWrapper from '../PaginationWrapper/PaginationWrapper';
+import TableCard from '../TableCard/TableCard';
 
 /**
  * ReportCard component - Displays details of a report.
@@ -46,6 +37,7 @@ export function ReportCard({ report, setAlert }) {
     const [formattedDate, setFormattedDate] = useState('');
     const [localReport, setLocalReport] = useState(report);
     const [visible, setVisible] = useState(true);
+    const { reportsApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
     const { setModal } = useModal();
 
@@ -75,7 +67,7 @@ export function ReportCard({ report, setAlert }) {
 
     const handleRetry = async (reportId) => {
         try {
-            await retryReport(reportId);
+            await reportsApi.reportsRetryCreate({ id: reportId, reportRequest: {} });
             setLocalReport({ ...localReport, status: 'working' });
             setAlert({
                 show: true,
@@ -90,7 +82,7 @@ export function ReportCard({ report, setAlert }) {
 
     const handleDelete = async (reportId) => {
         try {
-            await deleteReport(reportId);
+            await reportsApi.reportsDestroy({ id: reportId });
             setVisible(false);
             setAlert({
                 show: true,
@@ -234,6 +226,7 @@ export default function ReportList({ setAlert = null }) {
     const [totalPages, setTotalPages] = useState(1);
     const [sortField, setSortField] = useState(searchParams.get('reports_sort_field') || 'created_at');
     const [sortDirection, setSortDirection] = useState(searchParams.get('reports_sort_direction') || 'desc');
+    const { reportsApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
     const { profile } = useProfile();
     const { setModal } = useModal();
@@ -276,17 +269,17 @@ export default function ReportList({ setAlert = null }) {
         setLoading(true);
         try {
             if (report_id) {
-                const response = await getReport(report_id);
-                setReports([response.data]);
+                const report = await reportsApi.reportsRetrieve({ id: report_id });
+                setReports([report]);
             } else {
                 const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
-                const response = await getReports({
+                const response = await reportsApi.reportsList({
                     page,
-                    page_size: pageSize,
-                    order_by: orderBy,
+                    pageSize: pageSize,
+                    orderBy,
                 });
-                setReports(response.data.results);
-                setTotalPages(response.data.total_pages);
+                setReports(response.results);
+                setTotalPages(response.totalPages);
             }
         } catch (error) {
             console.error('Failed to fetch reports', error);
@@ -310,7 +303,9 @@ export default function ReportList({ setAlert = null }) {
                     onConfirm: async () => {
                         try {
                             // Send all delete requests in parallel
-                            const deletePromises = selectedIds.map(id => deleteReport(id));
+                            const deletePromises = selectedIds.map((id) =>
+                                reportsApi.reportsDestroy({ id }),
+                            );
                             const results = await Promise.allSettled(deletePromises);
 
                             // Count successes and failures
@@ -434,7 +429,10 @@ export default function ReportList({ setAlert = null }) {
                                     <button
                                         onClick={async () => {
                                             try {
-                                                await retryReport(report.id);
+                                                await reportsApi.reportsRetryCreate({
+                                                    id: report.id,
+                                                    reportRequest: {},
+                                                });
                                                 fetchReports();
                                                 setAlert({
                                                     show: true,
@@ -464,7 +462,7 @@ export default function ReportList({ setAlert = null }) {
                                     text: `Are you sure you want to delete this report?`,
                                     onConfirm: async () => {
                                         try {
-                                            await deleteReport(report.id);
+                                            await reportsApi.reportsDestroy({ id: report.id });
                                             fetchReports();
                                             setAlert({
                                                 show: true,
@@ -497,29 +495,14 @@ export default function ReportList({ setAlert = null }) {
         <ReportCard key={report.id} report={report} setAlert={setAlert} />
     );
 
+    // NOTE: Import functionality is disabled because the /reports/import/ endpoint
+    // is missing from the backend API. This is an OpenAPI spec mismatch.
     const handleImportClick = () => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.onchange = (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                importReport(file)
-                    .then((response) => {
-                        console.log('Report imported successfully', response);
-                        // Optionally refresh the list or display a success message
-                        fetchReports();
-                    })
-                    .catch((error) => {
-                        console.error('Failed to import report', error);
-                        setAlert({
-                            show: true,
-                            message: 'Failed to import report',
-                            color: 'red',
-                        });
-                    });
-            }
-        };
-        input.click();
+        setAlert({
+            show: true,
+            message: 'Import functionality is not yet implemented',
+            color: 'yellow',
+        });
     };
 
     return (

@@ -1,26 +1,21 @@
 import { useState } from 'react';
-import { performAction } from '../../services/managementService/managementService';
+import useApi from '../../hooks/useApi/useApi';
 import AlertBox from '../AlertBox/AlertBox';
 
 export default function EntriesManagement() {
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { managementApi } = useApi();
 
     const handlePropagateAccessVectors = async () => {
         try {
-            const response = await performAction('propagateAccessVectors');
-            if (response.status === 200) {
-                setAlert({
-                    show: true,
-                    message: 'Propagate Access Vectors action triggered successfully!',
-                    color: 'green',
-                });
-            } else {
-                setAlert({
-                    show: true,
-                    message: 'Failed to trigger Propagate Access Vectors action.',
-                    color: 'red',
-                });
-            }
+            await managementApi.managementActionsCreate({
+                actionName: 'propagateAccessVectors',
+            });
+            setAlert({
+                show: true,
+                message: 'Propagate Access Vectors action triggered successfully!',
+                color: 'green',
+            });
         } catch (error) {
             setAlert({
                 show: true,
@@ -32,24 +27,18 @@ export default function EntriesManagement() {
 
     const handleDeleteHangingArtifacts = async () => {
         try {
-            const response = await performAction('deleteHangingArtifacts');
-            if (response.status === 200) {
-                setAlert({
-                    show: true,
-                    message: response.data.message,
-                    color: 'green',
-                });
-            } else {
-                setAlert({
-                    show: true,
-                    message: 'Failed to trigger Propagate Access Vectors action.',
-                    color: 'red',
-                });
-            }
+            const response = await managementApi.managementActionsCreate({
+                actionName: 'deleteHangingArtifacts',
+            });
+            setAlert({
+                show: true,
+                message: response.message || 'Action completed successfully!',
+                color: 'green',
+            });
         } catch (error) {
             setAlert({
                 show: true,
-                message: 'Error occurred while propagating access vectors.',
+                message: 'Error occurred while deleting hanging artifacts.',
                 color: 'red',
             });
         }

@@ -1,11 +1,7 @@
 import MarkdownIt from 'markdown-it';
-import markdownItAnchor from "markdown-it-anchor";
+import { default as anchor, default as markdownItAnchor } from "markdown-it-anchor";
 import Prism from 'prismjs';
-import { getBaseUrl } from '../../services/configService/configService';
-
-import anchor from 'markdown-it-anchor';
-import { getEntryClasses } from '../../services/adminService/adminService';
-import { authAxios } from '../../services/axiosInstance/axiosInstance';
+import { EntriesApi, FileTransferApi } from '../../services/cradle/apis';
 import { parseWithExtensions, parseWithExtensionsInline } from './markdownExtensions';
 
 const LINK_SVG = `
@@ -27,40 +23,42 @@ const customPermalink = anchor.permalink.linkInsideHeader({
 
 export async function parseMarkdown(
     mdContent: string,
+    entriesApi: EntriesApi,
+    fileTransferApi: FileTransferApi,
+    baseURL: string,
     fileData?: any[],
     addLinks = false,
 ): Promise<{ html: string; metadata: Record<string, any> } | undefined> {
     try {
-        const response = await getEntryClasses();
-        if (response.status === 200) {
-            const entryColors = new Map<string, string>();
-            for (const entry of response.data) {
-                entryColors.set(entry.subtype, entry.color);
-            }
-
-            const md = new MarkdownIt({
-                html: true,
-                highlight: (code: string, lang: string): string => {
-                    if (lang && Prism.languages[lang]) {
-                        try {
-                            return Prism.highlight(code, Prism.languages[lang], lang);
-                        } catch {}
-                    }
-                    return '';
-                },
-            });
-
-
-            return await parseWithExtensions(
-                addLinks ? md.use(markdownItAnchor, {
-                    permalink: customPermalink
-                }) : md,
-                mdContent,
-                fileData,
-                entryColors,
-                authAxios,
-            );
+        const entries = await entriesApi.entryClassesList({});
+        const entryColors = new Map<string, string>();
+        for (const entry of entries) {
+            entryColors.set(entry.subtype, entry.color);
         }
+
+        const md = new MarkdownIt({
+            html: true,
+            highlight: (code: string, lang: string): string => {
+                if (lang && Prism.languages[lang]) {
+                    try {
+                        return Prism.highlight(code, Prism.languages[lang], lang);
+                    } catch {}
+                }
+                return '';
+            },
+        });
+
+
+        return await parseWithExtensions(
+            addLinks ? md.use(markdownItAnchor, {
+                permalink: customPermalink
+            }) : md,
+            mdContent,
+            fileData,
+            entryColors,
+            fileTransferApi,
+            baseURL,
+        );
     } catch (error: any) {
         // Handle network or authorization errors by returning undefined.
         if (
@@ -93,18 +91,5 @@ export function parseMarkdownInline(mdContent: string | undefined): string | und
     }
 }
 
-export function parseWorker() {
-    // In some React component or service file
-    const worker = new Worker(new URL('./parserWorker.ts', import.meta.url), {
-        type: 'module',
-    });
-
-    worker.postMessage({
-        token: localStorage.getItem('access'),
-        apiBaseUrl: getBaseUrl(),
-    });
-
-    return worker;
-}
 
 export default parseMarkdown;

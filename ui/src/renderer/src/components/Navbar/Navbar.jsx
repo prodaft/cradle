@@ -2,8 +2,8 @@ import { ArrowLeft, ArrowRight, Search } from 'iconoir-react';
 import { useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { addFleetingNote } from '../../services/fleetingNotesService/fleetingNotesService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import Logo from '../Logo/Logo';
 import NavbarButton from '../NavbarButton/NavbarButton';
@@ -24,14 +24,18 @@ export default function Navbar({
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const { navigate, navigateLink } = useCradleNavigate();
     const { profile } = useProfile();
+    const { fleetingNotesApi } = useApi();
 
     const handleCreateNewNote = async () => {
         try {
             const defaultContent = profile?.defaultNoteTemplate || '# Untitled\n\nStart writing your note here...';
-            const response = await addFleetingNote(defaultContent, []);
-            if (response.status === 200) {
-                navigate(`/notes/${response.data.id}`);
-            }
+            const response = await fleetingNotesApi.fleetingNotesCreate({
+                fleetingNoteRequest: {
+                    content: defaultContent,
+                    files: []
+                }
+            });
+            navigate(`/notes/${response.id}`);
         } catch (error) {
             displayError(() => { }, navigate)(error);
         }

@@ -16,15 +16,10 @@ import FilesList from '../FilesList/FilesList';
 export default function Files({ setAlert }) {
     const { navigate, navigateLink } = useCradleNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-    const [searchFilters, setSearchFiltersFoo] = useState({
+    const [searchFilters, setSearchFilters] = useState({
         keyword: '',
         mimetype: '',
     });
-
-    const setSearchFilters = (filters) => {
-        setSearchFiltersFoo(filters);
-        console.log('Search filters updated:', filters);
-    };
 
     // Error handler function
     const handleError = (error) => {

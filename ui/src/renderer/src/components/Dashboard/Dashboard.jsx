@@ -1,19 +1,11 @@
-import pluralize from 'pluralize';
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
+import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { deleteEntry } from '../../services/adminService/adminService';
-import {
-    enrichEntry,
-    getEnrichmentTechniques,
-} from '../../services/dashboardService/dashboardService';
-import { queryEntries } from '../../services/queryService/queryService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import ActionConfirmationModal from '../Modals/ActionConfirmationModal.jsx';
-import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import NotFound from '../NotFound/NotFound';
 import { Tab, Tabs } from '../Tabs/Tabs';
 import Files from './Files.jsx';
@@ -42,7 +34,7 @@ export default function Dashboard() {
     const [entryMissing, setEntryMissing] = useState(false);
     const [contentObject, setContentObject] = useState(null);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const [enrichers, setEnrichers] = useState([]);
+    const { queryApi, entriesApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
     const { profile, isAdmin } = useProfile();
     const dashboard = useRef(null);
@@ -54,51 +46,42 @@ export default function Dashboard() {
         setEntryMissing(false);
         setAlert('');
         setContentObject(null);
-        queryEntries({ subtype, name_exact: name }).then((response) => {
-            if (response.data.count != 1) {
-                setEntryMissing(true);
-                return;
-            }
-            let obj = response.data.results[0];
-
-            dashboard.current.scrollTo(0, 0);
-            setContentObject(obj);
-        });
-    }, [subtype, name, setAlert, setEntryMissing, setContentObject]);
-
-    useEffect(() => {
-        if (contentObject == null) return;
-        getEnrichmentTechniques(contentObject.id)
+        queryApi
+            .queryList({ subtype: [subtype], nameExact: [name] })
             .then((response) => {
-                if (response.status === 200) {
-                    setEnrichers(response.data);
+                if (response.count != 1) {
+                    setEntryMissing(true);
+                    return;
                 }
-            })
-            .catch((error) => {
-                displayError(setAlert, navigate)(error);
+                let obj = response.results[0];
+
+                dashboard.current.scrollTo(0, 0);
+                setContentObject(obj);
             });
-    }, [contentObject?.id]);
+    }, [subtype, name, setAlert, setEntryMissing, setContentObject, queryApi]);
 
     const handleDelete = () => {
-        deleteEntry(`entries/${pluralize(contentObject.type)}`, contentObject.id)
-            .then((response) => {
-                if (response.status === 200) {
-                    navigate('/');
-                }
-            })
-            .catch(displayError(setAlert, navigate));
-    };
+        // Only entities can be deleted (not artifacts)
+        if (contentObject.type !== 'entity') {
+            setAlert({
+                show: true,
+                message: 'Only entities can be deleted.',
+                color: 'red',
+            });
+            return;
+        }
 
-    const handleEnrich = (id, enrichId) => () => {
-        enrichEntry(id, enrichId).then((response) => {
-            if (response.status === 200) {
+        entriesApi
+            .entitiesDestroy({ entityId: contentObject.id })
+            .then(() => {
                 setAlert({
                     show: true,
-                    message: response.data.message,
+                    message: 'Entity deleted successfully.',
                     color: 'green',
                 });
-            }
-        });
+                navigate('/');
+            })
+            .catch(displayError(setAlert, navigate));
     };
 
 

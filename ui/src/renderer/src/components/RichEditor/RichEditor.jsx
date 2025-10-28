@@ -4,17 +4,18 @@ import { defaultHighlightStyle, indentOnInput, syntaxHighlighting } from '@codem
 import { languages } from '@codemirror/language-data';
 import { EditorState } from '@codemirror/state';
 import { drawSelection, EditorView, highlightActiveLine, keymap, lineNumbers, rectangularSelection } from '@codemirror/view';
+import { vim, Vim } from '@replit/codemirror-vim';
 import { Prec } from '@uiw/react-codemirror';
 import { NavArrowDown, NavArrowUp } from 'iconoir-react';
 import { purrmd, PurrMDFeatures, purrmdTheme } from 'purrmd';
 import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
+import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { getEntryClasses } from '../../services/adminService/adminService';
-import { CradleEditor } from '../../utils/editorUtils/editorUtils';
 import { cradleLinkColorPlugin, cradleLinksPlugin } from '../../utils/editorUtils/cradleLinksPlugins';
 import { createCradleTheme } from '../../utils/editorUtils/editorTheme';
+import { CradleEditor } from '../../utils/editorUtils/editorUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import FileTable from '../FileTable/FileTable';
 
@@ -37,6 +38,7 @@ const RichEditor = forwardRef(function RichEditor({
     const { profile } = useProfile();
     const [lspLoaded, setLspLoaded] = useState(false);
     const { isDarkMode } = useTheme();
+    const { entriesApi, notesApi, lspApi } = useApi();
     const { navigate } = useCradleNavigate();
     const editorRef = useRef(null);
     const editorViewRef = useRef(null);
@@ -46,20 +48,18 @@ const RichEditor = forwardRef(function RichEditor({
     useEffect(() => {
         const fetchEntryColors = async () => {
             try {
-                const response = await getEntryClasses();
-                if (response.status === 200) {
-                    const colorMap = new Map();
-                    for (const entry of response.data) {
-                        colorMap.set(entry.subtype, entry.color);
-                    }
-                    setEntryColors(colorMap);
+                const entries = await entriesApi.entryClassesList({});
+                const colorMap = new Map();
+                for (const entry of entries) {
+                    colorMap.set(entry.subtype, entry.color);
                 }
+                setEntryColors(colorMap);
             } catch (error) {
                 console.error('Failed to fetch entry colors:', error);
             }
         };
         fetchEntryColors();
-    }, []);
+    }, [entriesApi]);
 
     const cradleTheme = useMemo(() => createCradleTheme(isDarkMode), [isDarkMode]);
 
@@ -75,8 +75,8 @@ const RichEditor = forwardRef(function RichEditor({
 
     const editorUtils = useMemo(() => {
         CradleEditor.clearCache();
-        return new CradleEditor({}, setLspLoaded, displayError(setAlert));
-    }, [setAlert]);
+        return new CradleEditor({}, setLspLoaded, displayError(setAlert), notesApi, lspApi);
+    }, [setAlert, notesApi, lspApi]);
 
     const extensions = useMemo(() => {
         if (entryColors.size === 0) {
@@ -143,7 +143,10 @@ const RichEditor = forwardRef(function RichEditor({
         }
 
         if (profile?.vim_mode) {
-            exts = exts.concat(editorUtils.vim());
+            Vim.defineEx('write', 'w', (cm) => {
+                setMarkdownContent(cm.state.doc.toString());
+            });
+            exts = exts.concat(vim());
         }
 
         return exts;

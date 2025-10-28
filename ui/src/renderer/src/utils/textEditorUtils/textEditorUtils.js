@@ -1,7 +1,6 @@
 import { syntaxTree } from '@codemirror/language';
 import DOMPurify from 'dompurify';
 import QueryString from 'qs';
-import { getBaseUrl } from '../../services/configService/configService';
 import parseMarkdown from '../customParser/customParser.ts';
 
 /**
@@ -10,11 +9,15 @@ import parseMarkdown from '../customParser/customParser.ts';
  *
  * @function parseContent
  * @param {string} content - Markdown syntax
+ * @param {EntriesApi} entriesApi - API instance for entries
+ * @param {FileTransferApi} fileTransferApi - API instance for file transfers
+ * @param {string} baseURL - Base URL of the backend
  * @param {Array<FileData>} [fileData] - information about the files that will be linked
+ * @param {boolean} [addLinks] - whether to add anchor links to headings
  * @returns {Promise<{html: string, metadata: Record<string, any>}>} parsed and sanitized HTML with metadata
  */
-const parseContent = async (content, fileData, addLinks = false) =>
-    parseMarkdown(content, fileData, addLinks).then((result) => {
+const parseContent = async (content, entriesApi, fileTransferApi, baseURL, fileData, addLinks = false) =>
+    parseMarkdown(content, entriesApi, fileTransferApi, baseURL, fileData, addLinks).then((result) => {
         if (!result) return { html: '', metadata: {} };
         return {
             html: DOMPurify.sanitize(result.html),
@@ -28,10 +31,10 @@ const parseContent = async (content, fileData, addLinks = false) =>
  *
  * @function createDownloadPath
  * @param {FileData} file - file information
+ * @param {string} apiBaseUrl - Base URL of the backend
  * @returns {string} download link
  */
-const createDownloadPath = (file) => {
-    const apiBaseUrl = getBaseUrl();
+const createDownloadPath = (file, apiBaseUrl) => {
     const { minio_file_name, bucket_name } = file;
     const queryParams = QueryString.stringify({
         bucketName: bucket_name,

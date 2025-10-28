@@ -1,10 +1,8 @@
 import { Mail, MailOpen } from 'iconoir-react';
 import { useState } from 'react';
 import Tooltip from '../../components/Tooltip/Tooltip';
+import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { activateUser, changeAccess } from '../../services/adminService/adminService';
-import { markUnread } from '../../services/notificationsService/notificationsService';
-import { getReport } from '../../services/publishService/publishService';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 
@@ -59,57 +57,67 @@ export default function NotificationCard({
         requesting_user_id,
     } = notification;
     const [isMarkedUnread, setIsMarkedUnread] = useState(is_marked_unread);
+    const { reportsApi, notificationsApi, accessApi, usersApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
 
     const handleMarkUnread = (id) => {
-        markUnread(id, !isMarkedUnread)
-            .then((response) => {
-                if (response.status === 200) {
-                    if (isMarkedUnread) {
-                        updateFlaggedNotificationsCount((prevCount) => prevCount - 1);
-                    } else {
-                        updateFlaggedNotificationsCount((prevCount) => prevCount + 1);
-                    }
-                    setIsMarkedUnread(!isMarkedUnread);
+        notificationsApi.notificationsUpdate({
+            notificationId: id,
+            updateNotificationRequest: {
+                isMarkedUnread: !isMarkedUnread
+            }
+        })
+            .then(() => {
+                if (isMarkedUnread) {
+                    updateFlaggedNotificationsCount((prevCount) => prevCount - 1);
+                } else {
+                    updateFlaggedNotificationsCount((prevCount) => prevCount + 1);
                 }
+                setIsMarkedUnread(!isMarkedUnread);
             })
             .catch(displayError(setAlert, navigate));
     };
 
     const handleChangeAccess = (newAccess) => () => {
-        changeAccess(requesting_user_id, entity_id, newAccess)
-            .then((response) => {
-                if (response.status === 200) {
-                    setAlert({
-                        show: true,
-                        message: 'Access level changed successfully',
-                        color: 'green',
-                    });
-                }
+        accessApi.accessUserUpdate({
+            userId: requesting_user_id,
+            entityId: entity_id,
+            accessRequest: {
+                accessType: newAccess
+            }
+        })
+            .then(() => {
+                setAlert({
+                    show: true,
+                    message: 'Access level changed successfully',
+                    color: 'green',
+                });
             })
             .catch(displayError(setAlert, navigate));
     };
 
     const handleActivateUser = () => {
-        activateUser(new_user.id)
-            .then((response) => {
-                if (response.status === 200) {
-                    setAlert({
-                        show: true,
-                        message: 'User activated successfully.',
-                        color: 'green',
-                    });
-                }
+        usersApi.usersUpdate({
+            userId: new_user.id,
+            userRetrieveRequest: {
+                isActive: true
+            }
+        })
+            .then(() => {
+                setAlert({
+                    show: true,
+                    message: 'User activated successfully.',
+                    color: 'green',
+                });
             })
             .catch(displayError(setAlert, navigate));
     };
 
     const handleViewReport = () => {
-        getReport(published_report_id)
-            .then((response) => {
-                if (response.status === 200) {
-                    window.open(response.data.report_url, '_blank');
-                }
+        reportsApi
+            .reportsRetrieve({ id: published_report_id })
+            .then((report) => {
+                window.open(report.reportUrl, '_blank');
             })
             .catch(displayError(setAlert, navigate));
     };

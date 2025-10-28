@@ -1,35 +1,38 @@
 import { createContext, useContext, useEffect } from 'react';
+import useApi from '../../hooks/useApi/useApi';
 import useAuth from '../../hooks/useAuth/useAuth';
 import { useProfile as useProfileHook } from '../../hooks/useProfile/useProfile';
-import {
-    getDefaultNoteTemplate,
-    getUser,
-} from '../../services/userService/userService';
 
 const ProfileContext = createContext();
 
 export function ProfileProvider({ children }) {
     const { profile, setProfile } = useProfileHook();
+    const { usersApi } = useApi();
     const auth = useAuth();
 
     let getUserProfile = async () => {
         try {
-            const response = await getUser('me');
-            if (response && response.data) {
-                setProfile(response.data);
+            const user = await usersApi.usersRetrieve({ userId: 'me' });
+            if (user) {
+                setProfile(user);
             } else {
                 setProfile(null); // Clear profile if no data is returned
             }
 
-            const defaultNoteTemplateResponse = await getDefaultNoteTemplate('me');
-            if (defaultNoteTemplateResponse && defaultNoteTemplateResponse.data) {
+            const defaultNoteTemplate = await usersApi.usersDefaultNoteTemplateRetrieve({
+                userId: 'me',
+            });
+            if (defaultNoteTemplate && defaultNoteTemplate.template) {
                 // Assuming the default note template is stored in the profile
                 setProfile((prevProfile) => ({
                     ...prevProfile,
-                    defaultNoteTemplate: defaultNoteTemplateResponse.data.template,
+                    defaultNoteTemplate: defaultNoteTemplate.template,
                 }));
             } else {
-                profile.defaultNoteTemplate = '';
+                setProfile((prevProfile) => ({
+                    ...prevProfile,
+                    defaultNoteTemplate: '',
+                }));
             }
         } catch (error) {
             console.error('Error fetching user profile:', error);
@@ -42,7 +45,7 @@ export function ProfileProvider({ children }) {
         } else {
             setProfile(null); // Clear profile if not authenticated
         }
-    }, [auth]);
+    }, [auth, usersApi]);
 
     const isAdmin = () => profile && profile.role === 'admin';
     const isEntryManager = () =>

@@ -1,14 +1,10 @@
 import { Download } from 'iconoir-react';
 import { forwardRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { authAxios } from '../../services/axiosInstance/axiosInstance';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
-import {
-    createDownloadPath,
-    createProcessFilePath,
-} from '../../utils/textEditorUtils/textEditorUtils';
 
 /**
  * FileItem component - This component is used to display a file in a list.
@@ -20,20 +16,19 @@ import {
  */
 const FileItem = forwardRef(function ({ id, file, setAlert, ...props }, ref) {
     const { navigate, navigateLink } = useCradleNavigate();
+    const { fileTransferApi } = useApi();
     const [hidden, setHidden] = useState(false);
     const location = useLocation();
 
     const downloadFile = () => {
         if (file.bucket_name && file.minio_file_name) {
-            const url = createDownloadPath({
-                bucket_name: file.bucket_name,
-                minio_file_name: file.minio_file_name,
-            });
-
-            authAxios
-                .get(url)
+            fileTransferApi
+                .fileTransferDownloadRetrieve({
+                    bucketName: file.bucket_name,
+                    minioFileName: file.minio_file_name,
+                })
                 .then((response) => {
-                    const { presigned } = response.data;
+                    const { presigned } = response;
                     const link = document.createElement('a');
                     link.href = presigned;
 
@@ -50,29 +45,6 @@ const FileItem = forwardRef(function ({ id, file, setAlert, ...props }, ref) {
                     setAlert({
                         show: true,
                         message: 'Failed to download file. Please try again.',
-                        color: 'red',
-                    });
-                });
-        }
-    };
-
-    const processFile = () => {
-        if (file.id) {
-            const url = createProcessFilePath();
-
-            authAxios
-                .post(url, { file_id: file.id })
-                .then((response) => {
-                    setAlert({
-                        show: true,
-                        message: 'File processing started successfully',
-                        color: 'green',
-                    });
-                })
-                .catch((error) => {
-                    setAlert({
-                        show: true,
-                        message: 'Failed to process file. Please try again.',
                         color: 'red',
                     });
                 });
@@ -159,15 +131,6 @@ const FileItem = forwardRef(function ({ id, file, setAlert, ...props }, ref) {
                     >
                         <Download />
                     </button>
-                    {/*
-                    <button
-                        className='text-white p-2 rounded-full  hover:bg-white/20'
-                        title='Process file'
-                        onClick={processFile}
-                    >
-                        <Refresh />
-                    </button>
-                    */}
                 </div>
             </div>
         </div>

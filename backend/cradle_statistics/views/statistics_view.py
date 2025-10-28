@@ -1,21 +1,20 @@
 from itertools import islice
 from typing import cast
 
-from access.models import Access
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from entries.models import Entry
-from notes.models import Note
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
+
+from access.models import Access
+from entries.models import Entry
+from notes.models import Note
 from user.models import CradleUser
 
 from ..serializers import (
     HomePageStatisticsSerializer,
-    StatisticsEntrySerializer,
-    StatisticsNoteSerializer,
 )
 
 
@@ -84,14 +83,12 @@ class StatisticsList(APIView):
             .order_by("-notes__timestamp")[:3]
         )
 
-        notes_serializer = StatisticsNoteSerializer(truncate=150, many=True)
-        entities_serializer = StatisticsEntrySerializer(many=True)
-        artifacts_serializer = StatisticsEntrySerializer(many=True)
-
         response_data = {
-            "notes": notes_serializer.to_representation(notes_list),
-            "entities": entities_serializer.to_representation(entities_list),
-            "artifacts": artifacts_serializer.to_representation(artifacts_list),
+            "notes": notes_list,
+            "entities": entities_list,
+            "artifacts": artifacts_list,
         }
 
-        return Response(response_data)
+        serializer = HomePageStatisticsSerializer(response_data)
+
+        return Response(serializer.data)

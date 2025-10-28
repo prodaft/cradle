@@ -60,7 +60,6 @@ models/FileDownload.ts
 models/FileReference.ts
 models/FileReferenceRequest.ts
 models/FileReferenceWithNote.ts
-models/FileReferenceWithNoteRequest.ts
 models/FileUpload.ts
 models/FleetingNote.ts
 models/FleetingNoteRequest.ts
@@ -71,10 +70,9 @@ models/ManagementActionResponse.ts
 models/MappingSubclass.ts
 models/NextNameResponse.ts
 models/NoteCreateRequest.ts
+models/NoteEditRequest.ts
 models/NoteRetrieve.ts
-models/NoteRetrieveRequest.ts
 models/OptimizedEntryResponse.ts
-models/OptimizedEntryResponseRequest.ts
 models/PaginatedBaseDigestSerializerResponse.ts
 models/PaginatedEnrichmentRelationSerializerResponse.ts
 models/PaginatedEnrichmentRequestListSerializerResponse.ts
@@ -103,6 +101,9 @@ models/ReportRetryErrorResponse.ts
 models/RequestAccessRequest.ts
 models/Snippet.ts
 models/SnippetRequest.ts
+models/StatisticsEntry.ts
+models/StatisticsNote.ts
+models/StatisticsUser.ts
 models/SubGraph.ts
 models/TokenObtainRequest.ts
 models/TokenPairRetrieve.ts

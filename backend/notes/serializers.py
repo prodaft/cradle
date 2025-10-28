@@ -187,19 +187,13 @@ class LinkedEntrySerializer(serializers.ModelSerializer):
 
 
 class OptimizedEntryResponseSerializer(serializers.ModelSerializer):
-    """Entry serializer for file references"""
+    type = serializers.CharField(source="entry_class.type", read_only=True)
+    subtype = serializers.CharField(source="entry_class.subtype", read_only=True)
+    color = serializers.CharField(source="entry_class.color", read_only=True)
 
     class Meta:
         model = Entry
-        fields = ["id", "name"]
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        if hasattr(instance, "entry_class") and instance.entry_class:
-            representation["type"] = instance.entry_class.type
-            representation["subtype"] = instance.entry_class.subtype
-            representation["color"] = instance.entry_class.color
-        return representation
+        fields = ["id", "name", "type", "subtype", "color"]
 
 
 class FileReferenceWithNoteSerializer(serializers.ModelSerializer):

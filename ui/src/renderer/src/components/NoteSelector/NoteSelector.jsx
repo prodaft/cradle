@@ -2,12 +2,11 @@ import { useDroppable } from '@dnd-kit/core';
 import { Search } from 'iconoir-react';
 import { useCallback, useEffect, useState } from 'react';
 
+import useApi from '../../hooks/useApi/useApi';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import DraggableNote from '../DraggableNote/DraggableNote';
 import AddNote from '../NoteActions/AddNote';
 import Pagination from '../Pagination/Pagination';
-
-import { searchNote } from '../../services/notesService/notesService';
 
 export default function NoteSelector({
     selectedNotes,
@@ -31,6 +30,7 @@ export default function NoteSelector({
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const { notesApi } = useApi();
 
     const { setNodeRef } = useDroppable({ id: 'note-selector' });
 
@@ -46,23 +46,31 @@ export default function NoteSelector({
         truncate: -1,
     });
 
-    const fetchNotes = useCallback(() => {
+    const fetchNotes = useCallback(async () => {
         setLoading(true);
-        searchNote({ page, ...submittedFilters })
-            .then((response) => {
-                finalSetNotes(response.data.results);
-                setTotalPages(response.data.total_pages);
-                setLoading(false);
-            })
-            .catch(() => {
-                finalAlert({
-                    show: true,
-                    message: 'Failed to fetch notes. Please try again.',
-                    color: 'red',
-                });
-                setLoading(false);
+        try {
+            const params = {
+                page,
+                content: submittedFilters.content,
+                authorUsername: submittedFilters.author__username,
+                truncate: submittedFilters.truncate,
+            };
+            // Remove undefined values
+            Object.keys(params).forEach(key => params[key] === undefined && delete params[key]);
+
+            const response = await notesApi.notesList(params);
+            finalSetNotes(response.results);
+            setTotalPages(response.totalPages);
+            setLoading(false);
+        } catch (error) {
+            finalAlert({
+                show: true,
+                message: 'Failed to fetch notes. Please try again.',
+                color: 'red',
             });
-    }, [page, submittedFilters, finalSetNotes, finalAlert]);
+            setLoading(false);
+        }
+    }, [page, submittedFilters, finalSetNotes, finalAlert, notesApi]);
 
     const handleSearchSubmit = (e) => {
         e.preventDefault();

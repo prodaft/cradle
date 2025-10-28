@@ -1,7 +1,7 @@
 import { Trash } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
-import { deleteDigest } from '../../services/intelioService/intelioService';
+import useApi from '../../hooks/useApi/useApi';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 
@@ -11,6 +11,7 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
     const [showErrors, setShowErrors] = useState(false);
     const [showWarnings, setShowWarnings] = useState(false);
     const { setModal } = useModal();
+    const { intelioApi } = useApi();
 
     useEffect(() => {
         setFormattedDate(formatDate(new Date(localDigest.created_at)));
@@ -18,7 +19,7 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
 
     const handleDelete = async () => {
         try {
-            await deleteDigest(localDigest.id);
+            await intelioApi.intelioDigestDestroy({ id: localDigest.id });
             setVisible(false);
             setAlert({
                 show: true,
@@ -56,13 +57,12 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
                     </button>
                 </div>
                 <span
-                    className={`badge ${
-                        localDigest.status === 'done'
-                            ? 'badge-success'
-                            : localDigest.status === 'error'
-                              ? 'badge-error'
-                              : 'badge-secondary'
-                    }`}
+                    className={`badge ${localDigest.status === 'done'
+                        ? 'badge-success'
+                        : localDigest.status === 'error'
+                            ? 'badge-error'
+                            : 'badge-secondary'
+                        }`}
                 >
                     {localDigest.status.charAt(0).toUpperCase() +
                         localDigest.status.slice(1)}
@@ -107,9 +107,8 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
                             onClick={() => setShowErrors(!showErrors)}
                         >
                             <span
-                                className={`mr-2 transform  ${
-                                    showErrors ? 'rotate-90' : ''
-                                }`}
+                                className={`mr-2 transform  ${showErrors ? 'rotate-90' : ''
+                                    }`}
                             >
                                 ▶
                             </span>
@@ -135,9 +134,8 @@ function DigestCard({ localDigest, setAlert, onDelete }) {
                             className='flex items-center text-yellow-600 dark:text-yellow-300 hover:text-yellow-500 dark:hover:text-yellow-200 '
                         >
                             <span
-                                className={`mr-2 transform  ${
-                                    showWarnings ? 'rotate-90' : ''
-                                }`}
+                                className={`mr-2 transform  ${showWarnings ? 'rotate-90' : ''
+                                    }`}
                             >
                                 ▶
                             </span>

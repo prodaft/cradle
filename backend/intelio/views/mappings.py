@@ -1,22 +1,17 @@
-from django.db import IntegrityError
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import serializers
 from django.apps import apps
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from django.db import IntegrityError
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from ..models.base import ClassMapping
-from ..serializers import ClassMappingSerializer, MappingSubclassSerializer
 from core.utils import fields_to_form
 from user.permissions import HasEntryManagerRole
 
-
-class MappingSchemaRequestSerializer(serializers.Serializer):
-    """Basic serializer for mapping schema requests"""
-
-    pass
+from ..models.base import ClassMapping
+from ..serializers import ClassMappingSerializer, MappingSubclassSerializer
 
 
 @extend_schema_view(
@@ -112,7 +107,7 @@ class MappingKeysSchemaView(APIView):
         operation_id="mappings_schema_create_or_update",
         summary="Create or update mapping",
         description="Create a new mapping or update an existing one for a given class.",
-        request=MappingSchemaRequestSerializer,
+        request=OpenApiTypes.OBJECT,
         responses={
             200: {
                 "type": "object",
@@ -129,6 +124,14 @@ class MappingKeysSchemaView(APIView):
         operation_id="mappings_schema_destroy",
         summary="Delete mapping",
         description="Delete a mapping instance for a given class.",
+        parameters=[
+            OpenApiParameter(
+                name="mapping_id",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="The ID of the mapping to delete",
+            ),
+        ],
         responses={
             200: {"description": "Mapping successfully deleted"},
             400: {
@@ -146,7 +149,6 @@ class MappingSchemaView(APIView):
     """
 
     permission_classes = [IsAuthenticated, HasEntryManagerRole]
-    serializer_class = MappingSchemaRequestSerializer
 
     def get(self, request, class_name):
         try:

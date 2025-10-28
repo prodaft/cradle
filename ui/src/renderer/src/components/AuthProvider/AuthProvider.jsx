@@ -2,7 +2,13 @@ import { createContext, useCallback, useEffect, useRef, useState } from 'react';
 import {
     AuthTokenException
 } from '../../exceptions/AuthExceptions';
-import { getBaseUrl } from '../../services/configService/configService';
+
+/**
+ * Get the base URL from localStorage or environment variable
+ */
+const getBaseUrl = () => {
+    return localStorage.getItem('backendUrl') || import.meta.env.VITE_API_BASE_URL;
+};
 
 /**
  * AuthContext - the context for authentication of the application
@@ -37,6 +43,10 @@ export default function AuthProvider({ children }) {
     const [role, setRole] = useState(localStorage.getItem('role') || '');
     const [userId, setUserId] = useState(localStorage.getItem('user_id') || null);
     const [isLoading, setIsLoading] = useState(false);
+    const [basePath, setBasePath] = useState(getBaseUrl());
+
+    // Token version counter - increments when tokens change to trigger dependent re-renders
+    const [tokenVersion, setTokenVersion] = useState(0);
 
     // Store tokens and expiration in refs (not state) to avoid re-renders
     const accessTokenRef = useRef(localStorage.getItem('access_token') || '');
@@ -46,8 +56,6 @@ export default function AuthProvider({ children }) {
 
     // Timer for automatic token refresh
     const refreshTimerRef = useRef(null);
-
-    const basePath = getBaseUrl();
 
     /**
      * Check if user is currently logged in (has valid refresh token)
@@ -81,6 +89,9 @@ export default function AuthProvider({ children }) {
 
         setRole(data.role);
 
+        // Increment token version to trigger re-renders in dependent components
+        setTokenVersion(prev => prev + 1);
+
         // Extract user_id from access token if needed (optional, could be from backend)
         // For now, we'll just keep the existing user_id logic
     }, []);
@@ -98,6 +109,9 @@ export default function AuthProvider({ children }) {
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('access_expires_at');
         localStorage.removeItem('refresh_expires_at');
+
+        // Increment token version to trigger re-renders in dependent components
+        setTokenVersion(prev => prev + 1);
         localStorage.removeItem('role');
         localStorage.removeItem('user_id');
 
@@ -343,6 +357,9 @@ export default function AuthProvider({ children }) {
                 isEntryManager,
                 isLoading,
                 setTokensDirectly, // For admin simulate session feature
+                tokenVersion, // Expose version for dependent components
+                basePath,
+                setBasePath,
             }}
         >
             {children}

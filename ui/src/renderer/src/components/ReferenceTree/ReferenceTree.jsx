@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { queryEntries } from '../../services/queryService/queryService';
 import {
     createDashboardLink,
     SubtypeHierarchy,
@@ -25,6 +25,7 @@ import Collapsible from '../Collapsible/Collapsible';
 export default function ReferenceTree({ note, setAlert }) {
     const [references, setReferences] = useState({});
     const [nextPageStatus, setNextPageStatus] = useState({});
+    const { queryApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
 
     // If there's no entry_classes, there is nothing to display
@@ -62,24 +63,21 @@ export default function ReferenceTree({ note, setAlert }) {
         }));
 
         try {
-            const response = await queryEntries(
-                { subtype: path, referenced_in: note.id },
+            const response = await queryApi.queryList({
+                subtype: [path],
+                referencedIn: note.id,
                 page,
-            );
-            if (response.status === 200) {
-                setReferences((prev) => ({
-                    ...prev,
-                    [path]: [...(references[path] || []), ...response.data.results],
-                }));
+            });
 
-                setNextPageStatus((prev) => ({
-                    ...prev,
-                    [path]:
-                        response.data.page === response.data.total_pages
-                            ? 'end'
-                            : response.data.page + 1,
-                }));
-            }
+            setReferences((prev) => ({
+                ...prev,
+                [path]: [...(references[path] || []), ...response.results],
+            }));
+
+            setNextPageStatus((prev) => ({
+                ...prev,
+                [path]: response.page === response.totalPages ? 'end' : response.page + 1,
+            }));
         } catch (error) {
             displayError(setAlert, navigate)(error);
         }
@@ -131,12 +129,12 @@ export default function ReferenceTree({ note, setAlert }) {
                                         <span className='h-6 px-1 py-1 mx-1 my-1'>
                                             {/* Render pagination logic */}
                                             {nextPageStatus[`${path}${value}`] ===
-                                            'loading' ? (
+                                                'loading' ? (
                                                 <div className='spinner-dot-pulse spinner-sm'>
                                                     <div className='spinner-pulse-dot spinner-sm '></div>
                                                 </div>
                                             ) : nextPageStatus[`${path}${value}`] !==
-                                              'end' ? (
+                                                'end' ? (
                                                 <span
                                                     onClick={() =>
                                                         fetchReferences(

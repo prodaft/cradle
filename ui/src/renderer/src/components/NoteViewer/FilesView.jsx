@@ -1,8 +1,7 @@
 import { Download } from 'iconoir-react';
-import { authAxios } from '../../services/axiosInstance/axiosInstance';
+import useApi from '../../hooks/useApi/useApi';
 import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
-import { createDownloadPath } from '../../utils/textEditorUtils/textEditorUtils';
 import FileItem from '../FileItem/FileItem';
 import ListView from '../ListView/ListView';
 
@@ -10,20 +9,20 @@ import ListView from '../ListView/ListView';
  * Displays files attached to a note in a table/card view
  */
 export default function FilesView({ files, setAlert, copyToClipboard }) {
+    const { fileTransferApi } = useApi();
+
     if (!files || files.length === 0) {
         return null;
     }
 
     const handleDownload = (file) => {
-        const url = createDownloadPath({
-            bucket_name: file.bucket_name,
-            minio_file_name: file.minio_file_name,
-        });
-
-        authAxios
-            .get(url)
+        fileTransferApi
+            .fileTransferDownloadRetrieve({
+                bucketName: file.bucket_name,
+                minioFileName: file.minio_file_name,
+            })
             .then((response) => {
-                const { presigned } = response.data;
+                const { presigned } = response;
                 const link = document.createElement('a');
                 link.href = presigned;
                 const fileName = file.minio_file_name.split('/').pop() || file.minio_file_name;

@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import useApi from '../../hooks/useApi/useApi';
+import useAuth from '../../hooks/useAuth/useAuth';
 import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
 import Preview from '../Preview/Preview';
 
@@ -11,9 +13,11 @@ import Preview from '../Preview/Preview';
 export const NotePreviewContent = ({ note }) => {
   const [parsedContent, setParsedContent] = useState('');
   const [loading, setLoading] = useState(true);
+  const { entriesApi, fileTransferApi } = useApi();
+  const { basePath } = useAuth();
 
   useEffect(() => {
-    parseContent(note.content, note.files)
+    parseContent(note.content, entriesApi, fileTransferApi, basePath, note.files)
       .then((result) => {
         setParsedContent(result.html);
         setLoading(false);
@@ -22,7 +26,7 @@ export const NotePreviewContent = ({ note }) => {
         setParsedContent('<p>Error loading preview</p>');
         setLoading(false);
       });
-  }, [note.content, note.files]);
+  }, [note.content, note.files, entriesApi, fileTransferApi, basePath]);
 
   return (
     <div className="w-[450px] max-h-[450px] overflow-hidden">

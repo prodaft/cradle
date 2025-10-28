@@ -2,8 +2,7 @@ import { Upload } from 'iconoir-react';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import * as Yup from 'yup';
-import { saveDigest } from '../../services/intelioService/intelioService';
-import { queryEntries } from '../../services/queryService/queryService';
+import useApi from '../../hooks/useApi/useApi';
 import AlertBox from '../AlertBox/AlertBox';
 import Selector from '../Selector/Selector';
 
@@ -70,6 +69,7 @@ function UploadForm({ dataTypeOptions, onUpload }) {
     const [alert, setAlert] = useState({ show: false, message: '', color: '' });
     const [touched, setTouched] = useState({});
     const [errors, setErrors] = useState({});
+    const { queryApi, intelioApi } = useApi();
     const [formValues, setFormValues] = useState({
         title: '',
         dataType: null,
@@ -96,9 +96,9 @@ function UploadForm({ dataTypeOptions, onUpload }) {
     const fetchRelatedEntries = async (query) => {
         setEntriesLoading(true);
         try {
-            const response = await queryEntries({ name: `${query}`, type: 'entity' });
-            if (response.status === 200) {
-                return response.data.results.map((entry) => ({
+            const response = await queryApi.queryList({ name: [query], type: 'entity' });
+            if (response && response.results) {
+                return response.results.map((entry) => ({
                     value: entry.id,
                     label: `${entry.subtype}:${entry.name}`,
                 }));
@@ -171,30 +171,26 @@ function UploadForm({ dataTypeOptions, onUpload }) {
     const handleUpload = async (values) => {
         setIsUploading(true);
         try {
-            const body = {
-                digest_type: values.dataType.value,
+            const requestParams = {
+                digestType: values.dataType.value,
                 title: values.title,
+                file: values.files[0], // API expects single file, not array
             };
 
             if (values.associatedEntry?.value) {
-                body.entity = values.associatedEntry.value;
+                requestParams.entity = parseInt(values.associatedEntry.value, 10);
             }
 
-            const response = await saveDigest(body, values.files);
+            await intelioApi.intelioDigestCreate(requestParams);
 
-            if (response.status === 201) {
-                setAlert({
-                    color: 'green',
-                    message: 'File uploaded successfully',
-                    show: true,
-                });
-                resetForm();
-            } else {
-                setAlert({
-                    color: 'red',
-                    message: 'Upload failed',
-                    show: true,
-                });
+            setAlert({
+                color: 'green',
+                message: 'File uploaded successfully',
+                show: true,
+            });
+            resetForm();
+            if (onUpload) {
+                onUpload();
             }
         } catch (error) {
             setAlert({
@@ -335,13 +331,12 @@ function UploadForm({ dataTypeOptions, onUpload }) {
                     </label>
                     <div
                         {...getRootProps()}
-                        className={`border-2 border-dashed rounded-md p-2 text-center cursor-pointer h-10 flex items-center justify-center  ${
-                            filesError
-                                ? 'border-red-300 bg-red-50 hover:border-red-400'
-                                : isDragActive
-                                  ? 'bg-blue-50 border-blue-300'
-                                  : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
-                        }`}
+                        className={`border-2 border-dashed rounded-md p-2 text-center cursor-pointer h-10 flex items-center justify-center  ${filesError
+                            ? 'border-red-300 bg-red-50 hover:border-red-400'
+                            : isDragActive
+                                ? 'bg-blue-50 border-blue-300'
+                                : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+                            }`}
                         aria-invalid={filesError ? 'true' : 'false'}
                         aria-describedby={filesError ? 'files-error' : undefined}
                     >
@@ -407,13 +402,12 @@ function UploadForm({ dataTypeOptions, onUpload }) {
                     <button
                         type='submit'
                         disabled={isUploading}
-                        className={`w-full btn flex items-center justify-center  ${
-                            isUploading
-                                ? 'opacity-50 cursor-not-allowed'
-                                : hasErrors
-                                  ? 'hover:bg-red-800 text-white'
-                                  : 'text-white'
-                        }`}
+                        className={`w-full btn flex items-center justify-center  ${isUploading
+                            ? 'opacity-50 cursor-not-allowed'
+                            : hasErrors
+                                ? 'hover:bg-red-800 text-white'
+                                : 'text-white'
+                            }`}
                         aria-label={isUploading ? 'Uploading file' : 'Upload file'}
                     >
                         {isUploading ? (

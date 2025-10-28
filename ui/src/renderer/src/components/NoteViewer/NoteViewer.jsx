@@ -8,21 +8,9 @@ import { usePaneTabs } from '../../contexts/PaneTabsContext/PaneTabsContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useApi from '../../hooks/useApi/useApi.js';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import {
-    deleteFleetingNote,
-    getFleetingNoteById,
-    saveFleetingNoteAsFinal,
-    updateFleetingNote
-} from '../../services/fleetingNotesService/fleetingNotesService';
-import {
-    deleteNote,
-    getNote,
-    updateNote,
-} from '../../services/notesService/notesService';
 import { CradleEditor } from '../../utils/editorUtils/editorUtils';
 import extractHeaderHierarchy from '../../utils/editorUtils/markdownOutliner';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import { parseContent } from '../../utils/textEditorUtils/textEditorUtils';
 import ActivityList from '../ActivityList/ActivityList';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import FileInput from '../FileInput/FileInput';
@@ -62,7 +50,6 @@ export default function NoteViewer() {
     const [fileData, setFileData] = useState([]);
     const [initialMarkdown, setInitialMarkdown] = useState('');
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const [parsedContent, setParsedContent] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [activeView, setActiveView] = useState(ViewMode.CONTENT);
     const [showViewsMenu, setShowViewsMenu] = useState(false);
@@ -81,15 +68,15 @@ export default function NoteViewer() {
     const [lspLoaded, setLspLoaded] = useState(false);
     const rawContentRef = useRef(null);
     const editorRef = useRef(null);
-    const { managementApi } = useApi();
+    const { managementApi, fleetingNotesApi, notesApi, lspApi } = useApi();
     const { updateCurrentTabTitle } = usePaneTabs();
     const { activePaneId } = useLayout();
 
     // Initialize editor utils for autolink functionality
     const editorUtils = React.useMemo(() => {
         CradleEditor.clearCache();
-        return new CradleEditor({}, setLspLoaded, displayError(setAlert));
-    }, [setAlert]);
+        return new CradleEditor({}, setLspLoaded, displayError(setAlert), notesApi, lspApi);
+    }, [setAlert, notesApi, lspApi]);
 
     const copyToClipboard = (text) => {
         navigator.clipboard
@@ -155,21 +142,29 @@ export default function NoteViewer() {
     );
 
     useEffect(() => {
+        // Guard: Don't attempt to load if id is not available
+        if (!id) {
+            console.warn('NoteViewer - No note ID provided');
+            setIsLoading(false);
+            return;
+        }
+
         setIsLoading(true);
 
         // Try to load as regular note first, then fallback to fleeting note if it fails
         const loadNote = async () => {
+            console.log('NoteViewer - Loading note with ID:', id, 'Type:', typeof id);
+
             try {
                 // First try to load as a regular note
-                const response = await getNote(id, false);
-                const responseNote = response.data;
+                const responseNote = await notesApi.notesRetrieve({ noteId: id, footnotes: false });
 
                 // Check if this is a fleeting note using the fleeting field
                 const isFleetingNote = responseNote.fleeting === true;
                 setIsFleeting(isFleetingNote);
 
                 // Debug logging
-                console.log('NoteViewer - Note type detection:', {
+                console.log('NoteViewer - Note loaded successfully:', {
                     id: id,
                     isFleetingNote: isFleetingNote,
                     fleeting: responseNote.fleeting,
@@ -178,19 +173,20 @@ export default function NoteViewer() {
                     hasEntries: !!responseNote.entries
                 });
 
-                return response;
+                return responseNote;
             } catch (error) {
                 // If regular note fails, try as fleeting note
-                console.log('NoteViewer - Regular note failed, trying fleeting note:', error);
-                const response = await getFleetingNoteById(id);
+                console.error('NoteViewer - Regular note failed, trying fleeting note. Error:', error);
+                console.log('NoteViewer - Attempting fleeting note with ID:', id);
+                const responseNote = await fleetingNotesApi.fleetingNotesRetrieve({ id });
                 setIsFleeting(true);
-                return response;
+                console.log('NoteViewer - Fleeting note loaded successfully');
+                return responseNote;
             }
         };
 
         loadNote()
-            .then((response) => {
-                const responseNote = response.data;
+            .then((responseNote) => {
                 setNote(responseNote);
                 setMarkdownContent(responseNote.content);
                 setInitialMarkdown(responseNote.content);
@@ -202,41 +198,41 @@ export default function NoteViewer() {
                 }
                 return responseNote;
             })
-            .then((note) => {
-                return parseContent(note.content, note.files, true).then((result) =>
-                    setParsedContent(result.html),
-                );
-            })
             .catch(displayError(setAlert, navigate))
             .finally(() => {
                 // Turn off loading spinner regardless of success or failure
                 setIsLoading(false);
             });
-    }, [id, navigate, setAlert, updateCurrentTabTitle, activePaneId, profile]);
+    }, [id, navigate, setAlert, updateCurrentTabTitle, activePaneId, profile, notesApi, fleetingNotesApi]);
 
     const toggleView = useCallback(() => {
         setRichEditor((prevRichEditor) => !prevRichEditor);
     }, []);
 
-    const handleDelete = useCallback(() => {
-        // Use the appropriate delete function based on whether the note is fleeting
-        const deleteFunction = note.fleeting ? deleteFleetingNote : deleteNote;
-        deleteFunction(id)
-            .then(() => {
-                if (!state) {
-                    navigate(from, { replace: true });
-                    return;
-                }
-                if (!state.notes) {
-                    navigate(from, { replace: true, state: state });
-                    return;
-                }
-                const stateNotes = state.notes.filter((note) => note.id !== id);
-                const newState = { ...state, notes: stateNotes };
-                navigate(from, { replace: true, state: newState });
-            })
-            .catch(displayError(setAlert, navigate));
-    }, [id, navigate, note.fleeting]);
+    const handleDelete = useCallback(async () => {
+        try {
+            // Use the appropriate delete function based on whether the note is fleeting
+            if (note.fleeting) {
+                await fleetingNotesApi.fleetingNotesDestroy({ id });
+            } else {
+                await notesApi.notesDelete({ noteId: id });
+            }
+
+            if (!state) {
+                navigate(from, { replace: true });
+                return;
+            }
+            if (!state.notes) {
+                navigate(from, { replace: true, state: state });
+                return;
+            }
+            const stateNotes = state.notes.filter((note) => note.id !== id);
+            const newState = { ...state, notes: stateNotes };
+            navigate(from, { replace: true, state: newState });
+        } catch (error) {
+            displayError(setAlert, navigate)(error);
+        }
+    }, [id, navigate, note.fleeting, fleetingNotesApi, notesApi, state, from, setAlert]);
 
     // Use a ref to store the latest values for the save function
     const saveDataRef = useRef({ markdownContent, fileData, isFleeting });
@@ -255,35 +251,37 @@ export default function NoteViewer() {
 
         setSaving(true);
         try {
-            let response;
             if (fleeting) {
                 // Update existing fleeting note
-                response = await updateFleetingNote(id, content, files);
+                await fleetingNotesApi.fleetingNotesUpdate({
+                    id,
+                    fleetingNoteRequest: {
+                        content,
+                        files,
+                    },
+                });
             } else {
                 // Update regular note
-                response = await updateNote(id, {
-                    content: content,
-                    files: files,
+                await notesApi.notesUpdate({
+                    noteId: id,
+                    noteEditRequest: {
+                        content: content,
+                        files: files,
+                    },
                 });
             }
 
-            if (response.status === 200) {
-                setInitialMarkdown(content);
-                setHasUnsavedChanges(false);
-                setAlert({
-                    show: false,
-                });
-                // Update the parsed content for preview
-                parseContent(content, files, true).then((result) =>
-                    setParsedContent(result.html),
-                );
-            }
+            setInitialMarkdown(content);
+            setHasUnsavedChanges(false);
+            setAlert({
+                show: false,
+            });
         } catch (error) {
             displayError(setAlert, navigate)(error);
         } finally {
             setSaving(false);
         }
-    }, [id, navigate, setAlert]);
+    }, [id, navigate, setAlert, fleetingNotesApi, notesApi]);
 
     const handleSaveAsFinal = useCallback(async () => {
         if (!markdownContent || markdownContent.trim().length === 0) {
@@ -293,23 +291,21 @@ export default function NoteViewer() {
 
         setSaving(true);
         try {
-            const response = await saveFleetingNoteAsFinal(id);
+            const response = await fleetingNotesApi.fleetingNotesFinalUpdate({ id });
 
-            if (response.status === 200) {
-                setAlert({
-                    show: true,
-                    message: 'Note finalized successfully.',
-                    color: 'green',
-                });
-                // Navigate to the regular note view
-                navigate(`/notes/${response.data.id}`, { replace: true });
-            }
+            setAlert({
+                show: true,
+                message: 'Note finalized successfully.',
+                color: 'green',
+            });
+            // Navigate to the regular note view
+            navigate(`/notes/${response.id}`, { replace: true });
         } catch (error) {
             displayError(setAlert, navigate)(error);
         } finally {
             setSaving(false);
         }
-    }, [id, markdownContent, fileData, navigate]);
+    }, [id, markdownContent, fileData, navigate, fleetingNotesApi, setAlert]);
 
     const handleRelinkNote = useCallback(() => {
         managementApi.managementActionsCreate({
@@ -419,6 +415,7 @@ export default function NoteViewer() {
                                 markdownContent={markdownContent}
                                 saving={saving}
                                 hasUnsavedChanges={hasUnsavedChanges}
+                                isFleeting={note.fleeting}
                                 noteStatus={note.status}
                                 noteStatusMessage={note.status_message}
                             />

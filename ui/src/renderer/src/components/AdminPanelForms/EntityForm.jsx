@@ -4,12 +4,6 @@ import { Controller, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
 import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import {
-    createEntity,
-    editEntity,
-    getNextEntityName
-} from '../../services/adminService/adminService';
-import { advancedQuery } from '../../services/queryService/queryService';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AdminPanelPermissionCard from '../AdminPanelPermissionCard/AdminPanelPermissionCard';
 import AlertBox from '../AlertBox/AlertBox';
@@ -26,23 +20,26 @@ const entitySchema = Yup.object().shape({
 
 export default function EntityForm({ id = null, isEdit = false, onAdd }) {
     const { navigate, navigateLink } = useCradleNavigate();
-    const { accessApi, entriesApi } = useApi();
+    const { accessApi, entriesApi, queryApi } = useApi();
     const [accesses, setAccessUsers] = useState([]);
     const [entity, setEntity] = useState(null);
     const [subclasses, setSubclasses] = useState([]);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
 
     const fetchAliases = async (q) => {
-        const results = await advancedQuery(q, true);
+        try {
+            const results = await queryApi.queryAdvancedRetrieve({
+                query: Array.isArray(q) ? q : [q],
+                wildcard: true,
+            });
 
-        if (results.status === 200) {
-            let a = results.data.results.map((alias) => ({
+            let a = results.results.map((alias) => ({
                 value: alias.id,
                 label: `${alias.subtype}:${alias.name}`,
             }));
             return a;
-        } else {
-            displayError(setAlert, navigate)(results);
+        } catch (error) {
+            displayError(setAlert, navigate)(error);
             return [];
         }
     };
@@ -137,21 +134,22 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }) {
         try {
             let result = null;
             if (isEdit) {
-                result = await editEntity(payload, id);
+                await entriesApi.entitiesUpdate({
+                    entityId: id,
+                    entityUpdate: payload,
+                });
             } else {
-                result = await createEntity(payload);
+                result = await entriesApi.entitiesCreate({
+                    entity: payload,
+                });
+                if (onAdd) onAdd(result);
             }
 
-            if (result.status !== 200) {
-                displayError(setAlert, navigate)(result.data);
-            } else {
-                if (!isEdit) onAdd(result.data);
-                setAlert({
-                    show: true,
-                    message: 'Successfully saved entity!',
-                    color: 'green',
-                });
-            }
+            setAlert({
+                show: true,
+                message: 'Successfully saved entity!',
+                color: 'green',
+            });
         } catch (err) {
             displayError(setAlert, navigate)(err);
         }
@@ -161,13 +159,14 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }) {
     const watchSubtype = watch('subtype');
     useEffect(() => {
         if (!isEdit && watchSubtype) {
-            getNextEntityName(watchSubtype)
-                .then((name) => {
-                    reset((prev) => ({ ...prev, name }));
+            entriesApi
+                .entriesNextNameRetrieve({ classSubtype: watchSubtype })
+                .then((response) => {
+                    reset((prev) => ({ ...prev, name: response.nextName }));
                 })
                 .catch((err) => displayError(setAlert, navigate)(err));
         }
-    }, [watchSubtype, isEdit, navigate, reset]);
+    }, [watchSubtype, isEdit, entriesApi, navigate, reset]);
 
     return (
         <div className='flex items-center justify-center min-h-screen'>

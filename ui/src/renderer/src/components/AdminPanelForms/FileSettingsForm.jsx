@@ -2,12 +2,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
-import { getEntryClasses } from '../../services/adminService/adminService';
-import {
-    getSettings,
-    performAction,
-    setSettings,
-} from '../../services/managementService/managementService';
+import useApi from '../../hooks/useApi/useApi';
 import AlertBox from '../AlertBox/AlertBox';
 import FormField from '../FormField/FormField';
 import Selector from '../Selector/Selector';
@@ -22,6 +17,7 @@ const fileSettingsSchema = Yup.object().shape({
 });
 
 export default function FileSettingsForm() {
+    const { entriesApi, managementApi } = useApi();
     const {
         register,
         handleSubmit,
@@ -45,14 +41,14 @@ export default function FileSettingsForm() {
 
     const handleReProcessAllFiles = async () => {
         try {
-            const response = await performAction('reprocessAllFiles');
-            if (response.status === 200) {
-                setAlert({
-                    show: true,
-                    message: 'Files are being re-processed',
-                    color: 'green',
-                });
-            }
+            await managementApi.managementActionsCreate({
+                body: { action: 'reprocessAllFiles' }
+            });
+            setAlert({
+                show: true,
+                message: 'Files are being re-processed',
+                color: 'green',
+            });
         } catch (error) {
             console.error(error);
             setAlert({
@@ -67,17 +63,15 @@ export default function FileSettingsForm() {
     useEffect(() => {
         async function fetchSubtypes() {
             try {
-                const response = await getEntryClasses();
-                if (response.status === 200 && response.data) {
-                    setSubtypes(
-                        response.data
-                            .filter((entry) => entry.type === 'artifact')
-                            .map((entry) => ({
-                                value: entry.subtype,
-                                label: entry.subtype,
-                            })),
-                    );
-                }
+                const entryClasses = await entriesApi.entryClassesList({});
+                setSubtypes(
+                    entryClasses
+                        .filter((entry) => entry.type === 'artifact')
+                        .map((entry) => ({
+                            value: entry.subtype,
+                            label: entry.subtype,
+                        })),
+                );
             } catch (error) {
                 console.error('Error fetching subtypes:', error);
                 setAlert({
@@ -88,32 +82,30 @@ export default function FileSettingsForm() {
             }
         }
         fetchSubtypes();
-    }, []);
+    }, [entriesApi]);
 
     useEffect(() => {
         async function fetchSettings() {
             try {
-                const response = await getSettings();
-                if (response.status === 200 && response.data) {
-                    // Check if file settings exist in the response
-                    if (response.data.files) {
-                        // Convert the array of mimetype patterns to a newline-separated string
-                        const mimetypePatternsString = Array.isArray(
-                            response.data.files.mimetype_patterns,
-                        )
-                            ? response.data.files.mimetype_patterns.join('\n')
-                            : response.data.files.mimetype_patterns ||
-                              'image/*\napplication/pdf\napplication/msword\napplication/vnd.openxmlformats-officedocument.wordprocessingml.document';
+                const settings = await managementApi.managementSettingsRetrieve();
+                // Check if file settings exist in the response
+                if (settings.files) {
+                    // Convert the array of mimetype patterns to a newline-separated string
+                    const mimetypePatternsString = Array.isArray(
+                        settings.files.mimetype_patterns,
+                    )
+                        ? settings.files.mimetype_patterns.join('\n')
+                        : settings.files.mimetype_patterns ||
+                        'image/*\napplication/pdf\napplication/msword\napplication/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
-                        reset({
-                            autoprocessFiles:
-                                response.data.files.autoprocess_files ?? true,
-                            md5Subtype: response.data.files.md5_subtype || '',
-                            sha1Subtype: response.data.files.sha1_subtype || '',
-                            sha256Subtype: response.data.files.sha256_subtype || '',
-                            mimetypePatterns: mimetypePatternsString,
-                        });
-                    }
+                    reset({
+                        autoprocessFiles:
+                            settings.files.autoprocess_files ?? true,
+                        md5Subtype: settings.files.md5_subtype || '',
+                        sha1Subtype: settings.files.sha1_subtype || '',
+                        sha256Subtype: settings.files.sha256_subtype || '',
+                        mimetypePatterns: mimetypePatternsString,
+                    });
                 }
             } catch (error) {
                 console.error(error);
@@ -125,7 +117,7 @@ export default function FileSettingsForm() {
             }
         }
         fetchSettings();
-    }, [reset]);
+    }, [reset, managementApi]);
 
     const onSubmit = async (data) => {
         try {
@@ -134,22 +126,22 @@ export default function FileSettingsForm() {
                 .split('\n')
                 .filter((pattern) => pattern.trim() !== '');
 
-            const response = await setSettings({
-                files: {
-                    autoprocess_files: data.autoprocessFiles,
-                    md5_subtype: data.md5Subtype,
-                    sha1_subtype: data.sha1Subtype,
-                    sha256_subtype: data.sha256Subtype,
-                    mimetype_patterns: mimetypePatternsArray,
+            await managementApi.managementSettingsCreate({
+                body: {
+                    files: {
+                        autoprocess_files: data.autoprocessFiles,
+                        md5_subtype: data.md5Subtype,
+                        sha1_subtype: data.sha1Subtype,
+                        sha256_subtype: data.sha256Subtype,
+                        mimetype_patterns: mimetypePatternsArray,
+                    },
                 },
             });
-            if (response.status === 200) {
-                setAlert({
-                    show: true,
-                    message: 'File settings updated successfully!',
-                    color: 'green',
-                });
-            }
+            setAlert({
+                show: true,
+                message: 'File settings updated successfully!',
+                color: 'green',
+            });
         } catch (error) {
             console.error(error);
             setAlert({

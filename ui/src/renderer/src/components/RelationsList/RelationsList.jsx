@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
+import useApi from '../../hooks/useApi/useApi';
 import { useProfile } from '../../hooks/useProfile/useProfile';
-import { getRelations } from '../../services/graphService/graphService';
 import AlertBox from '../AlertBox/AlertBox';
 import Pagination from '../Pagination/Pagination';
 import RelationCard from './RelationCard';
@@ -12,6 +12,7 @@ export default function RelationsList({ query }) {
     const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(false);
     const { profile } = useProfile();
+    const { entriesApi } = useApi();
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
 
     useEffect(() => {
@@ -26,10 +27,13 @@ export default function RelationsList({ query }) {
     const fetchRelations = async () => {
         setLoading(true);
         try {
-            const response = await getRelations(query, page);
-            const data = response.data;
-            setRelations(data.results);
-            setTotalPages(data.total_pages);
+            const response = await entriesApi.entriesRelationsList({
+                page: page,
+                wildcard: true,
+                ...query,
+            });
+            setRelations(response.results);
+            setTotalPages(response.totalPages);
             setAlert({
                 show: false,
                 message: 'Error fetching relations',

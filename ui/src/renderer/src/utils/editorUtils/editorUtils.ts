@@ -6,11 +6,8 @@ import { Diagnostic, linter } from '@codemirror/lint';
 import { basicSetup, EditorState } from '@uiw/react-codemirror';
 import dayjs from 'dayjs';
 import jsyaml from 'js-yaml';
-import {
-    fetchCompletionTries,
-    fetchLspTypes,
-} from '../../services/queryService/queryService';
-import { getSnippets } from '../../services/snippetsService/snippetsService';
+import type { LspApi } from '../../services/cradle/apis/LspApi';
+import type { NotesApi } from '../../services/cradle/apis/NotesApi';
 import { DynamicTrie } from './trie';
 
 /*==============================================================================
@@ -116,6 +113,8 @@ export class CradleEditor {
     private _ready: Promise<boolean>;
     private _onError: ((error: Error) => void) | null;
     private _onLspLoaded: (bool: boolean) => void;
+    private _notesApi: NotesApi | null;
+    private _lspApi: LspApi | null;
 
     private combinedRegex: RegExp | null = null; // for scanning large text
     private combinedWordRegex: RegExp | null = null; // for whole-word matching
@@ -127,12 +126,16 @@ export class CradleEditor {
         options: EnhancerOptions = {},
         onLspLoaded: (bool: boolean) => void,
         onError: ((error: Error) => void) | null = null,
+        notesApi: NotesApi | null = null,
+        lspApi: LspApi | null = null,
     ) {
         this.entryClasses = null;
         this.tries = null;
         this.snippets = null;
         this._onError = onError;
         this._onLspLoaded = onLspLoaded;
+        this._notesApi = notesApi;
+        this._lspApi = lspApi;
         this._ready = this.initializeEntryClassesTriesAndSnippets().then((ready) => {
             this._onLspLoaded(ready);
             return ready;
@@ -174,9 +177,10 @@ export class CradleEditor {
                 this.entryClasses = CradleEditor.cachedEntryClasses;
             } else {
                 if (!CradleEditor.entryClassesPromise) {
-                    CradleEditor.entryClassesPromise = fetchLspTypes().then(
-                        (response) => response.data,
-                    );
+                    if (!this._lspApi) {
+                        throw new Error('LspApi is required for editor initialization');
+                    }
+                    CradleEditor.entryClassesPromise = this._lspApi.lspTypesRetrieve();
                 }
                 const entryClasses = await CradleEditor.entryClassesPromise;
                 this.entryClasses = entryClasses;
@@ -188,10 +192,13 @@ export class CradleEditor {
                 this.tries = CradleEditor.cachedTries;
             } else {
                 if (!CradleEditor.triesPromise) {
-                    CradleEditor.triesPromise = fetchCompletionTries().then(
-                        (response) => {
+                    if (!this._lspApi) {
+                        throw new Error('LspApi is required for editor initialization');
+                    }
+                    CradleEditor.triesPromise = this._lspApi.lspTrieRetrieve().then(
+                        (triesData) => {
                             const tries: { [key: string]: DynamicTrie } = {};
-                            for (const [type, trie] of Object.entries(response.data)) {
+                            for (const [type, trie] of Object.entries(triesData)) {
                                 tries[type] = new DynamicTrie(null, type, -1);
                                 tries[type].mergeTrie('', trie);
                             }
@@ -203,16 +210,16 @@ export class CradleEditor {
                                 tries[entryClass.subtype] = new DynamicTrie(
                                     async (x) => {
                                         try {
-                                            let result = await fetchCompletionTries(
-                                                entryClass.subtype,
-                                                x,
-                                            );
+                                            let result = await this._lspApi.lspTrieRetrieve({
+                                                type: entryClass.subtype,
+                                                prefix: x,
+                                            });
                                             if (
-                                                result.data &&
-                                                result.data[entryClass.subtype]
+                                                result &&
+                                                result[entryClass.subtype]
                                             ) {
                                                 let trie =
-                                                    result.data[entryClass.subtype];
+                                                    result[entryClass.subtype];
 
                                                 for (const char of x) {
                                                     if (!trie.c || !trie.c[char]) {
@@ -266,9 +273,9 @@ export class CradleEditor {
             if (CradleEditor.cachedSnippets) {
                 this.snippets = CradleEditor.cachedSnippets;
             } else {
-                if (!CradleEditor.snippetsPromise) {
-                    CradleEditor.snippetsPromise = getSnippets().then(
-                        (response) => response.data || [],
+                if (!CradleEditor.snippetsPromise && this._notesApi) {
+                    CradleEditor.snippetsPromise = this._notesApi.notesSnippetsList().then(
+                        (snippets) => snippets || [],
                     );
                 }
                 const snippets = await CradleEditor.snippetsPromise;
@@ -324,9 +331,11 @@ export class CradleEditor {
      */
     async refreshSnippets(): Promise<Snippet[]> {
         try {
+            if (!this._notesApi) {
+                throw new Error('NotesApi is required to refresh snippets');
+            }
             CradleEditor.invalidateSnippetsCache();
-            const response = await getSnippets();
-            const snippets = response.data || [];
+            const snippets = await this._notesApi.notesSnippetsList() || [];
             this.snippets = snippets;
             CradleEditor.cachedSnippets = snippets;
             return snippets;

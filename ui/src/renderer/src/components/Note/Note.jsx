@@ -8,6 +8,8 @@ import {
 } from 'iconoir-react';
 import React, { forwardRef, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import useApi from '../../hooks/useApi/useApi';
+import useAuth from '../../hooks/useAuth/useAuth';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { parseMarkdownInline } from '../../utils/customParser/customParser';
 import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
@@ -37,6 +39,8 @@ const Note = forwardRef(function (
     ref,
 ) {
     const { navigate, navigateLink } = useCradleNavigate();
+    const { entriesApi, fileTransferApi } = useApi();
+    const { basePath } = useAuth();
     const [hidden, setHidden] = useState(false);
     const location = useLocation();
     const [parsedContent, setParsedContent] = useState('');
@@ -78,10 +82,10 @@ const Note = forwardRef(function (
     };
 
     useEffect(() => {
-        parseContent(note.content, note.files)
+        parseContent(note.content, entriesApi, fileTransferApi, basePath, note.files)
             .then((result) => setParsedContent(result.html))
             .catch(displayError(setAlert, navigate));
-    }, [note.content, note.files, setAlert, navigate]);
+    }, [note.content, note.files, entriesApi, fileTransferApi, basePath, setAlert, navigate]);
 
     const style = {
         opacity: ghost ? 0.5 : 1,

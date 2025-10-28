@@ -3,13 +3,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Controller, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
+import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import {
-    createArtifactClass,
-    editArtifactClass,
-    getEntryClass,
-    getEntryClasses,
-} from '../../services/adminService/adminService';
 import { GoldenRatioColorGenerator } from '../../utils/colorUtils/colorUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
@@ -47,6 +42,7 @@ const entryTypeSchema = Yup.object().shape({
  * @param {boolean} [props.isEdit=false] - If true, the form will be used for editing.
  */
 export default function EntryTypeForm({ id = null, isEdit = false, onAdd }) {
+    const { entriesApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
     const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
     const [showColorPicker, setShowColorPicker] = useState(false);
@@ -56,17 +52,13 @@ export default function EntryTypeForm({ id = null, isEdit = false, onAdd }) {
     // Fetch all entry types for the Children selector.
     const fetchEntryTypes = async (q) => {
         try {
-            const response = await getEntryClasses();
-            if (response.status === 200 && response.data) {
-                setEntryTypes(
-                    response.data.map((entry) => ({
-                        value: entry.subtype,
-                        label: `${entry.subtype}`,
-                    })),
-                );
-            } else {
-                return [];
-            }
+            const entries = await entriesApi.entryClassesList({});
+            setEntryTypes(
+                entries.map((entry) => ({
+                    value: entry.subtype,
+                    label: `${entry.subtype}`,
+                })),
+            );
         } catch (err) {
             displayError(setAlert, navigate)(err);
             return [];
@@ -111,28 +103,26 @@ export default function EntryTypeForm({ id = null, isEdit = false, onAdd }) {
     // In edit mode, fetch the entry type details and prepopulate the form.
     useEffect(() => {
         if (isEdit && id) {
-            getEntryClass(id)
-                .then((response) => {
-                    if (response.status === 200 && response.data) {
-                        const entrytype = response.data;
-                        reset({
-                            type: entrytype.type,
-                            subtype: entrytype.subtype,
-                            catalystType: entrytype.catalyst_type,
-                            description: entrytype.description,
-                            prefix: entrytype.prefix,
-                            color: entrytype.color,
-                            generativeRegex: entrytype.generative_regex || '',
-                            typeFormat: entrytype.format,
-                            regex: entrytype.regex,
-                            options: entrytype.options,
-                            children:
-                                entrytype.children_detail.map((x) => ({
-                                    value: x.subtype,
-                                    label: x.subtype,
-                                })) || [], // prepopulate children if available
-                        });
-                    }
+            entriesApi
+                .entryClassesRetrieve({ classSubtype: id })
+                .then((entrytype) => {
+                    reset({
+                        type: entrytype.type,
+                        subtype: entrytype.subtype,
+                        catalystType: entrytype.catalystType,
+                        description: entrytype.description,
+                        prefix: entrytype.prefix,
+                        color: entrytype.color,
+                        generativeRegex: entrytype.generativeRegex || '',
+                        typeFormat: entrytype.format,
+                        regex: entrytype.regex,
+                        options: entrytype.options,
+                        children:
+                            entrytype.childrenDetail?.map((x) => ({
+                                value: x.subtype,
+                                label: x.subtype,
+                            })) || [], // prepopulate children if available
+                    });
                 })
                 .catch((err) => displayError(setAlert, navigate)(err));
         } else {
@@ -152,45 +142,42 @@ export default function EntryTypeForm({ id = null, isEdit = false, onAdd }) {
         }
         setAlert({ show: false, message: '', color: 'red' });
         fetchEntryTypes();
-    }, [isEdit, id, reset, navigate]);
+    }, [isEdit, id, reset, navigate, entriesApi]);
 
     const onSubmit = async (data) => {
         try {
+            const payload = {
+                generativeRegex: data.generativeRegex,
+                format: data.typeFormat === '' ? null : data.typeFormat,
+                type: data.type,
+                subtype: data.subtype,
+                catalystType: data.catalystType,
+                description: data.description,
+                prefix: data.prefix,
+                color: data.color,
+                regex: data.regex,
+                options: data.options,
+                children: data.children.map((child) => child.value),
+            };
+
             let result = null;
-
             if (isEdit) {
-                result = await editArtifactClass(
-                    {
-                        generative_regex: data.generativeRegex,
-                        format: data.typeFormat == '' ? null : data.typeFormat,
-                        ...data,
-                        children: data.children.map((child) => child.value),
-                    },
-                    id,
-                );
+                result = await entriesApi.entryClassesUpdate({
+                    classSubtype: id,
+                    entryClassRequest: payload,
+                });
             } else {
-                result = await createArtifactClass({
-                    generative_regex: data.generativeRegex,
-                    format: data.typeFormat == '' ? null : data.typeFormat,
-                    ...data,
-                    children: data.children.map((child) => child.value),
+                result = await entriesApi.entryClassesCreate({
+                    entryClassRequest: payload,
                 });
             }
 
-            if (result.status === 200) {
-                setAlert({
-                    show: true,
-                    message: 'Entry Type saved successfully!',
-                    color: 'green',
-                });
-                if (!isEdit) onAdd(result.data);
-            } else {
-                setAlert({
-                    show: true,
-                    message: 'Failed to save Entry Type.',
-                    color: 'red',
-                });
-            }
+            setAlert({
+                show: true,
+                message: 'Entry Type saved successfully!',
+                color: 'green',
+            });
+            if (!isEdit) onAdd(result);
         } catch (err) {
             displayError(setAlert, navigate)(err);
         }
