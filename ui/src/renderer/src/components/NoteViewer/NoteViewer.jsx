@@ -369,9 +369,10 @@ export default function NoteViewer() {
     useEffect(() => {
         const content = markdownContent || '';
         setNoteOutline(extractHeaderHierarchy(content, (lineNumber) => {
-            console.log(editorRef.current.view);
+            if (!editorRef.current?.view || typeof lineNumber !== 'number') return;
+
             const view = editorRef.current.view;
-            if (view && typeof lineNumber === 'number') {
+            if (view) {
                 const state = view.state;
                 if (lineNumber == 1) {
                     view.dispatch({
@@ -520,30 +521,29 @@ export default function NoteViewer() {
                                         </Panel>
                                     </PanelGroup>
                                 ) : (
-                                    <div className='h-full'>
-                                        <div className='h-full flex flex-col border-l cradle-border'>
-                                            <div className='flex-1 min-h-0'>
-                                                <RichEditor
-                                                    key={richEditor ? 'rich' : 'source'}
-                                                    ref={editorRef}
-                                                    noteid={id}
-                                                    markdownContent={markdownContent}
-                                                    setMarkdownContent={setMarkdownContent}
-                                                    fileData={fileData}
-                                                    setFileData={setFileData}
-                                                    source={!richEditor}
-                                                    setAlert={setAlert}
-                                                    saveNote={handleSaveNote}
-                                                />
-                                            </div>
+                                    <div className='h-full flex flex-col border-l cradle-border'>
+                                        {/* Embedded Rich Editor */}
+                                        <div className='flex-1 min-h-0'>
+                                            <RichEditor
+                                                key={richEditor ? 'rich' : 'source'}
+                                                ref={editorRef}
+                                                noteid={id}
+                                                markdownContent={markdownContent}
+                                                setMarkdownContent={setMarkdownContent}
+                                                fileData={fileData}
+                                                setFileData={setFileData}
+                                                source={!richEditor}
+                                                setAlert={setAlert}
+                                                saveNote={handleSaveNote}
+                                            />
+                                        </div>
 
-                                            {/* Reference Tree below the editor */}
-                                            <div className='mt-4'>
-                                                <ReferenceTree
-                                                    note={note}
-                                                    setAlert={setAlert}
-                                                />
-                                            </div>
+                                        {/* Reference Tree below the editor */}
+                                        <div className='mt-4'>
+                                            <ReferenceTree
+                                                note={note}
+                                                setAlert={setAlert}
+                                            />
                                         </div>
                                     </div>
                                 )}

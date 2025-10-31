@@ -167,7 +167,7 @@ export default function NotesList({
         if (contentSearch?.value !== undefined) {
             setSearchInputValue(contentSearch.value);
         }
-    }, [contentSearch?.value]);
+    }, [contentSearch]);
 
     const fetchNotes = useCallback(async () => {
         if (query == null) return;

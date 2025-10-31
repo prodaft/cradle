@@ -34,11 +34,6 @@ export default function RelationsList({ query }) {
             });
             setRelations(response.results);
             setTotalPages(response.totalPages);
-            setAlert({
-                show: false,
-                message: 'Error fetching relations',
-                color: 'red',
-            });
         } catch (error) {
             console.error('Failed to fetch relations:', error);
             setAlert({
