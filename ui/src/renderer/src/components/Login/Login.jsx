@@ -103,9 +103,6 @@ export default function Login() {
                                 <Logo text={true} width='60%' />
                             </div>
                         )}
-                        <h1 className='text-4xl font-bold cradle-text-primary cradle-mono mb-4 tracking-tight'>
-                            CRADLE
-                        </h1>
                         <p className='text-lg cradle-text-tertiary cradle-mono leading-relaxed max-w-md'>
                             A knowledge workspace for threat intelligence analysts.
                         </p>

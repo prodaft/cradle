@@ -5,12 +5,17 @@ import { usePaneTabs } from '../../contexts/PaneTabsContext/PaneTabsContext';
 import { useLayout } from '../../contexts/LayoutContext/LayoutContext';
 import { useTabHost } from '../../contexts/TabHostContext/TabHostContext';
 
-// Constants
-const ZONE_MIN = 72;
-const ZONE_MAX = 220;
-const ZONE_RATIO = 0.22;
-const TABBAR_TOP_OVERRIDE = 18;
-const STICKY_PX = 24;
+const getTabbarTopOverride = (tabbarEl) => {
+    const h = tabbarEl?.getBoundingClientRect().height || 0;
+    // Use ~40% of tabbar height, clamped to sensible bounds
+    return Math.max(8, Math.min(32, Math.round(h * 0.4)));
+};
+
+const getStickyPx = (tabbarEl) => {
+    const base = tabbarEl?.getBoundingClientRect().height || 40;
+    const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
+    return Math.max(8, Math.min(40, Math.round((base * 0.6) / dpr)));
+};
 
 // DND constants and helpers
 const DND_MIME = 'application/x-cradle-tab';
@@ -84,10 +89,6 @@ const Tab = memo(({
 
     return (
         <div key={`tab-wrapper-${tab.id}`} className='relative flex items-center h-full'>
-            {showDropBefore && (
-                <div className='absolute left-0 top-0 bottom-0 w-0.5 z-10' style={{ backgroundColor: 'var(--cradle-accent-primary)' }} />
-            )}
-            
             <div
                 role="tab"
                 aria-selected={isTabActive}
@@ -137,10 +138,6 @@ const Tab = memo(({
                     <Xmark width='0.9em' height='0.9em' />
                 </button>
             </div>
-            
-            {showDropAfter && (
-                <div className='absolute right-0 top-0 bottom-0 w-0.5 z-10' style={{ backgroundColor: 'var(--cradle-accent-primary)' }} />
-            )}
         </div>
     );
 });
@@ -381,7 +378,7 @@ const PaneTabs = ({ paneId, isActive, onRootRef }) => {
                 if (onRootRef) onRootRef(el);
             }}
             role="tablist"
-            className={`flex items-center h-10 cradle-bg-elevated overflow-x-auto overflow-y-hidden cradle-scrollbar-thin ${isActive ? 'cradle-border-b' : 'cradle-border-b border-opacity-50'}`}
+            className={`flex items-center h-10 cradle-bg-elevated overflow-x-auto overflow-y-hidden cradle-scrollbar-thin relative z-20 ${isActive ? 'cradle-border-b' : 'cradle-border-b border-opacity-50'}`}
             onDragEnter={handleTabBarDragEnter}
             onDragOver={handleTabBarDragOver}
             onDragLeave={handleTabBarDragLeave}
@@ -667,12 +664,12 @@ const LayoutPane = ({ paneId, outletContext }) => {
         const w = paneSize.w || paneRect.width;
         const h = paneSize.h || paneRect.height;
 
-        // --- Sizing (clamped, bigger than before) ---
+        // --- Sizing: exactly half of pane per axis ---
         const currentTabbarH = tabbarH || (layoutTabBarRef.current?.getBoundingClientRect().height || 0);
 
-        const wStrip = Math.min(Math.max(ZONE_MIN, w * ZONE_RATIO), ZONE_MAX);
-        const hTopContentStrip = Math.min(Math.max(ZONE_MIN, (h - currentTabbarH) * ZONE_RATIO), ZONE_MAX);
-        const hBottomStrip     = Math.min(Math.max(ZONE_MIN, h * ZONE_RATIO), ZONE_MAX);
+        const wStrip = w * 0.5;
+        const hTopContentStrip = (h - currentTabbarH) * 0.5;
+        const hBottomStrip     = h * 0.5;
 
         const yContent = Math.max(0, y - currentTabbarH); // y inside content area
 
@@ -684,7 +681,7 @@ const LayoutPane = ({ paneId, outletContext }) => {
             if (e.clientX >= t.left && e.clientX <= t.right && e.clientY >= t.top && e.clientY <= t.bottom) {
                 // ...but within a small band at the *bottom* of it, treat as TOP split (so "responds on tabs")
                 const distFromBottom = t.bottom - e.clientY;
-                if (distFromBottom <= TABBAR_TOP_OVERRIDE) {
+                if (distFromBottom <= getTabbarTopOverride(layoutTabBarRef.current)) {
                     return 'top';
                 }
                 // otherwise, it's a normal tabbar drop target
@@ -692,11 +689,20 @@ const LayoutPane = ({ paneId, outletContext }) => {
             }
         }
 
-        // --- Area zones (big blocks) ---
-        if (y >= currentTabbarH && yContent <= hTopContentStrip) return 'top';         // content-only for top
-        if (y >= h - hBottomStrip) return 'bottom';                              // whole pane for bottom
-        if (x <= wStrip) return 'left';
-        if (x >= w - wStrip) return 'right';
+        // --- Nearest-edge logic (uses 50% strips only as visuals) ---
+        // If we're in the content area, select the closest pane edge
+        if (y >= currentTabbarH) {
+            const dLeft = x;
+            const dRight = w - x;
+            const dTop = y - currentTabbarH;
+            const dBottom = h - y;
+
+            const minDist = Math.min(dLeft, dRight, dTop, dBottom);
+            if (minDist === dLeft) return 'left';
+            if (minDist === dRight) return 'right';
+            if (minDist === dTop) return 'top';
+            if (minDist === dBottom) return 'bottom';
+        }
 
         return null;
     };
@@ -713,7 +719,8 @@ const LayoutPane = ({ paneId, outletContext }) => {
         const dx = e.clientX - lastPointRef.current.x;
         const dy = e.clientY - lastPointRef.current.y;
         const dist2 = dx*dx + dy*dy;
-        if (dist2 <= STICKY_PX * STICKY_PX) {
+        const sticky = getStickyPx(layoutTabBarRef.current);
+        if (dist2 <= sticky * sticky) {
             // keep previous zone if still meaningful
             return lastZoneRef.current ?? zone;
         }
@@ -861,8 +868,8 @@ const LayoutPane = ({ paneId, outletContext }) => {
             {/* Drag overlay that actually captures events over iframes/canvases */}
             {showOverlay && (
                 <div
-                    className="absolute inset-0"
-                    style={{ zIndex: 900, pointerEvents: 'auto' }}
+                    className="absolute"
+                    style={{ top: tabbarH, left: 0, right: 0, bottom: 0, zIndex: 900, pointerEvents: 'auto' }}
                     onDragEnter={handlePaneDragEnterCapture}
                     onDragOver={handlePaneDragOverCapture}
                     onDragLeave={handlePaneDragLeaveCapture}
@@ -879,10 +886,8 @@ const LayoutPane = ({ paneId, outletContext }) => {
                 <div className='absolute left-0 right-0 pointer-events-none'
                      style={{ 
                          top: tabbarH,
-                         height: Math.min(Math.max(ZONE_MIN, (paneSize.h - tabbarH) * ZONE_RATIO), ZONE_MAX),
+                        height: (paneSize.h - tabbarH) * 0.5,
                          background: 'var(--cradle-glow-primary)',
-                         borderTop: '2px dashed var(--cradle-accent-primary)', 
-                         borderBottom: '2px dashed var(--cradle-accent-primary)',
                          zIndex: 1000 
                      }}
                 />
@@ -892,37 +897,35 @@ const LayoutPane = ({ paneId, outletContext }) => {
                 <div className='absolute left-0 right-0 pointer-events-none'
                      style={{ 
                          bottom: 0,
-                         height: Math.min(Math.max(ZONE_MIN, paneSize.h * ZONE_RATIO), ZONE_MAX),
+                        height: paneSize.h * 0.5,
                          background: 'var(--cradle-glow-primary)',
-                         borderTop: '2px dashed var(--cradle-accent-primary)', 
-                         borderBottom: '2px dashed var(--cradle-accent-primary)',
                          zIndex: 1000 
                      }}
                 />
             )}
 
             {dropZone === 'left' && (
-                <div className='absolute top-0 bottom-0 pointer-events-none'
+                <div className='absolute pointer-events-none'
                      style={{ 
-                         left: 0,
-                         width: Math.min(Math.max(ZONE_MIN, paneSize.w * ZONE_RATIO), ZONE_MAX),
-                         background: 'var(--cradle-glow-primary)',
-                         borderLeft: '2px dashed var(--cradle-accent-primary)', 
-                         borderRight: '2px dashed var(--cradle-accent-primary)',
-                         zIndex: 1000 
+                        top: tabbarH,
+                        bottom: 0,
+                        left: 0,
+                        width: paneSize.w * 0.5,
+                        background: 'var(--cradle-glow-primary)',
+                        zIndex: 1000 
                      }}
                 />
             )}
 
             {dropZone === 'right' && (
-                <div className='absolute top-0 bottom-0 pointer-events-none'
+                <div className='absolute pointer-events-none'
                      style={{ 
-                         right: 0,
-                         width: Math.min(Math.max(ZONE_MIN, paneSize.w * ZONE_RATIO), ZONE_MAX),
-                         background: 'var(--cradle-glow-primary)',
-                         borderLeft: '2px dashed var(--cradle-accent-primary)', 
-                         borderRight: '2px dashed var(--cradle-accent-primary)',
-                         zIndex: 1000 
+                        top: tabbarH,
+                        bottom: 0,
+                        right: 0,
+                        width: paneSize.w * 0.5,
+                        background: 'var(--cradle-glow-primary)',
+                        zIndex: 1000 
                      }}
                 />
             )}
