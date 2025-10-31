@@ -1,13 +1,13 @@
-from rest_framework.generics import ListAPIView
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema
+from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from drf_spectacular.utils import extend_schema
 
-from core.pagination import TotalPagesPagination
 from user.permissions import HasAdminRole
-from .models import EventLog
+
 from .filters import EventLogFilter
+from .models import EventLog
 from .serializers import EventLogSerializer  # Create this serializer in step 3
 
 
@@ -15,9 +15,7 @@ from .serializers import EventLogSerializer  # Create this serializer in step 3
     summary="List event logs",
     description="Returns a filtered list of event logs. Only available to admin users.",
     responses={
-        200: TotalPagesPagination().get_paginated_response_serializer(
-            EventLogSerializer
-        ),
+        200: EventLogSerializer,
         401: {"description": "User is not authenticated"},
         403: {"description": "User is not authorized to view logs"},
     },

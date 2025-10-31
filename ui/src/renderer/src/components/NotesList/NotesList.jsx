@@ -33,7 +33,6 @@ export default function NotesList({
     filteredNotes = [],
     noteActions = [],
     hideActionBar = false,
-    forceCardView = false,
     references = null,
     onFilterChange = null,
     contentSearch = null,
@@ -51,8 +50,7 @@ export default function NotesList({
     const { fleetingNotesApi, notesApi } = useApi();
     const [selectedNotes, setSelectedNotes] = useState([]);
     const [pageSize, setPageSize] = useState(
-        Number(searchParams.get('notes_pagesize')) ||
-        (!forceCardView ? 20 : 10)
+        Number(searchParams.get('notes_pagesize')) || 20
     );
     const [columnFilters, setColumnFilters] = useState({
         author: query?.author__username || '',
@@ -383,21 +381,6 @@ export default function NotesList({
         );
     };
 
-    const renderCard = (note, index) => {
-        for (const n of filteredNotes) {
-            if (n.id === note.id) return null;
-        }
-        return (
-            <Note
-                id={note.id}
-                key={index}
-                note={note}
-                setAlert={setAlert}
-                actions={noteActions}
-            />
-        );
-    };
-
     return (
         <PreviewTipProvider delayDuration={800}>
             <div className='flex flex-col space-y-4'>
@@ -496,13 +479,11 @@ export default function NotesList({
                     data={notes}
                     columns={columns}
                     renderRow={renderRow}
-                    renderCard={renderCard}
                     loading={loading}
                     sortField={sortField}
                     sortDirection={sortDirection}
                     onSort={handleSort}
                     sortFieldMapping={sortFieldMapping}
-                    forceCardView={forceCardView}
                     emptyMessage="No notes found!"
                     tableClassName="table table-hover"
                     enableMultiSelect={true}

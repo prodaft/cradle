@@ -10,7 +10,6 @@ import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import PaginationWrapper from '../PaginationWrapper/PaginationWrapper';
 import TableCard from '../TableCard/TableCard';
 import Tooltip from '../Tooltip/Tooltip';
-import DigestCard from './DigestCard';
 
 function DigestList({
     digests,
@@ -146,15 +145,6 @@ function DigestList({
             </tr>
         );
     };
-
-    const renderCard = (digest) => (
-        <DigestCard
-            key={digest.id}
-            localDigest={digest}
-            setAlert={setAlert}
-            onDelete={onDigestDelete}
-        />
-    );
 
     // Define actions for the ActionBar
     const actions = [
@@ -296,7 +286,6 @@ function DigestList({
                 data={digests}
                 columns={columns}
                 renderRow={renderRow}
-                renderCard={renderCard}
                 loading={loading}
                 sortField={sortField}
                 sortDirection={sortDirection}

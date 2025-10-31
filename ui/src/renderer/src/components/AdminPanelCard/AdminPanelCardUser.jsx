@@ -9,6 +9,7 @@ import AccountSettings from '../AccountSettings/AccountSettings';
 import ActivityList from '../ActivityList/ActivityList';
 import AdminPanelUserPermissions from '../AdminPanelUserPermissions/AdminPanelUserPermissions';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import Card from '../Card/Card';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 
 export default function AdminPanelCardUser({ name, id, onDelete, setRightPane }) {
@@ -46,46 +47,44 @@ export default function AdminPanelCardUser({ name, id, onDelete, setRightPane })
         setRightPane(<AdminPanelUserPermissions username={name} id={id} key={id} />);
     };
 
+    const actions = [
+        {
+            icon: <ClockRotateRight />,
+            onClick: handleActivityClick,
+            tooltip: 'View Activity',
+            show: isAdmin(),
+            variant: 'ghost',
+        },
+        {
+            icon: <EditPencil />,
+            onClick: handleEditClick,
+            tooltip: 'Edit',
+            variant: 'ghost',
+        },
+        {
+            icon: <Trash />,
+            onClick: () =>
+                setModal(ConfirmDeletionModal, {
+                    text: 'Are you sure you want to delete this user? This is not reversible.',
+                    onConfirm: handleDelete,
+                    confirmText: name,
+                }),
+            tooltip: 'Delete',
+            show: isAdmin(),
+            variant: 'danger',
+        },
+    ];
+
     return (
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
-            <div className='h-fit w-full bg-cradle3 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl'>
+            <Card actions={actions} actionsPosition="bottom-right" className="bg-cradle3 bg-opacity-20 backdrop-filter backdrop-blur-lg">
                 <h2 className='card-header w-full mx-2 px-1 break-all'>
                     <span className='cursor-pointer' onClick={handleUserClick}>
                         {name}
                     </span>
                 </h2>
-                <div className='w-full flex flex-row justify-end'>
-                    {isAdmin() && (
-                        <button
-                            className='btn btn-ghost w-fit h-full p-1'
-                            onClick={handleActivityClick}
-                        >
-                            <ClockRotateRight />
-                        </button>
-                    )}
-                    <button
-                        className='btn btn-ghost w-fit h-full p-1'
-                        onClick={handleEditClick}
-                    >
-                        <EditPencil />
-                    </button>
-                    {isAdmin() && (
-                        <button
-                            className='btn btn-ghost w-fit h-full p-1'
-                            onClick={() =>
-                                setModal(ConfirmDeletionModal, {
-                                    text: 'Are you sure you want to delete this user? This is not reversible.',
-                                    onConfirm: handleDelete,
-                                    confirmText: name,
-                                })
-                            }
-                        >
-                            <Trash />
-                        </button>
-                    )}
-                </div>
-            </div>
+            </Card>
         </>
     );
 }

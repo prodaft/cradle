@@ -266,21 +266,6 @@ export default function FilesList({
         );
     };
 
-    const renderCard = (file, index) => {
-        for (const f of filteredFiles) {
-            if (f.id === file.id) return null;
-        }
-        return (
-            <FileItem
-                id={file.id}
-                key={index}
-                file={file}
-                setAlert={setAlert}
-                actions={fileActions}
-            />
-        );
-    };
-
     return (
         <>
             <div className='flex flex-col space-y-4'>
@@ -350,7 +335,6 @@ export default function FilesList({
                         data={files}
                         columns={columns}
                         renderRow={renderRow}
-                        renderCard={renderCard}
                         loading={loading}
                         sortField={sortField}
                         sortDirection={sortDirection}

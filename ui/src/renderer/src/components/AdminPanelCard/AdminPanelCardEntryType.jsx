@@ -8,6 +8,7 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 import ActivityList from '../ActivityList/ActivityList.jsx';
 import EntryTypeForm from '../AdminPanelForms/EntryTypeForm.jsx';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import Card from '../Card/Card';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 
 export default function AdminPanelCardEntryType({
@@ -47,46 +48,44 @@ export default function AdminPanelCardEntryType({
         setRightPane(<EntryTypeForm id={id} isEdit={true} />);
     };
 
+    const actions = [
+        {
+            icon: <ClockRotateRight />,
+            onClick: handleActivityClick,
+            tooltip: 'View Activity',
+            show: isAdmin(),
+            variant: 'ghost',
+        },
+        {
+            icon: <EditPencil />,
+            onClick: handleEditClick,
+            tooltip: 'Edit',
+            variant: 'ghost',
+        },
+        {
+            icon: <Trash />,
+            onClick: () =>
+                setModal(ConfirmDeletionModal, {
+                    onConfirm: handleDelete,
+                    confirmText: name,
+                    text: 'Are you sure you want to delete this entry type? This action is irreversible.',
+                }),
+            tooltip: 'Delete',
+            show: isAdmin(),
+            variant: 'danger',
+        },
+    ];
+
     return (
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
-            <div className='h-fit w-full bg-cradle3 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl'>
+            <Card actions={actions} actionsPosition="bottom-right" className="bg-cradle3 bg-opacity-20 backdrop-filter backdrop-blur-lg">
                 <span className='cursor-pointer' onClick={handleEditClick}>
                     <h2 className='card-header w-full mx-2 px-1 break-all'>
                         ({count >= 0 ? (count == 100 ? '99+' : count) : 0}) {name}
                     </h2>
                 </span>
-                <div className='w-full flex flex-row justify-end'>
-                    {isAdmin() && (
-                        <button
-                            className='btn btn-ghost w-fit h-full p-1'
-                            onClick={handleActivityClick}
-                        >
-                            <ClockRotateRight />
-                        </button>
-                    )}
-                    <button
-                        className='btn btn-ghost w-fit h-full p-1'
-                        onClick={handleEditClick}
-                    >
-                        <EditPencil />
-                    </button>
-                    {isAdmin() && (
-                        <button
-                            className='btn btn-ghost w-fit h-full p-1'
-                            onClick={() =>
-                                setModal(ConfirmDeletionModal, {
-                                    onConfirm: handleDelete,
-                                    confirmText: name,
-                                    text: 'Are you sure you want to delete this entry type? This action is irreversible.',
-                                })
-                            }
-                        >
-                            <Trash />
-                        </button>
-                    )}
-                </div>
-            </div>
+            </Card>
         </>
     );
 }

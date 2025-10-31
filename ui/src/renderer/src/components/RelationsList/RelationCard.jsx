@@ -8,6 +8,7 @@ import {
     createDashboardLink,
 } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
+import Card from '../Card/Card';
 
 export default function RelationCard({ relation, onDelete, setAlert }) {
     const [formattedCreated, setFormattedCreated] = useState('');
@@ -47,29 +48,26 @@ export default function RelationCard({ relation, onDelete, setAlert }) {
         navigate(link, { event: e });
     };
 
-    if (!visible) return null;
+    const actions = [
+        {
+            icon: <Trash className='w-5 h-5' />,
+            onClick: handleDelete,
+            tooltip: 'Delete Relation',
+            show: isAdmin(),
+            variant: 'danger',
+        },
+    ];
 
     return (
-        <div className='bg-white dark:bg-gray-800 dark:bg-opacity-75 p-4 rounded-lg shadow-lg hover:shadow-xl  m-2 relative'>
-            <div className='flex justify-between items-center mb-2'>
-                <h2 className='text-lg font-bold text-gray-900 dark:text-white'>
-                    {capitalizeString(relation.reason || 'Relation')}
-                </h2>
-                {isAdmin() && (
-                    <button
-                        title='Delete Relation'
-                        className='text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 '
-                        onClick={handleDelete}
-                    >
-                        <Trash className='w-5 h-5' />
-                    </button>
-                )}
-            </div>
+        <Card actions={actions} visible={visible} actionsPosition="top-right">
+            <h2 className='text-lg font-bold text-gray-900 dark:text-white mb-2'>
+                {capitalizeString(relation.reason || 'Relation')}
+            </h2>
             <div className='text-gray-700 dark:text-gray-300 text-sm space-y-1'>
                 <InfoRow label='Entity 1:'>
                     <span
                         className='underline cursor-pointer'
-                        style={{ color: relation.e1.color || '#2563eb' }} // default to blue if missing
+                        style={{ color: relation.e1.color || '#2563eb' }}
                         onClick={handleEntryClick(
                             relation.e1.name,
                             relation.e1.subtype,
@@ -82,9 +80,7 @@ export default function RelationCard({ relation, onDelete, setAlert }) {
                     <span
                         className='underline cursor-pointer'
                         style={{ color: relation.e2.color || '#2563eb' }}
-                        onClick={() =>
-                            handleEntryClick(relation.e2.name, relation.e2.subtype)
-                        }
+                        onClick={handleEntryClick(relation.e2.name, relation.e2.subtype)}
                     >
                         [{relation.e2.subtype}] {relation.e2.name}
                     </span>
@@ -97,10 +93,10 @@ export default function RelationCard({ relation, onDelete, setAlert }) {
                     </InfoRow>
                 ))}
             </div>
-            <div className='absolute bottom-1 right-2 text-[10px] text-gray-400 dark:text-gray-600 select-text mt-1'>
+            <div className='text-[10px] text-gray-400 dark:text-gray-600 select-text mt-2'>
                 ID: {relation.id}
             </div>
-        </div>
+        </Card>
     );
 }
 

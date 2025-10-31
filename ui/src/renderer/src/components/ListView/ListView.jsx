@@ -4,18 +4,16 @@ import { useState, useRef, useEffect } from 'react';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 
 /**
- * ListView component - A reusable component for displaying data in table or card view
+ * ListView component - A reusable component for displaying data in table view
  * @function ListView
  * @param {Object} props - Component props
  * @param {Array} props.data - Array of items to display
  * @param {Array} props.columns - Column definitions for table view
- * @param {Function} props.renderCard - Function to render card view for each item
  * @param {boolean} props.loading - Loading state
  * @param {string} props.sortField - Current sort field
  * @param {string} props.sortDirection - Current sort direction ('asc' or 'desc')
  * @param {Function} props.onSort - Sort handler
  * @param {Object} props.sortFieldMapping - Mapping of column keys to API field names
- * @param {boolean} props.forceCardView - Force card view regardless of profile setting
  * @param {string} props.emptyMessage - Message to display when no data
  * @param {Function} props.renderRow - Custom row renderer for table view
  * @param {string} props.tableClassName - Additional className for table
@@ -28,13 +26,11 @@ import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 export default function ListView({
     data = [],
     columns = [],
-    renderCard = null,
     loading = false,
     sortField = '',
     sortDirection = 'desc',
     onSort = null,
     sortFieldMapping = {},
-    forceCardView = false,
     emptyMessage = 'No items found!',
     renderRow = null,
     tableClassName = 'table table-hover',
@@ -236,80 +232,62 @@ export default function ListView({
         );
     }
 
-    const showTableView = !forceCardView;
-
     return (
-        <>
-            {showTableView ? (
-                <div className='overflow-x-auto w-full cradle-scrollbar'>
-                        <table className='cradle-table'>
-                            <thead>
-                                <tr>
-                                    {enableMultiSelect && (
-                                        <th className='w-12'>
-                                            <div className='flex items-center gap-2'>
-                                                <input
-                                                    type='checkbox'
-                                                    className='cradle-checkbox'
-                                                    checked={
-                                                        data.length > 0 &&
-                                                        selectedIds.length === data.length
-                                                    }
-                                                    onChange={(e) =>
-                                                        handleSelectAll(e.target.checked)
-                                                    }
-                                                    disabled={data.length === 0}
-                                                />
-                                            </div>
-                                        </th>
-                                    )}
-                                    {columns.map((column) => (
-                                        <SortableTableHeader
-                                            key={column.key}
-                                            column={column.key}
-                                            className={column.className || ''}
-                                            filterType={column.filterType || 'text'}
-                                        >
-                                            {column.label}
-                                        </SortableTableHeader>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {data.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={columns.length + (enableMultiSelect ? 1 : 0)} className='text-center py-8'>
-                                            <span className='text-sm text-zinc-500 cradle-text-tertiary'>
-                                                {emptyMessage}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    data.map((item, index) =>
-                                        renderRow ? renderRow(item, index, {
-                                            enableMultiSelect,
-                                            isSelected: selectedIds.includes(item.id),
-                                            onSelect: () => handleSelectRow(item.id),
-                                        }) : null
-                                    )
-                                )}
-                            </tbody>
-                        </table>
-                </div>
-            ) : (
-                data.length === 0 ? (
-                    <div className='container mx-auto flex flex-col items-center'>
-                        <p className='mt-6 !text-sm !font-normal text-zinc-500'>
-                            {emptyMessage}
-                        </p>
-                    </div>
-                ) : (
-                    data.map((item, index) =>
-                        renderCard ? renderCard(item, index) : null
-                    )
-                )
-            )}
-        </>
+        <div className='overflow-x-auto w-full cradle-scrollbar'>
+            <table className='cradle-table'>
+                <thead>
+                    <tr>
+                        {enableMultiSelect && (
+                            <th className='w-12'>
+                                <div className='flex items-center gap-2'>
+                                    <input
+                                        type='checkbox'
+                                        className='cradle-checkbox'
+                                        checked={
+                                            data.length > 0 &&
+                                            selectedIds.length === data.length
+                                        }
+                                        onChange={(e) =>
+                                            handleSelectAll(e.target.checked)
+                                        }
+                                        disabled={data.length === 0}
+                                    />
+                                </div>
+                            </th>
+                        )}
+                        {columns.map((column) => (
+                            <SortableTableHeader
+                                key={column.key}
+                                column={column.key}
+                                className={column.className || ''}
+                                filterType={column.filterType || 'text'}
+                            >
+                                {column.label}
+                            </SortableTableHeader>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {data.length === 0 ? (
+                        <tr>
+                            <td colSpan={columns.length + (enableMultiSelect ? 1 : 0)} className='text-center py-8'>
+                                <span className='text-sm text-zinc-500 cradle-text-tertiary'>
+                                    {emptyMessage}
+                                </span>
+                            </td>
+                        </tr>
+                    ) : (
+                        data.map((item, index) =>
+                            renderRow ? renderRow(item, index, {
+                                enableMultiSelect,
+                                isSelected: selectedIds.includes(item.id),
+                                onSelect: () => handleSelectRow(item.id),
+                            }) : null
+                        )
+                    )}
+                </tbody>
+            </table>
+        </div>
     );
 }
 
@@ -322,13 +300,11 @@ ListView.propTypes = {
             className: PropTypes.string,
         })
     ),
-    renderCard: PropTypes.func,
     loading: PropTypes.bool,
     sortField: PropTypes.string,
     sortDirection: PropTypes.oneOf(['asc', 'desc']),
     onSort: PropTypes.func,
     sortFieldMapping: PropTypes.object,
-    forceCardView: PropTypes.bool,
     emptyMessage: PropTypes.string,
     renderRow: PropTypes.func,
     tableClassName: PropTypes.string,

@@ -15,11 +15,11 @@
 
 import * as runtime from '../runtime';
 import type {
-  PaginatedPaginatedEventLogSerializerResponseList,
+  PaginatedEventLogList,
 } from '../models/index';
 import {
-    PaginatedPaginatedEventLogSerializerResponseListFromJSON,
-    PaginatedPaginatedEventLogSerializerResponseListToJSON,
+    PaginatedEventLogListFromJSON,
+    PaginatedEventLogListToJSON,
 } from '../models/index';
 
 export interface LogsListRequest {
@@ -42,7 +42,7 @@ export class LogsApi extends runtime.BaseAPI {
      * Returns a filtered list of event logs. Only available to admin users.
      * List event logs
      */
-    async logsListRaw(requestParameters: LogsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedPaginatedEventLogSerializerResponseList>> {
+    async logsListRaw(requestParameters: LogsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedEventLogList>> {
         const queryParameters: any = {};
 
         if (requestParameters['contentType'] != null) {
@@ -97,14 +97,14 @@ export class LogsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => PaginatedPaginatedEventLogSerializerResponseListFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PaginatedEventLogListFromJSON(jsonValue));
     }
 
     /**
      * Returns a filtered list of event logs. Only available to admin users.
      * List event logs
      */
-    async logsList(requestParameters: LogsListRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedPaginatedEventLogSerializerResponseList> {
+    async logsList(requestParameters: LogsListRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedEventLogList> {
         const response = await this.logsListRaw(requestParameters, initOverrides);
         return await response.value();
     }

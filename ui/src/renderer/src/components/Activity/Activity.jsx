@@ -5,6 +5,7 @@ import 'prismjs/themes/prism-tomorrow.css';
 import { useEffect, useState } from 'react';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
+import Card from '../Card/Card';
 
 /**
  * Activity component - Displays details of an activity log entry.
@@ -140,7 +141,7 @@ export default function Activity({ log }) {
     };
 
     return (
-        <div className='bg-white dark:bg-gray-800 dark:bg-opacity-70 p-4 backdrop-blur-lg rounded-lg m-2 shadow-lg hover:shadow-xl '>
+        <Card className="dark:bg-opacity-70 backdrop-blur-lg">
             <div className='flex justify-between items-center mb-2'>
                 <div className='text-gray-600 dark:text-gray-300 text-xs'>
                     {formattedTimestamp}
@@ -174,6 +175,6 @@ export default function Activity({ log }) {
                     <Activity log={log.src_log} />
                 </div>
             )}
-        </div>
+        </Card>
     );
 }

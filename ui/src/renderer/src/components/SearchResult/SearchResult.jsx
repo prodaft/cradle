@@ -1,4 +1,5 @@
 import React from 'react';
+import Card from '../Card/Card';
 
 /**
  * Component to show search results
@@ -21,39 +22,30 @@ export default function SearchResult({
     actions = [],
     depth,
 }) {
+    // Convert actions from old format to new Card format
+    const cardActions = actions.map(action => ({
+        icon: action.icon,
+        onClick: action.callback,
+    }));
+
     return (
-        <div
-            className='relative h-fit w-full bg-cradle3 px-3 py-6 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl cursor-pointer my-3 flex items-center'
+        <Card
             onClick={onClick}
+            actions={cardActions}
+            actionsPosition="top-right"
+            className="bg-cradle3 bg-opacity-20 backdrop-filter backdrop-blur-lg my-3"
+            padding="px-3 py-6"
         >
-            <div className='flex-grow'>
-                <div className='flex items-center'>
-                    {depth != null && (
-                        <span className='badge ml-2'>Depth: {depth}</span>
-                    )}
-                    <h2 className='card-header text-white mx-2'>{name}</h2>
-                </div>
-                <p className='text-zinc-300 mx-2'>
-                    {type}
-                    {subtype ? `: ${subtype}` : ''}
-                </p>
+            <div className='flex items-center'>
+                {depth != null && (
+                    <span className='badge ml-2'>Depth: {depth}</span>
+                )}
+                <h2 className='card-header text-white mx-2'>{name}</h2>
             </div>
-            {actions.length > 0 && (
-                <div className='flex space-x-2 ml-4'>
-                    {actions.map((action, index) => (
-                        <button
-                            key={index}
-                            onClick={(e) => {
-                                e.stopPropagation(); // Prevent triggering parent onClick
-                                action.callback();
-                            }}
-                            className='text-white hover:bg-white/20 p-2 rounded-full '
-                        >
-                            {action.icon}
-                        </button>
-                    ))}
-                </div>
-            )}
-        </div>
+            <p className='text-zinc-300 mx-2'>
+                {type}
+                {subtype ? `: ${subtype}` : ''}
+            </p>
+        </Card>
     );
 }
