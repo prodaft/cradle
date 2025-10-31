@@ -116,22 +116,10 @@ function App() {
                                                                         element={<ReportList />}
                                                                     />
                                                                     <Route
-                                                                        path='/publish'
-                                                                        element={<Publish />}
-                                                                    />
-                                                                    <Route
                                                                         path='/account/'
                                                                         element={
                                                                             <AccountSettings target='me' />
                                                                         }
-                                                                    />
-                                                                    <Route
-                                                                        path='/activity'
-                                                                        element={<ActivityList />}
-                                                                    />
-                                                                    <Route
-                                                                        path='/activity/:username'
-                                                                        element={<ActivityList />}
                                                                     />
                                                                     <Route
                                                                         path='/admin'

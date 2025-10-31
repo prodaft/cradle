@@ -49,7 +49,7 @@ export default function AdminPanelSection({
         : [];
     return (
         <div className='w-full h-full flex flex-col rounded-md px-3'>
-            <div className='w-full flex flex-row items-center justify-between mb-2'>
+            <div className='w-full flex flex-row items-center justify-between p-3'>
                 <input
                     type='text'
                     placeholder='Search'
@@ -60,7 +60,7 @@ export default function AdminPanelSection({
                     <Tooltip content={addTooltipText}>
                         <span>
                             <button
-                                className='h-fit mx-2 pt-1'
+                                className='h-fit ml-4 pt-1'
                                 onClick={() =>
                                     handleAdd((x) => setAddedItems((prev) => [...prev, x]))
                                 }

@@ -117,7 +117,7 @@ export default function GraphExplorer({ GraphSearchComponent }) {
                         edges={edges}
                     />
                 </Panel>
-                <PanelResizeHandle className='w-[2px] cradle-border-x hover:bg-[#FF8C00] hover:bg-opacity-50 transition-colors' />
+                <PanelResizeHandle className='w-[2px] cradle-bg-elevated cradle-border-x hover:bg-[#FF8C00] hover:bg-opacity-50 transition-colors' />
                 <Panel defaultSize={70} minSize={50}>
                     <div className='relative h-full'>
                         <Graph

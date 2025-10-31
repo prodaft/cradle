@@ -347,7 +347,7 @@ export default function AdminPanel() {
                             </Tabs>
                         </div>
                     </Panel>
-                    <PanelResizeHandle className='w-[2px] cradle-border-x hover:bg-[#FF8C00] hover:bg-opacity-50 transition-colors' />
+                    <PanelResizeHandle className='w-[2px] cradle-bg-elevated cradle-border-x hover:bg-[#FF8C00] hover:bg-opacity-50 transition-colors' />
                     <Panel defaultSize={70} minSize={50}>
                         <div className='max-h-[calc(100vh-5rem)] overflow-y-auto'>
                             {rightPane}

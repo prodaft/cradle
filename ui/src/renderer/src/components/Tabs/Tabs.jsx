@@ -53,7 +53,7 @@ const Tabs = ({
     }, [searchParams, queryParam]);
 
     return (
-        <div className='flex-col h-full'>
+        <div className='flex-col h-full overflow-y-hidden'>
             {/* Only show tab navigation if there's more than one tab */}
             {tabs.length > 1 && (
                 <div
@@ -70,11 +70,10 @@ const Tabs = ({
                                 <button
                                     key={tabId}
                                     onClick={() => handleTabChange(index)}
-                                    className={`px-6 py-3  relative ${perTabClass} ${
-                                        isActive
+                                    className={`px-6 py-3  relative ${perTabClass} ${isActive
                                             ? 'cradle-text-secondary cradle-bg-primary border-b-2 border-cradle-bg-primary'
                                             : 'cradle-text-muted hover:cradle-text-tertiary border-b-2 border-transparent hover:border-cradle-border-primary'
-                                    }`}
+                                        }`}
                                 >
                                     {tab.props.title}
                                 </button>
