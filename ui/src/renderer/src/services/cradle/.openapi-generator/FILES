@@ -83,9 +83,8 @@ models/PaginatedEventLogSerializerResponse.ts
 models/PaginatedFileReferenceWithNoteSerializerResponse.ts
 models/PaginatedNoteRetrieveSerializerResponse.ts
 models/PaginatedPaginatedEventLogSerializerResponseList.ts
-models/PaginatedPaginatedReportSerializerResponseList.ts
 models/PaginatedRelationSerializerResponse.ts
-models/PaginatedReportSerializerResponse.ts
+models/PaginatedReportList.ts
 models/PaginatedSubGraphSerializerResponse.ts
 models/PasswordResetConfirmRequest.ts
 models/PasswordResetRequestRequest.ts

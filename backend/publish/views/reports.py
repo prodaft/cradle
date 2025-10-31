@@ -54,9 +54,7 @@ from ..tasks import edit_report, generate_report
             ),
         ],
         responses={
-            200: TotalPagesPagination().get_paginated_response_serializer(
-                ReportSerializer
-            ),
+            200: ReportSerializer,
             401: {"description": "User is not authenticated"},
         },
     )
