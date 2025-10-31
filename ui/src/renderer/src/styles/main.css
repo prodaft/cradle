@@ -22,6 +22,31 @@
     font-size: 14px;
 }
 
+/* Remove active line background highlighting for Rich Editor only  */
+.rich-editor .cm-editor .cm-activeLine,
+.rich-editor .cm-editor .cm-activeLineGutter {
+    background-color: transparent !important;
+}
+
+/* Ensure consistent background for all lines for Rich Editor only  */
+.rich-editor .cm-content .cm-line {
+    background-color: transparent !important;
+}
+
+/* Add padding on left, top, and bottom for Rich Editor only */
+.rich-editor .cm-scroller {
+    padding: 16px 0 16px 16px !important;
+}
+
+/* Make cursor white in editor */
+.cm-editor .cm-cursor,
+.cm-editor .cm-cursor-primary {
+    border-left-color: #FFFFFF !important;
+}
+
+/* Make cursor black in light mode */
+[data-theme='light'] .cm-editor .cm-cursor,
+[data-theme='light'] .cm-editor .cm-cursor-primary,
 [data-theme='light'] .CodeMirror .cm-cursor,
 [data-theme='light'] .CodeMirror .cm-dropCursor {
     border-left-color: #000000 !important;

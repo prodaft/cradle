@@ -217,7 +217,7 @@ const RichEditor = forwardRef(function RichEditor({
     }, []);
 
     return (
-        <div className='h-full w-full flex flex-col flex-1'>
+        <div className={`${!source ? 'rich-editor' : ''} h-full w-full flex flex-col flex-1`}>
             <div className='h-full w-full flex flex-col overflow-auto'>
                 <div className='flex h-full overflow-y-hidden'>
                     <div
