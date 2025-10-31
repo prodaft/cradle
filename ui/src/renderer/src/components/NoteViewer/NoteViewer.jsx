@@ -62,7 +62,7 @@ export default function NoteViewer() {
     const [showReportModal, setShowReportModal] = useState(false);
     const [showOutline, setShowOutline] = useState(() => {
         const saved = localStorage.getItem('showOutline');
-        return saved === 'true' ? true : false;
+        return saved === 'true';
     });
     const [noteOutline, setNoteOutline] = useState([]);
     const [lspLoaded, setLspLoaded] = useState(false);

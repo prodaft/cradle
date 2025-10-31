@@ -510,9 +510,6 @@ const TypeMappingsEditor = ({ id }) => {
                                                         }}
                                                         menuPosition='fixed'
                                                     />
-                                                    {/*hasError && (
-                                                        <p className='text-red-500 text-xs mt-1'>{validationErrors[errorKey]}</p>
-                                                    )*/}
                                                 </td>
                                             );
                                         } else if (colType === 'number') {
@@ -540,9 +537,6 @@ const TypeMappingsEditor = ({ id }) => {
                                                                 : ''
                                                         }
                                                     />
-                                                    {/*hasError && (
-                                                        <p className='text-red-500 text-xs mt-1'>{validationErrors[errorKey]}</p>
-                                                    )*/}
                                                 </td>
                                             );
                                         } else {
@@ -571,9 +565,6 @@ const TypeMappingsEditor = ({ id }) => {
                                                                 : ''
                                                         }
                                                     />
-                                                    {/*hasError && (
-                                                        <p className='text-red-500 text-xs mt-1'>{validationErrors[errorKey]}</p>
-                                                    )*/}
                                                 </td>
                                             );
                                         }

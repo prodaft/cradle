@@ -126,8 +126,6 @@ export default function Welcome() {
     useEffect(() => {
         (async () => {
             const response = await statisticsApi.statisticsRetrieve();
-            console.log('response');
-            console.log(response);
             const { artifacts, entities, notes } = response;
             setArtifacts(artifacts);
             setEntities(entities);

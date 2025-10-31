@@ -39,8 +39,6 @@ export default function Dashboard() {
     const { profile, isAdmin } = useProfile();
     const dashboard = useRef(null);
 
-    const { setModal } = useModal();
-
     // On load, fetch the dashboard data for the entry
     useEffect(() => {
         setEntryMissing(false);

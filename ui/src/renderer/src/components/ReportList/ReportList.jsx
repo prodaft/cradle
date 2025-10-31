@@ -495,16 +495,6 @@ export default function ReportList({ setAlert = null }) {
         <ReportCard key={report.id} report={report} setAlert={setAlert} />
     );
 
-    // NOTE: Import functionality is disabled because the /reports/import/ endpoint
-    // is missing from the backend API. This is an OpenAPI spec mismatch.
-    const handleImportClick = () => {
-        setAlert({
-            show: true,
-            message: 'Import functionality is not yet implemented',
-            color: 'yellow',
-        });
-    };
-
     return (
         <div className='w-full h-full flex flex-col space-y-3'>
             <AlertDismissible alert={alert} setAlert={setAlert} />
