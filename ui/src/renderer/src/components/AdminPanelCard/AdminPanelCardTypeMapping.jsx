@@ -24,13 +24,12 @@ export default function AdminPanelCardTypeMapping({ name, id, setRightPane }) {
     return (
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
-            <Card actions={actions} actionsPosition="bottom-right" className="bg-cradle3 bg-opacity-20 backdrop-filter backdrop-blur-lg">
-                <h2 className='card-header w-full mx-2 px-1 break-all'>
-                    <span className='cursor-pointer' onClick={handleEditClick}>
-                        {capitalizeString(name)}
-                    </span>
-                </h2>
-            </Card>
+            <Card
+                title={capitalizeString(name)}
+                actions={actions}
+                onClick={handleEditClick}
+                className="bg-cradle3 bg-opacity-20 backdrop-filter backdrop-blur-lg"
+            />
         </>
     );
 }

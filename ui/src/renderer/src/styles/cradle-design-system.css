@@ -188,18 +188,26 @@
 }
 
 /* Card Header */
-.cradle-card-header {
-  padding: 0.875rem 1.25rem;
-  border-bottom: 1px solid var(--cradle-border-primary);
+.cradle-card {
   background: var(--cradle-bg-elevated);
-  font-size: 0.75rem;
+  color: var(--cradle-text-secondary);
+}
+
+.cradle-card-header {
+  border-color: var(--cradle-border-primary);
+  border-style: solid;
+  background: var(--cradle-bg-elevated);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cradle-card-title {
+  font-size: 0.95rem;
   text-transform: uppercase;
   letter-spacing: 2px;
   font-weight: 600;
   color: var(--cradle-text-secondary);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .cradle-card-body {

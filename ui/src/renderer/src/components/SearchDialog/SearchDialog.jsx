@@ -217,13 +217,15 @@ export default function SearchDialog({ isOpen, onClose }) {
                                 {results.map((result) => {
                                     const dashboardLink = createDashboardLink(result);
                                     return (
-                                        <SearchResult
-                                            key={result.id}
-                                            name={result.name}
-                                            type={result.type}
-                                            subtype={result.subtype}
-                                            onClick={handleResultClick(dashboardLink)}
-                                        />
+                                        <div className='mb-3'>
+                                            <SearchResult
+                                                key={result.id}
+                                                name={result.name}
+                                                type={result.type}
+                                                subtype={result.subtype}
+                                                onClick={handleResultClick(dashboardLink)}
+                                            />
+                                        </div>
                                     );
                                 })}
 

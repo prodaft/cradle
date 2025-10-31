@@ -205,7 +205,6 @@ function UploadForm({ dataTypeOptions, onUpload }) {
 
     const validateForm = async () => {
         try {
-            console.log(formValues);
             await UploadSchema.validate(formValues, { abortEarly: false });
             setErrors({});
             return true;

@@ -93,8 +93,12 @@ h6:hover .header-anchor-icon {
    ============================================ */
 
 /* Card Components */
-.card {
+.card-container {
     @apply cradle-card;
+}
+
+.card-title {
+    @apply cradle-card-title;
 }
 
 .card-header {

@@ -1,3 +1,4 @@
+import { NavArrowDown, NavArrowRight } from 'iconoir-react';
 import { useState } from 'react';
 
 function Collapsible({
@@ -26,13 +27,12 @@ function Collapsible({
                     onClick={toggle}
                 >
                     {/* Arrow rotation */}
-                    <span
-                        className={`mr-2 transform  ${
-                            isOpen ? 'rotate-90' : ''
-                        }`}
-                    >
-                        ▶
-                    </span>
+                    {isOpen ? (
+                        <NavArrowDown />
+                    ) : (
+                        <NavArrowRight />
+                    )}
+
                     {label}
                 </button>
                 {/* Extra button rendered only if both text and callback are provided */}
@@ -47,7 +47,7 @@ function Collapsible({
             <div className='border-b border-zinc-700 mx-3' />
 
             {/* Collapsible content */}
-            {isOpen && <div className='pl-3 pt-1'>{children}</div>}
+            {isOpen && <div className='pl-3 pt-1 '>{children}</div>}
         </div>
     );
 }

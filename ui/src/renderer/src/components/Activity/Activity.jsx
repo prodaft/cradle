@@ -141,36 +141,29 @@ export default function Activity({ log }) {
     };
 
     return (
-        <Card className="dark:bg-opacity-70 backdrop-blur-lg">
-            <div className='flex justify-between items-center mb-2'>
-                <div className='text-gray-600 dark:text-gray-300 text-xs'>
-                    {formattedTimestamp}
+        <Card
+            className="dark:bg-opacity-70 backdrop-blur-lg mt-3"
+            badge={log.type}
+            badgeClass="badge-outline-primary"
+            details={{
+                User: log.user.username,
+                Timestamp: formattedTimestamp,
+                Object: log.objectRepr
+            }}
+        >
+            {log.details && (
+                <div className='text-gray-700 dark:text-gray-300 text-sm'>
+                    <strong className='text-cradle2 text-sm'>Details:</strong>
+                    <div
+                        className='mt-2'
+                        dangerouslySetInnerHTML={{
+                            __html: formatDiff(log.details),
+                        }}
+                    />
                 </div>
-                <div className='text-orange-600 dark:text-orange-500 text-xs font-bold uppercase'>
-                    {log.type}
-                </div>
-            </div>
-            <div className='text-gray-700 dark:text-gray-300 text-sm space-y-1'>
-                <div>
-                    <strong className='text-cradle2'>User:</strong> {log.user.username}
-                </div>
-                <div>
-                    <strong className='text-cradle2'>Object:</strong> {log.object_repr}
-                </div>
-                {log.details && (
-                    <div>
-                        <strong className='text-cradle2 text-sm'>Details:</strong>
-                        <div
-                            className='mt-2'
-                            dangerouslySetInnerHTML={{
-                                __html: formatDiff(log.details),
-                            }}
-                        />
-                    </div>
-                )}
-            </div>
-            {log.src_log && (
-                <div>
+            )}
+            {log.srcLog && (
+                <div className='mt-3'>
                     <strong className='text-cradle2 text-sm'>Caused by:</strong>
                     <Activity log={log.src_log} />
                 </div>

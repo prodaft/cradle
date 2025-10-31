@@ -6,7 +6,6 @@ import useApi from '../../hooks/useApi/useApi';
 import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import AlertBox from '../AlertBox/AlertBox';
-import FileItem from '../FileItem/FileItem';
 import ListView from '../ListView/ListView';
 import PaginationWrapper from '../PaginationWrapper/PaginationWrapper';
 import TableCard from '../TableCard/TableCard';
@@ -209,7 +208,6 @@ export default function FilesList({
         for (const f of filteredFiles) {
             if (f.id === file.id) return null;
         }
-        console.log(file);
 
         const { enableMultiSelect, isSelected, onSelect } = selectProps;
 

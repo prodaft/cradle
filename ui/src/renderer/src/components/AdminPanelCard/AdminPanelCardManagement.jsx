@@ -26,13 +26,12 @@ export default function AdminPanelCardManagement({
     return (
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
-            <Card actions={actions} actionsPosition="bottom-right" className="bg-cradle3 bg-opacity-20 backdrop-filter backdrop-blur-lg">
-                <h2 className='card-header w-full mx-2 px-1 break-all'>
-                    <span className='cursor-pointer' onClick={handleClick}>
-                        {name}
-                    </span>
-                </h2>
-            </Card>
+            <Card
+                title={name}
+                actions={actions}
+                onClick={handleClick}
+                className="bg-cradle3 bg-opacity-20 backdrop-filter backdrop-blur-lg"
+            />
         </>
     );
 }

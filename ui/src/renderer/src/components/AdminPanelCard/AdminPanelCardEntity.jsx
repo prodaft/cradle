@@ -75,14 +75,12 @@ export default function AdminPanelCardEntity({
     return (
         <>
             <AlertDismissible alert={alert} setAlert={setAlert} />
-            <Card actions={actions} actionsPosition="bottom-right" className="bg-cradle3 bg-opacity-20 backdrop-filter backdrop-blur-lg">
-                <h2 className='card-header w-full mx-2 px-1 break-all'>
-                    <span className='cursor-pointer' onClick={handleEditClick}>
-                        <span className='text-zinc-500'>{`${typename}: `}</span>
-                        {name}
-                    </span>
-                </h2>
-            </Card>
+            <Card
+                title={name}
+                prefix={`${typename}:`}
+                actions={actions}
+                onClick={handleEditClick}
+            />
         </>
     );
 }

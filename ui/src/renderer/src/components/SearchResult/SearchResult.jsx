@@ -32,20 +32,9 @@ export default function SearchResult({
         <Card
             onClick={onClick}
             actions={cardActions}
-            actionsPosition="top-right"
-            className="bg-cradle3 bg-opacity-20 backdrop-filter backdrop-blur-lg my-3"
-            padding="px-3 py-6"
-        >
-            <div className='flex items-center'>
-                {depth != null && (
-                    <span className='badge ml-2'>Depth: {depth}</span>
-                )}
-                <h2 className='card-header text-white mx-2'>{name}</h2>
-            </div>
-            <p className='text-zinc-300 mx-2'>
-                {type}
-                {subtype ? `: ${subtype}` : ''}
-            </p>
-        </Card>
+            title={name}
+            prefix={`${subtype}:`}
+            badge={depth != null ? `Depth: ${depth}` : undefined}
+        />
     );
 }

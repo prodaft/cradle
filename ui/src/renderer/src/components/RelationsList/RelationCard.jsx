@@ -58,13 +58,28 @@ export default function RelationCard({ relation, onDelete, setAlert }) {
         },
     ];
 
+    // Build details object with simple string values
+    const cardDetails = {
+        'Created At': formattedCreated,
+        'Last Seen': formattedSeen,
+        ...Object.fromEntries(
+            Object.entries(relation.details).map(([key, value]) => [
+                capitalizeString(key),
+                value
+            ])
+        ),
+    };
+
     return (
-        <Card actions={actions} visible={visible} actionsPosition="top-right">
-            <h2 className='text-lg font-bold text-gray-900 dark:text-white mb-2'>
-                {capitalizeString(relation.reason || 'Relation')}
-            </h2>
-            <div className='text-gray-700 dark:text-gray-300 text-sm space-y-1'>
-                <InfoRow label='Entity 1:'>
+        <Card
+            title={capitalizeString(relation.reason || 'Relation')}
+            actions={actions}
+            visible={visible}
+            slug={`ID: ${relation.id}`}
+            details={cardDetails}
+        >
+            <div className='text-gray-700 dark:text-gray-300 text-sm space-y-1 mx-2 -mt-1 mb-2'>
+                <InfoRow label='Entity 1'>
                     <span
                         className='underline cursor-pointer'
                         style={{ color: relation.e1.color || '#2563eb' }}
@@ -76,7 +91,7 @@ export default function RelationCard({ relation, onDelete, setAlert }) {
                         [{relation.e1.subtype}] {relation.e1.name}
                     </span>
                 </InfoRow>
-                <InfoRow label='Entity 2:'>
+                <InfoRow label='Entity 2'>
                     <span
                         className='underline cursor-pointer'
                         style={{ color: relation.e2.color || '#2563eb' }}
@@ -85,16 +100,6 @@ export default function RelationCard({ relation, onDelete, setAlert }) {
                         [{relation.e2.subtype}] {relation.e2.name}
                     </span>
                 </InfoRow>
-                <InfoRow label='Created At:'>{formattedCreated}</InfoRow>
-                <InfoRow label='Last Seen:'>{formattedSeen}</InfoRow>
-                {Object.keys(relation.details).map((key) => (
-                    <InfoRow key={key} label={`${capitalizeString(key)}:`}>
-                        {relation.details[key]}
-                    </InfoRow>
-                ))}
-            </div>
-            <div className='text-[10px] text-gray-400 dark:text-gray-600 select-text mt-2'>
-                ID: {relation.id}
             </div>
         </Card>
     );

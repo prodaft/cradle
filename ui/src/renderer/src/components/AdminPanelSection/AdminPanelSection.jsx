@@ -49,7 +49,7 @@ export default function AdminPanelSection({
         : [];
     return (
         <div className='w-full h-full flex flex-col rounded-md px-3'>
-            <div className='w-full flex flex-row items-center justify-between p-3'>
+            <div className='w-full flex flex-row items-center justify-between pt-3 pr-3 pb-3'>
                 <input
                     type='text'
                     placeholder='Search'
@@ -71,7 +71,7 @@ export default function AdminPanelSection({
                     </Tooltip>
                 )}
             </div>
-            <div className='w-full flex-grow overflow-y-auto flex flex-col space-y-2 gap-1 h-[80vh]'>
+            <div className='w-full flex-grow overflow-y-auto space-y-4 gap-1 h-[80vh]'>
                 {isLoading ? (
                     // Loading spinner
                     <div className='flex items-center justify-center min-h-[200px]'>
