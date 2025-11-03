@@ -8,6 +8,7 @@ import {
     Notes,
     Page,
     Settings,
+    Sparks,
     UserCrown,
 } from 'iconoir-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -61,6 +62,9 @@ export default function Sidebar({
 
     const digestDataLocation = '/digest-data';
     const handleDigestData = useCallback(navigateLink(digestDataLocation), [navigateLink]);
+
+    const enrichmentRequestsLocation = '/enrichment-requests';
+    const handleEnrichmentRequests = useCallback(navigateLink(enrichmentRequestsLocation), [navigateLink]);
 
     const graphViewLocation = '/knowledge-graph';
     const handleGraphView = useCallback(navigateLink(graphViewLocation), [
@@ -135,6 +139,12 @@ export default function Sidebar({
                                 icon={<Graph height={24} width={24} />}
                                 text='Graph Explorer'
                                 highlightedLocation={graphViewLocation}
+                            />
+                            <SidebarItem
+                                handleClick={handleEnrichmentRequests}
+                                icon={<Sparks />}
+                                text='Enrichment'
+                                highlightedLocation={enrichmentRequestsLocation}
                             />
                         </SidebarSection>
                     </div>

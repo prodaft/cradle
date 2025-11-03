@@ -43,6 +43,9 @@ const Reports = React.lazy(
     () => import('./components/Reports/Reports.jsx'),
 );
 const DigestData = React.lazy(() => import('./components/DigestData/DigestData.jsx'));
+const EnrichmentRequests = React.lazy(
+    () => import('./components/EnrichmentRequests/EnrichmentRequests.jsx'),
+);
 
 import ApiProvider from './components/ApiProvider/ApiProvider';
 import AuthProvider from './components/AuthProvider/AuthProvider.jsx';
@@ -94,6 +97,10 @@ function App() {
                                                                     <Route
                                                                         path='/digest-data'
                                                                         element={<DigestData />}
+                                                                    />
+                                                                    <Route
+                                                                        path='/enrichment-requests'
+                                                                        element={<EnrichmentRequests />}
                                                                     />
                                                                     <Route
                                                                         path='/dashboards/:subtype/:name'
