@@ -94,7 +94,7 @@ export default function SearchDialog({ isOpen, onClose }) {
             try {
                 let response = await queryApi.queryAdvancedRetrieve({
                     page: page,
-                    pageSize: 20,
+                    pageSize: 10,
                     query: searchQueries,
                     wildcard: true,
                 });
@@ -109,7 +109,7 @@ export default function SearchDialog({ isOpen, onClose }) {
             try {
                 let response = await queryApi.queryList({
                     page: page,
-                    pageSize: 20,
+                    pageSize: 10,
                     name: searchQueries,
                     subtype: entrySubtypeFilters,
                 });

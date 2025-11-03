@@ -621,6 +621,19 @@ const LayoutPane = ({ paneId, outletContext }) => {
                         if (!inside) setDropZone(null);
                     }
                     if (inside) {
+                        // Check if we're dragging a single tab from the same pane
+                        const dragData = getCradleTab(ev.dataTransfer);
+                        const isSingleTabSamePane = dragData && 
+                            dragData.paneId === paneId && 
+                            dragData.tabCount <= 1;
+                        
+                        if (isSingleTabSamePane) {
+                            // Don't show drop zones for single tab in same pane
+                            // (can't reorder, can't split, tabbar drop would be no-op)
+                            setDropZone(null);
+                            return;
+                        }
+                        
                         let zone = calculateDropZone(ev);
                         zone = pickZoneSticky(zone, ev);
                         setDropZone((prev) => (prev !== zone ? zone : prev));
@@ -808,11 +821,12 @@ const LayoutPane = ({ paneId, outletContext }) => {
             return;
         }
         
-        // same-pane single-tab guard for split only — moving within same pane center is a no-op
-        if (sourcePaneId === paneId && tabCount <= 1 && liveZone) {
-            console.warn('[LayoutPane handlePaneDrop] Cannot split pane with only one tab by dragging to itself');
+        // same-pane single-tab guard — prevent all drop operations (tabbar, splits, reorders)
+        // Can't move single tab within same pane (would be no-op for tabbar, invalid for splits)
+        if (sourcePaneId === paneId && tabCount <= 1) {
             setDropZone(null);
             setShowOverlay(false);
+            clearGlobalDragFlag();
             return;
         }
         

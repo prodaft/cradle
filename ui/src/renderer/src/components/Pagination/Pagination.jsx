@@ -1,74 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
-
-/**
- * Custom Page Size Dropdown component
- */
-function PageSizeDropdown({ pageSize, onPageSizeChange }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const dropdownRef = useRef(null);
-
-    const pageSizeOptions = [
-        { value: 10, label: '10' },
-        { value: 20, label: '20' },
-        { value: 50, label: '50' },
-        { value: 100, label: '100' }
-    ];
-
-    // Close dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setIsOpen(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
-
-    const handleOptionClick = (value) => {
-        setIsOpen(false);
-        onPageSizeChange(value);
-    };
-
-    return (
-        <div className="cradle-dropdown" ref={dropdownRef}>
-            <button
-                type="button"
-                className="cradle-select text-sm w-16 ml-1 px-2 py-1 flex items-center justify-between"
-                onClick={() => setIsOpen(!isOpen)}
-                title="Items per page"
-            >
-                <span>{pageSize}</span>
-                <svg
-                    className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-            </button>
-            
-            {isOpen && (
-                <div className="cradle-dropdown-menu">
-                    {pageSizeOptions.map((option) => (
-                        <button
-                            key={option.value}
-                            type="button"
-                            className="cradle-dropdown-option flex items-center gap-2"
-                            onClick={() => handleOptionClick(option.value)}
-                        >
-                            {option.label}
-                        </button>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-}
+import { useState, useEffect } from 'react';
 
 export default function Pagination({
     currentPage,
@@ -177,11 +107,21 @@ export default function Pagination({
                 </span>
             )}
 
-            {/* Page Size Dropdown */}
+            {/* Page Size Input */}
             {pageSize !== null && onPageSizeChange && (
-                <PageSizeDropdown
-                    pageSize={pageSize}
-                    onPageSizeChange={onPageSizeChange}
+                <input
+                    type="number"
+                    min="10"
+                    step="10"
+                    value={pageSize}
+                    onChange={(e) => {
+                        const value = parseInt(e.target.value, 10);
+                        if (!isNaN(value) && value >= 10) {
+                            onPageSizeChange(value);
+                        }
+                    }}
+                    className="cradle-select text-sm w-16 ml-1 px-2 py-1"
+                    title="Items per page"
                 />
             )}
         </div>

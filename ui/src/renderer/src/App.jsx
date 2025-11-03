@@ -87,7 +87,7 @@ function App() {
                                                                         element={<FeatureNotImplemented />}
                                                                     />
                                                                     <Route
-                                                                        path='/documents'
+                                                                        path='/notes'
                                                                         element={<Documents />}
                                                                     />
                                                                     <Route
@@ -115,7 +115,7 @@ function App() {
                                                                         element={<GraphExplorer GraphSearchComponent={GraphSearch} />}
                                                                     />
                                                                     <Route
-                                                                        path='/connectivity'
+                                                                        path='/reports'
                                                                         element={<Reports />}
                                                                     />
                                                                     <Route
@@ -123,13 +123,13 @@ function App() {
                                                                         element={<ReportList />}
                                                                     />
                                                                     <Route
-                                                                        path='/account/'
+                                                                        path='/settings'
                                                                         element={
                                                                             <AccountSettings target='me' />
                                                                         }
                                                                     />
                                                                     <Route
-                                                                        path='/admin'
+                                                                        path='/manage'
                                                                         element={<Outlet />}
                                                                     >
                                                                         <Route
@@ -137,7 +137,7 @@ function App() {
                                                                             element={<AdminPanel />}
                                                                         />
                                                                         <Route
-                                                                            path='/admin/add/user'
+                                                                            path='/manage/add/user'
                                                                             element={
                                                                                 <AccountSettings
                                                                                     isEdit={false}

@@ -34,7 +34,7 @@ export default function Reports() {
     const [sortDirection, setSortDirection] = useState(searchParams.get('reports_sort_direction') || 'desc');
     const [pageSize, setPageSize] = useState(
         Number(searchParams.get('reports_pagesize')) ||
-        20
+        10
     );
     const [selectedReports, setSelectedReports] = useState([]);
     const [columnFilters, setColumnFilters] = useState({
@@ -273,12 +273,14 @@ export default function Reports() {
             >
                 {enableMultiSelect && (
                     <td className='w-12' onClick={(e) => e.stopPropagation()}>
-                        <input
-                            type='checkbox'
-                            checked={isSelected}
-                            onChange={() => onSelect(report)}
-                            className='cradle-checkbox'
-                        />
+                        <div className='flex items-center'>
+                            <input
+                                type='checkbox'
+                                checked={isSelected}
+                                onChange={() => onSelect(report)}
+                                className='cradle-checkbox'
+                            />
+                        </div>
                     </td>
                 )}
                 <td className={statusColors[report.status] || 'cradle-text-secondary'}>

@@ -25,7 +25,7 @@ export default function UploadExternal({ setAlert }) {
     const [sortDirection, setSortDirection] = useState(searchParams.get('digests_sort_direction') || 'desc');
     const [pageSize, setPageSize] = useState(
         Number(searchParams.get('digests_pagesize')) ||
-        25
+        10
     );
 
     // Search state

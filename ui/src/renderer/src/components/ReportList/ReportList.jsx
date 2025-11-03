@@ -40,7 +40,7 @@ export default function ReportList({ setAlert = null }) {
     const [selectedReports, setSelectedReports] = useState([]);
     const [pageSize, setPageSize] = useState(
         Number(searchParams.get('reports_pagesize')) ||
-        25
+        10
     );
 
     let [alert, setAlertState] = useState({ show: false, message: '', color: 'red' });
@@ -172,12 +172,14 @@ export default function ReportList({ setAlert = null }) {
             <tr key={report.id}>
                 {enableMultiSelect && (
                     <td className='w-12' onClick={(e) => e.stopPropagation()}>
-                        <input
-                            type='checkbox'
-                            className='cradle-checkbox'
-                            checked={isSelected}
-                            onChange={onSelect}
-                        />
+                        <div className='flex items-center'>
+                            <input
+                                type='checkbox'
+                                className='cradle-checkbox'
+                                checked={isSelected}
+                                onChange={onSelect}
+                            />
+                        </div>
                     </td>
                 )}
                 <td className='w-8'>

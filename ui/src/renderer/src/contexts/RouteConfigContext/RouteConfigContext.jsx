@@ -23,21 +23,20 @@ const DigestData = React.lazy(() => import('../../components/DigestData/DigestDa
  */
 const routeConfigs = [
     { path: '/notes/:id', component: NoteViewer },
-    { path: '/notes', component: NoteSelector },
+    { path: '/notes', component: Documents },
     { path: '/dashboards/:subtype/:name', component: Dashboard },
-    { path: '/admin/add/user', component: () => <AccountSettings isEdit={false} /> },
-    { path: '/admin', component: AdminPanel },
+    { path: '/manage/add/user', component: () => <AccountSettings isEdit={false} /> },
+    { path: '/manage', component: AdminPanel },
     { path: '/reports/:report_id', component: ReportList },
     { path: '/knowledge-graph', component: () => <GraphExplorer GraphSearchComponent={GraphSearch} /> },
     { path: '/not-implemented', component: FeatureNotImplemented },
-    { path: '/documents', component: Documents },
     { path: '/files', component: Files },
     { path: '/digest-data', component: DigestData },
-    { path: '/connectivity', component: Reports },
+    { path: '/reports', component: Reports },
     { path: '/publish', component: Publish },
     { path: '/activity/:username', component: ActivityList },
     { path: '/activity', component: ActivityList },
-    { path: '/account', component: () => <AccountSettings target='me' /> },
+    { path: '/settings', component: () => <AccountSettings target='me' /> },
     { path: '/', exact: true, component: Welcome },
 ];
 

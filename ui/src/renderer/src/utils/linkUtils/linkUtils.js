@@ -10,11 +10,11 @@ export function getRedirectUrl(content_type, id) {
         case 'note':
             return `/notes/${id}`;
         case 'cradleuser':
-            return `/admin/user-permissions/user/${id}`;
+            return `/manage/user-permissions/user/${id}`;
         case 'entry':
-            return `/admin/edit-entity/${id}`;
+            return `/manage/edit-entity/${id}`;
         case 'entryclass':
-            return `/admin/edit-entry-class/${id}`;
+            return `/manage/edit-entry-class/${id}`;
         default:
             return null;
     }

@@ -192,7 +192,7 @@ export default function Publish() {
                     editReportRequest: { noteIds, title: enteredTitle },
                 })
                 .then(() => {
-                    navigate(`/connectivity/`);
+                    navigate(`/reports`);
                 })
                 .catch(displayError(setAlert));
         } else {
@@ -206,7 +206,7 @@ export default function Publish() {
                     },
                 })
                 .then(() => {
-                    navigate(`/connectivity/`);
+                    navigate(`/reports`);
                 })
                 .catch(displayError(setAlert));
         }

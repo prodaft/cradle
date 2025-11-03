@@ -39,12 +39,11 @@ export const getTitleForPath = (path) => {
         'editor': 'Fleeting Note',
         'dashboards': 'Dashboard',
         'knowledge-graph': 'Knowledge Graph',
-        'connectivity': 'Reports',
-        'reports': 'Report',
+        'reports': 'Reports',
         'publish': 'Publish',
         'activity': 'Activity',
-        'account': 'Settings',
-        'admin': 'Admin Panel',
+        'settings': 'Settings',
+        'manage': 'Manage',
         'not-implemented': 'Not Implemented',
     };
     
@@ -84,12 +83,11 @@ export const getIconForPath = (path) => {
         'editor': 'EditPencil',
         'dashboards': 'Dashboard',
         'knowledge-graph': 'NetworkAlt',
-        'connectivity': 'Page',
-        'reports': 'Reports',
+        'reports': 'Page',
         'publish': 'CloudUpload',
         'activity': 'Activity',
-        'account': 'Settings',
-        'admin': 'Shield',
+        'settings': 'Settings',
+        'manage': 'Shield',
         'not-implemented': 'WarningTriangle',
     };
     

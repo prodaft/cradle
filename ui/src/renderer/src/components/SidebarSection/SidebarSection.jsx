@@ -34,7 +34,7 @@ export default function SidebarSection({ sectionType, justify, height, children 
             className={`${sectionVariants[sectionType]} ${justifyVariants[justify]} ${heightVariants[height]}`}
         >
             <nav className='menu rounded-md'>
-                <section className='menu-section gap-2'>
+                <section className='menu-section gap-0'>
                     <ul className='menu-items'>{children}</ul>
                 </section>
             </nav>

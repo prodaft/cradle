@@ -8,7 +8,7 @@ function PaginationWrapper({
     currentPage = 1,
     totalPages = 1,
     onPageChange = () => {},
-    pageSize = 20,
+    pageSize = 10,
     onPageSizeChange = () => {},
     disabled = false,
     className = '',
