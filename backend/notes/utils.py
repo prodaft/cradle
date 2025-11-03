@@ -1,17 +1,13 @@
-from collections.abc import Iterable
 import re
+from collections.abc import Iterable
 from typing import Dict, NamedTuple
 
-from django.template.loader import render_to_string
+from django.db.models.query import QuerySet
 
+from entries.enums import EntryType
 from entries.models import Entry
-from user.models import CradleUser
 
 from .models import Note
-from entries.enums import EntryType
-from django.db.models.query import QuerySet
-from django.conf import settings
-from django.template.exceptions import TemplateDoesNotExist
 
 LINK_REGEX = r"\[\[(?P<cl_type>[^:\|\]]+?):(?P<cl_value>(?:\\[\[\]\|]|[^\[\]\|])+?)(?:\|(?P<cl_alias>(?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]"  # noqa: E501 to avoid splitting the regex on two lines
 
@@ -49,22 +45,6 @@ def extract_links(s: str) -> list[Link]:
 
     for r in references:
         yield Link(r[0], r[1])
-
-
-def get_guide_note(guide_name: str, request):
-    # Check if the guide name only contains alphanumeric characters and underscores
-    if not re.match(r"^[a-zA-Z0-9_]+$", guide_name):
-        return None
-
-    try:
-        content = render_to_string(
-            f"notes/md/{guide_name}.md",
-            {"static_location": request.build_absolute_uri(settings.STATIC_URL)},
-        )
-    except TemplateDoesNotExist:
-        return None
-
-    return Note(content=content, author=CradleUser(username="yeet"))
 
 
 def calculate_acvec(entries: Iterable[Entry]):

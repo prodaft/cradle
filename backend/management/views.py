@@ -9,10 +9,14 @@ from drf_spectacular.utils import (
     OpenApiResponse,
     extend_schema,
 )
+from rest_framework import serializers, status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from entries.models import Entry, Relation
 from entries.tasks import (
     refresh_edges_materialized_view,
-    simulate_graph,
     update_accesses,
 )
 from file_transfer.tasks import reprocess_all_files_task
@@ -25,10 +29,6 @@ from notes.processor.link_files_task import LinkFilesTask
 from notes.processor.metadata_process_task import MetadataProcessTask
 from notes.processor.smart_linker_task import SmartLinkerTask
 from notes.processor.task_scheduler import TaskScheduler
-from rest_framework import serializers, status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
 from user.permissions import HasAdminRole
 
 from .models import BaseSettingsSection, Setting
@@ -205,10 +205,6 @@ class ActionView(APIView):
     def action_refreshMaterializedGraph(self, request, *args, **kwargs):
         refresh_edges_materialized_view.apply_async(force=True)
         return Response({"message": "Started graph materialization."})
-
-    def action_recalculateNodePositions(self, request, *args, **kwargs):
-        simulate_graph.apply_async()
-        return Response({"message": "Started simulating graph."})
 
     def action_propagateAccessVectors(self, request, *args, **kwargs):
         entities = Entry.entities.all()

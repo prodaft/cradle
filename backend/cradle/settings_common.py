@@ -219,7 +219,7 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "notes", "static")]
+STATICFILES_DIRS = []
 
 # Can be set in specific config files if needed
 MINIO_BACKEND_URL = None

@@ -1,14 +1,11 @@
 import uuid
-from celery import shared_task, group
-from django.contrib.contenttypes.models import ContentType
+
+from celery import group, shared_task
 
 from entries.enums import EntryType
-from entries.models import Entry, EntryClass
+from entries.models import EntryClass
 from intelio.enums import EnrichmentStatus
 from intelio.models.base import BaseDigest, EnricherSettings, EnrichmentRequest
-from user.models import CradleUser
-
-from django.utils import timezone
 
 BATCH_SIZE = 2048
 

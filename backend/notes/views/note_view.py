@@ -446,7 +446,7 @@ class NoteDetail(APIView):
             )
         note_to_delete.delete()
 
-        refresh_edges_materialized_view.apply_async(simulate=True)
+        refresh_edges_materialized_view.apply_async()
 
         return Response("Note was deleted.", status=status.HTTP_200_OK)
 

@@ -1,23 +1,22 @@
 import json
 import logging
-from collections import defaultdict
 
 from celery import shared_task
-from core.decorators import distributed_lock
 from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import close_old_connections
 from django.utils import timezone
+
+from core.decorators import distributed_lock
 from entries.enums import EntryType, RelationReason
 from entries.exceptions import InvalidEntryException
 from entries.models import Entry, EntryClass, Relation
 from management.settings import cradle_settings
-from user.models import CradleUser
-
 from notes.enums import NoteStatus
 from notes.exceptions import EntriesDoNotExistException, EntryClassesDoNotExistException
 from notes.markdown.to_links import Link
 from notes.markdown.to_metadata import infer_metadata
+from user.models import CradleUser
 
 from .models import Note
 
@@ -98,7 +97,7 @@ def smart_linker_task(note_id):
 
     finally:
         close_old_connections()
-        refresh_edges_materialized_view.apply_async(simulate=True)
+        refresh_edges_materialized_view.apply_async()
 
     return note_id
 
@@ -278,7 +277,6 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
     Celery task to create missing entries for a note.
     """
     from entries.tasks import scan_for_children
-    from intelio.tasks import enrich_entries
 
     note = Note.objects.get(id=note_id)
     if user_id:

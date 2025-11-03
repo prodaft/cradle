@@ -27,4 +27,4 @@ def digest_chunk(digest_id, start, end, last):
         digest.save()
         from entries.tasks import refresh_edges_materialized_view
 
-        refresh_edges_materialized_view.apply_async(simulate=True)
+        refresh_edges_materialized_view.apply_async()

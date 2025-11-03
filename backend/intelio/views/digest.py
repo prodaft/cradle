@@ -264,5 +264,5 @@ class DigestAPIView(GenericAPIView):
 
         digest.delete()
 
-        refresh_edges_materialized_view.apply_async(simulate=True)
+        refresh_edges_materialized_view.apply_async()
         return Response(status=status.HTTP_204_NO_CONTENT)

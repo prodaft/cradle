@@ -1,7 +1,5 @@
 from uuid import UUID
 
-from access.enums import AccessType
-from access.models import Access
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -9,9 +7,11 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from user.permissions import HasEntryManagerRole
 
+from access.enums import AccessType
+from access.models import Access
 from entries.tasks import refresh_edges_materialized_view
+from user.permissions import HasEntryManagerRole
 
 from ..models import Entry
 from ..serializers import EntitySerializer, EntryResponseSerializer
@@ -167,7 +167,7 @@ class EntityDetail(APIView):
             )
 
         entity.delete_renaming(request.user.id)
-        refresh_edges_materialized_view.apply_async(simulate=True)
+        refresh_edges_materialized_view.apply_async()
 
         return Response("Requested entity was deleted", status=status.HTTP_200_OK)
 

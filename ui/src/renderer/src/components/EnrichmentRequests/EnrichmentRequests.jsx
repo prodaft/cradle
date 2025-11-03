@@ -1,10 +1,10 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import useApi from '../../hooks/useApi/useApi';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
-import EnrichmentRequestsList from './EnrichmentRequestsList';
 import EnrichmentRequestModal from './EnrichmentRequestModal';
+import EnrichmentRequestsList from './EnrichmentRequestsList';
 
 export default function EnrichmentRequests() {
     const [searchParams, setSearchParams] = useSearchParams();

@@ -7,7 +7,7 @@ fi
 
 CURRENT=$(uv run --project backend bump-my-version show current_version 2> /dev/null)
 BASE_VERSION=$(echo $CURRENT | sed 's/-beta\..*//')
-GIT_HASH=$(git rev-parse --short HEAD)
+GIT_HASH=$(git rev-parse --short HEAD^)
 NEW_VERSION="$BASE_VERSION-beta.$GIT_HASH"
 
 if [ "$CURRENT" != "$NEW_VERSION" ]; then

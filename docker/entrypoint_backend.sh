@@ -2,9 +2,6 @@
 
 : "${NUM_WORKERS:=12}"
 
-uv run python manage.py collectstatic --noinput -c
-chown -R www-data:www-data static
-
 uv run python manage.py migrate django_celery_beat
 uv run python manage.py migrate
 
