@@ -51,7 +51,7 @@ export default function Sidebar({
     }, [isHovered]);
 
 
-    const documentsLocation = '/documents';
+    const documentsLocation = '/notes';
     const handleDocuments = useCallback(navigateLink(documentsLocation), [
         navigateLink,
     ]);
@@ -67,17 +67,17 @@ export default function Sidebar({
         navigateLink,
     ]);
 
-    const connectivityLocation = '/connectivity';
+    const connectivityLocation = '/reports';
     const handleConnectivity = useCallback(navigateLink(connectivityLocation), [
         navigateLink,
     ]);
 
-    const accountSettingsLocation = '/account';
+    const accountSettingsLocation = '/settings';
     const handleAccountSettings = useCallback(navigateLink(accountSettingsLocation), [
         navigateLink,
     ]);
 
-    const adminLocation = '/admin';
+    const adminLocation = '/manage';
     const handleAdminPanel = useCallback(navigateLink(adminLocation), [navigateLink]);
 
     const handleLogout = useCallback(() => {
@@ -100,7 +100,7 @@ export default function Sidebar({
                 onMouseLeave={() => setIsHovered(false)}
             >
                 <div className='flex flex-col h-full justify-between'>
-                    <div className='flex flex-col gap-2'>
+                    <div className='flex flex-col gap-0'>
                         <SidebarSection
                             sectionType='header'
                             height='fit'
@@ -109,7 +109,7 @@ export default function Sidebar({
                             <SidebarItem
                                 handleClick={handleDocuments}
                                 icon={<Notes />}
-                                text='Documents'
+                                text='Notes'
                                 highlightedLocation={documentsLocation}
                             />
                             <SidebarItem

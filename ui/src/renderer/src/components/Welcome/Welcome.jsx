@@ -161,7 +161,7 @@ export default function Welcome() {
             title: 'Browse Notes',
             description: 'View all notes',
             icon: <Notes width={24} height={24} />,
-            onClick: navigateLink('/documents'),
+            onClick: navigateLink('/notes'),
             color: 'cradle-status-info'
         },
         {

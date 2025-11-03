@@ -215,12 +215,14 @@ export default function FilesList({
             <tr key={file.id || index}>
                 {enableMultiSelect && (
                     <td className='w-12' onClick={(e) => e.stopPropagation()}>
-                        <input
-                            type='checkbox'
-                            className='cradle-checkbox'
-                            checked={isSelected}
-                            onChange={onSelect}
-                        />
+                        <div className='flex items-center'>
+                            <input
+                                type='checkbox'
+                                className='cradle-checkbox'
+                                checked={isSelected}
+                                onChange={onSelect}
+                            />
+                        </div>
                     </td>
                 )}
                 <td className='truncate w-32'>

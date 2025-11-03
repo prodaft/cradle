@@ -21,7 +21,8 @@ export default function SidebarItem({
     highlightedLocation = '',
 }) {
     const location = useLocation();
-    const isHighlighted = location.pathname === highlightedLocation;
+    const isHighlighted = location.pathname === highlightedLocation || 
+        (highlightedLocation && location.pathname.startsWith(highlightedLocation + '/'));
 
     const itemStyle = isHighlighted
         ? { color: 'var(--cradle-accent-primary)' }
@@ -30,11 +31,12 @@ export default function SidebarItem({
     return (
         <Tooltip content={text} side='right'>
             <li
-                className='p-4 cursor-pointer flex items-center justify-center z-50 relative  cradle-mono rounded-lg'
+                className='px-4 py-0 cursor-pointer flex items-center justify-center z-50 relative  cradle-mono rounded-none'
                 style={itemStyle}
                 onClick={handleClick}
+                data-active={isHighlighted}
             >
-                <div className='icon flex items-center justify-center flex-shrink-0'>
+                <div className='icon flex items-center justify-center flex-shrink-0 py-4'>
                     {icon}
                 </div>
             </li>

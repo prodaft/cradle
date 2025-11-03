@@ -21,7 +21,7 @@ export default function NoteGraphSearch(noteId) {
     }) {
         const [isGraphFetching, setIsGraphFetching] = useState(false);
         const [currentPage, setCurrentPage] = useState(1);
-        const [pageSize, setPageSize] = useState(100);
+        const [pageSize, setPageSize] = useState(10);
         const [totalPages, setTotalPages] = useState(null);
         const [loading, setLoading] = useState(false);
         const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });

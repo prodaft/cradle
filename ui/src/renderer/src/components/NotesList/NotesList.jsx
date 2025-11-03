@@ -50,7 +50,8 @@ export default function NotesList({
     const { fleetingNotesApi, notesApi } = useApi();
     const [selectedNotes, setSelectedNotes] = useState([]);
     const [pageSize, setPageSize] = useState(
-        Number(searchParams.get('notes_pagesize')) || 20
+        Number(searchParams.get('notes_pagesize')) ||
+        10
     );
     const [columnFilters, setColumnFilters] = useState({
         author: query?.author__username || '',
@@ -318,12 +319,14 @@ export default function NotesList({
                 >
                     {enableMultiSelect && (
                         <td className='w-12' onClick={(e) => e.stopPropagation()}>
-                            <input
-                                type='checkbox'
-                                className='cradle-checkbox'
-                                checked={isSelected}
-                                onChange={onSelect}
-                            />
+                            <div className='flex items-center'>
+                                <input
+                                    type='checkbox'
+                                    className='cradle-checkbox'
+                                    checked={isSelected}
+                                    onChange={onSelect}
+                                />
+                            </div>
                         </td>
                     )}
                     <td className={`truncate w-64`}>

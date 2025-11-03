@@ -21,7 +21,7 @@ export default function PaginatedGraphFetch({
     const [isGraphFetching, setIsGraphFetching] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [currentDepth, setCurrentDepth] = useState(1);
-    const [pageSize, setPageSize] = useState(500);
+    const [pageSize, setPageSize] = useState(10);
     const [hasNextPage, setHasNextPage] = useState(true);
     const [loading, setLoading] = useState(false);
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
