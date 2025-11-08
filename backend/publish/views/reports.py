@@ -8,6 +8,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.pagination import TotalPagesPagination
 from core.utils import validate_order_by
+from core.openapi import get_error_responses, get_common_error_responses, get_validation_error_response
 from notes.models import Note
 from publish.strategies import PUBLISH_STRATEGIES
 
@@ -18,6 +19,17 @@ from ..serializers import (
     ReportSerializer,
 )
 from ..tasks import edit_report, generate_report
+from ..exceptions import (
+    ReportNotFoundException,
+    ReportAlreadyGeneratingException,
+    ReportAlreadyCompletedException,
+    InvalidPageSizeException,
+    PageSizeTooLargeException,
+    ReportIdRequiredException,
+    ReportDeleteErrorException,
+    NotesNotFoundException,
+    PublishErrorCodes,
+)
 
 
 @extend_schema_view(
@@ -55,7 +67,11 @@ from ..tasks import edit_report, generate_report
         ],
         responses={
             200: ReportSerializer,
-            401: {"description": "User is not authenticated"},
+            **get_error_responses(
+                PublishErrorCodes.INVALID_PAGE_SIZE,
+                PublishErrorCodes.PAGE_SIZE_TOO_LARGE
+            ),
+            **get_common_error_responses(),
         },
     )
 )
@@ -82,16 +98,10 @@ class ReportListDeleteAPIView(generics.ListAPIView):
         try:
             page_size = int(request.query_params.get("page_size", 10))
         except ValueError:
-            return Response(
-                "Invalid page_size value. Must be an integer.",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
 
         if page_size > 200:
-            return Response(
-                "page_size cannot be greater than 200.",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise PageSizeTooLargeException(detail="page_size cannot be greater than 200.")
 
         # Handle ordering
         order_by = request.query_params.get("order_by", "-created_at")
@@ -131,9 +141,12 @@ class ReportListDeleteAPIView(generics.ListAPIView):
         description="Resets the report status, re-queues the generation task, and returns the updated report. Only works for failed reports - cannot retry reports that are currently processing or already completed.",  # noqa: E501
         responses={
             200: ReportSerializer,
-            400: ReportRetryErrorResponseSerializer,
-            401: {"description": "User is not authenticated"},
-            404: ReportRetryErrorResponseSerializer,
+            **get_error_responses(
+                PublishErrorCodes.REPORT_NOT_FOUND,
+                PublishErrorCodes.REPORT_ALREADY_GENERATING,
+                PublishErrorCodes.REPORT_ALREADY_COMPLETED
+            ),
+            **get_common_error_responses(),
         },
     )
 )
@@ -150,21 +163,13 @@ class ReportRetryAPIView(APIView):
         try:
             report = PublishedReport.objects.for_user(request.user).get(id=pk)
         except PublishedReport.DoesNotExist:
-            return Response(
-                {"detail": "Report not found."}, status=status.HTTP_404_NOT_FOUND
-            )
+            raise ReportNotFoundException(detail="Report not found.")
 
         if report.status == ReportStatus.WORKING:
-            return Response(
-                {"detail": "Report is already being generated."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ReportAlreadyGeneratingException(detail="Report is already being generated.")
 
         if report.status == ReportStatus.DONE:
-            return Response(
-                {"detail": "Report already generated successfully."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ReportAlreadyCompletedException(detail="Report already generated successfully.")
 
         report.status = ReportStatus.WORKING
         report.error_message = ""
@@ -182,8 +187,8 @@ class ReportRetryAPIView(APIView):
         description="Returns the details of a specific report belonging to the authenticated user.",
         responses={
             200: ReportSerializer,
-            401: {"description": "User is not authenticated"},
-            404: {"description": "Report not found"},
+            **get_error_responses(PublishErrorCodes.REPORT_NOT_FOUND),
+            **get_common_error_responses(),
         },
     ),
     put=extend_schema(
@@ -191,12 +196,14 @@ class ReportRetryAPIView(APIView):
         description="Updates an existing report with new notes and title.",
         request=EditReportSerializer,
         responses={
-            200: ReportSerializer,
-            400: {
-                "description": "Invalid request data or report is already being generated"
-            },
-            401: {"description": "User is not authenticated"},
-            404: {"description": "Report or one or more notes not found"},
+            202: {"description": "Edit task queued"},
+            **get_error_responses(
+                PublishErrorCodes.REPORT_NOT_FOUND,
+                PublishErrorCodes.NOTES_NOT_FOUND,
+                PublishErrorCodes.REPORT_ALREADY_GENERATING
+            ),
+            **get_validation_error_response(),
+            **get_common_error_responses(),
         },
     ),
     delete=extend_schema(
@@ -204,8 +211,12 @@ class ReportRetryAPIView(APIView):
         description="Deletes a specific report belonging to the authenticated user.",
         responses={
             204: {"description": "Report deleted successfully"},
-            401: {"description": "User is not authenticated"},
-            404: {"description": "Report not found"},
+            **get_error_responses(
+                PublishErrorCodes.REPORT_NOT_FOUND,
+                PublishErrorCodes.REPORT_ID_REQUIRED,
+                PublishErrorCodes.REPORT_DELETE_ERROR
+            ),
+            **get_common_error_responses(),
         },
     ),
 )
@@ -227,13 +238,10 @@ class ReportDetailAPIView(generics.RetrieveAPIView):
         try:
             report = PublishedReport.objects.for_user(request.user).get(id=pk)
         except PublishedReport.DoesNotExist:
-            return Response(
-                {"detail": "Report not found."}, status=status.HTTP_404_NOT_FOUND
-            )
+            raise ReportNotFoundException(detail="Report not found.")
 
         serializer = EditReportSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
 
         data = serializer.validated_data
         note_ids = data["note_ids"]
@@ -241,16 +249,10 @@ class ReportDetailAPIView(generics.RetrieveAPIView):
 
         notes = Note.objects.filter(id__in=note_ids)
         if notes.count() != len(note_ids):
-            return Response(
-                {"detail": "One or more notes not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotesNotFoundException(detail="One or more notes not found.")
 
         if report.status == ReportStatus.WORKING:
-            return Response(
-                {"detail": "Report is already being generated."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ReportAlreadyGeneratingException(detail="Report is already being generated.")
 
         report.status = ReportStatus.WORKING
         report.title = title
@@ -267,15 +269,12 @@ class ReportDetailAPIView(generics.RetrieveAPIView):
 
     def delete(self, request, pk):
         if not pk:
-            return Response(
-                {"detail": "Report id required."}, status=status.HTTP_400_BAD_REQUEST
-            )
+            raise ReportIdRequiredException(detail="Report id required.")
+
         try:
             report = self.get_queryset().get(id=pk)
         except PublishedReport.DoesNotExist:
-            return Response(
-                {"detail": "Report not found."}, status=status.HTTP_404_NOT_FOUND
-            )
+            raise ReportNotFoundException(detail="Report not found.")
 
         publisher_factory = PUBLISH_STRATEGIES.get(report.strategy)
         if publisher_factory is not None:
@@ -284,10 +283,7 @@ class ReportDetailAPIView(generics.RetrieveAPIView):
             try:
                 publisher.delete_report(report)
             except Exception:
-                return Response(
-                    {"detail": "Error deleting report."},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
+                raise ReportDeleteErrorException(detail="Error deleting report.")
 
         report.delete()
         return Response(

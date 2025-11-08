@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function Pagination({
     currentPage,
@@ -25,23 +25,11 @@ export default function Pagination({
         (_, index) => startPage + index,
     );
 
-    const handlePageInputChange = (e) => {
-        setInputValue(e.target.value);
-    };
-
     const handlePageInputSubmit = () => {
-        const pageNum = parseInt(inputValue, 10);
         if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
             onPageChange(pageNum);
         } else {
             setInputValue(currentPage);
-        }
-    };
-
-    const handlePageInputKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            handlePageInputSubmit();
-            e.target.blur();
         }
     };
 
@@ -74,9 +62,7 @@ export default function Pagination({
                 <input
                     type='text'
                     value={inputValue}
-                    onChange={handlePageInputChange}
-                    onBlur={handlePageInputSubmit}
-                    onKeyDown={handlePageInputKeyDown}
+                    onChange={(e) => setInputValue(e.target.value)}
                     className='border border-base-300 rounded text-center text-sm bg-base-100 focus:outline-none focus:border-primary'
                     style={{ width: `${String(inputValue).length * 0.6 + 0.8}em`, padding: '0 2px' }}
                     title='Enter page number'
@@ -109,20 +95,17 @@ export default function Pagination({
 
             {/* Page Size Input */}
             {pageSize !== null && onPageSizeChange && (
-                <input
-                    type="number"
-                    min="10"
-                    step="10"
+                <select
                     value={pageSize}
-                    onChange={(e) => {
-                        const value = parseInt(e.target.value, 10);
-                        if (!isNaN(value) && value >= 10) {
-                            onPageSizeChange(value);
-                        }
-                    }}
+                    onChange={(e) => onPageSizeChange(e.target.value)}
                     className="cradle-select text-sm w-16 ml-1 px-2 py-1"
                     title="Items per page"
-                />
+                >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                </select>
             )}
         </div>
     );

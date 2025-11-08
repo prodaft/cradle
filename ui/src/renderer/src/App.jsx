@@ -99,7 +99,7 @@ function App() {
                                                                         element={<DigestData />}
                                                                     />
                                                                     <Route
-                                                                        path='/enrichment-requests'
+                                                                        path='/enrich'
                                                                         element={<EnrichmentRequests />}
                                                                     />
                                                                     <Route

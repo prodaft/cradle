@@ -4,9 +4,14 @@ import 'tailwindcss/tailwind.css';
 import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Graph from '../Graph/Graph';
 import GraphQuery from '../GraphQuery/GraphQuery';
+import InProgress from '../InProgress/InProgress';
 import { filterGraph } from './graphFilterUtils';
 
 export default function GraphExplorer({ GraphSearchComponent }) {
+    if (import.meta.env.VITE_ENV === 'production') {
+        return <InProgress />;
+    }
+
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
     const [disabledTypes, setDisabledTypes] = useState(new Set());

@@ -8,9 +8,15 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from core.pagination import TotalPagesPagination
+from core.openapi import get_error_responses, get_common_error_responses
 from entries.enums import RelationReason
 from ..models import Relation
 from ..serializers import RelationSerializer
+from ..exceptions import (
+    RelatesParameterRequiredException,
+    InvalidRelatesParameterException,
+    EntriesErrorCodes,
+)
 
 
 @extend_schema(
@@ -30,8 +36,11 @@ from ..serializers import RelationSerializer
         200: TotalPagesPagination().get_paginated_response_serializer(
             RelationSerializer
         ),
-        400: {"description": "Bad request - invalid parameters"},
-        401: {"description": "User is not authenticated"},
+        **get_error_responses(
+            EntriesErrorCodes.RELATES_PARAMETER_REQUIRED,
+            EntriesErrorCodes.INVALID_RELATES_PARAMETER,
+        ),
+        **get_common_error_responses(),
     },
 )
 class RelationListView(APIView):
@@ -41,17 +50,15 @@ class RelationListView(APIView):
     def get(self, request):
         raw_ids = request.query_params.getlist("relates")
         if not raw_ids:
-            return Response(
-                {"detail": "`relates` query parameter is required."},
-                status=status.HTTP_400_BAD_REQUEST,
+            raise RelatesParameterRequiredException(
+                detail="`relates` query parameter is required."
             )
 
         try:
             entry_ids = [int(e) for e in raw_ids]
         except ValueError:
-            return Response(
-                {"detail": "One or more `relates` values are not valid integers."},
-                status=status.HTTP_400_BAD_REQUEST,
+            raise InvalidRelatesParameterException(
+                detail="One or more `relates` values are not valid integers."
             )
 
         # Get relations where both e1 and e2 are in the provided list
@@ -76,9 +83,7 @@ class RelationListView(APIView):
     description="Deletes a specific relation by ID. Only admin users can perform this action.",
     responses={
         204: {"description": "No content - relation deleted successfully"},
-        404: {"description": "Relation not found"},
-        401: {"description": "User is not authenticated"},
-        403: {"description": "User is not authorized to delete relations"},
+        **get_common_error_responses(),
     },
 )
 class RelationDetailView(APIView):

@@ -5,6 +5,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 
+from core.openapi import get_common_error_responses, get_validation_error_response
 from entries.enums import EntryType
 from ..models import Access
 from ..enums import AccessType
@@ -40,8 +41,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
         ],
         responses={
             200: {"description": "Access request sent successfully"},
-            401: {"description": "User is not authenticated"},
-            404: {"description": "Entity does not exist"},
+            **get_validation_error_response(),
+            **get_common_error_responses(),
         },
     )
 )

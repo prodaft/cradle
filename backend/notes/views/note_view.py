@@ -15,6 +15,7 @@ from access.enums import AccessType
 from access.models import Access
 from core.pagination import TotalPagesPagination
 from core.utils import validate_order_by
+from core.openapi import get_error_responses, get_common_error_responses, get_validation_error_response
 from entries.enums import EntryType
 from entries.models import Entry
 from file_transfer.models import FileReference
@@ -30,6 +31,15 @@ from ..serializers import (
     NoteEditSerializer,
     NoteListSerializer,
     NoteRetrieveSerializer,
+)
+from ..exceptions import (
+    InvalidPageSizeException,
+    InvalidReferencesAtLeastException,
+    EntryNotFoundException,
+    NoteDoesNotExistException,
+    CannotEditNoteException,
+    NoAccessToEntriesException,
+    NotesErrorCodes,
 )
 
 
@@ -114,8 +124,13 @@ from ..serializers import (
             200: TotalPagesPagination().get_paginated_response_serializer(
                 NoteRetrieveSerializer
             ),
-            400: {"description": "Invalid filter parameters"},
-            401: {"description": "User is not authenticated"},
+            **get_error_responses(
+                NotesErrorCodes.INVALID_PAGE_SIZE,
+                NotesErrorCodes.INVALID_REFERENCES_AT_LEAST,
+                NotesErrorCodes.ENTRY_NOT_FOUND,
+                NotesErrorCodes.INVALID_REQUEST,
+            ),
+            **get_common_error_responses(),
         },
     ),
     post=extend_schema(
@@ -125,13 +140,11 @@ from ..serializers import (
         request=NoteCreateSerializer,
         responses={
             200: NoteRetrieveSerializer,
-            400: {
-                "description": "Invalid request data or insufficient entity references"
-            },
-            401: {"description": "User is not authenticated"},
-            403: {
-                "description": "User does not have required access to referenced entities"
-            },
+            **get_validation_error_response(),
+            **get_error_responses(
+                NotesErrorCodes.NO_ACCESS_TO_ENTRIES,
+            ),
+            **get_common_error_responses(),
         },
     ),
 )
@@ -147,16 +160,10 @@ class NoteList(APIView):
         try:
             page_size = int(request.query_params.get("page_size", 10))
         except ValueError:
-            return Response(
-                "Invalid page_size value. Must be an integer.",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
 
         if page_size > 200:
-            return Response(
-                "page_size cannot be greater than 200.",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise InvalidPageSizeException(detail="page_size cannot be greater than 200.")
 
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")
@@ -165,10 +172,7 @@ class NoteList(APIView):
                     request.query_params.get("references_at_least", len(entrylist))
                 )
             except ValueError:
-                return Response(
-                    "Invalid references_at_least value.",
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+                raise InvalidReferencesAtLeastException(detail="Invalid references_at_least value.")
 
             queryset = queryset.annotate(
                 matching_entries=Count("entries", filter=Q(entries__in=entrylist))
@@ -178,7 +182,7 @@ class NoteList(APIView):
             entry = Entry.objects.filter(id=entryid)
 
             if not entry.exists():
-                return Response("Entry not found.", status=status.HTTP_404_NOT_FOUND)
+                raise EntryNotFoundException(detail="Entry not found.")
 
             entry = entry.first()
 
@@ -275,7 +279,8 @@ class NoteList(APIView):
                 serializer.to_representation(notes), status=status.HTTP_200_OK
             )
         else:
-            return Response(filterset.errors, status=status.HTTP_400_BAD_REQUEST)
+            from ..exceptions import InvalidRequestException
+            raise InvalidRequestException(detail=str(filterset.errors))
 
     def post(self, request: Request) -> Response:
         """
@@ -301,12 +306,10 @@ class NoteList(APIView):
         serializer = NoteCreateSerializer(
             data=request.data, context={"request": request}
         )
-        if serializer.is_valid():
-            note = serializer.save()
-            json_note = NoteRetrieveSerializer(note, many=False).data
-            return Response(json_note, status=status.HTTP_200_OK)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        note = serializer.save()
+        json_note = NoteRetrieveSerializer(note, many=False).data
+        return Response(json_note, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
@@ -331,9 +334,10 @@ class NoteList(APIView):
         ],
         responses={
             200: NoteRetrieveSerializer,
-            400: {"description": "Invalid note ID format"},
-            401: {"description": "User is not authenticated"},
-            404: {"description": "Note not found"},
+            **get_error_responses(
+                NotesErrorCodes.NOTE_DOES_NOT_EXIST,
+            ),
+            **get_common_error_responses(),
         },
     ),
     post=extend_schema(
@@ -351,10 +355,12 @@ class NoteList(APIView):
         ],
         responses={
             200: NoteRetrieveSerializer,
-            400: {"description": "Invalid note ID format or invalid request data"},
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User lacks required permissions"},
-            404: {"description": "Note not found"},
+            **get_validation_error_response(),
+            **get_error_responses(
+                NotesErrorCodes.NOTE_DOES_NOT_EXIST,
+                NotesErrorCodes.CANNOT_EDIT_NOTE,
+            ),
+            **get_common_error_responses(),
         },
     ),
     delete=extend_schema(
@@ -371,10 +377,11 @@ class NoteList(APIView):
         ],
         responses={
             200: {"description": "Note was deleted successfully"},
-            400: {"description": "Invalid note ID format"},
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User lacks required permissions"},
-            404: {"description": "Note not found"},
+            **get_error_responses(
+                NotesErrorCodes.NOTE_DOES_NOT_EXIST,
+                NotesErrorCodes.NO_ACCESS_TO_ENTRIES,
+            ),
+            **get_common_error_responses(),
         },
     ),
 )
@@ -387,7 +394,7 @@ class NoteDetail(APIView):
         try:
             note: Note = Note.objects.get_accessible_notes(request.user).get(id=note_id)
         except Note.DoesNotExist:
-            return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
+            raise NoteDoesNotExistException(detail="Note was not found.")
 
         if request.query_params.get("footnotes", "true") == "true":
             return Response(
@@ -400,7 +407,7 @@ class NoteDetail(APIView):
         try:
             note: Note = Note.objects.non_fleeting().get(id=note_id)
         except Note.DoesNotExist:
-            return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
+            raise NoteDoesNotExistException(detail="Note was not found.")
 
         user = cast(CradleUser, request.user)
 
@@ -409,23 +416,18 @@ class NoteDetail(APIView):
             set(note.entries.filter(entry_class__type=EntryType.ENTITY)),
             {AccessType.READ, AccessType.READ_WRITE},
         ):
-            return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
+            raise NoteDoesNotExistException(detail="Note was not found.")
 
         if not user.is_cradle_admin and note.author != user:
-            return Response(
-                "You cannot edit this note", status=status.HTTP_403_FORBIDDEN
-            )
+            raise CannotEditNoteException(detail="You cannot edit this note")
 
         serializer = NoteEditSerializer(
             note, data=request.data, context={"request": request}
         )
-
-        if serializer.is_valid():
-            note = serializer.save()
-            json_note = NoteRetrieveSerializer(note, many=False).data
-            return Response(json_note, status=status.HTTP_200_OK)
-
-        return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
+        serializer.is_valid(raise_exception=True)
+        note = serializer.save()
+        json_note = NoteRetrieveSerializer(note, many=False).data
+        return Response(json_note, status=status.HTTP_200_OK)
 
     def delete(self, request: Request, note_id: UUID) -> Response:
         from entries.tasks import refresh_edges_materialized_view
@@ -433,16 +435,16 @@ class NoteDetail(APIView):
         try:
             note_to_delete = Note.objects.non_fleeting().get(id=note_id)
         except Note.DoesNotExist:
-            return Response("Note not found.", status=status.HTTP_404_NOT_FOUND)
+            raise NoteDoesNotExistException(detail="Note not found.")
 
         if not Access.objects.has_access_to_entities(
             cast(CradleUser, request.user),
             set(note_to_delete.entries.filter(entry_class__type=EntryType.ENTITY)),
             {AccessType.READ, AccessType.READ_WRITE},
         ):
-            return Response(
-                "User does not have Read-Write access to all referenced entities",
-                status=status.HTTP_403_FORBIDDEN,
+            raise NoAccessToEntriesException(
+                detail="User does not have Read-Write access to all referenced entities",
+                links=list(note_to_delete.entries.filter(entry_class__type=EntryType.ENTITY))
             )
         note_to_delete.delete()
 
@@ -535,9 +537,12 @@ class NoteDetail(APIView):
             200: TotalPagesPagination().get_paginated_response_serializer(
                 FileReferenceWithNoteSerializer
             ),
-            400: {"description": "Invalid filter parameters"},
-            401: {"description": "User is not authenticated"},
-            404: {"description": "Resource not found"},
+            **get_error_responses(
+                NotesErrorCodes.INVALID_PAGE_SIZE,
+                NotesErrorCodes.INVALID_REFERENCES_AT_LEAST,
+                NotesErrorCodes.ENTRY_NOT_FOUND,
+            ),
+            **get_common_error_responses(),
         },
     ),
 )
@@ -552,16 +557,10 @@ class NoteFiles(APIView):
         try:
             page_size = int(request.query_params.get("page_size", 10))
         except ValueError:
-            return Response(
-                "Invalid page_size value. Must be an integer.",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
 
         if page_size > 200:
-            return Response(
-                "page_size cannot be greater than 200.",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise InvalidPageSizeException(detail="page_size cannot be greater than 200.")
 
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")
@@ -570,10 +569,7 @@ class NoteFiles(APIView):
                     request.query_params.get("references_at_least", len(entrylist))
                 )
             except ValueError:
-                return Response(
-                    "Invalid references_at_least value.",
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+                raise InvalidReferencesAtLeastException(detail="Invalid references_at_least value.")
             queryset = queryset.annotate(
                 matching_entries=Count("entries", filter=Q(entries__in=entrylist))
             ).filter(matching_entries=references_at_least)
@@ -581,7 +577,7 @@ class NoteFiles(APIView):
             entryid = request.query_params.get("linked_to")
             entry = Entry.objects.filter(id=entryid)
             if not entry.exists():
-                return Response("Entry not found.", status=status.HTTP_404_NOT_FOUND)
+                raise EntryNotFoundException(detail="Entry not found.")
             entry = entry.first()
             linked_to_exact_match = (
                 request.query_params.get("linked_to_exact_match", "false") == "true"
@@ -690,7 +686,11 @@ class NoteFiles(APIView):
             200: TotalPagesPagination().get_paginated_response_serializer(
                 SubGraphSerializer, many=False
             ),
-            400: {"description": "Invalid note ID format or page size"},
+            **get_error_responses(
+                NotesErrorCodes.INVALID_PAGE_SIZE,
+                NotesErrorCodes.NOTE_DOES_NOT_EXIST,
+            ),
+            **get_common_error_responses(),
         },
     ),
 )
@@ -702,21 +702,15 @@ class NoteGraph(APIView):
         try:
             page_size = int(request.query_params.get("page_size", 250))
         except ValueError:
-            return Response(
-                "Invalid page_size value. Must be an integer.",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
 
         if page_size > 1000:
-            return Response(
-                "page_size cannot be greater than 1000.",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise InvalidPageSizeException(detail="page_size cannot be greater than 1000.")
 
         try:
             note: Note = Note.objects.get_accessible_notes(request.user).get(id=note_id)
         except Note.DoesNotExist:
-            return Response("Note was not found.", status=status.HTTP_404_NOT_FOUND)
+            raise NoteDoesNotExistException(detail="Note was not found.")
 
         rels = note.relations.all()
 

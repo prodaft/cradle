@@ -28,6 +28,7 @@ import NoteMetadata from './NoteMetadata';
 import StatusIndicators from './StatusIndicators';
 import ViewsDropdown from './ViewsDropdown';
 
+import { EditPencil, Eye } from 'iconoir-react';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import '../../utils/customParser/prism-config.js';
@@ -44,6 +45,9 @@ export default function NoteViewer() {
     const [note, setNote] = useState({});
     const [richEditor, setRichEditor] = useState(
         localStorage.getItem('richEditor') ? localStorage.getItem('richEditor') === 'true' : true
+    );
+    const [enableEditing, setEnableEditing] = useState(
+        localStorage.getItem('enableEditing') ? localStorage.getItem('enableEditing') === 'true' : true
     );
     const [markdownContent, setMarkdownContent] = useState('');
     const { setModal } = useModal();
@@ -98,6 +102,12 @@ export default function NoteViewer() {
         setShowOutline(newValue);
         localStorage.setItem('showOutline', newValue);
     }, [showOutline]);
+
+    const toggleEditing = useCallback(() => {
+        const newValue = !enableEditing;
+        setEnableEditing(newValue);
+        localStorage.setItem('enableEditing', newValue);
+    }, [enableEditing]);
 
     const smartLink = useCallback(
         async (onlyTimestamps) => {
@@ -241,7 +251,7 @@ export default function NoteViewer() {
         saveDataRef.current = { markdownContent, fileData, isFleeting };
     }, [markdownContent, fileData, isFleeting]);
 
-    const handleSaveNote = useCallback(async () => {
+    const handleSaveNote = useCallback(async (showAlert = false) => {
         const { markdownContent: content, fileData: files, isFleeting: fleeting } = saveDataRef.current;
 
         if (!content || content.trim().length === 0) {
@@ -260,6 +270,11 @@ export default function NoteViewer() {
                         files,
                     },
                 });
+                setAlert({
+                    show: showAlert,
+                    message: 'Fleeting note saved.',
+                    color: 'green',
+                })
             } else {
                 // Update regular note
                 await notesApi.notesUpdate({
@@ -269,13 +284,15 @@ export default function NoteViewer() {
                         files: files,
                     },
                 });
+                setAlert({
+                    show: showAlert,
+                    message: 'Note saved successfully.',
+                    color: 'green',
+                })
             }
 
             setInitialMarkdown(content);
             setHasUnsavedChanges(false);
-            setAlert({
-                show: false,
-            });
         } catch (error) {
             displayError(setAlert, navigate)(error);
         } finally {
@@ -427,6 +444,19 @@ export default function NoteViewer() {
                     <div className='flex items-center gap-2'>
                         {!id?.startsWith('guide_') && (
                             <>
+
+                                {activeView === ViewMode.CONTENT && (
+                                    <button
+                                        onClick={() => {
+                                            toggleEditing();
+                                        }}
+                                        className='w-full text-left px-2 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                        data-testid='toggle-editing-mode-menu-item'
+                                    >
+                                        {enableEditing ? <EditPencil width='16' height='16' /> : <Eye width='16' height='16' />}
+                                        {/* <span className='flex-1'>{enableEditing ? 'Mode' : 'Preview Mode'}</span> */}
+                                    </button>
+                                )}
                                 <ViewsDropdown
                                     activeView={activeView}
                                     richEditor={richEditor}
@@ -441,6 +471,8 @@ export default function NoteViewer() {
                                     activeView={activeView}
                                     showActionsMenu={showActionsMenu}
                                     setShowActionsMenu={setShowActionsMenu}
+                                    enableEditing={enableEditing}
+                                    setEnableEditing={setEnableEditing}
                                     showOutline={showOutline}
                                     toggleOutline={toggleOutline}
                                     lspLoaded={lspLoaded}
@@ -507,6 +539,7 @@ export default function NoteViewer() {
                                                         source={!richEditor}
                                                         setAlert={setAlert}
                                                         saveNote={handleSaveNote}
+                                                        enableEditing={enableEditing}
                                                     />
                                                 </div>
 
@@ -535,6 +568,7 @@ export default function NoteViewer() {
                                                 source={!richEditor}
                                                 setAlert={setAlert}
                                                 saveNote={handleSaveNote}
+                                                enableEditing={enableEditing}
                                             />
                                         </div>
 

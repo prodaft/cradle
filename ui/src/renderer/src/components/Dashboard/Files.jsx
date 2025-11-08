@@ -82,7 +82,7 @@ export default function Files({ obj, setAlert }) {
                                 />
                             </div>
                         </div>
-                        
+
                         {obj.type === 'entity' && (
                             <div className='flex items-center space-x-2'>
                                 <input
@@ -98,16 +98,16 @@ export default function Files({ obj, setAlert }) {
                                 </label>
                             </div>
                         )}
-                        
+
                         <div className='cradle-separator'></div>
-                        
+
                         <button type='submit' className='cradle-btn cradle-btn-primary w-full md:w-auto px-8'>
                             <Search className='inline-block mr-2' size={16} /> Search Files
                         </button>
                     </form>
                 </div>
             </div>
-            
+
             <FilesList query={query} setAlert={setAlert} onError={handleError} />
         </div>
     );

@@ -21,6 +21,53 @@ const CRADLE_GRAY_COLORS = {
     },
 };
 
+// CRADLE Design System Colors - CSS Custom Properties
+// These reference the CSS variables defined in cradle-design-system.css
+const CRADLE_DESIGN_SYSTEM_COLORS = {
+    // Backgrounds
+    'cradle-bg': {
+        primary: 'var(--cradle-bg-primary)',
+        secondary: 'var(--cradle-bg-secondary)',
+        tertiary: 'var(--cradle-bg-tertiary)',
+        elevated: 'var(--cradle-bg-elevated)',
+        sidebar: 'var(--cradle-bg-sidebar)',
+        topbar: 'var(--cradle-bg-topbar)',
+    },
+    // Sidebar
+    'cradle-sidebar': {
+        text: 'var(--cradle-sidebar-text)',
+        icon: 'var(--cradle-sidebar-icon)',
+        hoverBg: 'var(--cradle-sidebar-hover-bg)',
+    },
+    // Borders
+    'cradle-border': {
+        primary: 'var(--cradle-border-primary)',
+        accent: 'var(--cradle-border-accent)',
+        interactive: 'var(--cradle-border-interactive)',
+    },
+    // Text
+    'cradle-text': {
+        primary: 'var(--cradle-text-primary)',
+        secondary: 'var(--cradle-text-secondary)',
+        tertiary: 'var(--cradle-text-tertiary)',
+        muted: 'var(--cradle-text-muted)',
+    },
+    // Accents
+    'cradle-accent': {
+        primary: 'var(--cradle-accent-primary)',
+        secondary: 'var(--cradle-accent-secondary)',
+        info: 'var(--cradle-accent-info)',
+        success: 'var(--cradle-accent-success)',
+        warning: 'var(--cradle-accent-warning)',
+        error: 'var(--cradle-accent-error)',
+    },
+    // Glows
+    'cradle-glow': {
+        primary: 'var(--cradle-glow-primary)',
+        accent: 'var(--cradle-glow-accent)',
+    },
+};
+
 module.exports = {
     darkMode: ['selector', '[data-theme="dark"]'],
     content: [
@@ -41,6 +88,7 @@ module.exports = {
             colors: {
                 ...EXTENDED_COLORS,
                 ...CRADLE_GRAY_COLORS,
+                ...CRADLE_DESIGN_SYSTEM_COLORS,
             },
             typography: (theme) => ({
                 DEFAULT: {

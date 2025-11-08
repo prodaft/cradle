@@ -10,6 +10,7 @@ import { ViewMode } from './constants';
 export default function ActionsDropdown({
     activeView,
     showActionsMenu,
+    enableEditing,
     setShowActionsMenu,
     showOutline,
     toggleOutline,
@@ -56,7 +57,7 @@ export default function ActionsDropdown({
                                     {showOutline && <Check width='16' height='16' />}
                                 </button>
                             )}
-                            {lspLoaded && activeView === ViewMode.CONTENT && (
+                            {lspLoaded && enableEditing && activeView === ViewMode.CONTENT && (
                                 <button
                                     onClick={() => {
                                         setShowActionsMenu(false);
@@ -69,7 +70,7 @@ export default function ActionsDropdown({
                                     <span className='flex-1'>Auto Link</span>
                                 </button>
                             )}
-                            {lspLoaded && activeView === ViewMode.CONTENT && (
+                            {enableEditing && lspLoaded && activeView === ViewMode.CONTENT && (
                                 <button
                                     onClick={() => {
                                         setShowActionsMenu(false);

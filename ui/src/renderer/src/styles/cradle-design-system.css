@@ -646,6 +646,43 @@
   color: var(--cradle-text-secondary);
 }
 
+.cradle-table td.action {
+  padding: initial;
+  border-bottom: 1px solid var(--cradle-border-primary);
+  color: var(--cradle-text-secondary);
+}
+
+.cradle-table td.action button {
+  width: 2rem !important;
+  height: 2rem !important;
+  min-width: 2rem !important;
+  min-height: 2rem !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  cursor: pointer;
+  transition: background 0.15s ease-in-out;
+  line-height: 0 !important;
+}
+
+.cradle-table td.action button svg,
+.cradle-table td.action button > * {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+.cradle-table td.action button:hover {
+  background: rgba(255, 140, 0, 0.1) !important;
+  border-radius: 50% !important;
+}
+
 .cradle-table tbody tr {
   border-bottom: 1px solid var(--cradle-border-primary);
   border-left: 3px solid transparent;
@@ -1169,6 +1206,13 @@
   width: 3px;
   height: 70%;
   background: var(--cradle-accent-primary);
+}
+
+/* Alert dismiss button - ensure icon is always white */
+.alert-dismiss-button svg {
+  stroke: var(--cradle-text-secondary) !important;
+  color: var(--cradle-text-secondary) !important;
+  fill: none !important;
 }
 
 } /* End @layer components */

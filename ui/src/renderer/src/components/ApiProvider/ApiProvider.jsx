@@ -60,23 +60,25 @@ export default function ApiProvider({ children }) {
 
     // Create API instances with the configuration
     const apis = useMemo(
-        () => ({
-            accessApi: new AccessApi(configuration),
-            entriesApi: new EntriesApi(configuration),
-            fileTransferApi: new FileTransferApi(configuration),
-            fleetingNotesApi: new FleetingNotesApi(configuration),
-            intelioApi: new IntelioApi(configuration),
-            knowledgeGraphApi: new KnowledgeGraphApi(configuration),
-            logsApi: new LogsApi(configuration),
-            lspApi: new LspApi(configuration),
-            managementApi: new ManagementApi(configuration),
-            notesApi: new NotesApi(configuration),
-            notificationsApi: new NotificationsApi(configuration),
-            queryApi: new QueryApi(configuration),
-            reportsApi: new ReportsApi(configuration),
-            statisticsApi: new StatisticsApi(configuration),
-            usersApi: new UsersApi(configuration),
-        }),
+        () => {
+            return {
+                accessApi: new AccessApi(configuration),
+                entriesApi: new EntriesApi(configuration),
+                fileTransferApi: new FileTransferApi(configuration),
+                fleetingNotesApi: new FleetingNotesApi(configuration),
+                intelioApi: new IntelioApi(configuration),
+                knowledgeGraphApi: new KnowledgeGraphApi(configuration),
+                logsApi: new LogsApi(configuration),
+                lspApi: new LspApi(configuration),
+                managementApi: new ManagementApi(configuration),
+                notesApi: new NotesApi(configuration),
+                notificationsApi: new NotificationsApi(configuration),
+                queryApi: new QueryApi(configuration),
+                reportsApi: new ReportsApi(configuration),
+                statisticsApi: new StatisticsApi(configuration),
+                usersApi: new UsersApi(configuration),
+            }
+        },
         [configuration],
     );
 

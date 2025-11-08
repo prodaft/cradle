@@ -7,8 +7,15 @@ from rest_framework.views import APIView
 
 from access.models import Access
 from core.pagination import TotalPagesPagination
+from core.openapi import get_error_responses, get_validation_error_response, get_common_error_responses
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from ..exceptions import DuplicateEntryException
+from ..exceptions import (
+    DuplicateEntryException,
+    InvalidEntryTypeException,
+    AdminOnlyEntityCreateException,
+    EntryNotFoundException,
+    EntriesErrorCodes,
+)
 
 from ..models import Entry
 from ..serializers import ArtifactSerializer, EntitySerializer, EntrySerializer
@@ -22,8 +29,13 @@ from ..enums import EntryType
         request=EntrySerializer,
         responses={
             200: EntrySerializer,
-            400: {"description": "Invalid data or entry type"},
-            403: {"description": "Only admins can create entities"},
+            **get_validation_error_response(),
+            **get_error_responses(
+                EntriesErrorCodes.INVALID_ENTRY_TYPE,
+                EntriesErrorCodes.ADMIN_ONLY_ENTITY_CREATE,
+                EntriesErrorCodes.DUPLICATE_ENTRY,
+            ),
+            **get_common_error_responses(),
         },
     ),
 )
@@ -43,14 +55,13 @@ class EntryView(generics.CreateAPIView):
 
         elif entry_type == EntryType.ENTITY:
             if not request.user.is_cradle_admin:
-                return Response(
-                    "Only admins can create entries!", status=status.HTTP_403_FORBIDDEN
+                raise AdminOnlyEntityCreateException(
+                    detail="Only admins can create entities!"
                 )
             serializer_class = EntitySerializer
         else:
-            return Response(
-                "Invalid entry type. Must be 'artifact' or 'entity'.",
-                status=status.HTTP_400_BAD_REQUEST,
+            raise InvalidEntryTypeException(
+                detail="Invalid entry type. Must be 'artifact' or 'entity'."
             )
 
         data = request.data.copy()
@@ -59,16 +70,14 @@ class EntryView(generics.CreateAPIView):
             data = request.data.dict()
 
         serializer = serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
 
-        if serializer.is_valid():
-            if hasattr(serializer, "exists") and serializer.exists():
-                raise DuplicateEntryException()
+        if hasattr(serializer, "exists") and serializer.exists():
+            raise DuplicateEntryException()
 
-            serializer.save()
-            serializer.instance.log_create(request.user)
-            return Response(serializer.data)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        serializer.instance.log_create(request.user)
+        return Response(serializer.data)
 
 
 @extend_schema(
@@ -76,8 +85,10 @@ class EntryView(generics.CreateAPIView):
     description="Returns detailed information about a specific entry by ID. Access control applies for entities.",
     responses={
         200: EntrySerializer,
-        404: {"description": "Entry not found or access denied"},
-        401: {"description": "User is not authenticated"},
+        **get_error_responses(
+            EntriesErrorCodes.ENTRY_NOT_FOUND,
+        ),
+        **get_common_error_responses(),
     },
 )
 class EntryDetailView(APIView):
@@ -87,8 +98,8 @@ class EntryDetailView(APIView):
         try:
             entry = Entry.objects.accessible(request.user).get(pk=id)
         except Entry.DoesNotExist:
-            return Response(
-                "There is no entry with specified ID.", status=status.HTTP_404_NOT_FOUND
+            raise EntryNotFoundException(
+                detail="There is no entry with specified ID."
             )
 
         # Access control for entities
@@ -99,9 +110,8 @@ class EntryDetailView(APIView):
                 .filter(pk=id)
                 .exists()
             ):
-                return Response(
-                    "There is no entity with specified ID.",
-                    status=status.HTTP_404_NOT_FOUND,
+                raise EntryNotFoundException(
+                    detail="There is no entity with specified ID."
                 )
 
         serializer = EntrySerializer(entry)

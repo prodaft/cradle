@@ -5,10 +5,18 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 
+from core.openapi import get_error_responses, get_common_error_responses, get_validation_error_response
 from user.models import CradleUser
 from entries.models import Entry
 from ..models import Access
 from ..serializers import AccessSerializer
+from ..exceptions import (
+    UserNotFoundException,
+    EntityNotFoundException,
+    UpdateNotAllowedException,
+    InvalidRequestException,
+    AccessErrorCodes,
+)
 from typing import cast
 from ..enums import AccessType
 from notifications.models import AccessGrantedNotification
@@ -39,9 +47,14 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
         request=AccessSerializer,
         responses={
             200: {"description": "Access updated successfully"},
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User is not allowed to update this access"},
-            404: {"description": "User or entity not found"},
+            **get_error_responses(
+                AccessErrorCodes.USER_NOT_FOUND,
+                AccessErrorCodes.ENTITY_NOT_FOUND,
+                AccessErrorCodes.UPDATE_NOT_ALLOWED,
+                AccessErrorCodes.INVALID_REQUEST
+            ),
+            **get_validation_error_response(),
+            **get_common_error_responses(),
         },
     )
 )
@@ -125,18 +138,17 @@ class UpdateAccess(APIView):
         try:
             updated_user = CradleUser.objects.get(id=user_id)
         except CradleUser.DoesNotExist:
-            return Response("User does not exist.", status=status.HTTP_404_NOT_FOUND)
+            raise UserNotFoundException(detail="User does not exist.")
 
         try:
             updated_entity = Entry.entities.get(id=entity_id)
         except Entry.DoesNotExist:
-            return Response("Entity does not exist.", status=status.HTTP_404_NOT_FOUND)
+            raise EntityNotFoundException(detail="Entity does not exist.")
 
         user: CradleUser = cast(CradleUser, request.user)
         if not self.__can_update_access(user, updated_user, updated_entity):
-            return Response(
-                "User is not allowed to perform this operation",
-                status=status.HTTP_403_FORBIDDEN,
+            raise UpdateNotAllowedException(
+                detail="User is not allowed to perform this operation"
             )
 
         updated_access, _ = Access.objects.get_or_create(
@@ -144,18 +156,16 @@ class UpdateAccess(APIView):
         )
 
         serializer = AccessSerializer(updated_access, data=request.data)
-        if serializer.is_valid():
-            with transaction.atomic():
-                serializer.save()
-                AccessGrantedNotification.objects.create(
-                    user=updated_user,
-                    entity=updated_entity,
-                    message=(
-                        f"Your access for entity {updated_entity.name} has "
-                        f"been changed to {request.data['access_type']}"
-                    ),
-                )
+        serializer.is_valid(raise_exception=True)
+        with transaction.atomic():
+            serializer.save()
+            AccessGrantedNotification.objects.create(
+                user=updated_user,
+                entity=updated_entity,
+                message=(
+                    f"Your access for entity {updated_entity.name} has "
+                    f"been changed to {request.data['access_type']}"
+                ),
+            )
 
-            return Response("Access has been updated.")
-
-        return Response("Request is invalid", status=status.HTTP_400_BAD_REQUEST)
+        return Response("Access has been updated.")

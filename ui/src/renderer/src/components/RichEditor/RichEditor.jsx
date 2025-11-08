@@ -2,7 +2,7 @@ import { acceptCompletion, autocompletion, closeBrackets, completionKeymap } fro
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { defaultHighlightStyle, indentOnInput, syntaxHighlighting } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
-import { EditorState } from '@codemirror/state';
+import { EditorState, StateEffect } from '@codemirror/state';
 import { drawSelection, EditorView, highlightActiveLine, keymap, lineNumbers, rectangularSelection } from '@codemirror/view';
 import { vim, Vim } from '@replit/codemirror-vim';
 import { Prec } from '@uiw/react-codemirror';
@@ -32,6 +32,7 @@ const RichEditor = forwardRef(function RichEditor({
     setAlert,
     saveNote,
     additionalExtensions = [],
+    enableEditing = true,
     source = false,
 }, ref) {
     const [showFileList, setShowFileList] = useState(false);
@@ -112,6 +113,8 @@ const RichEditor = forwardRef(function RichEditor({
                     }
                 }
             }),
+            EditorState.readOnly.of(!enableEditing),
+            EditorView.editable.of(enableEditing),
             purrmdTheme(),
             Prec.high(cradleTheme),
             EditorView.lineWrapping,
@@ -132,6 +135,17 @@ const RichEditor = forwardRef(function RichEditor({
                 ]),
             ),
             keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
+            keymap.of([{
+                key: 'Ctrl-s',
+                run: (cm) => {
+                    if (!enableEditing) {
+                        return false;
+                    }
+                    setMarkdownContent(cm.state.doc.toString());
+                    saveNote(true);
+                    return true;
+                }
+            }]),
             autocompletion(),
             ...editorUtils.autocomplete(),
             editorUtils.lint(),
@@ -145,6 +159,8 @@ const RichEditor = forwardRef(function RichEditor({
         if (profile?.vim_mode) {
             Vim.defineEx('write', 'w', (cm) => {
                 setMarkdownContent(cm.state.doc.toString());
+                saveNote(true);
+                return true;
             });
             exts = exts.concat(vim());
         }
@@ -158,7 +174,18 @@ const RichEditor = forwardRef(function RichEditor({
         entryColors,
         navigate,
         source,
+        enableEditing,
     ]);
+
+    useEffect(() => {
+        if (editorViewRef.current) {
+            editorViewRef.current.dispatch({
+                effects: [
+                    StateEffect.reconfigure.of(extensions)
+                ]
+            });
+        }
+    }, [extensions]);
 
     useEffect(() => {
         if (!editorViewRef.current && editorRef.current && extensions.length > 0) {
@@ -277,6 +304,7 @@ export default memo(RichEditor, (prevProps, nextProps) => {
         prevProps.markdownContent === nextProps.markdownContent &&
         prevProps.fileData === nextProps.fileData &&
         prevProps.additionalExtensions === nextProps.additionalExtensions &&
-        prevProps.source === nextProps.source
+        prevProps.source === nextProps.source &&
+        prevProps.enableEditing === nextProps.enableEditing
     );
 });

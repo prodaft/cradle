@@ -12,6 +12,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.pagination import TotalPagesPagination
 from core.utils import validate_order_by
+from core.openapi import get_error_responses, get_common_error_responses, get_validation_error_response
 from user.authentication import APIKeyAuthentication
 
 from ..filters import BaseDigestFilter
@@ -22,6 +23,13 @@ from ..serializers import (
     DigestSubclassSerializer,
 )
 from ..tasks import start_digest
+from ..exceptions import (
+    InvalidPageSizeException,
+    PageSizeTooLargeException,
+    MissingFileException,
+    MissingDigestIdException,
+    IntelioErrorCodes,
+)
 
 
 @extend_schema(
@@ -29,7 +37,7 @@ from ..tasks import start_digest
     description="Returns a list of all subclasses of BaseDigest with their names.",
     responses={
         200: DigestSubclassSerializer(many=True),
-        401: {"description": "User is not authenticated"},
+        **get_common_error_responses(),
     },
 )
 class DigestSubclassesAPIView(APIView):
@@ -118,7 +126,11 @@ class DigestSubclassesAPIView(APIView):
         200: TotalPagesPagination().get_paginated_response_serializer(
             BaseDigestSerializer
         ),
-        401: {"description": "User is not authenticated"},
+        **get_error_responses(
+            IntelioErrorCodes.INVALID_PAGE_SIZE,
+            IntelioErrorCodes.PAGE_SIZE_TOO_LARGE
+        ),
+        **get_common_error_responses(),
     },
     methods=["GET"],
 )
@@ -128,8 +140,9 @@ class DigestSubclassesAPIView(APIView):
     request=BaseDigestCreateSerializer,
     responses={
         201: BaseDigestSerializer,
-        400: {"description": "Bad request - validation errors or missing file"},
-        401: {"description": "User is not authenticated"},
+        **get_error_responses(IntelioErrorCodes.MISSING_FILE),
+        **get_validation_error_response(),
+        **get_common_error_responses(),
     },
     methods=["POST"],
 )
@@ -158,16 +171,10 @@ class DigestAPIView(GenericAPIView):
         try:
             page_size = int(request.query_params.get("page_size", 10))
         except ValueError:
-            return Response(
-                "Invalid page_size value. Must be an integer.",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
 
         if page_size > 200:
-            return Response(
-                "page_size cannot be greater than 200.",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise PageSizeTooLargeException(detail="page_size cannot be greater than 200.")
 
         # Handle ordering
         order_by = request.query_params.get("order_by", "-created_at")
@@ -202,21 +209,20 @@ class DigestAPIView(GenericAPIView):
 
         # Use the create serializer for validation
         create_serializer = BaseDigestCreateSerializer(data=data)
-        if create_serializer.is_valid():
-            # Create the digest and assign the current user
-            digest_data = create_serializer.validated_data.copy()
-            digest_data.pop("file", None)  # Remove file from digest creation data
-            digest_data["user"] = request.user  # Assign the current user
+        create_serializer.is_valid(raise_exception=True)
 
-            digest = BaseDigest(**digest_data)
-            digest.save()
-        else:
-            return Response(create_serializer.errors, status=400)
+        # Create the digest and assign the current user
+        digest_data = create_serializer.validated_data.copy()
+        digest_data.pop("file", None)  # Remove file from digest creation data
+        digest_data["user"] = request.user  # Assign the current user
+
+        digest = BaseDigest(**digest_data)
+        digest.save()
 
         file = request.FILES.get("file")
 
         if not file:
-            return Response({"detail": "Missing 'file' in request."}, status=400)
+            raise MissingFileException(detail="Missing 'file' in request.")
 
         with open(digest.path, "wb+") as destination:
             for chunk in file.chunks():
@@ -238,9 +244,11 @@ class DigestAPIView(GenericAPIView):
         ],
         responses={
             204: {"description": "Digest deleted successfully"},
-            400: {"description": "Bad request - missing 'id' query parameter"},
-            401: {"description": "User is not authenticated"},
-            404: {"description": "Digest not found"},
+            **get_error_responses(
+                IntelioErrorCodes.MISSING_DIGEST_ID,
+                IntelioErrorCodes.DIGEST_NOT_FOUND
+            ),
+            **get_common_error_responses(),
         },
     )
     def delete(self, request):
@@ -252,10 +260,7 @@ class DigestAPIView(GenericAPIView):
 
         digest_id = request.query_params.get("id")
         if not digest_id:
-            return Response(
-                {"detail": "Missing 'id' query parameter."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise MissingDigestIdException(detail="Missing 'id' query parameter.")
 
         if request.user.is_cradle_admin:
             digest = get_object_or_404(BaseDigest, id=digest_id)

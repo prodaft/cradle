@@ -6,22 +6,8 @@ import App from './App.jsx';
 import './styles/fonts.css';
 import './styles/main.css';
 
-// worker.start();
-//
-// async function enableMocking() {
-//     if (import.meta.env.MODE !== 'demo') {
-//         return;
-//     }
-//
-//     const { worker } = await import('./mocks/browser');
-//
-//     return worker.start();
-// }
-
-// enableMocking().then(() => {
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
         <App />
     </React.StrictMode>,
 );
-// });

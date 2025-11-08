@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.pagination import TotalPagesPagination
+from core.openapi import get_error_responses, get_common_error_responses, get_validation_error_response
 from user.permissions import HasAdminRole
 
 from ..models.base import BaseEnricher, EnricherSettings, EnrichmentRequest
@@ -19,6 +20,15 @@ from ..serializers import (
     EnrichmentSubclassSerializer,
 )
 from ..utils import get_or_default_enricher
+from ..exceptions import (
+    EnricherNotFoundException,
+    EnrichmentRequestNotFoundException,
+    EnricherTypeNotFoundException,
+    InvalidPageSizeException,
+    PageSizeTooLargeException,
+    PermissionDeniedException,
+    IntelioErrorCodes,
+)
 
 
 @extend_schema_view(
@@ -28,8 +38,7 @@ from ..utils import get_or_default_enricher
         description="Returns a list of all subclasses of BaseEnricher with their names.",
         responses={
             200: EnrichmentSubclassSerializer(many=True),
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User does not have admin role"},
+            **get_common_error_responses(),
         },
     )
 )
@@ -72,7 +81,8 @@ class EnrichmentSubclassesAPIView(APIView):
         description="Get enrichment settings for a specific enricher type.",
         responses={
             200: EnrichmentSettingsSerializer,
-            404: {"description": "Enricher type not found"},
+            **get_error_responses(IntelioErrorCodes.ENRICHER_NOT_FOUND),
+            **get_common_error_responses(),
         },
     ),
     post=extend_schema(
@@ -82,8 +92,9 @@ class EnrichmentSubclassesAPIView(APIView):
         request=EnrichmentSettingsSerializer,
         responses={
             200: EnrichmentSettingsSerializer,
-            404: {"description": "Enricher type not found"},
-            400: {"description": "Bad request"},
+            **get_error_responses(IntelioErrorCodes.ENRICHER_NOT_FOUND),
+            **get_validation_error_response(),
+            **get_common_error_responses(),
         },
     ),
 )
@@ -100,28 +111,19 @@ class EnrichmentSettingsAPIView(GenericAPIView):
         enricher = get_or_default_enricher(enricher_type)
 
         if enricher is None:
-            return Response(
-                {"detail": "Enricher type not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise EnricherNotFoundException(detail="Enricher type not found.")
 
         return Response(self.get_serializer(enricher).data)
 
     def post(self, request, enricher_type):
         enricher = get_or_default_enricher(enricher_type)
         if enricher is None:
-            return Response(
-                {"detail": "Enricher type not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise EnricherNotFoundException(detail="Enricher type not found.")
 
         serializer = self.get_serializer(enricher, data=request.data, partial=True)
-
-        if serializer.is_valid():
-            serializer.save(enricher_type=enricher_type)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(enricher_type=enricher_type)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
@@ -170,8 +172,11 @@ class EnrichmentSettingsAPIView(GenericAPIView):
             200: TotalPagesPagination().get_paginated_response_serializer(
                 EnrichmentRequestListSerializer
             ),
-            400: {"description": "Invalid filter parameters"},
-            401: {"description": "User is not authenticated"},
+            **get_error_responses(
+                IntelioErrorCodes.INVALID_PAGE_SIZE,
+                IntelioErrorCodes.PAGE_SIZE_TOO_LARGE
+            ),
+            **get_common_error_responses(),
         },
     ),
     post=extend_schema(
@@ -184,8 +189,8 @@ class EnrichmentSettingsAPIView(GenericAPIView):
         request=EnrichmentRequestSerializer,
         responses={
             201: EnrichmentRequestSerializer,
-            400: {"description": "Invalid request data"},
-            401: {"description": "User is not authenticated"},
+            **get_validation_error_response(),
+            **get_common_error_responses(),
         },
     ),
 )
@@ -212,16 +217,10 @@ class EnrichmentAPIView(APIView):
         try:
             page_size = int(request.query_params.get("page_size", 10))
         except ValueError:
-            return Response(
-                "Invalid page_size value. Must be an integer.",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
 
         if page_size > 100:
-            return Response(
-                "page_size cannot be greater than 100.",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise PageSizeTooLargeException(detail="page_size cannot be greater than 100.")
 
         # Filter by user username
         user_username = request.query_params.get("user__username")
@@ -269,17 +268,14 @@ class EnrichmentAPIView(APIView):
         serializer = EnrichmentRequestSerializer(
             data=request.data, context={"request": request}
         )
-
-        if serializer.is_valid():
-            enrichment_request = serializer.save()
-            return Response(
-                EnrichmentRequestSerializer(
-                    enrichment_request, context={"request": request}
-                ).data,
-                status=status.HTTP_201_CREATED,
-            )
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        enrichment_request = serializer.save()
+        return Response(
+            EnrichmentRequestSerializer(
+                enrichment_request, context={"request": request}
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 @extend_schema_view(
@@ -289,9 +285,11 @@ class EnrichmentAPIView(APIView):
         description="Retrieve detailed information about a specific enrichment request including enricher types, entries requested, warnings, and errors.",
         responses={
             200: EnrichmentRequestDetailSerializer,
-            401: {"description": "User is not authenticated"},
-            403: {"description": "Forbidden - insufficient permissions"},
-            404: {"description": "Enrichment request not found"},
+            **get_error_responses(
+                IntelioErrorCodes.ENRICHMENT_REQUEST_NOT_FOUND,
+                IntelioErrorCodes.PERMISSION_DENIED
+            ),
+            **get_common_error_responses(),
         },
     ),
 )
@@ -318,18 +316,12 @@ class EnrichmentDetailAPIView(APIView):
         enrichment_request = self.get_object(pk)
 
         if enrichment_request is None:
-            return Response(
-                {"detail": "Enrichment request not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise EnrichmentRequestNotFoundException(detail="Enrichment request not found.")
 
         # Check if user has access to this request
         if enrichment_request.user != request.user and not request.user.is_staff:
-            return Response(
-                {
-                    "detail": "You don't have permission to view this enrichment request."
-                },
-                status=status.HTTP_403_FORBIDDEN,
+            raise PermissionDeniedException(
+                detail="You don't have permission to view this enrichment request."
             )
 
         serializer = EnrichmentRequestDetailSerializer(enrichment_request)
@@ -389,11 +381,14 @@ class EnrichmentDetailAPIView(APIView):
             200: TotalPagesPagination().get_paginated_response_serializer(
                 EnrichmentRelationSerializer
             ),
-            401: {"description": "User is not authenticated"},
-            403: {"description": "Forbidden - insufficient permissions"},
-            404: {
-                "description": "Enrichment request not found or enricher type not found"
-            },
+            **get_error_responses(
+                IntelioErrorCodes.ENRICHMENT_REQUEST_NOT_FOUND,
+                IntelioErrorCodes.ENRICHER_TYPE_NOT_FOUND,
+                IntelioErrorCodes.PERMISSION_DENIED,
+                IntelioErrorCodes.INVALID_PAGE_SIZE,
+                IntelioErrorCodes.PAGE_SIZE_TOO_LARGE
+            ),
+            **get_common_error_responses(),
         },
     ),
 )
@@ -423,18 +418,12 @@ class EnrichmentRelationsAPIView(APIView):
         enrichment_request = self.get_object(pk)
 
         if enrichment_request is None:
-            return Response(
-                {"detail": "Enrichment request not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise EnrichmentRequestNotFoundException(detail="Enrichment request not found.")
 
         # Check if user has access to this request
         if enrichment_request.user != request.user and not request.user.is_staff:
-            return Response(
-                {
-                    "detail": "You don't have permission to view this enrichment request."
-                },
-                status=status.HTTP_403_FORBIDDEN,
+            raise PermissionDeniedException(
+                detail="You don't have permission to view this enrichment request."
             )
 
         # Verify enricher_type is valid for this enrichment request
@@ -443,11 +432,8 @@ class EnrichmentRelationsAPIView(APIView):
             for settings in enrichment_request.enrichers_settings.all()
         ]
         if enricher_type not in enricher_types:
-            return Response(
-                {
-                    "detail": f"Enricher type '{enricher_type}' not found in this enrichment request."
-                },
-                status=status.HTTP_404_NOT_FOUND,
+            raise EnricherTypeNotFoundException(
+                detail=f"Enricher type '{enricher_type}' not found in this enrichment request."
             )
 
         # Get relations associated with this enrichment request and enricher type
@@ -457,16 +443,10 @@ class EnrichmentRelationsAPIView(APIView):
         try:
             page_size = int(request.query_params.get("page_size", 10))
         except ValueError:
-            return Response(
-                "Invalid page_size value. Must be an integer.",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
 
         if page_size > 100:
-            return Response(
-                "page_size cannot be greater than 100.",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise PageSizeTooLargeException(detail="page_size cannot be greater than 100.")
 
         # Apply filters
         reason = request.query_params.get("reason")

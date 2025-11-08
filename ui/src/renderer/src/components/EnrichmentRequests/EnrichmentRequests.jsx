@@ -7,6 +7,10 @@ import EnrichmentRequestModal from './EnrichmentRequestModal';
 import EnrichmentRequestsList from './EnrichmentRequestsList';
 
 export default function EnrichmentRequests() {
+    if (import.meta.env.VITE_ENV === 'production') {
+        return <InProgress />;
+    }
+
     const [searchParams, setSearchParams] = useSearchParams();
     const [alert, setAlert] = useState({ show: false, message: '', color: '' });
     const { intelioApi } = useApi();

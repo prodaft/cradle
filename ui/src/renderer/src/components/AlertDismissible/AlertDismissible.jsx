@@ -25,10 +25,6 @@ export default function AlertDismissible({ alert, setAlert, duration = 3500.0 })
 
     useEffect(() => {
         if (alert && alert.show) {
-            if (alert.color == 'red') {
-                console.log(alert)
-            }
-
             setTimeLeft(duration);
             const timer = setTimeout(() => {
                 setAlert({ ...alert, show: false });
@@ -60,10 +56,10 @@ export default function AlertDismissible({ alert, setAlert, duration = 3500.0 })
                     <div className='flex flex-row items-center justify-between px-4'>
                         <p>{alert.message}</p>
                         <button
-                            className={`${colorVariants[alert.color]} hover:opacity-90 text-white font-bold py-2 pl-4`}
+                            className={`${colorVariants[alert.color]} hover:opacity-90 text-white font-bold py-2 pl-4 alert-dismiss-button`}
                             onClick={() => setAlert('')}
                         >
-                            <Xmark color="white" strokeWidth='2' />
+                            <Xmark strokeWidth='2' stroke='white' fill='none' />
                         </button>
                     </div>
                     <div

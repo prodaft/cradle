@@ -138,6 +138,7 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PARSER_CLASSES": ("rest_framework.parsers.JSONParser",),
+    "EXCEPTION_HANDLER": "core.exception_handler.custom_exception_handler",
 }
 
 SPECTACULAR_SETTINGS = {
@@ -149,6 +150,10 @@ SPECTACULAR_SETTINGS = {
     "COMPONENT_SPLIT_REQUEST": True,
     "COMPONENT_NO_READ_ONLY_REQUIRED": True,
     "POSTPROCESSING_HOOKS": ["cradle.schema_processors.postprocess_schema_enums"],
+    # Error handling - RFC 9457 compliant
+    "ENUM_NAME_OVERRIDES": {
+        "ErrorCodeEnum": "core.exceptions.ErrorCode",
+    },
 }
 
 SIMPLE_JWT = {

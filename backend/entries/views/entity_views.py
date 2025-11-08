@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from core.openapi import get_error_responses, get_validation_error_response, get_common_error_responses
 from access.enums import AccessType
 from access.models import Access
 from entries.tasks import refresh_edges_materialized_view
@@ -15,6 +16,13 @@ from user.permissions import HasEntryManagerRole
 
 from ..models import Entry
 from ..serializers import EntitySerializer, EntryResponseSerializer
+from ..exceptions import (
+    DuplicateEntityException,
+    EntityNotFoundException,
+    AdminOnlyEntityDeleteException,
+    AdminOnlyEntityPublicStatusException,
+    EntriesErrorCodes,
+)
 
 
 @extend_schema_view(
@@ -22,7 +30,10 @@ from ..serializers import EntitySerializer, EntryResponseSerializer
         operation_id="entities_list",
         summary="List entities",
         description="Returns a list of entities. For regular users, returns only entities they have access to. For admin users, returns all entities.",  # noqa: E501
-        responses={200: EntryResponseSerializer(many=True)},
+        responses={
+            200: EntryResponseSerializer(many=True),
+            **get_common_error_responses(),
+        },
     ),
     post=extend_schema(
         operation_id="entities_create",
@@ -30,10 +41,12 @@ from ..serializers import EntitySerializer, EntryResponseSerializer
         description="Creates a new entity. Only available to admin users.",
         request=EntitySerializer,
         responses={
-            200: EntitySerializer,
-            400: {"description": "Invalid data provided"},
-            403: {"description": "User is not an admin"},
-            409: {"description": "Entity already exists"},
+            201: EntitySerializer,
+            **get_validation_error_response(),
+            **get_error_responses(
+                EntriesErrorCodes.DUPLICATE_ENTITY,
+            ),
+            **get_common_error_responses(),
         },
     ),
 )
@@ -55,21 +68,22 @@ class EntityList(APIView):
     def post(self, request: Request) -> Response:
         """Creates a new entity. Only available to admin users."""
         serializer = EntitySerializer(data=request.data)
-        if serializer.is_valid():
-            # Check if entity already exists
-            name = serializer.validated_data.get("name")
-            if Entry.entities.filter(name=name).exists():
-                return Response(
-                    {"error": f"Entity with name '{name}' already exists"},
-                    status=status.HTTP_409_CONFLICT,
-                )  # Create new entity
-            serializer.save()
+        serializer.is_valid(raise_exception=True)
 
-            # Refresh edges materialized view
-            refresh_edges_materialized_view.delay()
+        # Check if entity already exists
+        name = serializer.validated_data.get("name")
+        if Entry.entities.filter(name=name).exists():
+            raise DuplicateEntityException(
+                detail=f"Entity with name '{name}' already exists"
+            )
 
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Create new entity
+        serializer.save()
+
+        # Refresh edges materialized view
+        refresh_edges_materialized_view.delay()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
@@ -87,7 +101,10 @@ class EntityList(APIView):
         ],
         responses={
             200: EntitySerializer,
-            404: {"description": "Entity not found or user doesn't have access"},
+            **get_error_responses(
+                EntriesErrorCodes.ENTITY_NOT_FOUND,
+            ),
+            **get_common_error_responses(),
         },
     ),
     delete=extend_schema(
@@ -104,8 +121,11 @@ class EntityList(APIView):
         ],
         responses={
             200: {"description": "Entity successfully deleted"},
-            403: {"description": "User is not an admin"},
-            404: {"description": "Entity not found"},
+            **get_error_responses(
+                EntriesErrorCodes.ADMIN_ONLY_ENTITY_DELETE,
+                EntriesErrorCodes.ENTITY_NOT_FOUND,
+            ),
+            **get_common_error_responses(),
         },
     ),
     post=extend_schema(
@@ -122,7 +142,13 @@ class EntityList(APIView):
             )
         ],
         responses={
-            404: {"description": "Entity not found or user doesn't have access"}
+            200: EntitySerializer,
+            **get_validation_error_response(),
+            **get_error_responses(
+                EntriesErrorCodes.ENTITY_NOT_FOUND,
+                EntriesErrorCodes.ADMIN_ONLY_ENTITY_PUBLIC_STATUS,
+            ),
+            **get_common_error_responses(),
         },
     ),
 )
@@ -137,17 +163,15 @@ class EntityDetail(APIView):
             .filter(pk=entity_id)
             .exists()
         ):
-            return Response(
-                "There is no entity with specified ID.",
-                status=status.HTTP_404_NOT_FOUND,
+            raise EntityNotFoundException(
+                detail="There is no entity with specified ID."
             )
 
         try:
             entity = Entry.entities.get(pk=entity_id)
         except Entry.DoesNotExist:
-            return Response(
-                "There is no entity with specified ID.",
-                status=status.HTTP_404_NOT_FOUND,
+            raise EntityNotFoundException(
+                detail="There is no entity with specified ID."
             )
 
         serializer = EntitySerializer(entity)
@@ -155,15 +179,14 @@ class EntityDetail(APIView):
 
     def delete(self, request: Request, entity_id: UUID) -> Response:
         if not request.user.is_cradle_admin:
-            return Response(
-                "Only admins can delete entities!", status=status.HTTP_403_FORBIDDEN
+            raise AdminOnlyEntityDeleteException(
+                detail="Only admins can delete entities!"
             )
         try:
             entity = Entry.entities.get(pk=entity_id)
         except Entry.DoesNotExist:
-            return Response(
-                "There is no entity with specified ID.",
-                status=status.HTTP_404_NOT_FOUND,
+            raise EntityNotFoundException(
+                detail="There is no entity with specified ID."
             )
 
         entity.delete_renaming(request.user.id)
@@ -175,9 +198,8 @@ class EntityDetail(APIView):
         try:
             entity = Entry.entities.get(pk=entity_id)
         except Entry.DoesNotExist:
-            return Response(
-                "There is no entity with specified ID or you don't have access.",
-                status=status.HTTP_404_NOT_FOUND,
+            raise EntityNotFoundException(
+                detail="There is no entity with specified ID or you don't have access."
             )
 
         if not (
@@ -185,15 +207,12 @@ class EntityDetail(APIView):
                 request.user, [entity], {AccessType.READ_WRITE}
             )
         ):
-            return Response(
-                "There is no entity with specified ID or you don't have access.",
-                status=status.HTTP_404_NOT_FOUND,
+            raise EntityNotFoundException(
+                detail="There is no entity with specified ID or you don't have access."
             )
 
         serializer = EntitySerializer(entity, data=request.data)
-
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
 
         # Non-Admin cannot change public status of entity
         if (
@@ -201,9 +220,8 @@ class EntityDetail(APIView):
             != entity.is_public
             and not request.user.is_cradle_admin
         ):
-            return Response(
-                "Only admins can change the public status of entities!",
-                status=status.HTTP_403_FORBIDDEN,
+            raise AdminOnlyEntityPublicStatusException(
+                detail="Only admins can change the public status of entities!"
             )
 
         serializer.save()

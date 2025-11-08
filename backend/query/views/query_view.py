@@ -3,6 +3,7 @@ from uuid import UUID
 
 from access.models import Access
 from core.pagination import TotalPagesPagination
+from core.openapi import get_error_responses, get_common_error_responses
 from django.db.models import Q, Subquery
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -21,6 +22,11 @@ from user.authentication import APIKeyAuthentication
 from query.filters import EntryFilter
 
 from ..utils import parse_query
+from ..exceptions import (
+    InvalidPageSizeException,
+    InvalidQuerySyntaxException,
+    QueryErrorCodes,
+)
 
 
 @extend_schema(
@@ -75,7 +81,7 @@ from ..utils import parse_query
     ],
     responses={
         200: EntryResponseSerializer(many=True),
-        401: {"description": "Unauthorized"},
+        **get_common_error_responses(),
     },
 )
 class EntryListQuery(ListAPIView):
@@ -159,8 +165,11 @@ class AdvancedQueryView(APIView):
             200: TotalPagesPagination().get_paginated_response_serializer(
                 EntryResponseSerializer
             ),
-            400: {"description": "Invalid query syntax"},
-            401: {"description": "Unauthorized"},
+            **get_error_responses(
+                QueryErrorCodes.INVALID_PAGE_SIZE,
+                QueryErrorCodes.INVALID_QUERY_SYNTAX
+            ),
+            **get_common_error_responses(),
         },
         request=None,
     )
@@ -171,9 +180,8 @@ class AdvancedQueryView(APIView):
 
         page_size = request.query_params.get("page_size", "10")
         if not page_size.isdigit() or int(page_size) <= 0:
-            return Response(
-                {"error": "Invalid page_size parameter. Must be a positive integer."},
-                status=status.HTTP_400_BAD_REQUEST,
+            raise InvalidPageSizeException(
+                detail="Invalid page_size parameter. Must be a positive integer."
             )
         page_size = int(page_size)
 
@@ -193,10 +201,7 @@ class AdvancedQueryView(APIView):
                 try:
                     query_filter |= parse_query(query_str.strip())
                 except Exception as e:
-                    return Response(
-                        {"error": f"Invalid query syntax: {str(e)}"},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+                    raise InvalidQuerySyntaxException(detail=f"Invalid query syntax: {str(e)}")
 
         # Get accessible entries for the user with optimized queries
         accessible_entries = (

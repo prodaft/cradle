@@ -63,7 +63,7 @@ export default function Sidebar({
     const digestDataLocation = '/digest-data';
     const handleDigestData = useCallback(navigateLink(digestDataLocation), [navigateLink]);
 
-    const enrichmentRequestsLocation = '/enrichment-requests';
+    const enrichmentRequestsLocation = '/enrich';
     const handleEnrichmentRequests = useCallback(navigateLink(enrichmentRequestsLocation), [navigateLink]);
 
     const graphViewLocation = '/knowledge-graph';

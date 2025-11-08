@@ -10,6 +10,42 @@ import ListView from '../ListView/ListView';
 import PaginationWrapper from '../PaginationWrapper/PaginationWrapper';
 import TableCard from '../TableCard/TableCard';
 
+const usePrevious = (value, initialValue) => {
+    const ref = useRef(initialValue);
+    useEffect(() => {
+        ref.current = value;
+    });
+    return ref.current;
+};
+
+
+const useEffectDebugger = (effectHook, dependencies, dependencyNames = []) => {
+    const previousDeps = usePrevious(dependencies, []);
+
+    const changedDeps = dependencies.reduce((accum, dependency, index) => {
+        if (dependency !== previousDeps[index]) {
+            const keyName = dependencyNames[index] || index;
+            return {
+                ...accum,
+                [keyName]: {
+                    before: previousDeps[index],
+                    after: dependency
+                }
+            };
+        }
+
+        return accum;
+    }, {});
+
+    if (Object.keys(changedDeps).length) {
+        console.log('[use-effect-debugger] ', changedDeps);
+    }
+
+    useEffect(effectHook, dependencies);
+};
+
+
+
 /**
  * FilesList component - This component is used to display a list of files.
  * @function FilesList
@@ -115,7 +151,7 @@ export default function FilesList({
             }
             setLoading(false);
         }
-    }, [page, pageSize, sortField, sortDirection, query, setAlert, onError, notesApi]);
+    }, [page, pageSize, sortField, sortDirection, query, notesApi]);
 
     const copyToClipboard = (text) => {
         navigator.clipboard
@@ -132,6 +168,31 @@ export default function FilesList({
             });
     };
 
+    // Download a single file
+    const handleDownloadFile = async (file) => {
+        if (!file.bucketName || !file.minioFileName) {
+            setAlert({
+                show: true,
+                message: 'File download information is missing.',
+                color: 'red',
+            });
+            return;
+        }
+
+        try {
+            const response = await fileTransferApi.fileTransferDownloadRetrieve({
+                bucketName: file.bucketName,
+                minioFileName: file.minioFileName,
+            });
+        } catch (error) {
+            setAlert({
+                show: true,
+                message: 'Failed to download file. Please try again.',
+                color: 'red',
+            });
+        }
+    };
+
     // Download selected files
     const handleDownloadSelected = async () => {
         if (selectedFiles.length === 0) return;
@@ -139,15 +200,15 @@ export default function FilesList({
         try {
             for (const fileId of selectedFiles) {
                 const file = files.find(f => f.id === fileId);
-                if (file && file.bucket_name && file.minio_file_name) {
+                if (file && file.bucketName && file.minioFileName) {
                     const response = await fileTransferApi.fileTransferDownloadRetrieve({
-                        bucketName: file.bucket_name,
-                        minioFileName: file.minio_file_name,
+                        bucketName: file.bucketName,
+                        minioFileName: file.minioFileName,
                     });
                     const { presigned } = response;
                     const link = document.createElement('a');
                     link.href = presigned;
-                    const fileName = file.minio_file_name.split('/').pop() || file.minio_file_name;
+                    const fileName = file.minioFileName.split('/').pop() || file.minioFileName;
                     link.download = fileName;
                     document.body.appendChild(link);
                     link.click();
@@ -202,6 +263,7 @@ export default function FilesList({
         { key: 'mimetype', label: 'MimeType', className: 'w-32' },
         { key: 'sha256', label: 'SHA256', className: 'w-48' },
         { key: 'uploadedAt', label: 'Uploaded At', className: 'w-32' },
+        { key: 'actions', label: '', className: 'w-4' },
     ];
 
     const renderRow = (file, index, selectProps = {}) => {
@@ -236,6 +298,7 @@ export default function FilesList({
                                 className='badge badge-xs px-1 text-white'
                                 style={{
                                     backgroundColor: entity.color || '#ccc',
+                                    borderColor: entity.color || '#ccc',
                                 }}
                             >
                                 {entity.name}
@@ -261,6 +324,18 @@ export default function FilesList({
                 </td>
                 <td className=''>
                     {formatDate(new Date(file.timestamp))}
+                </td>
+                <td className='w-4 action'>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadFile(file);
+                        }}
+                        className='cursor-pointer rounded flex items-center justify-center p-0.5'
+                        title='Download file'
+                    >
+                        <Download className='w-4' />
+                    </button>
                 </td>
             </tr>
         );

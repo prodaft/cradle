@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from core.openapi import get_error_responses, get_common_error_responses, get_validation_error_response
 from notes.models import Note
 from notes.serializers import (
     FleetingNoteRetrieveSerializer,
@@ -19,6 +20,11 @@ from notes.serializers import (
     NoteRetrieveSerializer,
 )
 from user.models import CradleUser
+from .exceptions import (
+    FleetingNoteNotFoundException,
+    EmptyContentException,
+    FleetingNotesErrorCodes,
+)
 
 
 @extend_schema_view(
@@ -28,7 +34,7 @@ from user.models import CradleUser
         + "in descending order. Note content is truncated to 200 characters for preview.",
         responses={
             200: FleetingNoteRetrieveSerializer(many=True),
-            401: {"description": "User is not authenticated"},
+            **get_common_error_responses(),
         },
     ),
     post=extend_schema(
@@ -37,11 +43,8 @@ from user.models import CradleUser
         request=FleetingNoteSerializer,
         responses={
             200: FleetingNoteSerializer,
-            400: {
-                "description": "Invalid request data or file reference bucket name does not match user ID"
-            },
-            401: {"description": "User is not authenticated"},
-            404: {"description": "Referenced file does not exist in MinIO storage"},
+            **get_validation_error_response(),
+            **get_common_error_responses(),
         },
     ),
 )
@@ -100,10 +103,9 @@ class FleetingNotesList(APIView):
         serializer = FleetingNoteSerializer(
             data=request.data, context={"request": request}
         )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
@@ -120,8 +122,8 @@ class FleetingNotesList(APIView):
         ],
         responses={
             200: FleetingNoteSerializer,
-            401: {"description": "User is not authenticated"},
-            404: {"description": "Fleeting note not found"},
+            **get_error_responses(FleetingNotesErrorCodes.FLEETING_NOTE_NOT_FOUND),
+            **get_common_error_responses(),
         },
     ),
     put=extend_schema(
@@ -138,9 +140,12 @@ class FleetingNotesList(APIView):
         request=FleetingNoteSerializer,
         responses={
             200: FleetingNoteSerializer,
-            400: {"description": "Invalid request data or empty content"},
-            401: {"description": "User is not authenticated"},
-            404: {"description": "Fleeting note not found"},
+            **get_error_responses(
+                FleetingNotesErrorCodes.EMPTY_CONTENT,
+                FleetingNotesErrorCodes.FLEETING_NOTE_NOT_FOUND
+            ),
+            **get_validation_error_response(),
+            **get_common_error_responses(),
         },
     ),
     delete=extend_schema(
@@ -156,8 +161,8 @@ class FleetingNotesList(APIView):
         ],
         responses={
             200: {"description": "Fleeting note deleted successfully"},
-            401: {"description": "User is not authenticated"},
-            404: {"description": "Fleeting note not found"},
+            **get_error_responses(FleetingNotesErrorCodes.FLEETING_NOTE_NOT_FOUND),
+            **get_common_error_responses(),
         },
     ),
 )
@@ -188,9 +193,7 @@ class FleetingNotesDetail(APIView):
                 pk=id, author=cast(CradleUser, request.user)
             )
         except Note.DoesNotExist:
-            return Response(
-                "The fleeting note does not exist", status=status.HTTP_404_NOT_FOUND
-            )
+            raise FleetingNoteNotFoundException(detail="The fleeting note does not exist")
 
         serializer = FleetingNoteSerializer(note)
         return Response(serializer.data)
@@ -217,25 +220,21 @@ class FleetingNotesDetail(APIView):
         """
         data = request.data
         if "content" not in data or not data.get("content"):
-            return Response(
-                "Content cannot be empty", status=status.HTTP_400_BAD_REQUEST
-            )
+            raise EmptyContentException(detail="Content cannot be empty")
+
         try:
             note = Note.objects.fleeting().get(
                 pk=id, author=cast(CradleUser, request.user)
             )
         except Note.DoesNotExist:
-            return Response(
-                "Fleeting note does not exist.", status=status.HTTP_404_NOT_FOUND
-            )
+            raise FleetingNoteNotFoundException(detail="Fleeting note does not exist")
 
         serializer = FleetingNoteSerializer(
             note, data=data, context={"request": request}
         )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status.HTTP_200_OK)
 
     def delete(self, request: Request, id: UUID) -> Response:
         """
@@ -260,9 +259,7 @@ class FleetingNotesDetail(APIView):
                 pk=id, author=cast(CradleUser, request.user)
             )
         except Note.DoesNotExist:
-            return Response(
-                "Fleeting note does not exist.", status=status.HTTP_404_NOT_FOUND
-            )
+            raise FleetingNoteNotFoundException(detail="Fleeting note does not exist")
 
         note.delete()
         return Response(status=status.HTTP_200_OK)
@@ -280,30 +277,14 @@ class FleetingNotesDetail(APIView):
                 description="UUID of the fleeting note to convert",
             )
         ],
+        request=None,
         responses={
             200: NoteRetrieveSerializer,
-            400: {
-                "description": "Note does not meet minimum reference requirements or has invalid file references"
-            },
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User does not own the fleeting note"},
-            404: {
-                "description": "Fleeting note not found or referenced entities don't exist"
-            },
+            **get_error_responses(FleetingNotesErrorCodes.FLEETING_NOTE_NOT_FOUND),
+            **get_validation_error_response(),
+            **get_common_error_responses(),
         },
     )
-)
-@extend_schema(
-    summary="Convert fleeting note to regular note",
-    description="Converts a fleeting note to a regular note. Only the owner can convert it.",
-    # Empty request body
-    request=None,
-    responses={
-        200: NoteRetrieveSerializer,
-        400: {"description": "Invalid request data"},
-        401: {"description": "User is not authenticated"},
-        404: {"description": "Fleeting note not found"},
-    },
 )
 class FleetingNotesFinal(APIView):
     authentication_classes = [JWTAuthentication]
@@ -334,9 +315,7 @@ class FleetingNotesFinal(APIView):
                 pk=id, author=cast(CradleUser, request.user)
             )
         except Note.DoesNotExist:
-            return Response(
-                "The fleeting note does not exist", status=status.HTTP_404_NOT_FOUND
-            )
+            raise FleetingNoteNotFoundException(detail="The fleeting note does not exist")
 
         if isinstance(request.data, QueryDict):
             request.data._mutable = True
@@ -352,11 +331,10 @@ class FleetingNotesFinal(APIView):
             serializer = NoteCreateSerializer(
                 data=note_data, context={"request": request}
             )
-            if serializer.is_valid():
-                new_note = serializer.save()
-                # Delete the fleeting note
-                note.delete()
-                return Response(
-                    NoteRetrieveSerializer(new_note).data, status=status.HTTP_200_OK
-                )
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            serializer.is_valid(raise_exception=True)
+            new_note = serializer.save()
+            # Delete the fleeting note
+            note.delete()
+            return Response(
+                NoteRetrieveSerializer(new_note).data, status=status.HTTP_200_OK
+            )

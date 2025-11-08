@@ -8,8 +8,15 @@ from drf_spectacular.types import OpenApiTypes
 
 from django.db.models import Q
 
+from core.openapi import get_error_responses, get_common_error_responses, get_validation_error_response
 from ..models import Snippet
 from ..serializers import SnippetSerializer
+from ..exceptions import (
+    UserNotFoundException,
+    SnippetNotFoundException,
+    PermissionDeniedException,
+    NotesErrorCodes,
+)
 from user.models import UserRoles, CradleUser
 
 
@@ -40,8 +47,11 @@ class UserSnippetsListCreateView(APIView):
         ],
         responses={
             200: SnippetSerializer(many=True),
-            403: OpenApiResponse(description="Permission denied"),
-            404: OpenApiResponse(description="User not found"),
+            **get_error_responses(
+                NotesErrorCodes.USER_NOT_FOUND,
+                NotesErrorCodes.PERMISSION_DENIED,
+            ),
+            **get_common_error_responses(),
         },
     )
     def get(self, request, user_id):
@@ -57,17 +67,11 @@ class UserSnippetsListCreateView(APIView):
             try:
                 target_user = CradleUser.objects.get(id=user_id)
             except CradleUser.DoesNotExist:
-                return Response(
-                    {"detail": "User not found."},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
+                raise UserNotFoundException(detail="User not found.")
 
             # Check permissions
             if not (current_user.pk == target_user.pk or self._is_admin()):
-                return Response(
-                    {"detail": "You are not allowed to fetch this user's snippets."},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+                raise PermissionDeniedException(detail="You are not allowed to fetch this user's snippets.")
 
             snippets = Snippet.objects.filter(owner=target_user)
 
@@ -89,9 +93,12 @@ class UserSnippetsListCreateView(APIView):
         request=SnippetSerializer,
         responses={
             201: SnippetSerializer,
-            400: OpenApiResponse(description="Invalid data provided"),
-            403: OpenApiResponse(description="Permission denied"),
-            404: OpenApiResponse(description="User not found"),
+            **get_validation_error_response(),
+            **get_error_responses(
+                NotesErrorCodes.USER_NOT_FOUND,
+                NotesErrorCodes.PERMISSION_DENIED,
+            ),
+            **get_common_error_responses(),
         },
     )
     def post(self, request, user_id):
@@ -101,10 +108,7 @@ class UserSnippetsListCreateView(APIView):
         if user_id == "null":
             # Create system snippet - requires admin privileges
             if not self._is_admin():
-                return Response(
-                    {"detail": "Only administrators can create system snippets."},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+                raise PermissionDeniedException(detail="Only administrators can create system snippets.")
             target_owner = None
         elif user_id == "me":
             target_owner = current_user
@@ -112,23 +116,16 @@ class UserSnippetsListCreateView(APIView):
             try:
                 target_owner = CradleUser.objects.get(id=user_id)
             except CradleUser.DoesNotExist:
-                return Response(
-                    {"detail": "User not found."},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
+                raise UserNotFoundException(detail="User not found.")
 
             # Check permissions - users can only create snippets for themselves unless admin
             if current_user.pk != target_owner.pk and not self._is_admin():
-                return Response(
-                    {"detail": "You can only create snippets for yourself."},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+                raise PermissionDeniedException(detail="You can only create snippets for yourself.")
 
         serializer = SnippetSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(owner=target_owner)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(owner=target_owner)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class AllAccessibleSnippetsListView(APIView):
@@ -142,7 +139,10 @@ class AllAccessibleSnippetsListView(APIView):
     @extend_schema(
         summary="List all accessible snippets",
         description="Returns all snippets accessible to the current user (user's own snippets and system snippets).",
-        responses={200: SnippetSerializer(many=True)},
+        responses={
+            200: SnippetSerializer(many=True),
+            **get_common_error_responses(),
+        },
     )
     def get(self, request):
         """Get all snippets accessible to the current user"""
@@ -171,10 +171,7 @@ class SnippetDetailView(APIView):
         try:
             snippet = Snippet.objects.get(id=snippet_id)
         except Snippet.DoesNotExist:
-            return None, Response(
-                {"detail": "Snippet not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise SnippetNotFoundException(detail="Snippet not found.")
 
         current_user = cast(CradleUser, request.user)
 
@@ -184,12 +181,9 @@ class SnippetDetailView(APIView):
         if not (
             snippet.owner == current_user or snippet.owner is None or self._is_admin()
         ):
-            return None, Response(
-                {"detail": "You don't have permission to access this snippet."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDeniedException(detail="You don't have permission to access this snippet.")
 
-        return snippet, None
+        return snippet
 
     def _check_modify_permissions(self, snippet, request):
         """Check if user has permission to modify/delete this snippet"""
@@ -197,10 +191,7 @@ class SnippetDetailView(APIView):
 
         # For system snippets (owner=null), only admins can modify/delete
         if snippet.owner is None and not self._is_admin():
-            return Response(
-                {"detail": "Only administrators can modify system snippets."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDeniedException(detail="Only administrators can modify system snippets.")
 
         # For user snippets, only the owner or admin can modify/delete
         if (
@@ -208,12 +199,7 @@ class SnippetDetailView(APIView):
             and snippet.owner != current_user
             and (snippet.owner.is_admin() or not self._is_admin())
         ):
-            return Response(
-                {"detail": "You can only modify your own snippets."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        return None
+            raise PermissionDeniedException(detail="You can only modify your own snippets.")
 
     @extend_schema(
         summary="Retrieve a snippet",
@@ -229,18 +215,16 @@ class SnippetDetailView(APIView):
         ],
         responses={
             200: SnippetSerializer,
-            403: OpenApiResponse(description="Permission denied"),
-            404: OpenApiResponse(description="Snippet not found"),
+            **get_error_responses(
+                NotesErrorCodes.SNIPPET_NOT_FOUND,
+                NotesErrorCodes.PERMISSION_DENIED,
+            ),
+            **get_common_error_responses(),
         },
     )
     def get(self, request, snippet_id):
         """Retrieve a specific snippet"""
-        snippet, error_response = self._get_snippet_and_check_permissions(
-            snippet_id, request
-        )
-        if error_response:
-            return error_response
-
+        snippet = self._get_snippet_and_check_permissions(snippet_id, request)
         serializer = SnippetSerializer(snippet)
         return Response(serializer.data)
 
@@ -259,29 +243,23 @@ class SnippetDetailView(APIView):
         request=SnippetSerializer,
         responses={
             200: SnippetSerializer,
-            400: OpenApiResponse(description="Invalid data provided"),
-            403: OpenApiResponse(description="Permission denied"),
-            404: OpenApiResponse(description="Snippet not found"),
+            **get_validation_error_response(),
+            **get_error_responses(
+                NotesErrorCodes.SNIPPET_NOT_FOUND,
+                NotesErrorCodes.PERMISSION_DENIED,
+            ),
+            **get_common_error_responses(),
         },
     )
     def put(self, request, snippet_id):
         """Update a specific snippet"""
-        snippet, error_response = self._get_snippet_and_check_permissions(
-            snippet_id, request
-        )
-        if error_response:
-            return error_response
-
-        # Check modify permissions
-        modify_error = self._check_modify_permissions(snippet, request)
-        if modify_error:
-            return modify_error
+        snippet = self._get_snippet_and_check_permissions(snippet_id, request)
+        self._check_modify_permissions(snippet, request)
 
         serializer = SnippetSerializer(snippet, data=request.data, partial=False)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
     @extend_schema(
         summary="Partially update a snippet",
@@ -298,29 +276,23 @@ class SnippetDetailView(APIView):
         request=SnippetSerializer,
         responses={
             200: SnippetSerializer,
-            400: OpenApiResponse(description="Invalid data provided"),
-            403: OpenApiResponse(description="Permission denied"),
-            404: OpenApiResponse(description="Snippet not found"),
+            **get_validation_error_response(),
+            **get_error_responses(
+                NotesErrorCodes.SNIPPET_NOT_FOUND,
+                NotesErrorCodes.PERMISSION_DENIED,
+            ),
+            **get_common_error_responses(),
         },
     )
     def patch(self, request, snippet_id):
         """Partially update a specific snippet"""
-        snippet, error_response = self._get_snippet_and_check_permissions(
-            snippet_id, request
-        )
-        if error_response:
-            return error_response
-
-        # Check modify permissions
-        modify_error = self._check_modify_permissions(snippet, request)
-        if modify_error:
-            return modify_error
+        snippet = self._get_snippet_and_check_permissions(snippet_id, request)
+        self._check_modify_permissions(snippet, request)
 
         serializer = SnippetSerializer(snippet, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
     @extend_schema(
         summary="Delete a snippet",
@@ -336,22 +308,17 @@ class SnippetDetailView(APIView):
         ],
         responses={
             204: OpenApiResponse(description="Snippet deleted successfully"),
-            403: OpenApiResponse(description="Permission denied"),
-            404: OpenApiResponse(description="Snippet not found"),
+            **get_error_responses(
+                NotesErrorCodes.SNIPPET_NOT_FOUND,
+                NotesErrorCodes.PERMISSION_DENIED,
+            ),
+            **get_common_error_responses(),
         },
     )
     def delete(self, request, snippet_id):
         """Delete a specific snippet"""
-        snippet, error_response = self._get_snippet_and_check_permissions(
-            snippet_id, request
-        )
-        if error_response:
-            return error_response
-
-        # Check modify permissions
-        modify_error = self._check_modify_permissions(snippet, request)
-        if modify_error:
-            return modify_error
+        snippet = self._get_snippet_and_check_permissions(snippet_id, request)
+        self._check_modify_permissions(snippet, request)
 
         snippet.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

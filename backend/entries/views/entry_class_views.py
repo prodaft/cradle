@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from core.openapi import get_error_responses, get_validation_error_response, get_common_error_responses
 from user.models import CradleUser
 from user.permissions import HasAdminRole, HasEntryManagerRole
 
@@ -19,6 +20,15 @@ from ..serializers import (
     EntryClassSerializer,
     EntryClassSerializerCount,
     NextNameResponseSerializer,
+)
+from ..exceptions import (
+    EntryClassNotFoundException,
+    CannotDeleteAliasClassException,
+    CannotEditAliasClassException,
+    AdminOnlyEntryClassDeleteException,
+    AdminOnlyEntryClassTypeChangeException,
+    AdminOnlyViewCountException,
+    EntriesErrorCodes,
 )
 
 
@@ -37,8 +47,10 @@ from ..serializers import (
         ],
         responses={
             200: EntryClassSerializer(many=True),
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User is not authorized to view entry classes' count"},
+            **get_error_responses(
+                EntriesErrorCodes.ADMIN_ONLY_VIEW_COUNT,
+            ),
+            **get_common_error_responses(),
         },
     ),
     post=extend_schema(
@@ -48,8 +60,8 @@ from ..serializers import (
         request=EntryClassSerializer,
         responses={
             200: EntryClassSerializer,
-            400: {"description": "Invalid data provided"},
-            403: {"description": "User is not an admin"},
+            **get_validation_error_response(),
+            **get_common_error_responses(),
         },
     ),
 )
@@ -74,9 +86,8 @@ class EntryClassList(APIView):
 
         if request.query_params.get("show_count") == "true":
             if not request.user.is_entry_manager:
-                return Response(
-                    "User must be an admin to see the count of entries in each class.",
-                    status=status.HTTP_403_FORBIDDEN,
+                raise AdminOnlyViewCountException(
+                    detail="User must be an admin to see the count of entries in each class."
                 )
             # For count queries, we need to prefetch entry counts as well
             from django.db.models import Count
@@ -91,11 +102,10 @@ class EntryClassList(APIView):
         user = cast(CradleUser, request.user)
 
         serializer = EntryClassSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            serializer.instance.log_create(user)
-            return Response(serializer.data)
-        return Response("The data is not valid", status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        serializer.instance.log_create(user)
+        return Response(serializer.data)
 
 
 @extend_schema_view(
@@ -113,7 +123,10 @@ class EntryClassList(APIView):
         ],
         responses={
             200: EntryClassSerializer,
-            404: {"description": "Entry class not found"},
+            **get_error_responses(
+                EntriesErrorCodes.ENTRY_CLASS_NOT_FOUND,
+            ),
+            **get_common_error_responses(),
         },
     ),
     delete=extend_schema(
@@ -130,10 +143,12 @@ class EntryClassList(APIView):
         ],
         responses={
             200: {"description": "Entry class successfully deleted"},
-            403: {
-                "description": "User is not an admin or trying to delete 'alias' class"
-            },
-            404: {"description": "Entry class not found"},
+            **get_error_responses(
+                EntriesErrorCodes.CANNOT_DELETE_ALIAS_CLASS,
+                EntriesErrorCodes.ADMIN_ONLY_ENTRY_CLASS_DELETE,
+                EntriesErrorCodes.ENTRY_CLASS_NOT_FOUND,
+            ),
+            **get_common_error_responses(),
         },
     ),
     post=extend_schema(
@@ -151,8 +166,13 @@ class EntryClassList(APIView):
         ],
         responses={
             200: EntryClassSerializer,
-            403: {"description": "Trying to edit 'alias' class"},
-            404: {"description": "Entry class not found"},
+            **get_validation_error_response(),
+            **get_error_responses(
+                EntriesErrorCodes.CANNOT_EDIT_ALIAS_CLASS,
+                EntriesErrorCodes.ENTRY_CLASS_NOT_FOUND,
+                EntriesErrorCodes.ADMIN_ONLY_ENTRY_CLASS_TYPE_CHANGE,
+            ),
+            **get_common_error_responses(),
         },
     ),
 )
@@ -175,28 +195,28 @@ class EntryClassDetail(APIView):
         try:
             entity = EntryClass.objects.get(subtype=class_subtype)
         except EntryClass.DoesNotExist:
-            return Response(
-                "There is no entry class with specified subtype.",
-                status=status.HTTP_404_NOT_FOUND,
+            raise EntryClassNotFoundException(
+                detail="There is no entry class with specified subtype."
             )
         serializer = EntryClassSerializer(entity)
         return Response(serializer.data)
 
     def delete(self, request: Request, class_subtype: str) -> Response:
         if class_subtype in settings.INTERNAL_SUBTYPES:
-            return Response(
-                "Cannot delete the alias entry class.", status=status.HTTP_403_FORBIDDEN
+            raise CannotDeleteAliasClassException(
+                detail="Cannot delete the alias entry class."
             )
 
         if not request.user.is_cradle_admin:
-            return Response("User must be an admin to delete entry classes.")
+            raise AdminOnlyEntryClassDeleteException(
+                detail="User must be an admin to delete entry classes."
+            )
 
         try:
             entity_class = EntryClass.objects.get(subtype=class_subtype)
         except EntryClass.DoesNotExist:
-            return Response(
-                "There is no entry class with specified subtype.",
-                status=status.HTTP_404_NOT_FOUND,
+            raise EntryClassNotFoundException(
+                detail="There is no entry class with specified subtype."
             )
 
         entity_class.rename(None, request.user.id)
@@ -205,8 +225,8 @@ class EntryClassDetail(APIView):
 
     def post(self, request: Request, class_subtype: str) -> Response:
         if class_subtype in settings.INTERNAL_SUBTYPES:
-            return Response(
-                "Cannot edit the alias entry class.", status=status.HTTP_403_FORBIDDEN
+            raise CannotEditAliasClassException(
+                detail="Cannot edit the alias entry class."
             )
 
         user = cast(CradleUser, request.user)
@@ -214,15 +234,13 @@ class EntryClassDetail(APIView):
         try:
             entryclass = EntryClass.objects.get(subtype=class_subtype)
         except EntryClass.DoesNotExist:
-            return Response(
-                "There is no entry class with specified subtype.",
-                status=status.HTTP_404_NOT_FOUND,
+            raise EntryClassNotFoundException(
+                detail="There is no entry class with specified subtype."
             )
 
         if not user.is_cradle_admin and request.data["type"] != entryclass.type:
-            return Response(
-                "User must be an admin to change entry class type!",
-                status=status.HTTP_403_FORBIDDEN,
+            raise AdminOnlyEntryClassTypeChangeException(
+                detail="User must be an admin to change entry class type!"
             )
 
         new_subtype = request.data.get("subtype", None)
@@ -232,16 +250,13 @@ class EntryClassDetail(APIView):
                 entryclass = entryclass.rename(new_subtype, user.id)
 
             serializer = EntryClassSerializer(entryclass, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
 
-            if serializer.is_valid():
-                serializer.save()
+            response = dict(serializer.data)
+            entryclass.log_edit(user)
 
-                response = dict(serializer.data)
-                entryclass.log_edit(user)
-
-                return Response(response)
-
-        return Response(serializer.error_messages, status=status.HTTP_400_BAD_REQUEST)
+            return Response(response)
 
 
 @extend_schema_view(
@@ -258,7 +273,10 @@ class EntryClassDetail(APIView):
         ],
         responses={
             200: NextNameResponseSerializer,
-            404: {"description": "Entry class not found"},
+            **get_error_responses(
+                EntriesErrorCodes.ENTRY_CLASS_NOT_FOUND,
+            ),
+            **get_common_error_responses(),
         },
     )
 )
@@ -270,9 +288,8 @@ class NextName(APIView):
         try:
             eclass = EntryClass.objects.get(subtype=class_subtype)
         except EntryClass.DoesNotExist:
-            return Response(
-                "There is no entry class with specified subtype.",
-                status=status.HTTP_404_NOT_FOUND,
+            raise EntryClassNotFoundException(
+                detail="There is no entry class with specified subtype."
             )
 
         if not eclass.prefix:

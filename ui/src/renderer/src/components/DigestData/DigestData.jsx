@@ -32,6 +32,7 @@ export default function DigestData() {
     const [submittedFilters, setSubmittedFilters] = useState({
         title: searchParams.get('title') || '',
         author: searchParams.get('author') || '',
+        created_at_gte: searchParams.get('created_at_gte') || '',
     });
 
     // Date range state
@@ -51,13 +52,14 @@ export default function DigestData() {
 
     useEffect(() => {
         fetchDigests();
-    }, [page, submittedFilters, sortField, sortDirection, pageSize, columnFilters, intelioApi]);
+    }, [page, sortField, sortDirection, pageSize, columnFilters, intelioApi]);
 
     // Initialize filters from URL parameters
     useEffect(() => {
         const initialFilters = {
             title: searchParams.get('title') || '',
             author: searchParams.get('author') || '',
+            created_at_gte: searchParams.get('created_at_gte') || '',
         };
 
         const initialDateRange = {
@@ -88,6 +90,7 @@ export default function DigestData() {
                 created_at_lte: searchParams.get('created_at_lte') || '',
             });
         }
+        fetchDigests();
     }, []);
 
     const updateSearchParams = (filters, dateRangeValue) => {
@@ -153,10 +156,6 @@ export default function DigestData() {
             ...prev,
             [name]: value,
         }));
-    };
-
-    const handleDateRangeChange = (value) => {
-        setDateRange(value);
     };
 
     const handleSearchSubmit = (e) => {

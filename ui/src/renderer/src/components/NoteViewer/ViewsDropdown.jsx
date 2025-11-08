@@ -1,7 +1,7 @@
 import { Graph } from '@phosphor-icons/react';
 import { Check, ClockRotateRight, Code, Page } from 'iconoir-react';
-import { ViewMode } from './constants';
 import Tooltip from '../Tooltip/Tooltip';
+import { ViewMode } from './constants';
 
 /**
  * Dropdown menu for switching between different view modes

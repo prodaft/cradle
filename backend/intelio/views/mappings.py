@@ -8,10 +8,20 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.utils import fields_to_form
+from core.openapi import get_error_responses, get_common_error_responses
 from user.permissions import HasEntryManagerRole
 
 from ..models.base import ClassMapping
 from ..serializers import ClassMappingSerializer, MappingSubclassSerializer
+from ..exceptions import (
+    InvalidClassNameException,
+    NotMappingClassException,
+    InternalClassRequiredException,
+    IntegrityErrorException,
+    MappingIdRequiredException,
+    MappingNotFoundException,
+    IntelioErrorCodes,
+)
 
 
 @extend_schema_view(
@@ -21,8 +31,7 @@ from ..serializers import ClassMappingSerializer, MappingSubclassSerializer
         description="Returns a list of all subclasses of ClassMapping with their names.",
         responses={
             200: MappingSubclassSerializer(many=True),
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User does not have entry manager role"},
+            **get_common_error_responses(),
         },
     )
 )
@@ -58,9 +67,11 @@ class ClassMappingSubclassesAPIView(APIView):
                 "type": "object",
                 "description": "Field mapping schema",
             },
-            400: {"description": "Invalid class name or not a valid mapping class"},
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User does not have entry manager role"},
+            **get_error_responses(
+                IntelioErrorCodes.INVALID_CLASS_NAME,
+                IntelioErrorCodes.NOT_MAPPING_CLASS
+            ),
+            **get_common_error_responses(),
         },
     )
 )
@@ -75,10 +86,10 @@ class MappingKeysSchemaView(APIView):
         try:
             mapping_class = apps.get_model(app_label="intelio", model_name=class_name)
         except LookupError:
-            return Response({"error": "Invalid class name"}, status=400)
+            raise InvalidClassNameException(detail="Invalid class name")
 
         if not issubclass(mapping_class, ClassMapping) or mapping_class._meta.abstract:
-            return Response({"error": "Not a valid mapping class"}, status=400)
+            raise NotMappingClassException(detail="Not a valid mapping class")
 
         field_mapping = fields_to_form({f.name: f for f in mapping_class._meta.fields})
 
@@ -98,9 +109,11 @@ class MappingKeysSchemaView(APIView):
                     "description": "Mapping instance data",
                 },
             },
-            400: {"description": "Invalid class name or not a valid mapping class"},
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User does not have entry manager role"},
+            **get_error_responses(
+                IntelioErrorCodes.INVALID_CLASS_NAME,
+                IntelioErrorCodes.NOT_MAPPING_CLASS
+            ),
+            **get_common_error_responses(),
         },
     ),
     post=extend_schema(
@@ -113,11 +126,13 @@ class MappingKeysSchemaView(APIView):
                 "type": "object",
                 "description": "Mapping instance data",
             },
-            400: {
-                "description": "Invalid class name, not a valid mapping class, or bad request data"
-            },
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User does not have entry manager role"},
+            **get_error_responses(
+                IntelioErrorCodes.INVALID_CLASS_NAME,
+                IntelioErrorCodes.NOT_MAPPING_CLASS,
+                IntelioErrorCodes.INTERNAL_CLASS_REQUIRED,
+                IntelioErrorCodes.INTEGRITY_ERROR
+            ),
+            **get_common_error_responses(),
         },
     ),
     delete=extend_schema(
@@ -134,12 +149,13 @@ class MappingKeysSchemaView(APIView):
         ],
         responses={
             200: {"description": "Mapping successfully deleted"},
-            400: {
-                "description": "Invalid class name, not a valid mapping class, or missing mapping_id"
-            },
-            404: {"description": "Mapping not found"},
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User does not have entry manager role"},
+            **get_error_responses(
+                IntelioErrorCodes.INVALID_CLASS_NAME,
+                IntelioErrorCodes.NOT_MAPPING_CLASS,
+                IntelioErrorCodes.MAPPING_ID_REQUIRED,
+                IntelioErrorCodes.MAPPING_NOT_FOUND
+            ),
+            **get_common_error_responses(),
         },
     ),
 )
@@ -154,10 +170,10 @@ class MappingSchemaView(APIView):
         try:
             mapping_class = apps.get_model(app_label="intelio", model_name=class_name)
         except LookupError:
-            return Response({"error": "Invalid class name"}, status=400)
+            raise InvalidClassNameException(detail="Invalid class name")
 
         if not issubclass(mapping_class, ClassMapping) or mapping_class._meta.abstract:
-            return Response({"error": "Not a valid mapping class"}, status=400)
+            raise NotMappingClassException(detail="Not a valid mapping class")
 
         mappings = mapping_class.objects.all()
         serializer = ClassMappingSerializer.get_serializer(mapping_class)
@@ -168,10 +184,10 @@ class MappingSchemaView(APIView):
         try:
             mapping_class = apps.get_model(app_label="intelio", model_name=class_name)
         except LookupError:
-            return Response({"error": "Invalid class name"}, status=400)
+            raise InvalidClassNameException(detail="Invalid class name")
 
         if not issubclass(mapping_class, ClassMapping) or mapping_class._meta.abstract:
-            return Response({"error": "Not a valid mapping class"}, status=400)
+            raise NotMappingClassException(detail="Not a valid mapping class")
 
         values = {}
 
@@ -180,7 +196,7 @@ class MappingSchemaView(APIView):
                 values[f.name] = request.data[f.name]
 
         if "internal_class" not in values:
-            return Response({"error": "internal_class is required"}, status=400)
+            raise InternalClassRequiredException(detail="internal_class is required")
 
         mappingf = mapping_class.objects.filter(
             id=values.pop("id", None),
@@ -198,25 +214,25 @@ class MappingSchemaView(APIView):
                 mapping = mapping_class.objects.create(**values)
                 return Response(serializer(mapping).data)
         except IntegrityError as e:
-            return Response({"error": str(e)}, status=400)
+            raise IntegrityErrorException(detail=str(e))
 
     def delete(self, request, class_name):
         try:
             mapping_class = apps.get_model(app_label="intelio", model_name=class_name)
         except LookupError:
-            return Response({"error": "Invalid class name"}, status=400)
+            raise InvalidClassNameException(detail="Invalid class name")
 
         if not issubclass(mapping_class, ClassMapping) or mapping_class._meta.abstract:
-            return Response({"error": "Not a valid mapping class"}, status=400)
+            raise NotMappingClassException(detail="Not a valid mapping class")
 
         id = request.query_params.get("mapping_id")
 
         if not id:
-            return Response({"error": "mapping_id is required"}, status=400)
+            raise MappingIdRequiredException(detail="mapping_id is required")
 
         mapping = mapping_class.objects.filter(id=id)
 
         if not mapping.exists():
-            return Response({"error": "Mapping not found"}, status=404)
+            raise MappingNotFoundException(detail="Mapping not found")
 
         return Response(mapping.delete())

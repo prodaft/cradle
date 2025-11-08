@@ -9,6 +9,14 @@ from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from core.openapi import get_error_responses, get_validation_error_response
+from ..exceptions import (
+    EmailNotConfirmedException,
+    AccountNotActivatedException,
+    TwoFactorRequiredException,
+    InvalidTwoFactorTokenException,
+    UserErrorCodes,
+)
 from ..serializers import (
     TokenObtainSerializer,
     TokenPairRetrieveSerializer,
@@ -24,8 +32,13 @@ class TokenObtainPairLogView(TokenObtainPairView):
         request=TokenObtainSerializer,
         responses={
             200: TokenPairRetrieveSerializer,
-            400: {"description": "Invalid credentials"},
-            401: {"description": "Authentication failed or invalid 2FA token"},
+            **get_validation_error_response(),
+            **get_error_responses(
+                UserErrorCodes.EMAIL_NOT_CONFIRMED,
+                UserErrorCodes.ACCOUNT_NOT_ACTIVATED,
+                UserErrorCodes.TWO_FACTOR_REQUIRED,
+                UserErrorCodes.INVALID_TWO_FACTOR_TOKEN,
+            ),
         },
         summary="Obtain JWT Pair",
     )
@@ -40,28 +53,27 @@ class TokenObtainPairLogView(TokenObtainPairView):
         user = serializer.user
 
         if not user.email_confirmed:
-            return Response(
-                "Your email is not confirmed", status=status.HTTP_401_UNAUTHORIZED
+            raise EmailNotConfirmedException(
+                detail="Your email is not confirmed"
             )
 
         if not user.is_active:
-            return Response(
-                "Your account is not activated", status=status.HTTP_401_UNAUTHORIZED
+            raise AccountNotActivatedException(
+                detail="Your account is not activated"
             )
 
         # Check if 2FA is enabled
         if user.two_factor_enabled:
             # If no 2FA token provided, return a special response
             if "two_factor_token" not in request.data:
-                return Response(
-                    {"requires_2fa": True, "message": "2FA token required"},
-                    status=status.HTTP_401_UNAUTHORIZED,
+                raise TwoFactorRequiredException(
+                    detail="2FA token required"
                 )
 
             # Verify 2FA token
             if not user.verify_2fa_token(request.data["two_factor_token"]):
-                return Response(
-                    {"error": "Invalid 2FA token"}, status=status.HTTP_401_UNAUTHORIZED
+                raise InvalidTwoFactorTokenException(
+                    detail="Invalid 2FA token"
                 )
 
         # Add role and token expiry times to response
@@ -90,8 +102,7 @@ class TokenObtainPairLogView(TokenObtainPairView):
         request=TokenRefreshSerializer,
         responses={
             200: TokenRefreshRetrieveSerializer,
-            400: {"description": "Bad Request: Invalid refresh token"},
-            401: {"description": "Unauthorized: Refresh token expired or invalid"},
+            **get_validation_error_response(),
         },
     )
 )
@@ -101,8 +112,7 @@ class TokenRefreshLogView(TokenRefreshView):
         request=TokenRefreshSerializer,
         responses={
             200: TokenRefreshRetrieveSerializer,
-            400: "Bad Request: Invalid refresh token",
-            401: "Unauthorized: Refresh token expired or invalid",
+            **get_validation_error_response(),
         },
         summary="Refresh Access Token",
     )

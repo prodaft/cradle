@@ -7,6 +7,14 @@ from ..serializers import Enable2FASerializer, Verify2FASerializer
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from django_otp.plugins.otp_totp.models import TOTPDevice
 
+from core.openapi import get_error_responses, get_common_error_responses, get_validation_error_response
+from ..exceptions import (
+    TwoFactorAlreadyEnabledException,
+    TwoFactorNotEnabledException,
+    InvalidTwoFactorTokenException,
+    UserErrorCodes,
+)
+
 
 @extend_schema_view(
     post=extend_schema(
@@ -14,7 +22,8 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
         description="Initiates 2FA setup for the user and returns a QR code URL",
         responses={
             200: {"description": "Returns QR code URL for 2FA setup"},
-            400: {"description": "2FA is already enabled"},
+            **get_error_responses(UserErrorCodes.TWO_FACTOR_ALREADY_ENABLED),
+            **get_common_error_responses(),
         },
     )
 )
@@ -25,8 +34,8 @@ class Enable2FAView(APIView):
 
     def post(self, request):
         if request.user.two_factor_enabled:
-            return Response(
-                {"error": "2FA is already enabled"}, status=status.HTTP_400_BAD_REQUEST
+            raise TwoFactorAlreadyEnabledException(
+                detail="2FA is already enabled"
             )
 
         # The enable_2fa method now handles the transaction and potential race conditions
@@ -41,7 +50,9 @@ class Enable2FAView(APIView):
         request=Enable2FASerializer,
         responses={
             200: {"description": "2FA setup completed successfully"},
-            400: {"description": "Invalid token"},
+            **get_validation_error_response(),
+            **get_error_responses(UserErrorCodes.INVALID_TWO_FACTOR_TOKEN),
+            **get_common_error_responses(),
         },
     )
 )
@@ -53,14 +64,13 @@ class Verify2FASetupView(APIView):
         from django.db import transaction
 
         serializer = Enable2FASerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
 
         token = serializer.validated_data["token"]
 
         if not request.user.verify_2fa_token(token):
-            return Response(
-                {"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST
+            raise InvalidTwoFactorTokenException(
+                detail="Invalid token"
             )
 
         with transaction.atomic():
@@ -86,7 +96,12 @@ class Verify2FASetupView(APIView):
         request=Verify2FASerializer,
         responses={
             200: {"description": "2FA disabled successfully"},
-            400: {"description": "Invalid token or 2FA not enabled"},
+            **get_validation_error_response(),
+            **get_error_responses(
+                UserErrorCodes.TWO_FACTOR_NOT_ENABLED,
+                UserErrorCodes.INVALID_TWO_FACTOR_TOKEN,
+            ),
+            **get_common_error_responses(),
         },
     )
 )
@@ -96,17 +111,16 @@ class Disable2FAView(APIView):
 
     def post(self, request):
         if not request.user.two_factor_enabled:
-            return Response(
-                {"error": "2FA is not enabled"}, status=status.HTTP_400_BAD_REQUEST
+            raise TwoFactorNotEnabledException(
+                detail="2FA is not enabled"
             )
 
         serializer = Verify2FASerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
 
         # The verify_2fa_token and disable_2fa methods now handle transactions internally
         if request.user.verify_2fa_token(serializer.validated_data["token"]):
             request.user.disable_2fa()
             return Response({"message": "2FA disabled successfully"})
 
-        return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
+        raise InvalidTwoFactorTokenException(detail="Invalid token")

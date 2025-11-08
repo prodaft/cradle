@@ -12,12 +12,23 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from core.openapi import get_error_responses, get_common_error_responses, get_validation_error_response
 from management.settings import cradle_settings
 from notifications.models import NewUserNotification
 from user.permissions import HasAdminRole
 
 from ..authentication import APIKeyAuthentication
 from ..models import CradleUser
+from ..exceptions import (
+    RegistrationDisabledException,
+    UserAlreadyExistsException,
+    UserNotFoundException,
+    DisallowedActionException,
+    IncorrectOldPasswordException,
+    UnknownActionException,
+    EmailAlreadyConfirmedException,
+    UserErrorCodes,
+)
 from ..serializers import (
     APIKeyRequestSerializer,
     APIKeyResponseSerializer,
@@ -43,8 +54,7 @@ from ..serializers import (
         description="Returns a list of all users. Only available to admin users.",
         responses={
             200: UserRetrieveSerializer(many=True),
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User is not an admin"},
+            **get_common_error_responses(),
         },
     ),
     post=extend_schema(
@@ -53,8 +63,12 @@ from ..serializers import (
         description="Creates a new user account. Available to unauthenticated users.",
         request=UserCreateSerializer,
         responses={
-            200: {"description": "User created successfully"},
-            400: {"description": "Invalid data provided"},
+            200: UserRetrieveSerializer,
+            **get_validation_error_response(),
+            **get_error_responses(
+                UserErrorCodes.REGISTRATION_DISABLED,
+                UserErrorCodes.USER_ALREADY_EXISTS,
+            ),
         },
     ),
 )
@@ -75,8 +89,8 @@ class UserList(APIView):
 
     def post(self, request):
         if not cradle_settings.users.allow_registration:
-            return Response(
-                "User registration is disabled.", status=status.HTTP_403_FORBIDDEN
+            raise RegistrationDisabledException(
+                detail="User registration is disabled."
             )
 
         serializer = UserCreateSerializer(data=request.data)
@@ -85,30 +99,28 @@ class UserList(APIView):
             if request.user.is_cradle_admin:  # If user is admin allow more controls
                 serializer = UserCreateSerializerAdmin(data=request.data)
 
-        if serializer.is_valid():
-            if not CradleUser.objects.filter(
-                email=serializer.validated_data["email"]
-            ).exists():
-                user = serializer.save()
-                admins = CradleUser.objects.filter(role="admin")
-                with transaction.atomic():
-                    for i in admins:
-                        NewUserNotification.objects.create(
-                            user_id=i.id,
-                            new_user=user,
-                            message=f"A new user has registered: {user.username}",
-                        )
-                user.send_email_confirmation()
-                serializer = UserRetrieveSerializer(user)
+        serializer.is_valid(raise_exception=True)
 
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            else:
-                return Response(
-                    "User with this email already exists.",
-                    status=status.HTTP_409_CONFLICT,
+        if CradleUser.objects.filter(
+            email=serializer.validated_data["email"]
+        ).exists():
+            raise UserAlreadyExistsException(
+                detail="User with this email already exists."
+            )
+
+        user = serializer.save()
+        admins = CradleUser.objects.filter(role="admin")
+        with transaction.atomic():
+            for i in admins:
+                NewUserNotification.objects.create(
+                    user_id=i.id,
+                    new_user=user,
+                    message=f"A new user has registered: {user.username}",
                 )
+        user.send_email_confirmation()
+        serializer = UserRetrieveSerializer(user)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
@@ -126,9 +138,8 @@ class UserList(APIView):
         ],
         responses={
             200: UserRetrieveSerializer,
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User is not allowed to view this profile"},
-            404: {"description": "User not found"},
+            **get_error_responses(UserErrorCodes.USER_NOT_FOUND),
+            **get_common_error_responses(),
         },
     ),
     post=extend_schema(
@@ -145,9 +156,9 @@ class UserList(APIView):
         ],
         responses={
             200: UserRetrieveSerializer,
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User is not allowed to edit this profile"},
-            404: {"description": "User not found"},
+            **get_validation_error_response(),
+            **get_error_responses(UserErrorCodes.USER_NOT_FOUND),
+            **get_common_error_responses(),
         },
     ),
 )
@@ -165,18 +176,16 @@ class UserDetail(APIView):
             try:
                 user = CradleUser.objects.get(id=user_id)
             except CradleUser.DoesNotExist:
-                return Response(
-                    "There is no user with the specified ID.",
-                    status=status.HTTP_404_NOT_FOUND,
+                raise UserNotFoundException(
+                    detail="There is no user with the specified ID."
                 )
 
         if not (
             initiator.pk == user.pk
             or (initiator.is_cradle_admin and not user.is_cradle_admin)
         ):
-            return Response(
-                "You are not allowed to view this user.",
-                status=status.HTTP_403_FORBIDDEN,
+            raise DisallowedActionException(
+                detail="You are not allowed to view this user."
             )
 
         json_user = UserRetrieveSerializer(user, many=False).data
@@ -192,18 +201,16 @@ class UserDetail(APIView):
             try:
                 edited = CradleUser.objects.get(id=user_id)
             except CradleUser.DoesNotExist:
-                return Response(
-                    "There is no user with the specified ID.",
-                    status=status.HTTP_404_NOT_FOUND,
+                raise UserNotFoundException(
+                    detail="There is no user with the specified ID."
                 )
 
         if not (
             editor.pk == edited.pk
             or (editor.is_cradle_admin and not edited.is_cradle_admin)
         ):
-            return Response(
-                "You are not allowed to edit this user.",
-                status=status.HTTP_403_FORBIDDEN,
+            raise DisallowedActionException(
+                detail="You are not allowed to edit this user."
             )
 
         if request.data.get("username", None) == edited.username:
@@ -219,12 +226,10 @@ class UserDetail(APIView):
         else:
             serializer = UserCreateSerializer(edited, data=request.data, partial=True)
 
-        if serializer.is_valid():
-            user = serializer.save()
-            json_user = UserRetrieveSerializer(user, many=False).data
-            return Response(json_user, status=status.HTTP_200_OK)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        json_user = UserRetrieveSerializer(user, many=False).data
+        return Response(json_user, status=status.HTTP_200_OK)
 
     def delete(self, request, user_id):
         deleter = cast(CradleUser, request.user)
@@ -235,18 +240,16 @@ class UserDetail(APIView):
             try:
                 removed_user = CradleUser.objects.get(id=user_id)
             except CradleUser.DoesNotExist:
-                return Response(
-                    "There is no user with the specified ID.",
-                    status=status.HTTP_404_NOT_FOUND,
+                raise UserNotFoundException(
+                    detail="There is no user with the specified ID."
                 )
 
         if not (
             deleter.pk == removed_user.pk
             or (deleter.is_cradle_admin and not removed_user.is_cradle_admin)
         ):
-            return Response(
-                "You are not allowed to delete this user.",
-                status=status.HTTP_403_FORBIDDEN,
+            raise DisallowedActionException(
+                detail="You are not allowed to delete this user."
             )
 
         removed_user.delete()
@@ -262,14 +265,9 @@ class UserDetail(APIView):
         request=ChangePasswordRequestSerializer,
         responses={
             200: ChangePasswordResponseSerializer,
-            400: {
-                "type": "string",
-                "description": "Bad Request: Invalid data or incorrect old password",
-            },
-            401: {
-                "type": "string",
-                "description": "Unauthorized: Authentication credentials were not provided",
-            },
+            **get_validation_error_response(),
+            **get_error_responses(UserErrorCodes.INCORRECT_OLD_PASSWORD),
+            **get_common_error_responses(),
         },
     )
 )
@@ -284,26 +282,24 @@ class ChangePasswordView(APIView):
     def post(self, request):
         user: CradleUser = request.user
         serializer = ChangePasswordSerializer(data=request.data)
-        if serializer.is_valid():
-            old_password = serializer.validated_data["old_password"]
-            new_password = serializer.validated_data["new_password"]
+        serializer.is_valid(raise_exception=True)
 
-            # Check if old_password is correct
-            if not user.check_password(old_password):
-                return Response(
-                    "The old password is incorrect.",
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        old_password = serializer.validated_data["old_password"]
+        new_password = serializer.validated_data["new_password"]
 
-            # Everything is valid, update the password
-            user.set_password(new_password)
-            user.save()
-
-            return Response(
-                {"detail": "Password changed successfully."}, status=status.HTTP_200_OK
+        # Check if old_password is correct
+        if not user.check_password(old_password):
+            raise IncorrectOldPasswordException(
+                detail="The old password is incorrect."
             )
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Everything is valid, update the password
+        user.set_password(new_password)
+        user.save()
+
+        return Response(
+            {"detail": "Password changed successfully."}, status=status.HTTP_200_OK
+        )
 
 
 @extend_schema_view(
@@ -326,10 +322,13 @@ class ChangePasswordView(APIView):
         ],
         responses={
             200: UserManageResponseSerializer,
-            400: {"description": "Bad Request: Unknown action or invalid state"},
-            401: {"description": "Unauthorized: User is not authenticated"},
-            403: {"description": "Forbidden: User is not an admin"},
-            404: {"description": "Not Found: User not found"},
+            **get_error_responses(
+                UserErrorCodes.UNKNOWN_ACTION,
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.EMAIL_ALREADY_CONFIRMED,
+                UserErrorCodes.DISALLOWED_ACTION,
+            ),
+            **get_common_error_responses(),
         },
     )
 )
@@ -350,16 +349,15 @@ class ManageUser(APIView):
             "send_email_confirmation",
             "password_reset_email",
         ]:
-            return Response("Unknown action", status=status.HTTP_400_BAD_REQUEST)
+            raise UnknownActionException(detail="Unknown action")
         return self.__getattribute__(action_name)(request, user_id, *args, **kwargs)
 
     def password_reset_email(self, request, user_id, *args, **kwargs):
         try:
             user = CradleUser.objects.get(id=user_id)
         except CradleUser.DoesNotExist:
-            return Response(
-                "There is no user with the specified ID.",
-                status=status.HTTP_404_NOT_FOUND,
+            raise UserNotFoundException(
+                detail="There is no user with the specified ID."
             )
 
         user.send_password_reset()
@@ -373,15 +371,13 @@ class ManageUser(APIView):
         try:
             user = CradleUser.objects.get(id=user_id)
         except CradleUser.DoesNotExist:
-            return Response(
-                "There is no user with the specified ID.",
-                status=status.HTTP_404_NOT_FOUND,
+            raise UserNotFoundException(
+                detail="There is no user with the specified ID."
             )
 
         if user.email_confirmed:
-            return Response(
-                "User's email is already confirmed.",
-                status=status.HTTP_400_BAD_REQUEST,
+            raise EmailAlreadyConfirmedException(
+                detail="User's email is already confirmed."
             )
 
         user.send_email_confirmation()
@@ -395,14 +391,12 @@ class ManageUser(APIView):
         try:
             user = CradleUser.objects.get(id=user_id)
         except CradleUser.DoesNotExist:
-            return Response(
-                "There is no user with the specified ID.",
-                status=status.HTTP_404_NOT_FOUND,
+            raise UserNotFoundException(
+                detail="There is no user with the specified ID."
             )
         if user.is_cradle_admin:
-            return Response(
-                "You are not allowed to simulate an admin.",
-                status=status.HTTP_403_FORBIDDEN,
+            raise DisallowedActionException(
+                detail="You are not allowed to simulate an admin."
             )
         return Response(self.get_tokens_for_user(user), status=status.HTTP_200_OK)
 
@@ -421,9 +415,11 @@ class ManageUser(APIView):
     ],
     responses={
         200: APIKeyResponseSerializer,
-        401: {"description": "User is not authenticated"},
-        403: {"description": "User is not allowed to generate API key for this user"},
-        404: {"description": "User not found"},
+        **get_error_responses(
+            UserErrorCodes.USER_NOT_FOUND,
+            UserErrorCodes.DISALLOWED_ACTION,
+        ),
+        **get_common_error_responses(),
     },
 )
 class APIKey(APIView):
@@ -437,15 +433,19 @@ class APIKey(APIView):
         if user_id == "me":
             user = requesting_user
         else:
-            user = CradleUser.objects.get(id=user_id)
+            try:
+                user = CradleUser.objects.get(id=user_id)
+            except CradleUser.DoesNotExist:
+                raise UserNotFoundException(
+                    detail="There is no user with the specified ID."
+                )
 
         if not (
             requesting_user.pk == user.pk
             or (requesting_user.is_cradle_admin and not user.is_cradle_admin)
         ):
-            return Response(
-                "You are not allowed to generate API key for this user.",
-                status=status.HTTP_403_FORBIDDEN,
+            raise DisallowedActionException(
+                detail="You are not allowed to generate API key for this user."
             )
 
         key = secrets.token_hex(24)
@@ -463,7 +463,7 @@ class APIKey(APIView):
     request=EmailConfirmSerializer,
     responses={
         200: {"description": "Email confirmed successfully"},
-        400: {"description": "Bad request - token expired or invalid"},
+        **get_validation_error_response(),
     },
 )
 class EmailConfirm(APIView):
@@ -472,26 +472,23 @@ class EmailConfirm(APIView):
 
     def post(self, request):
         serializer = EmailConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        if serializer.is_valid():
-            user = serializer.user
+        user = serializer.user
 
-            # Check if token expired
-            if user.email_confirmation_token_expiry < timezone.now():
-                user.send_email_confirmation()
+        # Check if token expired
+        if user.email_confirmation_token_expiry < timezone.now():
+            user.send_email_confirmation()
+            from core.exceptions import ValidationException
+            raise ValidationException(
+                detail="Email confirmation token has expired a new one was sent."
+            )
 
-                return Response(
-                    "Email confirmation token has expired a new one was sent.",
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        user.email_confirmed = True
+        user.email_confirmation_token = ""
+        user.save()
 
-            user.email_confirmed = True
-            user.email_confirmation_token = ""
-            user.save()
-
-            return Response("Email confirmed.", status=status.HTTP_200_OK)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response("Email confirmed.", status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
@@ -502,7 +499,7 @@ class EmailConfirm(APIView):
         request=PasswordResetRequestSerializer,
         responses={
             200: {"description": "Password reset email sent"},
-            400: {"description": "Email or username must be provided"},
+            **get_validation_error_response(),
         },
     ),
     put=extend_schema(
@@ -512,9 +509,7 @@ class EmailConfirm(APIView):
         request=PasswordResetConfirmSerializer,
         responses={
             200: {"description": "Password reset successfully"},
-            400: {
-                "description": "Invalid token provided, token expired, or invalid password"
-            },
+            **get_validation_error_response(),
         },
     ),
 )
@@ -528,8 +523,9 @@ class PasswordReset(APIView):
         username = request.data.get("username")
 
         if not email and not username:
-            return Response(
-                "Email or username must be provided", status=status.HTTP_400_BAD_REQUEST
+            from core.exceptions import ValidationException
+            raise ValidationException(
+                detail="Email or username must be provided"
             )
 
         user = None
@@ -545,10 +541,9 @@ class PasswordReset(APIView):
         return Response("Password reset email sent.", status=status.HTTP_200_OK)
 
     def put(self, request):
+        from core.exceptions import ValidationException
         serializer = PasswordResetConfirmSerializer(data=request.data)
-
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
 
         token = serializer.validated_data["token"]
         password = serializer.validated_data["password"]
@@ -558,9 +553,8 @@ class PasswordReset(APIView):
 
             # Check if token was expired
             if user.password_reset_token_expiry < timezone.now():
-                return Response(
-                    "Password reset token has expired.",
-                    status=status.HTTP_400_BAD_REQUEST,
+                raise ValidationException(
+                    detail="Password reset token has expired."
                 )
 
             # Reset the token and set new password
@@ -570,7 +564,7 @@ class PasswordReset(APIView):
 
             return Response("Password reset successfully.", status=status.HTTP_200_OK)
 
-        return Response("Token not found!", status=status.HTTP_400_BAD_REQUEST)
+        raise ValidationException(detail="Token not found!")
 
 
 @extend_schema_view(
@@ -587,9 +581,8 @@ class PasswordReset(APIView):
         ],
         responses={
             200: DefaultNoteTemplateResponseSerializer,
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User is not allowed to view this template"},
-            404: {"description": "User not found"},
+            **get_error_responses(UserErrorCodes.USER_NOT_FOUND),
+            **get_common_error_responses(),
         },
     ),
     post=extend_schema(
@@ -606,10 +599,9 @@ class PasswordReset(APIView):
         request=DefaultNoteTemplateSerializer,
         responses={
             200: DefaultNoteTemplateResponseSerializer,
-            400: {"description": "Invalid data provided"},
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User is not allowed to edit this template"},
-            404: {"description": "User not found"},
+            **get_validation_error_response(),
+            **get_error_responses(UserErrorCodes.USER_NOT_FOUND),
+            **get_common_error_responses(),
         },
     ),
 )
@@ -626,9 +618,8 @@ class DefaultNoteTemplateView(APIView):
             try:
                 user = CradleUser.objects.get(id=user_id)
             except CradleUser.DoesNotExist:
-                return Response(
-                    "There is no user with the specified ID.",
-                    status=status.HTTP_404_NOT_FOUND,
+                raise UserNotFoundException(
+                    detail="There is no user with the specified ID."
                 )
 
         # Check permissions - users can only see their own template or admins can see non-admin templates
@@ -636,9 +627,8 @@ class DefaultNoteTemplateView(APIView):
             initiator.pk == user.pk
             or (initiator.is_cradle_admin and not user.is_cradle_admin)
         ):
-            return Response(
-                "You are not allowed to view this template.",
-                status=status.HTTP_403_FORBIDDEN,
+            raise DisallowedActionException(
+                detail="You are not allowed to view this template."
             )
 
         return Response(
@@ -656,9 +646,8 @@ class DefaultNoteTemplateView(APIView):
             try:
                 edited = CradleUser.objects.get(id=user_id)
             except CradleUser.DoesNotExist:
-                return Response(
-                    "There is no user with the specified ID.",
-                    status=status.HTTP_404_NOT_FOUND,
+                raise UserNotFoundException(
+                    detail="There is no user with the specified ID."
                 )
 
         # Check permissions - users can only edit their own template or admins can edit non-admin templates
@@ -666,19 +655,16 @@ class DefaultNoteTemplateView(APIView):
             editor.pk == edited.pk
             or (editor.is_cradle_admin and not edited.is_cradle_admin)
         ):
-            return Response(
-                "You are not allowed to edit this template.",
-                status=status.HTTP_403_FORBIDDEN,
+            raise DisallowedActionException(
+                detail="You are not allowed to edit this template."
             )
 
         serializer = DefaultNoteTemplateSerializer(data=request.data)
-        if serializer.is_valid():
-            edited.default_note_template = serializer.validated_data.get("template")
-            edited.save(update_fields=["default_note_template"])
+        serializer.is_valid(raise_exception=True)
+        edited.default_note_template = serializer.validated_data.get("template")
+        edited.save(update_fields=["default_note_template"])
 
-            return Response(
-                {"template": edited.default_note_template},
-                status=status.HTTP_200_OK,
-            )
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"template": edited.default_note_template},
+            status=status.HTTP_200_OK,
+        )

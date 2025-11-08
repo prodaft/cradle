@@ -12,8 +12,15 @@ from .serializers import (
     FileProcessSerializer,
 )
 from .models import FileReference
+from .exceptions import (
+    InvalidFileNameException,
+    FileReferenceNotFoundException,
+    InvalidRequestBodyException,
+    FileTransferErrorCodes,
+)
 import time
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from core.openapi import get_error_responses, get_common_error_responses
 
 
 @extend_schema_view(
@@ -31,8 +38,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
         ],
         responses={
             200: FileUploadSerializer,
-            400: {"description": "Query parameters are invalid"},
-            401: {"description": "User is not authenticated"},
+            **get_error_responses(FileTransferErrorCodes.INVALID_FILE_NAME),
+            **get_common_error_responses(),
         },
     )
 )
@@ -63,9 +70,7 @@ class FileUpload(APIView):
 
         file_name = request.query_params.get("fileName")
         if not file_name:
-            return Response(
-                "Query parameters are invalid", status=status.HTTP_400_BAD_REQUEST
-            )
+            raise InvalidFileNameException(detail="The 'fileName' query parameter is required.")
 
         response_data = {}
         response_data["bucket_name"] = str(request.user.id)
@@ -103,9 +108,11 @@ class FileUpload(APIView):
         ],
         responses={
             200: FileDownloadSerializer,
-            400: {"description": "Query parameters are invalid"},
-            401: {"description": "User is not authenticated"},
-            404: {"description": "The requested file does not exist"},
+            **get_error_responses(
+                FileTransferErrorCodes.INVALID_FILE_NAME,
+                FileTransferErrorCodes.MINIO_OBJECT_NOT_FOUND
+            ),
+            **get_common_error_responses(),
         },
     )
 )
@@ -138,8 +145,8 @@ class FileDownload(APIView):
         minio_file_name = request.query_params.get("minioFileName")
 
         if bucket_name is None or minio_file_name is None:
-            return Response(
-                "Query parameters are invalid", status=status.HTTP_400_BAD_REQUEST
+            raise InvalidFileNameException(
+                detail="Both 'bucketName' and 'minioFileName' query parameters are required."
             )
 
         response_data = {}
@@ -159,9 +166,11 @@ class FileDownload(APIView):
         request=FileProcessSerializer,
         responses={
             200: {"description": "File processing started successfully"},
-            400: {"description": "Request body is invalid"},
-            401: {"description": "User is not authenticated"},
-            404: {"description": "File reference not found"},
+            **get_error_responses(
+                FileTransferErrorCodes.INVALID_REQUEST_BODY,
+                FileTransferErrorCodes.FILE_REFERENCE_NOT_FOUND
+            ),
+            **get_common_error_responses(),
         },
     )
 )
@@ -184,10 +193,7 @@ class FileProcess(APIView):
         serializer = FileProcessSerializer(data=request.data)
 
         if not serializer.is_valid():
-            return Response(
-                {"error": "Invalid request body", "details": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise InvalidRequestBodyException(detail="Request body validation failed.")
 
         try:
             file_reference = FileReference.objects.get(
@@ -201,6 +207,6 @@ class FileProcess(APIView):
                 {"message": "File processing started"}, status=status.HTTP_200_OK
             )
         except FileReference.DoesNotExist:
-            return Response(
-                {"error": "File reference not found"}, status=status.HTTP_404_NOT_FOUND
+            raise FileReferenceNotFoundException(
+                detail=f"File reference with ID {serializer.validated_data['file_id']} not found."
             )

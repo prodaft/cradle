@@ -76,7 +76,6 @@ function DigestList({
     } : {};
 
     const renderRow = (digest, index, selectProps = {}) => {
-        console.log(digest);
         const { enableMultiSelect, isSelected, onSelect } = selectProps;
 
         return (

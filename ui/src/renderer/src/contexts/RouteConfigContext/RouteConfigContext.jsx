@@ -17,27 +17,29 @@ const Publish = React.lazy(() => import('../../components/Publish/Publish.jsx'))
 const AccountSettings = React.lazy(() => import('../../components/AccountSettings/AccountSettings.jsx'));
 const AdminPanel = React.lazy(() => import('../../components/AdminPanel/AdminPanel.jsx'));
 const DigestData = React.lazy(() => import('../../components/DigestData/DigestData.jsx'));
+const EnrichmentRequests = React.lazy(() => import('../../components/EnrichmentRequests/EnrichmentRequests.jsx'));
 
 /**
  * Define route configurations
  */
 const routeConfigs = [
-    { path: '/notes/:id', component: NoteViewer },
-    { path: '/notes', component: Documents },
-    { path: '/dashboards/:subtype/:name', component: Dashboard },
-    { path: '/manage/add/user', component: () => <AccountSettings isEdit={false} /> },
-    { path: '/manage', component: AdminPanel },
-    { path: '/reports/:report_id', component: ReportList },
-    { path: '/knowledge-graph', component: () => <GraphExplorer GraphSearchComponent={GraphSearch} /> },
-    { path: '/not-implemented', component: FeatureNotImplemented },
-    { path: '/files', component: Files },
-    { path: '/digest-data', component: DigestData },
-    { path: '/reports', component: Reports },
-    { path: '/publish', component: Publish },
-    { path: '/activity/:username', component: ActivityList },
-    { path: '/activity', component: ActivityList },
-    { path: '/settings', component: () => <AccountSettings target='me' /> },
-    { path: '/', exact: true, component: Welcome },
+  { path: '/notes/:id', component: NoteViewer },
+  { path: '/notes', component: Documents },
+  { path: '/dashboards/:subtype/:name', component: Dashboard },
+  { path: '/manage/add/user', component: () => <AccountSettings isEdit={false} /> },
+  { path: '/manage', component: AdminPanel },
+  { path: '/reports/:report_id', component: ReportList },
+  { path: '/knowledge-graph', component: () => <GraphExplorer GraphSearchComponent={GraphSearch} /> },
+  { path: '/not-implemented', component: FeatureNotImplemented },
+  { path: '/files', component: Files },
+  { path: '/digest-data', component: DigestData },
+  { path: '/reports', component: Reports },
+  { path: '/publish', component: Publish },
+  { path: '/activity/:username', component: ActivityList },
+  { path: '/activity', component: ActivityList },
+  { path: '/settings', component: () => <AccountSettings target='me' /> },
+  { path: '/enrich', component: EnrichmentRequests },
+  { path: '/', exact: true, component: Welcome },
 ];
 
 const RouteConfigContext = createContext(routeConfigs);

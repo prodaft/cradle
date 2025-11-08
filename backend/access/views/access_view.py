@@ -11,11 +11,17 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from django.db.models import Q
 
+from core.openapi import get_error_responses, get_common_error_responses
 from user.models import CradleUser, UserRoles
 from user.permissions import HasAdminRole
 
 from ..models import Access
 from ..serializers import AccessEntitySerializer, AccessUserSerializer
+from ..exceptions import (
+    UserNotFoundException,
+    EntityNotFoundException,
+    AccessErrorCodes,
+)
 from entries.models import Entry
 from entries.enums import EntryType
 
@@ -34,9 +40,8 @@ from entries.enums import EntryType
         ],
         responses={
             200: AccessEntitySerializer(many=True),
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User is not an admin"},
-            404: {"description": "User not found"},
+            **get_error_responses(AccessErrorCodes.USER_NOT_FOUND),
+            **get_common_error_responses(),
         },
     )
 )
@@ -69,7 +74,7 @@ class UserAccessList(APIView):
         try:
             user = CradleUser.objects.get(id=user_id)
         except CradleUser.DoesNotExist:
-            return Response("User does not exist", status=status.HTTP_404_NOT_FOUND)
+            raise UserNotFoundException(detail="User does not exist")
 
         entities_with_access = Access.objects.get_accesses(user)
 
@@ -94,9 +99,8 @@ class UserAccessList(APIView):
         ],
         responses={
             200: AccessUserSerializer(many=True),
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User is not an admin"},
-            404: {"description": "Entity not found"},
+            **get_error_responses(AccessErrorCodes.ENTITY_NOT_FOUND),
+            **get_common_error_responses(),
         },
     )
 )
@@ -120,7 +124,7 @@ class EntityAccessList(APIView):
         ).first()
 
         if not entity:
-            return Response("Entity does not exist", status=status.HTTP_404_NOT_FOUND)
+            raise EntityNotFoundException(detail="Entity does not exist")
 
         accesses = Access.objects.filter(
             Q(entity=entity)

@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from core.openapi import get_error_responses, get_common_error_responses, get_validation_error_response
 from notes.models import Note
 
 from ..models import DownloadStrategies, PublishedReport, UploadStrategies
@@ -15,6 +16,11 @@ from ..serializers import (
 )
 from ..strategies import PUBLISH_STRATEGIES
 from ..tasks import generate_report
+from ..exceptions import (
+    NotesNotFoundException,
+    StrategyNotFoundException,
+    PublishErrorCodes,
+)
 
 
 @extend_schema_view(
@@ -23,7 +29,7 @@ from ..tasks import generate_report
         description="Returns available upload and download strategies for publishing reports.",  # noqa: E501
         responses={
             200: PublishStrategiesResponseSerializer,
-            401: {"description": "User is not authenticated"},
+            **get_common_error_responses(),
         },
     ),
     post=extend_schema(
@@ -31,10 +37,13 @@ from ..tasks import generate_report
         description="Creates a new published report from selected notes using specified strategy.",  # noqa: E501
         request=PublishReportSerializer,
         responses={
-            200: ReportSerializer,
-            400: {"description": "Invalid request data"},
-            401: {"description": "User is not authenticated"},
-            404: {"description": "One or more notes not found or strategy not found"},
+            201: ReportSerializer,
+            **get_error_responses(
+                PublishErrorCodes.NOTES_NOT_FOUND,
+                PublishErrorCodes.STRATEGY_NOT_FOUND
+            ),
+            **get_validation_error_response(),
+            **get_common_error_responses(),
         },
     ),
 )
@@ -55,8 +64,7 @@ class PublishReportAPIView(APIView):
 
     def post(self, request):
         serializer = PublishReportSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
         note_ids = data["note_ids"]
@@ -68,17 +76,12 @@ class PublishReportAPIView(APIView):
 
         notes = Note.objects.filter(id__in=note_ids)
         if notes.count() != len(note_ids):
-            return Response(
-                {"detail": "One or more notes not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotesNotFoundException(detail="One or more notes not found.")
 
         publisher_factory = PUBLISH_STRATEGIES.get(strategy_key)
 
         if publisher_factory is None:
-            return Response(
-                {"detail": "Strategy not found."}, status=status.HTTP_404_NOT_FOUND
-            )
+            raise StrategyNotFoundException(detail="Strategy not found.")
 
         report = PublishedReport.objects.create(
             title=title,
