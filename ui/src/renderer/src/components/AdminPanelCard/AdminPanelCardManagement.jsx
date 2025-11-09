@@ -1,6 +1,5 @@
 import { EditPencil } from 'iconoir-react';
 import { useState } from 'react';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Card from '../Card/Card';
 
 export default function AdminPanelCardManagement({
@@ -8,7 +7,7 @@ export default function AdminPanelCardManagement({
     SettingComponent,
     setRightPane,
 }) {
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { notify } = useNotif();
 
     const handleClick = () => {
         setRightPane(<SettingComponent />);
@@ -25,8 +24,7 @@ export default function AdminPanelCardManagement({
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
-            <Card
+                        <Card
                 title={name}
                 actions={actions}
                 onClick={handleClick}

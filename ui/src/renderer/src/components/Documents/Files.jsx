@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { displayError } from '../../utils/responseUtils/responseUtils';
+import { handleAPIError } from '../../utils/apiErrorHandler';
 import FilesList from '../FilesList/FilesList';
 
 /**
@@ -9,11 +10,10 @@ import FilesList from '../FilesList/FilesList';
  * Displays files not linked to any specific artifact
  * Uses the FilesList component to display files
  *
- * @param {Object} props
- * @param {Function} props.setAlert - Function to set alert messages
  * @returns {JSX.Element}
  */
-export default function Files({ setAlert }) {
+export default function Files() {
+    const { notify } = useNotif();
     const { navigate, navigateLink } = useCradleNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const [searchFilters, setSearchFilters] = useState({
@@ -23,7 +23,7 @@ export default function Files({ setAlert }) {
 
     // Error handler function
     const handleError = (error) => {
-        displayError(setAlert, navigate)(error);
+        handleAPIError(error, notify);
     };
 
 
@@ -47,7 +47,6 @@ export default function Files({ setAlert }) {
                 {searchFilters && (
                     <FilesList
                         query={searchFilters}
-                        setAlert={setAlert}
                         onError={handleError}
                     />
                 )}

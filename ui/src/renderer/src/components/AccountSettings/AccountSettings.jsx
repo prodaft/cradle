@@ -6,13 +6,13 @@ import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
 import vimIcon from '../../assets/vim32x32.gif';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useApi from '../../hooks/useApi/useApi';
 import useAuth from '../../hooks/useAuth/useAuth';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
-import AlertDismissible from '../AlertDismissible/AlertDismissible.jsx';
 import FormField from '../FormField/FormField';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import MarkdownEditorModal from '../Modals/MarkdownEditorModal.jsx';
@@ -42,6 +42,7 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
     const { usersApi } = useApi();
     const auth = useAuth();
     const { profile, setProfile, isAdmin } = useProfile();
+    const { notify } = useNotif();
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
     const [showChangePassword, setShowChangePassword] = useState(false);
     const [showApiKeyGenerate, setShowApiKeyGenerate] = useState(false);
@@ -96,7 +97,6 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
     });
 
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const [popup, setPopup] = useState({ show: false, message: '', color: 'red' });
 
     // Prepopulate form in edit mode.
     useEffect(() => {
@@ -155,10 +155,9 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                     }));
                 }
 
-                setPopup({
-                    show: true,
-                    message: 'User updated successfully',
-                    color: 'green',
+                notify({
+                    type: 'success',
+                    text: 'User updated successfully',
                 });
             } catch (err) {
                 displayError(setAlert, navigate)(err);
@@ -180,10 +179,9 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                     userCreateRequest: payload,
                 });
 
-                setPopup({
-                    show: true,
-                    message: 'User created successfully',
-                    color: 'green',
+                notify({
+                    type: 'success',
+                    text: 'User created successfully',
                 });
                 reset();
                 onAdd(newUser);
@@ -207,11 +205,9 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
             const response = await usersApi.usersApikeyCreate({
                 userId: getValues('id'),
             });
-            setPopup({
-                show: true,
-                message: 'API key generated successfully!',
-                color: 'green',
-                code: response.apiKey,
+            notify({
+                type: 'success',
+                text: `API key generated successfully! ${response.apiKey}`,
             });
             setShowApiKeyGenerate(false);
         } catch (err) {
@@ -240,10 +236,9 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                     newPassword: newPassword,
                 },
             });
-            setPopup({
-                show: true,
-                message: 'Password changed successfully!',
-                color: 'green',
+            notify({
+                type: 'success',
+                text: 'Password changed successfully!',
             });
             setShowChangePassword(false);
             setCurrentPassword('');
@@ -278,10 +273,9 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                             defaultNoteTemplateRequest: { template: content },
                         })
                         .then(() => {
-                            setPopup({
-                                show: true,
-                                message: 'Default note template updated successfully!',
-                                color: 'green',
+                            notify({
+                                type: 'success',
+                                text: 'Default note template updated successfully!',
                             });
                         })
                         .catch((err) => {
@@ -307,11 +301,9 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                     },
                 });
                 setTwoFactorEnabled(false);
-                setPopup({
-                    show: true,
-                    message:
-                        '2FA has been successfully disabled for the selected account!',
-                    color: 'green',
+                notify({
+                    type: 'success',
+                    text: '2FA has been successfully disabled for the selected account!',
                 });
             }
         } else {
@@ -336,20 +328,18 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                     verify2FARequest: { token: twoFactorCode },
                 });
                 setTwoFactorEnabled(false);
-                setPopup({
-                    show: true,
-                    message: '2FA has been successfully disabled for your account',
-                    color: 'green',
+                notify({
+                    type: 'success',
+                    text: '2FA has been successfully disabled for your account',
                 });
             } else {
                 await usersApi.users2faVerifyCreate({
                     enable2FARequest: { token: twoFactorCode },
                 });
                 setTwoFactorEnabled(true);
-                setPopup({
-                    show: true,
-                    message: '2FA has been successfully enabled for your account',
-                    color: 'green',
+                notify({
+                    type: 'success',
+                    text: '2FA has been successfully enabled for your account',
                 });
             }
             setShow2FASetup(false);
@@ -989,7 +979,6 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
 
     return (
         <>
-            <AlertDismissible alert={popup} setAlert={setPopup} />
             <div className='w-full h-full'>
                 {/* Page Header */}
                 <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
@@ -1018,8 +1007,8 @@ export default function AccountSettings({ target, isEdit = true, onAdd }) {
                                                 type='button'
                                                 onClick={() => setActiveSection(item.id)}
                                                 className={`cradle-btn w-full flex items-center gap-3 ${activeSection === item.id
-                                                        ? 'cradle-btn-primary'
-                                                        : 'cradle-btn-ghost'
+                                                    ? 'cradle-btn-primary'
+                                                    : 'cradle-btn-ghost'
                                                     }`}
                                             >
                                                 <Icon className='w-5 h-5 flex-shrink-0' />

@@ -16,6 +16,7 @@
 import * as runtime from '../runtime';
 import type {
   AccessEntity,
+  AccessEntityList404Response,
   AccessRequest,
   AccessUser,
   RequestAccessRequest,
@@ -23,6 +24,8 @@ import type {
 import {
     AccessEntityFromJSON,
     AccessEntityToJSON,
+    AccessEntityList404ResponseFromJSON,
+    AccessEntityList404ResponseToJSON,
     AccessRequestFromJSON,
     AccessRequestToJSON,
     AccessUserFromJSON,

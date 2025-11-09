@@ -2,8 +2,8 @@ import { useDroppable } from '@dnd-kit/core';
 import { Search } from 'iconoir-react';
 import { useCallback, useEffect, useState } from 'react';
 
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import useApi from '../../hooks/useApi/useApi';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import DraggableNote from '../DraggableNote/DraggableNote';
 import AddNote from '../NoteActions/AddNote';
 import Pagination from '../Pagination/Pagination';
@@ -14,19 +14,17 @@ export default function NoteSelector({
     notes,
     setNotes,
     activeNote,
-    setAlert,
 }) {
     // Handle case where component is used as a standalone route component
     const [internalNotes, setInternalNotes] = useState([]);
     const [internalSelectedNotes, setInternalSelectedNotes] = useState([]);
-    const [internalAlert, setInternalAlert] = useState({ show: false, message: '' });
+    const { notify } = useNotif();
 
     // Use provided props or fall back to internal state
     const finalNotes = notes || internalNotes;
     const finalSetNotes = setNotes || setInternalNotes;
     const finalSelectedNotes = selectedNotes || internalSelectedNotes;
     const finalSetSelectedNotes = setSelectedNotes || setInternalSelectedNotes;
-    const finalAlert = setAlert || setInternalAlert;
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -63,14 +61,13 @@ export default function NoteSelector({
             setTotalPages(response.totalPages);
             setLoading(false);
         } catch (error) {
-            finalAlert({
-                show: true,
-                message: 'Failed to fetch notes. Please try again.',
-                color: 'red',
+            notify({
+                type: 'error',
+                text: 'Failed to fetch notes. Please try again.',
             });
             setLoading(false);
         }
-    }, [page, submittedFilters, finalSetNotes, finalAlert, notesApi]);
+    }, [page, submittedFilters, finalSetNotes, notify, notesApi]);
 
     const handleSearchSubmit = (e) => {
         e.preventDefault();
@@ -108,11 +105,6 @@ export default function NoteSelector({
             className='w-full h-full flex justify-center items-center overflow-y-scroll overflow-x-hidden'
         >
             <div className='w-full max-w-6xl h-full flex flex-col p-6 space-y-3 min-w-0'>
-                <AlertDismissible
-                    alert={{ show: false, message: '', color: 'red' }}
-                    setAlert={finalAlert}
-                />
-
                 <form
                     onSubmit={handleSearchSubmit}
                     className='flex flex-col sm:flex-row gap-4 px-3 pb-2 w-full min-w-0'
@@ -163,7 +155,6 @@ export default function NoteSelector({
                                                 id={note.id}
                                                 key={note.id}
                                                 note={note}
-                                                setAlert={finalAlert}
                                                 ghost={
                                                     activeNote &&
                                                     activeNote.id === note.id

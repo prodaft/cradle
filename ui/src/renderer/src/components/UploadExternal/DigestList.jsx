@@ -2,6 +2,7 @@ import { Trash } from 'iconoir-react';
 import React from 'react';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import useApi from '../../hooks/useApi/useApi';
+import { useAPICall } from '../../hooks/useAPICall';
 import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import ActionsTable from '../ActionsTable/ActionsTable';
@@ -34,6 +35,7 @@ function DigestList({
 }) {
     const { setModal } = useModal();
     const { intelioApi } = useApi();
+    const { executor } = useAPICall();
 
     // Mapping of table columns to API field names
     const sortFieldMapping = {
@@ -43,8 +45,8 @@ function DigestList({
         user: 'user__username',
     };
 
-    const handleDelete = async (digestId) => {
-        try {
+    const handleDelete = executor(
+        async (digestId) => {
             await intelioApi.intelioDigestDestroy({ id: digestId });
             setAlert({
                 show: true,
@@ -52,11 +54,14 @@ function DigestList({
                 color: 'green',
             });
             if (onDigestDelete) onDigestDelete();
-        } catch (error) {
-            console.error('Delete digest failed:', error);
-            setAlert({ show: true, message: 'Failed to delete digest', color: 'red' });
+        },
+        {
+            onError: (error) => {
+                console.error('Delete digest failed:', error);
+                setAlert({ show: true, message: 'Failed to delete digest', color: 'red' });
+            }
         }
-    };
+    );
 
     const columns = [
         { key: 'type', label: 'Type' },

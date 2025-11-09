@@ -2,11 +2,12 @@ import { uniqueId } from 'lodash';
 import { useEffect, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useLocation } from 'react-router-dom';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useApi from '../../hooks/useApi/useApi';
+import { useAPICall } from '../../hooks/useAPICall';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
-import { displayError } from '../../utils/responseUtils/responseUtils';
 import AccountSettings from '../AccountSettings/AccountSettings';
 import AdminPanelCardEnrichment from '../AdminPanelCard/AdminPanelCardEnrichment';
 import AdminPanelCardEntity from '../AdminPanelCard/AdminPanelCardEntity';
@@ -22,7 +23,6 @@ import GraphSettingsForm from '../AdminPanelForms/GraphSettingsForm';
 import NoteSettingsForm from '../AdminPanelForms/NoteSettingsForm';
 import UserSettingsForm from '../AdminPanelForms/UserSettingsForm';
 import AdminPanelSection from '../AdminPanelSection/AdminPanelSection';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import { Tab, Tabs } from '../Tabs/Tabs';
 
 /**
@@ -44,16 +44,15 @@ export default function AdminPanel() {
     const [users, setUsers] = useState(null);
     const { isAdmin } = useProfile();
     const [entryTypes, setEntryTypes] = useState(null);
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { notify } = useNotif();
     const [rightPane, setRightPane] = useState(null);
     const location = useLocation();
     const { navigate, navigateLink } = useCradleNavigate();
     const { entriesApi, usersApi, queryApi, intelioApi } = useApi();
-    const handleError = displayError(setAlert, navigate);
+    const { execute } = useAPICall();
 
     const displayEntities = async () => {
-        queryApi
-            .queryList({ type: ['entity'] })
+        execute(() => queryApi.queryList({ type: ['entity'] }))
             .then((response) => {
                 const fetchedEntities = response.results;
                 setEntities(
@@ -73,12 +72,11 @@ export default function AdminPanel() {
                     }),
                 );
             })
-            .catch(handleError);
+            .catch(() => {});
     };
 
     const displayEntryTypes = async () => {
-        entriesApi
-            .entryClassesList({ includeCount: true, includeAliases: true })
+        execute(() => entriesApi.entryClassesList({ includeCount: true, includeAliases: true }))
             .then((fetchedEntryTypes) => {
                 setEntryTypes(
                     fetchedEntryTypes.map((c) => (
@@ -94,12 +92,11 @@ export default function AdminPanel() {
                     )),
                 );
             })
-            .catch(handleError);
+            .catch(() => {});
     };
 
     const displayUsers = async () => {
-        usersApi
-            .usersList()
+        execute(() => usersApi.usersList())
             .then((fetchedUsers) => {
                 setUsers(
                     fetchedUsers.map((user) => (
@@ -114,12 +111,11 @@ export default function AdminPanel() {
                     )),
                 );
             })
-            .catch(handleError);
+            .catch(() => {});
     };
 
     const displayMappingTypes = async () => {
-        intelioApi
-            .mappingsSubclassesList()
+        execute(() => intelioApi.mappingsSubclassesList())
             .then((mappingTypes) => {
                 if (mappingTypes) {
                     setMappingTypes(
@@ -137,12 +133,11 @@ export default function AdminPanel() {
                     );
                 }
             })
-            .catch(handleError);
+            .catch(() => {});
     };
 
     const displayEnrichmentTypes = async () => {
-        intelioApi
-            .enrichmentSubclassesList()
+        execute(() => intelioApi.enrichmentSubclassesList())
             .then((enrichmentTypes) => {
                 if (enrichmentTypes) {
                     setEnrichmentTypes(
@@ -159,7 +154,7 @@ export default function AdminPanel() {
                     );
                 }
             })
-            .catch(handleError);
+            .catch(() => {});
     };
 
     useEffect(() => {
@@ -175,7 +170,6 @@ export default function AdminPanel() {
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='w-full h-full'>
                 <PanelGroup direction='horizontal' className='h-full'>
                     <Panel defaultSize={30} minSize={20} maxSize={50}>

@@ -15,6 +15,7 @@
 
 import * as runtime from '../runtime';
 import type {
+  AccessEntityList404Response,
   NoteCreateRequest,
   NoteEditRequest,
   NoteRetrieve,
@@ -26,6 +27,8 @@ import type {
   SnippetRequest,
 } from '../models/index';
 import {
+    AccessEntityList404ResponseFromJSON,
+    AccessEntityList404ResponseToJSON,
     NoteCreateRequestFromJSON,
     NoteCreateRequestToJSON,
     NoteEditRequestFromJSON,

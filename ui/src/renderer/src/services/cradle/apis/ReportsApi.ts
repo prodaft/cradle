@@ -15,15 +15,17 @@
 
 import * as runtime from '../runtime';
 import type {
+  AccessEntityList404Response,
   EditReportRequest,
   PaginatedReportList,
   PublishReportRequest,
   PublishStrategiesResponse,
   Report,
   ReportRequest,
-  ReportRetryErrorResponse,
 } from '../models/index';
 import {
+    AccessEntityList404ResponseFromJSON,
+    AccessEntityList404ResponseToJSON,
     EditReportRequestFromJSON,
     EditReportRequestToJSON,
     PaginatedReportListFromJSON,
@@ -36,8 +38,6 @@ import {
     ReportToJSON,
     ReportRequestFromJSON,
     ReportRequestToJSON,
-    ReportRetryErrorResponseFromJSON,
-    ReportRetryErrorResponseToJSON,
 } from '../models/index';
 
 export interface ReportsDestroyRequest {
@@ -376,7 +376,7 @@ export class ReportsApi extends runtime.BaseAPI {
      * Updates an existing report with new notes and title.
      * Update report
      */
-    async reportsUpdateRaw(requestParameters: ReportsUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Report>> {
+    async reportsUpdateRaw(requestParameters: ReportsUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
         if (requestParameters['id'] == null) {
             throw new runtime.RequiredError(
                 'id',
@@ -417,14 +417,18 @@ export class ReportsApi extends runtime.BaseAPI {
             body: EditReportRequestToJSON(requestParameters['editReportRequest']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => ReportFromJSON(jsonValue));
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<any>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
     }
 
     /**
      * Updates an existing report with new notes and title.
      * Update report
      */
-    async reportsUpdate(requestParameters: ReportsUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Report> {
+    async reportsUpdate(requestParameters: ReportsUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
         const response = await this.reportsUpdateRaw(requestParameters, initOverrides);
         return await response.value();
     }

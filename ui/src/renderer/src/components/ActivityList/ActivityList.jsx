@@ -3,9 +3,9 @@ import dayjs from 'dayjs';
 import { Search } from 'iconoir-react';
 import { useCallback, useEffect, useState } from 'react';
 import Datepicker from 'react-tailwindcss-datepicker';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import useApi from '../../hooks/useApi/useApi';
 import Activity from '../Activity/Activity';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Pagination from '../Pagination/Pagination';
 
 export default function ActivityList({ name, objectId, content_type, username }) {
@@ -25,7 +25,7 @@ export default function ActivityList({ name, objectId, content_type, username })
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { notify } = useNotif();
 
     const fetchEvents = useCallback(() => {
         setLoading(true);
@@ -43,11 +43,10 @@ export default function ActivityList({ name, objectId, content_type, username })
                 setTotalPages(response.totalPages);
                 setLoading(false);
             })
-            .catch(() => {
-                setAlert({
-                    show: true,
-                    message: 'Failed to fetch event logs. Please try again.',
-                    color: 'red',
+            .catch((error) => {
+                notify({
+                    type: 'error',
+                    text: error.response?.data?.detail || 'Failed to fetch event logs. Please try again.',
                 });
                 setLoading(false);
             });
@@ -75,7 +74,6 @@ export default function ActivityList({ name, objectId, content_type, username })
     return (
         <div className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'>
             <div className='w-[95%] h-full flex flex-col p-6 space-y-3'>
-                <AlertDismissible alert={alert} setAlert={setAlert} />
 
                 <form
                     onSubmit={handleSearchSubmit}

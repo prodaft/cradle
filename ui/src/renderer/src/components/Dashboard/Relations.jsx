@@ -1,10 +1,12 @@
 import { Check, Search } from 'iconoir-react';
 import { useEffect, useRef, useState } from 'react';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useApi from '../../hooks/useApi/useApi';
+import { useAPICall } from '../../hooks/useAPICall';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import { handleAPIError } from '../../utils/apiErrorHandler';
 import { createDashboardLink } from '../../utils/dashboardUtils/dashboardUtils';
-import { displayError } from '../../utils/responseUtils/responseUtils';
 import AlertBox from '../AlertBox/AlertBox';
 import LazyPagination from '../Pagination/LazyPagination';
 import SearchFilterSection from '../SearchFilterSection/SearchFilterSection';
@@ -16,6 +18,7 @@ export default function Relations({ obj }) {
     const [showFilters, setShowFilters] = useState(false);
     const [entrySubtypeFilters, setEntrySubtypeFilters] = useState([]);
     const [results, setResults] = useState(null);
+    const { notify } = useNotif();
     const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [entrySubtypes, setEntrySubtypes] = useState([]);
     const [page, setPage] = useState(1);
@@ -25,10 +28,13 @@ export default function Relations({ obj }) {
     const [isRequestingAccess, setIsRequestingAccess] = useState(false);
     const { profile } = useProfile();
     const { entriesApi, knowledgeGraphApi, accessApi } = useApi();
+    const { execute } = useAPICall();
 
     const dialogRoot = document.getElementById('portal-root');
     const { navigate, navigateLink } = useCradleNavigate();
-    const handleError = displayError(setAlert, navigate);
+    const handleError = (err) => {
+        handleAPIError(err, notify);
+    };
     const [isLoading, setIsLoading] = useState(false);
 
     const populateEntrySubtypes = () => {
@@ -70,7 +76,7 @@ export default function Relations({ obj }) {
                     response.results.sort((a, b) => a.depth - b.depth);
                     setResults(response.results);
                 })
-                .catch(displayError(setAlert, navigate))
+                .catch(handleError)
                 .finally(() => {
                     setIsLoading(false);
                 });
@@ -94,7 +100,7 @@ export default function Relations({ obj }) {
                             : response.results;
                     setResults(filteredResults);
                 })
-                .catch(displayError(setAlert, navigate))
+                .catch(handleError)
                 .finally(() => {
                     setIsLoading(false);
                 });
@@ -143,29 +149,21 @@ export default function Relations({ obj }) {
 
     const handleRequestAccess = (entities) => () => {
         setIsRequestingAccess(true);
-        Promise.all(entities.map((entity) =>
-            accessApi.accessRequestCreate({
-                entityId: entity,
-                requestAccessRequest: {
-                    entityId: entity
-                }
-            })
-        ))
+        execute(
+            () => Promise.all(entities.map((entity) =>
+                accessApi.accessRequestCreate({
+                    entityId: entity,
+                    requestAccessRequest: {
+                        entityId: entity
+                    }
+                })
+            )),
+            { successMessage: 'Access request submitted successfully' }
+        )
             .then(() => {
-                setAlert({
-                    show: true,
-                    message: 'Access request submitted successfully',
-                    color: 'green',
-                });
                 setInaccessibleEntities([]); // Clear inaccessible entities after request
             })
-            .catch((error) => {
-                setAlert({
-                    show: true,
-                    message: 'Failed to request access',
-                    color: 'red',
-                });
-            })
+            .catch(() => {})
             .finally(() => {
                 setIsRequestingAccess(false);
             });

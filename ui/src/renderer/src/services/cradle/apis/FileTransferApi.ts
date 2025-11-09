@@ -15,10 +15,13 @@
 
 import * as runtime from '../runtime';
 import type {
+  AccessEntityList404Response,
   FileDownload,
   FileUpload,
 } from '../models/index';
 import {
+    AccessEntityList404ResponseFromJSON,
+    AccessEntityList404ResponseToJSON,
     FileDownloadFromJSON,
     FileDownloadToJSON,
     FileUploadFromJSON,

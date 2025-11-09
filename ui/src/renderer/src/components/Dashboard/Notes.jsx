@@ -4,7 +4,7 @@ import Datepicker from 'react-tailwindcss-datepicker';
 import DeleteNote from '../NoteActions/DeleteNote';
 import NotesList from '../NotesList/NotesList';
 
-export default function Notes({ setAlert, obj }) {
+export default function Notes({ obj }) {
     const [searchFilters, setSearchFilters] = useState({
         content: '',
         author__username: '',
@@ -32,7 +32,7 @@ export default function Notes({ setAlert, obj }) {
             timestamp_gte: '',
             timestamp_lte: '',
         });
-    }, [setAlert, obj, linked_to_exact_match]);
+    }, [obj, linked_to_exact_match]);
 
     // Auto-submit when date range changes
     useEffect(() => {
@@ -129,7 +129,7 @@ export default function Notes({ setAlert, obj }) {
                     <NotesList
                         query={submittedFilters}
                         noteActions={[
-                            { Component: DeleteNote, props: { setAlert } },
+                            { Component: DeleteNote, props: {} },
                         ]}
                     />
                 )}

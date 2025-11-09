@@ -1,19 +1,20 @@
 import { useEffect, useState } from 'react';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import useApi from '../../hooks/useApi/useApi';
+import { useAPICall } from '../../hooks/useAPICall';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Selector from '../Selector/Selector';
 
 const TypeMappingsEditor = ({ id }) => {
     const [columnDefinitions, setColumnDefinitions] = useState(null);
     const [rows, setRows] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { notify } = useNotif();
     const [validationErrors, setValidationErrors] = useState({});
     const { intelioApi, entriesApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
+    const { execute } = useAPICall();
 
     const allColumns = columnDefinitions
         ? [
@@ -223,16 +224,10 @@ const TypeMappingsEditor = ({ id }) => {
         });
 
         if (row.id) {
-            intelioApi
-                .mappingsSchemaDestroy({ className: id, mappingId: row.id })
-                .then(() => {
-                    setAlert({
-                        show: true,
-                        message: 'Mapping deleted successfully',
-                        color: 'green',
-                    });
-                })
-                .catch((err) => displayError(setAlert, navigate)(err));
+            execute(
+                () => intelioApi.mappingsSchemaDestroy({ className: id, mappingId: row.id }),
+                { successMessage: 'Mapping deleted successfully' }
+            ).catch(() => {});
         }
     };
 
@@ -268,10 +263,9 @@ const TypeMappingsEditor = ({ id }) => {
 
         // Check if there are any errors
         if (Object.keys(rowErrors).length > 0) {
-            setAlert({
-                show: true,
-                message: 'Please fix validation errors before saving',
-                color: 'red',
+            notify({
+                type: 'error',
+                text: 'Please fix validation errors before saving',
             });
             return;
         }
@@ -287,14 +281,11 @@ const TypeMappingsEditor = ({ id }) => {
             }
         }
 
-        intelioApi
-            .mappingsSchemaCreateOrUpdate({ className: id, requestBody: rowData })
+        execute(
+            () => intelioApi.mappingsSchemaCreateOrUpdate({ className: id, requestBody: rowData }),
+            { successMessage: 'Mapping saved successfully' }
+        )
             .then(() => {
-                setAlert({
-                    show: true,
-                    message: 'Mapping saved successfully',
-                    color: 'green',
-                });
                 // Update the row to mark it as not edited
                 setRows((prevRows) =>
                     prevRows.map((r, idx) =>
@@ -302,7 +293,7 @@ const TypeMappingsEditor = ({ id }) => {
                     ),
                 );
             })
-            .catch((err) => displayError(setAlert, navigate)(err));
+            .catch(() => {});
     };
 
     const handleSaveAll = () => {
@@ -328,10 +319,9 @@ const TypeMappingsEditor = ({ id }) => {
 
         // If there are errors, show alert and return
         if (hasErrors) {
-            setAlert({
-                show: true,
-                message: 'Please fix validation errors before saving',
-                color: 'red',
+            notify({
+                type: 'error',
+                text: 'Please fix validation errors before saving',
             });
             return;
         }
@@ -351,25 +341,22 @@ const TypeMappingsEditor = ({ id }) => {
             });
 
         if (dataToSave.length === 0) {
-            setAlert({
-                show: true,
-                message: 'No changes to save',
-                color: 'yellow',
+            notify({
+                type: 'info',
+                text: 'No changes to save',
             });
             return;
         }
 
-        Promise.all(
-            dataToSave.map((row) =>
-                intelioApi.mappingsSchemaCreateOrUpdate({ className: id, requestBody: row })
-            )
+        execute(
+            () => Promise.all(
+                dataToSave.map((row) =>
+                    intelioApi.mappingsSchemaCreateOrUpdate({ className: id, requestBody: row })
+                )
+            ),
+            { successMessage: 'All mappings saved successfully' }
         )
             .then(() => {
-                setAlert({
-                    show: true,
-                    message: 'All mappings saved successfully',
-                    color: 'green',
-                });
                 // Update all rows to mark them as not edited
                 setRows((prevRows) =>
                     prevRows.map((r) =>
@@ -377,7 +364,7 @@ const TypeMappingsEditor = ({ id }) => {
                     ),
                 );
             })
-            .catch((err) => displayError(setAlert, navigate)(err));
+            .catch(() => {});
     };
 
     // Get used internal_class values to filter options
@@ -397,7 +384,6 @@ const TypeMappingsEditor = ({ id }) => {
 
     return (
         <div className='container w-[90%] h-full mx-auto my-4'>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
 
             <h1 className='text-3xl font-bold my-4'>Edit Type Mappings</h1>
             <div className='h-full mx-auto bg-gray-2 rounded-md my-4 p-4'>

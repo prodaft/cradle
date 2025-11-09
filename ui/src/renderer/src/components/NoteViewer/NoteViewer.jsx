@@ -4,15 +4,16 @@ import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useLocation, useParams } from 'react-router-dom';
 import { useLayout } from '../../contexts/LayoutContext/LayoutContext';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import { usePaneTabs } from '../../contexts/PaneTabsContext/PaneTabsContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useApi from '../../hooks/useApi/useApi.js';
+import { useAPICall } from '../../hooks/useAPICall';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import { handleAPIError } from '../../utils/apiErrorHandler';
 import { CradleEditor } from '../../utils/editorUtils/editorUtils';
 import extractHeaderHierarchy from '../../utils/editorUtils/markdownOutliner';
-import { displayError } from '../../utils/responseUtils/responseUtils';
 import ActivityList from '../ActivityList/ActivityList';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import FileInput from '../FileInput/FileInput';
 import GraphExplorer from '../GraphExplorer/GraphExplorer.jsx';
 import NoteGraphSearch from '../GraphQuery/NoteGraphSearch.jsx';
@@ -51,9 +52,9 @@ export default function NoteViewer() {
     );
     const [markdownContent, setMarkdownContent] = useState('');
     const { setModal } = useModal();
+    const { notify } = useNotif();
     const [fileData, setFileData] = useState([]);
     const [initialMarkdown, setInitialMarkdown] = useState('');
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
     const [isLoading, setIsLoading] = useState(true);
     const [activeView, setActiveView] = useState(ViewMode.CONTENT);
     const [showViewsMenu, setShowViewsMenu] = useState(false);
@@ -75,24 +76,31 @@ export default function NoteViewer() {
     const { managementApi, fleetingNotesApi, notesApi, lspApi } = useApi();
     const { updateCurrentTabTitle } = usePaneTabs();
     const { activePaneId } = useLayout();
+    const { execute } = useAPICall();
 
     // Initialize editor utils for autolink functionality
     const editorUtils = React.useMemo(() => {
         CradleEditor.clearCache();
-        return new CradleEditor({}, setLspLoaded, displayError(setAlert), notesApi, lspApi);
-    }, [setAlert, notesApi, lspApi]);
+        const handleError = (error) => {
+            handleAPIError(error, notify);
+        };
+        return new CradleEditor({}, setLspLoaded, handleError, notesApi, lspApi);
+    }, [notify, notesApi, lspApi]);
 
     const copyToClipboard = (text) => {
         navigator.clipboard
             .writeText(text)
+            .then(() => {
+                notify({
+                    type: 'success',
+                    text: 'Copied to clipboard',
+                });
+            })
             .catch((error) => {
                 console.error('Failed to copy text: ', error);
-            })
-            .then(() => {
-                setAlert({
-                    show: true,
-                    message: 'Copied to clipboard',
-                    color: 'green',
+                notify({
+                    type: 'error',
+                    text: 'Failed to copy to clipboard',
                 });
             });
     };
@@ -142,13 +150,12 @@ export default function NoteViewer() {
             });
 
             setMarkdownContent(linked);
-            setAlert({
-                show: true,
-                message: `${changes > 0 ? changes : 'No'} link${changes == 1 ? '' : 's'} ${onlyTimestamps ? 'timestamped.' : 'found in text.'}`,
-                color: changes > 0 ? 'green' : 'gray',
+            notify({
+                type: changes > 0 ? 'success' : 'info',
+                text: `${changes > 0 ? changes : 'No'} link${changes == 1 ? '' : 's'} ${onlyTimestamps ? 'timestamped.' : 'found in text.'}`,
             });
         },
-        [editorUtils, setMarkdownContent, setAlert],
+        [editorUtils, setMarkdownContent, notify],
     );
 
     useEffect(() => {
@@ -195,7 +202,7 @@ export default function NoteViewer() {
             }
         };
 
-        loadNote()
+        execute(() => loadNote())
             .then((responseNote) => {
                 setNote(responseNote);
                 setMarkdownContent(responseNote.content);
@@ -208,19 +215,19 @@ export default function NoteViewer() {
                 }
                 return responseNote;
             })
-            .catch(displayError(setAlert, navigate))
+            .catch(() => { })
             .finally(() => {
                 // Turn off loading spinner regardless of success or failure
                 setIsLoading(false);
             });
-    }, [id, navigate, setAlert, updateCurrentTabTitle, activePaneId, profile, notesApi, fleetingNotesApi]);
+    }, [id, navigate, execute, updateCurrentTabTitle, activePaneId, profile, notesApi, fleetingNotesApi]);
 
     const toggleView = useCallback(() => {
         setRichEditor((prevRichEditor) => !prevRichEditor);
     }, []);
 
     const handleDelete = useCallback(async () => {
-        try {
+        execute(async () => {
             // Use the appropriate delete function based on whether the note is fleeting
             if (note.fleeting) {
                 await fleetingNotesApi.fleetingNotesDestroy({ id });
@@ -239,10 +246,8 @@ export default function NoteViewer() {
             const stateNotes = state.notes.filter((note) => note.id !== id);
             const newState = { ...state, notes: stateNotes };
             navigate(from, { replace: true, state: newState });
-        } catch (error) {
-            displayError(setAlert, navigate)(error);
-        }
-    }, [id, navigate, note.fleeting, fleetingNotesApi, notesApi, state, from, setAlert]);
+        }).catch(() => { });
+    }, [id, execute, navigate, note.fleeting, fleetingNotesApi, notesApi, state, from]);
 
     // Use a ref to store the latest values for the save function
     const saveDataRef = useRef({ markdownContent, fileData, isFleeting });
@@ -255,12 +260,16 @@ export default function NoteViewer() {
         const { markdownContent: content, fileData: files, isFleeting: fleeting } = saveDataRef.current;
 
         if (!content || content.trim().length === 0) {
-            setAlert({ show: true, message: 'Cannot save empty note.', color: 'red' });
+            notify({ type: 'error', text: 'Cannot save empty note.' });
             return;
         }
 
         setSaving(true);
-        try {
+        const successMessage = fleeting
+            ? (showAlert ? 'Fleeting note saved.' : undefined)
+            : (showAlert ? 'Note saved successfully.' : undefined);
+
+        execute(async () => {
             if (fleeting) {
                 // Update existing fleeting note
                 await fleetingNotesApi.fleetingNotesUpdate({
@@ -270,11 +279,6 @@ export default function NoteViewer() {
                         files,
                     },
                 });
-                setAlert({
-                    show: showAlert,
-                    message: 'Fleeting note saved.',
-                    color: 'green',
-                })
             } else {
                 // Update regular note
                 await notesApi.notesUpdate({
@@ -284,45 +288,38 @@ export default function NoteViewer() {
                         files: files,
                     },
                 });
-                setAlert({
-                    show: showAlert,
-                    message: 'Note saved successfully.',
-                    color: 'green',
-                })
             }
-
-            setInitialMarkdown(content);
-            setHasUnsavedChanges(false);
-        } catch (error) {
-            displayError(setAlert, navigate)(error);
-        } finally {
-            setSaving(false);
-        }
-    }, [id, navigate, setAlert, fleetingNotesApi, notesApi]);
+        }, successMessage ? { successMessage } : undefined)
+            .then(() => {
+                setInitialMarkdown(content);
+                setHasUnsavedChanges(false);
+            })
+            .catch(() => { })
+            .finally(() => {
+                setSaving(false);
+            });
+    }, [id, execute, fleetingNotesApi, notesApi]);
 
     const handleSaveAsFinal = useCallback(async () => {
         if (!markdownContent || markdownContent.trim().length === 0) {
-            setAlert({ show: true, message: 'Cannot save empty note.', color: 'red' });
+            notify({ type: 'error', text: 'Cannot save empty note.' });
             return;
         }
 
         setSaving(true);
-        try {
-            const response = await fleetingNotesApi.fleetingNotesFinalUpdate({ id });
-
-            setAlert({
-                show: true,
-                message: 'Note finalized successfully.',
-                color: 'green',
+        execute(
+            () => fleetingNotesApi.fleetingNotesFinalUpdate({ id }),
+            { successMessage: 'Note finalized successfully.' }
+        )
+            .then((response) => {
+                // Navigate to the regular note view
+                navigate(`/notes/${response.id}`, { replace: true });
+            })
+            .catch(() => { })
+            .finally(() => {
+                setSaving(false);
             });
-            // Navigate to the regular note view
-            navigate(`/notes/${response.id}`, { replace: true });
-        } catch (error) {
-            displayError(setAlert, navigate)(error);
-        } finally {
-            setSaving(false);
-        }
-    }, [id, markdownContent, fileData, navigate, fleetingNotesApi, setAlert]);
+    }, [id, markdownContent, fileData, navigate, fleetingNotesApi]);
 
     const handleRelinkNote = useCallback(() => {
         managementApi.managementActionsCreate({
@@ -331,21 +328,19 @@ export default function NoteViewer() {
                 note_id: id,
             },
         }).then(() => {
-            setAlert({
-                show: true,
-                message: 'Relinking note...',
-                color: 'green',
+            notify({
+                type: 'info',
+                text: 'Relinking note...',
             });
         });
-    }, [id, managementApi, setAlert]);
+    }, [id, managementApi]);
 
     const handlePublish = useCallback(() => {
         setModal(ReportGenerationModal, {
             noteId: id,
             noteTitle: note.title,
-            setAlert: setAlert,
         });
-    }, [id, note.title, setAlert, setModal]);
+    }, [id, note.title, setModal]);
 
     const handleDeleteWithConfirmation = useCallback(() => {
         setModal(ConfirmDeletionModal, {
@@ -420,11 +415,6 @@ export default function NoteViewer() {
 
     return (
         <>
-            <AlertDismissible
-                alert={alert}
-                setAlert={setAlert}
-                onClose={() => setAlert('')}
-            />
             <div className='w-[100%] h-full flex flex-col'>
                 <div className='w-full cradle-border-b px-4 py-3 flex items-center justify-between'>
                     <div className='flex items-center gap-4'>
@@ -537,7 +527,6 @@ export default function NoteViewer() {
                                                         fileData={fileData}
                                                         setFileData={setFileData}
                                                         source={!richEditor}
-                                                        setAlert={setAlert}
                                                         saveNote={handleSaveNote}
                                                         enableEditing={enableEditing}
                                                     />
@@ -547,7 +536,6 @@ export default function NoteViewer() {
                                                 <div className='mt-4'>
                                                     <ReferenceTree
                                                         note={note}
-                                                        setAlert={setAlert}
                                                     />
                                                 </div>
                                             </div>
@@ -566,7 +554,6 @@ export default function NoteViewer() {
                                                 fileData={fileData}
                                                 setFileData={setFileData}
                                                 source={!richEditor}
-                                                setAlert={setAlert}
                                                 saveNote={handleSaveNote}
                                                 enableEditing={enableEditing}
                                             />
@@ -576,7 +563,6 @@ export default function NoteViewer() {
                                         <div className='mt-4'>
                                             <ReferenceTree
                                                 note={note}
-                                                setAlert={setAlert}
                                             />
                                         </div>
                                     </div>
@@ -593,7 +579,6 @@ export default function NoteViewer() {
                     {activeView === ViewMode.FILES && (
                         <FilesView
                             files={note.files}
-                            setAlert={setAlert}
                             copyToClipboard={copyToClipboard}
                         />
                     )}

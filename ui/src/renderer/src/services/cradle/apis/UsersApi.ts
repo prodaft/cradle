@@ -16,6 +16,7 @@
 import * as runtime from '../runtime';
 import type {
   APIKeyResponse,
+  AccessEntityList404Response,
   ChangePasswordRequestRequest,
   ChangePasswordResponse,
   DefaultNoteTemplateRequest,
@@ -37,6 +38,8 @@ import type {
 import {
     APIKeyResponseFromJSON,
     APIKeyResponseToJSON,
+    AccessEntityList404ResponseFromJSON,
+    AccessEntityList404ResponseToJSON,
     ChangePasswordRequestRequestFromJSON,
     ChangePasswordRequestRequestToJSON,
     ChangePasswordResponseFromJSON,
@@ -408,7 +411,7 @@ export class UsersApi extends runtime.BaseAPI {
      * Creates a new user account. Available to unauthenticated users.
      * Create user
      */
-    async usersCreateRaw(requestParameters: UsersCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+    async usersCreateRaw(requestParameters: UsersCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UserRetrieve>> {
         if (requestParameters['userCreateRequest'] == null) {
             throw new runtime.RequiredError(
                 'userCreateRequest',
@@ -441,18 +444,14 @@ export class UsersApi extends runtime.BaseAPI {
             body: UserCreateRequestToJSON(requestParameters['userCreateRequest']),
         }, initOverrides);
 
-        if (this.isJsonMime(response.headers.get('content-type'))) {
-            return new runtime.JSONApiResponse<any>(response);
-        } else {
-            return new runtime.TextApiResponse(response) as any;
-        }
+        return new runtime.JSONApiResponse(response, (jsonValue) => UserRetrieveFromJSON(jsonValue));
     }
 
     /**
      * Creates a new user account. Available to unauthenticated users.
      * Create user
      */
-    async usersCreate(requestParameters: UsersCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+    async usersCreate(requestParameters: UsersCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UserRetrieve> {
         const response = await this.usersCreateRaw(requestParameters, initOverrides);
         return await response.value();
     }

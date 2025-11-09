@@ -1,8 +1,8 @@
 import { Search } from 'iconoir-react';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { displayError } from '../../utils/responseUtils/responseUtils';
 import FilesList from '../FilesList/FilesList';
 
 /**
@@ -12,11 +12,11 @@ import FilesList from '../FilesList/FilesList';
  *
  * @param {Object} props
  * @param {Object} props.obj - The artifact object
- * @param {Function} props.setAlert - Function to set alert messages
  * @returns {JSX.Element}
  */
-export default function Files({ obj, setAlert }) {
+export default function Files({ obj }) {
     const { navigate, navigateLink } = useCradleNavigate();
+    const { notify } = useNotif();
     const [searchParams, setSearchParams] = useSearchParams();
     const [exactMatch, setExactMatch] = useState(false);
     const [searchFilters, setSearchFilters] = useState({
@@ -28,7 +28,10 @@ export default function Files({ obj, setAlert }) {
 
     // Error handler function
     const handleError = (error) => {
-        displayError(setAlert, navigate)(error);
+        notify({
+            type: 'error',
+            text: error.response?.data?.detail || 'An error occurred',
+        });
     };
 
     const handleSearchChange = (e) => {
@@ -108,7 +111,7 @@ export default function Files({ obj, setAlert }) {
                 </div>
             </div>
 
-            <FilesList query={query} setAlert={setAlert} onError={handleError} />
+            <FilesList query={query} onError={handleError} />
         </div>
     );
 }

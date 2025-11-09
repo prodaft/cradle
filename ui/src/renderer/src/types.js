@@ -16,6 +16,17 @@
  */
 
 /**
+ * An object representing a notification. Used with the useNotif hook.
+ * @typedef {Object} Notification
+ * @property {('success'|'error'|'info')} type - The type of notification.
+ * @property {string} [background] - Optional custom background color.
+ * @property {React.ReactNode} [icon] - Optional icon component.
+ * @property {string} [title] - Optional notification title.
+ * @property {string} text - The notification message text.
+ * @property {number} [duration] - Duration in milliseconds for which the notification should be displayed. Default is 3500ms.
+ */
+
+/**
  * @typedef {Object} FileData
  * @property {string} minio_file_name - the name of the file in MinIO
  * @property {string} file_name - the name of the file

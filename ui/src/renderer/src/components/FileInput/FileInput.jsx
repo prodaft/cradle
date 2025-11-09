@@ -1,10 +1,11 @@
 import { CloudUpload } from 'iconoir-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import useApi from '../../hooks/useApi/useApi';
+import { useAPICall } from '../../hooks/useAPICall';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
+import { handleAPIError } from '../../utils/apiErrorHandler';
 import { uploadFile } from '../../utils/fileUtils/fileUtils';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 
 /**
  * This component is used to upload files to the server.
@@ -29,7 +30,7 @@ export default function FileInput({
     setPendingFiles,
 }) {
     const { fileTransferApi } = useApi();
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { notify } = useNotif();
     const [isUploading, setIsUploading] = useState(false);
     const inputRef = useRef(null);
     const { navigate, navigateLink } = useCradleNavigate();
@@ -49,7 +50,7 @@ export default function FileInput({
 
     const handleUpload = () => {
         if (!pendingFiles || pendingFiles.length === 0) {
-            setAlert({ show: true, message: 'No files selected.', color: 'red' });
+            notify({ type: 'error', text: 'No files selected.' });
             return;
         }
 
@@ -93,14 +94,15 @@ export default function FileInput({
                     );
                 } else {
                     setPendingFiles([]);
-                    setAlert({
-                        show: true,
-                        message: 'All files uploaded successfully!',
-                        color: 'green',
+                    notify({
+                        type: 'success',
+                        text: 'All files uploaded successfully!',
                     });
                 }
             })
-            .catch(displayError(setAlert, navigate)) // Catches the error thrown in the .then block
+            .catch((error) => {
+                handleAPIError(error, notify);
+            }) // Catches the error thrown in the .then block
             .finally(() => {
                 setIsUploading(false);
             });
@@ -132,7 +134,6 @@ export default function FileInput({
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='flex flex-row space-x-2' onPaste={handlePaste}>
                 <input
                     type='file'

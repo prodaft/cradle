@@ -2,19 +2,22 @@ import { NavArrowDown, NavArrowUp, Search } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Datepicker from 'react-tailwindcss-datepicker';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import useApi from '../../hooks/useApi/useApi';
+import { useAPICall } from '../../hooks/useAPICall';
 import { useProfile } from '../../hooks/useProfile/useProfile';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import { handleAPIError } from '../../utils/apiErrorHandler';
 import DigestList from './DigestList';
 import UploadForm from './UploadForm';
 
-export default function UploadExternal({ setAlert }) {
+export default function UploadExternal() {
     const [searchParams, setSearchParams] = useSearchParams();
     const [dataTypeOptions, setDataTypeOptions] = useState([]);
-    const [alert, setLocalAlert] = useState({ show: false, message: '', color: '' });
+    const { notify } = useNotif();
     const { profile } = useProfile();
     const { intelioApi } = useApi();
     const [isUploadFormVisible, setIsUploadFormVisible] = useState(false);
+    const { execute } = useAPICall();
 
     // Digest list state
     const [digests, setDigests] = useState([]);
@@ -50,8 +53,7 @@ export default function UploadExternal({ setAlert }) {
     };
 
     useEffect(() => {
-        intelioApi
-            .intelioDigestOptionsList()
+        execute(() => intelioApi.intelioDigestOptionsList())
             .then((response) => {
                 if (response) {
                     const dataTypes = response.map((type) => ({
@@ -61,24 +63,17 @@ export default function UploadExternal({ setAlert }) {
                     }));
                     setDataTypeOptions(dataTypes);
                 } else {
-                    (setAlert || setLocalAlert)({
-                        color: 'red',
-                        message: 'Failed to load data types',
-                        show: true,
+                    notify({
+                        type: 'error',
+                        text: 'Failed to load data types',
                     });
                 }
             })
-            .catch((error) => {
-                (setAlert || setLocalAlert)({
-                    color: 'red',
-                    message: `Error fetching data types: ${error.message}`,
-                    show: true,
-                });
-            });
+            .catch(() => {});
 
         // Initial fetch of digests with search params
         fetchDigests();
-    }, [page, submittedFilters, sortField, sortDirection, pageSize, intelioApi]);
+    }, [page, submittedFilters, sortField, sortDirection, pageSize, intelioApi, execute]);
 
     // Add an effect to initialize filters and date range from URL parameters
     useEffect(() => {
@@ -196,36 +191,31 @@ export default function UploadExternal({ setAlert }) {
 
     const fetchDigests = async () => {
         setLoading(true);
-        try {
-            // Add search filters to the API call
-            const searchQueryParams = {
-                page,
-                pageSize,
-                title: submittedFilters.title || undefined,
-                author: submittedFilters.author || undefined,
-                createdAtGte: submittedFilters.created_at_gte || undefined,
-                createdAtLte: submittedFilters.created_at_lte || undefined,
-            };
+        const searchQueryParams = {
+            page,
+            pageSize,
+            title: submittedFilters.title || undefined,
+            author: submittedFilters.author || undefined,
+            createdAtGte: submittedFilters.created_at_gte || undefined,
+            createdAtLte: submittedFilters.created_at_lte || undefined,
+        };
 
-            // Add sorting
-            const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
-            searchQueryParams.orderBy = orderBy;
+        // Add sorting
+        const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
+        searchQueryParams.orderBy = orderBy;
 
-            const response = await intelioApi.intelioDigestRetrieve(searchQueryParams);
-
-            setDigests(response.results);
-            setTotalPages(response.totalPages);
-        } catch (error) {
-            console.error('Failed to fetch digests', error);
-            (setAlert || setLocalAlert)({
-                color: 'red',
-                message: `Error fetching digests: ${error.message}`,
-                show: true,
+        execute(() => intelioApi.intelioDigestRetrieve(searchQueryParams))
+            .then((response) => {
+                setDigests(response.results);
+                setTotalPages(response.totalPages);
+            })
+            .catch((error) => {
+                console.error('Failed to fetch digests', error);
+                setDigests([]);
+            })
+            .finally(() => {
+                setLoading(false);
             });
-            setDigests([]);
-        } finally {
-            setLoading(false);
-        }
     };
 
     const handlePageChange = (newPage) => {
@@ -253,12 +243,8 @@ export default function UploadExternal({ setAlert }) {
         setSearchParams(newParams, { replace: true });
     };
 
-    // Use the provided setAlert or the local one
-    const alertHandler = setAlert || setLocalAlert;
-
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={alertHandler} />
             <div className=''>
                 <div className='flex items-center mb-4'>
                     <h2 className='text-xl font-semibold flex items-center gap-2 ml-4'>

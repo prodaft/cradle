@@ -1,12 +1,11 @@
 import { EditPencil } from 'iconoir-react/regular';
 import { useState } from 'react';
 import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils.jsx';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Card from '../Card/Card';
 import TypeMappingsEditor from '../TypeMappingsEditor/TypeMappingsEditor.jsx';
 
 export default function AdminPanelCardTypeMapping({ name, id, setRightPane }) {
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { notify } = useNotif();
 
     const handleEditClick = () => {
         setRightPane(<TypeMappingsEditor id={id} onSave={(a) => { }} />);
@@ -23,8 +22,7 @@ export default function AdminPanelCardTypeMapping({ name, id, setRightPane }) {
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
-            <Card
+                        <Card
                 title={capitalizeString(name)}
                 actions={actions}
                 onClick={handleEditClick}

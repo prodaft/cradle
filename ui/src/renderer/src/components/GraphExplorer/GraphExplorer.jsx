@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import 'tailwindcss/tailwind.css';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import Graph from '../Graph/Graph';
 import GraphQuery from '../GraphQuery/GraphQuery';
 import InProgress from '../InProgress/InProgress';
@@ -24,7 +24,7 @@ export default function GraphExplorer({ GraphSearchComponent }) {
         simulationLinkSpring: 0.5,
         simulationLinkDistance: 10,
     });
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { notify } = useNotif();
     const [selectedEntries, setSelectedEntries] = useState(new Set());
 
     // Maintain sets for tracking existing IDs
@@ -104,7 +104,6 @@ export default function GraphExplorer({ GraphSearchComponent }) {
 
     return (
         <div className='w-full h-full overflow-y-hidden relative'>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
             <PanelGroup direction='horizontal' className='h-full'>
                 <Panel defaultSize={30} minSize={20} maxSize={50}>
                     <GraphQuery
