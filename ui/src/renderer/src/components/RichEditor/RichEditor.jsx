@@ -2,12 +2,19 @@ import { acceptCompletion, autocompletion, closeBrackets, completionKeymap } fro
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { defaultHighlightStyle, indentOnInput, syntaxHighlighting } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
+import { markdown } from '@codemirror/lang-markdown';
+import { GFM } from '@lezer/markdown';
 import { EditorState, StateEffect } from '@codemirror/state';
 import { drawSelection, EditorView, highlightActiveLine, keymap, lineNumbers, rectangularSelection } from '@codemirror/view';
 import { vim, Vim } from '@replit/codemirror-vim';
 import { Prec } from '@uiw/react-codemirror';
 import { NavArrowDown, NavArrowUp } from 'iconoir-react';
-import { purrmd, PurrMDFeatures, purrmdTheme } from 'purrmd';
+import {
+    prosemarkBasicSetup,
+    prosemarkBaseThemeSetup,
+    prosemarkMarkdownSyntaxExtensions,
+} from '@prosemark/core';
+import { htmlBlockExtension } from '@prosemark/render-html';
 import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import { useTheme } from '../../contexts/ThemeContext/ThemeContext';
@@ -20,7 +27,7 @@ import { displayError } from '../../utils/responseUtils/responseUtils';
 import FileTable from '../FileTable/FileTable';
 
 /**
- * RichEditor component that uses PurrMD for WYSIWYG markdown editing
+ * RichEditor component that uses ProseMark for WYSIWYG markdown editing
  * This component provides a rich-text editing mode for Markdown content with instant preview
  */
 const RichEditor = forwardRef(function RichEditor({
@@ -79,6 +86,37 @@ const RichEditor = forwardRef(function RichEditor({
         return new CradleEditor({}, setLspLoaded, displayError(setAlert), notesApi, lspApi);
     }, [setAlert, notesApi, lspApi]);
 
+    const handleCodeBlockCopy = useCallback((lang, code, event) => {
+        if (event && event.target) {
+            const originalText = event.target.innerText;
+            event.target.innerText = 'Copied!';
+            setTimeout(() => {
+                event.target.innerText = originalText;
+            }, 900);
+        }
+        if (typeof code === 'string') {
+            navigator.clipboard.writeText(code);
+        }
+    }, []);
+
+    // Custom extension to add copy buttons to code blocks
+    const codeBlockCopyExtension = useMemo(() => {
+        return EditorView.domEventHandlers({
+            click: (event, view) => {
+                const target = event.target;
+                if (target instanceof HTMLElement && target.classList.contains('code-block-copy-btn')) {
+                    const codeBlock = target.closest('pre');
+                    if (codeBlock) {
+                        const code = codeBlock.textContent || '';
+                        handleCodeBlockCopy('', code, event);
+                    }
+                    return true;
+                }
+                return false;
+            }
+        });
+    }, [handleCodeBlockCopy]);
+
     const extensions = useMemo(() => {
         if (entryColors.size === 0) {
             return [];
@@ -87,35 +125,30 @@ const RichEditor = forwardRef(function RichEditor({
         let exts = [
             cradleLinksPlugin(entryColors, navigate, source),
             cradleLinkColorPlugin(entryColors, source),
-            purrmd({
-                markdownExtConfig: {
-                    extensions: [editorUtils.extension()],
-                    codeLanguages: languages,
-                },
-                formattingDisplayMode: source ? 'show' : 'auto',
-                defaultSlashMenu: {
-                    show: false,
-                },
-                featuresConfigs: {
-                    [PurrMDFeatures.CodeBlock]: {
-                        onCodeBlockInfoClick: (lang, code, event) => {
-                            if (event && event.target) {
-                                const originalText = event.target.innerText;
-                                event.target.innerText = 'Copied!';
-                                setTimeout(() => {
-                                    event.target.innerText = originalText;
-                                }, 900);
-                            }
-                            if (typeof code === 'string') {
-                                navigator.clipboard.writeText(code);
-                            }
-                        }
-                    }
-                }
+            // Markdown language support with ProseMark extensions
+            markdown({
+                codeLanguages: languages,
+                extensions: [
+                    // GitHub Flavored Markdown (support for autolinks, strikethroughs)
+                    GFM,
+                    // additional parsing tags for existing markdown features, backslash escapes, emojis
+                    prosemarkMarkdownSyntaxExtensions,
+                    // Cradle editor extension
+                    editorUtils.extension(),
+                ]
             }),
-            EditorState.readOnly.of(!enableEditing),
-            EditorView.editable.of(enableEditing),
-            purrmdTheme(),
+            // Basic prosemark extensions
+            prosemarkBasicSetup(),
+            // Theme extensions
+            prosemarkBaseThemeSetup(),
+            // Render HTML blocks
+            htmlBlockExtension,
+            // Code block copy handler
+            codeBlockCopyExtension,
+            // Control when formatting marks are shown
+            EditorView.contentAttributes.of({
+                'data-formatting-mode': source ? 'show' : 'auto'
+            }),
             Prec.high(cradleTheme),
             EditorView.lineWrapping,
             history(),
@@ -156,6 +189,16 @@ const RichEditor = forwardRef(function RichEditor({
             exts.push(lineNumbers());
         }
 
+        // Hide gutters (e.g., fold gutter) in Rich Editor mode
+        if (!source) {
+            exts.push(
+                EditorView.theme({
+                    '.cm-gutters': { display: 'none' },
+                    '.cm-content': { paddingLeft: '0px' },
+                })
+            );
+        }
+
         if (profile?.vim_mode) {
             Vim.defineEx('write', 'w', (cm) => {
                 setMarkdownContent(cm.state.doc.toString());
@@ -175,6 +218,8 @@ const RichEditor = forwardRef(function RichEditor({
         navigate,
         source,
         enableEditing,
+        handleCodeBlockCopy,
+        codeBlockCopyExtension,
     ]);
 
     useEffect(() => {
