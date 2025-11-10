@@ -27,7 +27,6 @@ export async function parseAPIError(error) {
     };
   }
   const data = await error.response.json() || {};
-  console.log('data', data);
 
   return {
     code: data.code || 'UNKNOWN_ERROR',
@@ -52,11 +51,10 @@ export async function parseAPIError(error) {
  * @param {string} options.message - Custom error message
  * @param {number} options.duration - Notification duration in ms
  * @param {boolean} options.notifyValidation - Whether to notify for validation errors
- * @returns {Object} Parsed error object
  */
 export function handleAPIError(parsed, notify, options = {}) {
   if (parsed.isValidationError && !options.notifyValidation) {
-    return parsed;
+    return false;
   }
 
   notify({
@@ -65,7 +63,7 @@ export function handleAPIError(parsed, notify, options = {}) {
     duration: options.duration || 5000
   });
 
-  return parsed;
+  return true;
 }
 
 /**

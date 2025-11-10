@@ -8,7 +8,6 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django_lifecycle import (
-    AFTER_CREATE,
     AFTER_DELETE,
     LifecycleModel,
     hook,
@@ -378,15 +377,12 @@ class EnrichmentRequest(LifecycleModel):
     warnings = models.JSONField(default=list, blank=True)
 
     def clean(self):
-        if not self.enrichment_settings:
-            raise ValidationError("At least one enricher must be selected")
+        if self.pk:
+            if not self.enrichers_settings.count():
+                raise ValidationError("At least one enricher must be selected")
 
-        for enricher in self.enrichers_settings.all():
-            config = BaseEnricher.get_subclass(enricher.enricher_type)
-            if config is None:
-                raise ValidationError(
-                    f"Unknown enricher type: {enricher.enricher_type}"
-                )
+            if not self.entities.count():
+                raise ValidationError("At least one entity must be selected")
 
         if not isinstance(self.request, list):
             raise ValidationError({"request": "Must be a list"})
@@ -430,7 +426,7 @@ class EnrichmentRequest(LifecycleModel):
     @property
     def enrichers(self):
         """
-        Return the enricher class based on the enrichment_settings.
+        Return the enricher class based on the enrichers_settings.
         """
         enrichers = []
 
@@ -465,20 +461,17 @@ class EnrichmentRequest(LifecycleModel):
 
         return entries
 
-    @hook(AFTER_CREATE)
     def start_enrichment(self):
         """
         Start the enrichment process after creation.
         """
         from ..tasks import start_enrich
 
-        self.id = self._initial_state.get_value(self, "id")
-
         # Trigger the enrichment process
         # This could be handled by a background task or Celery
         self.status = EnrichmentStatus.WORKING
         self.save(update_fields=["status"])
-        transaction.on_commit(lambda: start_enrich.apply_async(self.id))
+        start_enrich.apply_async((self.id,))
 
     @property
     def access_vector(self):

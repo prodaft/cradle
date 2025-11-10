@@ -32,7 +32,6 @@ import { handleAPIError, parseAPIError } from '../utils/apiErrorHandler';
 export function useAPICall() {
     const { notify } = useNotif();
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
 
     /**
      * Execute an API call with automatic error handling
@@ -49,7 +48,6 @@ export function useAPICall() {
      */
     const execute = useCallback(async (apiCall, options = {}) => {
         setLoading(true);
-        setError(null);
 
         try {
             const result = await apiCall();
@@ -70,23 +68,50 @@ export function useAPICall() {
 
             return result;
         } catch (err) {
-            const parsed = await parseAPIError(err);
-            setError(parsed);
+            var parsed = null;
+
+            try {
+                parsed = await parseAPIError(err);
+            } catch (error) {
+                if (err.response?.status === 500) {
+                    parsed = {
+                        code: "INTERNAL_SERVER_ERROR",
+                        detail: "An internal server error occurred",
+                        status: err.status,
+                        title: "Internal Server Error",
+                        instance: 'unknown',
+                        timestamp: new Date().toISOString(),
+                        isValidationError: false,
+                        fieldErrors: {},
+                        raw: err
+                    };
+                } else {
+                    parsed = {
+                        code: "UNKNOWN_ERROR",
+                        detail: "An unknown error occurred",
+                        status: err.status,
+                        title: "Unknown Error",
+                        instance: 'unknown',
+                        timestamp: new Date().toISOString(),
+                        isValidationError: false,
+                        fieldErrors: {},
+                        raw: err
+                    }
+                }
+            }
 
             // Only notify if not suppressed
-            if (!options.suppressNotification) {
-                handleAPIError(parsed, notify, {
-                    message: options.errorMessage,
-                    duration: options.duration
-                });
-            }
+            handleAPIError(parsed, notify, {
+                message: options.errorMessage,
+                duration: options.duration
+            });
 
             // Optional error callback
             if (options.onError) {
                 options.onError(parsed);
             }
 
-            throw parsed; // Re-throw for caller to handle if needed
+            throw parsed;
         } finally {
             setLoading(false);
         }
@@ -106,19 +131,10 @@ export function useAPICall() {
         };
     }, [execute]);
 
-    /**
-     * Clear the error state
-     */
-    const clearError = useCallback(() => {
-        setError(null);
-    }, []);
-
     return {
         execute,
         executor,
         loading,
-        error,
-        clearError
     };
 }
 

@@ -183,13 +183,7 @@ export default function EnrichmentRequests() {
                     text: 'Enrichment request created successfully',
                 });
                 fetchEnrichmentRequests();
-            },
-            onError: (error) => {
-                notify({
-                    type: 'error',
-                    text: `Error creating enrichment request: ${error.message}`,
-                });
-            },
+            }
         });
     };
 

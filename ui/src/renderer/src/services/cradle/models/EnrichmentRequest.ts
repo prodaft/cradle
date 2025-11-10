@@ -81,35 +81,35 @@ export interface EnrichmentRequest {
      */
     readonly userDetail?: EssentialUserRetrieve;
     /**
-     * The entity to enrich
-     * @type {number}
+     * The entities to enrich
+     * @type {Array<number>}
      * @memberof EnrichmentRequest
      */
-    entity: number;
+    entities: Array<number>;
     /**
      * 
-     * @type {Entry}
+     * @type {Array<Entry>}
      * @memberof EnrichmentRequest
      */
-    readonly entityDetail?: Entry;
+    readonly entitiesDetail?: Array<Entry>;
     /**
      * The enrichment settings used for this request
-     * @type {string}
+     * @type {Array<string>}
      * @memberof EnrichmentRequest
      */
-    readonly enrichmentSettings?: string | null;
+    readonly enrichmentSettings?: Array<string>;
     /**
      * 
-     * @type {string}
+     * @type {Array<string>}
      * @memberof EnrichmentRequest
      */
-    readonly enricherClass?: string | null;
+    readonly enricherClasses?: Array<string>;
     /**
      * 
-     * @type {string}
+     * @type {Array<string>}
      * @memberof EnrichmentRequest
      */
-    readonly enricherNameDisplay?: string | null;
+    readonly enricherNamesDisplay?: Array<string>;
     /**
      * 
      * @type {any}
@@ -143,7 +143,7 @@ export type EnrichmentRequestStatusEnum = typeof EnrichmentRequestStatusEnum[key
  */
 export function instanceOfEnrichmentRequest(value: object): value is EnrichmentRequest {
     if (!('title' in value) || value['title'] === undefined) return false;
-    if (!('entity' in value) || value['entity'] === undefined) return false;
+    if (!('entities' in value) || value['entities'] === undefined) return false;
     return true;
 }
 
@@ -164,11 +164,11 @@ export function EnrichmentRequestFromJSONTyped(json: any, ignoreDiscriminator: b
         'status': json['status'] == null ? undefined : json['status'],
         'user': json['user'] == null ? undefined : json['user'],
         'userDetail': json['user_detail'] == null ? undefined : EssentialUserRetrieveFromJSON(json['user_detail']),
-        'entity': json['entity'],
-        'entityDetail': json['entity_detail'] == null ? undefined : EntryFromJSON(json['entity_detail']),
+        'entities': json['entities'],
+        'entitiesDetail': json['entities_detail'] == null ? undefined : ((json['entities_detail'] as Array<any>).map(EntryFromJSON)),
         'enrichmentSettings': json['enrichment_settings'] == null ? undefined : json['enrichment_settings'],
-        'enricherClass': json['enricher_class'] == null ? undefined : json['enricher_class'],
-        'enricherNameDisplay': json['enricher_name_display'] == null ? undefined : json['enricher_name_display'],
+        'enricherClasses': json['enricher_classes'] == null ? undefined : json['enricher_classes'],
+        'enricherNamesDisplay': json['enricher_names_display'] == null ? undefined : json['enricher_names_display'],
         'request': json['request'] == null ? undefined : json['request'],
         'errors': json['errors'] == null ? undefined : json['errors'],
     };
@@ -178,7 +178,7 @@ export function EnrichmentRequestToJSON(json: any): EnrichmentRequest {
     return EnrichmentRequestToJSONTyped(json, false);
 }
 
-export function EnrichmentRequestToJSONTyped(value?: Omit<EnrichmentRequest, 'id'|'created_at'|'completed_at'|'status'|'user'|'user_detail'|'entity_detail'|'enrichment_settings'|'enricher_class'|'enricher_name_display'|'errors'> | null, ignoreDiscriminator: boolean = false): any {
+export function EnrichmentRequestToJSONTyped(value?: Omit<EnrichmentRequest, 'id'|'created_at'|'completed_at'|'status'|'user'|'user_detail'|'entities_detail'|'enrichment_settings'|'enricher_classes'|'enricher_names_display'|'errors'> | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }
@@ -186,7 +186,7 @@ export function EnrichmentRequestToJSONTyped(value?: Omit<EnrichmentRequest, 'id
     return {
         
         'title': value['title'],
-        'entity': value['entity'],
+        'entities': value['entities'],
         'request': value['request'],
     };
 }

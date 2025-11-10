@@ -26,17 +26,17 @@ export interface EnrichmentRequestRequest {
      */
     title: string;
     /**
-     * The entity to enrich
-     * @type {number}
+     * The entities to enrich
+     * @type {Array<number>}
      * @memberof EnrichmentRequestRequest
      */
-    entity: number;
+    entities: Array<number>;
     /**
-     * The name of the enricher to use for this request
-     * @type {string}
+     * The names of the enrichers to use for this request
+     * @type {Array<string>}
      * @memberof EnrichmentRequestRequest
      */
-    enricherName: string;
+    enricherNames: Array<string>;
     /**
      * 
      * @type {any}
@@ -50,8 +50,8 @@ export interface EnrichmentRequestRequest {
  */
 export function instanceOfEnrichmentRequestRequest(value: object): value is EnrichmentRequestRequest {
     if (!('title' in value) || value['title'] === undefined) return false;
-    if (!('entity' in value) || value['entity'] === undefined) return false;
-    if (!('enricherName' in value) || value['enricherName'] === undefined) return false;
+    if (!('entities' in value) || value['entities'] === undefined) return false;
+    if (!('enricherNames' in value) || value['enricherNames'] === undefined) return false;
     return true;
 }
 
@@ -66,8 +66,8 @@ export function EnrichmentRequestRequestFromJSONTyped(json: any, ignoreDiscrimin
     return {
         
         'title': json['title'],
-        'entity': json['entity'],
-        'enricherName': json['enricher_name'],
+        'entities': json['entities'],
+        'enricherNames': json['enricher_names'],
         'request': json['request'] == null ? undefined : json['request'],
     };
 }
@@ -84,8 +84,8 @@ export function EnrichmentRequestRequestToJSONTyped(value?: EnrichmentRequestReq
     return {
         
         'title': value['title'],
-        'entity': value['entity'],
-        'enricher_name': value['enricherName'],
+        'entities': value['entities'],
+        'enricher_names': value['enricherNames'],
         'request': value['request'],
     };
 }

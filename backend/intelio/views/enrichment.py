@@ -6,10 +6,23 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from core.openapi import (
+    get_common_error_responses,
+    get_error_responses,
+    get_validation_error_response,
+)
 from core.pagination import TotalPagesPagination
-from core.openapi import get_error_responses, get_common_error_responses, get_validation_error_response
 from user.permissions import HasAdminRole
 
+from ..exceptions import (
+    EnricherNotFoundException,
+    EnricherTypeNotFoundException,
+    EnrichmentRequestNotFoundException,
+    IntelioErrorCodes,
+    InvalidPageSizeException,
+    PageSizeTooLargeException,
+    PermissionDeniedException,
+)
 from ..models.base import BaseEnricher, EnricherSettings, EnrichmentRequest
 from ..serializers import (
     EnrichmentRelationSerializer,
@@ -20,15 +33,6 @@ from ..serializers import (
     EnrichmentSubclassSerializer,
 )
 from ..utils import get_or_default_enricher
-from ..exceptions import (
-    EnricherNotFoundException,
-    EnrichmentRequestNotFoundException,
-    EnricherTypeNotFoundException,
-    InvalidPageSizeException,
-    PageSizeTooLargeException,
-    PermissionDeniedException,
-    IntelioErrorCodes,
-)
 
 
 @extend_schema_view(
@@ -174,7 +178,7 @@ class EnrichmentSettingsAPIView(GenericAPIView):
             ),
             **get_error_responses(
                 IntelioErrorCodes.INVALID_PAGE_SIZE,
-                IntelioErrorCodes.PAGE_SIZE_TOO_LARGE
+                IntelioErrorCodes.PAGE_SIZE_TOO_LARGE,
             ),
             **get_common_error_responses(),
         },
@@ -217,10 +221,14 @@ class EnrichmentAPIView(APIView):
         try:
             page_size = int(request.query_params.get("page_size", 10))
         except ValueError:
-            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
+            raise InvalidPageSizeException(
+                detail="Invalid page_size value. Must be an integer."
+            )
 
         if page_size > 100:
-            raise PageSizeTooLargeException(detail="page_size cannot be greater than 100.")
+            raise PageSizeTooLargeException(
+                detail="page_size cannot be greater than 100."
+            )
 
         # Filter by user username
         user_username = request.query_params.get("user__username")
@@ -251,8 +259,9 @@ class EnrichmentAPIView(APIView):
         else:
             queryset = queryset.order_by("-created_at")
 
-        # Optimize query with select_related
-        queryset = queryset.select_related("user", "enrichment_settings")
+        queryset = queryset.select_related("user").prefetch_related(
+            "enrichers_settings"
+        )
 
         # Apply pagination
         paginator = TotalPagesPagination(page_size=page_size)
@@ -287,7 +296,7 @@ class EnrichmentAPIView(APIView):
             200: EnrichmentRequestDetailSerializer,
             **get_error_responses(
                 IntelioErrorCodes.ENRICHMENT_REQUEST_NOT_FOUND,
-                IntelioErrorCodes.PERMISSION_DENIED
+                IntelioErrorCodes.PERMISSION_DENIED,
             ),
             **get_common_error_responses(),
         },
@@ -316,7 +325,9 @@ class EnrichmentDetailAPIView(APIView):
         enrichment_request = self.get_object(pk)
 
         if enrichment_request is None:
-            raise EnrichmentRequestNotFoundException(detail="Enrichment request not found.")
+            raise EnrichmentRequestNotFoundException(
+                detail="Enrichment request not found."
+            )
 
         # Check if user has access to this request
         if enrichment_request.user != request.user and not request.user.is_staff:
@@ -386,7 +397,7 @@ class EnrichmentDetailAPIView(APIView):
                 IntelioErrorCodes.ENRICHER_TYPE_NOT_FOUND,
                 IntelioErrorCodes.PERMISSION_DENIED,
                 IntelioErrorCodes.INVALID_PAGE_SIZE,
-                IntelioErrorCodes.PAGE_SIZE_TOO_LARGE
+                IntelioErrorCodes.PAGE_SIZE_TOO_LARGE,
             ),
             **get_common_error_responses(),
         },
@@ -418,7 +429,9 @@ class EnrichmentRelationsAPIView(APIView):
         enrichment_request = self.get_object(pk)
 
         if enrichment_request is None:
-            raise EnrichmentRequestNotFoundException(detail="Enrichment request not found.")
+            raise EnrichmentRequestNotFoundException(
+                detail="Enrichment request not found."
+            )
 
         # Check if user has access to this request
         if enrichment_request.user != request.user and not request.user.is_staff:
@@ -443,10 +456,14 @@ class EnrichmentRelationsAPIView(APIView):
         try:
             page_size = int(request.query_params.get("page_size", 10))
         except ValueError:
-            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
+            raise InvalidPageSizeException(
+                detail="Invalid page_size value. Must be an integer."
+            )
 
         if page_size > 100:
-            raise PageSizeTooLargeException(detail="page_size cannot be greater than 100.")
+            raise PageSizeTooLargeException(
+                detail="page_size cannot be greater than 100."
+            )
 
         # Apply filters
         reason = request.query_params.get("reason")

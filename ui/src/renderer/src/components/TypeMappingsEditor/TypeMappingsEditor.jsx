@@ -227,7 +227,7 @@ const TypeMappingsEditor = ({ id }) => {
             execute(
                 () => intelioApi.mappingsSchemaDestroy({ className: id, mappingId: row.id }),
                 { successMessage: 'Mapping deleted successfully' }
-            ).catch(() => {});
+            ).catch(() => { });
         }
     };
 
@@ -293,7 +293,7 @@ const TypeMappingsEditor = ({ id }) => {
                     ),
                 );
             })
-            .catch(() => {});
+            .catch(() => { });
     };
 
     const handleSaveAll = () => {
@@ -364,7 +364,7 @@ const TypeMappingsEditor = ({ id }) => {
                     ),
                 );
             })
-            .catch(() => {});
+            .catch(() => { });
     };
 
     // Get used internal_class values to filter options
@@ -494,7 +494,6 @@ const TypeMappingsEditor = ({ id }) => {
                                                                 ? 'border-red-500'
                                                                 : '',
                                                         }}
-                                                        menuPosition='fixed'
                                                     />
                                                 </td>
                                             );

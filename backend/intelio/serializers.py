@@ -1,7 +1,11 @@
+from django.db import transaction
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
 
+from access.enums import AccessType
+from access.exceptions import EntityNotFoundException
+from access.models import Access
 from core.utils import fields_to_form
 from entries.models import Entry, EntryClass, Relation
 from entries.serializers import (
@@ -324,19 +328,21 @@ class EnrichmentRequestDetailSerializer(serializers.ModelSerializer):
 class EnrichmentRequestSerializer(serializers.ModelSerializer):
     """Serializer for enrichment requests."""
 
-    # Input field for enricher name instead of enrichment_settings
-    enricher_name = serializers.CharField(
-        write_only=True, help_text="The name of the enricher to use for this request"
+    # Input: allow multiple enricher names
+    enricher_names = serializers.ListField(
+        child=serializers.CharField(),
+        write_only=True,
+        help_text="The names of the enrichers to use for this request",
     )
 
-    # Make enrichment_settings read-only as it will be set automatically
-    # Note: This is a custom field representing the first enricher setting from enrichers_settings
+    # Return IDs of all enrichment settings
     enrichment_settings = serializers.SerializerMethodField(
         read_only=True, help_text="The enrichment settings used for this request"
     )
 
-    entity = serializers.PrimaryKeyRelatedField(
-        queryset=Entry.objects.all(), help_text="The entity to enrich"
+    # ManyToMany entities
+    entities = serializers.PrimaryKeyRelatedField(
+        queryset=Entry.objects.all(), many=True, help_text="The entities to enrich"
     )
 
     user = serializers.PrimaryKeyRelatedField(
@@ -345,11 +351,11 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
 
     # Read-only details
     user_detail = EssentialUserRetrieveSerializer(source="user", read_only=True)
-    entity_detail = EntrySerializer(source="entity", read_only=True)
+    entities_detail = EntrySerializer(source="entities", many=True, read_only=True)
 
-    # Add enricher class and name fields for response
-    enricher_class = serializers.SerializerMethodField(read_only=True)
-    enricher_name_display = serializers.SerializerMethodField(read_only=True)
+    # Return classes and display names for all enrichers
+    enricher_classes = serializers.SerializerMethodField(read_only=True)
+    enricher_names_display = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = EnrichmentRequest
@@ -361,12 +367,12 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
             "status",
             "user",
             "user_detail",
-            "entity",
-            "entity_detail",
-            "enricher_name",  # write-only input field
+            "entities",
+            "entities_detail",
+            "enricher_names",  # write-only input field
             "enrichment_settings",
-            "enricher_class",
-            "enricher_name_display",
+            "enricher_classes",
+            "enricher_names_display",
             "request",
             "errors",
         ]
@@ -378,80 +384,79 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
             "status",
             "errors",
             "enrichment_settings",
-            "enricher_class",
-            "enricher_name_display",
+            "enricher_classes",
+            "enricher_names_display",
         ]
 
-    @extend_schema_field(serializers.UUIDField(allow_null=True))
+    @extend_schema_field(serializers.ListField(child=serializers.UUIDField()))
     def get_enrichment_settings(self, obj):
-        """Return the ID of the first enrichment settings"""
-        # Note: EnrichmentRequest uses enrichers_settings (plural) ManyToMany field
-        # We get the first one for backward compatibility with single enricher display
-        first_setting = obj.enrichers_settings.first()
-        if first_setting:
-            return first_setting.id
-        return None
+        """Return a list of enrichment_settings IDs"""
+        return list(obj.enrichers_settings.values_list("id", flat=True))
 
-    @extend_schema_field(serializers.CharField(allow_null=True))
-    def get_enricher_class(self, obj):
-        """Return the class name of the enricher"""
-        # Note: EnrichmentRequest uses enrichers_settings (plural) ManyToMany field
-        # We get the first one for backward compatibility with single enricher display
-        first_setting = obj.enrichers_settings.first()
-        if first_setting:
-            return first_setting.enricher_type
-        return None
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
+    def get_enricher_classes(self, obj):
+        """Return the class names of all enrichers"""
+        return list(obj.enrichers_settings.values_list("enricher_type", flat=True))
 
-    @extend_schema_field(serializers.CharField(allow_null=True))
-    def get_enricher_name_display(self, obj):
-        """Return the display name of the enricher"""
-        # Note: EnrichmentRequest uses enrichers_settings (plural) ManyToMany field
-        # We get the first one for backward compatibility with single enricher display
-        first_setting = obj.enrichers_settings.first()
-        if first_setting:
-            config = BaseEnricher.get_subclass(first_setting.enricher_type)
-            return config.display_name if config else first_setting.enricher_type
-        return None
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
+    def get_enricher_names_display(self, obj):
+        """Return the display names of all enrichers"""
+        names = []
+        for setting in obj.enrichers_settings.all():
+            config = BaseEnricher.get_subclass(setting.enricher_type)
+            names.append(config.display_name if config else setting.enricher_type)
+        return names
 
-    def validate_enricher_name(self, value):
-        """Validate the enricher_name and find the corresponding enrichment_settings"""
-        # Find enricher class by display_name
-        for subclass in BaseEnricher.__subclasses__():
-            if hasattr(subclass, "display_name") and subclass.display_name == value:
-                # Check if settings exist and are enabled
-                try:
-                    EnricherSettings.objects.get(
-                        enricher_type=subclass.__name__, enabled=True
-                    )
-                    return value
-                except EnricherSettings.DoesNotExist:
-                    raise serializers.ValidationError(
-                        f"No enabled settings found for enricher: {value}"
-                    )
+    def validate_enricher_names(self, values):
+        """Validate multiple enricher names"""
+        validated = set()
+        validated_names = set()
 
-        raise serializers.ValidationError(f"Unknown enricher name: {value}")
+        for value in values:
+            if value in validated_names:
+                raise serializers.ValidationError(f"Duplicate enricher name: {value}")
+
+            enricher = EnricherSettings.objects.get(enricher_type=value, enabled=True)
+            if not enricher:
+                raise serializers.ValidationError(
+                    f"Unknown or disabled enricher: {value}"
+                )
+
+            validated.add(enricher)
+            validated_names.add(value)
+
+        if not validated:
+            raise serializers.ValidationError("At least one enricher must be selected")
+
+        return list(validated)
+
+    def validate_entities(self, values):
+        """Validate multiple entity IDs"""
+        user = self.context["request"].user
+        values = set(values)
+
+        if not Access.objects.has_access_to_entities(
+            user, values, {AccessType.READ_WRITE}
+        ):
+            raise EntityNotFoundException("You don't have access to all the entities")
+
+        return list(values)
 
     def create(self, validated_data):
-        # Extract enricher_name
-        enricher_name = validated_data.pop("enricher_name")
-
-        # Set the user to the current user
+        enrichers = validated_data.pop("enricher_names", [])
+        entities = validated_data.pop("entities", [])
         validated_data["user"] = self.context["request"].user
 
-        # Create the enrichment request first
         instance = super().create(validated_data)
 
-        # Find the corresponding enrichment_settings and add to ManyToMany
-        for subclass in BaseEnricher.__subclasses__():
-            if (
-                hasattr(subclass, "display_name")
-                and subclass.display_name == enricher_name
-            ):
-                enrichment_settings = EnricherSettings.objects.get(
-                    enricher_type=subclass.__name__, enabled=True
-                )
-                instance.enrichers_settings.add(enrichment_settings)
-                break
+        for enricher in enrichers:
+            instance.enrichers_settings.add(enricher)
+
+        for value in entities:
+            instance.entities.add(value)
+
+        ## on_commit start_enrichment
+        transaction.on_commit(lambda: instance.start_enrichment())
 
         return instance
 
