@@ -1,0 +1,47 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Django: runserver",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/manage.py",
+      "args": [
+        "runserver",
+        "0.0.0.0:8000"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "console": "integratedTerminal",
+      "django": true,
+      "justMyCode": true
+    },
+    {
+      "name": "Celery: worker",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "celery",
+      "args": [
+        "-A",
+        "cradle",
+        "worker",
+        "-Q",
+        "email,notes,publish,import",
+        "-l",
+        "INFO"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Django + Celery",
+      "configurations": [
+        "Django: runserver",
+        "Celery: worker"
+      ],
+      "stopAll": true
+    }
+  ]
+}

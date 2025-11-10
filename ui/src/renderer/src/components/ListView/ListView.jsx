@@ -233,7 +233,7 @@ export default function ListView({
     }
 
     return (
-        <div className='overflow-x-auto w-full cradle-scrollbar'>
+        <div className='overflow-x-auto w-full cradle-scrollbar pb-4'>
             <table className='cradle-table'>
                 <thead>
                     <tr>
