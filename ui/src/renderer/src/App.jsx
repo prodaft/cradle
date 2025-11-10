@@ -17,14 +17,7 @@ const AccountSettings = React.lazy(
 );
 const Dashboard = React.lazy(() => import('./components/Dashboard/Dashboard.jsx'));
 const NotFound = React.lazy(() => import('./components/NotFound/NotFound.jsx'));
-const Publish = React.lazy(() => import('./components/Publish/Publish.jsx'));
 const NoteViewer = React.lazy(() => import('./components/NoteViewer/NoteViewer.jsx'));
-const NoteSelector = React.lazy(
-    () => import('./components/NoteSelector/NoteSelector.jsx'),
-);
-const ActivityList = React.lazy(
-    () => import('./components/ActivityList/ActivityList.jsx'),
-);
 const GraphSearch = React.lazy(() => import('./components/GraphQuery/GraphSearch.jsx'));
 const ConfirmEmail = React.lazy(
     () => import('./components/ConfirmEmail/ConfirmEmail.jsx'),
@@ -76,108 +69,108 @@ function App() {
                                                 <PaneTabsProvider>
                                                     <ModalProvider>
                                                         <Suspense fallback={<CradleLoading />}>
-                                                        <Routes>
-                                                            <Route
-                                                                element={
-                                                                    <PrivateRoute fallback={'/login'} />
-                                                                }
-                                                            >
-                                                                <Route path='/' element={<MainLayout />}>
-                                                                    <Route index element={<Welcome />} />
-                                                                    <Route
-                                                                        path='/not-implemented'
-                                                                        element={<FeatureNotImplemented />}
-                                                                    />
-                                                                    <Route
-                                                                        path='/notes'
-                                                                        element={<Documents />}
-                                                                    />
-                                                                    <Route
-                                                                        path='/files'
-                                                                        element={<Files />}
-                                                                    />
-                                                                    <Route
-                                                                        path='/digest-data'
-                                                                        element={<DigestData />}
-                                                                    />
-                                                                    <Route
-                                                                        path='/enrich'
-                                                                        element={<EnrichmentRequests />}
-                                                                    />
-                                                                    <Route
-                                                                        path='/dashboards/:subtype/:name'
-                                                                        element={<Dashboard />}
-                                                                    />
-                                                                    <Route
-                                                                        path='/notes/:id'
-                                                                        element={<NoteViewer />}
-                                                                    />
-                                                                    <Route
-                                                                        path='/knowledge-graph'
-                                                                        element={<GraphExplorer GraphSearchComponent={GraphSearch} />}
-                                                                    />
-                                                                    <Route
-                                                                        path='/reports'
-                                                                        element={<Reports />}
-                                                                    />
-                                                                    <Route
-                                                                        path='/reports/:report_id'
-                                                                        element={<ReportList />}
-                                                                    />
-                                                                    <Route
-                                                                        path='/settings'
-                                                                        element={
-                                                                            <AccountSettings target='me' />
-                                                                        }
-                                                                    />
-                                                                    <Route
-                                                                        path='/manage'
-                                                                        element={<Outlet />}
-                                                                    >
+                                                            <Routes>
+                                                                <Route
+                                                                    element={
+                                                                        <PrivateRoute fallback={'/login'} />
+                                                                    }
+                                                                >
+                                                                    <Route path='/' element={<MainLayout />}>
+                                                                        <Route index element={<Welcome />} />
                                                                         <Route
-                                                                            index
-                                                                            element={<AdminPanel />}
+                                                                            path='/not-implemented'
+                                                                            element={<FeatureNotImplemented />}
                                                                         />
                                                                         <Route
-                                                                            path='/manage/add/user'
+                                                                            path='/notes'
+                                                                            element={<Documents />}
+                                                                        />
+                                                                        <Route
+                                                                            path='/files'
+                                                                            element={<Files />}
+                                                                        />
+                                                                        <Route
+                                                                            path='/digest-data'
+                                                                            element={<DigestData />}
+                                                                        />
+                                                                        <Route
+                                                                            path='/enrich'
+                                                                            element={<EnrichmentRequests />}
+                                                                        />
+                                                                        <Route
+                                                                            path='/dashboards/:subtype/:name'
+                                                                            element={<Dashboard />}
+                                                                        />
+                                                                        <Route
+                                                                            path='/notes/:id'
+                                                                            element={<NoteViewer />}
+                                                                        />
+                                                                        <Route
+                                                                            path='/knowledge-graph'
+                                                                            element={<GraphExplorer GraphSearchComponent={GraphSearch} />}
+                                                                        />
+                                                                        <Route
+                                                                            path='/reports'
+                                                                            element={<Reports />}
+                                                                        />
+                                                                        <Route
+                                                                            path='/reports/:report_id'
+                                                                            element={<ReportList />}
+                                                                        />
+                                                                        <Route
+                                                                            path='/settings'
                                                                             element={
-                                                                                <AccountSettings
-                                                                                    isEdit={false}
-                                                                                />
+                                                                                <AccountSettings target='me' />
                                                                             }
                                                                         />
+                                                                        <Route
+                                                                            path='/manage'
+                                                                            element={<Outlet />}
+                                                                        >
+                                                                            <Route
+                                                                                index
+                                                                                element={<AdminPanel />}
+                                                                            />
+                                                                            <Route
+                                                                                path='/manage/add/user'
+                                                                                element={
+                                                                                    <AccountSettings
+                                                                                        isEdit={false}
+                                                                                    />
+                                                                                }
+                                                                            />
+                                                                        </Route>
                                                                     </Route>
                                                                 </Route>
-                                                            </Route>
-                                                            <Route path='/login' element={<Login />} />
-                                                            <Route
-                                                                path='/confirm-email'
-                                                                element={<ConfirmEmail />}
-                                                            />
-                                                            <Route
-                                                                path='/reset-password'
-                                                                element={<ResetPassword />}
-                                                            />
-                                                            <Route
-                                                                path='/forgot-password'
-                                                                element={<ForgotPassword />}
-                                                            />
-                                                            <Route
-                                                                path='/register'
-                                                                element={<Register />}
-                                                            />
-                                                            <Route
-                                                                path='/not-found'
-                                                                element={
-                                                                    <NotFound
-                                                                        message={
-                                                                            "We can't seem to find the page you are looking for."
-                                                                        }
-                                                                    />
-                                                                }
-                                                            />
-                                                            <Route path='*' element={<NotFound />} />
-                                                        </Routes>
+                                                                <Route path='/login' element={<Login />} />
+                                                                <Route
+                                                                    path='/confirm-email'
+                                                                    element={<ConfirmEmail />}
+                                                                />
+                                                                <Route
+                                                                    path='/reset-password'
+                                                                    element={<ResetPassword />}
+                                                                />
+                                                                <Route
+                                                                    path='/forgot-password'
+                                                                    element={<ForgotPassword />}
+                                                                />
+                                                                <Route
+                                                                    path='/register'
+                                                                    element={<Register />}
+                                                                />
+                                                                <Route
+                                                                    path='/not-found'
+                                                                    element={
+                                                                        <NotFound
+                                                                            message={
+                                                                                "We can't seem to find the page you are looking for."
+                                                                            }
+                                                                        />
+                                                                    }
+                                                                />
+                                                                <Route path='*' element={<NotFound />} />
+                                                            </Routes>
                                                         </Suspense>
                                                     </ModalProvider>
                                                 </PaneTabsProvider>

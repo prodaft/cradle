@@ -36,6 +36,7 @@
         "@react-three/fiber": "8.15.19"
     },
     "dependencies": {
+        "3d-force-graph": "^1.73.4",
         "@codemirror/autocomplete": "^6.19.0",
         "@codemirror/highlight": "^0.19.8",
         "@codemirror/lang-markdown": "^6.4.0",
@@ -55,13 +56,13 @@
         "@phosphor-icons/react": "^2.1.7",
         "@radix-ui/react-tooltip": "^1.2.8",
         "@replit/codemirror-vim": "^6.3.0",
+        "@sentry/react": "^10.23.0",
         "@tailwindcss/forms": "^0.5.7",
         "@uidotdev/usehooks": "^2.4.1",
         "@uiw/codemirror-extensions-events": "^4.25.2",
         "@uiw/codemirror-theme-eclipse": "^4.25.2",
         "@uiw/codemirror-theme-vscode": "^4.25.2",
         "@uiw/react-codemirror": "^4.25.2",
-        "3d-force-graph": "^1.73.4",
         "axios-cache-interceptor": "^1.6.0",
         "cytoscape": "^3.31.2",
         "d3": "^7.9.0",
