@@ -1,5 +1,6 @@
 import { EditPencil } from 'iconoir-react/regular';
 import { useState } from 'react';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import EnrichmentSettingsForm from '../AdminPanelForms/EnrichmentSettingsForm';
 import Card from '../Card/Card';
@@ -24,7 +25,7 @@ export default function AdminPanelCardEnrichment({ name, id, setRightPane }) {
 
     return (
         <>
-                        <Card
+            <Card
                 title={name}
                 actions={actions}
                 onClick={handleEditClick}

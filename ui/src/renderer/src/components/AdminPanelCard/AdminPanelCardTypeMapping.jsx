@@ -1,5 +1,5 @@
 import { EditPencil } from 'iconoir-react/regular';
-import { useState } from 'react';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import { capitalizeString } from '../../utils/dashboardUtils/dashboardUtils.jsx';
 import Card from '../Card/Card';
 import TypeMappingsEditor from '../TypeMappingsEditor/TypeMappingsEditor.jsx';
@@ -22,7 +22,7 @@ export default function AdminPanelCardTypeMapping({ name, id, setRightPane }) {
 
     return (
         <>
-                        <Card
+            <Card
                 title={capitalizeString(name)}
                 actions={actions}
                 onClick={handleEditClick}
