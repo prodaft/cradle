@@ -54,6 +54,7 @@ import PrivateRoute from './components/PrivateRoute/PrivateRoute.jsx';
 import { TooltipProvider } from './components/Tooltip/Tooltip.jsx';
 import { LayoutProvider } from './contexts/LayoutContext/LayoutContext.jsx';
 import { ModalProvider } from './contexts/ModalContext/ModalContext.jsx';
+import { NotificationProvider } from './contexts/NotificationContext/NotificationContext.jsx';
 import { PaneTabsProvider } from './contexts/PaneTabsContext/PaneTabsContext.jsx';
 import { ProfileProvider } from './contexts/ProfileContext/ProfileContext.jsx';
 import { RouteConfigProvider } from './contexts/RouteConfigContext/RouteConfigContext.jsx';
@@ -67,13 +68,14 @@ function App() {
                 <ApiProvider>
                     <ProfileProvider>
                         <ThemeProvider>
-                            <TooltipProvider>
-                                <TabHostProvider>
-                                    <RouteConfigProvider>
-                                        <LayoutProvider>
-                                            <PaneTabsProvider>
-                                                <ModalProvider>
-                                                    <Suspense fallback={<CradleLoading />}>
+                            <NotificationProvider>
+                                <TooltipProvider>
+                                    <TabHostProvider>
+                                        <RouteConfigProvider>
+                                            <LayoutProvider>
+                                                <PaneTabsProvider>
+                                                    <ModalProvider>
+                                                        <Suspense fallback={<CradleLoading />}>
                                                         <Routes>
                                                             <Route
                                                                 element={
@@ -176,13 +178,14 @@ function App() {
                                                             />
                                                             <Route path='*' element={<NotFound />} />
                                                         </Routes>
-                                                    </Suspense>
-                                                </ModalProvider>
-                                            </PaneTabsProvider>
-                                        </LayoutProvider>
-                                    </RouteConfigProvider>
-                                </TabHostProvider>
-                            </TooltipProvider>
+                                                        </Suspense>
+                                                    </ModalProvider>
+                                                </PaneTabsProvider>
+                                            </LayoutProvider>
+                                        </RouteConfigProvider>
+                                    </TabHostProvider>
+                                </TooltipProvider>
+                            </NotificationProvider>
                         </ThemeProvider>
                     </ProfileProvider>
                 </ApiProvider>

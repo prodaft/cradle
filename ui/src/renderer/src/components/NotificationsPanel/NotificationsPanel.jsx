@@ -1,9 +1,8 @@
 import { Xmark } from 'iconoir-react';
 import { useEffect, useState } from 'react';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import NotificationCard from '../NotificationCard/NotificationCard';
 
 /**
@@ -17,7 +16,7 @@ import NotificationCard from '../NotificationCard/NotificationCard';
  * When the number of flagged notifications is the same as the newNotificationsCount, the component does not fetch notifications from the server.
  *
  * The NotificationsPanel component uses the useAuth hook to get the user's authentication information for fetching notifications.
- * It also uses the AlertDismissible component to display alerts.
+ * It uses the useNotif hook to display notifications.
  *
  * @component
  * @param {Object} props - The props of the component.
@@ -33,7 +32,7 @@ export default function NotificationsPanel({
     setUnreadNotificationsCount,
 }) {
     const { notificationsApi } = useApi();
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { notify } = useNotif();
     const [notifications, setNotifications] = useState([]);
     const [flaggedNotificationsCount, setFlaggedNotificationsCount] = useState(0);
     const { navigate, navigateLink } = useCradleNavigate();
@@ -52,7 +51,12 @@ export default function NotificationsPanel({
                 ).length;
                 updateFlaggedNotificationsCount(auxFlaggedNotificationsCount);
             })
-            .catch(displayError(setAlert, navigate));
+            .catch((error) => {
+                notify({
+                    type: 'error',
+                    text: error.response?.data?.detail || 'Failed to fetch notifications',
+                });
+            });
     }
 
     useEffect(() => {
@@ -67,7 +71,6 @@ export default function NotificationsPanel({
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
             <div
                 className='bg-gray-2 w-full h-full p-4 flex flex-col space-y-2 overflow-hidden'
                 data-testid='notifications-panel'

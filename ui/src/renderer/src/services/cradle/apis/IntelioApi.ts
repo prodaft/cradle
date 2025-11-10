@@ -15,6 +15,7 @@
 
 import * as runtime from '../runtime';
 import type {
+  AccessEntityList404Response,
   BaseDigest,
   DigestSubclass,
   EnrichmentRequest,
@@ -29,6 +30,8 @@ import type {
   PaginatedEnrichmentRequestListSerializerResponse,
 } from '../models/index';
 import {
+    AccessEntityList404ResponseFromJSON,
+    AccessEntityList404ResponseToJSON,
     BaseDigestFromJSON,
     BaseDigestToJSON,
     DigestSubclassFromJSON,

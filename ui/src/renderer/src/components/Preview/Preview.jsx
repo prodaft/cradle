@@ -11,7 +11,6 @@ import { useSearchParams } from 'react-router-dom';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { addCopyButtonsToCodeBlocks } from '../../utils/prismCopyButton';
 import { handleLinkClick } from '../../utils/textEditorUtils/textEditorUtils';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 
 export default function Preview({
     htmlContent,
@@ -21,7 +20,7 @@ export default function Preview({
     const sanitizedContent = DOMPurify.sanitize(htmlContent);
     const { navigate, navigateLink } = useCradleNavigate();
     const preventScrollRef = useRef(false);
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { notify } = useNotif();
     const [isLoading, setIsLoading] = useState(true); // New state for loading spinner
     const [previewElement, setPreviewElement] = useState(null);
     const [searchParams, setSearchParams] = useSearchParams();
@@ -123,8 +122,7 @@ export default function Preview({
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
-            {isLoading ? (
+                        {isLoading ? (
                 <div className='flex items-center justify-center min-h-screen'>
                     <div className='spinner-dot-pulse spinner-xl'>
                         <div className='spinner-pulse-dot'></div>

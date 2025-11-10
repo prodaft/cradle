@@ -1,6 +1,7 @@
 import { Clock, DatabaseBackup, Notes, PlusCircle, Search, User } from 'iconoir-react';
 import { StatsReport } from 'iconoir-react/regular';
 import { useEffect, useState } from 'react';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
@@ -8,7 +9,6 @@ import { parseMarkdownInline } from '../../utils/customParser/customParser';
 import { truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import { displayError } from '../../utils/responseUtils/responseUtils';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Logo from '../Logo/Logo';
 
 /**
@@ -115,7 +115,7 @@ function RecentNotesCard({ title, notes, icon, emptyMessage, onNoteClick, color,
  * @constructor
  */
 export default function Welcome() {
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { notify } = useNotif();
     const [artifacts, setArtifacts] = useState([]);
     const [entities, setEntities] = useState([]);
     const [notes, setNotes] = useState([]);
@@ -182,7 +182,6 @@ export default function Welcome() {
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='h-full w-full overflow-auto cradle-bg-primary'>
                 {/* Header Section */}
                 <div className='cradle-border-b px-6 py-8'>

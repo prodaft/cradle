@@ -15,12 +15,15 @@
 
 import * as runtime from '../runtime';
 import type {
+  AccessEntityList404Response,
   FleetingNote,
   FleetingNoteRequest,
   FleetingNoteRetrieve,
   NoteRetrieve,
 } from '../models/index';
 import {
+    AccessEntityList404ResponseFromJSON,
+    AccessEntityList404ResponseToJSON,
     FleetingNoteFromJSON,
     FleetingNoteToJSON,
     FleetingNoteRequestFromJSON,

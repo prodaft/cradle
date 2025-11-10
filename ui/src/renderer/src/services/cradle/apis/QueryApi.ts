@@ -15,10 +15,13 @@
 
 import * as runtime from '../runtime';
 import type {
+  AccessEntityList404Response,
   PaginatedEntryResponseList,
   PaginatedEntryResponseSerializerResponse,
 } from '../models/index';
 import {
+    AccessEntityList404ResponseFromJSON,
+    AccessEntityList404ResponseToJSON,
     PaginatedEntryResponseListFromJSON,
     PaginatedEntryResponseListToJSON,
     PaginatedEntryResponseSerializerResponseFromJSON,

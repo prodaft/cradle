@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useApi from '../../hooks/useApi/useApi';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import DigestList from '../UploadExternal/DigestList';
 
 export default function DigestData() {
     const [searchParams, setSearchParams] = useSearchParams();
-    const [alert, setAlert] = useState({ show: false, message: '', color: '' });
+    const { notify } = useNotif();
     const { profile } = useProfile();
     const { intelioApi } = useApi();
 
@@ -197,10 +197,9 @@ export default function DigestData() {
             setTotalPages(response.totalPages);
         } catch (error) {
             console.error('Failed to fetch digests', error);
-            setAlert({
-                color: 'red',
-                message: `Error fetching digests: ${error.message}`,
-                show: true,
+            notify({
+                type: 'error',
+                text: `Error fetching digests: ${error.message}`,
             });
             setDigests([]);
         } finally {
@@ -242,8 +241,6 @@ export default function DigestData() {
 
     return (
         <div className='w-full h-full'>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
-
             {/* Page Header */}
             <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
                 <div>
@@ -265,7 +262,6 @@ export default function DigestData() {
                     page={page}
                     totalPages={totalPages}
                     handlePageChange={handlePageChange}
-                    setAlert={setAlert}
                     onDigestDelete={fetchDigests}
                     sortField={sortField}
                     sortDirection={sortDirection}

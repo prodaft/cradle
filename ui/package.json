@@ -115,6 +115,7 @@
         "reagraph": "^4.30.4",
         "rippleui": "^1.12.1",
         "selenium-webdriver": "^4.21.0",
+        "sonner": "^2.0.7",
         "tailwind-scrollbar": "^3.1.0",
         "vite-plugin-node-polyfills": "^0.23.0",
         "yup": "^1.6.1"

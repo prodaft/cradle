@@ -1,9 +1,8 @@
 import { NavArrowDown } from 'iconoir-react';
 import { useState } from 'react';
 import useApi from '../../hooks/useApi/useApi';
+import { useAPICall } from '../../hooks/useAPICall';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 
 /**
  * AdminPanelUserPermissions component - This component is used to display the permissions for a user.
@@ -32,28 +31,29 @@ export default function AdminPanelPermissionCard({
     searchKey,
 }) {
     const [currentAccess, setCurrentAccess] = useState(accessLevel);
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { execute } = useAPICall();
     const { accessApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
 
     const handleChange = async (newAccess) => {
         if (currentAccess !== newAccess) {
-            accessApi
-                .accessUserUpdate({
+            execute(
+                () => accessApi.accessUserUpdate({
                     userId: userId,
                     entityId: entityId,
                     accessRequest: { accessType: newAccess },
-                })
-                .then(() => {
-                    setCurrentAccess(newAccess);
-                })
-                .catch(displayError(setAlert, navigate));
+                }),
+                { successMessage: 'Access updated successfully' }
+            ).then(() => {
+                setCurrentAccess(newAccess);
+            }).catch(() => {
+                // Error already handled by execute
+            });
         }
     };
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='h-fit w-full bg-cradle3 p-4 my-1 bg-opacity-20 rounded-xl flex flex-row justify-start'>
                 <h2 className='card-header w-full mx-2'>{text}</h2>
                 <div className='w-full flex flex-row justify-end'>

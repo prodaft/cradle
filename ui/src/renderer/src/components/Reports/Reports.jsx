@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useModal } from '../../contexts/ModalContext/ModalContext.jsx';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import { capitalizeString, truncateText } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import ActionsTable from '../ActionsTable/ActionsTable';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import ListView from '../ListView/ListView';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import PaginationWrapper from '../PaginationWrapper/PaginationWrapper';
@@ -20,7 +20,7 @@ import TableCard from '../TableCard/TableCard';
  */
 export default function Reports() {
     const [searchParams, setSearchParams] = useSearchParams();
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { notify } = useNotif();
     const { reportsApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
     const { profile } = useProfile();
@@ -86,10 +86,9 @@ export default function Reports() {
             setTotalPages(response.totalPages);
         } catch (error) {
             console.error('Failed to fetch reports', error);
-            setAlert({
-                color: 'red',
-                message: `Error fetching reports: ${error.message}`,
-                show: true,
+            notify({
+                type: 'error',
+                text: `Error fetching reports: ${error.message}`,
             });
             setReports([]);
         } finally {
@@ -126,19 +125,17 @@ export default function Reports() {
                     await Promise.all(
                         idsArray.map((id) => reportsApi.reportsDestroy({ id })),
                     );
-                    setAlert({
-                        show: true,
-                        message: `${idsArray.length > 1 ? 'Reports' : 'Report'} deleted successfully`,
-                        color: 'green',
+                    notify({
+                        type: 'success',
+                        text: `${idsArray.length > 1 ? 'Reports' : 'Report'} deleted successfully`,
                     });
                     fetchReports();
                     setSelectedReports([]);
                 } catch (error) {
                     console.error('Delete failed:', error);
-                    setAlert({
-                        show: true,
-                        message: 'Failed to delete report(s)',
-                        color: 'red',
+                    notify({
+                        type: 'error',
+                        text: 'Failed to delete report(s)',
                     });
                 }
             },
@@ -148,18 +145,16 @@ export default function Reports() {
     const handleRetry = async (reportId) => {
         try {
             await reportsApi.reportsRetryCreate({ id: reportId, reportRequest: {} });
-            setAlert({
-                show: true,
-                message: 'Retrying to build report!',
-                color: 'green',
+            notify({
+                type: 'success',
+                text: 'Retrying to build report!',
             });
             fetchReports();
         } catch (error) {
             console.error('Retry failed:', error);
-            setAlert({
-                show: true,
-                message: 'Failed to retry report',
-                color: 'red',
+            notify({
+                type: 'error',
+                text: 'Failed to retry report',
             });
         }
     };
@@ -223,17 +218,15 @@ export default function Reports() {
                 }
             }
 
-            setAlert({
-                show: true,
-                message: `${idsArray.length > 1 ? 'Reports' : 'Report'} downloaded successfully`,
-                color: 'green',
+            notify({
+                type: 'success',
+                text: `${idsArray.length > 1 ? 'Reports' : 'Report'} downloaded successfully`,
             });
         } catch (error) {
             console.error('Download failed:', error);
-            setAlert({
-                show: true,
-                message: 'Failed to download report(s)',
-                color: 'red',
+            notify({
+                type: 'error',
+                text: 'Failed to download report(s)',
             });
         }
     };
@@ -298,8 +291,6 @@ export default function Reports() {
 
     return (
         <div className='w-full h-full'>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
-
             {/* Page Header */}
             <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
                 <div>

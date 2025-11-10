@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import 'tailwindcss/tailwind.css';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import useApi from '../../hooks/useApi/useApi';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import { useAPICall } from '../../hooks/useAPICall';
 import Note from '../Note/Note';
 import NoteSelector from '../NoteSelector/NoteSelector';
 import PublishPreview from '../PublishPreview/PublishPreview';
@@ -12,14 +13,13 @@ import { arrayMove } from '@dnd-kit/sortable';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useSearchParams } from 'react-router-dom';
 import { NoButtonsSensor } from '../../utils/dndUtils/dndUtils';
-import { displayError } from '../../utils/responseUtils/responseUtils';
 import FormModal from '../Modals/FormModal';
 
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 
 export default function Publish() {
     const [searchParams, setSearchParams] = useSearchParams();
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { notify } = useNotif();
     const [availableNotes, setAvailableNotes] = useState([]);
     const [selectedNotes, setSelectedNotes] = useState([]);
     const selectedNotesRef = useRef([]);
@@ -34,6 +34,7 @@ export default function Publish() {
     const [title, setTitle] = useState('');
 
     const { navigate, navigateLink } = useCradleNavigate();
+    const { execute } = useAPICall();
 
     const sensors = [useSensor(NoButtonsSensor)];
 
@@ -47,24 +48,23 @@ export default function Publish() {
         if (reportParam && reportId != reportParam) {
             setIsEditing(true);
             setReportId(reportParam);
-            reportsApi
-                .reportsRetrieve({ id: reportParam })
+            execute(() => reportsApi.reportsRetrieve({ id: reportParam }))
                 .then((reportData) => {
                     setTitle(reportData.title);
 
                     if (reportData.noteIds && reportData.noteIds.length > 0) {
-                        Promise.all(
+                        execute(() => Promise.all(
                             reportData.noteIds.map((id) =>
                                 notesApi.notesRetrieve({ noteId: id }),
                             ),
-                        )
+                        ))
                             .then((notes) => {
                                 setSelectedNotes(notes);
                             })
-                            .catch(displayError(setAlert));
+                            .catch(() => {});
                     }
                 })
-                .catch(displayError(setAlert));
+                .catch(() => {});
         }
     }, [searchParams]);
 
@@ -76,7 +76,7 @@ export default function Publish() {
         const notesParam = queryParams.get('notes');
         if (notesParam) {
             const noteIds = notesParam.split(',');
-            Promise.all(noteIds.map((id) => getNote(id)))
+            execute(() => Promise.all(noteIds.map((id) => getNote(id))))
                 .then((notes) => {
                     const validNotes = notes
                         .filter((note) => note.status === 200)
@@ -86,18 +86,17 @@ export default function Publish() {
                     }
                     setSelectedNotes(validNotes);
                 })
-                .catch(displayError(setAlert));
+                .catch(() => {});
         }
     }, [searchParams]);
 
     useEffect(() => {
-        reportsApi
-            .reportsPublishRetrieve()
+        execute(() => reportsApi.reportsPublishRetrieve())
             .then((options) => {
                 setPublishOptions(options);
             })
-            .catch(displayError(setAlert));
-    }, [reportsApi]);
+            .catch(() => {});
+    }, [reportsApi, execute]);
 
     useEffect(() => {
         const noteIds = selectedNotes.map((note) => note.id).join(',');
@@ -186,29 +185,27 @@ export default function Publish() {
     const handleTitleSubmit = (enteredTitle, strategy) => {
         const noteIds = selectedNotesRef.current.map((note) => note.id);
         if (isEditing && reportId) {
-            reportsApi
-                .reportsUpdate({
-                    id: reportId,
-                    editReportRequest: { noteIds, title: enteredTitle },
-                })
+            execute(() => reportsApi.reportsUpdate({
+                id: reportId,
+                editReportRequest: { noteIds, title: enteredTitle },
+            }))
                 .then(() => {
                     navigate(`/reports`);
                 })
-                .catch(displayError(setAlert));
+                .catch(() => {});
         } else {
-            reportsApi
-                .reportsPublishCreate({
-                    publishReportRequest: {
-                        strategy,
-                        noteIds,
-                        title: enteredTitle,
-                        anonymized: anonymize,
-                    },
-                })
+            execute(() => reportsApi.reportsPublishCreate({
+                publishReportRequest: {
+                    strategy,
+                    noteIds,
+                    title: enteredTitle,
+                    anonymized: anonymize,
+                },
+            }))
                 .then(() => {
                     navigate(`/reports`);
                 })
-                .catch(displayError(setAlert));
+                .catch(() => {});
         }
     };
 
@@ -216,8 +213,6 @@ export default function Publish() {
 
     return (
         <div className='w-full h-full overflow-y-hidden relative'>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
-
             <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}

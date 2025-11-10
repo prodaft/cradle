@@ -15,6 +15,7 @@
 
 import * as runtime from '../runtime';
 import type {
+  AccessEntityList404Response,
   Entity,
   EntityRequest,
   Entry,
@@ -26,6 +27,8 @@ import type {
   PaginatedRelationSerializerResponse,
 } from '../models/index';
 import {
+    AccessEntityList404ResponseFromJSON,
+    AccessEntityList404ResponseToJSON,
     EntityFromJSON,
     EntityToJSON,
     EntityRequestFromJSON,
@@ -299,7 +302,7 @@ export class EntriesApi extends runtime.BaseAPI {
      * Updates an existing entity.
      * Update entity
      */
-    async entitiesUpdateRaw(requestParameters: EntitiesUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+    async entitiesUpdateRaw(requestParameters: EntitiesUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Entity>> {
         if (requestParameters['entityId'] == null) {
             throw new runtime.RequiredError(
                 'entityId',
@@ -340,15 +343,16 @@ export class EntriesApi extends runtime.BaseAPI {
             body: EntityRequestToJSON(requestParameters['entityRequest']),
         }, initOverrides);
 
-        return new runtime.VoidApiResponse(response);
+        return new runtime.JSONApiResponse(response, (jsonValue) => EntityFromJSON(jsonValue));
     }
 
     /**
      * Updates an existing entity.
      * Update entity
      */
-    async entitiesUpdate(requestParameters: EntitiesUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.entitiesUpdateRaw(requestParameters, initOverrides);
+    async entitiesUpdate(requestParameters: EntitiesUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Entity> {
+        const response = await this.entitiesUpdateRaw(requestParameters, initOverrides);
+        return await response.value();
     }
 
     /**

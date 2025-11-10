@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useApi from '../../hooks/useApi/useApi';
+import { useAPICall } from '../../hooks/useAPICall';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { displayError } from '../../utils/responseUtils/responseUtils';
 import DeleteNote from '../NoteActions/DeleteNote';
 import NotesList from '../NotesList/NotesList';
 
@@ -17,11 +18,13 @@ import NotesList from '../NotesList/NotesList';
  * @returns {Notes}
  * @constructor
  */
-export default function Notes({ setAlert }) {
+export default function Notes() {
+    const { notify } = useNotif();
     const [searchParams, setSearchParams] = useSearchParams();
     const { navigate, navigateLink } = useCradleNavigate();
     const { profile } = useProfile();
     const { fleetingNotesApi } = useApi();
+    const { execute } = useAPICall();
 
     const [searchFilters, setSearchFilters] = useState({
         content: searchParams.get('content') || '',
@@ -70,18 +73,17 @@ export default function Notes({ setAlert }) {
     };
 
     const handleCreateNewNote = async () => {
-        try {
-            const defaultContent = profile?.defaultNoteTemplate || '# Untitled\n\nStart writing your note here...';
-            const response = await fleetingNotesApi.fleetingNotesCreate({
-                fleetingNoteRequest: {
-                    content: defaultContent,
-                    files: []
-                }
-            });
-            navigate(`/notes/${response.id}`);
-        } catch (error) {
-            displayError(setAlert, navigate)(error);
-        }
+        const defaultContent = profile?.defaultNoteTemplate || '# Untitled\n\nStart writing your note here...';
+        execute(() => fleetingNotesApi.fleetingNotesCreate({
+            fleetingNoteRequest: {
+                content: defaultContent,
+                files: []
+            }
+        }))
+            .then((response) => {
+                navigate(`/notes/${response.id}`);
+            })
+            .catch(() => {});
     };
 
     // Auto-update search when filters change
@@ -162,7 +164,7 @@ export default function Notes({ setAlert }) {
                     <NotesList
                         query={submittedFilters}
                         noteActions={[
-                            { Component: DeleteNote, props: { setAlert } },
+                            { Component: DeleteNote, props: {} },
                         ]}
                         onFilterChange={handleColumnFilterChange}
                         contentSearch={{

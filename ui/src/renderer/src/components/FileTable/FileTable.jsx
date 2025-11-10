@@ -1,8 +1,6 @@
 import { Download, InputField, PasteClipboard, Trash } from 'iconoir-react';
-import { useState } from 'react';
-import { displayError } from '../../utils/responseUtils/responseUtils';
+import { useAPICall } from '../../hooks/useAPICall';
 import { createDownloadPath } from '../../utils/textEditorUtils/textEditorUtils';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Tooltip from '../Tooltip/Tooltip';
 
 /**
@@ -20,20 +18,15 @@ import Tooltip from '../Tooltip/Tooltip';
  * @constructor
  */
 export default function FileTable({ fileData, setFileData, insertTextCallback }) {
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { executor } = useAPICall();
 
-    const copyToClipboard = (text) => {
-        navigator.clipboard
-            .writeText(text)
-            .then(() => {
-                setAlert({
-                    show: true,
-                    message: 'Copied to clipboard!',
-                    color: 'green',
-                });
-            })
-            .catch(displayError(setAlert));
-    };
+    // Pre-configured clipboard copy with automatic error/success handling
+    const copyToClipboard = executor(
+        async (text) => {
+            await navigator.clipboard.writeText(text);
+        },
+        { successMessage: 'Copied to clipboard!' }
+    );
 
     // Removes a file from the table only. The file is not deleted from the server.
     const handleDelete = (data) => {
@@ -59,7 +52,6 @@ export default function FileTable({ fileData, setFileData, insertTextCallback })
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
             <div className='w-full h-full mx-auto p-2 bg-transparent rounded-lg overflow-y-auto text-sm z-40'>
                 <div className='overflow-x-auto'>
                     <div className='w-full bg-gray-2 rounded-md overflow-x-hidden overflow-y-auto'>

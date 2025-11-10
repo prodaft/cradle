@@ -2,12 +2,11 @@ import { EditPencil } from 'iconoir-react/regular';
 import { useState } from 'react';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import EnrichmentSettingsForm from '../AdminPanelForms/EnrichmentSettingsForm';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Card from '../Card/Card';
 
 export default function AdminPanelCardEnrichment({ name, id, setRightPane }) {
     const [dialog, setDialog] = useState(false);
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { notify } = useNotif();
     const { navigate, navigateLink } = useCradleNavigate();
 
     const handleEditClick = () => {
@@ -25,8 +24,7 @@ export default function AdminPanelCardEnrichment({ name, id, setRightPane }) {
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
-            <Card
+                        <Card
                 title={name}
                 actions={actions}
                 onClick={handleEditClick}

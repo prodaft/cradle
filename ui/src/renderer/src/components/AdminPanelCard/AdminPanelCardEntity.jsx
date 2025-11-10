@@ -1,13 +1,11 @@
 import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
-import { useState } from 'react';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useApi from '../../hooks/useApi/useApi';
+import { useAPICall } from '../../hooks/useAPICall';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { displayError } from '../../utils/responseUtils/responseUtils';
 import ActivityList from '../ActivityList/ActivityList';
 import EntityForm from '../AdminPanelForms/EntityForm';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Card from '../Card/Card';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal';
 
@@ -19,20 +17,19 @@ export default function AdminPanelCardEntity({
     typename,
     setRightPane,
 }) {
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { executor } = useAPICall();
     const { entriesApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
     const { isAdmin } = useProfile();
     const { setModal } = useModal();
 
-    const handleDelete = async () => {
-        try {
+    const handleDelete = executor(
+        async () => {
             await entriesApi.entitiesDestroy({ entityId: id });
             onDelete();
-        } catch (error) {
-            displayError(setAlert, navigate)(error);
-        }
-    };
+        },
+        { successMessage: 'Entity deleted successfully' }
+    );
 
     const handleActivityClick = () => {
         setRightPane(
@@ -74,7 +71,6 @@ export default function AdminPanelCardEntity({
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
             <Card
                 title={name}
                 prefix={`${typename}:`}

@@ -5,28 +5,27 @@ import {
     RefreshCircle,
     Trash,
 } from 'iconoir-react';
-import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useModal } from '../../contexts/ModalContext/ModalContext.jsx';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useApi from '../../hooks/useApi/useApi';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
 import {
-    capitalizeString,
-    truncateText,
+    truncateText
 } from '../../utils/dashboardUtils/dashboardUtils';
 import { formatDate } from '../../utils/dateUtils/dateUtils';
 import ActionsTable from '../ActionsTable/ActionsTable';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import ListView from '../ListView/ListView';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 import PaginationWrapper from '../PaginationWrapper/PaginationWrapper';
 import TableCard from '../TableCard/TableCard';
 
-export default function ReportList({ setAlert = null }) {
+export default function ReportList() {
     const { report_id } = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
+    const { notify } = useNotif();
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
@@ -42,12 +41,6 @@ export default function ReportList({ setAlert = null }) {
         Number(searchParams.get('reports_pagesize')) ||
         10
     );
-
-    let [alert, setAlertState] = useState({ show: false, message: '', color: 'red' });
-
-    if (!setAlert) {
-        setAlert = setAlertState;
-    }
 
     // Mapping of table columns to API field names
     const sortFieldMapping = {
@@ -120,22 +113,19 @@ export default function ReportList({ setAlert = null }) {
                             const failures = results.filter(r => r.status === 'rejected').length;
 
                             if (failures === 0) {
-                                setAlert({
-                                    show: true,
-                                    color: 'green',
-                                    message: `Successfully deleted ${successes} report${successes > 1 ? 's' : ''}`,
+                                notify({
+                                    type: 'success',
+                                    text: `Successfully deleted ${successes} report${successes > 1 ? 's' : ''}`,
                                 });
                             } else if (successes === 0) {
-                                setAlert({
-                                    show: true,
-                                    color: 'red',
-                                    message: `Failed to delete ${failures} report${failures > 1 ? 's' : ''}`,
+                                notify({
+                                    type: 'error',
+                                    text: `Failed to delete ${failures} report${failures > 1 ? 's' : ''}`,
                                 });
                             } else {
-                                setAlert({
-                                    show: true,
-                                    color: 'amber',
-                                    message: `Deleted ${successes} report${successes > 1 ? 's' : ''}, ${failures} failed`,
+                                notify({
+                                    type: 'info',
+                                    text: `Deleted ${successes} report${successes > 1 ? 's' : ''}, ${failures} failed`,
                                 });
                             }
 
@@ -143,10 +133,9 @@ export default function ReportList({ setAlert = null }) {
                             setSelectedReports([]);
                             fetchReports();
                         } catch (error) {
-                            setAlert({
-                                show: true,
-                                color: 'red',
-                                message: 'An unexpected error occurred while deleting reports',
+                            notify({
+                                type: 'error',
+                                text: 'An unexpected error occurred while deleting reports',
                             });
                         }
                     },
@@ -212,10 +201,9 @@ export default function ReportList({ setAlert = null }) {
                                             if (report.report_url) {
                                                 window.open(report.report_url, '_blank');
                                             } else {
-                                                setAlert({
-                                                    show: true,
-                                                    message: 'No report location available',
-                                                    color: 'red',
+                                                notify({
+                                                    type: 'error',
+                                                    text: 'No report location available',
                                                 });
                                             }
                                         }}
@@ -243,17 +231,15 @@ export default function ReportList({ setAlert = null }) {
                                                     reportRequest: {},
                                                 });
                                                 fetchReports();
-                                                setAlert({
-                                                    show: true,
-                                                    message: 'Retrying to build report!',
-                                                    color: 'green',
+                                                notify({
+                                                    type: 'success',
+                                                    text: 'Retrying to build report!',
                                                 });
                                             } catch (error) {
                                                 console.error('Retry report failed:', error);
-                                                setAlert({
-                                                    show: true,
-                                                    message: 'Failed to retry report',
-                                                    color: 'red',
+                                                notify({
+                                                    type: 'error',
+                                                    text: 'Failed to retry report',
                                                 });
                                             }
                                         }}
@@ -273,17 +259,15 @@ export default function ReportList({ setAlert = null }) {
                                         try {
                                             await reportsApi.reportsDestroy({ id: report.id });
                                             fetchReports();
-                                            setAlert({
-                                                show: true,
-                                                message: 'Report deleted successfully',
-                                                color: 'green',
+                                            notify({
+                                                type: 'success',
+                                                text: 'Report deleted successfully',
                                             });
                                         } catch (error) {
                                             console.error('Delete report failed:', error);
-                                            setAlert({
-                                                show: true,
-                                                message: 'Failed to delete report',
-                                                color: 'red',
+                                            notify({
+                                                type: 'error',
+                                                text: 'Failed to delete report',
                                             });
                                         }
                                     },
@@ -302,7 +286,6 @@ export default function ReportList({ setAlert = null }) {
 
     return (
         <div className='w-full h-full flex flex-col space-y-3'>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
             <h1 className='text-3xl font-semibold mb-4'>
                 {report_id ? (
                     'Report Details'

@@ -18,6 +18,7 @@ apis/index.ts
 index.ts
 models/APIKeyResponse.ts
 models/AccessEntity.ts
+models/AccessEntityList404Response.ts
 models/AccessRequest.ts
 models/AccessUser.ts
 models/BaseDigest.ts
@@ -95,7 +96,6 @@ models/PublishStrategy.ts
 models/Relation.ts
 models/Report.ts
 models/ReportRequest.ts
-models/ReportRetryErrorResponse.ts
 models/RequestAccessRequest.ts
 models/Snippet.ts
 models/SnippetRequest.ts

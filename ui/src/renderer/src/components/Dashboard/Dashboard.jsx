@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
-import { useModal } from '../../contexts/ModalContext/ModalContext';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useApi from '../../hooks/useApi/useApi';
+import { useAPICall } from '../../hooks/useAPICall';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { displayError } from '../../utils/responseUtils/responseUtils';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import NotFound from '../NotFound/NotFound';
 import { Tab, Tabs } from '../Tabs/Tabs';
 import Files from './Files.jsx';
@@ -33,16 +32,16 @@ export default function Dashboard() {
     const { name } = useParams();
     const [entryMissing, setEntryMissing] = useState(false);
     const [contentObject, setContentObject] = useState(null);
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { notify } = useNotif();
     const { queryApi, entriesApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
     const { profile, isAdmin } = useProfile();
     const dashboard = useRef(null);
+    const { execute } = useAPICall();
 
     // On load, fetch the dashboard data for the entry
     useEffect(() => {
         setEntryMissing(false);
-        setAlert('');
         setContentObject(null);
         queryApi
             .queryList({ subtype: [subtype], nameExact: [name] })
@@ -56,30 +55,26 @@ export default function Dashboard() {
                 dashboard.current.scrollTo(0, 0);
                 setContentObject(obj);
             });
-    }, [subtype, name, setAlert, setEntryMissing, setContentObject, queryApi]);
+    }, [subtype, name, setEntryMissing, setContentObject, queryApi]);
 
     const handleDelete = () => {
         // Only entities can be deleted (not artifacts)
         if (contentObject.type !== 'entity') {
-            setAlert({
-                show: true,
-                message: 'Only entities can be deleted.',
-                color: 'red',
+            notify({
+                type: 'error',
+                text: 'Only entities can be deleted.',
             });
             return;
         }
 
-        entriesApi
-            .entitiesDestroy({ entityId: contentObject.id })
+        execute(
+            () => entriesApi.entitiesDestroy({ entityId: contentObject.id }),
+            { successMessage: 'Entity deleted successfully.' }
+        )
             .then(() => {
-                setAlert({
-                    show: true,
-                    message: 'Entity deleted successfully.',
-                    color: 'green',
-                });
                 navigate('/');
             })
-            .catch(displayError(setAlert, navigate));
+            .catch(() => {});
     };
 
 
@@ -95,7 +90,6 @@ export default function Dashboard() {
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
             <div
                 className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-hidden'
                 ref={dashboard}
@@ -134,13 +128,13 @@ export default function Dashboard() {
                                     perTabClass='w-[33%] justify-center'
                                 >
                                     <Tab title='Notes' classes='pt-4'>
-                                        <Notes setAlert={setAlert} obj={contentObject} />
+                                        <Notes obj={contentObject} />
                                     </Tab>
                                     <Tab title='Relations' classes='pt-4'>
                                         <Relations obj={contentObject} />
                                     </Tab>
                                     <Tab title='Files' classes='pt-4'>
-                                        <Files obj={contentObject} setAlert={setAlert} />
+                                        <Files obj={contentObject} />
                                     </Tab>
                                 </Tabs>
                             </div>

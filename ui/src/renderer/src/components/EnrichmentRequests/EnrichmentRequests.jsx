@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
+import { useNotif } from '../../contexts/NotificationContext/NotificationContext';
 import useApi from '../../hooks/useApi/useApi';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
+import InProgress from '../InProgress/InProgress';
 import EnrichmentRequestModal from './EnrichmentRequestModal';
 import EnrichmentRequestsList from './EnrichmentRequestsList';
 
@@ -12,7 +13,7 @@ export default function EnrichmentRequests() {
     }
 
     const [searchParams, setSearchParams] = useSearchParams();
-    const [alert, setAlert] = useState({ show: false, message: '', color: '' });
+    const { notify } = useNotif();
     const { intelioApi } = useApi();
     const { setModal } = useModal();
 
@@ -70,10 +71,9 @@ export default function EnrichmentRequests() {
             setTotalPages(response.totalPages || 1);
         } catch (error) {
             console.error('Failed to fetch enrichment requests', error);
-            setAlert({
-                color: 'red',
-                message: `Error fetching enrichment requests: ${error.message}`,
-                show: true,
+            notify({
+                type: 'error',
+                text: `Error fetching enrichment requests: ${error.message}`,
             });
             setEnrichmentRequests([]);
             setTotalPages(1);
@@ -178,18 +178,16 @@ export default function EnrichmentRequests() {
     const handleCreateRequest = () => {
         setModal(EnrichmentRequestModal, {
             onSuccess: () => {
-                setAlert({
-                    show: true,
-                    message: 'Enrichment request created successfully',
-                    color: 'green',
+                notify({
+                    type: 'success',
+                    text: 'Enrichment request created successfully',
                 });
                 fetchEnrichmentRequests();
             },
             onError: (error) => {
-                setAlert({
-                    show: true,
-                    message: `Error creating enrichment request: ${error.message}`,
-                    color: 'red',
+                notify({
+                    type: 'error',
+                    text: `Error creating enrichment request: ${error.message}`,
                 });
             },
         });
@@ -197,8 +195,6 @@ export default function EnrichmentRequests() {
 
     return (
         <div className='w-full h-full'>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
-
             {/* Page Header */}
             <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
                 <div>
@@ -226,7 +222,6 @@ export default function EnrichmentRequests() {
                     page={page}
                     totalPages={totalPages}
                     handlePageChange={handlePageChange}
-                    setAlert={setAlert}
                     onRequestDelete={fetchEnrichmentRequests}
                     sortField={sortField}
                     sortDirection={sortDirection}

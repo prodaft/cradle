@@ -1,13 +1,11 @@
 import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
-import { useState } from 'react';
 import { useModal } from '../../contexts/ModalContext/ModalContext';
 import { useProfile } from '../../contexts/ProfileContext/ProfileContext';
 import useApi from '../../hooks/useApi/useApi';
+import { useAPICall } from '../../hooks/useAPICall';
 import useCradleNavigate from '../../hooks/useCradleNavigate/useCradleNavigate';
-import { displayError } from '../../utils/responseUtils/responseUtils';
 import ActivityList from '../ActivityList/ActivityList.jsx';
 import EntryTypeForm from '../AdminPanelForms/EntryTypeForm.jsx';
-import AlertDismissible from '../AlertDismissible/AlertDismissible';
 import Card from '../Card/Card';
 import ConfirmDeletionModal from '../Modals/ConfirmDeletionModal.jsx';
 
@@ -18,20 +16,19 @@ export default function AdminPanelCardEntryType({
     onDelete,
     setRightPane,
 }) {
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const { executor } = useAPICall();
     const { entriesApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
     const { setModal } = useModal();
     const { isAdmin } = useProfile();
 
-    const handleDelete = async () => {
-        try {
+    const handleDelete = executor(
+        async () => {
             await entriesApi.entryClassesDestroy({ classSubtype: id });
             onDelete();
-        } catch (error) {
-            displayError(setAlert, navigate)(error);
-        }
-    };
+        },
+        { successMessage: 'Entry type deleted successfully' }
+    );
 
     const handleActivityClick = () => {
         setRightPane(
@@ -78,7 +75,6 @@ export default function AdminPanelCardEntryType({
 
     return (
         <>
-            <AlertDismissible alert={alert} setAlert={setAlert} />
             <Card
                 title={name}
                 prefix={`(${count >= 0 ? (count == 100 ? '99+' : count) : 0}) `}

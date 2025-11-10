@@ -187,7 +187,6 @@ export class ManagementApi extends runtime.BaseAPI {
 export const ManagementActionsCreateActionNameEnum = {
     DeleteHangingArtifacts: 'deleteHangingArtifacts',
     PropagateAccessVectors: 'propagateAccessVectors',
-    RecalculateNodePositions: 'recalculateNodePositions',
     RefreshMaterializedGraph: 'refreshMaterializedGraph',
     RelinkNotes: 'relinkNotes',
     ReprocessAllFiles: 'reprocessAllFiles'
