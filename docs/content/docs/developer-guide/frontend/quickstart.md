@@ -52,7 +52,7 @@ Define a hook that uses the utility to manage random number state:
 // /hooks/useRandomNumber/useRandomNumber.js
 
 import { useState } from 'react';
-import { getRandomNumber } from '../../utils/numberUtils/numberUtils';
+import { getRandomNumber } from '@/utils/numberUtils/numberUtils';
 
 /**
  * Returns a random number and a function to update it.
@@ -101,9 +101,9 @@ Implement the component that displays the random number and provides controls:
 // /components/RandomNumber/RandomNumber.jsx
 
 import React from 'react';
-import useRandomNumber from '../../hooks/useRandomNumber/useRandomNumber';
-import { saveNumber } from '../../services/numberService/numberService';
-import useNavbarContents from '../../hooks/useNavbarContents/useNavbarContents';
+import useRandomNumber from '@/hooks/useRandomNumber/useRandomNumber';
+import { saveNumber } from '@/services/numberService/numberService';
+import useNavbarContents from '@/hooks/useNavbarContents/useNavbarContents';
 import NavbarButton from '../NavbarButton/NavbarButton';
 
 /**

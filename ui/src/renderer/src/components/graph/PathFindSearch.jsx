@@ -1,0 +1,254 @@
+import { format, parseISO } from 'date-fns';
+import { Search } from 'iconoir-react';
+import { useEffect, useState } from 'react';
+import Datepicker from 'react-tailwindcss-datepicker';
+import * as Yup from 'yup';
+import useApi from '@/hooks/useApi/useApi';
+import {
+    LinkTreeFlattener,
+    truncateText,
+} from '@/utils/dashboardUtils/dashboardUtils';
+import AlertBox from '../AlertBox/AlertBox';
+import Selector from '../Selector/Selector';
+
+const GraphQuerySchema = Yup.object().shape({
+    src: Yup.string().required('Start node is required'),
+    dst: Yup.array().min(1, 'At least one destination is required'),
+    startDate: Yup.date().required('Start date is required'),
+    endDate: Yup.date()
+        .required('End date is required')
+        .min(Yup.ref('startDate'), 'End date must be after or equal to start date'),
+});
+
+export default function PathFindSearch({
+    queryValues,
+    setQueryValues,
+    addEdges,
+    addNodes,
+}) {
+    const [formValues, setFormValues] = useState(queryValues);
+    const [errors, setErrors] = useState({});
+    const [touched, setTouched] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { queryApi, knowledgeGraphApi } = useApi();
+
+    const [startEntry, setStartEntry] = useState(queryValues.src || null);
+    const [destinationSelectors, setDestinationSelectors] = useState(
+        queryValues.dst || [],
+    );
+    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+
+    useEffect(() => {
+        setFormValues({
+            ...queryValues,
+            src: queryValues.src?.value || null,
+            dst: queryValues.dst?.map((d) => d.value) || [],
+        });
+        setStartEntry(queryValues.src || null);
+        setDestinationSelectors(queryValues.dst || null);
+    }, [queryValues]);
+
+    const fetchEntries = async (q) => {
+        try {
+            const results = await queryApi.queryAdvancedRetrieve({
+                query: Array.isArray(q) ? q : [q],
+                wildcard: true,
+            });
+            return results.results.map((alias) => ({
+                value: alias.id,
+                id: String(alias.id),
+                degree: alias.degree,
+                type: alias.subtype,
+                label: `${alias.subtype}:${alias.name}`,
+            }));
+        } catch (error) {
+            displayError(setAlert)(error);
+            return [];
+        }
+    };
+
+    const setFieldValue = (name, value) => {
+        setFormValues((prev) => ({ ...prev, [name]: value }));
+        setTouched((prev) => ({ ...prev, [name]: true }));
+    };
+
+    const validateForm = async () => {
+        try {
+            await GraphQuerySchema.validate(formValues, { abortEarly: false });
+            setErrors({});
+            return true;
+        } catch (validationErrors) {
+            const newErrors = {};
+            validationErrors.inner.forEach((error) => {
+                newErrors[error.path] = error.message;
+            });
+            setErrors(newErrors);
+            return false;
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        const allTouched = Object.keys(formValues).reduce((acc, key) => {
+            acc[key] = true;
+            return acc;
+        }, {});
+        setTouched(allTouched);
+
+        const isValid = await validateForm();
+        if (isValid) {
+            // Set new query values in parent
+            setQueryValues({
+                ...formValues,
+                src: startEntry,
+                dst: destinationSelectors,
+            });
+
+            setIsSubmitting(true);
+            try {
+                const response = await knowledgeGraphApi.knowledgeGraphPathfindCreate({
+                    pathfindQueryRequest: {
+                        src: formValues.src,
+                        dsts: formValues.dst,
+                        minDate: formValues.startDate,
+                        maxDate: formValues.endDate,
+                    },
+                });
+
+                const { entries, relations, colors } = response;
+                const flattenedEntries = LinkTreeFlattener.flatten(entries);
+
+                if (flattenedEntries.length === 0) {
+                    setAlert({
+                        show: true,
+                        message: 'No path found!',
+                        color: 'yellow',
+                    });
+                }
+
+                flattenedEntries.forEach((e) => {
+                    e.label = truncateText(`${e.subtype}: ${e.name || e.id}`, 25);
+                    e.color = colors[e.subtype];
+                });
+                addNodes(flattenedEntries);
+                addEdges(relations);
+
+                setAlert({ show: false });
+            } catch (error) {
+                setAlert({
+                    show: true,
+                    message: error.message,
+                    color: 'red',
+                });
+            } finally {
+                setIsSubmitting(false);
+            }
+        }
+    };
+
+    const showError = (fieldName) =>
+        errors[fieldName] && touched[fieldName] ? (
+            <div className='text-red-500 text-xs mt-1'>{errors[fieldName]}</div>
+        ) : null;
+
+    const displayError = (setAlert) => (results) => {
+        setAlert({
+            show: true,
+            message: results.error || 'An error occurred',
+            color: 'red',
+        });
+    };
+
+    return (
+        <div className='flex flex-col space-y-4 px-2'>
+            <form className='flex flex-col space-y-2' onSubmit={handleSubmit}>
+                <div className='grid grid-cols-12 gap-2'>
+                    <div className='col-span-6 flex flex-col'>
+                        <label className='text-xs text-gray-400 mb-1'>Start Node</label>
+                        <Selector
+                            value={startEntry}
+                            onChange={(selected) => {
+                                setStartEntry(selected);
+                                setFieldValue('src', selected?.value || '');
+                            }}
+                            fetchOptions={fetchEntries}
+                            isMulti={false}
+                            placeholder='Start'
+                            className='text-sm'
+                        />
+                        {showError('src')}
+                    </div>
+                    <div className='col-span-6 flex flex-col'>
+                        <label className='text-xs text-gray-400 mb-1'>
+                            Select Destinations
+                        </label>
+                        <Selector
+                            value={destinationSelectors}
+                            onChange={(selected) => {
+                                setDestinationSelectors(selected || []);
+                                setFieldValue(
+                                    'dst',
+                                    (selected || []).map((s) => s.value),
+                                );
+                            }}
+                            fetchOptions={fetchEntries}
+                            isMulti={true}
+                            placeholder='Destinations'
+                            className='text-sm'
+                        />
+                        {showError('dst')}
+                    </div>
+                </div>
+                <div className='flex flex-row space-x-2 items-center w-full mt-4'>
+                    <div className='flex flex-col !max-w-full w-full'>
+                        <label className='text-xs text-gray-400 mb-1'>Date Range</label>
+                        <Datepicker
+                            value={{
+                                startDate: parseISO(formValues.startDate),
+                                endDate: parseISO(formValues.endDate),
+                            }}
+                            onChange={(value) => {
+                                if (value.startDate && value.endDate) {
+                                    setFieldValue(
+                                        'startDate',
+                                        format(value.startDate, "yyyy-MM-dd'T'HH:mm"),
+                                    );
+                                    setFieldValue(
+                                        'endDate',
+                                        format(value.endDate, "yyyy-MM-dd'T'HH:mm"),
+                                    );
+                                }
+                            }}
+                            inputClassName='input py-1 px-2 text-sm flex-grow !max-w-full w-full'
+                            toggleClassName='hidden'
+                        />
+                        {(errors.startDate || errors.endDate) &&
+                            (touched.startDate || touched.endDate) && (
+                                <div className='text-red-500 text-xs mt-1'>
+                                    {errors.startDate || errors.endDate}
+                                </div>
+                            )}
+                    </div>
+                    <button
+                        type='submit'
+                        title='Search graph'
+                        className='btn w-fit flex items-center mt-auto'
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? (
+                            <div className='spinner-dot-pulse'>
+                                <div className='spinner-pulse-dot'></div>
+                            </div>
+                        ) : (
+                            <>
+                                <Search className='text-primary mr-2' /> Search
+                            </>
+                        )}
+                    </button>
+                </div>
+            </form>
+            <AlertBox alert={alert} />
+        </div>
+    );
+}

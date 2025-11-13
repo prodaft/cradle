@@ -1,0 +1,66 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "incremental": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,    
+    "skipDefaultLibCheck": true,
+    "allowJs": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": false,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+
+    /* Path aliases */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/renderer/src/*"],
+      "@components": ["./src/renderer/src/components"],
+      "@components/*": ["./src/renderer/src/components/*"],
+      "@contexts": ["./src/renderer/src/contexts"],
+      "@contexts/*": ["./src/renderer/src/contexts/*"],
+      "@hooks": ["./src/renderer/src/hooks"],
+      "@hooks/*": ["./src/renderer/src/hooks/*"],
+      "@services": ["./src/renderer/src/services"],
+      "@services/*": ["./src/renderer/src/services/*"],
+      "@utils": ["./src/renderer/src/utils"],
+      "@utils/*": ["./src/renderer/src/utils/*"],
+      "@types": ["./src/renderer/src/types"],
+      "@types/*": ["./src/renderer/src/types/*"]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.js",
+    "src/**/*.jsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "out",
+    "build"
+  ],
+  "references": [
+    { "path": "./tsconfig.node.json" }
+  ]
+}
