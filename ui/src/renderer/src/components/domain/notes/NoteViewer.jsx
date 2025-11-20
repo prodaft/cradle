@@ -83,7 +83,7 @@ export default function NoteViewer() {
         const handleError = (error) => {
             handleAPIError(error, notify);
         };
-        return new CradleEditor({}, setLspLoaded, handleError, notesApi, lspApi);
+        return new CradleEditor(lspApi, notesApi, {}, setLspLoaded, handleError);
     }, [notify, notesApi, lspApi]);
 
     const copyToClipboard = (text) => {

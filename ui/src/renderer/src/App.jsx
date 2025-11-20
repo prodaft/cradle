@@ -8,6 +8,7 @@ const ConfirmEmail = React.lazy(() => import('./components/domain/auth/ConfirmEm
 const ResetPassword = React.lazy(() => import('./components/domain/auth/ResetPassword'));
 const ForgotPassword = React.lazy(() => import('./components/domain/auth/ForgotPassword'));
 const MainLayout = React.lazy(() => import('./components/layout/MainLayout/MainLayout'));
+const NoteViewer = React.lazy(() => import('./components/domain/notes/NoteViewer.jsx'));
 
 // Feedback components
 import CradleLoading from './components/base/Loading/CradleLoading';
@@ -50,7 +51,9 @@ function App() {
                                                                     <PrivateRoute fallback={'/login'} />
                                                                 }
                                                             >
-                                                                <Route path='/*' element={<MainLayout />}/>
+                                                                <Route path='/' element={<MainLayout />}>
+                                                                    <Route path='/notes/:id' element={<NoteViewer />} />
+                                                                </Route>
                                                             </Route>
                                                             <Route path='/login' element={<Login />} />
                                                             <Route

@@ -76,7 +76,7 @@ const RichEditor = forwardRef(function RichEditor({
 
     const editorUtils = useMemo(() => {
         CradleEditor.clearCache();
-        return new CradleEditor({}, setLspLoaded, displayError(setAlert), notesApi, lspApi);
+        return new CradleEditor(lspApi, notesApi, {}, setLspLoaded, displayError(setAlert));
     }, [setAlert, notesApi, lspApi]);
 
     const extensions = useMemo(() => {
