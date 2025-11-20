@@ -11,12 +11,6 @@ import parseMarkdown from '../parser/parse';
 import type { FileReference } from '@/services/cradle/models';
 
 /**
- * File data structure for attachments
- * @deprecated Use FileReference from @/services/cradle/models instead
- */
-export type FileData = FileReference;
-
-/**
  * Parse result from markdown parser
  */
 export interface ParseResult {
@@ -58,7 +52,7 @@ export const parseContent = async (
   entriesApi: any,
   fileTransferApi: any,
   baseURL: string,
-  fileData?: FileData[],
+  fileData?: FileReference[],
   addLinks: boolean = false
 ): Promise<ParseResult> => {
   const result = await parseMarkdown(content, entriesApi, fileTransferApi, baseURL, fileData, addLinks);
@@ -107,7 +101,6 @@ export const handleLinkClick = (navigateHandler: NavigateHandler) => (event: Eve
 
 const LINK_REGEX_SINGLE = /^\[(?:([^:|]+)(?::(?:((?:\\\||[^|])+))?(?:\|((?:\\\||[^|])+))?)?)?\]$/;
 const LINK_REGEX_DOUBLE = /(?:~)?^\[\[(?:([^:|]+)(?::(?:((?:\\\||[^|])+))?(?:\|((?:\\\||[^|])+))?)?)?\]\]$/;
-const LINK_REGEX = LINK_REGEX_DOUBLE;
 
 /**
  * Autocomplete context for the editor

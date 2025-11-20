@@ -2,7 +2,7 @@
  * Link utilities for handling URLs and redirects
  */
 
-import { FileData } from "@/types";
+import { FileReference } from "@/services/cradle/models";
 import QueryString from "qs";
 
 /**
@@ -65,7 +65,7 @@ export function strip(str: string, chars: string = ' \t\n\r\f\v'): string {
  * @param apiBaseUrl - Base URL of the backend
  * @returns Download link
  */
-export const createDownloadPath = (file: FileData, apiBaseUrl: string): string => {
+export const createDownloadPath = (file: FileReference, apiBaseUrl: string): string => {
   const { minioFileName, bucketName } = file;
   const queryParams = QueryString.stringify({
     bucketName: bucketName,
@@ -96,7 +96,7 @@ export const createProcessFilePath = (apiBaseUrl: string): string => {
  * @param apiBaseUrl - Base URL for creating download paths
  * @returns Markdown content with links prepended
  */
-export const prependLinks = (mdContent: string, fileData: FileData[], apiBaseUrl: string): string => {
+export const prependLinks = (mdContent: string, fileData: FileReference[], apiBaseUrl: string): string => {
   const mdLinks = fileData
     .map((file) => {
       const apiDownloadPath = createDownloadPath(file, apiBaseUrl);

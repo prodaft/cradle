@@ -241,12 +241,3 @@ export interface LoginCredentials {
   password: string;
   twoFactorToken?: string;
 }
-
-export interface AuthContextValue {
-  user: User | null;
-  login: (username: string, password: string, twoFactorToken?: string) => Promise<void>;
-  logout: () => void;
-  isAuthenticated: boolean;
-  basePath: string;
-  setBasePath: (path: string) => void;
-}

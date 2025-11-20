@@ -14,4 +14,4 @@ export { default as SearchFilter } from './SearchFilter';
 export type { SearchFilterProps } from './SearchFilter';
 
 export { default as FileInput } from './FileInput';
-export type { FileInputProps, FileData } from './FileInput';
+export type { FileInputProps } from './FileInput';

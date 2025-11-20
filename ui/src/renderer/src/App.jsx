@@ -1,25 +1,33 @@
 import React, { Suspense } from 'react';
-import { HashRouter, Outlet, Route, Routes } from 'react-router-dom';
+import { HashRouter, Route, Routes } from 'react-router-dom';
 
-const Login = React.lazy(() => import('./components/Login/Login.jsx'));
-const Documents = React.lazy(() => import('./components/Documents/Documents.jsx'));
-const Files = React.lazy(() => import('./components/Files/Files.jsx'));
-const Register = React.lazy(() => import('./components/Register/Register.jsx'));
-const MainLayout = React.lazy(() => import('./components/MainLayout/MainLayout.jsx'));
+// Lazy-loaded route components
+const Login = React.lazy(() => import('./components/domain/auth/Login'));
+const Register = React.lazy(() => import('./components/domain/auth/Register'));
+const ConfirmEmail = React.lazy(() => import('./components/domain/auth/ConfirmEmail'));
+const ResetPassword = React.lazy(() => import('./components/domain/auth/ResetPassword'));
+const ForgotPassword = React.lazy(() => import('./components/domain/auth/ForgotPassword'));
+const MainLayout = React.lazy(() => import('./components/layout/MainLayout/MainLayout'));
 
-import ApiProvider from './components/ApiProvider/ApiProvider';
-import AuthProvider from './components/AuthProvider/AuthProvider.jsx';
-import CradleLoading from './components/CradleLoading/CradleLoading.jsx';
-import PrivateRoute from './components/PrivateRoute/PrivateRoute.jsx';
-import { TooltipProvider } from './components/Tooltip/Tooltip.jsx';
-import { LayoutProvider } from './contexts/LayoutContext/LayoutContext.jsx';
-import { ModalProvider } from './contexts/ModalContext/ModalContext.jsx';
-import { NotificationProvider } from './contexts/NotificationContext/NotificationContext.jsx';
-import { PaneTabsProvider } from './contexts/PaneTabsContext/PaneTabsContext.jsx';
-import { ProfileProvider } from './contexts/ProfileContext/ProfileContext.jsx';
-import { RouteConfigProvider } from './contexts/RouteConfigContext/RouteConfigContext.jsx';
-import { TabHostProvider } from './contexts/TabHostContext/TabHostContext.jsx';
-import { ThemeProvider } from './contexts/ThemeContext/ThemeContext.jsx';
+// Feedback components
+import CradleLoading from './components/base/Loading/CradleLoading';
+import NotFound from './components/feedback/NotFound';
+
+// Auth components
+import PrivateRoute from './components/domain/auth/PrivateRoute';
+
+// Context providers
+import { ApiProvider } from './contexts/api/ApiProvider';
+import { AuthProvider } from './components/domain/auth/AuthProvider';
+import { LayoutProvider } from './contexts/ui/LayoutContext';
+import { ModalProvider } from './contexts/ui/ModalContext';
+import { NotificationProvider } from './contexts/ui/NotificationContext';
+import { PaneTabsProvider } from './contexts/tabs/PaneTabsContext';
+import { ProfileProvider } from './contexts/user/ProfileContext';
+import { RouteConfigProvider } from './contexts/routing/RouteConfigContext';
+import { TabHostProvider } from './contexts/tabs/TabHostContext';
+import { ThemeProvider } from './contexts/ui/ThemeContext';
+import { TooltipProvider } from './components/base/Tooltip/Tooltip';
 
 function App() {
     return (

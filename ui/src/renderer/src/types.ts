@@ -82,14 +82,3 @@ export type { FileReference as FileData } from '@/services/cradle/models';
  * @deprecated Use NoteRetrieve from @/services/cradle/models instead
  */
 export type { NoteRetrieve as Note } from '@/services/cradle/models';
-
-/**
- * @deprecated Use Entry from @/services/cradle/models instead
- * For graph visualization with D3 properties, use GraphNode instead
- */
-export type { Entry as GraphEntry } from '@/services/cradle/models';
-
-/**
- * @deprecated Use Entity from @/services/cradle/models instead
- */
-export type { Entity as DashboardEntry } from '@/services/cradle/models';

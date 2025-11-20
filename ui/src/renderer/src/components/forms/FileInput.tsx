@@ -7,19 +7,13 @@ import { handleAPIError } from '@utils/api';
 import type { FileReference } from '@/services/cradle/models';
 
 /**
- * File data structure returned after successful upload
- * Using generated FileReference type from API models
- */
-export type FileData = FileReference;
-
-/**
  * FileInput component props
  */
 export interface FileInputProps {
   /** Files uploaded via this instance of the component */
-  fileData: FileData[];
+  fileData: FileReference[];
   /** Callback used when uploaded files change */
-  setFileData: Dispatch<SetStateAction<FileData[]>>;
+  setFileData: Dispatch<SetStateAction<FileReference[]>>;
   /** Array of File objects pending upload */
   pendingFiles: File[];
   /** Callback used when pending files change */
@@ -35,7 +29,7 @@ export interface FileInputProps {
  *
  * @example
  * ```tsx
- * const [fileData, setFileData] = useState<FileData[]>([]);
+ * const [fileData, setFileData] = useState<FileReference[]>([]);
  * const [pendingFiles, setPendingFiles] = useState<File[]>([]);
  *
  * <FileInput
@@ -79,7 +73,7 @@ export default function FileInput({
 
     // Attempt to upload all files and remember which files succeed and which fail
     setIsUploading(true);
-    const succeededFileData: FileData[] = [];
+    const succeededFileData: FileReference[] = [];
     const failedFiles: File[] = [];
 
     const fileUploadPromises = pendingFiles.map((file) =>

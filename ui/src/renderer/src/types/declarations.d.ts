@@ -90,4 +90,48 @@ declare module 'iconoir-react' {
   export const Settings: ComponentType<SVGProps<SVGSVGElement>>;
   export const SunLight: ComponentType<SVGProps<SVGSVGElement>>;
   export const Undo: ComponentType<SVGProps<SVGSVGElement>>;
+  export const ArrowDown: ComponentType<SVGProps<SVGSVGElement>>;
+  export const ArrowRight: ComponentType<SVGProps<SVGSVGElement>>;
+  export const Bin: ComponentType<SVGProps<SVGSVGElement>>;
+  export const Download: ComponentType<SVGProps<SVGSVGElement>>;
+
+  // File operations
+  export const InputField: ComponentType<SVGProps<SVGSVGElement>>;
+  export const PasteClipboard: ComponentType<SVGProps<SVGSVGElement>>;
+  export const Trash: ComponentType<SVGProps<SVGSVGElement>>;
+  export const Upload: ComponentType<SVGProps<SVGSVGElement>>;
+  export const CloudUpload: ComponentType<SVGProps<SVGSVGElement>>;
+
+  // Navigation
+  export const NavArrowUp: ComponentType<SVGProps<SVGSVGElement>>;
+  export const NavArrowDown: ComponentType<SVGProps<SVGSVGElement>>;
+  export const NavArrowRight: ComponentType<SVGProps<SVGSVGElement>>;
+  export const ArrowLeft: ComponentType<SVGProps<SVGSVGElement>>;
+  export const Page: ComponentType<SVGProps<SVGSVGElement>>;
+
+  // Sidebar icons
+  export const Archive: ComponentType<SVGProps<SVGSVGElement>>;
+  export const Bell: ComponentType<SVGProps<SVGSVGElement>>;
+  export const BellNotification: ComponentType<SVGProps<SVGSVGElement>>;
+  export const DatabaseBackup: ComponentType<SVGProps<SVGSVGElement>>;
+  export const LogOut: ComponentType<SVGProps<SVGSVGElement>>;
+  export const Notes: ComponentType<SVGProps<SVGSVGElement>>;
+  export const Sparks: ComponentType<SVGProps<SVGSVGElement>>;
+  export const UserCrown: ComponentType<SVGProps<SVGSVGElement>>;
+
+  // Other
+  export const Code: ComponentType<SVGProps<SVGSVGElement>>;
+}
+
+// ============================================================================
+// Vite environment variables
+// ============================================================================
+
+interface ImportMetaEnv {
+  readonly VITE_API_BASE_URL: string;
+  // Add other env variables as needed
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
 }

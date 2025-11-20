@@ -5,8 +5,7 @@ import type { Token } from 'markdown-it/index.js';
 import QueryString from 'qs';
 import { FileTransferApi } from '@/services/cradle/apis';
 import { strip } from '../links';
-import { FileDownload } from '@/services/cradle';
-import { FileData } from '../editor/textEditor';
+import { FileDownload, FileReference } from '@/services/cradle';
 import { prependLinks } from '../links';
 
 // Override block-level renderer rules to render nothing
@@ -214,7 +213,7 @@ export async function processTokens(
 export async function parseWithExtensions(
     md: MarkdownIt,
     mdContent: string,
-    fileData: FileData[] | undefined,
+    fileData: FileReference[] | undefined,
     entryColors: Map<string, string>,
     fileTransferApi: FileTransferApi,
     baseURL: string,

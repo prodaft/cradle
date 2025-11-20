@@ -3,8 +3,8 @@
  */
 
 import { useContext } from 'react';
-import { AuthContext } from '@/components/AuthProvider/AuthProvider';
-import type { AuthContextValue } from '@/types';
+import { AuthContext } from '@/components/domain/auth/AuthProvider';
+import type { AuthContextValue } from '@/components/domain/auth/AuthProvider';
 
 /**
  * Hook to use the AuthContext

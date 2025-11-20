@@ -6,27 +6,23 @@
 import React, { createContext, useContext, ReactNode, ComponentType, LazyExoticComponent } from 'react';
 
 // Import all route components
-const Documents = React.lazy(() => import('@/components/documents/Documents.jsx'));
-const Files = React.lazy(() => import('@/components/Files/Files.jsx'));
+const Documents = React.lazy(() => import('@/components/domain/files/Documents.jsx'));
+const Files = React.lazy(() => import('@/components/domain/files/Files.jsx'));
 const FeatureNotImplemented = React.lazy(
-  () => import('@/components/FeatureNotImplemented/FeatureNotImplemented.jsx')
+  () => import('@/components/feedback/FeatureNotImplemented.jsx')
 );
-const Dashboard = React.lazy(() => import('@/components/Dashboard/Dashboard.jsx'));
-const NoteViewer = React.lazy(() => import('@/components/NoteViewer/NoteViewer.jsx'));
-const NoteSelector = React.lazy(() => import('@/components/NoteSelector/NoteSelector.jsx'));
-const Welcome = React.lazy(() => import('@/components/Welcome/Welcome.jsx'));
-const ActivityList = React.lazy(() => import('@/components/ActivityList/ActivityList.jsx'));
-const GraphSearch = React.lazy(() => import('@/components/GraphQuery/GraphSearch.jsx'));
-const GraphExplorer = React.lazy(() => import('@/components/GraphExplorer/GraphExplorer.jsx'));
-const Reports = React.lazy(() => import('@/components/Reports/Reports.jsx'));
-const ReportList = React.lazy(() => import('@/components/ReportList/ReportList.jsx'));
-const Publish = React.lazy(() => import('@/components/Publish/Publish.jsx'));
-const AccountSettings = React.lazy(() => import('@/components/AccountSettings/AccountSettings.jsx'));
-const AdminPanel = React.lazy(() => import('@/components/AdminPanel/AdminPanel.jsx'));
-const DigestData = React.lazy(() => import('@/components/DigestData/DigestData.jsx'));
-const EnrichmentRequests = React.lazy(
-  () => import('@/components/EnrichmentRequests/EnrichmentRequests.jsx')
-);
+const Dashboard = React.lazy(() => import('@/components/domain/dashboard/Dashboard.jsx'));
+const NoteViewer = React.lazy(() => import('@/components/domain/notes/NoteViewer.jsx'));
+const Welcome = React.lazy(() => import('@/components/feedback/Welcome.jsx'));
+const ActivityList = React.lazy(() => import('@/components/domain/activity/ActivityList.jsx'));
+const GraphSearch = React.lazy(() => import('@/components/domain/graph/GraphSearch.jsx'));
+const GraphExplorer = React.lazy(() => import('@/components/domain/graph/GraphExplorer.jsx'));
+const Reports = React.lazy(() => import('@/components/domain/reports/Reports.jsx'));
+const ReportList = React.lazy(() => import('@/components/domain/reports/ReportList.jsx'));
+const AccountSettings = React.lazy(() => import('@/components/domain/user/AccountSettings.jsx'));
+const AdminPanel = React.lazy(() => import('@/components/domain/admin/AdminPanel.jsx'));
+const DigestData = React.lazy(() => import('@/components/domain/activity/DigestData.jsx'));
+const EnrichmentRequests = React.lazy(() => import('@/components/domain/enrichment/EnrichmentRequests.jsx'));
 
 /**
  * Route configuration structure
@@ -55,7 +51,6 @@ const routeConfigs: RouteConfig[] = [
   { path: '/files', component: Files },
   { path: '/digest-data', component: DigestData },
   { path: '/reports', component: Reports },
-  { path: '/publish', component: Publish },
   { path: '/activity/:username', component: ActivityList },
   { path: '/activity', component: ActivityList },
   { path: '/settings', component: () => <AccountSettings target="me" /> },

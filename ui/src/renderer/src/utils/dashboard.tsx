@@ -3,8 +3,8 @@
  */
 
 import { ReactElement } from 'react';
-import DashboardCard from '@components/DashboardCard/DashboardCard';
-import DashboardHorizontalSection from '../components/DashboardHorizontalSection/DashboardHorizontalSection';
+import DashboardCard from '@components/domain/dashboard/DashboardCard';
+import DashboardHorizontalSection from '@components/domain/dashboard/DashboardHorizontalSection';
 
 /**
  * Dashboard entry structure
@@ -18,7 +18,9 @@ export interface DashboardEntry {
 /**
  * Subtype hierarchy tree node
  */
-type TreeNode = Record<string, TreeNode>;
+interface TreeNode {
+  [key: string]: TreeNode;
+}
 
 /**
  * Class for building and converting subtype hierarchies

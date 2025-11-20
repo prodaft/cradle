@@ -3,13 +3,18 @@
  */
 
 import { truncateText } from './dashboard';
-import type { Entry } from '@/services/cradle/models';
 
 /**
  * Graph entry from API
- * @deprecated Use Entry from @/services/cradle/models instead
+ * This represents the actual structure returned by the graph API endpoint.
+ * It differs from the Entry/Entity generated models which don't include the 'type' field.
  */
-export type GraphEntry = Entry;
+export interface GraphEntry {
+  id: string;
+  name: string;
+  type: string;
+  subtype?: string;
+}
 
 /**
  * Graph link structure (adjacency list from API)

@@ -5,40 +5,40 @@
  */
 
 // Authentication & Authorization
-export * from './auth';
+export * from './domain/auth';
 
 // Admin Panel & Management
-export * from './admin';
+export * from './domain/admin';
 
 // Note Management
-export * from './notes';
+export * from './domain/notes';
 
 // File Management
-export * from './files';
+export * from './domain/files';
 
 // Knowledge Graph & Visualization
-export * from './graph';
+export * from './domain/graph';
 
 // Relations & References
-export * from './relations';
+export * from './domain/relations';
 
 // Dashboard Views
-export * from './dashboard';
+export * from './domain/dashboard';
 
 // Reports & Publishing
-export * from './reports';
+export * from './domain/reports';
 
 // Data Enrichment
-export * from './enrichment';
+export * from './domain/enrichment';
 
 // Notifications System
-export * from './notifications';
+export * from './domain/notifications';
 
 // Activity & Actions Tracking
-export * from './activity';
+export * from './domain/activity';
 
 // Search Functionality
-export * from './search';
+export * from './domain/search';
 
 // Modal Dialogs
 export * from './modals';
@@ -49,12 +49,9 @@ export * from './layout';
 // Form Components
 export * from './forms';
 
-// Reusable UI Components
-export * from './ui';
-
 // User Account Management
-export * from './user';
+export * from './domain/user';
 
-// Shared/Common Components
-export * from './shared';
+// Note: Base UI and Feedback components are imported directly via path aliases
+// They don't have barrel exports to avoid circular dependencies
 
