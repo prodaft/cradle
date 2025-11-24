@@ -11,14 +11,48 @@ import FormField from '../../../forms/FormField';
 import Selector from '../../../forms/Selector';
 import { Tab, Tabs } from '../../../layout/Tabs/Tabs';
 
+interface Alert {
+    show: boolean;
+    message: string;
+    color: string;
+}
+
+interface EnrichmentSettingsFormProps {
+    enrichment_class: string;
+}
+
+interface EclassOption {
+    value: string;
+    label: string;
+}
+
+interface FormField {
+    type: 'string' | 'number' | 'choice';
+    required?: boolean;
+    options?: string[];
+}
+
+interface FormFields {
+    [key: string]: FormField;
+}
+
+interface FormData {
+    strategy: string;
+    periodicity: string;
+    for_eclasses: EclassOption[];
+    enabled?: boolean;
+    settings: Record<string, string | number>;
+    id?: string | number;
+}
+
 // Dynamic schema generation based on form_fields
-const createEnrichmentSchema = (form_fields) => {
-    const schemaFields = {
+const createEnrichmentSchema = (form_fields: FormFields) => {
+    const schemaFields: Record<string, Yup.AnySchema> = {
         strategy: Yup.string().required('Strategy is required'),
         for_eclasses: Yup.array().notRequired(),
         settings: Yup.object().shape(
             Object.entries(form_fields || {}).reduce((acc, [key, field]) => {
-                let validator = Yup.string();
+                let validator: Yup.AnySchema = Yup.string();
 
                 if (field.type === 'number') {
                     validator = Yup.number();
@@ -32,13 +66,13 @@ const createEnrichmentSchema = (form_fields) => {
 
                 acc[key] = validator;
                 return acc;
-            }, {}),
+            }, {} as Record<string, Yup.AnySchema>),
         ),
     };
 
     // Add periodicity validation if it exists
     schemaFields.periodicity = Yup.string().when('strategy', {
-        is: (val) => val === 'periodicity',
+        is: (val: string) => val === 'periodicity',
         then: () => Yup.string().required('Interval is required'),
         otherwise: () => Yup.string().notRequired(),
     });
@@ -52,12 +86,12 @@ const createEnrichmentSchema = (form_fields) => {
  * @param {Object} props
  * @param {string} props.enrichment_class - The enrichment class to fetch settings for
  */
-export default function EnrichmentSettingsForm({ enrichment_class }) {
+export default function EnrichmentSettingsForm({ enrichment_class }: EnrichmentSettingsFormProps) {
     const { navigate, navigateLink } = useCradleNavigate();
     const { intelioApi, entriesApi } = useApi();
     const [displayName, setDisplayName] = useState('');
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
-    const [formFields, setFormFields] = useState({});
+    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
+    const [formFields, setFormFields] = useState<FormFields>({});
     const [loading, setLoading] = useState(true);
 
     // For dynamic form validation
@@ -74,7 +108,7 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
         reset,
         setValue,
         formState: { errors },
-    } = useForm({
+    } = useForm<FormData>({
         resolver: yupResolver(validationSchema),
         defaultValues: {
             strategy: 'manual',
@@ -87,7 +121,7 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
     const watchStrategy = watch('strategy');
 
     // Fetch all entry classes for the for_eclasses selector
-    const fetchEntryClasses = async (q) => {
+    const fetchEntryClasses = async (q: string): Promise<EclassOption[]> => {
         try {
             const response = await entriesApi.entryClassesList({});
             if (response) {
@@ -125,7 +159,7 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
                         );
 
                         // Initialize settings object with defaults
-                        const initialSettings = {};
+                        const initialSettings: Record<string, string | number> = {};
                         Object.keys(settings.formFields || {}).forEach((key) => {
                             initialSettings[key] = settings.settings?.[key] || '';
                         });
@@ -156,7 +190,7 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
         }
     }, [enrichment_class, reset, navigate, intelioApi]);
 
-    const onSubmit = async (data) => {
+    const onSubmit = async (data: FormData) => {
         try {
             const formatted_data = {
                 ...data,
@@ -202,7 +236,7 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
                             </select>
                             {errors.settings?.[key] && (
                                 <p className='text-red-600 text-sm'>
-                                    {errors.settings[key].message}
+                                    {errors.settings[key]?.message}
                                 </p>
                             )}
                         </div>
@@ -211,7 +245,7 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
             } else if (field.type === 'number') {
                 return (
                     <>
-                        <div className='mt-4' />
+                        <div className='mt-4' key={`${key}-spacer`} />
                         <FormField
                             key={key}
                             type='number'
@@ -227,7 +261,7 @@ export default function EnrichmentSettingsForm({ enrichment_class }) {
                 // Default to string input
                 return (
                     <>
-                        <div className='mt-4' />
+                        <div className='mt-4' key={`${key}-spacer`} />
                         <FormField
                             key={key}
                             type='text'

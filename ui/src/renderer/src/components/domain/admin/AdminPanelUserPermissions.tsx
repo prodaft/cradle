@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { ReactElement, useEffect, useState } from 'react';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
@@ -8,6 +8,11 @@ import useFrontendSearch from '@/hooks/search/useFrontendSearch';
 import { naturalSort } from '@/utils/dashboard';
 import AdminPanelPermissionCard from './cards/AdminPanelPermissionCard';
 import Tooltip from '../../base/Tooltip/Tooltip';
+
+interface AdminPanelUserPermissionsProps {
+    username: string;
+    id: number | string;
+}
 
 /**
  * AdminPanelUserPermissions component - This component is used to display the permissions for a specific user.
@@ -20,8 +25,8 @@ import Tooltip from '../../base/Tooltip/Tooltip';
  * @returns {AdminPanelUserPermissions}
  * @constructor
  */
-export default function AdminPanelUserPermissions({ username, id }) {
-    const [entities, setEntities] = useState([]);
+export default function AdminPanelUserPermissions({ username, id }: AdminPanelUserPermissionsProps) {
+    const [entities, setEntities] = useState<ReactElement[]>([]);
     const { notify } = useNotif();
     const { accessApi, usersApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
@@ -31,7 +36,7 @@ export default function AdminPanelUserPermissions({ username, id }) {
     const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(entities);
 
     const simulateSession = () => {
-        execute(() => usersApi.usersManageRetrieve({ userId: id, actionName: 'simulate' }))
+        execute(() => usersApi.usersManageRetrieve({ userId: Number(id), actionName: 'simulate' }))
             .then((res) => {
                 // Backend returns access, refresh, and expiration times
                 auth.setTokensDirectly(res);
@@ -42,20 +47,20 @@ export default function AdminPanelUserPermissions({ username, id }) {
 
     const sendEmailConfirmation = () => {
         execute(
-            () => usersApi.usersManageRetrieve({ userId: id, actionName: 'send_email_confirmation' }),
+            () => usersApi.usersManageRetrieve({ userId: Number(id), actionName: 'send_email_confirmation' }),
             { successMessage: 'Email confirmation sent successfully' }
         ).catch(() => {});
     };
 
     const sendPasswordResetEmail = () => {
         execute(
-            () => usersApi.usersManageRetrieve({ userId: id, actionName: 'password_reset_email' }),
+            () => usersApi.usersManageRetrieve({ userId: Number(id), actionName: 'password_reset_email' }),
             { successMessage: 'Password reset email sent successfully' }
         ).catch(() => {});
     };
 
     useEffect(() => {
-        execute(() => accessApi.accessUserList({ userId: id }))
+        execute(() => accessApi.accessUserList({ userId: Number(id) }))
             .then((permissions) => {
                 setEntities(
                     permissions
@@ -141,7 +146,11 @@ export default function AdminPanelUserPermissions({ username, id }) {
                             />
                         </div>
                         <div className='w-full rounded-lg my-2 h-[80vh] overflow-y-auto'>
-                            {filteredChildren.sort((a, b) => a.key - b.key)}
+                            {filteredChildren.sort((a, b) => {
+                                const aKey = a.key?.toString() || '';
+                                const bKey = b.key?.toString() || '';
+                                return naturalSort(aKey, bKey);
+                            })}
                         </div>
                     </div>
                 </div>

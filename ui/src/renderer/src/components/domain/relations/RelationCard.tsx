@@ -1,5 +1,5 @@
 import { Trash } from 'iconoir-react';
-import { useEffect, useState, MouseEvent } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
@@ -8,28 +8,28 @@ import {
     createDashboardLink,
 } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import Card from '@components/base/Card/Card';
+import Card from '../../base/Card/Card';
 
-interface Entity {
+interface Alert {
+    show: boolean;
+    message: string;
+    color: string;
+}
+
+interface RelationEntity {
     name: string;
     subtype: string;
     color?: string;
 }
 
 interface Relation {
-    id: string;
+    id: number | string;
     created_at: string;
     last_seen: string;
     reason?: string;
-    e1: Entity;
-    e2: Entity;
-    details: Record<string, any>;
-}
-
-interface Alert {
-    show: boolean;
-    message: string;
-    color: string;
+    details: Record<string, unknown>;
+    e1: RelationEntity;
+    e2: RelationEntity;
 }
 
 interface RelationCardProps {
@@ -44,7 +44,7 @@ export default function RelationCard({ relation, onDelete, setAlert }: RelationC
     const [visible, setVisible] = useState(true);
     const { isAdmin } = useProfile();
     const { entriesApi } = useApi();
-    const { navigate, navigateLink } = useCradleNavigate();
+    const { navigate } = useCradleNavigate();
 
     useEffect(() => {
         setFormattedCreated(formatDate(new Date(relation.created_at)));
@@ -53,7 +53,7 @@ export default function RelationCard({ relation, onDelete, setAlert }: RelationC
 
     const handleDelete = async () => {
         try {
-            await entriesApi.entriesRelationsDestroy({ id: relation.id });
+            await entriesApi.entriesRelationsDestroy({ id: Number(relation.id) });
             setVisible(false);
             setAlert({
                 show: true,
@@ -71,7 +71,7 @@ export default function RelationCard({ relation, onDelete, setAlert }: RelationC
         }
     };
 
-    const handleEntryClick = (name: string, subtype: string) => (e: MouseEvent) => {
+    const handleEntryClick = (name: string, subtype: string) => (e: React.MouseEvent) => {
         const link = createDashboardLink({ name, subtype });
         navigate(link, { event: e });
     };
@@ -86,8 +86,7 @@ export default function RelationCard({ relation, onDelete, setAlert }: RelationC
         },
     ];
 
-    // Build details object with simple string values
-    const cardDetails: Record<string, any> = {
+    const cardDetails = {
         'Created At': formattedCreated,
         'Last Seen': formattedSeen,
         ...Object.fromEntries(
@@ -135,7 +134,7 @@ export default function RelationCard({ relation, onDelete, setAlert }: RelationC
 
 interface InfoRowProps {
     label: string;
-    children: React.ReactNode;
+    children: ReactNode;
 }
 
 function InfoRow({ label, children }: InfoRowProps) {

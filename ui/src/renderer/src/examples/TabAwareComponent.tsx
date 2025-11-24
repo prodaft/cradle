@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useTabContext, useIsBackgroundTab, useIsActivePane } from '../hooks/useTabContext/useTabContext';
 
 /**
@@ -6,8 +6,9 @@ import { useTabContext, useIsBackgroundTab, useIsActivePane } from '../hooks/use
  * This component demonstrates the proper way to handle routing in a multi-tab environment
  */
 const TabAwareComponent = () => {
-    const { params, location, navigate, isActive, isPaneActive, isBackgroundTab } = useTabContext();
+    const { params, location, navigate, isActive, isPaneActive } = useTabContext();
     const isBackground = useIsBackgroundTab();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const isActivePane = useIsActivePane();
     
     const [localState, setLocalState] = useState('');
@@ -27,7 +28,7 @@ const TabAwareComponent = () => {
     }, [location.pathname, isActive, isPaneActive, isBackground]);
 
     // Example: Navigation function
-    const handleNavigation = (newPath) => {
+    const handleNavigation = (newPath: string) => {
         if (isBackground) {
             // Background tabs cannot navigate - this will show a warning
             navigate(newPath);
@@ -45,7 +46,7 @@ const TabAwareComponent = () => {
     };
 
     // Example: Local state management (works in all tabs)
-    const handleLocalStateChange = (value) => {
+    const handleLocalStateChange = (value: string) => {
         setLocalState(value);
     };
 
@@ -108,3 +109,4 @@ const TabAwareComponent = () => {
 };
 
 export default TabAwareComponent;
+

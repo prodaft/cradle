@@ -176,7 +176,6 @@ export default function NoteViewer() {
     );
 
     useEffect(() => {
-        // Guard: Don't attempt to load if id is not available
         if (!id) {
             console.warn('NoteViewer - No note ID provided');
             setIsLoading(false);

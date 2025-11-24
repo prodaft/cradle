@@ -11,6 +11,57 @@ import FormField from '../../../forms/FormField';
 import Selector from '../../../forms/Selector';
 import { Tab, Tabs } from '../../../layout/Tabs/Tabs';
 
+interface Alert {
+    show: boolean;
+    message: string;
+    color: string;
+}
+
+interface EntityFormProps {
+    id?: number | string | null;
+    isEdit?: boolean;
+    onAdd?: (result: unknown) => void;
+}
+
+interface AliasOption {
+    value: number | string;
+    label: string;
+}
+
+interface FormData {
+    name: string;
+    subtype: string;
+    description: string;
+    is_public: boolean;
+    aliases: AliasOption[];
+}
+
+interface EntityClass {
+    type: string;
+    subtype: string;
+}
+
+interface Entity {
+    id: number | string;
+    name: string;
+    subtype: string;
+    description: string;
+    is_public: boolean;
+    aliasesDetail: Array<{
+        id: number | string;
+        name: string;
+        subtype: string;
+    }>;
+}
+
+interface Access {
+    user: {
+        id: number | string;
+        username: string;
+    };
+    accessType: 'none' | 'read' | 'read-write';
+}
+
 const entitySchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     subtype: Yup.string().required('Subtype is required'),
@@ -18,22 +69,22 @@ const entitySchema = Yup.object().shape({
     aliases: Yup.array().notRequired(),
 });
 
-export default function EntityForm({ id = null, isEdit = false, onAdd }) {
+export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityFormProps) {
     const { navigate, navigateLink } = useCradleNavigate();
     const { accessApi, entriesApi, queryApi } = useApi();
-    const [accesses, setAccessUsers] = useState([]);
-    const [entity, setEntity] = useState(null);
-    const [subclasses, setSubclasses] = useState([]);
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const [accesses, setAccessUsers] = useState<Access[]>([]);
+    const [entity, setEntity] = useState<Entity | null>(null);
+    const [subclasses, setSubclasses] = useState<EntityClass[]>([]);
+    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
 
-    const fetchAliases = async (q) => {
+    const fetchAliases = async (q: string | string[]): Promise<AliasOption[]> => {
         try {
             const results = await queryApi.queryAdvancedRetrieve({
                 query: Array.isArray(q) ? q : [q],
                 wildcard: true,
             });
 
-            let a = results.results.map((alias) => ({
+            const a = results.results.map((alias) => ({
                 value: alias.id,
                 label: `${alias.subtype}:${alias.name}`,
             }));
@@ -51,7 +102,7 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }) {
         reset,
         control,
         formState: { errors },
-    } = useForm({
+    } = useForm<FormData>({
         resolver: yupResolver(entitySchema),
         defaultValues: {
             name: '',
@@ -68,7 +119,7 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }) {
 
             try {
                 const entryClasses = await entriesApi.entryClassesList({ showCount: true });
-                let subclasses = entryClasses.filter(
+                const subclasses = entryClasses.filter(
                     (entity) => entity.type === 'entity',
                 );
                 setSubclasses(subclasses);
@@ -80,16 +131,16 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }) {
                 displayError(setAlert, navigate)(err);
             }
         })();
-    }, [isEdit, navigate, reset]);
+    }, [isEdit, navigate, reset, entriesApi]);
 
     // Prepopulate form data if editing.
     useEffect(() => {
         (async () => {
             if (isEdit && id) {
                 try {
-                    let [entity, accesses] = await Promise.all([
-                        entriesApi.entitiesRetrieve({ entityId: id }),
-                        accessApi.accessEntityList({ entityId: id }),
+                    const [entity, accesses] = await Promise.all([
+                        entriesApi.entitiesRetrieve({ entityId: Number(id) }),
+                        accessApi.accessEntityList({ entityId: Number(id) }),
                     ]);
                     reset({
                         name: entity.name,
@@ -119,9 +170,9 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }) {
             }
             setAlert({ show: false, message: '', color: 'red' });
         })();
-    }, [isEdit, id, navigate, reset]);
+    }, [isEdit, id, navigate, reset, entriesApi, accessApi]);
 
-    const onSubmit = async (data) => {
+    const onSubmit = async (data: FormData) => {
         const payload = {
             type: 'entity',
             name: data.name,
@@ -135,7 +186,7 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }) {
             let result = null;
             if (isEdit) {
                 await entriesApi.entitiesUpdate({
-                    entityId: id,
+                    entityId: Number(id),
                     entityUpdate: payload,
                 });
             } else {
@@ -282,7 +333,7 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }) {
                     {isEdit && entity && accesses.length > 0 &&
                         <Tab title='Access' classes='space-y-4'>
                             {accesses.map((access) => {
-                                let user = access.user;
+                                const user = access.user;
                                 return (
                                     <AdminPanelPermissionCard
                                         key={user.id}
@@ -290,6 +341,7 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }) {
                                         text={user.username}
                                         entityId={entity.id}
                                         accessLevel={access.accessType}
+                                        searchKey={user.username}
                                     />
                                 )
                             })}

@@ -77,12 +77,6 @@ const config: Config = {
         './src/renderer/src/styles/cradle-design-system.css',
         './node_modules/react-tailwindcss-datepicker/dist/index.esm.js',
     ],
-    safelist: [
-        // Preserve all cradle-* classes from being purged
-        {
-            pattern: /^cradle-.*/,
-        },
-    ],
     plugins: [
         require('@tailwindcss/typography'),
         require('tailwind-scrollbar'),

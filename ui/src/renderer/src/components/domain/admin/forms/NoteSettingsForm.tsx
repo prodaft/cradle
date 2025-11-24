@@ -8,6 +8,19 @@ import FormField from '../../../forms/FormField';
 import SnippetList from '../../../base/SnippetList/SnippetList';
 import { Tab, Tabs } from '../../../layout/Tabs/Tabs';
 
+interface Alert {
+    show: boolean;
+    message: string;
+    color: string;
+}
+
+interface FormData {
+    minEntries: number;
+    minEntities: number;
+    maxCliqueSize: number;
+    allowDynamicEntryClassCreation: boolean;
+}
+
 const noteSettingsSchema = Yup.object().shape({
     minEntries: Yup.number()
         .typeError('Must be a number')
@@ -30,7 +43,7 @@ export default function NoteSettingsForm() {
         handleSubmit,
         reset,
         formState: { errors },
-    } = useForm({
+    } = useForm<FormData>({
         resolver: yupResolver(noteSettingsSchema),
         defaultValues: {
             minEntries: 1,
@@ -40,7 +53,7 @@ export default function NoteSettingsForm() {
         },
     });
 
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
     const { managementApi } = useApi();
 
     useEffect(() => {
@@ -69,7 +82,7 @@ export default function NoteSettingsForm() {
         fetchSettings();
     }, [reset, managementApi]);
 
-    const onSubmit = async (data) => {
+    const onSubmit = async (data: FormData) => {
         try {
             await managementApi.managementSettingsCreate({
                 requestBody: {

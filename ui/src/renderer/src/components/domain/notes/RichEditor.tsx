@@ -2,7 +2,7 @@ import { acceptCompletion, autocompletion, closeBrackets, completionKeymap } fro
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { defaultHighlightStyle, indentOnInput, syntaxHighlighting } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
-import { EditorState, StateEffect } from '@codemirror/state';
+import { EditorState, Extension, StateEffect, Transaction } from '@codemirror/state';
 import { drawSelection, EditorView, highlightActiveLine, keymap, lineNumbers, rectangularSelection } from '@codemirror/view';
 import { vim, Vim } from '@replit/codemirror-vim';
 import { Prec } from '@uiw/react-codemirror';
@@ -18,12 +18,30 @@ import { createCradleTheme } from '@/utils/editor/theme';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import { displayError } from '@/utils/api';
 import FileTable from '../files/FileTable';
+import { FileReferenceWithNote } from '@/services/cradle/models';
+
+interface RichEditorProps {
+    noteid: string;
+    markdownContent: string;
+    setMarkdownContent: (content: string) => void;
+    fileData: FileReferenceWithNote[];
+    setFileData: (data: FileReferenceWithNote[]) => void;
+    setAlert: (alert: any) => void;
+    saveNote: (autoSave?: boolean) => void;
+    additionalExtensions?: Extension[];
+    enableEditing?: boolean;
+    source?: boolean;
+}
+
+export interface RichEditorRef {
+    view: EditorView | null;
+}
 
 /**
  * RichEditor component that uses PurrMD for WYSIWYG markdown editing
  * This component provides a rich-text editing mode for Markdown content with instant preview
  */
-const RichEditor = forwardRef(function RichEditor({
+const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEditor({
     noteid,
     markdownContent,
     setMarkdownContent,
@@ -37,22 +55,25 @@ const RichEditor = forwardRef(function RichEditor({
 }, ref) {
     const [showFileList, setShowFileList] = useState(false);
     const { profile } = useProfile();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [lspLoaded, setLspLoaded] = useState(false);
     const { isDarkMode } = useTheme();
     const { entriesApi, notesApi, lspApi } = useApi();
     const { navigate } = useCradleNavigate();
-    const editorRef = useRef(null);
-    const editorViewRef = useRef(null);
+    const editorRef = useRef<HTMLDivElement>(null);
+    const editorViewRef = useRef<EditorView | null>(null);
     const markdownContentRef = useRef(markdownContent);
-    const [entryColors, setEntryColors] = useState(new Map());
+    const [entryColors, setEntryColors] = useState<Map<string, string>>(new Map());
 
     useEffect(() => {
         const fetchEntryColors = async () => {
             try {
                 const entries = await entriesApi.entryClassesList({});
-                const colorMap = new Map();
+                const colorMap = new Map<string, string>();
                 for (const entry of entries) {
-                    colorMap.set(entry.subtype, entry.color);
+                    if (entry.color) {
+                        colorMap.set(entry.subtype, entry.color);
+                    }
                 }
                 setEntryColors(colorMap);
             } catch (error) {
@@ -84,7 +105,7 @@ const RichEditor = forwardRef(function RichEditor({
             return [];
         }
 
-        let exts = [
+        let exts: Extension[] = [
             cradleLinksPlugin(entryColors, navigate, source),
             cradleLinkColorPlugin(entryColors, source),
             purrmd({
@@ -98,12 +119,14 @@ const RichEditor = forwardRef(function RichEditor({
                 },
                 featuresConfigs: {
                     [PurrMDFeatures.CodeBlock]: {
-                        onCodeBlockInfoClick: (lang, code, event) => {
-                            if (event && event.target) {
+                        onCodeBlockInfoClick: (lang: string, code: string, event: MouseEvent) => {
+                            if (event && event.target && event.target instanceof HTMLElement) {
                                 const originalText = event.target.innerText;
                                 event.target.innerText = 'Copied!';
                                 setTimeout(() => {
-                                    event.target.innerText = originalText;
+                                    if (event.target instanceof HTMLElement) {
+                                        event.target.innerText = originalText;
+                                    }
                                 }, 900);
                             }
                             if (typeof code === 'string') {
@@ -137,7 +160,7 @@ const RichEditor = forwardRef(function RichEditor({
             keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
             keymap.of([{
                 key: 'Ctrl-s',
-                run: (cm) => {
+                run: (cm: EditorView) => {
                     if (!enableEditing) {
                         return false;
                     }
@@ -157,7 +180,8 @@ const RichEditor = forwardRef(function RichEditor({
         }
 
         if (profile?.vim_mode) {
-            Vim.defineEx('write', 'w', (cm) => {
+            // @ts-ignore - Vim types are not fully compatible with CodeMirror 6 types or missing
+            Vim.defineEx('write', 'w', (cm: any) => {
                 setMarkdownContent(cm.state.doc.toString());
                 saveNote(true);
                 return true;
@@ -175,6 +199,9 @@ const RichEditor = forwardRef(function RichEditor({
         navigate,
         source,
         enableEditing,
+        cradleTheme,
+        saveNote,
+        setMarkdownContent
     ]);
 
     useEffect(() => {
@@ -198,7 +225,7 @@ const RichEditor = forwardRef(function RichEditor({
                 const view = new EditorView({
                     state,
                     parent: editorRef.current,
-                    dispatch: (tr) => {
+                    dispatch: (tr: Transaction) => {
                         view.update([tr]);
                         if (tr.docChanged) {
                             const newContent = tr.state.doc.toString();
@@ -222,7 +249,13 @@ const RichEditor = forwardRef(function RichEditor({
 
     useEffect(() => {
         if (editorViewRef.current && markdownContent !== editorViewRef.current.state.doc.toString()) {
-            editorViewRef.current.dispatch({
+            // We only update if the difference is significant or if it's a fresh load
+            // But here we just blindly update which might cause cursor jumps if typing fast and prop updates lag
+            // However, markdownContentRef check in dispatch prevents local loops.
+            // This effect handles external updates.
+            
+            // Simple check to avoid overwriting if the content is effectively the same (CodeMirror handles this efficiently usually)
+             editorViewRef.current.dispatch({
                 changes: {
                     from: 0,
                     to: editorViewRef.current.state.doc.length,
@@ -232,10 +265,12 @@ const RichEditor = forwardRef(function RichEditor({
         }
     }, [markdownContent]);
 
-    const insertTextToCodeMirror = useCallback((text) => {
+    const insertTextToCodeMirror = useCallback((text: string) => {
         if (editorViewRef.current) {
-            const doc = editorViewRef.current.state;
-            editorViewRef.current.dispatch(doc.replaceSelection(text));
+            // CodeMirror 6 way to replace selection
+            const state = editorViewRef.current.state;
+            const transaction = state.update(state.replaceSelection(text));
+            editorViewRef.current.dispatch(transaction);
         }
     }, []);
 
@@ -308,3 +343,4 @@ export default memo(RichEditor, (prevProps, nextProps) => {
         prevProps.enableEditing === nextProps.enableEditing
     );
 });
+

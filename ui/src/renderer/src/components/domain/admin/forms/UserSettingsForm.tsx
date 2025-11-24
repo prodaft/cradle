@@ -7,19 +7,35 @@ import AlertBox from '../../../base/Alert/AlertBox';
 import FormField from '../../../forms/FormField';
 import { Tab, Tabs } from '../../../layout/Tabs/Tabs';
 
+interface Alert {
+    show: boolean;
+    message: string;
+    color: string;
+}
+
+interface UserSettingsFormProps {
+    onAdd?: () => void;
+}
+
+interface FormData {
+    allowRegistration: boolean;
+    requireEmailActivation: boolean;
+    requireAdminConfirmation: boolean;
+}
+
 const accountSettingsSchema = Yup.object().shape({
     allowRegistration: Yup.boolean(),
     requireEmailActivation: Yup.boolean(),
     requireAdminConfirmation: Yup.boolean(),
 });
 
-export default function UserSettingsForm({ onAdd }) {
+export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
     const {
         register,
         handleSubmit,
         reset,
         formState: { errors },
-    } = useForm({
+    } = useForm<FormData>({
         resolver: yupResolver(accountSettingsSchema),
         defaultValues: {
             allowRegistration: false,
@@ -28,7 +44,7 @@ export default function UserSettingsForm({ onAdd }) {
         },
     });
 
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
     const { managementApi } = useApi();
 
     useEffect(() => {
@@ -57,7 +73,7 @@ export default function UserSettingsForm({ onAdd }) {
         fetchSettings();
     }, [reset, managementApi]);
 
-    const onSubmit = async (data) => {
+    const onSubmit = async (data: FormData) => {
         try {
             await managementApi.managementSettingsCreate({
                 requestBody: {
