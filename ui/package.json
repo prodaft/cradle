@@ -8,6 +8,11 @@
         "email": "cradle@prodaft.com",
         "url": "https://catalyst.prodaft.com"
     },
+    "packageManager": "bun@1.1.0",
+    "engines": {
+        "bun": ">=1.0.0",
+        "npm": "0.0.0"
+    },
     "license": "MIT",
     "main": "./out/main/main.js",
     "homepage": "https://github.com/prodaft/cradle",
@@ -18,18 +23,22 @@
     "bugs": {
         "url": "https://github.com/prodaft/cradle/issues"
     },
+    "imports": {
+        "@/": "./ui/src/renderer/src/"
+    },
     "optionalDependencies": {
         "@esbuild/linux-x64": "0.24.0",
         "@rollup/rollup-linux-x64-gnu": "4.9.5"
     },
     "scripts": {
         "dev": "electron-vite dev -w",
-        "build-electron": "electron-vite build",
+        "build": "electron-vite build",
+        "dev-web": "vite",
         "build-web": "vite build",
-        "dist-electron": "electron-builder",
-        "lint": "eslint . --max-warnings 0",
-        "preview": "electron-vite preview",
-        "prettier": "npx prettier . --write",
+        "prettier": "prettier . --write",
+        "typecheck": "tsc --noEmit",
+        "lint": "eslint src/**/*.ts",
+        "verify": "npm run typecheck && npm run lint",
         "generate-api": "rm -rf src/renderer/src/services/cradle/; openapi-generator-cli generate -g typescript-fetch --input-spec ${npm_config_input:-http://localhost:8000/schema/} -c openapitools.json -o src/renderer/src/services/cradle/"
     },
     "overrides": {
@@ -118,6 +127,7 @@
         "selenium-webdriver": "^4.21.0",
         "sonner": "^2.0.7",
         "tailwind-scrollbar": "^3.1.0",
+        "ts-node": "^10.9.2",
         "vite-plugin-node-polyfills": "^0.23.0",
         "yup": "^1.6.1"
     },
@@ -131,7 +141,19 @@
         "@tailwindcss/typography": "github:tailwindcss/typography",
         "@testing-library/jest-dom": "^6.4.5",
         "@testing-library/react": "^15.0.6",
+        "@types/diff": "^7.0.2",
+        "@types/diff-match-patch": "^1.0.36",
+        "@types/dompurify": "^3.0.5",
+        "@types/js-yaml": "^4.0.9",
+        "@types/lodash": "^4.17.20",
+        "@types/markdown-it": "^14.1.2",
+        "@types/marked": "^5.0.2",
+        "@types/mime": "^3.0.4",
+        "@types/node": "^24.10.1",
+        "@types/prismjs": "^1.26.5",
+        "@types/qs": "^6.14.0",
         "@types/react": "^18.2.66",
+        "@types/react-color": "^3.0.13",
         "@types/react-dom": "^18.2.22",
         "@vitejs/plugin-react": "^4.2.1",
         "axios": "^1.7.7",
@@ -160,6 +182,7 @@
         "rollup-plugin-visualizer": "^5.14.0",
         "svg-jest": "^1.0.1",
         "tailwindcss": "^3.4.3",
+        "typescript": "^5.9.3",
         "vite": "^5.2.0",
         "vite-plugin-environment": "^1.1.3"
     },
