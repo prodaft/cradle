@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import { Search } from 'iconoir-react';
 import { useCallback, useEffect, useState } from 'react';
 import Datepicker from 'react-tailwindcss-datepicker';
+import { useTabContext } from '@/hooks/tabs/useTabContext';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
 import type { EventLog } from '@/services/cradle/models';
@@ -30,8 +31,11 @@ interface ActivityListProps {
 
 export default function ActivityList({ name, objectId, content_type, username }: ActivityListProps) {
     const { logsApi } = useApi();
+    const { params } = useTabContext();
+    const effectiveUsername = username || params.username || '';
+
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
-        username: username || '',
+        username: effectiveUsername,
         start_date: dayjs(0).format('YYYY-MM-DDTHH:mm'),
         end_date: dayjs().format('YYYY-MM-DDTHH:mm'),
         type: '',

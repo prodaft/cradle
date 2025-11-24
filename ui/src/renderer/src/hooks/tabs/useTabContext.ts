@@ -8,10 +8,10 @@ interface TabContextReturnType {
         pathname: string;
         search: string;
         hash: string;
-        state: null;
+        state: any;
         key: string;
     };
-    navigate: NavigateFunction | (() => void);
+    navigate: NavigateFunction | ((to: string, opts?: any) => void);
     isActive: boolean;
     isPaneActive: boolean;
     isBackgroundTab: boolean;
@@ -30,16 +30,19 @@ export const useTabContext = (): TabContextReturnType => {
 
     // If we're in a background tab, use captured data
     if (tabContext && !tabContext.isActive) {
+        const params = (tabContext.params as Params) || tabContext.capturedParams || {};
+        const location = tabContext.location || {
+            pathname: tabContext.capturedPathname || '/',
+            search: '',
+            hash: '',
+            state: null,
+            key: 'background-tab',
+        };
+
         return {
             // Use captured URL data for background tabs
-            params: tabContext.capturedParams || {},
-            location: {
-                pathname: tabContext.capturedPathname || '/',
-                search: '',
-                hash: '',
-                state: null,
-                key: 'background-tab',
-            },
+            params,
+            location,
             // Background tabs cannot navigate
             navigate: () => {
                 console.warn(
@@ -53,9 +56,14 @@ export const useTabContext = (): TabContextReturnType => {
         };
     }
 
-    // Active tab uses live router data
+    // Active tab uses live router data, BUT we prefer params from context if available
+    // because we might be in a Portal outside the React Router Route
+    const finalParams = (tabContext?.params && Object.keys(tabContext.params).length > 0)
+        ? (tabContext.params as Params)
+        : routerParams;
+
     return {
-        params: routerParams,
+        params: finalParams,
         location: routerLocation,
         navigate: routerNavigate,
         isActive: true,

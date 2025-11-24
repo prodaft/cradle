@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { useTabContext } from '@/hooks/tabs/useTabContext';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
@@ -30,8 +31,9 @@ import { EntryResponse } from '@/services/cradle/models';
 export default function Dashboard() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const location = useLocation();
-  const { subtype } = useParams<{ subtype: string }>();
-  const { name } = useParams<{ name: string }>();
+  const { params } = useTabContext();
+  const subtype = params.subtype;
+  const name = params.name;
   const [entryMissing, setEntryMissing] = useState(false);
   const [contentObject, setContentObject] = useState<EntryResponse | null>(null);
   const { notify } = useNotif();

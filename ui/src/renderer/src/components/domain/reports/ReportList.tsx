@@ -6,7 +6,8 @@ import {
     Trash,
 } from 'iconoir-react';
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { useTabContext } from '@/hooks/tabs/useTabContext';
 import { useModal } from '@/contexts/ui/ModalContext';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
@@ -52,7 +53,8 @@ interface SelectProps {
 }
 
 export default function ReportList() {
-    const { report_id } = useParams<{ report_id?: string }>();
+    const { params } = useTabContext();
+    const report_id = params.report_id;
     const [searchParams, setSearchParams] = useSearchParams();
     const { notify } = useNotif();
     const [reports, setReports] = useState<Report[]>([]);

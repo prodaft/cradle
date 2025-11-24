@@ -1,8 +1,9 @@
 import { debounce } from 'lodash';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import type { NoteRetrieve, FileReferenceWithNote } from '@services/cradle/models';
+import { useTabContext } from '@/hooks/tabs/useTabContext';
 import { useLayout } from '@/contexts/ui/LayoutContext';
 import { useModal } from '@/contexts/ui/ModalContext';
 import { useNotif } from '@/contexts/ui/NotificationContext';
@@ -53,7 +54,8 @@ interface LocationState {
  * NoteViewer component - displays note content with editing capabilities
  */
 export default function NoteViewer() {
-    const { id } = useParams<{ id: string }>();
+    const { params } = useTabContext();
+    const id = params.id || '';
     const { navigate } = useCradleNavigate();
     const location = useLocation();
     const locationState = (location.state as LocationState) || {};
