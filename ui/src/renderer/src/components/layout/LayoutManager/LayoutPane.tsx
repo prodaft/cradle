@@ -1,8 +1,8 @@
-import { Iconoir, Menu, NavArrowDown, Plus, SplitArea, Xmark } from 'iconoir-react';
-import React, { memo, useCallback, useEffect, useRef, useState, ReactNode, CSSProperties } from 'react';
-import { useLayout } from '@/contexts/ui/LayoutContext';
 import { usePaneTabs } from '@/contexts/tabs/PaneTabsContext';
 import { useTabHost } from '@/contexts/tabs/TabHostContext';
+import { useLayout } from '@/contexts/ui/LayoutContext';
+import { Menu, NavArrowDown, Plus, SplitArea, Xmark } from 'iconoir-react';
+import React, { CSSProperties, memo, useCallback, useEffect, useRef, useState } from 'react';
 
 // Extend window interface for drag flag
 declare global {
@@ -409,8 +409,9 @@ const PaneTabs = ({ paneId, isActive, onRootRef }: PaneTabsProps) => {
         return null;
     }
 
-    return (
-        <div
+    // TODO: Eventually enable this again
+    return (<>
+        {false && ( <div
             ref={(el) => {
                 tabBarRef.current = el;
                 if (onRootRef) onRootRef(el);
@@ -551,8 +552,8 @@ const PaneTabs = ({ paneId, isActive, onRootRef }: PaneTabsProps) => {
                     )}
                 </div>
             )}
-        </div>
-    );
+        </div>)}
+    </>);
 };
 
 interface LayoutPaneProps {

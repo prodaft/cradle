@@ -33,6 +33,5 @@ src/renderer/src/styles/output.css
 
 .env
 .vscode
-*.md
 stats.html
 tsconfig.tsbuildinfo

@@ -1,6 +1,6 @@
+import Tooltip from '@components/base/Tooltip/Tooltip';
 import React, { ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
-import Tooltip from '@components/base/Tooltip/Tooltip';
 
 /**
  * SidebarItem component props

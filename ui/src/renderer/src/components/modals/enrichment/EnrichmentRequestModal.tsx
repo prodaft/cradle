@@ -17,7 +17,7 @@ interface EnricherOption {
 interface EnrichmentFormData {
   title: string;
   enricherNames: string[];
-  entities: string[];
+  entities: number[];
   request: string;
 }
 
@@ -25,8 +25,8 @@ interface EnrichmentFormData {
  * Parsed request artifact structure
  */
 interface RequestArtifact {
-  type: string;
-  artifact: string;
+  entry_class: string;
+  name: string;
 }
 
 /**
@@ -188,8 +188,8 @@ export default function EnrichmentRequestModal({
                 enrichmentRequestRequest: {
                     title: formData.title,
                     enricherNames: formData.enricherNames,
-                    entities: formData.entities,
                     request: parsedRequest,
+                    entities: formData.entities,
                 },
             }));
             console.log(result);

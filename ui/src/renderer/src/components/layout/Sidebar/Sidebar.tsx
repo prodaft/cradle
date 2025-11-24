@@ -1,3 +1,5 @@
+import { useProfile } from '@contexts';
+import { useAuth, useCradleNavigate } from '@hooks';
 import { Graph } from '@phosphor-icons/react';
 import {
   Archive,
@@ -12,8 +14,6 @@ import {
   UserCrown,
 } from 'iconoir-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useProfile } from '@contexts';
-import { useAuth, useCradleNavigate } from '@hooks';
 import SidebarItem from './SidebarItem';
 import SidebarSection from './SidebarSection';
 
@@ -172,14 +172,12 @@ export default function Sidebar({
               highlightedLocation={accountSettingsLocation}
             />
             {isEntryManager() && (
-              <SidebarSection sectionType='content' height='fit' justify='start'>
                 <SidebarItem
                   handleClick={handleAdminPanel}
                   icon={<UserCrown height={24} width={24} />}
                   text='Manage'
                   highlightedLocation={adminLocation}
                 />
-              </SidebarSection>
             )}
             <SidebarItem
               handleClick={handleNotifications}
