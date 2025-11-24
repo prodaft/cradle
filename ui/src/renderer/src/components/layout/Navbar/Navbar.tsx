@@ -114,7 +114,6 @@ export default function Navbar({
               />
             }
             onClick={() => navigate(1)}
-            className='mr-2'
           />
           <div className='relative w-full max-w-lg'>
             <input

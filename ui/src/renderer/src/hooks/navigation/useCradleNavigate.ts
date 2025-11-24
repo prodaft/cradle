@@ -10,6 +10,12 @@ interface NavigateOptions {
     [key: string]: any;
 }
 
+/// Enum for forward/backward navigation
+enum NavigationDirection {
+    Forward = 1,
+    Backward = -1
+}
+
 const useCradleNavigate = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -19,7 +25,15 @@ const useCradleNavigate = () => {
     const activePaneId = layoutContext?.activePaneId;
     
     const smartNavigate = useCallback(
-        (to: string | { pathname: string }, options: NavigateOptions = {}) => {
+        (to: string | { pathname: string } | NavigationDirection, options: NavigateOptions = {}) => {
+            if (typeof to === 'number') {
+                if (to === NavigationDirection.Forward) {
+                    navigate(1);
+                } else {
+                    navigate(-1);
+                }
+                return;
+            }
             // If event is passed in options
             const event = options.event;
             const targetPath = typeof to === 'string' ? to : to.pathname;

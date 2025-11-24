@@ -18,7 +18,7 @@ export interface LogoProps {
   /** Whether to show text logo variant */
   text?: boolean;
   /** Optional click handler */
-  onClick?: (() => void) | null;
+  onClick?: ((e: React.MouseEvent<HTMLImageElement>) => void) | null;
 }
 
 /**
