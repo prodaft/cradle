@@ -1,8 +1,3 @@
-import { format, parseISO } from 'date-fns';
-import { Search } from 'iconoir-react';
-import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
-import Datepicker from 'react-tailwindcss-datepicker';
-import * as Yup from 'yup';
 import useApi from '@/hooks/api/useApi';
 import {
     LinkTreeFlattener,
@@ -10,6 +5,11 @@ import {
 } from '@/utils/dashboard';
 import AlertBox from '@components/base/Alert/AlertBox';
 import Selector from '@components/forms/Selector';
+import { format, parseISO } from 'date-fns';
+import { Search } from 'iconoir-react';
+import { FormEvent, useEffect, useState } from 'react';
+import Datepicker from 'react-tailwindcss-datepicker';
+import * as Yup from 'yup';
 
 interface Node {
     id: string;
@@ -221,7 +221,7 @@ export default function PathFindSearch({
     };
 
     return (
-        <div className='flex flex-col space-y-4 px-2'>
+        <div className='flex flex-col px-2'>
             <form className='flex flex-col space-y-2' onSubmit={handleSubmit}>
                 <div className='grid grid-cols-12 gap-2'>
                     <div className='col-span-6 flex flex-col'>

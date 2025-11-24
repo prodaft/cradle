@@ -131,6 +131,11 @@ input[type="search"] {
     @apply cradle-search;
 }
 
+input[type="number"] {
+    @apply cradle-input;
+    width: auto;
+}
+
 textarea,
 .textarea {
     @apply cradle-textarea;
@@ -221,8 +226,8 @@ ul.menu {
 }
 
 /* Ensure buttons are square */
-button:not(.sidebar *),
-.btn:not(.sidebar *) {
+button:not(.sidebar *):not(.rounded-full),
+.btn:not(.sidebar *):not(.rounded-full) {
     border-radius: 0 !important;
 }
 
@@ -254,6 +259,22 @@ select:not(.sidebar *) {
 /* Ensure badges and status indicators are square */
 .badge:not(.sidebar *),
 .status:not(.sidebar *) {
+    border-radius: 0 !important;
+}
+
+/* Ensure switches have square toggle elements - override ripple-ui styles */
+.switch:not(.sidebar *)::before,
+.switch:not(.sidebar *)::after,
+input.switch:not(.sidebar *)::before,
+input.switch:not(.sidebar *)::after,
+input[type="checkbox"].switch:not(.sidebar *)::before,
+input[type="checkbox"].switch:not(.sidebar *)::after {
+    position: absolute;      /* needed for centering */
+    top: 50%;
+    transform: translateY(-50%);
+
+    height: 14px !important;
+    width: 14px !important;
     border-radius: 0 !important;
 }
 

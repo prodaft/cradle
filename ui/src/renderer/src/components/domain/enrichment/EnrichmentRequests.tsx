@@ -1,6 +1,7 @@
 import { useModal } from '@/contexts/ui/ModalContext';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
+import { EnrichmentRequestList } from '@/services/cradle';
 import InProgress from '@components/feedback/InProgress';
 import EnrichmentRequestModal from '@components/modals/enrichment/EnrichmentRequestModal';
 import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from 'react';
@@ -16,16 +17,6 @@ interface ColumnFilters {
     user: string;
 }
 
-interface EnrichmentRequest {
-    id: string;
-    title: string;
-    status: string;
-    user?: {
-        username: string;
-    };
-    createdAt: string;
-}
-
 export default function EnrichmentRequests() {
     if (import.meta.env.VITE_ENV === 'production') {
         return <InProgress />;
@@ -37,7 +28,7 @@ export default function EnrichmentRequests() {
     const { setModal } = useModal();
 
     // Enrichment requests list state
-    const [enrichmentRequests, setEnrichmentRequests] = useState<EnrichmentRequest[]>([]);
+    const [enrichmentRequests, setEnrichmentRequests] = useState<EnrichmentRequestList[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -227,10 +218,10 @@ export default function EnrichmentRequests() {
                     </p>
                 </div>
                 <button
-                    className='btn btn-primary'
+                    className='cradle-btn cradle-btn-primary flex items-center justify-center w-10 h-10 text-white text-xl font-bold'
                     onClick={handleCreateRequest}
                 >
-                    Create Request
+                    +
                 </button>
             </div>
 

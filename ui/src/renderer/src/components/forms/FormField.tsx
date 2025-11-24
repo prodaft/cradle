@@ -1,4 +1,4 @@
-import { forwardRef, ForwardedRef, InputHTMLAttributes } from 'react';
+import { ForwardedRef, forwardRef, InputHTMLAttributes } from 'react';
 
 /**
  * FormField component props

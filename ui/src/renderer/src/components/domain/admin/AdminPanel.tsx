@@ -1,12 +1,21 @@
+import { useProfile } from '@/contexts/user/ProfileContext';
+import useApi from '@/hooks/api/useApi';
+import { useAPICall } from '@/hooks/api/useAPICall';
+import {
+  EnrichmentSubclass,
+  Entity,
+  EntryClass,
+  MappingSubclass,
+  UserRetrieve
+} from '@/services/cradle/models';
+import { createDashboardLink } from '@/utils/dashboard';
 import { uniqueId } from 'lodash';
 import { ReactNode, useEffect, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useLocation } from 'react-router-dom';
-import { useProfile } from '@/contexts/user/ProfileContext';
-import useApi from '@/hooks/api/useApi';
-import { useAPICall } from '@/hooks/api/useAPICall';
-import { createDashboardLink } from '@/utils/dashboard';
+import { Tab, Tabs } from '../../layout/Tabs/Tabs';
 import AccountSettings from '../user/AccountSettings';
+import AdminPanelSection from './AdminPanelSection';
 import AdminPanelCardEnrichment from './cards/AdminPanelCardEnrichment';
 import AdminPanelCardEntity from './cards/AdminPanelCardEntity';
 import AdminPanelCardEntryType from './cards/AdminPanelCardEntryType';
@@ -20,15 +29,6 @@ import FileSettingsForm from './forms/FileSettingsForm';
 import GraphSettingsForm from './forms/GraphSettingsForm';
 import NoteSettingsForm from './forms/NoteSettingsForm';
 import UserSettingsForm from './forms/UserSettingsForm';
-import AdminPanelSection from './AdminPanelSection';
-import { Tab, Tabs } from '../../layout/Tabs/Tabs';
-import {
-  EnrichmentSubclass,
-  Entity,
-  EntryClass,
-  MappingSubclass,
-  UserRetrieve
-} from '@/services/cradle/models';
 
 /**
  * AdminPanel component - This component is used to display the AdminPanel.
@@ -39,8 +39,6 @@ import {
  *
  * Each tab contains a list of cards using the adjusted cards which encapsulate
  * the logic for deletion, editing, and activity navigation.
- *
- * @returns {JSX.Element} AdminPanel
  */
 export default function AdminPanel() {
   const [entities, setEntities] = useState<ReactNode[] | null>(null);
@@ -178,7 +176,7 @@ export default function AdminPanel() {
       <div className="w-full h-full">
         <PanelGroup direction="horizontal" className="h-full">
           <Panel defaultSize={30} minSize={20} maxSize={50}>
-            <div className="m-3 h-full overflow-y-auto">
+            <div className="h-full overflow-y-auto">
               <Tabs defaultTab={0} queryParam={'tab'}>
                 <Tab title="Entities">
                   <AdminPanelSection

@@ -34,4 +34,5 @@ src/renderer/src/styles/output.css
 .env
 .vscode
 stats.html
+CLAUDE.md
 tsconfig.tsbuildinfo

@@ -1,8 +1,8 @@
-import { ComponentType, useMemo } from 'react';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import NotesList from '@components/domain/notes/NotesList';
 import RelationsList from '@components/domain/relations/RelationsList';
 import { Tab, Tabs } from '@components/layout/Tabs/Tabs';
+import { ComponentType, useMemo } from 'react';
 import GraphControl from './GraphControl';
 
 interface Entry {
@@ -84,11 +84,10 @@ export default function GraphQuery({
     }, [selectedEntries]);
 
     return (
-        <div className='h-full px-3 rounded-xl flex flex-col'>
+        <div className='h-full rounded-xl flex flex-col'>
             <Tabs
                 defaultTab={0}
-                tabClasses='tabs-underline w-full bg-opacity-9'
-                perTabClass='w-[33%] justify-center'
+                perTabClass=''
             >
                 <Tab title='Search'>
                     <div className='flex flex-col flex-1 overflow-hidden h-[85vh]'>

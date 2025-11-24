@@ -1,11 +1,10 @@
+import { useNotif } from '@/contexts/ui/NotificationContext';
+import InProgress from '@components/feedback/InProgress';
 import { ComponentType, useMemo, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import 'tailwindcss/tailwind.css';
-import { useNotif } from '@/contexts/ui/NotificationContext';
 import Graph from './Graph';
-import GraphQuery from './GraphQuery';
-import InProgress from '@components/feedback/InProgress';
 import { filterGraph } from './graphFilterUtils';
+import GraphQuery from './GraphQuery';
 
 interface Node {
     id: string;

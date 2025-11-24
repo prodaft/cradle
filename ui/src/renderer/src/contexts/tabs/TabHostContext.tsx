@@ -30,8 +30,9 @@ export function TabHostProvider({ children }: TabHostProviderProps) {
             el.style.position = 'absolute';
             el.style.top = '0';
             el.style.left = '0';
-            el.style.width = '1px';
-            el.style.height = '1px';
+            // Use full viewport size for parking to ensure correct layout calculations
+            el.style.width = '100vw';
+            el.style.height = '100vh';
             el.style.pointerEvents = 'none';
             el.style.zIndex = '1';
             el.style.visibility = 'hidden';
@@ -77,11 +78,11 @@ export function TabHostProvider({ children }: TabHostProviderProps) {
         const el = containersRef.current.get(tabId);
         if (!el) return;
         if (el.parentNode) el.parentNode.removeChild(el);
-        // Reset to minimal state
+        // Reset to minimal state, but keep full size for layout safety
         el.style.visibility = 'hidden';
         el.style.pointerEvents = 'none';
-        el.style.width = '1px';
-        el.style.height = '1px';
+        el.style.width = '100vw';
+        el.style.height = '100vh';
         el.style.right = 'auto';
         el.style.bottom = 'auto';
         el.style.overflow = 'hidden';

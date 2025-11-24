@@ -1,15 +1,16 @@
+import AlertBox from '@/components/base/Alert/AlertBox';
+import FormField from '@/components/forms/FormField';
+import Selector from '@/components/forms/Selector';
+import { Tab, Tabs } from '@/components/layout/Tabs/Tabs';
+import { TabClasses } from '@/components/layout/Tabs/types';
+import useApi from '@/hooks/api/useApi';
+import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { displayError } from '@/utils/api';
+import { capitalizeString } from '@/utils/dashboard';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
-import useApi from '@/hooks/api/useApi';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { capitalizeString } from '@/utils/dashboard';
-import { displayError } from '@/utils/api';
-import AlertBox from '../../../base/Alert/AlertBox';
-import FormField from '../../../forms/FormField';
-import Selector from '../../../forms/Selector';
-import { Tab, Tabs } from '../../../layout/Tabs/Tabs';
 
 interface Alert {
     show: boolean;
@@ -294,8 +295,7 @@ export default function EnrichmentSettingsForm({ enrichment_class }: EnrichmentS
                 <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
                     <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
                         <Tabs
-                            tabClasses='tabs gap-1 !bg-opacity-0'
-                            perTabClass='tab-pill'
+                            tabClass={TabClasses.PILL}
                         >
                             <Tab title='General' classes='space-y-4'>
                                 <div className='mt-4' />

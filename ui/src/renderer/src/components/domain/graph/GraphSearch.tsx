@@ -1,7 +1,8 @@
+import { Tab, Tabs } from '@components/layout/Tabs/Tabs';
+import { TabClasses } from '@components/layout/Tabs/types';
 import { addDays, format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Tab, Tabs } from '@components/layout/Tabs/Tabs';
 import PaginatedGraphFetch from './PaginatedGraphFetch';
 import PathFindSearch from './PathFindSearch';
 
@@ -100,10 +101,9 @@ export default function GraphSearch({ addNodes, addEdges }: GraphSearchProps) {
     };
 
     return (
-        <div className='w-full'>
+        <div className='w-full mt-2'>
             <Tabs
-                tabClasses='tabs gap-1 !bg-opacity-0'
-                perTabClass='tab-pill'
+                tabClass={TabClasses.PILL}
                 queryParam='searchTab'
             >
                 <Tab title='Fetch Graph' classes='space-y-4'>

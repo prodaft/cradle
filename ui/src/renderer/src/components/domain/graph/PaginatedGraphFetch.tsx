@@ -1,16 +1,16 @@
-import { format, parseISO } from 'date-fns';
-import { ArrowLeft, ArrowRight, PlaySolid } from 'iconoir-react';
-import { ChangeEvent, useEffect, useState } from 'react';
-import Datepicker from 'react-tailwindcss-datepicker';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { displayError } from '@/utils/api';
 import {
     LinkTreeFlattener,
     truncateText,
 } from '@/utils/dashboard';
-import { displayError } from '@/utils/api';
 import AlertBox from '@components/base/Alert/AlertBox';
 import Selector from '@components/forms/Selector';
+import { format, parseISO } from 'date-fns';
+import { ArrowLeft, ArrowRight, PlaySolid } from 'iconoir-react';
+import { ChangeEvent, useEffect, useState } from 'react';
+import Datepicker from 'react-tailwindcss-datepicker';
 
 interface Node {
     id: string;
@@ -298,7 +298,7 @@ export default function PaginatedGraphFetch({
 
     return (
         <div className='w-full px-2'>
-            <div className='flex flex-col w-full gap-2 mb-2'>
+            <div className='flex flex-col w-full gap-2'>
                 {/* First row - Date picker and Source node selector */}
                 <div className='flex items-start w-full gap-4'>
                     <div className='flex flex-col flex-grow'>
@@ -324,7 +324,7 @@ export default function PaginatedGraphFetch({
                             onChange={handleSourceChange}
                             fetchOptions={fetchEntries}
                             isMulti={false}
-                            placeholder='Select source (optional)'
+                            placeholder='Select source'
                             className='text-sm'
                             disabled={isGraphFetching}
                         />
@@ -353,7 +353,7 @@ export default function PaginatedGraphFetch({
 
                         <div className='flex flex-col'>
                             <label className='text-xs text-gray-400 mb-1'>
-                                Depth (Max: {MAX_DEPTH})
+                                Depth
                             </label>
                             <div className='flex items-center'>
                                 <input
@@ -368,9 +368,9 @@ export default function PaginatedGraphFetch({
                             </div>
                         </div>
 
-                        <div className='flex flex-col h-full'>
+                        <div className='flex flex-col h-full ml-4'>
                             <label className='text-xs text-gray-400 mb-1'>
-                                Page Navigation
+                                Pages
                             </label>
                             <div className='flex items-center'>
                                 <button
@@ -382,7 +382,7 @@ export default function PaginatedGraphFetch({
                                 >
                                     <ArrowLeft className='w-3 h-3' />
                                 </button>
-                                <span className='text-sm font-medium mx-2'>
+                                <span className='text-sm font-medium ml-2 mr-3'>
                                     {currentPage}
                                 </span>
                                 <button
@@ -394,29 +394,29 @@ export default function PaginatedGraphFetch({
                                 </button>
                             </div>
                         </div>
+
+                        <button
+                            type='button'
+                            onClick={fetchGraphPage}
+                            className='btn btn flex items-center mt-5 ml-10'
+                            disabled={
+                                isGraphFetching || reachedMaxDepthAndEnd || !sourceNode
+                            }
+                        >
+                            {isGraphFetching ? (
+                                <div className='flex justify-center'>
+                                    <div className='spinner-dot-pulse'>
+                                        <div className='spinner-pulse-dot'></div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <PlaySolid className='text-primary w-4' />
+                                </>
+                            )}
+                        </button>
                     </div>
 
-                    <button
-                        type='button'
-                        onClick={fetchGraphPage}
-                        className='btn btn flex items-center'
-                        disabled={
-                            isGraphFetching || reachedMaxDepthAndEnd || !sourceNode
-                        }
-                    >
-                        {isGraphFetching ? (
-                            <div className='flex justify-center py-1'>
-                                <div className='spinner-dot-pulse'>
-                                    <div className='spinner-pulse-dot'></div>
-                                </div>
-                            </div>
-                        ) : (
-                            <>
-                                <PlaySolid className='text-primary mr-1 w-4' /> Fetch
-                                Page
-                            </>
-                        )}
-                    </button>
                 </div>
             </div>
 

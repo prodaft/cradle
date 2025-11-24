@@ -1,15 +1,16 @@
+import useApi from '@/hooks/api/useApi';
+import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { displayError } from '@/utils/api';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
-import useApi from '@/hooks/api/useApi';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { displayError } from '@/utils/api';
-import AdminPanelPermissionCard from '../cards/AdminPanelPermissionCard';
 import AlertBox from '../../../base/Alert/AlertBox';
 import FormField from '../../../forms/FormField';
 import Selector from '../../../forms/Selector';
 import { Tab, Tabs } from '../../../layout/Tabs/Tabs';
+import { TabClasses } from '../../../layout/Tabs/types';
+import AdminPanelPermissionCard from '../cards/AdminPanelPermissionCard';
 
 interface Alert {
     show: boolean;
@@ -227,8 +228,7 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityF
                 </h1>
 
                 <Tabs
-                    tabClasses='tabs gap-1 !bg-opacity-0'
-                    perTabClass='tab-pill'
+                    tabClass={TabClasses.PILL}
                 >
                     <Tab title='Settings' classes='space-y-4'>
                         <div className='p-8 backdrop-blur-sm rounded-md bg-cradle3 bg-opacity-20'>

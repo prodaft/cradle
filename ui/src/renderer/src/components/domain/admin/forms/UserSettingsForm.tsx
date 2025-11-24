@@ -1,11 +1,12 @@
+import useApi from '@/hooks/api/useApi';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
-import useApi from '@/hooks/api/useApi';
 import AlertBox from '../../../base/Alert/AlertBox';
 import FormField from '../../../forms/FormField';
 import { Tab, Tabs } from '../../../layout/Tabs/Tabs';
+import { TabClasses } from '../../../layout/Tabs/types';
 
 interface Alert {
     show: boolean;
@@ -124,8 +125,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
             <div className='max-w-6xl mx-auto px-6 py-8'>
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <Tabs
-                        tabClasses='tabs gap-1 !bg-opacity-0'
-                        perTabClass='tab-pill'
+                        tabClass={TabClasses.PILL}
                     >
                         <Tab title='User Management'>
                             <div className='cradle-border cradle-bg-elevated p-6 mt-6'>

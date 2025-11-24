@@ -1,9 +1,9 @@
-import { Edit, Plus, Trash } from 'iconoir-react/regular';
-import { MouseEvent, useEffect, useState } from 'react';
-import { useModal } from '@contexts/ui/ModalContext';
-import useApi from '@hooks/api/useApi';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import MarkdownEditorModal from '@components/modals/notes/MarkdownEditorModal';
+import { useModal } from '@contexts/ui/ModalContext';
+import useApi from '@hooks/api/useApi';
+import { Edit, Plus, Trash } from 'iconoir-react/regular';
+import { MouseEvent, useEffect, useState } from 'react';
 
 interface Snippet {
     id: string;
@@ -134,7 +134,7 @@ export default function SnippetList({ userId = null }: SnippetListProps) {
             </div>
 
             {/* Snippets list */}
-            <div className='max-h-40 overflow-y-auto border border-gray-200 rounded-lg'>
+            <div className='max-h-40 overflow-y-auto border border-cradle-border-primary'>
                 {loading ? (
                     <div className='p-3 text-center'>
                         <div className='loading loading-spinner loading-sm'></div>

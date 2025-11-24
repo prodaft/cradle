@@ -1,17 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { useTabContext } from '@/hooks/tabs/useTabContext';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { useTabContext } from '@/hooks/tabs/useTabContext';
+import { EntryResponse } from '@/services/cradle/models';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import NotFound from '../../feedback/NotFound';
 import { Tab, Tabs } from '../../layout/Tabs/Tabs';
+import { TabClasses } from '../../layout/Tabs/types';
 import Files from './Files';
 import Notes from './Notes';
 import Relations from './Relations';
-import { EntryResponse } from '@/services/cradle/models';
 
 /**
  * Dashboard component
@@ -138,7 +139,7 @@ export default function Dashboard() {
                 <Tabs
                   defaultTab={0}
                   queryParam={'tab'}
-                  tabClasses="tabs-underline w-full"
+                  tabClass={TabClasses.UNDERLINE}
                   perTabClass="w-[33%] justify-center"
                 >
                   <Tab title="Notes" classes="pt-4">

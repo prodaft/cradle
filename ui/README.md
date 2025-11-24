@@ -34,7 +34,7 @@ It provides an intuitive interface for cybersecurity analysts to:
 
 ### Prerequisites
 
--   Node.js 18+
+-   Bun runtime
 -   Git
 
 ### Installation
@@ -49,7 +49,7 @@ It provides an intuitive interface for cybersecurity analysts to:
 2. **Install dependencies**
 
     ```bash
-    npm install
+    bun install
     ```
 
 3. **Configure environment**
@@ -61,7 +61,7 @@ It provides an intuitive interface for cybersecurity analysts to:
 
 4. **Start development server**
     ```bash
-    npm run dev
+    bun run dev
     ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -72,15 +72,16 @@ It provides an intuitive interface for cybersecurity analysts to:
 
 ### Development Scripts
 
-| Command             | Description                        |
-| ------------------- | ---------------------------------- |
-| `npm run dev`       | Start development server           |
-| `npm run build-web` | Build production bundle            |
-| `npm run preview`   | Preview production build           |
-| `npm run lint`      | Run ESLint for code quality checks |
-| `npm run test`      | Execute test suite                 |
-| `npm run jsdoc`     | Generate documentation             |
-| `npm run prettier`  | Format code with Prettier          |
+| Command             | Description                         |
+| ------------------- | ----------------------------------- |
+| `bun run dev`       | Start development server (Electron) |
+| `bun run dev-web`   | Start development server (Web)      |
+| `bun run build`     | Build production bundle (Electron)  |
+| `bun run build-web` | Build production bundle (Web)       |
+| `bun run lint`      | Run ESLint for code quality checks  |
+| `bun run typecheck` | Run tsc for typecheck               |
+| `bun run verify`    | Lint and Typecheck                  |
+| `bun run prettier`  | Format code with Prettier           |
 
 ### Key Features
 
@@ -97,7 +98,7 @@ It provides an intuitive interface for cybersecurity analysts to:
 
 **Build Issues**
 
--   Ensure Node.js version matches `.nvmrc`
+-   Ensure Bun runtime is properly installed
 -   Delete `node_modules` and reinstall dependencies
 
 **Runtime Errors**

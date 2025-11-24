@@ -1,9 +1,8 @@
 import { ChangeEvent, ComponentType, useState } from 'react';
-import 'tailwindcss/tailwind.css';
 
-import { ArrowLeft, ArrowRight, PlaySolid } from 'iconoir-react';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { displayError } from '@/utils/api';
+import { ArrowLeft, ArrowRight, PlaySolid } from 'iconoir-react';
 
 import useApi from '@/hooks/api/useApi';
 import {

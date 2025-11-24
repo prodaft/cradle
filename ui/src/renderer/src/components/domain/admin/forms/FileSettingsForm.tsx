@@ -1,14 +1,15 @@
+import useApi from '@/hooks/api/useApi';
+import { ManagementActionsCreateActionNameEnum } from '@/services/cradle/apis';
+import { EntryClass, EntryClassTypeEnum } from '@/services/cradle/models';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
-import useApi from '@/hooks/api/useApi';
 import AlertBox from '../../../base/Alert/AlertBox';
 import FormField from '../../../forms/FormField';
 import Selector from '../../../forms/Selector';
 import { Tab, Tabs } from '../../../layout/Tabs/Tabs';
-import { EntryClass, EntryClassTypeEnum } from '@/services/cradle/models';
-import { ManagementActionsCreateActionNameEnum } from '@/services/cradle/apis';
+import { TabClasses } from '../../../layout/Tabs/types';
 
 interface Alert {
   show: boolean;
@@ -196,7 +197,7 @@ export default function FileSettingsForm() {
           File Processing Settings
         </h1>
         <div className="p-8 backdrop-blur-sm rounded-md bg-cradle3 bg-opacity-20">
-          <Tabs tabClasses="tabs gap-1 !bg-opacity-0" perTabClass="tab-pill">
+          <Tabs tabClass={TabClasses.PILL}>
             <Tab title="Settings">
               <form
                 onSubmit={handleSubmit(onSubmit)}

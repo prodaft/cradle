@@ -1,17 +1,18 @@
+import useApi from '@/hooks/api/useApi';
+import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { EntryClass, EntryClassRequest, EntryClassRequestTypeEnum } from '@/services/cradle/models';
+import { displayError } from '@/utils/api';
+import { GoldenRatioColorGenerator } from '@/utils/colors/colorUtils';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useMemo, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Controller, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
-import useApi from '@/hooks/api/useApi';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { GoldenRatioColorGenerator } from '@/utils/colors/colorUtils';
-import { displayError } from '@/utils/api';
 import AlertBox from '../../../base/Alert/AlertBox';
 import FormField from '../../../forms/FormField';
 import Selector from '../../../forms/Selector';
 import { Tab, Tabs } from '../../../layout/Tabs/Tabs';
-import { EntryClass, EntryClassRequest, EntryClassRequestTypeEnum } from '@/services/cradle/models';
+import { TabClasses } from '../../../layout/Tabs/types';
 
 // Local Alert interface for component state
 interface Alert {
@@ -230,8 +231,7 @@ export default function EntryTypeForm({
         <div className="bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Tabs
-              tabClasses="tabs gap-1 !bg-opacity-0"
-              perTabClass="tab-pill"
+              tabClass={TabClasses.PILL}
             >
               <Tab title="Basic" classes="space-y-4">
                 <div className="mt-4" />

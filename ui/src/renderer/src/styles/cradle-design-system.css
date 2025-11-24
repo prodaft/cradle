@@ -859,6 +859,12 @@
   background: var(--cradle-bg-tertiary);
 }
 
+/* Number inputs should not span full width */
+input[type="number"].cradle-input,
+.cradle-input[type="number"] {
+  width: auto;
+}
+
 /* ============================================
    TEXTAREA - TECHNICAL STYLE
    ============================================ */
@@ -1379,3 +1385,81 @@
 
 } /* End @layer components */
 
+/* ProseMD CSS variables */
+/* === HEADINGS === */
+.prosemd h1 { font-size: 1.802em; font-weight: 600; color: var(--cradle-text-primary); }
+.prosemd h2 { font-size: 1.602em; font-weight: 600; color: var(--cradle-text-primary); }
+.prosemd h3 { font-size: 1.424em; font-weight: 600; color: var(--cradle-text-primary); }
+.prosemd h4 { font-size: 1.266em; font-weight: 500; color: var(--cradle-text-primary); }
+.prosemd h5 { font-size: 1.125em; font-weight: 500; color: var(--cradle-text-primary); }
+.prosemd h6 { font-size: 1em;    font-weight: 500; color: var(--cradle-text-primary); }
+
+/* Faded heading markers */
+.prosemd .pm-format-h {
+	color: var(--cradle-text-tertiary);
+	opacity: 0.7;
+}
+
+/* === LINKS === */
+.prosemd a { color: var(--cradle-accent-primary); }
+.prosemd a[href^="http"]::after { color: var(--cradle-accent-secondary); } /* URL preview title */
+
+/* Faded link formatting marks */
+.prosemd .pm-format-link {
+	color: var(--cradle-accent-primary);
+	opacity: 0.8;
+}
+
+/* === INLINE CODE === */
+.prosemd code {
+	background: var(--cradle-bg-tertiary);
+	color: var(--cradle-text-primary);
+}
+
+/* Formatting markers for code */
+.prosemd .pm-format-code {
+	color: var(--cradle-text-tertiary);
+	opacity: 0.7;
+}
+
+/* === CODE BLOCKS === */
+.prosemd pre {
+	background: var(--cradle-bg-secondary);
+	border-radius: 0px;
+}
+
+/* Info bar hover */
+.prosemd .pm-code-info:hover {
+	background: rgba(255,140,0,0.1);
+}
+
+/* === BLOCKQUOTE === */
+.prosemd blockquote {
+	border-left: 2px solid var(--cradle-accent-primary);
+}
+.prosemd .pm-format-blockquote {
+	color: var(--cradle-accent-primary);
+	opacity: 0.8;
+}
+
+/* === LISTS === */
+.prosemd ul .pm-format,
+.prosemd ol .pm-format {
+	color: var(--cradle-text-tertiary);
+	opacity: 0.8;
+}
+.prosemd ul > li::marker {
+	color: var(--cradle-accent-primary);
+}
+
+/* === CHECKBOXES === */
+.prosemd input[type="checkbox"] {
+	height: 1rem;
+	width: 1rem;
+	border: 2px solid var(--cradle-border-accent);
+	background: var(--cradle-bg-elevated);
+}
+.prosemd input[type="checkbox"]:checked {
+	background: var(--cradle-accent-primary);
+	border-color: var(--cradle-accent-primary);
+}

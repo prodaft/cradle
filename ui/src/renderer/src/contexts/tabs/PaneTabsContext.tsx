@@ -192,8 +192,17 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                 };
             } else if (Number.isInteger(activeIdx) && activeIdx >= 0 && activeIdx < newTabs.length) {
                 // Update existing active tab (only if activeIdx is a valid integer)
+                const currentTab = newTabs[activeIdx];
+                
+                // Optimization: If the path hasn't changed, do not update the state.
+                // This prevents unnecessary re-renders and prevents overwriting custom titles
+                // that might have been set by the component.
+                if (currentTab.path === location.pathname) {
+                    return currentState;
+                }
+
                 newTabs[activeIdx] = {
-                    ...newTabs[activeIdx],
+                    ...currentTab,
                     path: location.pathname,
                     title: getTitleForPath(location.pathname),
                     icon: getIconForPath(location.pathname),

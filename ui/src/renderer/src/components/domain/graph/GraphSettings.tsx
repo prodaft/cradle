@@ -116,7 +116,7 @@ export default function GraphSettings({ config, setConfig, nodes, edges }: Graph
                                     [key]: Number(e.target.value),
                                 }))
                             }
-                            className='input input-sm w-16 ml-2'
+                            className='input input-block input-sm w-16 ml-2'
                         />
                     </div>
                 ))}

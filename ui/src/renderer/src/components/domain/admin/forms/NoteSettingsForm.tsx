@@ -1,12 +1,13 @@
+import useApi from '@/hooks/api/useApi';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
-import useApi from '@/hooks/api/useApi';
 import AlertBox from '../../../base/Alert/AlertBox';
-import FormField from '../../../forms/FormField';
 import SnippetList from '../../../base/SnippetList/SnippetList';
+import FormField from '../../../forms/FormField';
 import { Tab, Tabs } from '../../../layout/Tabs/Tabs';
+import { TabClasses } from '../../../layout/Tabs/types';
 
 interface Alert {
     show: boolean;
@@ -137,8 +138,7 @@ export default function NoteSettingsForm() {
                 <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
                     <form onSubmit={handleSubmit(onSubmit)} className='space-y-6 mb-3'>
                         <Tabs
-                            tabClasses='tabs gap-1 !bg-opacity-0'
-                            perTabClass='tab-pill'
+                            tabClass={TabClasses.PILL}
                         >
                             <Tab title='Settings'>
                                 <div className='flex flex-col gap-3 pt-2'>
