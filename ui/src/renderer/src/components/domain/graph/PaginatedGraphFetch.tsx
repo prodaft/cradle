@@ -1,6 +1,6 @@
 import { format, parseISO } from 'date-fns';
 import { ArrowLeft, ArrowRight, PlaySolid } from 'iconoir-react';
-import { useEffect, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import Datepicker from 'react-tailwindcss-datepicker';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
@@ -9,22 +9,71 @@ import {
     truncateText,
 } from '@/utils/dashboard';
 import { displayError } from '@/utils/api';
-import AlertBox from '../../base/Alert/AlertBox';
-import Selector from '../../forms/Selector';
+import AlertBox from '@components/base/Alert/AlertBox';
+import Selector from '@components/forms/Selector';
+
+interface Node {
+    id: string;
+    degree?: number;
+    type?: string;
+    label?: string;
+    color?: string;
+    [key: string]: any;
+}
+
+interface Edge {
+    id: string;
+    src: string;
+    dst: string;
+    source?: string;
+    target?: string;
+    [key: string]: any;
+}
+
+interface Alert {
+    show: boolean;
+    message: string;
+    color: string;
+}
+
+interface SelectorOption {
+    value: string;
+    label: string;
+}
+
+interface DateRangeValue {
+    startDate: string | Date;
+    endDate: string | Date;
+}
+
+interface QueryValues {
+    src: SelectorOption | null;
+    startDate: string;
+    endDate: string;
+    pageSize: number;
+    depth?: number;
+}
+
+interface PaginatedGraphFetchProps {
+    queryValues: QueryValues;
+    setQueryValues: (values: any) => void;
+    addEdges: (edges: Edge[]) => void;
+    addNodes: (nodes: Node[]) => void;
+}
 
 export default function PaginatedGraphFetch({
     queryValues,
     setQueryValues,
     addEdges,
     addNodes,
-}) {
+}: PaginatedGraphFetchProps) {
     const [isGraphFetching, setIsGraphFetching] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [currentDepth, setCurrentDepth] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [hasNextPage, setHasNextPage] = useState(true);
     const [loading, setLoading] = useState(false);
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
     const { queryApi, knowledgeGraphApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
     const MAX_DEPTH = 3; // Set maximum depth to 3
@@ -33,8 +82,8 @@ export default function PaginatedGraphFetch({
     const [reachedMaxDepthAndEnd, setReachedMaxDepthAndEnd] = useState(false);
 
     // Define local states for source node and date range.
-    const [sourceNode, setSourceNode] = useState(null);
-    const [dateRange, setDateRange] = useState({
+    const [sourceNode, setSourceNode] = useState<SelectorOption | null>(null);
+    const [dateRange, setDateRange] = useState<DateRangeValue>({
         startDate: format(
             new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
             'yyyy-MM-dd',
@@ -123,7 +172,7 @@ export default function PaginatedGraphFetch({
             }
 
             const flattenedEntries = LinkTreeFlattener.flatten(entries);
-            let nodes = flattenedEntries.map((e) => ({
+            let nodes = flattenedEntries.map((e: any) => ({
                 id: String(e.id),
                 degree: e.degree,
                 type: e.subtype,
@@ -133,13 +182,13 @@ export default function PaginatedGraphFetch({
                         : truncateText(`${e.subtype}: ${e.name || e.id}`, 25),
                 color: colors[e.subtype] || '#4A90E2',
             }));
-            relations.forEach((r) => {
+            relations.forEach((r: Edge) => {
                 r.source = String(r.src);
                 r.target = String(r.dst);
             });
             addNodes(nodes);
             addEdges(relations);
-            setAlert({ show: false });
+            setAlert({ show: false, message: '', color: 'red' });
 
             // Check if we need to move to the next depth
             if (!has_next && currentPage > 1 && currentDepth < MAX_DEPTH) {
@@ -147,7 +196,7 @@ export default function PaginatedGraphFetch({
                 setCurrentDepth((prevDepth) => {
                     const newDepth = Math.min(prevDepth + 1, MAX_DEPTH);
                     // Update queryValues with the new depth
-                    setQueryValues((prev) => ({
+                    setQueryValues((prev: any) => ({
                         ...prev,
                         depth: newDepth,
                     }));
@@ -157,7 +206,7 @@ export default function PaginatedGraphFetch({
             } else if (has_next) {
                 setCurrentPage(currentPage + 1);
             }
-        } catch (error) {
+        } catch (error: any) {
             displayError(setAlert, navigate)(error);
             throw error;
         } finally {
@@ -166,26 +215,26 @@ export default function PaginatedGraphFetch({
         }
     };
 
-    const fetchEntries = async (q) => {
+    const fetchEntries = async (q: string | string[]) => {
         try {
             const results = await queryApi.queryAdvancedRetrieve({
                 query: Array.isArray(q) ? q : [q],
                 wildcard: true,
             });
-            return results.results.map((alias) => ({
+            return results.results.map((alias: any) => ({
                 value: alias.id,
                 label: `${alias.subtype}:${alias.name}`,
             }));
-        } catch (error) {
+        } catch (error: any) {
             displayError(setAlert, navigate)(error);
             return [];
         }
     };
 
-    const handlePageSizeChange = (e) => {
+    const handlePageSizeChange = (e: ChangeEvent<HTMLSelectElement>) => {
         const newSize = parseInt(e.target.value, 10);
         setPageSize(newSize);
-        setQueryValues((prev) => ({
+        setQueryValues((prev: any) => ({
             ...prev,
             pageSize: newSize,
         }));
@@ -194,7 +243,7 @@ export default function PaginatedGraphFetch({
         setReachedMaxDepthAndEnd(false); // Reset when search params change
     };
 
-    const handleDateRangeChange = (value) => {
+    const handleDateRangeChange = (value: any) => {
         if (value.startDate && value.endDate) {
             const newRange = {
                 startDate: format(value.startDate, "yyyy-MM-dd'T'HH:mm"),
@@ -202,7 +251,7 @@ export default function PaginatedGraphFetch({
             };
             setDateRange(newRange);
             // Update queryValues with the new date range.
-            setQueryValues((prev) => ({
+            setQueryValues((prev: any) => ({
                 ...prev,
                 startDate: newRange.startDate,
                 endDate: newRange.endDate,
@@ -215,10 +264,10 @@ export default function PaginatedGraphFetch({
         }
     };
 
-    const handleSourceChange = (selected) => {
+    const handleSourceChange = (selected: SelectorOption | null) => {
         setSourceNode(selected);
         // Update queryValues with the new source node.
-        setQueryValues((prev) => ({
+        setQueryValues((prev: any) => ({
             ...prev,
             src: selected,
         }));
@@ -229,16 +278,16 @@ export default function PaginatedGraphFetch({
         setReachedMaxDepthAndEnd(false); // Reset when search params change
     };
 
-    const handlePageChange = (newPage) => {
+    const handlePageChange = (newPage: number) => {
         setCurrentPage(newPage);
         // If page changes, we're definitely not at max depth + end
         setReachedMaxDepthAndEnd(false);
     };
 
-    const handleDepthChange = (e) => {
+    const handleDepthChange = (e: ChangeEvent<HTMLInputElement>) => {
         const newDepth = Math.min(parseInt(e.target.value, 10), MAX_DEPTH);
         setCurrentDepth(newDepth);
-        setQueryValues((prev) => ({
+        setQueryValues((prev: any) => ({
             ...prev,
             depth: newDepth,
         }));
@@ -256,8 +305,8 @@ export default function PaginatedGraphFetch({
                         <label className='text-xs text-gray-400 mb-1'>Date Range</label>
                         <Datepicker
                             value={{
-                                startDate: parseISO(dateRange.startDate),
-                                endDate: parseISO(dateRange.endDate),
+                                startDate: parseISO(String(dateRange.startDate)),
+                                endDate: parseISO(String(dateRange.endDate)),
                             }}
                             onChange={handleDateRangeChange}
                             inputClassName='input input-block py-1 px-2 text-sm flex-grow !max-w-full w-full'

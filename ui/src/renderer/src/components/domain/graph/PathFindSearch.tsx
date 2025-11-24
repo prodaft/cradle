@@ -1,6 +1,6 @@
 import { format, parseISO } from 'date-fns';
 import { Search } from 'iconoir-react';
-import { useEffect, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import Datepicker from 'react-tailwindcss-datepicker';
 import * as Yup from 'yup';
 import useApi from '@/hooks/api/useApi';
@@ -8,8 +8,62 @@ import {
     LinkTreeFlattener,
     truncateText,
 } from '@/utils/dashboard';
-import AlertBox from '../../base/Alert/AlertBox';
-import Selector from '../../forms/Selector';
+import AlertBox from '@components/base/Alert/AlertBox';
+import Selector from '@components/forms/Selector';
+
+interface Node {
+    id: string;
+    degree?: number;
+    type?: string;
+    label?: string;
+    color?: string;
+    [key: string]: any;
+}
+
+interface Edge {
+    id: string;
+    src: string;
+    dst: string;
+    source?: string;
+    target?: string;
+    [key: string]: any;
+}
+
+interface Alert {
+    show: boolean;
+    message: string;
+    color: string;
+}
+
+interface SelectorOption {
+    value: string;
+    id: string;
+    degree?: number;
+    type?: string;
+    label: string;
+}
+
+interface FormValues {
+    src: string | null;
+    dst: string[];
+    startDate: string;
+    endDate: string;
+}
+
+interface QueryValues {
+    src: SelectorOption | null;
+    dst: SelectorOption[];
+    max_depth: number;
+    startDate: string;
+    endDate: string;
+}
+
+interface PathFindSearchProps {
+    queryValues: QueryValues;
+    setQueryValues: (values: any) => void;
+    addEdges: (edges: Edge[]) => void;
+    addNodes: (nodes: Node[]) => void;
+}
 
 const GraphQuerySchema = Yup.object().shape({
     src: Yup.string().required('Start node is required'),
@@ -25,36 +79,42 @@ export default function PathFindSearch({
     setQueryValues,
     addEdges,
     addNodes,
-}) {
-    const [formValues, setFormValues] = useState(queryValues);
-    const [errors, setErrors] = useState({});
-    const [touched, setTouched] = useState({});
+}: PathFindSearchProps) {
+    const [formValues, setFormValues] = useState<FormValues>({
+        src: null,
+        dst: [],
+        startDate: queryValues.startDate,
+        endDate: queryValues.endDate,
+    });
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [touched, setTouched] = useState<Record<string, boolean>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { queryApi, knowledgeGraphApi } = useApi();
 
-    const [startEntry, setStartEntry] = useState(queryValues.src || null);
-    const [destinationSelectors, setDestinationSelectors] = useState(
+    const [startEntry, setStartEntry] = useState<SelectorOption | null>(queryValues.src || null);
+    const [destinationSelectors, setDestinationSelectors] = useState<SelectorOption[]>(
         queryValues.dst || [],
     );
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
 
     useEffect(() => {
         setFormValues({
-            ...queryValues,
             src: queryValues.src?.value || null,
             dst: queryValues.dst?.map((d) => d.value) || [],
+            startDate: queryValues.startDate,
+            endDate: queryValues.endDate,
         });
         setStartEntry(queryValues.src || null);
-        setDestinationSelectors(queryValues.dst || null);
+        setDestinationSelectors(queryValues.dst || []);
     }, [queryValues]);
 
-    const fetchEntries = async (q) => {
+    const fetchEntries = async (q: string | string[]) => {
         try {
             const results = await queryApi.queryAdvancedRetrieve({
                 query: Array.isArray(q) ? q : [q],
                 wildcard: true,
             });
-            return results.results.map((alias) => ({
+            return results.results.map((alias: any) => ({
                 value: alias.id,
                 id: String(alias.id),
                 degree: alias.degree,
@@ -67,7 +127,7 @@ export default function PathFindSearch({
         }
     };
 
-    const setFieldValue = (name, value) => {
+    const setFieldValue = (name: string, value: any) => {
         setFormValues((prev) => ({ ...prev, [name]: value }));
         setTouched((prev) => ({ ...prev, [name]: true }));
     };
@@ -77,9 +137,9 @@ export default function PathFindSearch({
             await GraphQuerySchema.validate(formValues, { abortEarly: false });
             setErrors({});
             return true;
-        } catch (validationErrors) {
-            const newErrors = {};
-            validationErrors.inner.forEach((error) => {
+        } catch (validationErrors: any) {
+            const newErrors: Record<string, string> = {};
+            validationErrors.inner.forEach((error: any) => {
                 newErrors[error.path] = error.message;
             });
             setErrors(newErrors);
@@ -87,13 +147,13 @@ export default function PathFindSearch({
         }
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         const allTouched = Object.keys(formValues).reduce((acc, key) => {
             acc[key] = true;
             return acc;
-        }, {});
+        }, {} as Record<string, boolean>);
         setTouched(allTouched);
 
         const isValid = await validateForm();
@@ -109,7 +169,7 @@ export default function PathFindSearch({
             try {
                 const response = await knowledgeGraphApi.knowledgeGraphPathfindCreate({
                     pathfindQueryRequest: {
-                        src: formValues.src,
+                        src: formValues.src!,
                         dsts: formValues.dst,
                         minDate: formValues.startDate,
                         maxDate: formValues.endDate,
@@ -127,15 +187,15 @@ export default function PathFindSearch({
                     });
                 }
 
-                flattenedEntries.forEach((e) => {
+                flattenedEntries.forEach((e: any) => {
                     e.label = truncateText(`${e.subtype}: ${e.name || e.id}`, 25);
                     e.color = colors[e.subtype];
                 });
                 addNodes(flattenedEntries);
                 addEdges(relations);
 
-                setAlert({ show: false });
-            } catch (error) {
+                setAlert({ show: false, message: '', color: 'red' });
+            } catch (error: any) {
                 setAlert({
                     show: true,
                     message: error.message,
@@ -147,12 +207,12 @@ export default function PathFindSearch({
         }
     };
 
-    const showError = (fieldName) =>
+    const showError = (fieldName: string) =>
         errors[fieldName] && touched[fieldName] ? (
             <div className='text-red-500 text-xs mt-1'>{errors[fieldName]}</div>
         ) : null;
 
-    const displayError = (setAlert) => (results) => {
+    const displayError = (setAlert: (alert: Alert) => void) => (results: any) => {
         setAlert({
             show: true,
             message: results.error || 'An error occurred',
@@ -168,7 +228,7 @@ export default function PathFindSearch({
                         <label className='text-xs text-gray-400 mb-1'>Start Node</label>
                         <Selector
                             value={startEntry}
-                            onChange={(selected) => {
+                            onChange={(selected: SelectorOption | null) => {
                                 setStartEntry(selected);
                                 setFieldValue('src', selected?.value || '');
                             }}
@@ -185,7 +245,7 @@ export default function PathFindSearch({
                         </label>
                         <Selector
                             value={destinationSelectors}
-                            onChange={(selected) => {
+                            onChange={(selected: SelectorOption[] | null) => {
                                 setDestinationSelectors(selected || []);
                                 setFieldValue(
                                     'dst',
@@ -208,7 +268,7 @@ export default function PathFindSearch({
                                 startDate: parseISO(formValues.startDate),
                                 endDate: parseISO(formValues.endDate),
                             }}
-                            onChange={(value) => {
+                            onChange={(value: any) => {
                                 if (value.startDate && value.endDate) {
                                     setFieldValue(
                                         'startDate',

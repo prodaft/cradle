@@ -1,9 +1,49 @@
-import { useMemo } from 'react';
+import { ComponentType, useMemo } from 'react';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import NotesList from '../notes/NotesList';
-import RelationsList from '../relations/RelationsList';
-import { Tab, Tabs } from '../../layout/Tabs/Tabs';
+import NotesList from '@components/domain/notes/NotesList';
+import RelationsList from '@components/domain/relations/RelationsList';
+import { Tab, Tabs } from '@components/layout/Tabs/Tabs';
 import GraphControl from './GraphControl';
+
+interface Entry {
+    id: string;
+    label?: string;
+    name?: string;
+    value?: string;
+    [key: string]: any;
+}
+
+interface Node {
+    id: string;
+    [key: string]: any;
+}
+
+interface Edge {
+    id: string;
+    source: string;
+    target: string;
+    [key: string]: any;
+}
+
+interface SearchComponentProps {
+    addEdges: (edges: Edge[]) => void;
+    addNodes: (nodes: Node[]) => void;
+}
+
+interface GraphQueryProps {
+    selectedEntries: Set<Entry>;
+    setSelectedEntries: (entries: Set<Entry>) => void;
+    entryGraphColors: Record<string, string>;
+    disabledTypes: Set<string>;
+    setDisabledTypes: (types: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
+    config: any;
+    setConfig: (config: any) => void;
+    SearchComponent: ComponentType<SearchComponentProps>;
+    addEdges: (edges: Edge[]) => void;
+    addNodes: (nodes: Node[]) => void;
+    nodes: Node[];
+    edges: Edge[];
+}
 
 export default function GraphQuery({
     selectedEntries,
@@ -18,7 +58,7 @@ export default function GraphQuery({
     addNodes,
     nodes,
     edges,
-}) {
+}: GraphQueryProps) {
     const { navigate, navigateLink } = useCradleNavigate();
 
     const settingsProps = {
@@ -74,13 +114,13 @@ export default function GraphQuery({
                                     <div className='flex flex-wrap gap-2 mb-2'>
                                         {Array.from(selectedEntries).slice(0, 3).map((entry) => (
                                             <span
-                                                key={entry.id || entry.value || entry}
+                                                key={entry.id || entry.value || String(entry)}
                                                 className='badge badge-outline-primary text-sm'
                                             >
                                                 {entry.label ||
                                                     entry.name ||
                                                     entry.id ||
-                                                    entry}
+                                                    String(entry)}
                                             </span>
                                         ))}
                                     </div>
@@ -108,13 +148,13 @@ export default function GraphQuery({
                                     <div className='flex flex-wrap gap-2 mb-2'>
                                         {Array.from(selectedEntries).slice(0, 3).map((entry) => (
                                             <span
-                                                key={entry.id || entry.value || entry}
+                                                key={entry.id || entry.value || String(entry)}
                                                 className='badge badge-outline-primary text-sm'
                                             >
                                                 {entry.label ||
                                                     entry.name ||
                                                     entry.id ||
-                                                    entry}
+                                                    String(entry)}
                                             </span>
                                         ))}
                                     </div>

@@ -1,15 +1,23 @@
 import { SubtypeHierarchy } from '@/utils/dashboard';
-import Collapsible from '../../base/Collapsible/Collapsible';
+import Collapsible from '@components/base/Collapsible/Collapsible';
+import { ReactNode } from 'react';
+
+interface GraphLegendProps {
+    entryGraphColors: Record<string, string>;
+    disabledTypes: Set<string>;
+    toggleDisabledType: (type: string) => void;
+    setDisabledTypes: (types: Set<string>) => void;
+}
 
 const GraphLegend = ({
     entryGraphColors,
     disabledTypes,
     toggleDisabledType,
     setDisabledTypes,
-}) => {
+}: GraphLegendProps) => {
     if (!entryGraphColors || Object.keys(entryGraphColors).length === 0) return null;
 
-    const toggleAllAtPath = (path, items) => {
+    const toggleAllAtPath = (path: string, items: string[]) => {
         const allKeys = items.map((item) => path + item);
         const allDisabled = allKeys.every((key) => disabledTypes.has(key));
 
@@ -64,7 +72,7 @@ const GraphLegend = ({
                                     Object.keys(entryGraphColors),
                                 ).convert(
                                     // --- Render for internal nodes (categories that have child categories) ---
-                                    (value, children, childValues) => {
+                                    (value: string, children: ReactNode, childValues: string[]) => {
                                         // Extract the path for this level
                                         const path =
                                             childValues.length > 0 &&
@@ -124,7 +132,7 @@ const GraphLegend = ({
                                         );
                                     },
                                     // --- Render for leaf nodes (concrete subtypes that reference actual entries) ---
-                                    (value, path) => (
+                                    (value: string, path: string) => (
                                         <div
                                             className='dark:text-zinc-300 text-xs w-36 pt-1'
                                             key={value}

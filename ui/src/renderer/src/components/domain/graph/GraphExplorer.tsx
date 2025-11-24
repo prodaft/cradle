@@ -1,22 +1,59 @@
-import { useMemo, useState } from 'react';
+import { ComponentType, useMemo, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import 'tailwindcss/tailwind.css';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import Graph from './Graph';
 import GraphQuery from './GraphQuery';
-import InProgress from '../../feedback/InProgress';
+import InProgress from '@components/feedback/InProgress';
 import { filterGraph } from './graphFilterUtils';
 
-export default function GraphExplorer({ GraphSearchComponent }) {
+interface Node {
+    id: string;
+    type?: string;
+    color?: string;
+    [key: string]: any;
+}
+
+interface Edge {
+    id: string;
+    source: string;
+    target: string;
+    [key: string]: any;
+}
+
+interface Entry {
+    id: string;
+    [key: string]: any;
+}
+
+interface GraphConfig {
+    nodeRadiusCoefficient: number;
+    linkWidthCoefficient: number;
+    simulationGravity: number;
+    simulationRepulsion: number;
+    simulationLinkSpring: number;
+    simulationLinkDistance: number;
+}
+
+interface SearchComponentProps {
+    addEdges: (edges: Edge[]) => void;
+    addNodes: (nodes: Node[]) => void;
+}
+
+interface GraphExplorerProps {
+    GraphSearchComponent: ComponentType<SearchComponentProps>;
+}
+
+export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerProps) {
     if (import.meta.env.VITE_ENV === 'production') {
         return <InProgress />;
     }
 
-    const [nodes, setNodes] = useState([]);
-    const [edges, setEdges] = useState([]);
-    const [disabledTypes, setDisabledTypes] = useState(new Set());
-    const [entryGraphColors, setEntryGraphColors] = useState({});
-    const [config, setConfig] = useState({
+    const [nodes, setNodes] = useState<Node[]>([]);
+    const [edges, setEdges] = useState<Edge[]>([]);
+    const [disabledTypes, setDisabledTypes] = useState<Set<string>>(new Set());
+    const [entryGraphColors, setEntryGraphColors] = useState<Record<string, string>>({});
+    const [config, setConfig] = useState<GraphConfig>({
         nodeRadiusCoefficient: 1,
         linkWidthCoefficient: 1,
         simulationGravity: 0.2,
@@ -25,18 +62,16 @@ export default function GraphExplorer({ GraphSearchComponent }) {
         simulationLinkDistance: 10,
     });
     const { notify } = useNotif();
-    const [selectedEntries, setSelectedEntries] = useState(new Set());
+    const [selectedEntries, setSelectedEntries] = useState<Set<Entry>>(new Set());
 
     // Maintain sets for tracking existing IDs
-    const [nodeIds, setNodeIds] = useState(new Set());
-    const [edgeIds, setEdgeIds] = useState(new Set());
+    const [nodeIds, setNodeIds] = useState<Set<string>>(new Set());
+    const [edgeIds, setEdgeIds] = useState<Set<string>>(new Set());
 
-    const addNodes = (newNodes) => {
-        if (!Array.isArray(newNodes)) {
-            newNodes = [newNodes];
-        }
+    const addNodes = (newNodes: Node[] | Node) => {
+        let nodesToProcess = Array.isArray(newNodes) ? newNodes : [newNodes];
 
-        const nodesToAdd = newNodes.filter((node) => {
+        const nodesToAdd = nodesToProcess.filter((node) => {
             if (!node.id) {
                 console.warn('Node missing id:', node);
                 return false;
@@ -65,12 +100,10 @@ export default function GraphExplorer({ GraphSearchComponent }) {
         }
     };
 
-    const addEdges = (newEdges) => {
-        if (!Array.isArray(newEdges)) {
-            newEdges = [newEdges];
-        }
+    const addEdges = (newEdges: Edge[] | Edge) => {
+        let edgesToProcess = Array.isArray(newEdges) ? newEdges : [newEdges];
 
-        const edgesToAdd = newEdges.filter((edge) => {
+        const edgesToAdd = edgesToProcess.filter((edge) => {
             if (!edge.id || !edge.source || !edge.target) {
                 console.warn(
                     'Edge missing required properties (id, source, target):',

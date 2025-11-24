@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { ChangeEvent, ComponentType, useState } from 'react';
 import 'tailwindcss/tailwind.css';
 
 import { ArrowLeft, ArrowRight, PlaySolid } from 'iconoir-react';
@@ -10,21 +10,52 @@ import {
     LinkTreeFlattener,
     truncateText,
 } from '@/utils/dashboard';
-import AlertBox from '../../base/Alert/AlertBox';
+import AlertBox from '@components/base/Alert/AlertBox';
 
-export default function NoteGraphSearch(noteId) {
-    return function ({
+interface Node {
+    id: string;
+    degree?: number;
+    type?: string;
+    label?: string;
+    color?: string;
+    [key: string]: any;
+}
+
+interface Edge {
+    id: string;
+    src: string;
+    dst: string;
+    source?: string;
+    target?: string;
+    [key: string]: any;
+}
+
+interface Alert {
+    show: boolean;
+    message: string;
+    color: string;
+}
+
+interface NoteGraphSearchProps {
+    queryValues: any;
+    setQueryValues: (values: any) => void;
+    addEdges: (edges: Edge[]) => void;
+    addNodes: (nodes: Node[]) => void;
+}
+
+export default function NoteGraphSearch(noteId: string): ComponentType<NoteGraphSearchProps> {
+    return function NoteGraphSearchComponent({
         queryValues,
         setQueryValues,
         addEdges,
         addNodes,
-    }) {
+    }: NoteGraphSearchProps) {
         const [isGraphFetching, setIsGraphFetching] = useState(false);
         const [currentPage, setCurrentPage] = useState(1);
         const [pageSize, setPageSize] = useState(10);
-        const [totalPages, setTotalPages] = useState(null);
+        const [totalPages, setTotalPages] = useState<number | null>(null);
         const [loading, setLoading] = useState(false);
-        const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+        const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
         const { notesApi } = useApi();
         const { navigate, navigateLink } = useCradleNavigate();
 
@@ -60,7 +91,7 @@ export default function NoteGraphSearch(noteId) {
 
                 console.log('entries', entries);
                 const flattenedEntries = LinkTreeFlattener.flatten(entries);
-                let nodes = flattenedEntries.map((e) => ({
+                let nodes = flattenedEntries.map((e: any) => ({
                     id: String(e.id),
                     degree: e.degree,
                     type: e.subtype,
@@ -70,16 +101,15 @@ export default function NoteGraphSearch(noteId) {
                             : truncateText(`${e.subtype}: ${e.name || e.id}`, 25),
                     color: colors[e.subtype] || '#4A90E2',
                 }));
-                relations.forEach((r) => {
+                relations.forEach((r: Edge) => {
                     r.source = String(r.src);
                     r.target = String(r.dst);
                 });
                 addNodes(nodes);
                 addEdges(relations);
-                setAlert({ show: false });
-                setAlert({ show: false });
+                setAlert({ show: false, message: '', color: 'red' });
                 handlePageChange(currentPage + 1);
-            } catch (error) {
+            } catch (error: any) {
                 console.error(error);
                 displayError(setAlert, navigate)(error);
             } finally {
@@ -88,18 +118,18 @@ export default function NoteGraphSearch(noteId) {
             }
         };
 
-        const handlePageSizeChange = (e) => {
+        const handlePageSizeChange = (e: ChangeEvent<HTMLSelectElement>) => {
             const newSize = parseInt(e.target.value, 10);
             setPageSize(newSize);
         };
 
-        const handlePageChange = (newPage) => {
+        const handlePageChange = (newPage: number) => {
             if (totalPages != null && newPage >= 1 && newPage <= totalPages) {
                 setCurrentPage(newPage);
             }
         };
 
-        const handlePageInputChange = (e) => {
+        const handlePageInputChange = (e: ChangeEvent<HTMLInputElement>) => {
             const value = parseInt(e.target.value, 10);
             if (
                 totalPages != null &&

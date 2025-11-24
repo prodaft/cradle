@@ -12,14 +12,6 @@ import ListView from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import TableCard from '@components/base/Card/TableCard';
 
-const usePrevious = <T,>(value: T, initialValue: T): T => {
-    const ref = useRef(initialValue);
-    useEffect(() => {
-        ref.current = value;
-    });
-    return ref.current;
-};
-
 interface FilesListQuery {
     date?: string;
     keyword?: string;
@@ -33,15 +25,12 @@ interface FilesListQuery {
 
 /**
  * FilesList component - This component is used to display a list of files.
- * @function FilesList
- * @param {Object} props - Component props
- * @param {FilesListQuery} props.query - Query parameters for filtering files
- * @param {FileReferenceWithNote[]} props.filteredFiles - Files to filter out from the results
- * @param {Array} props.fileActions - Actions that can be performed on files
- * @param {Object} props.references - References for drag and drop functionality
- * @param {StateSetter<Alert>} props.setAlert - Function to set alerts (optional)
- * @param {Function} props.onError - Error handler function (optional)
- * @returns {JSX.Element}
+ * @param query - Query parameters for filtering files
+ * @param filteredFiles - Files to filter out from the results
+ * @param fileActions - Actions that can be performed on files
+ * @param references - References for drag and drop functionality
+ * @param setAlert - Function to set alerts (optional)
+ * @param onError - Error handler function (optional)
  */
 interface FilesListProps {
     query?: FilesListQuery;
@@ -241,7 +230,7 @@ export default function FilesList({
     useEffect(() => {
         setPage(Number(searchParams.get('files_page')) || 1);
         fetchFiles();
-    }, [fetchFiles, pageSize]);
+    }, [pageSize]);
 
     const handlePageChange = (newPage: number) => {
         const newParams = new URLSearchParams(searchParams);
