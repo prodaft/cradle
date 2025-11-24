@@ -39,8 +39,11 @@ interface ListViewProps<T = any> {
 
 /**
  * ListView component - A reusable component for displaying data in table view
+ * 
+ * NOTE: The data items must have an id property, but it is optional to allow
+ * for compatibility with the auto-generated API responses.
  */
-export default function ListView<T extends { id: string }>({
+export default function ListView<T extends { id?: string }>({
     data = [],
     columns = [],
     loading = false,
@@ -63,7 +66,7 @@ export default function ListView<T extends { id: string }>({
 
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
-            const allIds = data.map((item) => item.id);
+            const allIds = data.map((item) => item.id!);
             setSelectedIds(allIds);
             setSelected(allIds);
         } else {
@@ -304,8 +307,8 @@ export default function ListView<T extends { id: string }>({
                         data.map((item, index) =>
                             renderRow ? renderRow(item, index, {
                                 enableMultiSelect,
-                                isSelected: selectedIds.includes(item.id),
-                                onSelect: () => handleSelectRow(item.id),
+                                isSelected: selectedIds.includes(item.id!),
+                                onSelect: () => handleSelectRow(item.id!),
                             }) : null
                         )
                     )}

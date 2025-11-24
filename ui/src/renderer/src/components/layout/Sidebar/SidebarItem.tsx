@@ -11,7 +11,7 @@ export interface SidebarItemProps {
   /** Text to display (shown in tooltip on hover) */
   text?: string;
   /** Click handler for the button */
-  handleClick: () => void;
+  handleClick: (e: React.MouseEvent<HTMLLIElement>) => void;
   /** Location to highlight - if matches current location, button is highlighted */
   highlightedLocation?: string;
 }

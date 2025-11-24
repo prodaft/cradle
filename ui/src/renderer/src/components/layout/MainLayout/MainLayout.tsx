@@ -1,7 +1,6 @@
 import React from 'react';
 import { useProfile, useTheme } from '@contexts';
 import LayoutManager from '../LayoutManager/LayoutManager';
-import GlobalTabPortals from '../GlobalTabPortals/GlobalTabPortals';
 import Navbar from '../Navbar/Navbar';
 import Sidebar from '../Sidebar/Sidebar';
 
@@ -12,7 +11,6 @@ import Sidebar from '../Sidebar/Sidebar';
  * - Top navbar with navigation and search
  * - Left sidebar with main navigation items
  * - Content area managed by LayoutManager
- * - Global tab portals for multi-pane functionality
  *
  * @example
  * ```tsx
@@ -49,9 +47,6 @@ export default function MainLayout(): JSX.Element {
           <LayoutManager outletContext={{}} />
         </div>
       </div>
-
-      {/* Global Tab Portals - Always mounted */}
-      <GlobalTabPortals />
     </div>
   );
 }

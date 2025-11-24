@@ -101,7 +101,7 @@ export default function Sidebar({
   const handleAdminPanel = useCallback(navigateLink(adminLocation), [navigateLink]);
 
   const handleLogout = useCallback(() => {
-    auth.logout();
+    auth.logOut();
   }, [auth]);
 
   const notificationIconStyle = showNotifications
@@ -167,7 +167,7 @@ export default function Sidebar({
           <SidebarSection sectionType='footer' height='fit' justify='end'>
             <SidebarItem
               handleClick={handleAccountSettings}
-              icon={<Settings />}
+              icon={<Settings height={24} width={24} />}
               text='Settings'
               highlightedLocation={accountSettingsLocation}
             />
@@ -175,7 +175,7 @@ export default function Sidebar({
               <SidebarSection sectionType='content' height='fit' justify='start'>
                 <SidebarItem
                   handleClick={handleAdminPanel}
-                  icon={<UserCrown />}
+                  icon={<UserCrown height={24} width={24} />}
                   text='Manage'
                   highlightedLocation={adminLocation}
                 />
@@ -186,10 +186,12 @@ export default function Sidebar({
               icon={
                 unreadNotificationsCount > 0 ? (
                   <BellNotification
+                    height={24}
+                    width={24}
                     style={notificationIconStyle}
                   />
                 ) : (
-                  <Bell style={notificationIconStyle} />
+                  <Bell height={24} width={24} style={notificationIconStyle} />
                 )
               }
               text={`${unreadNotificationsCount} Notifications`}

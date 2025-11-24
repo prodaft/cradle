@@ -2,7 +2,7 @@ import React, { useMemo, Suspense, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { matchPath } from 'react-router-dom';
 import { useTabHost } from '@/contexts/tabs/TabHostContext';
-import { useRouteConfigs } from '@/contexts/routing/RouteConfigContext';
+import { useRouteConfigs } from '@/hooks/tabs/useRouteConfigs';
 import { getTitleForPath, getIconForPath } from '@/utils/tabs';
 import { TabContextProvider } from '@/hooks/tabs/TabContextProvider';
 

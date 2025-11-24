@@ -1,4 +1,5 @@
 import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
+import { ReactNode } from 'react';
 import { useModal } from '@/contexts/ui/ModalContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
@@ -10,7 +11,19 @@ import AdminPanelUserPermissions from '../AdminPanelUserPermissions';
 import Card from '../../../base/Card/Card';
 import ConfirmDeletionModal from '../../../modals/base/ConfirmDeletionModal';
 
-export default function AdminPanelCardUser({ name, id, onDelete, setRightPane }) {
+interface AdminPanelCardUserProps {
+    name: string;
+    id: number | string;
+    onDelete: () => void;
+    setRightPane: (content: ReactNode) => void;
+}
+
+export default function AdminPanelCardUser({
+    name,
+    id,
+    onDelete,
+    setRightPane
+}: AdminPanelCardUserProps) {
     const { executor } = useAPICall();
     const { usersApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
@@ -20,7 +33,7 @@ export default function AdminPanelCardUser({ name, id, onDelete, setRightPane })
     // Pre-configured delete function with automatic error handling
     const handleDelete = executor(
         async () => {
-            await usersApi.usersDestroy({ userId: id });
+            await usersApi.usersDestroy({ userId: Number(id) });
             onDelete();
         },
         { successMessage: 'User deleted successfully' }
@@ -38,11 +51,11 @@ export default function AdminPanelCardUser({ name, id, onDelete, setRightPane })
     };
 
     const handleEditClick = () => {
-        setRightPane(<AccountSettings target={id} />);
+        setRightPane(<AccountSettings target={String(id)} />);
     };
 
     const handleUserClick = () => {
-        setRightPane(<AdminPanelUserPermissions username={name} id={id} key={id} />);
+        setRightPane(<AdminPanelUserPermissions username={name} id={String(id)} key={String(id)} />);
     };
 
     const actions = [
@@ -51,13 +64,13 @@ export default function AdminPanelCardUser({ name, id, onDelete, setRightPane })
             onClick: handleActivityClick,
             tooltip: 'View Activity',
             show: isAdmin(),
-            variant: 'ghost',
+            variant: 'ghost' as const,
         },
         {
             icon: <EditPencil />,
             onClick: handleEditClick,
             tooltip: 'Edit',
-            variant: 'ghost',
+            variant: 'ghost' as const,
         },
         {
             icon: <Trash />,
@@ -69,7 +82,7 @@ export default function AdminPanelCardUser({ name, id, onDelete, setRightPane })
                 }),
             tooltip: 'Delete',
             show: isAdmin(),
-            variant: 'danger',
+            variant: 'danger' as const,
         },
     ];
 

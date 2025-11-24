@@ -1,4 +1,4 @@
-import { NavArrowDown, Xmark, Menu, MoreVert } from 'iconoir-react';
+import { Iconoir, Menu, NavArrowDown, Plus, SplitArea, Xmark } from 'iconoir-react';
 import React, { memo, useCallback, useEffect, useRef, useState, ReactNode, CSSProperties } from 'react';
 import { useLayout } from '@/contexts/ui/LayoutContext';
 import { usePaneTabs } from '@/contexts/tabs/PaneTabsContext';
@@ -15,7 +15,7 @@ interface Tab {
     id: string;
     path: string;
     title: string;
-    icon: ReactNode;
+    icon: string;
 }
 
 interface DragData {
@@ -132,6 +132,14 @@ const Tab = memo(({
     onDragEnd,
     onKeyDown
 }: TabProps) => {
+    /*
+    const getIconComponent = useCallback((iconName) => {
+        const IconComponent = Iconoir[iconName];
+        const iconProps = { width: '1em', height: '1em', strokeWidth: 1.5 };
+        return IconComponent ? <IconComponent {...iconProps} /> : <Iconoir.Page {...iconProps} />;
+    }, []);
+    */
+
     const getIconComponent = useCallback((iconName: string) => {
         // For now, we just use a default icon since dynamic icon loading has TS issues
         const iconProps = { width: '1em', height: '1em', strokeWidth: 1.5 };
@@ -423,12 +431,12 @@ const PaneTabs = ({ paneId, isActive, onRootRef }: PaneTabsProps) => {
                 return (
                     <Tab
                         key={tab.id}
-                        tab={tab}
+                        tab={tab as Tab}
                         index={index}
                         isTabActive={isTabActive}
                         isActive={isActive}
                         isDragging={isDragging}
-                        showDropBefore={showDropBefore}
+                        showDropBefore={showDropBefore ?? false}
                         showDropAfter={showDropAfter}
                         onTabClick={handleTabClick}
                         onCloseClick={handleCloseClick}
@@ -455,7 +463,7 @@ const PaneTabs = ({ paneId, isActive, onRootRef }: PaneTabsProps) => {
                 onClick={() => createNewTab(paneId)}
                 title='New Tab'
             >
-                <Menu width='1.2em' height='1.2em' />
+                <Plus width='1.2em' height='1.2em' />
             </button>
 
             <div className='flex-1'></div>
@@ -474,7 +482,7 @@ const PaneTabs = ({ paneId, isActive, onRootRef }: PaneTabsProps) => {
                         onClick={() => splitPane(paneId, 'vertical', 'after')}
                         title='Split Horizontally'
                     >
-                        <MoreVert width='1.2em' height='1.2em' />
+                        <SplitArea width='1.2em' height='1.2em' />
                     </button>
 
                     <button
@@ -489,7 +497,7 @@ const PaneTabs = ({ paneId, isActive, onRootRef }: PaneTabsProps) => {
                         onClick={() => splitPane(paneId, 'horizontal', 'after')}
                         title='Split Vertically'
                     >
-                        <MoreVert width='1.2em' height='1.2em' style={{ transform: 'rotate(90deg)' }} />
+                        <SplitArea width='1.2em' height='1.2em' style={{ transform: 'rotate(90deg)' }} />
                     </button>
                 </>
             )}

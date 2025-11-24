@@ -81,6 +81,8 @@ declare module '*.sass' {
 
 declare module 'iconoir-react' {
   import { ComponentType, SVGProps } from 'react';
+  export const Iconoir: Record<string, ComponentType<SVGProps<SVGSVGElement>>>;
+
   export const WarningCircle: ComponentType<SVGProps<SVGSVGElement>>;
   export const CheckSolid: ComponentType<SVGProps<SVGSVGElement>>;
   export const InfoEmpty: ComponentType<SVGProps<SVGSVGElement>>;
@@ -108,6 +110,9 @@ declare module 'iconoir-react' {
   export const NavArrowRight: ComponentType<SVGProps<SVGSVGElement>>;
   export const ArrowLeft: ComponentType<SVGProps<SVGSVGElement>>;
   export const Page: ComponentType<SVGProps<SVGSVGElement>>;
+  export const Plus: ComponentType<SVGProps<SVGSVGElement>>;
+  export const Menu: ComponentType<SVGProps<SVGSVGElement>>;
+  export const SplitArea: ComponentType<SVGProps<SVGSVGElement>>;
 
   // Sidebar icons
   export const Archive: ComponentType<SVGProps<SVGSVGElement>>;

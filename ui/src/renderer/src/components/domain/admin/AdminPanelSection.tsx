@@ -1,8 +1,18 @@
 import { PlusCircle } from 'iconoir-react';
-import { useMemo, useState } from 'react';
+import { ReactElement, useMemo, useState } from 'react';
 import Tooltip from '@components/base/Tooltip/Tooltip';
 import useFrontendSearch from '@/hooks/search/useFrontendSearch';
 import { naturalSort } from '@/utils/dashboard';
+
+interface AdminPanelSectionProps {
+    title: string;
+    addEnabled: boolean;
+    addTooltipText: string;
+    handleAdd: (addItemCallback: (item: ReactElement) => void) => void;
+    children: ReactElement[] | null;
+    isLoading?: boolean;
+}
+
 /**
  * AdminPanelSection component - This component is used to display a section in the AdminPanel.
  * The section contains the following elements:
@@ -11,17 +21,6 @@ import { naturalSort } from '@/utils/dashboard';
  * - Search bar
  * - Children (cards)
  * The component will filter the children based on the search input.
- *
- * @function AdminPanelSection
- * @param {Object} props - The props object
- * @param {string} props.title - The title of the section
- * @param {boolean} props.addEnabled - Whether the add button is enabled
- * @param {string} props.addTooltipText - The tooltip text for the add button
- * @param {Function} props.handleAdd - The handler for the add button
- * @param {Array<React.ReactElement>} props.children - The children (cards) to display in the section
- * @param {boolean} props.isLoading - Whether the children are still loading (optional)
- * @returns {AdminPanelSection}
- * @constructor
  */
 export default function AdminPanelSection({
     title,
@@ -30,8 +29,8 @@ export default function AdminPanelSection({
     handleAdd,
     children,
     isLoading = false,
-}) {
-    const [addedItems, setAddedItems] = useState([]);
+}: AdminPanelSectionProps) {
+    const [addedItems, setAddedItems] = useState<ReactElement[]>([]);
     const combinedItems = useMemo(
         () => [...(children || []), ...addedItems],
         [children, addedItems],

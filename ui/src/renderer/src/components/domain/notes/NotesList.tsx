@@ -8,6 +8,7 @@ import {
 } from 'iconoir-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import type { NoteRetrieve, NoteRetrieveStatusEnum } from '@services/cradle/models';
 import { useModal } from '@/contexts/ui/ModalContext';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
@@ -28,6 +29,55 @@ import TableCard from '../../base/Card/TableCard';
 import Tooltip from '../../base/Tooltip/Tooltip';
 import { NotePreviewContent } from './NotePreviewContent';
 
+interface Alert {
+    show: boolean;
+    message: string;
+    color: string;
+}
+
+interface Query {
+    content?: string;
+    author__username?: string;
+    editor__username?: string;
+    date?: string;
+    references?: string;
+    created_date_from?: string;
+    created_date_to?: string;
+    updated_date_from?: string;
+    updated_date_to?: string;
+    timestamp_gte?: string;
+    timestamp_lte?: string;
+    truncate?: number;
+}
+
+interface DateRange {
+    from: string;
+    to: string;
+}
+
+interface ColumnFilters {
+    author: string;
+    editor: string;
+    createdAt: DateRange;
+    lastChanged: DateRange;
+}
+
+interface ContentSearch {
+    value: string;
+    onChange?: (value: string) => void;
+    onSubmit?: () => void;
+}
+
+interface NotesListProps {
+    query: Query | null;
+    filteredNotes?: NoteRetrieve[];
+    noteActions?: unknown[];
+    hideActionBar?: boolean;
+    references?: unknown;
+    onFilterChange?: ((column: string, value: string | DateRange) => void) | null;
+    contentSearch?: ContentSearch | null;
+}
+
 export default function NotesList({
     query,
     filteredNotes = [],
@@ -36,10 +86,10 @@ export default function NotesList({
     references = null,
     onFilterChange = null,
     contentSearch = null,
-}) {
+}: NotesListProps) {
     const [searchParams, setSearchParams] = useSearchParams();
-    const [notes, setNotes] = useState([]);
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const [notes, setNotes] = useState<NoteRetrieve[]>([]);
+    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
     const [loading, setLoading] = useState(false);
     const [totalPages, setTotalPages] = useState(1);
     const [page, setPage] = useState(Number(searchParams.get('notes_page')) || 1);
@@ -48,12 +98,12 @@ export default function NotesList({
     const { navigateLink } = useCradleNavigate();
     const { setModal } = useModal();
     const { fleetingNotesApi, notesApi } = useApi();
-    const [selectedNotes, setSelectedNotes] = useState([]);
+    const [selectedNotes, setSelectedNotes] = useState<string[]>([]);
     const [pageSize, setPageSize] = useState(
         Number(searchParams.get('notes_pagesize')) ||
         10
     );
-    const [columnFilters, setColumnFilters] = useState({
+    const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
         author: query?.author__username || '',
         editor: query?.editor__username || '',
         createdAt: {
@@ -68,16 +118,16 @@ export default function NotesList({
     const [searchInputValue, setSearchInputValue] = useState(contentSearch?.value || '');
 
     // Mapping of table columns to API field names
-    const sortFieldMapping = {
+    const sortFieldMapping: Record<string, string> = {
         title: 'title',
-        description: 'timestamp', // Description column sorts by timestamp as fallback
+        description: 'timestamp',
         author: 'author__username',
         editor: 'editor__username',
         createdAt: 'timestamp',
         lastChanged: 'edit_timestamp',
     };
 
-    const getStatusIcon = (status) => {
+    const getStatusIcon = (status?: NoteRetrieveStatusEnum) => {
         if (!status) return null;
 
         switch (status) {
@@ -112,11 +162,10 @@ export default function NotesList({
         }
     };
 
-    const handleSort = (field, direction) => {
+    const handleSort = (field: string, direction: string) => {
         setSortField(field);
         setSortDirection(direction);
 
-        // Reset to first page when sorting changes
         setPage(1);
         const newParams = new URLSearchParams(searchParams);
         newParams.set('notes_page', '1');
@@ -125,27 +174,24 @@ export default function NotesList({
         setSearchParams(newParams, { replace: true });
     };
 
-    const handleColumnFilter = (column, value) => {
+    const handleColumnFilter = (column: string, value: string | DateRange) => {
         setColumnFilters(prev => ({
             ...prev,
             [column]: value,
         }));
 
-        // Notify parent component if callback is provided
         if (onFilterChange) {
             onFilterChange(column, value);
         }
     };
 
-    // Define filterable columns with their handlers
-    const filterableColumns = {
+    const filterableColumns: Record<string, (value: string | DateRange) => void> = {
         author: (value) => handleColumnFilter('author', value),
         editor: (value) => handleColumnFilter('editor', value),
         createdAt: (value) => handleColumnFilter('createdAt', value),
         lastChanged: (value) => handleColumnFilter('lastChanged', value),
     };
 
-    // Update column filters when query changes
     useEffect(() => {
         setColumnFilters({
             author: query?.author__username || '',
@@ -161,7 +207,6 @@ export default function NotesList({
         });
     }, [query?.author__username, query?.editor__username, query?.created_date_from, query?.created_date_to, query?.updated_date_from, query?.updated_date_to]);
 
-    // Update search input value when contentSearch changes
     useEffect(() => {
         if (contentSearch?.value !== undefined) {
             setSearchInputValue(contentSearch.value);
@@ -175,8 +220,7 @@ export default function NotesList({
         try {
             const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
 
-            // Map snake_case to camelCase for the autogenerated API
-            const params = {
+            const params: Record<string, unknown> = {
                 page,
                 pageSize: pageSize,
                 orderBy: orderBy,
@@ -189,12 +233,11 @@ export default function NotesList({
                 truncate: query.truncate,
             };
 
-            // Remove undefined values
             Object.keys(params).forEach(key => params[key] === undefined && delete params[key]);
 
-            const response = await notesApi.notesList(params);
-            setNotes(response.results);
-            setTotalPages(response.totalPages);
+            const response = await notesApi.notesList(params as any);
+            setNotes(response.results as NoteRetrieve[]);
+            setTotalPages(response.totalPages || 1);
             setLoading(false);
         } catch (error) {
             setAlert({
@@ -211,25 +254,22 @@ export default function NotesList({
         fetchNotes();
     }, [fetchNotes, pageSize]);
 
-    const handlePageChange = (newPage) => {
+    const handlePageChange = (newPage: number) => {
         const newParams = new URLSearchParams(searchParams);
-        newParams.set('notes_page', newPage);
+        newParams.set('notes_page', String(newPage));
         setSearchParams(newParams);
 
         setPage(newPage);
     };
 
-    // Define actions for the ActionBar
     const actions = [
         {
             value: 'delete',
             label: 'Delete',
-            handler: async (selectedIds) => {
+            handler: async (selectedIds: string[]) => {
                 setModal(ConfirmDeletionModal, {
                     onConfirm: async () => {
                         try {
-                            // Send all delete requests in parallel
-                            // Use the appropriate delete function based on whether the note is fleeting
                             const deletePromises = selectedIds.map(id => {
                                 const note = notes.find(n => n.id === id);
                                 if (note && note.fleeting) {
@@ -240,7 +280,6 @@ export default function NotesList({
                             });
                             const results = await Promise.allSettled(deletePromises);
 
-                            // Count successes and failures
                             const successes = results.filter(r => r.status === 'fulfilled').length;
                             const failures = results.filter(r => r.status === 'rejected').length;
 
@@ -264,7 +303,6 @@ export default function NotesList({
                                 });
                             }
 
-                            // Refresh the notes list
                             setSelectedNotes([]);
                             fetchNotes();
                         } catch (error) {
@@ -290,13 +328,11 @@ export default function NotesList({
         { key: 'lastChanged', label: 'Updated At', filterType: 'date' },
     ];
 
-    // Render note preview content for tooltip
-    const renderNotePreview = (note) => {
+    const renderNotePreview = (note: NoteRetrieve) => {
         return <NotePreviewContent note={note} />;
     };
 
-    const renderRow = (note, index, selectProps = {}) => {
-        // Skip filtered notes
+    const renderRow = (note: NoteRetrieve, index: number, selectProps: any = {}) => {
         for (const n of filteredNotes) {
             if (n.id === note.id) return null;
         }
@@ -342,7 +378,7 @@ export default function NotesList({
                                     </Tooltip>
                                 ) : (
                                     note.status && (
-                                        <Tooltip content={note.status_message || capitalizeString(note.status)}>
+                                        <Tooltip content={note.statusMessage || capitalizeString(note.status)}>
                                             <span
                                                 className='inline-flex items-center align-middle flex-shrink-0'
                                             >
@@ -353,7 +389,7 @@ export default function NotesList({
                                 )}
                                 <span className='truncate'>
                                     {truncateText(
-                                        parseMarkdownInline(note.metadata?.title),
+                                        parseMarkdownInline(note.metadata?.title || ''),
                                         64,
                                     )}
                                 </span>
@@ -366,17 +402,17 @@ export default function NotesList({
                             : '-'}
                     </td>
                     <td className='truncate w-32'>
-                        {truncateText(note.author?.username, 16)}
+                        {truncateText(note.author?.username || '', 16)}
                     </td>
                     <td className='truncate w-32'>
-                        {truncateText(note.editor?.username, 16)}
+                        {truncateText(note.editor?.username || '', 16)}
                     </td>
                     <td className='w-36'>
-                        {formatDate(new Date(note.timestamp))}
+                        {note.timestamp && formatDate(new Date(note.timestamp))}
                     </td>
                     <td className='w-36'>
-                        {note.edit_timestamp
-                            ? formatDate(new Date(note.edit_timestamp))
+                        {note.editTimestamp
+                            ? formatDate(new Date(note.editTimestamp))
                             : '-'}
                     </td>
                 </tr>
@@ -389,11 +425,9 @@ export default function NotesList({
             <div className='flex flex-col space-y-4'>
                 <AlertBox alert={alert} setAlert={setAlert} />
 
-                {/* Compact Control Bar - Actions and Pagination */}
                 {!loading && (
                     <TableCard>
                         <div className='flex flex-wrap items-center justify-between gap-4'>
-                            {/* Left: Action Bar and Search */}
                             <div className='flex items-center gap-4 flex-shrink-0'>
                                 {!hideActionBar && (
                                     <ActionsTable
@@ -404,7 +438,6 @@ export default function NotesList({
                                     />
                                 )}
 
-                                {/* Content Search */}
                                 {contentSearch && (
                                     <div className='flex items-stretch gap-2 min-w-[280px]'>
                                         <div className='relative flex-1'>
@@ -458,7 +491,6 @@ export default function NotesList({
                                 )}
                             </div>
 
-                            {/* Right: Pagination */}
                             <PaginationWrapper
                                 currentPage={page}
                                 totalPages={totalPages}

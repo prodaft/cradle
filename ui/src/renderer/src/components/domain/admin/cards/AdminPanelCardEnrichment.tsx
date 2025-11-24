@@ -1,12 +1,20 @@
 import { EditPencil } from 'iconoir-react/regular';
-import { useState } from 'react';
+import { ReactNode } from 'react';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import EnrichmentSettingsForm from '../forms/EnrichmentSettingsForm';
 import Card from '../../../base/Card/Card';
 
-export default function AdminPanelCardEnrichment({ name, id, setRightPane }) {
-    const [dialog, setDialog] = useState(false);
-    const { notify } = useNotif();
+interface AdminPanelCardEnrichmentProps {
+    name: string;
+    id: string;
+    setRightPane: (content: ReactNode) => void;
+}
+
+export default function AdminPanelCardEnrichment({
+    name,
+    id,
+    setRightPane
+}: AdminPanelCardEnrichmentProps) {
     const { navigate, navigateLink } = useCradleNavigate();
 
     const handleEditClick = () => {
@@ -18,13 +26,13 @@ export default function AdminPanelCardEnrichment({ name, id, setRightPane }) {
             icon: <EditPencil />,
             onClick: handleEditClick,
             tooltip: 'Edit',
-            variant: 'ghost',
+            variant: 'ghost' as const,
         },
     ];
 
     return (
         <>
-                        <Card
+            <Card
                 title={name}
                 actions={actions}
                 onClick={handleEditClick}

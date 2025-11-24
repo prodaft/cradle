@@ -1,4 +1,5 @@
 import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
+import { ReactNode } from 'react';
 import { useModal } from '@/contexts/ui/ModalContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
@@ -9,6 +10,15 @@ import EntityForm from '../forms/EntityForm';
 import Card from '../../../base/Card/Card';
 import ConfirmDeletionModal from '../../../modals/base/ConfirmDeletionModal';
 
+interface AdminPanelCardEntityProps {
+    name: string;
+    id: number | string;
+    link: string;
+    onDelete: () => void;
+    typename: string;
+    setRightPane: (content: ReactNode) => void;
+}
+
 export default function AdminPanelCardEntity({
     name,
     id,
@@ -16,7 +26,7 @@ export default function AdminPanelCardEntity({
     onDelete,
     typename,
     setRightPane,
-}) {
+}: AdminPanelCardEntityProps) {
     const { executor } = useAPICall();
     const { entriesApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
@@ -25,7 +35,7 @@ export default function AdminPanelCardEntity({
 
     const handleDelete = executor(
         async () => {
-            await entriesApi.entitiesDestroy({ entityId: id });
+            await entriesApi.entitiesDestroy({ entityId: Number(id) });
             onDelete();
         },
         { successMessage: 'Entity deleted successfully' }
@@ -33,12 +43,12 @@ export default function AdminPanelCardEntity({
 
     const handleActivityClick = () => {
         setRightPane(
-            <ActivityList content_type='entry' objectId={id} name={name} key={id} />,
+            <ActivityList content_type='entry' objectId={String(id)} name={name} key={String(id)} />,
         );
     };
 
     const handleEditClick = () => {
-        setRightPane(<EntityForm id={id} isEdit={true} />);
+        setRightPane(<EntityForm id={Number(id)} isEdit={true} />);
     };
 
     const actions = [
@@ -47,13 +57,13 @@ export default function AdminPanelCardEntity({
             onClick: handleActivityClick,
             tooltip: 'View Activity',
             show: isAdmin(),
-            variant: 'ghost',
+            variant: 'ghost' as const,
         },
         {
             icon: <EditPencil />,
             onClick: handleEditClick,
             tooltip: 'Edit',
-            variant: 'ghost',
+            variant: 'ghost' as const,
         },
         {
             icon: <Trash />,
@@ -65,7 +75,7 @@ export default function AdminPanelCardEntity({
                 }),
             tooltip: 'Delete',
             show: isAdmin(),
-            variant: 'danger',
+            variant: 'danger' as const,
         },
     ];
 

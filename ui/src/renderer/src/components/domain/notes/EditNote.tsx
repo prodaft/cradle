@@ -1,6 +1,11 @@
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-
 import { EditPencil } from 'iconoir-react';
+import type { NoteRetrieve } from '@services/cradle/models';
+
+interface EditNoteProps {
+    note: NoteRetrieve;
+    classNames?: string;
+}
 
 /**
  * Note component - This component is used to display a note on the dashboard.
@@ -16,7 +21,7 @@ import { EditPencil } from 'iconoir-react';
  * @param {React.ReactNode} props.customControls - Custom controls to display in the header
  * @param {boolean} props.hideDefaultControls - Whether to hide the default controls
  */
-export default function EditNote({ note, classNames }) {
+export default function EditNote({ note, classNames }: EditNoteProps) {
     const { navigateLink } = useCradleNavigate();
 
     return (

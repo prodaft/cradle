@@ -2,6 +2,7 @@ import { debounce } from 'lodash';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useLocation, useParams } from 'react-router-dom';
+import type { NoteRetrieve, FileReferenceWithNote } from '@services/cradle/models';
 import { useLayout } from '@/contexts/ui/LayoutContext';
 import { useModal } from '@/contexts/ui/ModalContext';
 import { useNotif } from '@/contexts/ui/NotificationContext';
@@ -14,9 +15,10 @@ import { handleAPIError } from '@/utils/api';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import extractHeaderHierarchy from '@/utils/editor/outline';
 import ActivityList from '../activity/ActivityList';
+import AlertBox from '../../base/Alert/AlertBox';
 import FileInput from '../../forms/FileInput';
-import GraphExplorer from '../graph/GraphExplorer.jsx';
-import NoteGraphSearch from '../graph/NoteGraphSearch.jsx';
+import GraphExplorer from '../graph/GraphExplorer';
+import NoteGraphSearch from '../graph/NoteGraphSearch';
 import ConfirmDeletionModal from '../../modals/base/ConfirmDeletionModal';
 import ReportGenerationModal from '../../modals/reports/ReportGenerationModal';
 import NoteOutline from './NoteOutline';
@@ -33,16 +35,32 @@ import { EditPencil, Eye } from 'iconoir-react';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 
+interface Alert {
+    show: boolean;
+    message: string;
+    color: string;
+}
+
+interface LocationState {
+    from?: { pathname: string };
+    state?: {
+        notes?: NoteRetrieve[];
+        [key: string]: unknown;
+    };
+}
+
 /**
  * NoteViewer component - displays note content with editing capabilities
  */
 export default function NoteViewer() {
-    const { id } = useParams();
-    const { navigate, navigateLink } = useCradleNavigate();
+    const { id } = useParams<{ id: string }>();
+    const { navigate } = useCradleNavigate();
     const location = useLocation();
+    const locationState = (location.state as LocationState) || {};
     const { isAdmin, profile } = useProfile();
-    const { from, state } = location.state || { from: { pathname: '/' } };
-    const [note, setNote] = useState({});
+    const { from, state } = locationState;
+    const [note, setNote] = useState<NoteRetrieve | null>(null);
+    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
     const [richEditor, setRichEditor] = useState(
         localStorage.getItem('richEditor') ? localStorage.getItem('richEditor') === 'true' : true
     );
@@ -52,26 +70,26 @@ export default function NoteViewer() {
     const [markdownContent, setMarkdownContent] = useState('');
     const { setModal } = useModal();
     const { notify } = useNotif();
-    const [fileData, setFileData] = useState([]);
+    const [fileData, setFileData] = useState<FileReferenceWithNote[]>([]);
     const [initialMarkdown, setInitialMarkdown] = useState('');
     const [isLoading, setIsLoading] = useState(true);
-    const [activeView, setActiveView] = useState(ViewMode.CONTENT);
+    const [activeView, setActiveView] = useState<ViewMode>(ViewMode.CONTENT);
     const [showViewsMenu, setShowViewsMenu] = useState(false);
     const [showActionsMenu, setShowActionsMenu] = useState(false);
     const [isFleeting, setIsFleeting] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [pendingFiles, setPendingFiles] = useState([]);
+    const [pendingFiles, setPendingFiles] = useState<File[]>([]);
     const [showFileUpload, setShowFileUpload] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
     const [showOutline, setShowOutline] = useState(() => {
         const saved = localStorage.getItem('showOutline');
         return saved === 'true';
     });
-    const [noteOutline, setNoteOutline] = useState([]);
+    const [noteOutline, setNoteOutline] = useState<unknown[]>([]);
     const [lspLoaded, setLspLoaded] = useState(false);
-    const rawContentRef = useRef(null);
-    const editorRef = useRef(null);
+    const rawContentRef = useRef<HTMLDivElement | null>(null);
+    const editorRef = useRef<any>(null);
     const { managementApi, fleetingNotesApi, notesApi, lspApi } = useApi();
     const { updateCurrentTabTitle } = usePaneTabs();
     const { activePaneId } = useLayout();
@@ -80,13 +98,13 @@ export default function NoteViewer() {
     // Initialize editor utils for autolink functionality
     const editorUtils = React.useMemo(() => {
         CradleEditor.clearCache();
-        const handleError = (error) => {
+        const handleError = (error: unknown) => {
             handleAPIError(error, notify);
         };
         return new CradleEditor(lspApi, notesApi, {}, setLspLoaded, handleError);
     }, [notify, notesApi, lspApi]);
 
-    const copyToClipboard = (text) => {
+    const copyToClipboard = (text: string) => {
         navigator.clipboard
             .writeText(text)
             .then(() => {
@@ -107,17 +125,17 @@ export default function NoteViewer() {
     const toggleOutline = useCallback(() => {
         const newValue = !showOutline;
         setShowOutline(newValue);
-        localStorage.setItem('showOutline', newValue);
+        localStorage.setItem('showOutline', newValue.toString());
     }, [showOutline]);
 
     const toggleEditing = useCallback(() => {
         const newValue = !enableEditing;
         setEnableEditing(newValue);
-        localStorage.setItem('enableEditing', newValue);
+        localStorage.setItem('enableEditing', newValue.toString());
     }, [enableEditing]);
 
     const smartLink = useCallback(
-        async (onlyTimestamps) => {
+        async (onlyTimestamps: boolean) => {
             if (!editorRef.current) {
                 return;
             }
@@ -226,6 +244,8 @@ export default function NoteViewer() {
     }, []);
 
     const handleDelete = useCallback(async () => {
+        if (!note || !id) return;
+
         execute(async () => {
             // Use the appropriate delete function based on whether the note is fleeting
             if (note.fleeting) {
@@ -235,18 +255,18 @@ export default function NoteViewer() {
             }
 
             if (!state) {
-                navigate(from, { replace: true });
+                navigate(from?.pathname || '/', { replace: true });
                 return;
             }
             if (!state.notes) {
-                navigate(from, { replace: true, state: state });
+                navigate(from?.pathname || '/', { replace: true, state: state });
                 return;
             }
-            const stateNotes = state.notes.filter((note) => note.id !== id);
+            const stateNotes = state.notes.filter((n) => n.id !== id);
             const newState = { ...state, notes: stateNotes };
-            navigate(from, { replace: true, state: newState });
+            navigate(from?.pathname || '/', { replace: true, state: newState });
         }).catch(() => { });
-    }, [id, execute, navigate, note.fleeting, fleetingNotesApi, notesApi, state, from]);
+    }, [id, execute, navigate, note, fleetingNotesApi, notesApi, state, from]);
 
     // Use a ref to store the latest values for the save function
     const saveDataRef = useRef({ markdownContent, fileData, isFleeting });
@@ -256,6 +276,8 @@ export default function NoteViewer() {
     }, [markdownContent, fileData, isFleeting]);
 
     const handleSaveNote = useCallback(async (showAlert = false) => {
+        if (!id) return;
+
         const { markdownContent: content, fileData: files, isFleeting: fleeting } = saveDataRef.current;
 
         if (!content || content.trim().length === 0) {
@@ -297,10 +319,10 @@ export default function NoteViewer() {
             .finally(() => {
                 setSaving(false);
             });
-    }, [id, execute, fleetingNotesApi, notesApi]);
+    }, [id, execute, fleetingNotesApi, notesApi, notify]);
 
     const handleSaveAsFinal = useCallback(async () => {
-        if (!markdownContent || markdownContent.trim().length === 0) {
+        if (!id || !markdownContent || markdownContent.trim().length === 0) {
             notify({ type: 'error', text: 'Cannot save empty note.' });
             return;
         }
@@ -318,9 +340,11 @@ export default function NoteViewer() {
             .finally(() => {
                 setSaving(false);
             });
-    }, [id, markdownContent, fileData, navigate, fleetingNotesApi]);
+    }, [id, markdownContent, fileData, navigate, fleetingNotesApi, execute, notify]);
 
     const handleRelinkNote = useCallback(() => {
+        if (!id) return;
+
         managementApi.managementActionsCreate({
             actionName: 'relinkNotes',
             requestBody: {
@@ -332,14 +356,16 @@ export default function NoteViewer() {
                 text: 'Relinking note...',
             });
         });
-    }, [id, managementApi]);
+    }, [id, managementApi, notify]);
 
     const handlePublish = useCallback(() => {
+        if (!note || !id) return;
+
         setModal(ReportGenerationModal, {
             noteId: id,
             noteTitle: note.title,
         });
-    }, [id, note.title, setModal]);
+    }, [id, note, setModal]);
 
     const handleDeleteWithConfirmation = useCallback(() => {
         setModal(ConfirmDeletionModal, {
@@ -373,13 +399,13 @@ export default function NoteViewer() {
     }, [markdownContent, initialMarkdown, debouncedSaveNote]);
 
     useEffect(() => {
-        localStorage.setItem('richEditor', richEditor);
+        localStorage.setItem('richEditor', richEditor.toString());
     }, [richEditor]);
 
     // Compute note outline from markdown content
     useEffect(() => {
         const content = markdownContent || '';
-        setNoteOutline(extractHeaderHierarchy(content, (lineNumber) => {
+        setNoteOutline(extractHeaderHierarchy(content, (lineNumber: number) => {
             if (!editorRef.current?.view || typeof lineNumber !== 'number') return;
 
             const view = editorRef.current.view;
@@ -415,19 +441,20 @@ export default function NoteViewer() {
     return (
         <>
             <div className='w-[100%] h-full flex flex-col'>
+                <AlertBox alert={alert} setAlert={setAlert} />
                 <div className='w-full cradle-border-b px-4 py-3 flex items-center justify-between'>
                     <div className='flex items-center gap-4'>
-                        {!id?.startsWith('guide_') && (
+                        {!id?.startsWith('guide_') && note && (
                             <StatusIndicators
                                 markdownContent={markdownContent}
                                 saving={saving}
                                 hasUnsavedChanges={hasUnsavedChanges}
-                                isFleeting={note.fleeting}
-                                noteStatus={note.status}
-                                noteStatusMessage={note.status_message}
+                                isFleeting={!!note.fleeting}
+                                noteStatus={note.status || null}
+                                noteStatusMessage={note.statusMessage}
                             />
                         )}
-                        <NoteMetadata note={note} isFleeting={isFleeting} />
+                        {note && <NoteMetadata note={note} isFleeting={isFleeting} />}
                     </div>
 
                     <div className='flex items-center gap-2'>
@@ -454,7 +481,7 @@ export default function NoteViewer() {
                                     setActiveView={setActiveView}
                                     setRichEditor={setRichEditor}
                                     isAdmin={isAdmin()}
-                                    hasFiles={note.files && note.files.length > 0}
+                                    hasFiles={note && note.files && note.files.length > 0}
                                 />
                                 <ActionsDropdown
                                     activeView={activeView}
@@ -532,11 +559,13 @@ export default function NoteViewer() {
                                                 </div>
 
                                                 {/* Reference Tree below the editor */}
-                                                <div className='mt-4'>
-                                                    <ReferenceTree
-                                                        note={note}
-                                                    />
-                                                </div>
+                                                {note && (
+                                                    <div className='mt-4'>
+                                                        <ReferenceTree
+                                                            note={note}
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
                                         </Panel>
                                     </PanelGroup>
@@ -559,11 +588,13 @@ export default function NoteViewer() {
                                         </div>
 
                                         {/* Reference Tree below the editor */}
-                                        <div className='mt-4'>
-                                            <ReferenceTree
-                                                note={note}
-                                            />
-                                        </div>
+                                        {note && (
+                                            <div className='mt-4'>
+                                                <ReferenceTree
+                                                    note={note}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -571,18 +602,19 @@ export default function NoteViewer() {
                     )}
 
                     {/* Graph View */}
-                    {activeView === ViewMode.GRAPH && (
-                        <GraphExplorer GraphSearchComponent={NoteGraphSearch(note.id)} />
+                    {activeView === ViewMode.GRAPH && note && id && (
+                        <GraphExplorer GraphSearchComponent={NoteGraphSearch(id)} />
                     )}
 
-                    {activeView === ViewMode.FILES && (
+                    {activeView === ViewMode.FILES && note && (
                         <FilesView
-                            files={note.files}
+                            files={note.files || []}
+                            setAlert={setAlert}
                             copyToClipboard={copyToClipboard}
                         />
                     )}
 
-                    {isAdmin() && activeView === ViewMode.HISTORY && (
+                    {isAdmin() && activeView === ViewMode.HISTORY && id && (
                         <div className='pt-2'>
                             <ActivityList content_type='note' objectId={id} />
                         </div>

@@ -1,12 +1,26 @@
 import { useDroppable } from '@dnd-kit/core';
 import { Search } from 'iconoir-react';
 import { useCallback, useEffect, useState } from 'react';
-
+import type { NoteRetrieve } from '@services/cradle/models';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
-import DraggableNote from '../DraggableNote/DraggableNote';
-import AddNote from '../NoteActions/AddNote';
-import Pagination from '../Pagination/Pagination';
+import DraggableNote from './DraggableNote';
+import AddNote from './AddNote';
+import Pagination from '../../base/Pagination/Pagination';
+
+interface SearchFilters {
+    content: string;
+    author__username: string;
+    truncate: number;
+}
+
+interface NoteSelectorProps {
+    selectedNotes?: NoteRetrieve[];
+    setSelectedNotes?: React.Dispatch<React.SetStateAction<NoteRetrieve[]>>;
+    notes?: NoteRetrieve[];
+    setNotes?: React.Dispatch<React.SetStateAction<NoteRetrieve[]>>;
+    activeNote?: NoteRetrieve | null;
+}
 
 export default function NoteSelector({
     selectedNotes,
@@ -14,10 +28,10 @@ export default function NoteSelector({
     notes,
     setNotes,
     activeNote,
-}) {
+}: NoteSelectorProps) {
     // Handle case where component is used as a standalone route component
-    const [internalNotes, setInternalNotes] = useState([]);
-    const [internalSelectedNotes, setInternalSelectedNotes] = useState([]);
+    const [internalNotes, setInternalNotes] = useState<NoteRetrieve[]>([]);
+    const [internalSelectedNotes, setInternalSelectedNotes] = useState<NoteRetrieve[]>([]);
     const { notify } = useNotif();
 
     // Use provided props or fall back to internal state
@@ -32,13 +46,13 @@ export default function NoteSelector({
 
     const { setNodeRef } = useDroppable({ id: 'note-selector' });
 
-    const [searchFilters, setSearchFilters] = useState({
+    const [searchFilters, setSearchFilters] = useState<SearchFilters>({
         content: '',
         author__username: '',
         truncate: -1,
     });
 
-    const [submittedFilters, setSubmittedFilters] = useState({
+    const [submittedFilters, setSubmittedFilters] = useState<SearchFilters>({
         content: '',
         author__username: '',
         truncate: -1,
@@ -47,7 +61,7 @@ export default function NoteSelector({
     const fetchNotes = useCallback(async () => {
         setLoading(true);
         try {
-            const params = {
+            const params: Record<string, string | number> = {
                 page,
                 content: submittedFilters.content,
                 authorUsername: submittedFilters.author__username,
@@ -56,9 +70,9 @@ export default function NoteSelector({
             // Remove undefined values
             Object.keys(params).forEach(key => params[key] === undefined && delete params[key]);
 
-            const response = await notesApi.notesList(params);
-            finalSetNotes(response.results);
-            setTotalPages(response.totalPages);
+            const response = await notesApi.notesList(params as any);
+            finalSetNotes(response.results as NoteRetrieve[]);
+            setTotalPages(response.totalPages || 1);
             setLoading(false);
         } catch (error) {
             notify({
@@ -69,17 +83,17 @@ export default function NoteSelector({
         }
     }, [page, submittedFilters, finalSetNotes, notify, notesApi]);
 
-    const handleSearchSubmit = (e) => {
+    const handleSearchSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setSubmittedFilters(searchFilters);
     };
 
-    const handleSearchChange = (e) => {
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setSearchFilters((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handlePageChange = (newPage) => {
+    const handlePageChange = (newPage: number) => {
         setPage(newPage);
     };
 
@@ -95,7 +109,7 @@ export default function NoteSelector({
         fetchNotes();
     }, [fetchNotes]);
 
-    const isNoteSelected = (noteId) => {
+    const isNoteSelected = (noteId: string) => {
         return finalSelectedNotes.some((note) => note.id === noteId);
     };
 
@@ -162,7 +176,7 @@ export default function NoteSelector({
                                                 actions={[
                                                     {
                                                         Component: AddNote,
-                                                        props: { setSelectedNotes },
+                                                        props: { setSelectedNotes: finalSetSelectedNotes },
                                                     },
                                                 ]}
                                             />

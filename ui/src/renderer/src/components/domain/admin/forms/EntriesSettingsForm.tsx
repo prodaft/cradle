@@ -2,8 +2,14 @@ import { useState } from 'react';
 import useApi from '@/hooks/api/useApi';
 import AlertBox from '../../../base/Alert/AlertBox';
 
+interface Alert {
+    show: boolean;
+    message: string;
+    color: string;
+}
+
 export default function EntriesManagement() {
-    const [alert, setAlert] = useState({ show: false, message: '', color: 'red' });
+    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
     const { managementApi } = useApi();
 
     const handlePropagateAccessVectors = async () => {
@@ -70,7 +76,7 @@ export default function EntriesManagement() {
                             Delete Hanging Artifacts
                         </button>
                     </div>
-                    <AlertBox alert={alert} />
+                    <AlertBox alert={alert} setAlert={setAlert} />
                 </div>
             </div>
         </div>

@@ -3,6 +3,17 @@ import { Check, ClockRotateRight, Code, Page } from 'iconoir-react';
 import Tooltip from '../../base/Tooltip/Tooltip';
 import { ViewMode } from './constants';
 
+interface ViewsDropdownProps {
+    activeView: ViewMode;
+    richEditor: boolean;
+    showViewsMenu: boolean;
+    setShowViewsMenu: (show: boolean) => void;
+    setActiveView: (view: ViewMode) => void;
+    setRichEditor: (rich: boolean) => void;
+    isAdmin: boolean;
+    hasFiles: boolean;
+}
+
 /**
  * Dropdown menu for switching between different view modes
  */
@@ -15,7 +26,7 @@ export default function ViewsDropdown({
     setRichEditor,
     isAdmin,
     hasFiles
-}) {
+}: ViewsDropdownProps) {
     const getViewLabel = () => {
         if (activeView === ViewMode.CONTENT && richEditor) return 'Rich Editor';
         if (activeView === ViewMode.CONTENT && !richEditor) return 'Markdown Editor';

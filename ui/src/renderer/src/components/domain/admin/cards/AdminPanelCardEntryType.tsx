@@ -1,13 +1,22 @@
 import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
+import { ReactNode } from 'react';
 import { useModal } from '@/contexts/ui/ModalContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import ActivityList from '../../activity/ActivityList';
-import EntryTypeForm from '../forms/EntryTypeForm.jsx';
+import EntryTypeForm from '../forms/EntryTypeForm';
 import Card from '../../../base/Card/Card';
 import ConfirmDeletionModal from '../../../modals/base/ConfirmDeletionModal';
+
+interface AdminPanelCardEntryTypeProps {
+    name: string;
+    id: string;
+    count: number;
+    onDelete: () => void;
+    setRightPane: (content: ReactNode) => void;
+}
 
 export default function AdminPanelCardEntryType({
     name,
@@ -15,7 +24,7 @@ export default function AdminPanelCardEntryType({
     count,
     onDelete,
     setRightPane,
-}) {
+}: AdminPanelCardEntryTypeProps) {
     const { executor } = useAPICall();
     const { entriesApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
@@ -51,13 +60,13 @@ export default function AdminPanelCardEntryType({
             onClick: handleActivityClick,
             tooltip: 'View Activity',
             show: isAdmin(),
-            variant: 'ghost',
+            variant: 'ghost' as const,
         },
         {
             icon: <EditPencil />,
             onClick: handleEditClick,
             tooltip: 'Edit',
-            variant: 'ghost',
+            variant: 'ghost' as const,
         },
         {
             icon: <Trash />,
@@ -69,7 +78,7 @@ export default function AdminPanelCardEntryType({
                 }),
             tooltip: 'Delete',
             show: isAdmin(),
-            variant: 'danger',
+            variant: 'danger' as const,
         },
     ];
 

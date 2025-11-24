@@ -41,6 +41,9 @@ import NotFound from './components/feedback/NotFound';
 // Auth components
 import PrivateRoute from './components/domain/auth/PrivateRoute';
 
+// Layout components
+import GlobalTabPortals from './components/layout/GlobalTabPortals/GlobalTabPortals';
+
 // Context providers
 import { ApiProvider } from './contexts/api/ApiProvider';
 import { AuthProvider } from './components/domain/auth/AuthProvider';
@@ -63,12 +66,13 @@ function App() {
                         <ThemeProvider>
                             <NotificationProvider>
                                 <TooltipProvider>
-                                    <TabHostProvider>
-                                        <RouteConfigProvider>
+                                    <RouteConfigProvider>
+                                        <TabHostProvider>
                                             <LayoutProvider>
                                                 <PaneTabsProvider>
                                                     <ModalProvider>
                                                         <Suspense fallback={<CradleLoading />}>
+                                                        <GlobalTabPortals />
                                                         <Routes>
                                                             <Route
                                                                 element={
@@ -174,8 +178,8 @@ function App() {
                                                     </ModalProvider>
                                                 </PaneTabsProvider>
                                             </LayoutProvider>
-                                        </RouteConfigProvider>
-                                    </TabHostProvider>
+                                        </TabHostProvider>
+                                    </RouteConfigProvider>
                                 </TooltipProvider>
                             </NotificationProvider>
                         </ThemeProvider>

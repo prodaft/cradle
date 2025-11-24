@@ -12,7 +12,7 @@ const FeatureNotImplemented = React.lazy(
   () => import('@/components/feedback/FeatureNotImplemented.jsx')
 );
 const Dashboard = React.lazy(() => import('@/components/domain/dashboard/Dashboard.jsx'));
-const NoteViewer = React.lazy(() => import('@/components/domain/notes/NoteViewer.jsx'));
+const NoteViewer = React.lazy(() => import('@/components/domain/notes/NoteViewer'));
 const Welcome = React.lazy(() => import('@/components/feedback/Welcome.jsx'));
 const ActivityList = React.lazy(() => import('@/components/domain/activity/ActivityList.jsx'));
 const GraphSearch = React.lazy(() => import('@/components/domain/graph/GraphSearch.jsx'));
@@ -58,21 +58,7 @@ const routeConfigs: RouteConfig[] = [
   { path: '/', exact: true, component: Welcome },
 ];
 
-const RouteConfigContext = createContext<RouteConfig[] | undefined>(undefined);
-
-/**
- * Hook to access route configurations
- *
- * @returns Array of route configurations
- * @throws Error if used outside RouteConfigProvider
- */
-export const useRouteConfigs = (): RouteConfig[] => {
-  const context = useContext(RouteConfigContext);
-  if (!context) {
-    throw new Error('useRouteConfigs must be used within RouteConfigProvider');
-  }
-  return context;
-};
+export const RouteConfigContext = createContext<RouteConfig[]>(routeConfigs);
 
 /**
  * Props for RouteConfigProvider component

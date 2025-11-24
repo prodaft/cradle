@@ -1,14 +1,18 @@
 import { EditPencil } from 'iconoir-react';
-import { useState } from 'react';
+import { ComponentType, ReactNode } from 'react';
 import Card from '../../../base/Card/Card';
+
+interface AdminPanelCardManagementProps {
+    name: string;
+    SettingComponent: ComponentType;
+    setRightPane: (content: ReactNode) => void;
+}
 
 export default function AdminPanelCardManagement({
     name,
     SettingComponent,
     setRightPane,
-}) {
-    const { notify } = useNotif();
-
+}: AdminPanelCardManagementProps) {
     const handleClick = () => {
         setRightPane(<SettingComponent />);
     };
@@ -18,13 +22,13 @@ export default function AdminPanelCardManagement({
             icon: <EditPencil />,
             onClick: handleClick,
             tooltip: 'Edit',
-            variant: 'ghost',
+            variant: 'ghost' as const,
         },
     ];
 
     return (
         <>
-                        <Card
+            <Card
                 title={name}
                 actions={actions}
                 onClick={handleClick}

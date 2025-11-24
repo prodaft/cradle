@@ -8,6 +8,7 @@ import {
 } from 'iconoir-react';
 import React, { forwardRef, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import type { NoteRetrieve, NoteRetrieveStatusEnum } from '@services/cradle/models';
 import useApi from '@/hooks/api/useApi';
 import useAuth from '@/hooks/auth/useAuth';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
@@ -19,6 +20,29 @@ import { parseContent } from '@/utils/editor/textEditor';
 import Preview from '../../base/Preview/Preview';
 import ReferenceTree from '../relations/ReferenceTree';
 import Tooltip from '../../base/Tooltip/Tooltip';
+
+interface Alert {
+    show: boolean;
+    message: string;
+    color: string;
+}
+
+interface NoteAction {
+    Component: React.ComponentType<{
+        note: NoteRetrieve;
+        setHidden: (hidden: boolean) => void;
+        [key: string]: unknown;
+    }>;
+    props?: Record<string, unknown>;
+}
+
+interface NoteProps extends React.HTMLAttributes<HTMLDivElement> {
+    id: string;
+    note: NoteRetrieve;
+    setAlert?: React.Dispatch<React.SetStateAction<Alert>>;
+    actions?: NoteAction[];
+    ghost?: boolean;
+}
 
 /**
  * Note component - This component is used to display a note on the dashboard.
@@ -34,7 +58,7 @@ import Tooltip from '../../base/Tooltip/Tooltip';
  * @param {React.ReactNode} props.customControls - Custom controls to display in the header
  * @param {boolean} props.hideDefaultControls - Whether to hide the default controls
  */
-const Note = forwardRef(function (
+const Note = forwardRef<HTMLDivElement, NoteProps>(function Note(
     { id, note, setAlert, actions = [], ghost = false, ...props },
     ref,
 ) {
@@ -46,10 +70,10 @@ const Note = forwardRef(function (
     const [parsedContent, setParsedContent] = useState('');
     const [metadataExpanded, setMetadataExpanded] = useState(true);
 
-    const getStatusIcon = () => {
-        if (!note.status) return null;
+    const getStatusIcon = (status?: NoteRetrieveStatusEnum) => {
+        if (!status) return null;
 
-        switch (note.status) {
+        switch (status) {
             case 'healthy':
                 return (
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-green-500">
@@ -110,16 +134,16 @@ const Note = forwardRef(function (
                             </Tooltip>
                         )}
                         {note.status && (
-                            <Tooltip content={note.status_message || capitalizeString(note.status) || null}>
+                            <Tooltip content={note.statusMessage || capitalizeString(note.status) || null}>
                                 <span className='inline-flex items-center align-middle'>
-                                    {getStatusIcon()}
+                                    {getStatusIcon(note.status)}
                                 </span>
                             </Tooltip>
                         )}
                         {!note.editor && (
                             <>
                                 <span className='cradle-text-tertiary'>
-                                    {formatDate(new Date(note.timestamp))}
+                                    {note.timestamp && formatDate(new Date(note.timestamp))}
                                 </span>
                                 <span className='cradle-text-muted'>·</span>
                                 <span className='cradle-text-secondary'>
@@ -130,7 +154,7 @@ const Note = forwardRef(function (
                         {note.editor && (
                             <>
                                 <span className='cradle-text-tertiary'>
-                                    {formatDate(new Date(note.edit_timestamp))}
+                                    {note.editTimestamp && formatDate(new Date(note.editTimestamp))}
                                 </span>
                                 <span className='cradle-text-muted'>·</span>
                                 <span className='cradle-text-secondary'>
@@ -140,10 +164,10 @@ const Note = forwardRef(function (
                         )}
                     </div>
                     <div className='flex items-center gap-2 flex-shrink-0'>
-                        {actions.map(({ Component, props }, index) => (
+                        {actions.map(({ Component, props: actionProps }, index) => (
                             <Component
                                 key={index}
-                                {...props}
+                                {...actionProps}
                                 note={note}
                                 setHidden={setHidden}
                             />
@@ -220,7 +244,7 @@ const Note = forwardRef(function (
                     </div>
                 </div>
 
-                {note.entry_classes && parsedContent && (
+                {note.entries && parsedContent && (
                     <ReferenceTree note={note} setAlert={setAlert} />
                 )}
             </div>

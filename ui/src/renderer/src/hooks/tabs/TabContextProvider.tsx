@@ -1,3 +1,4 @@
+import { TabContextValue } from '@/types/index';
 import React, { createContext, useContext } from 'react';
 // import type { TabContextValue } from '@/types/index';
 

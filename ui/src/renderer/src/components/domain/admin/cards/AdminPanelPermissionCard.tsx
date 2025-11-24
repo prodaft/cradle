@@ -4,24 +4,18 @@ import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 
+type AccessLevel = 'none' | 'read' | 'read-write';
+
+interface AdminPanelPermissionCardProps {
+    userId: number | string;
+    text: string;
+    entityId: number | string;
+    accessLevel: AccessLevel;
+    searchKey: string;
+}
+
 /**
- * AdminPanelUserPermissions component - This component is used to display the permissions for a user.
- * The component displays the following information:
- * - Entity name
- * - Access level
- * The component contains a dropdown to change the access level for the user.
- * The component will display an alert if an error occurs.
- * The component will display the current access level.
- *
- * @function AdminPanelPermissionCard
- * @param {Object} props - The props object
- * @param {string} props.userId - The id of the user
- * @param {string} props.entityName - The name of the entity
- * @param {string} props.entityId - The id of the entity
- * @param {string} props.accessLevel - The access level of the user
- * @param {string} props.searchKey - The search key for the user
- * @returns {AdminPanelPermissionCard}
- * @constructor
+ * AdminPanelPermissionCard component - Displays and manages user permissions for an entity
  */
 export default function AdminPanelPermissionCard({
     userId,
@@ -29,18 +23,18 @@ export default function AdminPanelPermissionCard({
     entityId,
     accessLevel,
     searchKey,
-}) {
-    const [currentAccess, setCurrentAccess] = useState(accessLevel);
+}: AdminPanelPermissionCardProps) {
+    const [currentAccess, setCurrentAccess] = useState<AccessLevel>(accessLevel);
     const { execute } = useAPICall();
     const { accessApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
 
-    const handleChange = async (newAccess) => {
+    const handleChange = async (newAccess: AccessLevel) => {
         if (currentAccess !== newAccess) {
             execute(
                 () => accessApi.accessUserUpdate({
-                    userId: userId,
-                    entityId: entityId,
+                    userId: Number(userId),
+                    entityId: Number(entityId),
                     accessRequest: { accessType: newAccess },
                 }),
                 { successMessage: 'Access updated successfully' }
@@ -60,7 +54,7 @@ export default function AdminPanelPermissionCard({
                     <div className='dropdown'>
                         <label
                             className='btn btn-ghost my-2'
-                            tabIndex='0'
+                            tabIndex={0}
                             data-testid='accessLevelDisplay'
                         >
                             {currentAccess}{' '}
@@ -78,14 +72,14 @@ export default function AdminPanelPermissionCard({
                                 none
                             </a>
                             <a
-                                tabIndex='-1'
+                                tabIndex={-1}
                                 className='dropdown-item text-sm'
                                 onClick={() => handleChange('read')}
                             >
                                 read
                             </a>
                             <a
-                                tabIndex='-1'
+                                tabIndex={-1}
                                 className='dropdown-item text-sm'
                                 onClick={() => handleChange('read-write')}
                             >

@@ -1,18 +1,24 @@
 import { Clock, Link, User } from 'iconoir-react';
+import type { NoteRetrieve } from '@services/cradle/models';
 import { formatDate } from '@/utils/dates';
 import Tooltip from '../../base/Tooltip/Tooltip';
+
+interface NoteMetadataProps {
+    note: NoteRetrieve;
+    isFleeting?: boolean;
+}
 
 /**
  * Displays note metadata (timestamps, author, editor)
  */
-export default function NoteMetadata({ note, isFleeting }) {
+export default function NoteMetadata({ note, isFleeting }: NoteMetadataProps) {
     return (
         <div className='flex items-center gap-4 cradle-mono text-xs cradle-text-tertiary'>
             <Tooltip content="Created">
                 <span className='inline-flex items-center gap-1.5'>
                     <Clock width='16' height='16' />
                     <span className='cradle-text-tertiary'>
-                        {formatDate(new Date(note.timestamp))}
+                        {note.timestamp && formatDate(new Date(note.timestamp))}
                     </span>
                 </span>
             </Tooltip>
@@ -32,7 +38,7 @@ export default function NoteMetadata({ note, isFleeting }) {
                         <span className='inline-flex items-center gap-1.5'>
                             <Clock width='16' height='16' />
                             <span className='cradle-text-tertiary'>
-                                {formatDate(new Date(note.edit_timestamp))}
+                                {note.editTimestamp && formatDate(new Date(note.editTimestamp))}
                             </span>
                         </span>
                     </Tooltip>
@@ -46,12 +52,12 @@ export default function NoteMetadata({ note, isFleeting }) {
                     </Tooltip>
                 </>
             )}
-            {note.last_linked && (
+            {note.lastLinked && (
                 <Tooltip content="Last Linked">
                     <span className='inline-flex items-center gap-1.5'>
                         <Link width='16' height='16' />
                         <span className='cradle-text-tertiary'>
-                            {formatDate(new Date(note.last_linked))}
+                            {formatDate(new Date(note.lastLinked))}
                         </span>
                     </span>
                 </Tooltip>

@@ -1,14 +1,22 @@
 import { EditPencil } from 'iconoir-react/regular';
-import { useState } from 'react';
+import { ReactNode } from 'react';
 import { capitalizeString } from '@/utils/dashboard';
 import Card from '../../../base/Card/Card';
 import TypeMappingsEditor from '../TypeMappingsEditor';
 
-export default function AdminPanelCardTypeMapping({ name, id, setRightPane }) {
-    const { notify } = useNotif();
+interface AdminPanelCardTypeMappingProps {
+    name: string;
+    id: string;
+    setRightPane: (content: ReactNode) => void;
+}
 
+export default function AdminPanelCardTypeMapping({
+    name,
+    id,
+    setRightPane
+}: AdminPanelCardTypeMappingProps) {
     const handleEditClick = () => {
-        setRightPane(<TypeMappingsEditor id={id} onSave={(a) => { }} />);
+        setRightPane(<TypeMappingsEditor id={id} onSave={() => {}} />);
     };
 
     const actions = [
@@ -16,13 +24,13 @@ export default function AdminPanelCardTypeMapping({ name, id, setRightPane }) {
             icon: <EditPencil />,
             onClick: handleEditClick,
             tooltip: 'Edit',
-            variant: 'ghost',
+            variant: 'ghost' as const,
         },
     ];
 
     return (
         <>
-                        <Card
+            <Card
                 title={capitalizeString(name)}
                 actions={actions}
                 onClick={handleEditClick}
