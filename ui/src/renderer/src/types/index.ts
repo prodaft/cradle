@@ -64,13 +64,20 @@ export interface User {
 // Modal Types
 // ============================================================================
 
-export interface ModalData {
-    Component: ComponentType<any> | null;
-    props: Record<string, any>;
+export interface ModalData<TProps extends Record<string, unknown> = Record<string, unknown>> {
+    Component: ComponentType<TProps & { closeModal: () => void }> | null;
+    props: TProps;
 }
 
+/**
+ * Modal component props must include closeModal.
+ * Other props are passed through from setModal.
+ */
 export interface ModalContextValue {
-    setModal: (Component: ComponentType<any>, props?: Record<string, any>) => void;
+    setModal: <TProps extends { closeModal: () => void }>(
+        Component: ComponentType<TProps>,
+        props?: Omit<TProps, 'closeModal'>
+    ) => void;
     closeModal: () => void;
 }
 
@@ -161,13 +168,6 @@ export interface ApiResponse<T> {
     data: T;
     status: number;
     statusText: string;
-}
-
-export interface PaginatedResponse<T> {
-    count: number;
-    next: string | null;
-    previous: string | null;
-    results: T[];
 }
 
 export interface ApiError {

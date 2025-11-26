@@ -103,7 +103,6 @@ export default function SnippetList({ userId = null }: SnippetListProps) {
         e.stopPropagation();
         e.preventDefault();
         setModal(ConfirmDeletionModal, {
-            title: 'Delete Snippet',
             text: `Are you sure you want to delete "${snippet.name}"? This action cannot be undone.`,
             onConfirm: async () => {
                 try {

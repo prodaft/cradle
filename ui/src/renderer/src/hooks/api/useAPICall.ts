@@ -9,12 +9,12 @@ import { useCallback, useState } from 'react';
 /**
  * Options for execute function
  */
-export interface ExecuteOptions {
+export interface ExecuteOptions<T = unknown> {
     successMessage?: string;
     errorMessage?: string;
     duration?: number;
     suppressNotification?: boolean;
-    onSuccess?: (result: any) => void;
+    onSuccess?: (result: T) => void;
     onError?: (error: ParsedAPIError) => void;
 }
 
@@ -22,13 +22,13 @@ export interface ExecuteOptions {
  * Return type for useAPICall hook
  */
 export interface UseAPICallReturn {
-    execute: <T>(apiCall: () => Promise<T>, options?: ExecuteOptions) => Promise<T>;
+    execute: <T>(apiCall: () => Promise<T>, options?: ExecuteOptions<T>) => Promise<T>;
     executor: <T>(
         apiCall: (...args: any[]) => Promise<T>,
-        options?: ExecuteOptions,
+        options?: ExecuteOptions<T>,
     ) => (...args: any[]) => Promise<T>;
     loading: boolean;
-    handleError: (err: unknown, options: ExecuteOptions) => Promise<ParsedAPIError>;
+    handleError: <T = unknown>(err: unknown, options: ExecuteOptions<T>) => Promise<ParsedAPIError>;
 }
 
 /**
@@ -73,7 +73,7 @@ export function useAPICall(): UseAPICallReturn {
     const execute = useCallback(
         async <T>(
             apiCall: () => Promise<T>,
-            options: ExecuteOptions = {},
+            options: ExecuteOptions<T> = {},
         ): Promise<T> => {
             setLoading(true);
             setError(null);
@@ -98,6 +98,9 @@ export function useAPICall(): UseAPICallReturn {
                 return result;
             } catch (err) {
                 let parsed = await handleError(err, options);
+                if (options.onError) {
+                    options.onError(parsed);
+                }
                 throw parsed;
             } finally {
                 setLoading(false);
@@ -115,7 +118,7 @@ export function useAPICall(): UseAPICallReturn {
      * @returns Pre-configured async function
      */
     const executor = useCallback(
-        <T>(apiCall: (...args: any[]) => Promise<T>, options: ExecuteOptions = {}) => {
+        <T>(apiCall: (...args: any[]) => Promise<T>, options: ExecuteOptions<T> = {}) => {
             return async (...args: any[]): Promise<T> => {
                 return execute(() => apiCall(...args), options);
             };
@@ -130,7 +133,7 @@ export function useAPICall(): UseAPICallReturn {
      * @returns The error
      */
     const handleError = useCallback(
-        async (err: unknown, options: ExecuteOptions) => {
+        async <T = unknown>(err: unknown, options: ExecuteOptions<T>) => {
             const parsed = await parseAPIError(err);
 
             // Only notify if not suppressed

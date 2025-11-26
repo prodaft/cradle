@@ -39,7 +39,7 @@ export interface EnrichmentRequestModalProps {
     /** Optional callback to execute on successful request creation */
     onSuccess?: () => void;
     /** Optional callback to execute on error */
-    onError?: (error: unknown) => void;
+    onError?: (error: Error) => void;
 }
 
 /**

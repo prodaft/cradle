@@ -1,6 +1,6 @@
+import { useNotif } from '@/contexts';
+import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
-import { Alert, StateSetter } from '@/types';
-import { displayError } from '@/utils/api';
 import { Code, Download, Page } from 'iconoir-react';
 import { useState } from 'react';
 
@@ -24,8 +24,6 @@ export interface ReportGenerationModalProps {
     noteId: string;
     /** Title of the note */
     noteTitle?: string;
-    /** State setter for alert messages */
-    setAlert: StateSetter<Alert>;
 }
 
 /**
@@ -39,7 +37,6 @@ export interface ReportGenerationModalProps {
  *   closeModal={closeModal}
  *   noteId="123e4567-e89b-12d3-a456-426614174000"
  *   noteTitle="My Report"
- *   setAlert={setAlert}
  * />
  * ```
  */
@@ -47,43 +44,38 @@ export default function ReportGenerationModal({
     closeModal,
     noteId,
     noteTitle,
-    setAlert,
 }: ReportGenerationModalProps): JSX.Element {
     const { reportsApi } = useApi();
     const [title, setTitle] = useState(noteTitle || '');
     const [format, setFormat] = useState<ReportFormat>('html');
     const [mode, setMode] = useState<ReportMode>('anonymized');
     const [isGenerating, setIsGenerating] = useState(false);
+    const { notify } = useNotif();
+    const { execute } = useAPICall();
 
     const handleGenerate = async () => {
         if (!title.trim()) {
-            setAlert({
-                show: true,
-                message: 'Please enter a report title.',
-                color: 'red',
+            notify({
+                type: 'error',
+                text: 'Please enter a report title.',
             });
             return;
         }
 
         setIsGenerating(true);
         try {
-            await reportsApi.reportsPublishCreate({
+            await execute(() => reportsApi.reportsPublishCreate({
                 publishReportRequest: {
                     strategy: format,
                     noteIds: [noteId],
                     title: title.trim(),
                     anonymized: mode === 'anonymized',
                 },
+            }), {
+                successMessage: 'Report generated successfully!',
             });
 
-            setAlert({
-                show: true,
-                message: 'Report generated successfully!',
-                color: 'green',
-            });
             closeModal();
-        } catch (error) {
-            displayError(setAlert)(error);
         } finally {
             setIsGenerating(false);
         }
@@ -116,11 +108,10 @@ export default function ReportGenerationModal({
                         onClick={() => setFormat('html')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${
-                            format === 'html'
-                                ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
-                                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
-                        } disabled:opacity-50`}
+                        className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${format === 'html'
+                            ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
+                            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
+                            } disabled:opacity-50`}
                     >
                         <Page width='20' height='20' />
                         <span className='text-sm font-medium'>HTML</span>
@@ -129,11 +120,10 @@ export default function ReportGenerationModal({
                         onClick={() => setFormat('json')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${
-                            format === 'json'
-                                ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
-                                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
-                        } disabled:opacity-50`}
+                        className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${format === 'json'
+                            ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
+                            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
+                            } disabled:opacity-50`}
                     >
                         <Code width='20' height='20' />
                         <span className='text-sm font-medium'>JSON</span>
@@ -142,11 +132,10 @@ export default function ReportGenerationModal({
                         onClick={() => setFormat('plain')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${
-                            format === 'plain'
-                                ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
-                                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
-                        } disabled:opacity-50`}
+                        className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${format === 'plain'
+                            ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
+                            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
+                            } disabled:opacity-50`}
                     >
                         <Download width='20' height='20' />
                         <span className='text-sm font-medium'>Plain Text</span>
@@ -164,11 +153,10 @@ export default function ReportGenerationModal({
                         onClick={() => setMode('anonymized')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-lg flex items-center justify-center gap-2 transition-colors ${
-                            mode === 'anonymized'
-                                ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
-                                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
-                        } disabled:opacity-50`}
+                        className={`p-3 border rounded-lg flex items-center justify-center gap-2 transition-colors ${mode === 'anonymized'
+                            ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
+                            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
+                            } disabled:opacity-50`}
                     >
                         <span className='text-sm font-medium'>Anonymized</span>
                     </button>
@@ -176,11 +164,10 @@ export default function ReportGenerationModal({
                         onClick={() => setMode('transparent')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-lg flex items-center justify-center gap-2 transition-colors ${
-                            mode === 'transparent'
-                                ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
-                                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
-                        } disabled:opacity-50`}
+                        className={`p-3 border rounded-lg flex items-center justify-center gap-2 transition-colors ${mode === 'transparent'
+                            ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
+                            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
+                            } disabled:opacity-50`}
                     >
                         <span className='text-sm font-medium'>Transparent</span>
                     </button>

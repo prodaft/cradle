@@ -42,14 +42,14 @@ export const ModalProvider = ({ children }: ModalProviderProps): JSX.Element => 
     /**
      * Show a modal with the specified component and props
      *
-     * @param Component - Modal component to render
-     * @param props - Props to pass to the modal component
+     * @param Component - Modal component to render (must accept closeModal prop)
+     * @param props - Props to pass to the modal component (excluding closeModal which is auto-injected)
      */
-    const setModal = (
-        Component: ComponentType<any>,
-        props: Record<string, any> = {},
+    const setModal = <TProps extends { closeModal: () => void }>(
+        Component: ComponentType<TProps>,
+        props?: Omit<TProps, 'closeModal'>,
     ): void => {
-        setModalData({ Component, props });
+        setModalData({ Component, props: props || {} } as ModalData);
     };
 
     /**

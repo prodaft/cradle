@@ -103,27 +103,27 @@ export default function AccountSettings({
 
     const defaultValues: AccountFormData = isEdit
         ? {
-              id: '',
-              username: '',
-              email: '',
-              password: 'password',
-              catalystKey: 'apikey',
-              role: 'user',
-              vim_mode: false,
-              email_confirmed: false,
-              is_active: false,
-          }
+            id: '',
+            username: '',
+            email: '',
+            password: 'password',
+            catalystKey: 'apikey',
+            role: 'user',
+            vim_mode: false,
+            email_confirmed: false,
+            is_active: false,
+        }
         : {
-              id: '',
-              username: '',
-              email: '',
-              password: '',
-              catalystKey: '',
-              role: 'user',
-              vim_mode: false,
-              email_confirmed: false,
-              is_active: false,
-          };
+            id: '',
+            username: '',
+            email: '',
+            password: '',
+            catalystKey: '',
+            role: 'user',
+            vim_mode: false,
+            email_confirmed: false,
+            is_active: false,
+        };
 
     const {
         register,
@@ -309,7 +309,6 @@ export default function AccountSettings({
 
             setModal(MarkdownEditorModal, {
                 title: 'Edit Default Note Template',
-                noteTitle: 'Default Note Template',
                 initialContent: defaultNoteResponse.template || '',
                 onConfirm: (content: string) => {
                     if (isOwnAccount) {
@@ -767,8 +766,8 @@ export default function AccountSettings({
                                                 {show2FASetup
                                                     ? 'Cancel'
                                                     : isEdit && twoFactorEnabled
-                                                      ? 'Disable 2FA'
-                                                      : 'Enable 2FA'}
+                                                        ? 'Disable 2FA'
+                                                        : 'Enable 2FA'}
                                             </button>
                                         </div>
 
@@ -825,7 +824,7 @@ export default function AccountSettings({
                                                                         maxLength={1}
                                                                         value={
                                                                             twoFactorCode[
-                                                                                index
+                                                                            index
                                                                             ] || ''
                                                                         }
                                                                         onChange={(
@@ -858,7 +857,7 @@ export default function AccountSettings({
                                                                                 if (
                                                                                     value &&
                                                                                     index <
-                                                                                        5
+                                                                                    5
                                                                                 ) {
                                                                                     document
                                                                                         .getElementById(
@@ -874,12 +873,12 @@ export default function AccountSettings({
                                                                             // Handle backspace to go to previous input
                                                                             if (
                                                                                 e.key ===
-                                                                                    'Backspace' &&
+                                                                                'Backspace' &&
                                                                                 !twoFactorCode[
-                                                                                    index
+                                                                                index
                                                                                 ] &&
                                                                                 index >
-                                                                                    0
+                                                                                0
                                                                             ) {
                                                                                 document
                                                                                     .getElementById(
@@ -1177,11 +1176,10 @@ export default function AccountSettings({
                                                 onClick={() =>
                                                     setActiveSection(item.id)
                                                 }
-                                                className={`cradle-btn w-full flex items-center gap-3 ${
-                                                    activeSection === item.id
+                                                className={`cradle-btn w-full flex items-center gap-3 ${activeSection === item.id
                                                         ? 'cradle-btn-primary'
                                                         : 'cradle-btn-ghost'
-                                                }`}
+                                                    }`}
                                             >
                                                 <Icon className='w-5 h-5 flex-shrink-0' />
                                                 <span className='text-left flex-1'>
