@@ -25,7 +25,10 @@ interface AdminPanelUserPermissionsProps {
  * @returns {AdminPanelUserPermissions}
  * @constructor
  */
-export default function AdminPanelUserPermissions({ username, id }: AdminPanelUserPermissionsProps) {
+export default function AdminPanelUserPermissions({
+    username,
+    id,
+}: AdminPanelUserPermissionsProps) {
     const [entities, setEntities] = useState<ReactElement[]>([]);
     const { notify } = useNotif();
     const { accessApi, usersApi } = useApi();
@@ -36,27 +39,40 @@ export default function AdminPanelUserPermissions({ username, id }: AdminPanelUs
     const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(entities);
 
     const simulateSession = () => {
-        execute(() => usersApi.usersManageRetrieve({ userId: String(id), actionName: 'simulate' }))
+        execute(() =>
+            usersApi.usersManageRetrieve({
+                userId: String(id),
+                actionName: 'simulate',
+            }),
+        )
             .then((res) => {
                 // Backend returns access, refresh, and expiration times
                 auth.setTokensDirectly(res as any);
                 navigate('/', { replace: true });
             })
-            .catch(() => { });
+            .catch(() => {});
     };
 
     const sendEmailConfirmation = () => {
         execute(
-            () => usersApi.usersManageRetrieve({ userId: String(id), actionName: 'send_email_confirmation' }),
-            { successMessage: 'Email confirmation sent successfully' }
-        ).catch(() => { });
+            () =>
+                usersApi.usersManageRetrieve({
+                    userId: String(id),
+                    actionName: 'send_email_confirmation',
+                }),
+            { successMessage: 'Email confirmation sent successfully' },
+        ).catch(() => {});
     };
 
     const sendPasswordResetEmail = () => {
         execute(
-            () => usersApi.usersManageRetrieve({ userId: String(id), actionName: 'password_reset_email' }),
-            { successMessage: 'Password reset email sent successfully' }
-        ).catch(() => { });
+            () =>
+                usersApi.usersManageRetrieve({
+                    userId: String(id),
+                    actionName: 'password_reset_email',
+                }),
+            { successMessage: 'Password reset email sent successfully' },
+        ).catch(() => {});
     };
 
     useEffect(() => {
@@ -72,7 +88,12 @@ export default function AdminPanelUserPermissions({ username, id }: AdminPanelUs
                                     text={c.name}
                                     entityId={c.id}
                                     searchKey={c.name}
-                                    accessLevel={(c.accessType ?? 'none') as 'none' | 'read' | 'read-write'}
+                                    accessLevel={
+                                        (c.accessType ?? 'none') as
+                                            | 'none'
+                                            | 'read'
+                                            | 'read-write'
+                                    }
                                 />
                             );
                         })
@@ -83,7 +104,7 @@ export default function AdminPanelUserPermissions({ username, id }: AdminPanelUs
                         }),
                 );
             })
-            .catch(() => { });
+            .catch(() => {});
     }, [id, accessApi, execute]);
 
     return (

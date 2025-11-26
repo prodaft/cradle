@@ -3,10 +3,7 @@ import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { Relation } from '@/services/cradle';
-import {
-    capitalizeString,
-    createDashboardLink,
-} from '@/utils/dashboard';
+import { capitalizeString, createDashboardLink } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import { Trash } from 'iconoir-react';
 import { ReactNode, useEffect, useState } from 'react';
@@ -24,7 +21,7 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
     const { isAdmin } = useProfile();
     const { entriesApi } = useApi();
     const { navigate } = useCradleNavigate();
-    const { execute } = useAPICall()
+    const { execute } = useAPICall();
 
     useEffect(() => {
         setFormattedCreated(formatDate(new Date(relation.createdAt || '')));
@@ -37,10 +34,11 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
         if (onDelete) onDelete();
     };
 
-    const handleEntryClick = (name: string, subtype: string) => (e: React.MouseEvent) => {
-        const link = createDashboardLink({ name, subtype });
-        navigate(link, { event: e });
-    };
+    const handleEntryClick =
+        (name: string, subtype: string) => (e: React.MouseEvent) => {
+            const link = createDashboardLink({ name, subtype });
+            navigate(link, { event: e });
+        };
 
     const actions = [
         {
@@ -58,8 +56,8 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
         ...Object.fromEntries(
             Object.entries(relation.details).map(([key, value]) => [
                 capitalizeString(key),
-                value
-            ])
+                value,
+            ]),
         ),
     };
 
@@ -88,7 +86,10 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
                     <span
                         className='underline cursor-pointer'
                         style={{ color: relation.e2?.color || '#2563eb' }}
-                        onClick={handleEntryClick(relation.e2?.name || '', relation.e2?.subtype || '')}
+                        onClick={handleEntryClick(
+                            relation.e2?.name || '',
+                            relation.e2?.subtype || '',
+                        )}
                     >
                         [{relation.e2?.subtype}] {relation.e2?.name}
                     </span>

@@ -2,15 +2,15 @@
  * Hook for managing user profile state
  */
 
-import { useState } from 'react';
 import { type Profile } from '@/types/index';
+import { useState } from 'react';
 
 /**
  * Return type for useProfile hook
  */
 export interface UseProfileReturn {
-  profile: Profile | null;
-  setProfile: (profile: Profile | null) => void;
+    profile: Profile | null;
+    setProfile: (profile: Profile | null) => void;
 }
 
 /**
@@ -19,9 +19,9 @@ export interface UseProfileReturn {
  * @returns Profile state and setter
  */
 export function useProfile(): UseProfileReturn {
-  const [profile, setProfile] = useState<Profile | null>(null);
+    const [profile, setProfile] = useState<Profile | null>(null);
 
-  return { profile, setProfile };
+    return { profile, setProfile };
 }
 
 export default useProfile;

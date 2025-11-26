@@ -74,7 +74,11 @@ const accountSettingsSchema: Yup.ObjectSchema<AccountFormData> = Yup.object().sh
     theme: Yup.string().notRequired(),
 }) as Yup.ObjectSchema<AccountFormData>;
 
-export default function AccountSettings({ target = 'me', isEdit = true, onAdd }: AccountSettingsProps) {
+export default function AccountSettings({
+    target = 'me',
+    isEdit = true,
+    onAdd,
+}: AccountSettingsProps) {
     const { navigate, navigateLink } = useCradleNavigate();
     const { usersApi } = useApi();
     const auth = useAuth();
@@ -99,27 +103,27 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
 
     const defaultValues: AccountFormData = isEdit
         ? {
-            id: '',
-            username: '',
-            email: '',
-            password: 'password',
-            catalystKey: 'apikey',
-            role: 'user',
-            vim_mode: false,
-            email_confirmed: false,
-            is_active: false,
-        }
+              id: '',
+              username: '',
+              email: '',
+              password: 'password',
+              catalystKey: 'apikey',
+              role: 'user',
+              vim_mode: false,
+              email_confirmed: false,
+              is_active: false,
+          }
         : {
-            id: '',
-            username: '',
-            email: '',
-            password: '',
-            catalystKey: '',
-            role: 'user',
-            vim_mode: false,
-            email_confirmed: false,
-            is_active: false,
-        };
+              id: '',
+              username: '',
+              email: '',
+              password: '',
+              catalystKey: '',
+              role: 'user',
+              vim_mode: false,
+              email_confirmed: false,
+              is_active: false,
+          };
 
     const {
         register,
@@ -134,7 +138,11 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
         defaultValues,
     });
 
-    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
+    const [alert, setAlert] = useState<Alert>({
+        show: false,
+        message: '',
+        color: 'red',
+    });
 
     // Prepopulate form in edit mode.
     useEffect(() => {
@@ -159,7 +167,6 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
                     setTwoFactorEnabled(user.twoFactorEnabled || false);
                 })
                 .catch(displayError(setAlert, navigate));
-
         } else {
             reset(defaultValues);
         }
@@ -286,15 +293,19 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
             setNewPassword('');
             setConfirmPassword('');
         } catch (err: any) {
-            setPasswordError(err.response?.data?.message || 'Failed to change password');
+            setPasswordError(
+                err.response?.data?.message || 'Failed to change password',
+            );
         }
     };
 
     const editDefaultNoteTemplate = async () => {
         try {
-            const defaultNoteResponse = await usersApi.usersDefaultNoteTemplateRetrieve({
-                userId: target,
-            });
+            const defaultNoteResponse = await usersApi.usersDefaultNoteTemplateRetrieve(
+                {
+                    userId: target,
+                },
+            );
 
             setModal(MarkdownEditorModal, {
                 title: 'Edit Default Note Template',
@@ -390,10 +401,11 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
         }
     };
 
-
     const sidebarItems: SidebarItem[] = [
         { id: 'account', label: 'Account', icon: User },
-        ...(isEdit && (twoFactorEnabled || isOwnAccount) ? [{ id: 'security', label: 'Security', icon: Lock }] : []),
+        ...(isEdit && (twoFactorEnabled || isOwnAccount)
+            ? [{ id: 'security', label: 'Security', icon: Lock }]
+            : []),
         { id: 'apikeys', label: 'API Keys', icon: Key },
         { id: 'interface', label: 'Interface', icon: Settings },
     ];
@@ -413,7 +425,6 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
                         </div>
 
                         <div className='space-y-4'>
-
                             {/* User ID - Read Only */}
                             <div className='w-full'>
                                 <label className='cradle-label cradle-text-tertiary block mb-2'>
@@ -507,7 +518,9 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
                                             {...register('role')}
                                         >
                                             <option value='author'>User</option>
-                                            <option value='entrymanager'>Entry Manager</option>
+                                            <option value='entrymanager'>
+                                                Entry Manager
+                                            </option>
                                             <option value='admin'>Admin</option>
                                         </select>
                                         {errors.role && (
@@ -560,7 +573,6 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
                         </div>
 
                         <div className='space-y-3'>
-
                             {isOwnAccount && (
                                 <>
                                     {/* Change Password Section */}
@@ -578,11 +590,15 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
                                                 type='button'
                                                 className='cradle-btn cradle-btn-ghost'
                                                 onClick={() => {
-                                                    setShowChangePassword(!showChangePassword);
+                                                    setShowChangePassword(
+                                                        !showChangePassword,
+                                                    );
                                                     setPasswordError('');
                                                 }}
                                             >
-                                                {showChangePassword ? 'Cancel' : 'Change Password'}
+                                                {showChangePassword
+                                                    ? 'Cancel'
+                                                    : 'Change Password'}
                                             </button>
                                         </div>
 
@@ -597,7 +613,11 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
                                                             type='password'
                                                             className='cradle-search w-full'
                                                             value={currentPassword}
-                                                            onChange={(e) => setCurrentPassword(e.target.value)}
+                                                            onChange={(e) =>
+                                                                setCurrentPassword(
+                                                                    e.target.value,
+                                                                )
+                                                            }
                                                             required
                                                         />
                                                     </div>
@@ -609,7 +629,11 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
                                                             type='password'
                                                             className='cradle-search w-full'
                                                             value={newPassword}
-                                                            onChange={(e) => setNewPassword(e.target.value)}
+                                                            onChange={(e) =>
+                                                                setNewPassword(
+                                                                    e.target.value,
+                                                                )
+                                                            }
                                                             required
                                                         />
                                                     </div>
@@ -621,18 +645,26 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
                                                             type='password'
                                                             className='cradle-search w-full'
                                                             value={confirmPassword}
-                                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                                            onChange={(e) =>
+                                                                setConfirmPassword(
+                                                                    e.target.value,
+                                                                )
+                                                            }
                                                             required
                                                         />
                                                     </div>
                                                     {passwordError && (
-                                                        <p className='cradle-status-error text-sm'>{passwordError}</p>
+                                                        <p className='cradle-status-error text-sm'>
+                                                            {passwordError}
+                                                        </p>
                                                     )}
                                                     <div className='flex justify-end'>
                                                         <button
                                                             type='button'
                                                             className='cradle-btn cradle-btn-primary'
-                                                            onClick={handleChangePassword}
+                                                            onClick={
+                                                                handleChangePassword
+                                                            }
                                                         >
                                                             Update Password
                                                         </button>
@@ -652,28 +684,39 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
                                                     API Key
                                                 </label>
                                                 <p className='text-xs cradle-text-muted'>
-                                                    Generate a new API key for programmatic access
+                                                    Generate a new API key for
+                                                    programmatic access
                                                 </p>
                                             </div>
                                             <button
                                                 type='button'
                                                 className='cradle-btn cradle-btn-ghost'
-                                                onClick={() => setShowApiKeyGenerate(!showApiKeyGenerate)}
+                                                onClick={() =>
+                                                    setShowApiKeyGenerate(
+                                                        !showApiKeyGenerate,
+                                                    )
+                                                }
                                             >
-                                                {showApiKeyGenerate ? 'Cancel' : 'Generate API Key'}
+                                                {showApiKeyGenerate
+                                                    ? 'Cancel'
+                                                    : 'Generate API Key'}
                                             </button>
                                         </div>
 
                                         {showApiKeyGenerate && (
                                             <div className='mt-4 p-4 border cradle-border rounded'>
                                                 <p className='cradle-text-secondary mb-4'>
-                                                    Are you sure you want to generate a new API key? This will invalidate the current key.
+                                                    Are you sure you want to generate a
+                                                    new API key? This will invalidate
+                                                    the current key.
                                                 </p>
                                                 <div className='flex justify-end gap-2'>
                                                     <button
                                                         type='button'
                                                         className='cradle-btn cradle-btn-ghost'
-                                                        onClick={() => setShowApiKeyGenerate(false)}
+                                                        onClick={() =>
+                                                            setShowApiKeyGenerate(false)
+                                                        }
                                                     >
                                                         Cancel
                                                     </button>
@@ -721,7 +764,11 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
                                                     }
                                                 }}
                                             >
-                                                {show2FASetup ? 'Cancel' : (isEdit && twoFactorEnabled ? 'Disable 2FA' : 'Enable 2FA')}
+                                                {show2FASetup
+                                                    ? 'Cancel'
+                                                    : isEdit && twoFactorEnabled
+                                                      ? 'Disable 2FA'
+                                                      : 'Enable 2FA'}
                                             </button>
                                         </div>
 
@@ -732,15 +779,27 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
                                                         <>
                                                             <div className='flex justify-center mb-4'>
                                                                 <div className='p-4 bg-white rounded'>
-                                                                    <QRCodeSVG value={qrCodeUrl} size={200} level='H' />
+                                                                    <QRCodeSVG
+                                                                        value={
+                                                                            qrCodeUrl
+                                                                        }
+                                                                        size={200}
+                                                                        level='H'
+                                                                    />
                                                                 </div>
                                                             </div>
                                                             <div className='mb-4 p-3 cradle-bg-secondary rounded'>
                                                                 <p className='text-sm cradle-text-tertiary mb-2'>
-                                                                    Can't scan the QR code? Enter this secret key manually:
+                                                                    Can't scan the QR
+                                                                    code? Enter this
+                                                                    secret key manually:
                                                                 </p>
                                                                 <code className='block cradle-bg-elevated p-2 rounded text-center select-all cradle-text-primary'>
-                                                                    {new URL(qrCodeUrl).searchParams.get('secret')}
+                                                                    {new URL(
+                                                                        qrCodeUrl,
+                                                                    ).searchParams.get(
+                                                                        'secret',
+                                                                    )}
                                                                 </code>
                                                             </div>
                                                         </>
@@ -752,58 +811,134 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
                                                                 : 'Enter verification code from your authenticator app'}
                                                         </label>
                                                         <div className='flex gap-2 justify-center'>
-                                                            {[0, 1, 2, 3, 4, 5].map((index) => (
-                                                                <input
-                                                                    key={index}
-                                                                    id={`twoFactorToken-${index}`}
-                                                                    name={`twoFactorToken-${index}`}
-                                                                    type='text'
-                                                                    autoComplete='twoFactorToken'
-                                                                    className='cradle-search w-12 h-12 text-center text-lg font-mono disabled:opacity-50 disabled:cursor-not-allowed'
-                                                                    placeholder=''
-                                                                    pattern='[0-9]*'
-                                                                    maxLength={1}
-                                                                    value={twoFactorCode[index] || ''}
-                                                                    onChange={(e) => {
-                                                                        const value = e.target.value.replace(/\D/g, '');
-                                                                        if (value.length <= 1) {
-                                                                            const newCode = twoFactorCode.split('');
-                                                                            newCode[index] = value;
-                                                                            setTwoFactorCode(newCode.join(''));
+                                                            {[0, 1, 2, 3, 4, 5].map(
+                                                                (index) => (
+                                                                    <input
+                                                                        key={index}
+                                                                        id={`twoFactorToken-${index}`}
+                                                                        name={`twoFactorToken-${index}`}
+                                                                        type='text'
+                                                                        autoComplete='twoFactorToken'
+                                                                        className='cradle-search w-12 h-12 text-center text-lg font-mono disabled:opacity-50 disabled:cursor-not-allowed'
+                                                                        placeholder=''
+                                                                        pattern='[0-9]*'
+                                                                        maxLength={1}
+                                                                        value={
+                                                                            twoFactorCode[
+                                                                                index
+                                                                            ] || ''
+                                                                        }
+                                                                        onChange={(
+                                                                            e,
+                                                                        ) => {
+                                                                            const value =
+                                                                                e.target.value.replace(
+                                                                                    /\D/g,
+                                                                                    '',
+                                                                                );
+                                                                            if (
+                                                                                value.length <=
+                                                                                1
+                                                                            ) {
+                                                                                const newCode =
+                                                                                    twoFactorCode.split(
+                                                                                        '',
+                                                                                    );
+                                                                                newCode[
+                                                                                    index
+                                                                                ] =
+                                                                                    value;
+                                                                                setTwoFactorCode(
+                                                                                    newCode.join(
+                                                                                        '',
+                                                                                    ),
+                                                                                );
 
-                                                                            // Auto-focus next input
-                                                                            if (value && index < 5) {
-                                                                                document.getElementById(`twoFactorToken-${index + 1}`)?.focus();
+                                                                                // Auto-focus next input
+                                                                                if (
+                                                                                    value &&
+                                                                                    index <
+                                                                                        5
+                                                                                ) {
+                                                                                    document
+                                                                                        .getElementById(
+                                                                                            `twoFactorToken-${index + 1}`,
+                                                                                        )
+                                                                                        ?.focus();
+                                                                                }
                                                                             }
-                                                                        }
-                                                                    }}
-                                                                    onKeyDown={(e) => {
-                                                                        // Handle backspace to go to previous input
-                                                                        if (e.key === 'Backspace' && !twoFactorCode[index] && index > 0) {
-                                                                            document.getElementById(`twoFactorToken-${index - 1}`)?.focus();
-                                                                        }
-                                                                    }}
-                                                                    onPaste={(e) => {
-                                                                        e.preventDefault();
-                                                                        const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-                                                                        setTwoFactorCode(pastedData);
-                                                                        // Focus the last filled input or the first empty one
-                                                                        const focusIndex = Math.min(pastedData.length, 5);
-                                                                        document.getElementById(`twoFactorToken-${focusIndex}`)?.focus();
-                                                                    }}
-                                                                    required
-                                                                />
-                                                            ))}
+                                                                        }}
+                                                                        onKeyDown={(
+                                                                            e,
+                                                                        ) => {
+                                                                            // Handle backspace to go to previous input
+                                                                            if (
+                                                                                e.key ===
+                                                                                    'Backspace' &&
+                                                                                !twoFactorCode[
+                                                                                    index
+                                                                                ] &&
+                                                                                index >
+                                                                                    0
+                                                                            ) {
+                                                                                document
+                                                                                    .getElementById(
+                                                                                        `twoFactorToken-${index - 1}`,
+                                                                                    )
+                                                                                    ?.focus();
+                                                                            }
+                                                                        }}
+                                                                        onPaste={(
+                                                                            e,
+                                                                        ) => {
+                                                                            e.preventDefault();
+                                                                            const pastedData =
+                                                                                e.clipboardData
+                                                                                    .getData(
+                                                                                        'text',
+                                                                                    )
+                                                                                    .replace(
+                                                                                        /\D/g,
+                                                                                        '',
+                                                                                    )
+                                                                                    .slice(
+                                                                                        0,
+                                                                                        6,
+                                                                                    );
+                                                                            setTwoFactorCode(
+                                                                                pastedData,
+                                                                            );
+                                                                            // Focus the last filled input or the first empty one
+                                                                            const focusIndex =
+                                                                                Math.min(
+                                                                                    pastedData.length,
+                                                                                    5,
+                                                                                );
+                                                                            document
+                                                                                .getElementById(
+                                                                                    `twoFactorToken-${focusIndex}`,
+                                                                                )
+                                                                                ?.focus();
+                                                                        }}
+                                                                        required
+                                                                    />
+                                                                ),
+                                                            )}
                                                         </div>
                                                     </div>
                                                     <div className='flex justify-end'>
                                                         <button
                                                             type='button'
                                                             className={`cradle-btn ${twoFactorEnabled ? 'cradle-status-error !bg-opacity-10' : 'cradle-btn-primary'}`}
-                                                            disabled={twoFactorCode.length !== 6}
+                                                            disabled={
+                                                                twoFactorCode.length !==
+                                                                6
+                                                            }
                                                             onClick={handle2FASubmit}
                                                         >
-                                                            {twoFactorEnabled ? 'Disable 2FA' : 'Verify and Enable'}
+                                                            {twoFactorEnabled
+                                                                ? 'Disable 2FA'
+                                                                : 'Verify and Enable'}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -831,7 +966,8 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
                                                 Delete Account
                                             </label>
                                             <p className='text-xs cradle-text-muted'>
-                                                Permanently delete your account and all associated data
+                                                Permanently delete your account and all
+                                                associated data
                                             </p>
                                         </div>
                                         <button
@@ -1018,7 +1154,9 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
                             {isEdit ? 'Settings' : 'Add New User'}
                         </h1>
                         <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
-                            {isEdit ? 'Manage your account preferences and security' : 'Create a new user account'}
+                            {isEdit
+                                ? 'Manage your account preferences and security'
+                                : 'Create a new user account'}
                         </p>
                     </div>
                 </div>
@@ -1036,14 +1174,19 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
                                             <button
                                                 key={item.id}
                                                 type='button'
-                                                onClick={() => setActiveSection(item.id)}
-                                                className={`cradle-btn w-full flex items-center gap-3 ${activeSection === item.id
-                                                    ? 'cradle-btn-primary'
-                                                    : 'cradle-btn-ghost'
-                                                    }`}
+                                                onClick={() =>
+                                                    setActiveSection(item.id)
+                                                }
+                                                className={`cradle-btn w-full flex items-center gap-3 ${
+                                                    activeSection === item.id
+                                                        ? 'cradle-btn-primary'
+                                                        : 'cradle-btn-ghost'
+                                                }`}
                                             >
                                                 <Icon className='w-5 h-5 flex-shrink-0' />
-                                                <span className='text-left flex-1'>{item.label}</span>
+                                                <span className='text-left flex-1'>
+                                                    {item.label}
+                                                </span>
                                             </button>
                                         );
                                     })}

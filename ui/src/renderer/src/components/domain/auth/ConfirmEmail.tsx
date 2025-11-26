@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
 import useApi from '@/hooks/api/useApi';
 import { displayError } from '@/utils/api';
 import AlertBox from '@components/base/Alert/AlertBox';
+import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 
 interface Alert {
     show: boolean;
@@ -16,7 +16,11 @@ interface Alert {
  * On error, displays an error message.
  */
 export default function ConfirmEmail() {
-    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
+    const [alert, setAlert] = useState<Alert>({
+        show: false,
+        message: '',
+        color: 'red',
+    });
     const [searchParams, setSearchParams] = useSearchParams();
     const token = searchParams.get('token');
     const { usersApi } = useApi();
@@ -33,7 +37,7 @@ export default function ConfirmEmail() {
 
         try {
             await usersApi.usersEmailConfirmCreate({
-                emailConfirmRequest: { token }
+                emailConfirmRequest: { token },
             });
             setAlert({
                 show: true,

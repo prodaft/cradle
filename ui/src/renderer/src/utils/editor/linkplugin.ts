@@ -1,7 +1,7 @@
-import { forEachDiagnostic, Diagnostic } from '@codemirror/lint';
 import { syntaxTree } from '@codemirror/language';
-import { Decoration, ViewPlugin, EditorView, WidgetType } from '@codemirror/view';
+import { Diagnostic, forEachDiagnostic } from '@codemirror/lint';
 import { EditorState, Range } from '@codemirror/state';
+import { Decoration, EditorView, ViewPlugin, WidgetType } from '@codemirror/view';
 import { SyntaxNode } from '@lezer/common';
 
 /**
@@ -25,7 +25,7 @@ export class CradleLinkWidget extends WidgetType {
         navigate: (url: string) => void,
         fullText: string,
         timestamp: string,
-        hasPrefix: boolean
+        hasPrefix: boolean,
     ) {
         super();
         this.type = type;
@@ -123,7 +123,7 @@ export class CradleLinkWidget extends WidgetType {
 export function cradleLinksPlugin(
     entryColors: Map<string, string>,
     navigate: (url: string) => void,
-    sourceMode: boolean
+    sourceMode: boolean,
 ) {
     return ViewPlugin.fromClass(
         class {
@@ -139,12 +139,24 @@ export function cradleLinksPlugin(
                 this.decorations = this.buildDecorations(view);
             }
 
-            update(update: { docChanged: boolean; viewportChanged: boolean; selectionSet: boolean; view: EditorView; startState: EditorState; state: EditorState }) {
+            update(update: {
+                docChanged: boolean;
+                viewportChanged: boolean;
+                selectionSet: boolean;
+                view: EditorView;
+                startState: EditorState;
+                state: EditorState;
+            }) {
                 const oldDiagnosticCount = countDiagnostics(update.startState);
                 const newDiagnosticCount = countDiagnostics(update.state);
                 const diagnosticsChanged = oldDiagnosticCount !== newDiagnosticCount;
 
-                if (update.docChanged || update.viewportChanged || update.selectionSet || diagnosticsChanged) {
+                if (
+                    update.docChanged ||
+                    update.viewportChanged ||
+                    update.selectionSet ||
+                    diagnosticsChanged
+                ) {
                     this.decorations = this.buildDecorations(update.view);
                 }
             }
@@ -171,7 +183,7 @@ export function cradleLinksPlugin(
                                 cursorPos,
                                 diagnostics,
                                 this.entryColors,
-                                this.navigate
+                                this.navigate,
                             );
                             if (linkInfo) {
                                 widgets.push(linkInfo);
@@ -185,14 +197,17 @@ export function cradleLinksPlugin(
         },
         {
             decorations: (v) => v.decorations,
-        }
+        },
     );
 }
 
 /**
  * Creates a ViewPlugin to style CradleLink text when uncollapsed
  */
-export function cradleLinkColorPlugin(entryColors: Map<string, string>, sourceMode: boolean) {
+export function cradleLinkColorPlugin(
+    entryColors: Map<string, string>,
+    sourceMode: boolean,
+) {
     return ViewPlugin.fromClass(
         class {
             entryColors: Map<string, string>;
@@ -205,12 +220,24 @@ export function cradleLinkColorPlugin(entryColors: Map<string, string>, sourceMo
                 this.decorations = this.buildDecorations(view);
             }
 
-            update(update: { docChanged: boolean; viewportChanged: boolean; selectionSet: boolean; view: EditorView; startState: EditorState; state: EditorState }) {
+            update(update: {
+                docChanged: boolean;
+                viewportChanged: boolean;
+                selectionSet: boolean;
+                view: EditorView;
+                startState: EditorState;
+                state: EditorState;
+            }) {
                 const oldDiagnosticCount = countDiagnostics(update.startState);
                 const newDiagnosticCount = countDiagnostics(update.state);
                 const diagnosticsChanged = oldDiagnosticCount !== newDiagnosticCount;
 
-                if (update.docChanged || update.viewportChanged || update.selectionSet || diagnosticsChanged) {
+                if (
+                    update.docChanged ||
+                    update.viewportChanged ||
+                    update.selectionSet ||
+                    diagnosticsChanged
+                ) {
                     this.decorations = this.buildDecorations(update.view);
                 }
             }
@@ -233,7 +260,7 @@ export function cradleLinkColorPlugin(entryColors: Map<string, string>, sourceMo
                                 cursorPos,
                                 diagnostics,
                                 this.entryColors,
-                                this.sourceMode
+                                this.sourceMode,
                             );
                             marks.push(...colorMarks);
                         }
@@ -245,7 +272,7 @@ export function cradleLinkColorPlugin(entryColors: Map<string, string>, sourceMo
         },
         {
             decorations: (v) => v.decorations,
-        }
+        },
     );
 }
 
@@ -271,8 +298,8 @@ function parseCradleLink(
     cursorPos: number,
     diagnostics: Diagnostic[],
     entryColors: Map<string, string>,
-    navigate: (url: string) => void
- ): Range<Decoration> | null {
+    navigate: (url: string) => void,
+): Range<Decoration> | null {
     const from = node.from;
     const to = node.to;
     const linkText = text.slice(from, to);
@@ -318,7 +345,7 @@ function parseCradleLink(
     }
 
     const hasLintIssues = diagnostics.some(
-        (diagnostic) => diagnostic.from < widgetEnd && diagnostic.to > from
+        (diagnostic) => diagnostic.from < widgetEnd && diagnostic.to > from,
     );
 
     if (hasLintIssues) {
@@ -328,7 +355,16 @@ function parseCradleLink(
     const color = entryColors.get(type) || '#FF8C00';
 
     return Decoration.replace({
-        widget: new CradleLinkWidget(type, name, alias, color, navigate, linkText, timestamp, hasPrefix),
+        widget: new CradleLinkWidget(
+            type,
+            name,
+            alias,
+            color,
+            navigate,
+            linkText,
+            timestamp,
+            hasPrefix,
+        ),
         inclusive: false,
         block: false,
     }).range(from, widgetEnd);
@@ -340,7 +376,7 @@ function createColorMarks(
     cursorPos: number,
     diagnostics: Diagnostic[],
     entryColors: Map<string, string>,
-    sourceMode: boolean
+    sourceMode: boolean,
 ): Range<Decoration>[] {
     const marks: Range<Decoration>[] = [];
     const from = node.from;
@@ -367,10 +403,11 @@ function createColorMarks(
     }
 
     const isInLink = cursorPos >= from && cursorPos <= to;
-    const isInTimestamp = linkEnd > to && cursorPos >= timestampFrom && cursorPos <= timestampTo;
+    const isInTimestamp =
+        linkEnd > to && cursorPos >= timestampFrom && cursorPos <= timestampTo;
 
     const hasLintIssues = diagnostics.some(
-        (diagnostic) => diagnostic.from < linkEnd && diagnostic.to > from
+        (diagnostic) => diagnostic.from < linkEnd && diagnostic.to > from,
     );
 
     if (isInLink || isInTimestamp || hasLintIssues || sourceMode) {
@@ -385,7 +422,7 @@ function createColorMarks(
                 attributes: {
                     style: `color: ${color} !important;`,
                 },
-            }).range(from, linkEnd)
+            }).range(from, linkEnd),
         );
 
         child = node.node.firstChild;
@@ -396,33 +433,51 @@ function createColorMarks(
                         attributes: {
                             style: `color: ${color} !important; opacity: 0.8; font-weight: 600;`,
                         },
-                    }).range(child.from, child.to)
+                    }).range(child.from, child.to),
                 );
-            } else if (child.type.name === 'CradleLinkType' && child.from !== child.to) {
+            } else if (
+                child.type.name === 'CradleLinkType' &&
+                child.from !== child.to
+            ) {
                 marks.push(
                     Decoration.mark({
-                        attributes: { style: `color: ${color} !important; opacity: 0.9;` },
-                    }).range(child.from, child.to)
+                        attributes: {
+                            style: `color: ${color} !important; opacity: 0.9;`,
+                        },
+                    }).range(child.from, child.to),
                 );
-            } else if (child.type.name === 'CradleLinkValue' && child.from !== child.to) {
+            } else if (
+                child.type.name === 'CradleLinkValue' &&
+                child.from !== child.to
+            ) {
                 marks.push(
                     Decoration.mark({
-                        attributes: { style: `color: ${color} !important; font-weight: 600;` },
-                    }).range(child.from, child.to)
+                        attributes: {
+                            style: `color: ${color} !important; font-weight: 600;`,
+                        },
+                    }).range(child.from, child.to),
                 );
-            } else if (child.type.name === 'CradleLinkAlias' && child.from !== child.to) {
+            } else if (
+                child.type.name === 'CradleLinkAlias' &&
+                child.from !== child.to
+            ) {
                 marks.push(
                     Decoration.mark({
-                        attributes: { style: `color: ${color} !important; font-style: italic;` },
-                    }).range(child.from, child.to)
+                        attributes: {
+                            style: `color: ${color} !important; font-style: italic;`,
+                        },
+                    }).range(child.from, child.to),
                 );
-            } else if (child.type.name === 'CradleLinkTimestamp' && child.from !== child.to) {
+            } else if (
+                child.type.name === 'CradleLinkTimestamp' &&
+                child.from !== child.to
+            ) {
                 marks.push(
                     Decoration.mark({
                         attributes: {
                             style: `color: ${color} !important; font-style: italic; opacity: 0.7; text-decoration: underline; font-size: 0.85em;`,
                         },
-                    }).range(child.from, child.to)
+                    }).range(child.from, child.to),
                 );
             }
             child = child.nextSibling;

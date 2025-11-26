@@ -7,7 +7,10 @@ import { Report } from '@/services/cradle';
 import { capitalizeString, truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import TableCard from '@components/base/Card/TableCard';
-import ListView, { DateRangeFilter, SortDirection } from '@components/base/ListView/ListView';
+import ListView, {
+    DateRangeFilter,
+    SortDirection,
+} from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import ActionsTable, { Action } from '@components/domain/activity/ActionsTable';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
@@ -43,11 +46,14 @@ export default function Reports() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(Number(searchParams.get('reports_page')) || 1);
     const [totalPages, setTotalPages] = useState(1);
-    const [sortField, setSortField] = useState(searchParams.get('reports_sort_field') || 'created_at');
-    const [sortDirection, setSortDirection] = useState<SortDirection>(searchParams.get('reports_sort_direction') as SortDirection || 'desc');
+    const [sortField, setSortField] = useState(
+        searchParams.get('reports_sort_field') || 'created_at',
+    );
+    const [sortDirection, setSortDirection] = useState<SortDirection>(
+        (searchParams.get('reports_sort_direction') as SortDirection) || 'desc',
+    );
     const [pageSize, setPageSize] = useState(
-        Number(searchParams.get('reports_pagesize')) ||
-        10
+        Number(searchParams.get('reports_pagesize')) || 10,
     );
     const [selectedReports, setSelectedReports] = useState<string[]>([]);
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
@@ -172,27 +178,41 @@ export default function Reports() {
         }
     };
 
-    const handleColumnFilterChange = (column: string, value: string | DateRangeFilter) => {
-        setColumnFilters(prev => ({
+    const handleColumnFilterChange = (
+        column: string,
+        value: string | DateRangeFilter,
+    ) => {
+        setColumnFilters((prev) => ({
             ...prev,
             [column]: value,
         }));
         setPage(1); // Reset to first page when filters change
     };
 
-    const columns: Array<{ key: string; label: string; sortable?: boolean; filterType?: 'text' | 'date' }> = [
+    const columns: Array<{
+        key: string;
+        label: string;
+        sortable?: boolean;
+        filterType?: 'text' | 'date';
+    }> = [
         { key: 'status', label: 'Status', sortable: true },
         { key: 'title', label: 'Title', sortable: true },
         { key: 'strategy', label: 'Strategy', sortable: true },
         { key: 'anonymized', label: 'Anonymized', sortable: true },
-        { key: 'createdAt', label: 'Created At', sortable: true, filterType: 'date' as const },
+        {
+            key: 'createdAt',
+            label: 'Created At',
+            sortable: true,
+            filterType: 'date' as const,
+        },
     ];
 
     // Define filterable columns with their handlers
-    const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> = {
-        user: (value) => handleColumnFilterChange('user', value),
-        createdAt: (value) => handleColumnFilterChange('createdAt', value),
-    };
+    const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
+        {
+            user: (value) => handleColumnFilterChange('user', value),
+            createdAt: (value) => handleColumnFilterChange('createdAt', value),
+        };
 
     const handleDownload = async (reportIds: string | string[]) => {
         const idsArray = Array.isArray(reportIds) ? reportIds : [reportIds];
@@ -200,12 +220,14 @@ export default function Reports() {
         try {
             // Download each report
             for (const id of idsArray) {
-                const report = reports.find(r => r.id === id);
+                const report = reports.find((r) => r.id === id);
                 if (report && report.reportUrl) {
                     // Fetch the file content
                     const response = await fetch(report.reportUrl);
                     if (!response.ok) {
-                        throw new Error(`Failed to fetch report: ${response.statusText}`);
+                        throw new Error(
+                            `Failed to fetch report: ${response.statusText}`,
+                        );
                     }
 
                     // Get the file content as blob
@@ -217,8 +239,12 @@ export default function Reports() {
                     link.href = url;
 
                     // Set filename with proper extension
-                    const extension = report.strategy === 'json' ? 'json' :
-                        report.strategy === 'plain' ? 'txt' : 'html';
+                    const extension =
+                        report.strategy === 'json'
+                            ? 'json'
+                            : report.strategy === 'plain'
+                              ? 'txt'
+                              : 'html';
                     link.download = `${report.title || 'report'}.${extension}`;
 
                     // Trigger download
@@ -257,7 +283,11 @@ export default function Reports() {
         },
     ];
 
-    const renderRow = (report: Report, index: number, selectProps: SelectProps = {}) => {
+    const renderRow = (
+        report: Report,
+        index: number,
+        selectProps: SelectProps = {},
+    ) => {
         const { enableMultiSelect, isSelected, onSelect } = selectProps;
         const statusColors: Record<string, string> = {
             completed: 'text-green-500',
@@ -289,12 +319,24 @@ export default function Reports() {
                         </div>
                     </td>
                 )}
-                <td className={report.status ? statusColors[report.status] : 'cradle-text-secondary'}>
+                <td
+                    className={
+                        report.status
+                            ? statusColors[report.status]
+                            : 'cradle-text-secondary'
+                    }
+                >
                     {capitalizeString(report.status || '')}
                 </td>
-                <td className='cradle-text-primary'>{truncateText(report.title, 50)}</td>
-                <td className='cradle-text-secondary'>{capitalizeString(report.strategy || 'N/A')}</td>
-                <td className='cradle-text-secondary'>{report.anonymized ? 'Yes' : 'No'}</td>
+                <td className='cradle-text-primary'>
+                    {truncateText(report.title, 50)}
+                </td>
+                <td className='cradle-text-secondary'>
+                    {capitalizeString(report.strategy || 'N/A')}
+                </td>
+                <td className='cradle-text-secondary'>
+                    {report.anonymized ? 'Yes' : 'No'}
+                </td>
                 <td className='cradle-text-secondary'>
                     {formatDate(new Date(report.createdAt || ''))}
                 </td>
@@ -360,8 +402,8 @@ export default function Reports() {
                     sortDirection={sortDirection}
                     onSort={handleSort}
                     sortFieldMapping={sortFieldMapping}
-                    emptyMessage="No reports found."
-                    tableClassName="table table-zebra"
+                    emptyMessage='No reports found.'
+                    tableClassName='table table-zebra'
                     enableMultiSelect={true}
                     setSelected={setSelectedReports}
                     filterableColumns={filterableColumns}

@@ -30,134 +30,133 @@ import Relations from './Relations';
  * @constructor
  */
 export default function Dashboard() {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const location = useLocation();
-  const { params } = useTabContext();
-  const subtype = params.subtype;
-  const name = params.name;
-  const [entryMissing, setEntryMissing] = useState(false);
-  const [contentObject, setContentObject] = useState<EntryResponse | null>(null);
-  const { notify } = useNotif();
-  const { queryApi, entriesApi } = useApi();
-  const { navigate } = useCradleNavigate();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { profile, isAdmin } = useProfile();
-  const dashboard = useRef<HTMLDivElement>(null);
-  const { execute } = useAPICall();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const location = useLocation();
+    const { params } = useTabContext();
+    const subtype = params.subtype;
+    const name = params.name;
+    const [entryMissing, setEntryMissing] = useState(false);
+    const [contentObject, setContentObject] = useState<EntryResponse | null>(null);
+    const { notify } = useNotif();
+    const { queryApi, entriesApi } = useApi();
+    const { navigate } = useCradleNavigate();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { profile, isAdmin } = useProfile();
+    const dashboard = useRef<HTMLDivElement>(null);
+    const { execute } = useAPICall();
 
-  // On load, fetch the dashboard data for the entry
-  useEffect(() => {
-    setEntryMissing(false);
-    setContentObject(null);
+    // On load, fetch the dashboard data for the entry
+    useEffect(() => {
+        setEntryMissing(false);
+        setContentObject(null);
 
-    if (!subtype || !name) {
-      setEntryMissing(true);
-      return;
+        if (!subtype || !name) {
+            setEntryMissing(true);
+            return;
+        }
+
+        queryApi
+            .queryList({ subtype: [subtype], nameExact: [name] })
+            .then((response) => {
+                if (response.count !== 1) {
+                    setEntryMissing(true);
+                    return;
+                }
+                const obj = response.results[0];
+
+                if (dashboard.current) {
+                    dashboard.current.scrollTo(0, 0);
+                }
+                setContentObject(obj);
+            });
+    }, [subtype, name, setEntryMissing, setContentObject, queryApi]);
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const handleDelete = () => {
+        if (!contentObject) return;
+        // Only entities can be deleted (not artifacts)
+        if (contentObject.type !== 'entity') {
+            notify({
+                type: 'error',
+                text: 'Only entities can be deleted.',
+            });
+            return;
+        }
+
+        execute(() => entriesApi.entitiesDestroy({ entityId: contentObject.id! }), {
+            successMessage: 'Entity deleted successfully.',
+        })
+            .then(() => {
+                navigate('/');
+            })
+            .catch(() => {});
+    };
+
+    if (entryMissing) {
+        return (
+            <NotFound
+                message={
+                    'The entry you are looking for does not exist or you do not have access to it. If you believe the entry exists contact an administrator for access.'
+                }
+            />
+        );
     }
 
-    queryApi
-      .queryList({ subtype: [subtype], nameExact: [name] })
-      .then((response) => {
-        if (response.count !== 1) {
-          setEntryMissing(true);
-          return;
-        }
-        const obj = response.results[0];
-
-        if (dashboard.current) {
-          dashboard.current.scrollTo(0, 0);
-        }
-        setContentObject(obj);
-      });
-  }, [subtype, name, setEntryMissing, setContentObject, queryApi]);
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleDelete = () => {
-    if (!contentObject) return;
-    // Only entities can be deleted (not artifacts)
-    if (contentObject.type !== 'entity') {
-      notify({
-        type: 'error',
-        text: 'Only entities can be deleted.',
-      });
-      return;
-    }
-
-    execute(
-      () => entriesApi.entitiesDestroy({ entityId: contentObject.id! }),
-      { successMessage: 'Entity deleted successfully.' }
-    )
-      .then(() => {
-        navigate('/');
-      })
-      .catch(() => { });
-  };
-
-  if (entryMissing) {
     return (
-      <NotFound
-        message={
-          'The entry you are looking for does not exist or you do not have access to it. If you believe the entry exists contact an administrator for access.'
-        }
-      />
-    );
-  }
-
-  return (
-    <>
-      <div
-        className="w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-hidden"
-        ref={dashboard}
-      >
-        {contentObject == null ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="spinner-dot-pulse spinner-xl">
-              <div className="spinner-pulse-dot"></div>
+        <>
+            <div
+                className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-hidden'
+                ref={dashboard}
+            >
+                {contentObject == null ? (
+                    <div className='flex items-center justify-center h-full'>
+                        <div className='spinner-dot-pulse spinner-xl'>
+                            <div className='spinner-pulse-dot'></div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className='w-[95%] h-full flex flex-col p-6 space-y-4'>
+                        {contentObject.name && (
+                            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4'>
+                                <div>
+                                    <h1 className='text-3xl font-medium break-all cradle-text-primary cradle-mono tracking-tight'>
+                                        {contentObject.type && (
+                                            <span className='cradle-text-tertiary text-2xl mr-2'>{`${contentObject.subtype ? contentObject.subtype : contentObject.type}:`}</span>
+                                        )}
+                                        {contentObject.name}
+                                    </h1>
+                                    {contentObject.description && (
+                                        <p className='text-sm cradle-text-secondary mt-2 cradle-mono'>
+                                            {contentObject.description}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                        {contentObject.id && (
+                            <div className='cradle-card'>
+                                <Tabs
+                                    defaultTab={0}
+                                    queryParam={'tab'}
+                                    tabClass={TabClasses.UNDERLINE}
+                                    perTabClass='w-[33%] justify-center'
+                                >
+                                    <Tab title='Notes' classes='pt-4'>
+                                        <Notes obj={contentObject} />
+                                    </Tab>
+                                    <Tab title='Relations' classes='pt-4'>
+                                        <Relations obj={contentObject} />
+                                    </Tab>
+                                    <Tab title='Files' classes='pt-4'>
+                                        <Files obj={contentObject} />
+                                    </Tab>
+                                </Tabs>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
-          </div>
-        ) : (
-          <div className="w-[95%] h-full flex flex-col p-6 space-y-4">
-            {contentObject.name && (
-              <div className="flex justify-between items-center w-full cradle-border-b px-4 pb-4">
-                <div>
-                  <h1 className="text-3xl font-medium break-all cradle-text-primary cradle-mono tracking-tight">
-                    {contentObject.type && (
-                      <span className="cradle-text-tertiary text-2xl mr-2">{`${contentObject.subtype ? contentObject.subtype : contentObject.type}:`}</span>
-                    )}
-                    {contentObject.name}
-                  </h1>
-                  {contentObject.description && (
-                    <p className="text-sm cradle-text-secondary mt-2 cradle-mono">
-                      {contentObject.description}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-            {contentObject.id && (
-              <div className="cradle-card">
-                <Tabs
-                  defaultTab={0}
-                  queryParam={'tab'}
-                  tabClass={TabClasses.UNDERLINE}
-                  perTabClass="w-[33%] justify-center"
-                >
-                  <Tab title="Notes" classes="pt-4">
-                    <Notes obj={contentObject} />
-                  </Tab>
-                  <Tab title="Relations" classes="pt-4">
-                    <Relations obj={contentObject} />
-                  </Tab>
-                  <Tab title="Files" classes="pt-4">
-                    <Files obj={contentObject} />
-                  </Tab>
-                </Tabs>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-      <div className="w-full h-8" />
-    </>
-  );
+            <div className='w-full h-8' />
+        </>
+    );
 }

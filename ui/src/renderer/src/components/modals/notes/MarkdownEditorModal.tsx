@@ -1,27 +1,27 @@
+import { useTheme } from '@/contexts/ui/ThemeContext';
 import { markdown } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
 import { EditorView } from '@codemirror/view';
 import { eclipse } from '@uiw/codemirror-theme-eclipse';
 import CodeMirror from '@uiw/react-codemirror';
 import { useState } from 'react';
-import { useTheme } from '@/contexts/ui/ThemeContext';
 
 /**
  * MarkdownEditorModal component props
  */
 export interface MarkdownEditorModalProps {
-  /** Callback function when content is confirmed, receives content and title */
-  onConfirm: (content: string, title: string) => void;
-  /** Title for the modal/note */
-  title?: string;
-  /** Whether the title is editable */
-  titleEditable?: boolean;
-  /** Function to close the modal */
-  closeModal: () => void;
-  /** Initial markdown content */
-  initialContent?: string;
-  /** Optional help text to display below the editor */
-  helpText?: string | null;
+    /** Callback function when content is confirmed, receives content and title */
+    onConfirm: (content: string, title: string) => void;
+    /** Title for the modal/note */
+    title?: string;
+    /** Whether the title is editable */
+    titleEditable?: boolean;
+    /** Function to close the modal */
+    closeModal: () => void;
+    /** Initial markdown content */
+    initialContent?: string;
+    /** Optional help text to display below the editor */
+    helpText?: string | null;
 }
 
 /**
@@ -53,7 +53,10 @@ export default function MarkdownEditorModal({
     const [noteTitle, setNoteTitle] = useState(title || '');
     const { isDarkMode } = useTheme();
 
-    const extensions = [markdown({ codeLanguages: languages }), EditorView.lineWrapping];
+    const extensions = [
+        markdown({ codeLanguages: languages }),
+        EditorView.lineWrapping,
+    ];
 
     const handleConfirm = () => {
         onConfirm(userInput, noteTitle);

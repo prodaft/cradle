@@ -46,13 +46,21 @@ const entitySchema: Yup.ObjectSchema<FormData> = Yup.object().shape({
     aliases: Yup.array().notRequired(),
 }) as Yup.ObjectSchema<FormData>;
 
-export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityFormProps) {
+export default function EntityForm({
+    id = null,
+    isEdit = false,
+    onAdd,
+}: EntityFormProps) {
     const { navigate, navigateLink } = useCradleNavigate();
     const { accessApi, entriesApi, queryApi } = useApi();
     const [accesses, setAccessUsers] = useState<AccessUser[]>([]);
     const [entity, setEntity] = useState<Entity | null>(null);
     const [subclasses, setSubclasses] = useState<EntryClass[]>([]);
-    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
+    const [alert, setAlert] = useState<Alert>({
+        show: false,
+        message: '',
+        color: 'red',
+    });
 
     const fetchAliases = async (q: string | string[]): Promise<AliasOption[]> => {
         try {
@@ -93,9 +101,10 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityF
     // Populate subclass options.
     useEffect(() => {
         (async () => {
-
             try {
-                const entryClasses = await entriesApi.entryClassesList({ showCount: true });
+                const entryClasses = await entriesApi.entryClassesList({
+                    showCount: true,
+                });
                 const subclasses = entryClasses.filter(
                     (entity) => entity.type === 'entity',
                 );
@@ -124,10 +133,11 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityF
                         subtype: entity.subtype,
                         description: entity.description || '',
                         isPublic: entity.isPublic || false,
-                        aliases: entity.aliasesDetail?.map((alias) => ({
-                            value: alias.id,
-                            label: `${alias.subtype}:${alias.name}`,
-                        })) ?? [],
+                        aliases:
+                            entity.aliasesDetail?.map((alias) => ({
+                                value: alias.id,
+                                label: `${alias.subtype}:${alias.name}`,
+                            })) ?? [],
                     });
 
                     setAccessUsers(accesses);
@@ -203,12 +213,13 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityF
                     {isEdit ? 'Edit Entity' : 'Add New Entity'}
                 </h1>
 
-                <Tabs
-                    tabClass={TabClasses.PILL}
-                >
+                <Tabs tabClass={TabClasses.PILL}>
                     <Tab title='Settings' classes='space-y-4'>
                         <div className='p-8 backdrop-blur-sm rounded-md bg-cradle3 bg-opacity-20'>
-                            <form onSubmit={handleSubmit(onSubmit)} className='space-y-2'>
+                            <form
+                                onSubmit={handleSubmit(onSubmit)}
+                                className='space-y-2'
+                            >
                                 <FormField
                                     type='text'
                                     label='Name'
@@ -231,7 +242,10 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityF
                                             disabled={isEdit}
                                         >
                                             {subclasses.map((subclass, index) => (
-                                                <option key={index} value={subclass.subtype}>
+                                                <option
+                                                    key={index}
+                                                    value={subclass.subtype}
+                                                >
                                                     {subclass.subtype}
                                                 </option>
                                             ))}
@@ -273,12 +287,16 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityF
                                 </div>
                                 {/* Aliases Field */}
                                 <div className='w-full'>
-                                    <label className='block text-sm font-medium'>Aliases</label>
+                                    <label className='block text-sm font-medium'>
+                                        Aliases
+                                    </label>
                                     <div className='mt-1'>
                                         <Controller
                                             name='aliases'
                                             control={control}
-                                            render={({ field: { onChange, value } }) => (
+                                            render={({
+                                                field: { onChange, value },
+                                            }) => (
                                                 <Selector
                                                     value={value}
                                                     onChange={onChange}
@@ -297,7 +315,10 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityF
                                 </div>
                                 <AlertBox alert={alert} />
                                 <div className='flex gap-2'>
-                                    <button type='submit' className='btn btn-primary btn-block'>
+                                    <button
+                                        type='submit'
+                                        className='btn btn-primary btn-block'
+                                    >
                                         {isEdit ? 'Edit' : 'Add'}
                                     </button>
                                 </div>
@@ -305,7 +326,7 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityF
                         </div>
                     </Tab>
 
-                    {isEdit && entity && accesses.length > 0 &&
+                    {isEdit && entity && accesses.length > 0 && (
                         <Tab title='Access' classes='space-y-4'>
                             {accesses.map((access) => {
                                 const user = access.user;
@@ -318,10 +339,10 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityF
                                         accessLevel={access.accessType}
                                         searchKey={user.username}
                                     />
-                                )
+                                );
                             })}
                         </Tab>
-                    }
+                    )}
                 </Tabs>
             </div>
         </div>

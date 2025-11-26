@@ -1,16 +1,25 @@
 import { useContext } from 'react';
-import { useParams, useLocation, useNavigate, NavigateFunction, Location, Params } from 'react-router-dom';
+import {
+    Location,
+    NavigateFunction,
+    Params,
+    useLocation,
+    useNavigate,
+    useParams,
+} from 'react-router-dom';
 import { TabContext } from './TabContextProvider';
 
 interface TabContextReturnType {
     params: Params;
-    location: Location | {
-        pathname: string;
-        search: string;
-        hash: string;
-        state: any;
-        key: string;
-    };
+    location:
+        | Location
+        | {
+              pathname: string;
+              search: string;
+              hash: string;
+              state: any;
+              key: string;
+          };
     navigate: NavigateFunction | ((to: string, opts?: any) => void);
     isActive: boolean;
     isPaneActive: boolean;
@@ -46,7 +55,7 @@ export const useTabContext = (): TabContextReturnType => {
             // Background tabs cannot navigate
             navigate: () => {
                 console.warn(
-                    'Background tabs cannot navigate. Only the active tab in the active pane can change the URL.'
+                    'Background tabs cannot navigate. Only the active tab in the active pane can change the URL.',
                 );
             },
             // Tab state
@@ -58,9 +67,10 @@ export const useTabContext = (): TabContextReturnType => {
 
     // Active tab uses live router data, BUT we prefer params from context if available
     // because we might be in a Portal outside the React Router Route
-    const finalParams = (tabContext?.params && Object.keys(tabContext.params).length > 0)
-        ? (tabContext.params as Params)
-        : routerParams;
+    const finalParams =
+        tabContext?.params && Object.keys(tabContext.params).length > 0
+            ? (tabContext.params as Params)
+            : routerParams;
 
     return {
         params: finalParams,
@@ -85,5 +95,5 @@ export const useIsBackgroundTab = (): boolean => {
  */
 export const useIsActivePane = (): boolean => {
     const tabContext = useContext(TabContext);
-    return tabContext ? (tabContext.isPaneActive ?? true) : true;
+    return tabContext ? tabContext.isPaneActive ?? true : true;
 };

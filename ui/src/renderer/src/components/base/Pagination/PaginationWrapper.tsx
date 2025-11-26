@@ -25,7 +25,10 @@ function PaginationWrapper({
     ...props
 }: PaginationWrapperProps) {
     return (
-        <div className={`flex-shrink-0 ${disabled ? 'opacity-50 pointer-events-none' : ''} ${className}`} {...props}>
+        <div
+            className={`flex-shrink-0 ${disabled ? 'opacity-50 pointer-events-none' : ''} ${className}`}
+            {...props}
+        >
             <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}

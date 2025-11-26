@@ -3,7 +3,7 @@
  * Contexts for managing UI state: theme, modals, notifications, and layout
  */
 
-export { ThemeProvider, useTheme } from './ThemeContext';
+export { LayoutProvider, useLayout } from './LayoutContext';
 export { ModalProvider, useModal } from './ModalContext';
 export { NotificationProvider, useNotif } from './NotificationContext';
-export { LayoutProvider, useLayout } from './LayoutContext';
+export { ThemeProvider, useTheme } from './ThemeContext';

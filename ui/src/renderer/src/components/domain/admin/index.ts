@@ -1,4 +1,6 @@
 export { default as AdminPanel } from './AdminPanel';
+export { default as AdminPanelSection } from './AdminPanelSection';
+export { default as AdminPanelUserPermissions } from './AdminPanelUserPermissions';
 export { default as AdminPanelCardEnrichment } from './cards/AdminPanelCardEnrichment';
 export { default as AdminPanelCardEntity } from './cards/AdminPanelCardEntity';
 export { default as AdminPanelCardEntryType } from './cards/AdminPanelCardEntryType';
@@ -6,8 +8,6 @@ export { default as AdminPanelCardManagement } from './cards/AdminPanelCardManag
 export { default as AdminPanelCardTypeMapping } from './cards/AdminPanelCardTypeMapping';
 export { default as AdminPanelCardUser } from './cards/AdminPanelCardUser';
 export { default as AdminPanelPermissionCard } from './cards/AdminPanelPermissionCard';
-export { default as AdminPanelSection } from './AdminPanelSection';
-export { default as AdminPanelUserPermissions } from './AdminPanelUserPermissions';
 export { default as EnrichmentSettingsForm } from './forms/EnrichmentSettingsForm';
 export { default as EntityForm } from './forms/EntityForm';
 export { default as EntriesSettingsForm } from './forms/EntriesSettingsForm';
@@ -15,6 +15,5 @@ export { default as EntryTypeForm } from './forms/EntryTypeForm';
 export { default as FileSettingsForm } from './forms/FileSettingsForm';
 export { default as GraphSettingsForm } from './forms/GraphSettingsForm';
 export { default as NoteSettingsForm } from './forms/NoteSettingsForm';
-export { default as TypeMappingsEditor } from './TypeMappingsEditor';
 export { default as UserSettingsForm } from './forms/UserSettingsForm';
-
+export { default as TypeMappingsEditor } from './TypeMappingsEditor';

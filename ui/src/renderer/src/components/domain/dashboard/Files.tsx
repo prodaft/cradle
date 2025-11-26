@@ -1,12 +1,12 @@
-import { Search } from 'iconoir-react';
-import { ChangeEvent, FormEvent, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import FilesList from '@components/domain/files/FilesList';
+import { Search } from 'iconoir-react';
+import { ChangeEvent, FormEvent, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 interface SearchFilters {
-    linked_to: number | string;  // Entry ID (number) or empty string
+    linked_to: number | string; // Entry ID (number) or empty string
     entity_type: string;
     keyword: string;
     mimetype: string;
@@ -14,7 +14,7 @@ interface SearchFilters {
 
 interface FilesProps {
     obj: {
-        id?: number;  // Entry ID (BigAutoField)
+        id?: number; // Entry ID (BigAutoField)
         type?: string;
         [key: string]: any;
     };
@@ -118,8 +118,16 @@ export default function Files({ obj }: FilesProps) {
 
                         <div className='cradle-separator'></div>
 
-                        <button type='submit' className='cradle-btn cradle-btn-primary w-full md:w-auto px-8'>
-                            <Search className='inline-block mr-2' width={16} height={16} /> Search Files
+                        <button
+                            type='submit'
+                            className='cradle-btn cradle-btn-primary w-full md:w-auto px-8'
+                        >
+                            <Search
+                                className='inline-block mr-2'
+                                width={16}
+                                height={16}
+                            />{' '}
+                            Search Files
                         </button>
                     </form>
                 </div>

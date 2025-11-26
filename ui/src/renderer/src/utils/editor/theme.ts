@@ -21,10 +21,10 @@ export function createCradleTheme(isDarkMode: boolean) {
 
                 /* Code */
                 '--pm-code-background-color': isDarkMode
-                    ? 'var(--cradle-bg-tertiary)'    // purrmd-inline-code-bg-color
+                    ? 'var(--cradle-bg-tertiary)' // purrmd-inline-code-bg-color
                     : 'var(--cradle-bg-secondary)',
                 '--pm-code-btn-background-color': isDarkMode
-                    ? 'var(--cradle-bg-secondary)'   // code-block-bg-color
+                    ? 'var(--cradle-bg-secondary)' // code-block-bg-color
                     : 'var(--cradle-bg-tertiary)',
                 '--pm-code-btn-hover-background-color': isDarkMode
                     ? 'rgba(255, 140, 0, 0.1)'
@@ -71,6 +71,6 @@ export function createCradleTheme(isDarkMode: boolean) {
         },
         {
             dark: isDarkMode,
-        }
+        },
     );
 }

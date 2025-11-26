@@ -29,7 +29,9 @@ interface GraphQueryProps {
     setSelectedEntries: (entries: Set<Entry>) => void;
     entryGraphColors: Record<string, string>;
     disabledTypes: Set<string>;
-    setDisabledTypes: (types: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
+    setDisabledTypes: (
+        types: Set<string> | ((prev: Set<string>) => Set<string>),
+    ) => void;
     config: any;
     setConfig: (config: any) => void;
     SearchComponent: ComponentType<SearchComponentProps>;
@@ -79,10 +81,7 @@ export default function GraphQuery({
 
     return (
         <div className='h-full rounded-xl flex flex-col'>
-            <Tabs
-                defaultTab={0}
-                perTabClass=''
-            >
+            <Tabs defaultTab={0} perTabClass=''>
                 <Tab title='Search'>
                     <div className='flex flex-col flex-1 overflow-hidden h-[85vh]'>
                         <GraphControl
@@ -105,17 +104,23 @@ export default function GraphQuery({
                                 <>
                                     {/* Badges for selected entries */}
                                     <div className='flex flex-wrap gap-2 mb-2'>
-                                        {Array.from(selectedEntries).slice(0, 3).map((entry) => (
-                                            <span
-                                                key={entry.id || entry.value || String(entry)}
-                                                className='badge badge-outline-primary text-sm'
-                                            >
-                                                {entry.label ||
-                                                    entry.name ||
-                                                    entry.id ||
-                                                    String(entry)}
-                                            </span>
-                                        ))}
+                                        {Array.from(selectedEntries)
+                                            .slice(0, 3)
+                                            .map((entry) => (
+                                                <span
+                                                    key={
+                                                        entry.id ||
+                                                        entry.value ||
+                                                        String(entry)
+                                                    }
+                                                    className='badge badge-outline-primary text-sm'
+                                                >
+                                                    {entry.label ||
+                                                        entry.name ||
+                                                        entry.id ||
+                                                        String(entry)}
+                                                </span>
+                                            ))}
                                     </div>
 
                                     <NotesList
@@ -138,17 +143,23 @@ export default function GraphQuery({
                                 <>
                                     {/* Badges for selected entries */}
                                     <div className='flex flex-wrap gap-2 mb-2'>
-                                        {Array.from(selectedEntries).slice(0, 3).map((entry) => (
-                                            <span
-                                                key={entry.id || entry.value || String(entry)}
-                                                className='badge badge-outline-primary text-sm'
-                                            >
-                                                {entry.label ||
-                                                    entry.name ||
-                                                    entry.id ||
-                                                    String(entry)}
-                                            </span>
-                                        ))}
+                                        {Array.from(selectedEntries)
+                                            .slice(0, 3)
+                                            .map((entry) => (
+                                                <span
+                                                    key={
+                                                        entry.id ||
+                                                        entry.value ||
+                                                        String(entry)
+                                                    }
+                                                    className='badge badge-outline-primary text-sm'
+                                                >
+                                                    {entry.label ||
+                                                        entry.name ||
+                                                        entry.id ||
+                                                        String(entry)}
+                                                </span>
+                                            ))}
                                     </div>
 
                                     <RelationsList query={relationQuery} />

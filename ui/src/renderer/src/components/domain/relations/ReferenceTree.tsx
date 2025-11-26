@@ -2,11 +2,7 @@ import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { Entry, NoteRetrieve } from '@/types';
-import {
-    createDashboardLink,
-    SubtypeHierarchy,
-    truncateText,
-} from '@/utils/dashboard';
+import { createDashboardLink, SubtypeHierarchy, truncateText } from '@/utils/dashboard';
 import Collapsible from '@components/base/Collapsible/Collapsible';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -28,7 +24,9 @@ type NextPageStatus = number | 'loading' | 'end';
  */
 export default function ReferenceTree({ note }: ReferenceTreeProps) {
     const [references, setReferences] = useState<Record<string, Entry[]>>({});
-    const [nextPageStatus, setNextPageStatus] = useState<Record<string, NextPageStatus>>({});
+    const [nextPageStatus, setNextPageStatus] = useState<
+        Record<string, NextPageStatus>
+    >({});
     const { queryApi } = useApi();
     const { execute } = useAPICall();
     const { navigate, navigateLink } = useCradleNavigate();
@@ -67,14 +65,16 @@ export default function ReferenceTree({ note }: ReferenceTreeProps) {
             [path]: 'loading',
         }));
 
-        const response = await execute(() => queryApi.queryList({
-            subtype: [path],
-            referencedIn: note.id,
-            page,
-        }),
+        const response = await execute(
+            () =>
+                queryApi.queryList({
+                    subtype: [path],
+                    referencedIn: note.id,
+                    page,
+                }),
             {
                 errorMessage: 'Failed to fetch references',
-            }
+            },
         );
 
         setReferences((prev) => ({
@@ -133,12 +133,12 @@ export default function ReferenceTree({ note }: ReferenceTreeProps) {
                                         <span className='h-6 px-1 py-1 mx-1 my-1'>
                                             {/* Render pagination logic */}
                                             {nextPageStatus[`${path}${value}`] ===
-                                                'loading' ? (
+                                            'loading' ? (
                                                 <div className='spinner-dot-pulse spinner-sm'>
                                                     <div className='spinner-pulse-dot spinner-sm '></div>
                                                 </div>
                                             ) : nextPageStatus[`${path}${value}`] !==
-                                                'end' ? (
+                                              'end' ? (
                                                 <span
                                                     onClick={() =>
                                                         fetchReferences(

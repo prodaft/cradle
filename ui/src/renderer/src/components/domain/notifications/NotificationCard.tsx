@@ -1,7 +1,18 @@
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { AccessRequestAccessTypeEnum, AccessRequestNotification, instanceOfAccessRequestNotification, instanceOfNewUserNotification, instanceOfReportProcessingErrorNotification, instanceOfReportRenderNotification, NewUserNotification, Notification, ReportProcessingErrorNotification, ReportRenderNotification } from '@/services/cradle';
+import {
+    AccessRequestAccessTypeEnum,
+    AccessRequestNotification,
+    instanceOfAccessRequestNotification,
+    instanceOfNewUserNotification,
+    instanceOfReportProcessingErrorNotification,
+    instanceOfReportRenderNotification,
+    NewUserNotification,
+    Notification,
+    ReportProcessingErrorNotification,
+    ReportRenderNotification,
+} from '@/services/cradle';
 import { formatDate } from '@/utils/dates';
 import Tooltip from '@components/base/Tooltip/Tooltip';
 import { Mail, MailOpen } from 'iconoir-react';
@@ -16,24 +27,20 @@ export default function NotificationCard({
     notification,
     updateFlaggedNotificationsCount,
 }: NotificationCardProps) {
-    const {
-        id,
-        message,
-        timestamp,
-        isMarkedUnread,
-    } = notification;
+    const { id, message, timestamp, isMarkedUnread } = notification;
     const [unreadStatus, setUnreadStatus] = useState(isMarkedUnread);
     const { reportsApi, notificationsApi, accessApi, usersApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
     const { notify } = useNotif();
 
     const handleMarkUnread = (id: string) => {
-        notificationsApi.notificationsUpdate({
-            notificationId: id,
-            updateNotificationRequest: {
-                isMarkedUnread: !unreadStatus
-            }
-        })
+        notificationsApi
+            .notificationsUpdate({
+                notificationId: id,
+                updateNotificationRequest: {
+                    isMarkedUnread: !unreadStatus,
+                },
+            })
             .then(() => {
                 if (unreadStatus) {
                     updateFlaggedNotificationsCount((prevCount) => prevCount - 1);
@@ -45,7 +52,8 @@ export default function NotificationCard({
             .catch((error: any) => {
                 notify({
                     type: 'error',
-                    text: error.response?.data?.detail || 'Failed to update notification',
+                    text:
+                        error.response?.data?.detail || 'Failed to update notification',
                 });
             });
     };
@@ -54,13 +62,14 @@ export default function NotificationCard({
         const notif = notification as AccessRequestNotification;
         if (!notif.requestingUserId || !notif.entityId) return;
 
-        accessApi.accessUserUpdate({
-            userId: notif.requestingUserId,
-            entityId: notif.entityId!,
-            accessRequest: {
-                accessType: newAccess
-            }
-        })
+        accessApi
+            .accessUserUpdate({
+                userId: notif.requestingUserId,
+                entityId: notif.entityId!,
+                accessRequest: {
+                    accessType: newAccess,
+                },
+            })
             .then(() => {
                 notify({
                     type: 'success',
@@ -79,12 +88,13 @@ export default function NotificationCard({
         const notif = notification as NewUserNotification;
         if (!notif.newUser) return;
 
-        usersApi.usersUpdate({
-            userId: notif.newUser.id!,
-            userUpdateRequest: {
-                isActive: true,
-            }
-        })
+        usersApi
+            .usersUpdate({
+                userId: notif.newUser.id!,
+                userUpdateRequest: {
+                    isActive: true,
+                },
+            })
             .then(() => {
                 notify({
                     type: 'success',
@@ -196,7 +206,8 @@ export default function NotificationCard({
                     <button
                         className='btn btn-solid-secondary btn-sm'
                         onClick={(e) => {
-                            const notif = notification as ReportProcessingErrorNotification;
+                            const notif =
+                                notification as ReportProcessingErrorNotification;
                             navigateLink(`/reports/${notif.publishedReportId}`)(e);
                         }}
                     >

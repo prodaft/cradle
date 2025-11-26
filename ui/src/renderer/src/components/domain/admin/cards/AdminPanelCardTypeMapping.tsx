@@ -1,6 +1,6 @@
+import { capitalizeString } from '@/utils/dashboard';
 import { EditPencil } from 'iconoir-react/regular';
 import { ReactNode } from 'react';
-import { capitalizeString } from '@/utils/dashboard';
 import Card from '../../../base/Card/Card';
 import TypeMappingsEditor from '../TypeMappingsEditor';
 
@@ -13,7 +13,7 @@ interface AdminPanelCardTypeMappingProps {
 export default function AdminPanelCardTypeMapping({
     name,
     id,
-    setRightPane
+    setRightPane,
 }: AdminPanelCardTypeMappingProps) {
     const handleEditClick = () => {
         setRightPane(<TypeMappingsEditor id={id} onSave={() => {}} />);
@@ -34,7 +34,7 @@ export default function AdminPanelCardTypeMapping({
                 title={capitalizeString(name)}
                 actions={actions}
                 onClick={handleEditClick}
-                className="bg-cradle3 bg-opacity-20 backdrop-filter backdrop-blur-lg"
+                className='bg-cradle3 bg-opacity-20 backdrop-filter backdrop-blur-lg'
             />
         </>
     );

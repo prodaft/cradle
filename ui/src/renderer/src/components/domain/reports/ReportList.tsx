@@ -6,23 +6,14 @@ import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { useTabContext } from '@/hooks/tabs/useTabContext';
 import { Report } from '@/services/cradle';
-import {
-    capitalizeString,
-    truncateText
-} from '@/utils/dashboard';
+import { capitalizeString, truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import TableCard from '@components/base/Card/TableCard';
 import ListView, { SortDirection } from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import ActionsTable, { Action } from '@components/domain/activity/ActionsTable';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
-import {
-    Edit,
-    Eye,
-    PlusCircle,
-    RefreshCircle,
-    Trash,
-} from 'iconoir-react';
+import { Edit, Eye, PlusCircle, RefreshCircle, Trash } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -47,16 +38,19 @@ export default function ReportList() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [sortField, setSortField] = useState(searchParams.get('reports_sort_field') || 'created_at');
-    const [sortDirection, setSortDirection] = useState<SortDirection>(searchParams.get('reports_sort_direction') as SortDirection || 'desc');
+    const [sortField, setSortField] = useState(
+        searchParams.get('reports_sort_field') || 'created_at',
+    );
+    const [sortDirection, setSortDirection] = useState<SortDirection>(
+        (searchParams.get('reports_sort_direction') as SortDirection) || 'desc',
+    );
     const { reportsApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
     const { profile } = useProfile();
     const { setModal } = useModal();
     const [selectedReports, setSelectedReports] = useState<string[]>([]);
     const [pageSize, setPageSize] = useState(
-        Number(searchParams.get('reports_pagesize')) ||
-        10
+        Number(searchParams.get('reports_pagesize')) || 10,
     );
     const { execute } = useAPICall();
 
@@ -87,7 +81,9 @@ export default function ReportList() {
         setLoading(true);
         try {
             if (report_id) {
-                const report = await execute(() => reportsApi.reportsRetrieve({ id: report_id }));
+                const report = await execute(() =>
+                    reportsApi.reportsRetrieve({ id: report_id }),
+                );
                 setReports([report]);
             } else {
                 const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
@@ -126,8 +122,12 @@ export default function ReportList() {
                             const results = await Promise.allSettled(deletePromises);
 
                             // Count successes and failures
-                            const successes = results.filter(r => r.status === 'fulfilled').length;
-                            const failures = results.filter(r => r.status === 'rejected').length;
+                            const successes = results.filter(
+                                (r) => r.status === 'fulfilled',
+                            ).length;
+                            const failures = results.filter(
+                                (r) => r.status === 'rejected',
+                            ).length;
 
                             if (failures === 0) {
                                 notify({
@@ -171,7 +171,11 @@ export default function ReportList() {
         { key: 'actions', label: 'Actions' },
     ];
 
-    const renderRow = (report: Report, index: number, selectProps: SelectProps = {}) => {
+    const renderRow = (
+        report: Report,
+        index: number,
+        selectProps: SelectProps = {},
+    ) => {
         const { enableMultiSelect, isSelected, onSelect } = selectProps;
 
         return (
@@ -190,12 +194,13 @@ export default function ReportList() {
                 )}
                 <td className='w-8'>
                     <span
-                        className={`badge text-white ${report.status === 'done'
-                            ? 'bg-green-500'
-                            : report.status === 'error'
-                                ? 'bg-red-500'
-                                : 'bg-yellow-500'
-                            }`}
+                        className={`badge text-white ${
+                            report.status === 'done'
+                                ? 'bg-green-500'
+                                : report.status === 'error'
+                                  ? 'bg-red-500'
+                                  : 'bg-yellow-500'
+                        }`}
                     >
                         {capitalizeString(report.status || '')}
                     </span>
@@ -269,14 +274,19 @@ export default function ReportList() {
                                     text: `Are you sure you want to delete this report?`,
                                     onConfirm: async () => {
                                         try {
-                                            await reportsApi.reportsDestroy({ id: report.id! });
+                                            await reportsApi.reportsDestroy({
+                                                id: report.id!,
+                                            });
                                             fetchReports();
                                             notify({
                                                 type: 'success',
                                                 text: 'Report deleted successfully',
                                             });
                                         } catch (error) {
-                                            console.error('Delete report failed:', error);
+                                            console.error(
+                                                'Delete report failed:',
+                                                error,
+                                            );
                                             notify({
                                                 type: 'error',
                                                 text: 'Failed to delete report',
@@ -338,9 +348,14 @@ export default function ReportList() {
                                     onPageSizeChange={(newSize) => {
                                         setPageSize(newSize);
                                         setPage(1);
-                                        const newParams = new URLSearchParams(searchParams);
+                                        const newParams = new URLSearchParams(
+                                            searchParams,
+                                        );
                                         newParams.set('reports_page', '1');
-                                        newParams.set('reports_pagesize', String(newSize));
+                                        newParams.set(
+                                            'reports_pagesize',
+                                            String(newSize),
+                                        );
                                         setSearchParams(newParams, { replace: true });
                                     }}
                                     disabled={reports.length === 0}
@@ -358,8 +373,8 @@ export default function ReportList() {
                         sortDirection={sortDirection}
                         onSort={handleSort}
                         sortFieldMapping={sortFieldMapping}
-                        emptyMessage="No reports found."
-                        tableClassName="table table-zebra"
+                        emptyMessage='No reports found.'
+                        tableClassName='table table-zebra'
                         enableMultiSelect={true}
                         setSelected={setSelectedReports}
                     />

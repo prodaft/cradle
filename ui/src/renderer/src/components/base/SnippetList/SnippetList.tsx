@@ -28,7 +28,9 @@ export default function SnippetList({ userId = null }: SnippetListProps) {
     const loadSnippets = async () => {
         try {
             setLoading(true);
-            const response = await notesApi.notesSnippetsUserList({ userId: userId === null ? 'null' : String(userId) });
+            const response = await notesApi.notesSnippetsUserList({
+                userId: userId === null ? 'null' : String(userId),
+            });
             setSnippets((response as any) || []);
         } catch (error) {
             console.error('Error loading snippets:', error);
@@ -54,7 +56,7 @@ export default function SnippetList({ userId = null }: SnippetListProps) {
 
                         await notesApi.notesSnippetsUserCreate({
                             userId: userId === null ? 'null' : String(userId),
-                            snippetRequest: snippetData
+                            snippetRequest: snippetData,
                         });
                         await loadSnippets();
                     } catch (error) {
@@ -86,7 +88,7 @@ export default function SnippetList({ userId = null }: SnippetListProps) {
 
                         await notesApi.notesSnippetsUpdate({
                             snippetId: snippet.id,
-                            snippetRequest: snippetData
+                            snippetRequest: snippetData,
                         });
                         await loadSnippets();
                     } catch (error) {

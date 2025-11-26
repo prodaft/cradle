@@ -1,6 +1,6 @@
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { EditPencil } from 'iconoir-react';
 import type { NoteRetrieve } from '@services/cradle/models';
+import { EditPencil } from 'iconoir-react';
 
 interface EditNoteProps {
     note: NoteRetrieve;

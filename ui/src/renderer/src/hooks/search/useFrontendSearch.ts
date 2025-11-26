@@ -2,25 +2,25 @@
  * Hook for filtering React children based on search value
  */
 
-import { useEffect, useState, ReactElement } from 'react';
+import { ReactElement, useEffect, useState } from 'react';
 
 /**
  * Child element with searchKey prop
  */
 interface SearchableChild extends ReactElement {
-  props: {
-    searchKey: string;
-    [key: string]: any;
-  };
+    props: {
+        searchKey: string;
+        [key: string]: any;
+    };
 }
 
 /**
  * Return type for useFrontendSearch hook
  */
 export interface UseFrontendSearchReturn {
-  searchVal: string;
-  setSearchVal: (value: string) => void;
-  filteredChildren: SearchableChild[];
+    searchVal: string;
+    setSearchVal: (value: string) => void;
+    filteredChildren: SearchableChild[];
 }
 
 /**
@@ -37,22 +37,25 @@ export interface UseFrontendSearchReturn {
  * @param children - The children to be filtered
  * @returns Search state and filtered children
  */
-export const useFrontendSearch = (children: SearchableChild[]): UseFrontendSearchReturn => {
-  const [searchVal, setSearchVal] = useState<string>('');
-  const [filteredChildren, setFilteredChildren] = useState<SearchableChild[]>(children);
+export const useFrontendSearch = (
+    children: SearchableChild[],
+): UseFrontendSearchReturn => {
+    const [searchVal, setSearchVal] = useState<string>('');
+    const [filteredChildren, setFilteredChildren] =
+        useState<SearchableChild[]>(children);
 
-  useEffect(() => {
-    if (searchVal === '') {
-      setFilteredChildren(children);
-    } else {
-      const filtered = children.filter((child) =>
-        child.props.searchKey.toLowerCase().includes(searchVal.toLowerCase())
-      );
-      setFilteredChildren(filtered);
-    }
-  }, [searchVal, children]);
+    useEffect(() => {
+        if (searchVal === '') {
+            setFilteredChildren(children);
+        } else {
+            const filtered = children.filter((child) =>
+                child.props.searchKey.toLowerCase().includes(searchVal.toLowerCase()),
+            );
+            setFilteredChildren(filtered);
+        }
+    }, [searchVal, children]);
 
-  return { searchVal, setSearchVal, filteredChildren };
+    return { searchVal, setSearchVal, filteredChildren };
 };
 
 export default useFrontendSearch;

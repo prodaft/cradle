@@ -1,8 +1,8 @@
-import { PlusCircle } from 'iconoir-react';
-import { ReactElement, useMemo, useState } from 'react';
-import Tooltip from '@components/base/Tooltip/Tooltip';
 import useFrontendSearch from '@/hooks/search/useFrontendSearch';
 import { naturalSort } from '@/utils/dashboard';
+import Tooltip from '@components/base/Tooltip/Tooltip';
+import { PlusCircle } from 'iconoir-react';
+import { ReactElement, useMemo, useState } from 'react';
 
 interface AdminPanelSectionProps {
     title: string;
@@ -40,11 +40,11 @@ export default function AdminPanelSection({
     // Sort the filtered children based on their key property
     const sortedFilteredChildren = filteredChildren
         ? filteredChildren.sort((a, b) => {
-            // Convert keys to strings to ensure proper lexicographical comparison
-            const aKey = a.key?.toString() || '';
-            const bKey = b.key?.toString() || '';
-            return naturalSort(aKey, bKey);
-        })
+              // Convert keys to strings to ensure proper lexicographical comparison
+              const aKey = a.key?.toString() || '';
+              const bKey = b.key?.toString() || '';
+              return naturalSort(aKey, bKey);
+          })
         : [];
     return (
         <div className='w-full h-full flex flex-col rounded-md px-3'>
@@ -61,7 +61,9 @@ export default function AdminPanelSection({
                             <button
                                 className='h-fit ml-4 pt-1'
                                 onClick={() =>
-                                    handleAdd((x) => setAddedItems((prev) => [...prev, x]))
+                                    handleAdd((x) =>
+                                        setAddedItems((prev) => [...prev, x]),
+                                    )
                                 }
                             >
                                 <PlusCircle />

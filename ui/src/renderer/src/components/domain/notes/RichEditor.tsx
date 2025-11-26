@@ -6,13 +6,34 @@ import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import { cradleLinkColorPlugin, cradleLinksPlugin } from '@/utils/editor/linkplugin';
 import { createCradleTheme } from '@/utils/editor/theme';
-import { acceptCompletion, autocompletion, closeBrackets, completionKeymap } from '@codemirror/autocomplete';
-import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
+import {
+    acceptCompletion,
+    autocompletion,
+    closeBrackets,
+    completionKeymap,
+} from '@codemirror/autocomplete';
+import {
+    defaultKeymap,
+    history,
+    historyKeymap,
+    indentWithTab,
+} from '@codemirror/commands';
 import { markdown } from '@codemirror/lang-markdown';
-import { defaultHighlightStyle, indentOnInput, syntaxHighlighting } from '@codemirror/language';
+import {
+    defaultHighlightStyle,
+    indentOnInput,
+    syntaxHighlighting,
+} from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
 import { EditorState, Extension, StateEffect, Transaction } from '@codemirror/state';
-import { drawSelection, EditorView, highlightActiveLine, keymap, lineNumbers, rectangularSelection } from '@codemirror/view';
+import {
+    drawSelection,
+    EditorView,
+    highlightActiveLine,
+    keymap,
+    lineNumbers,
+    rectangularSelection,
+} from '@codemirror/view';
 import { GFM } from '@lezer/markdown';
 import {
     prosemarkBaseThemeSetup,
@@ -24,7 +45,16 @@ import { vim, Vim } from '@replit/codemirror-vim';
 import { FileReference } from '@services/cradle/models';
 import { Prec } from '@uiw/react-codemirror';
 import { NavArrowDown, NavArrowUp } from 'iconoir-react';
-import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import {
+    forwardRef,
+    memo,
+    useCallback,
+    useEffect,
+    useImperativeHandle,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import FileTable from '../files/FileTable';
 
 interface RichEditorProps {
@@ -48,18 +78,21 @@ export interface RichEditorRef {
  * RichEditor component that uses ProseMark for WYSIWYG markdown editing
  * This component provides a rich-text editing mode for Markdown content with instant preview
  */
-const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEditor({
-    noteid,
-    markdownContent,
-    setMarkdownContent,
-    fileData,
-    setFileData,
-    saveNote,
-    additionalExtensions = [],
-    enableEditing = true,
-    source = false,
-    editorUtils,
-}, ref) {
+const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEditor(
+    {
+        noteid,
+        markdownContent,
+        setMarkdownContent,
+        fileData,
+        setFileData,
+        saveNote,
+        additionalExtensions = [],
+        enableEditing = true,
+        source = false,
+        editorUtils,
+    },
+    ref,
+) {
     const [showFileList, setShowFileList] = useState(false);
     const { profile } = useProfile();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -93,11 +126,15 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
     const cradleTheme = useMemo(() => createCradleTheme(isDarkMode), [isDarkMode]);
 
-    useImperativeHandle(ref, () => ({
-        get view() {
-            return editorViewRef.current;
-        },
-    }), []);
+    useImperativeHandle(
+        ref,
+        () => ({
+            get view() {
+                return editorViewRef.current;
+            },
+        }),
+        [],
+    );
 
     useEffect(() => {
         markdownContentRef.current = markdownContent;
@@ -121,7 +158,10 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         return EditorView.domEventHandlers({
             click: (event, view) => {
                 const target = event.target;
-                if (target instanceof HTMLElement && target.classList.contains('code-block-copy-btn')) {
+                if (
+                    target instanceof HTMLElement &&
+                    target.classList.contains('code-block-copy-btn')
+                ) {
                     const codeBlock = target.closest('pre');
                     if (codeBlock) {
                         const code = codeBlock.textContent || '';
@@ -130,7 +170,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     return true;
                 }
                 return false;
-            }
+            },
         });
     }, [handleCodeBlockCopy]);
 
@@ -152,7 +192,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     prosemarkMarkdownSyntaxExtensions,
                     // Cradle editor extension
                     editorUtils.extension(),
-                ]
+                ],
             }),
             // Basic prosemark extensions
             prosemarkBasicSetup(),
@@ -164,7 +204,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             codeBlockCopyExtension,
             // Control when formatting marks are shown
             EditorView.contentAttributes.of({
-                'data-formatting-mode': source ? 'show' : 'auto'
+                'data-formatting-mode': source ? 'show' : 'auto',
             }),
             Prec.high(cradleTheme),
             EditorView.lineWrapping,
@@ -185,17 +225,19 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 ]),
             ),
             keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
-            keymap.of([{
-                key: 'Ctrl-s',
-                run: (cm: EditorView) => {
-                    if (!enableEditing) {
-                        return false;
-                    }
-                    setMarkdownContent(cm.state.doc.toString());
-                    saveNote(true);
-                    return true;
-                }
-            }]),
+            keymap.of([
+                {
+                    key: 'Ctrl-s',
+                    run: (cm: EditorView) => {
+                        if (!enableEditing) {
+                            return false;
+                        }
+                        setMarkdownContent(cm.state.doc.toString());
+                        saveNote(true);
+                        return true;
+                    },
+                },
+            ]),
             autocompletion(),
             ...editorUtils.autocomplete(),
             editorUtils.lint(),
@@ -212,7 +254,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 EditorView.theme({
                     '.cm-gutters': { display: 'none' },
                     '.cm-content': { paddingLeft: '0px' },
-                })
+                }),
             );
         }
 
@@ -238,15 +280,13 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         enableEditing,
         cradleTheme,
         saveNote,
-        setMarkdownContent
+        setMarkdownContent,
     ]);
 
     useEffect(() => {
         if (editorViewRef.current) {
             editorViewRef.current.dispatch({
-                effects: [
-                    StateEffect.reconfigure.of(extensions)
-                ]
+                effects: [StateEffect.reconfigure.of(extensions)],
             });
         }
     }, [extensions]);
@@ -270,7 +310,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                                 setMarkdownContent(newContent);
                             }
                         }
-                    }
+                    },
                 });
 
                 editorViewRef.current = view;
@@ -278,14 +318,17 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 console.error('Failed to initialize RichEditor:', error);
                 notify({
                     type: 'error',
-                    text: 'Failed to initialize editor. Please refresh the page.'
+                    text: 'Failed to initialize editor. Please refresh the page.',
                 });
             }
         }
     }, [extensions, setMarkdownContent, notify, markdownContent]);
 
     useEffect(() => {
-        if (editorViewRef.current && markdownContent !== editorViewRef.current.state.doc.toString()) {
+        if (
+            editorViewRef.current &&
+            markdownContent !== editorViewRef.current.state.doc.toString()
+        ) {
             // We only update if the difference is significant or if it's a fresh load
             // But here we just blindly update which might cause cursor jumps if typing fast and prop updates lag
             // However, markdownContentRef check in dispatch prevents local loops.
@@ -296,8 +339,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 changes: {
                     from: 0,
                     to: editorViewRef.current.state.doc.length,
-                    insert: markdownContent
-                }
+                    insert: markdownContent,
+                },
             });
         }
     }, [markdownContent]);
@@ -316,20 +359,22 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     }, []);
 
     return (
-        <div className={`${!source ? 'rich-editor' : ''} h-full w-full flex flex-col flex-1`}>
+        <div
+            className={`${!source ? 'rich-editor' : ''} h-full w-full flex flex-col flex-1`}
+        >
             <div className='h-full w-full flex flex-col overflow-auto'>
                 <div className='flex h-full overflow-y-hidden'>
                     <div
                         ref={editorRef}
                         className='w-full overflow-y-auto rounded-lg rich-editor'
-                        role="textbox"
-                        aria-label="Rich text editor"
-                        aria-multiline="true"
+                        role='textbox'
+                        aria-label='Rich text editor'
+                        aria-multiline='true'
                         tabIndex={0}
                         style={{
                             minHeight: '400px',
                             backgroundColor: 'transparent',
-                            color: isDarkMode ? '#FFFFFF' : '#000000'
+                            color: isDarkMode ? '#FFFFFF' : '#000000',
                         }}
                     />
                 </div>
@@ -380,4 +425,3 @@ export default memo(RichEditor, (prevProps, nextProps) => {
         prevProps.enableEditing === nextProps.enableEditing
     );
 });
-

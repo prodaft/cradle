@@ -11,17 +11,17 @@
  * @throws Error if the file upload fails
  */
 export async function uploadFile(presignedUrl: string, file: File): Promise<Response> {
-  const response = await fetch(presignedUrl, {
-    method: 'PUT',
-    body: file,
-    headers: {
-      'Content-Type': file.type || 'application/octet-stream',
-    },
-  });
+    const response = await fetch(presignedUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+            'Content-Type': file.type || 'application/octet-stream',
+        },
+    });
 
-  if (!response.ok) {
-    throw new Error(`File upload failed: ${response.statusText}`);
-  }
+    if (!response.ok) {
+        throw new Error(`File upload failed: ${response.statusText}`);
+    }
 
-  return response;
+    return response;
 }

@@ -5,9 +5,15 @@ import { HashRouter, Outlet, Route, Routes } from 'react-router-dom';
 const Login = React.lazy(() => import('./components/domain/auth/Login'));
 const Register = React.lazy(() => import('./components/domain/auth/Register'));
 const ConfirmEmail = React.lazy(() => import('./components/domain/auth/ConfirmEmail'));
-const ResetPassword = React.lazy(() => import('./components/domain/auth/ResetPassword'));
-const ForgotPassword = React.lazy(() => import('./components/domain/auth/ForgotPassword'));
-const MainLayout = React.lazy(() => import('./components/layout/MainLayout/MainLayout'));
+const ResetPassword = React.lazy(
+    () => import('./components/domain/auth/ResetPassword'),
+);
+const ForgotPassword = React.lazy(
+    () => import('./components/domain/auth/ForgotPassword'),
+);
+const MainLayout = React.lazy(
+    () => import('./components/layout/MainLayout/MainLayout'),
+);
 
 const Documents = React.lazy(() => import('./components/domain/files/Documents'));
 const Files = React.lazy(() => import('./components/domain/files/Files'));
@@ -26,9 +32,7 @@ const GraphExplorer = React.lazy(
     () => import('./components/domain/graph/GraphExplorer'),
 );
 const ReportList = React.lazy(() => import('./components/domain/reports/ReportList'));
-const Reports = React.lazy(
-    () => import('./components/domain/reports/Reports'),
-);
+const Reports = React.lazy(() => import('./components/domain/reports/Reports'));
 const DigestData = React.lazy(() => import('./components/domain/activity/DigestData'));
 const EnrichmentRequests = React.lazy(
     () => import('./components/domain/enrichment/EnrichmentRequests'),
@@ -71,55 +75,95 @@ function App() {
                                             <LayoutProvider>
                                                 <PaneTabsProvider>
                                                     <ModalProvider>
-                                                        <Suspense fallback={<CradleLoading />}>
-                                                        <GlobalTabPortals />
-                                                        <Routes>
-                                                            <Route
-                                                                element={
-                                                                    <PrivateRoute fallback={'/login'} />
-                                                                }
-                                                            >
-                                                                <Route path='/' element={<MainLayout />}>
-                                                                        <Route index element={<Welcome />} />
+                                                        <Suspense
+                                                            fallback={<CradleLoading />}
+                                                        >
+                                                            <GlobalTabPortals />
+                                                            <Routes>
+                                                                <Route
+                                                                    element={
+                                                                        <PrivateRoute
+                                                                            fallback={
+                                                                                '/login'
+                                                                            }
+                                                                        />
+                                                                    }
+                                                                >
+                                                                    <Route
+                                                                        path='/'
+                                                                        element={
+                                                                            <MainLayout />
+                                                                        }
+                                                                    >
+                                                                        <Route
+                                                                            index
+                                                                            element={
+                                                                                <Welcome />
+                                                                            }
+                                                                        />
                                                                         <Route
                                                                             path='/not-implemented'
-                                                                            element={<FeatureNotImplemented />}
+                                                                            element={
+                                                                                <FeatureNotImplemented />
+                                                                            }
                                                                         />
                                                                         <Route
                                                                             path='/notes'
-                                                                            element={<Documents />}
+                                                                            element={
+                                                                                <Documents />
+                                                                            }
                                                                         />
                                                                         <Route
                                                                             path='/files'
-                                                                            element={<Files />}
+                                                                            element={
+                                                                                <Files />
+                                                                            }
                                                                         />
                                                                         <Route
                                                                             path='/digest-data'
-                                                                            element={<DigestData />}
+                                                                            element={
+                                                                                <DigestData />
+                                                                            }
                                                                         />
                                                                         <Route
                                                                             path='/enrich'
-                                                                            element={<EnrichmentRequests />}
+                                                                            element={
+                                                                                <EnrichmentRequests />
+                                                                            }
                                                                         />
                                                                         <Route
                                                                             path='/dashboards/:subtype/:name'
-                                                                            element={<Dashboard />}
+                                                                            element={
+                                                                                <Dashboard />
+                                                                            }
                                                                         />
                                                                         <Route
                                                                             path='/notes/:id'
-                                                                            element={<NoteViewer />}
+                                                                            element={
+                                                                                <NoteViewer />
+                                                                            }
                                                                         />
                                                                         <Route
                                                                             path='/knowledge-graph'
-                                                                            element={<GraphExplorer GraphSearchComponent={GraphSearch} />}
+                                                                            element={
+                                                                                <GraphExplorer
+                                                                                    GraphSearchComponent={
+                                                                                        GraphSearch
+                                                                                    }
+                                                                                />
+                                                                            }
                                                                         />
                                                                         <Route
                                                                             path='/reports'
-                                                                            element={<Reports />}
+                                                                            element={
+                                                                                <Reports />
+                                                                            }
                                                                         />
                                                                         <Route
                                                                             path='/reports/:report_id'
-                                                                            element={<ReportList />}
+                                                                            element={
+                                                                                <ReportList />
+                                                                            }
                                                                         />
                                                                         <Route
                                                                             path='/settings'
@@ -129,51 +173,68 @@ function App() {
                                                                         />
                                                                         <Route
                                                                             path='/manage'
-                                                                            element={<Outlet />}
+                                                                            element={
+                                                                                <Outlet />
+                                                                            }
                                                                         >
                                                                             <Route
                                                                                 index
-                                                                                element={<AdminPanel />}
+                                                                                element={
+                                                                                    <AdminPanel />
+                                                                                }
                                                                             />
                                                                             <Route
                                                                                 path='/manage/add/user'
                                                                                 element={
                                                                                     <AccountSettings
-                                                                                        isEdit={false}
+                                                                                        isEdit={
+                                                                                            false
+                                                                                        }
                                                                                     />
                                                                                 }
                                                                             />
                                                                         </Route>
+                                                                    </Route>
                                                                 </Route>
-                                                            </Route>
-                                                            <Route path='/login' element={<Login />} />
-                                                            <Route
-                                                                path='/confirm-email'
-                                                                element={<ConfirmEmail />}
-                                                            />
-                                                            <Route
-                                                                path='/reset-password'
-                                                                element={<ResetPassword />}
-                                                            />
-                                                            <Route
-                                                                path='/forgot-password'
-                                                                element={<ForgotPassword />}
-                                                            />
-                                                            <Route
-                                                                path='/register'
-                                                                element={<Register />}
-                                                            />
-                                                            <Route
-                                                                path='/not-found'
-                                                                element={
-                                                                    <NotFound
-                                                                        message={
-                                                                            "We can't seem to find the page you are looking for."
-                                                                        }
-                                                                    />
-                                                                }
-                                                            />
-                                                        </Routes>
+                                                                <Route
+                                                                    path='/login'
+                                                                    element={<Login />}
+                                                                />
+                                                                <Route
+                                                                    path='/confirm-email'
+                                                                    element={
+                                                                        <ConfirmEmail />
+                                                                    }
+                                                                />
+                                                                <Route
+                                                                    path='/reset-password'
+                                                                    element={
+                                                                        <ResetPassword />
+                                                                    }
+                                                                />
+                                                                <Route
+                                                                    path='/forgot-password'
+                                                                    element={
+                                                                        <ForgotPassword />
+                                                                    }
+                                                                />
+                                                                <Route
+                                                                    path='/register'
+                                                                    element={
+                                                                        <Register />
+                                                                    }
+                                                                />
+                                                                <Route
+                                                                    path='/not-found'
+                                                                    element={
+                                                                        <NotFound
+                                                                            message={
+                                                                                "We can't seem to find the page you are looking for."
+                                                                            }
+                                                                        />
+                                                                    }
+                                                                />
+                                                            </Routes>
                                                         </Suspense>
                                                     </ModalProvider>
                                                 </PaneTabsProvider>
@@ -191,4 +252,3 @@ function App() {
 }
 
 export default App;
-

@@ -1,4 +1,3 @@
-import React from 'react';
 import { useProfile, useTheme } from '@contexts';
 import LayoutManager from '../LayoutManager/LayoutManager';
 import Navbar from '../Navbar/Navbar';
@@ -18,35 +17,35 @@ import Sidebar from '../Sidebar/Sidebar';
  * ```
  */
 export default function MainLayout(): JSX.Element {
-  const { profile } = useProfile();
-  const { isDarkMode, toggleTheme } = useTheme();
+    const { profile } = useProfile();
+    const { isDarkMode, toggleTheme } = useTheme();
 
-  const handleNotifications = () => {
-    // Handle notifications panel toggle
-    console.log('Toggle notifications panel');
-  };
+    const handleNotifications = () => {
+        // Handle notifications panel toggle
+        console.log('Toggle notifications panel');
+    };
 
-  return (
-    <div className='h-screen w-screen flex flex-col overflow-hidden'>
-      {/* Navbar - Top of screen */}
-      <Navbar contents={[]} />
+    return (
+        <div className='h-screen w-screen flex flex-col overflow-hidden'>
+            {/* Navbar - Top of screen */}
+            <Navbar contents={[]} />
 
-      {/* Main Content Area - Below navbar */}
-      <div className='flex-1 flex overflow-hidden'>
-        {/* Sidebar */}
-        <Sidebar
-          showNotifications={false}
-          unreadNotificationsCount={0}
-          handleNotifications={handleNotifications}
-          isDarkMode={isDarkMode}
-          onThemeToggle={toggleTheme}
-        />
+            {/* Main Content Area - Below navbar */}
+            <div className='flex-1 flex overflow-hidden'>
+                {/* Sidebar */}
+                <Sidebar
+                    showNotifications={false}
+                    unreadNotificationsCount={0}
+                    handleNotifications={handleNotifications}
+                    isDarkMode={isDarkMode}
+                    onThemeToggle={toggleTheme}
+                />
 
-        {/* Content Area */}
-        <div className='flex-1 overflow-hidden'>
-          <LayoutManager outletContext={{}} />
+                {/* Content Area */}
+                <div className='flex-1 overflow-hidden'>
+                    <LayoutManager outletContext={{}} />
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }

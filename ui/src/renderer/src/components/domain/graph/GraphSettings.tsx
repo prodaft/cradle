@@ -1,5 +1,5 @@
-import { ChangeEvent } from 'react';
 import type { GraphEdge } from '@/types/index';
+import { ChangeEvent } from 'react';
 
 interface Node {
     [key: string]: any;
@@ -21,8 +21,12 @@ interface GraphSettingsProps {
     edges: GraphEdge[];
 }
 
-export default function GraphSettings({ config, setConfig, nodes, edges }: GraphSettingsProps) {
-
+export default function GraphSettings({
+    config,
+    setConfig,
+    nodes,
+    edges,
+}: GraphSettingsProps) {
     return (
         <div className='px-8 pt-3'>
             <div className='flex flex-wrap gap-2 mt-2'>
@@ -86,7 +90,9 @@ export default function GraphSettings({ config, setConfig, nodes, edges }: Graph
                     },
                 ].map(({ label, value, min, max, step, key }) => (
                     <div key={key} className='flex items-center gap-3'>
-                        <label className='text-sm w-32 whitespace-nowrap'>{label}</label>
+                        <label className='text-sm w-32 whitespace-nowrap'>
+                            {label}
+                        </label>
                         <input
                             type='range'
                             min={min}

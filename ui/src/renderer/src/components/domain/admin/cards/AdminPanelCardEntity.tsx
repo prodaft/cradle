@@ -1,14 +1,14 @@
-import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
-import { ReactNode } from 'react';
 import { useModal } from '@/contexts/ui/ModalContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import ActivityList from '../../activity/ActivityList';
-import EntityForm from '../forms/EntityForm';
+import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
+import { ReactNode } from 'react';
 import Card from '../../../base/Card/Card';
 import ConfirmDeletionModal from '../../../modals/base/ConfirmDeletionModal';
+import ActivityList from '../../activity/ActivityList';
+import EntityForm from '../forms/EntityForm';
 
 interface AdminPanelCardEntityProps {
     name: string;
@@ -38,12 +38,17 @@ export default function AdminPanelCardEntity({
             await entriesApi.entitiesDestroy({ entityId: Number(id) });
             onDelete();
         },
-        { successMessage: 'Entity deleted successfully' }
+        { successMessage: 'Entity deleted successfully' },
     );
 
     const handleActivityClick = () => {
         setRightPane(
-            <ActivityList content_type='entry' objectId={String(id)} name={name} key={String(id)} />,
+            <ActivityList
+                content_type='entry'
+                objectId={String(id)}
+                name={name}
+                key={String(id)}
+            />,
         );
     };
 

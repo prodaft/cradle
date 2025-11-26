@@ -16,11 +16,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
 contextBridge.exposeInMainWorld('electronUpdater', {
     onUpdateAvailable: (callback: (info: unknown) => void) =>
-        ipcRenderer.on('update-available', (_: IpcRendererEvent, info: unknown) => callback(info)),
+        ipcRenderer.on('update-available', (_: IpcRendererEvent, info: unknown) =>
+            callback(info),
+        ),
     onUpdateDownloaded: (callback: (info: unknown) => void) =>
-        ipcRenderer.on('update-downloaded', (_: IpcRendererEvent, info: unknown) => callback(info)),
+        ipcRenderer.on('update-downloaded', (_: IpcRendererEvent, info: unknown) =>
+            callback(info),
+        ),
     onUpdateError: (callback: (error: unknown) => void) =>
-        ipcRenderer.on('update-error', (_: IpcRendererEvent, error: unknown) => callback(error)),
+        ipcRenderer.on('update-error', (_: IpcRendererEvent, error: unknown) =>
+            callback(error),
+        ),
 } as ElectronUpdater);
 
 // Declare global types for window

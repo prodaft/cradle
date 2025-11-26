@@ -11,30 +11,30 @@ import type { NotificationOptions } from '@/types/index';
  * Parsed API error structure
  */
 export interface ParsedAPIError {
-  code: string;
-  detail: string;
-  status: number;
-  title: string;
-  type?: string;
-  instance: string;
-  timestamp: string;
-  isValidationError: boolean;
-  fieldErrors: Record<string, string[]>;
-  raw: any;
+    code: string;
+    detail: string;
+    status: number;
+    title: string;
+    type?: string;
+    instance: string;
+    timestamp: string;
+    isValidationError: boolean;
+    fieldErrors: Record<string, string[]>;
+    raw: any;
 }
 
 /**
  * API error response structure
  */
 interface APIErrorResponse {
-  code?: string;
-  detail?: string;
-  status: number;
-  title?: string;
-  type?: string;
-  instance?: string;
-  timestamp?: string;
-  errors?: Record<string, string[]>;
+    code?: string;
+    detail?: string;
+    status: number;
+    title?: string;
+    type?: string;
+    instance?: string;
+    timestamp?: string;
+    errors?: Record<string, string[]>;
 }
 
 /**
@@ -42,9 +42,9 @@ interface APIErrorResponse {
  * @deprecated Import Alert from @/types instead for consistent alert handling
  */
 export interface Alert {
-  show: boolean;
-  message: string;
-  color: 'success' | 'error' | 'warning' | 'info' | string;
+    show: boolean;
+    message: string;
+    color: 'success' | 'error' | 'warning' | 'info' | string;
 }
 
 /**
@@ -54,44 +54,44 @@ export interface Alert {
  * @returns Parsed error object
  */
 export async function parseAPIError(error: any): Promise<ParsedAPIError> {
-  // Network error (no response from server)
-  if (!error.response) {
+    // Network error (no response from server)
+    if (!error.response) {
+        return {
+            code: 'NETWORK_ERROR',
+            detail: 'Unable to connect to the server. Please check your connection.',
+            status: 0,
+            title: 'Network Error',
+            instance: error.config?.url || 'unknown',
+            timestamp: new Date().toISOString(),
+            isValidationError: false,
+            fieldErrors: {},
+            raw: error,
+        };
+    }
+
+    const data: APIErrorResponse = (await error.response.json()) || {};
+
     return {
-      code: 'NETWORK_ERROR',
-      detail: 'Unable to connect to the server. Please check your connection.',
-      status: 0,
-      title: 'Network Error',
-      instance: error.config?.url || 'unknown',
-      timestamp: new Date().toISOString(),
-      isValidationError: false,
-      fieldErrors: {},
-      raw: error,
+        code: data.code || 'UNKNOWN_ERROR',
+        detail: data.detail || 'An error occurred',
+        status: data.status,
+        title: data.title || 'Error',
+        type: data.type,
+        instance: data.instance || error.config?.url || 'unknown',
+        timestamp: data.timestamp || new Date().toISOString(),
+        isValidationError: data.code === 'VALIDATION_ERROR',
+        fieldErrors: data.errors || {},
+        raw: data,
     };
-  }
-
-  const data: APIErrorResponse = (await error.response.json()) || {};
-
-  return {
-    code: data.code || 'UNKNOWN_ERROR',
-    detail: data.detail || 'An error occurred',
-    status: data.status,
-    title: data.title || 'Error',
-    type: data.type,
-    instance: data.instance || error.config?.url || 'unknown',
-    timestamp: data.timestamp || new Date().toISOString(),
-    isValidationError: data.code === 'VALIDATION_ERROR',
-    fieldErrors: data.errors || {},
-    raw: data,
-  };
 }
 
 /**
  * Options for handling API errors
  */
 export interface HandleAPIErrorOptions {
-  message?: string;
-  duration?: number;
-  notifyValidation?: boolean;
+    message?: string;
+    duration?: number;
+    notifyValidation?: boolean;
 }
 
 /**
@@ -103,21 +103,21 @@ export interface HandleAPIErrorOptions {
  * @returns Parsed error object
  */
 export function handleAPIError(
-  parsed: ParsedAPIError,
-  notify: (options: NotificationOptions) => void,
-  options: HandleAPIErrorOptions = {}
+    parsed: ParsedAPIError,
+    notify: (options: NotificationOptions) => void,
+    options: HandleAPIErrorOptions = {},
 ): ParsedAPIError {
-  if (parsed.isValidationError && !options.notifyValidation) {
+    if (parsed.isValidationError && !options.notifyValidation) {
+        return parsed;
+    }
+
+    notify({
+        type: 'error',
+        text: options.message || parsed.detail,
+        duration: options.duration || 5000,
+    });
+
     return parsed;
-  }
-
-  notify({
-    type: 'error',
-    text: options.message || parsed.detail,
-    duration: options.duration || 5000,
-  });
-
-  return parsed;
 }
 
 /**
@@ -128,7 +128,7 @@ export function handleAPIError(
  * @returns True if the error code matches
  */
 export function isErrorCode(parsed: ParsedAPIError, code: string): boolean {
-  return parsed.code === code;
+    return parsed.code === code;
 }
 
 /**
@@ -138,7 +138,7 @@ export function isErrorCode(parsed: ParsedAPIError, code: string): boolean {
  * @returns Field errors object
  */
 export function getFieldErrors(parsed: ParsedAPIError): Record<string, string[]> {
-  return parsed.fieldErrors;
+    return parsed.fieldErrors;
 }
 
 /**
@@ -148,8 +148,11 @@ export function getFieldErrors(parsed: ParsedAPIError): Record<string, string[]>
  * @param fallback - Fallback message if none found
  * @returns Error message
  */
-export function getErrorMessage(parsed: ParsedAPIError, fallback: string = 'An error occurred'): string {
-  return parsed.detail || fallback;
+export function getErrorMessage(
+    parsed: ParsedAPIError,
+    fallback: string = 'An error occurred',
+): string {
+    return parsed.detail || fallback;
 }
 
 /**
@@ -159,7 +162,7 @@ export function getErrorMessage(parsed: ParsedAPIError, fallback: string = 'An e
  * @returns True if the error is a validation error
  */
 export function isValidationError(parsed: ParsedAPIError): boolean {
-  return parsed.isValidationError;
+    return parsed.isValidationError;
 }
 
 /**
@@ -169,7 +172,7 @@ export function isValidationError(parsed: ParsedAPIError): boolean {
  * @returns HTTP status code
  */
 export function getErrorStatus(parsed: ParsedAPIError): number {
-  return parsed.status;
+    return parsed.status;
 }
 
 // ============================================================================
@@ -182,7 +185,7 @@ export function getErrorStatus(parsed: ParsedAPIError): number {
  * @returns Trimmed string
  */
 const trimMore = (str: string): string => {
-  return str.trim().replace(/^"/g, '').replace(/"$/g, '');
+    return str.trim().replace(/^"/g, '').replace(/"$/g, '');
 };
 
 /**
@@ -200,51 +203,51 @@ const trimMore = (str: string): string => {
  * @returns Function to display the error message
  */
 export const displayError = (
-  setAlert: (alert: Alert) => void,
-  navigate?: (path: string) => void
+    setAlert: (alert: Alert) => void,
+    navigate?: (path: string) => void,
 ): ((err: any) => void) => {
-  return (err: any) => {
-    if (err.response && err.response.status === 401 && navigate) {
-      setAlert({
-        show: true,
-        message: 'Your session has expired. Please log back in.',
-        color: 'red',
-      });
-      navigate('/login');
-      return;
-    }
-
-    let message: string | null = null;
-
-    if (err.response && err.response.status === 500) {
-      message = 'Server error. Please try again later.';
-    }
-
-    if (!message && err.response && err.response.data) {
-      if (err.response.data.detail) {
-        message = `${err.response.status}: ${err.response.data.detail}`;
-      }
-      for (const key in err.response.data) {
-        if (message) {
-          break;
+    return (err: any) => {
+        if (err.response && err.response.status === 401 && navigate) {
+            setAlert({
+                show: true,
+                message: 'Your session has expired. Please log back in.',
+                color: 'red',
+            });
+            navigate('/login');
+            return;
         }
-        if (key.includes('error') || key.includes('detail')) {
-          message = JSON.stringify(err.response.data[key]);
+
+        let message: string | null = null;
+
+        if (err.response && err.response.status === 500) {
+            message = 'Server error. Please try again later.';
         }
-      }
-      if (!message) {
-        message = JSON.stringify(err.response.data);
-      }
-    }
 
-    if (!message && err.message) {
-      message = err.message.trim('"');
-    }
-    if (!message) {
-      message = 'An unknown error occurred.';
-      console.log(err);
-    }
+        if (!message && err.response && err.response.data) {
+            if (err.response.data.detail) {
+                message = `${err.response.status}: ${err.response.data.detail}`;
+            }
+            for (const key in err.response.data) {
+                if (message) {
+                    break;
+                }
+                if (key.includes('error') || key.includes('detail')) {
+                    message = JSON.stringify(err.response.data[key]);
+                }
+            }
+            if (!message) {
+                message = JSON.stringify(err.response.data);
+            }
+        }
 
-    setAlert({ show: true, message: trimMore(message), color: 'red' });
-  };
+        if (!message && err.message) {
+            message = err.message.trim('"');
+        }
+        if (!message) {
+            message = 'An unknown error occurred.';
+            console.log(err);
+        }
+
+        setAlert({ show: true, message: trimMore(message), color: 'red' });
+    };
 };

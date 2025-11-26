@@ -22,7 +22,10 @@ interface FileItemProps {
     file: FileReferenceWithNote;
 }
 
-const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem({ id, file, ...props }, ref) {
+const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem(
+    { id, file, ...props },
+    ref,
+) {
     const { navigateLink } = useCradleNavigate();
     const { fileTransferApi } = useApi();
     const [hidden, setHidden] = useState(false);
@@ -31,17 +34,18 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem({ i
 
     const downloadFile = async () => {
         if (file.bucketName && file.minioFileName) {
-            let response = await execute(() => fileTransferApi.fileTransferDownloadRetrieve({
-                bucketName: file.bucketName,
-                minioFileName: file.minioFileName,
-            }));
+            let response = await execute(() =>
+                fileTransferApi.fileTransferDownloadRetrieve({
+                    bucketName: file.bucketName,
+                    minioFileName: file.minioFileName,
+                }),
+            );
 
             const { presigned } = response;
             const link = document.createElement('a');
             link.href = presigned;
 
-            const fileName =
-                file.minioFileName.split('/').pop() || file.minioFileName;
+            const fileName = file.minioFileName.split('/').pop() || file.minioFileName;
             link.download = fileName;
             document.body.appendChild(link);
 
@@ -108,7 +112,6 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem({ i
                             {file.timestamp ? formatDate(file.timestamp) : 'N/A'}
                         </span>
 
-
                         {file.sha256Hash && (
                             <>
                                 <span className='text-zinc-700 mx-1'>|</span>
@@ -117,7 +120,8 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem({ i
                                     onClick={() => copyToClipboard(file.sha256Hash!)}
                                     title='Click to copy'
                                 >
-                                    <strong>SHA256:</strong> {file.sha256Hash.substring(0, 21)}...
+                                    <strong>SHA256:</strong>{' '}
+                                    {file.sha256Hash.substring(0, 21)}...
                                 </span>
                             </>
                         )}
@@ -125,9 +129,7 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem({ i
                 </div>
                 <div className='flex space-x-2 ml-4'>
                     <button
-                        onClick={() =>
-                            downloadFile()
-                        }
+                        onClick={() => downloadFile()}
                         className='text-white hover:bg-white/20 p-2 rounded-full '
                         title='Download file'
                     >

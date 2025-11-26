@@ -46,12 +46,16 @@ export default function RelationsList({ query }: RelationsListProps) {
     const fetchRelations = async () => {
         setLoading(true);
         try {
-            const response = await execute(() => entriesApi.entriesRelationsRetrieve({
-                page: page,
-                ...query,
-            }), {
-                errorMessage: 'Failed to fetch relations',
-            });
+            const response = await execute(
+                () =>
+                    entriesApi.entriesRelationsRetrieve({
+                        page: page,
+                        ...query,
+                    }),
+                {
+                    errorMessage: 'Failed to fetch relations',
+                },
+            );
             setRelations(response.results);
             setTotalPages(response.totalPages);
         } finally {

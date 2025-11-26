@@ -72,16 +72,20 @@ const GraphLegend = ({
                                     Object.keys(entryGraphColors),
                                 ).convert(
                                     // --- Render for internal nodes (categories that have child categories) ---
-                                    (value: string, children: ReactNode, childValues: string[]) => {
+                                    (
+                                        value: string,
+                                        children: ReactNode,
+                                        childValues: string[],
+                                    ) => {
                                         // Extract the path for this level
                                         const path =
                                             childValues.length > 0 &&
-                                                childValues[0].includes('/')
+                                            childValues[0].includes('/')
                                                 ? childValues[0].substring(
-                                                    0,
-                                                    childValues[0].lastIndexOf('/') +
-                                                    1,
-                                                )
+                                                      0,
+                                                      childValues[0].lastIndexOf('/') +
+                                                          1,
+                                                  )
                                                 : '';
 
                                         // Get leaf node values for this category
@@ -139,10 +143,11 @@ const GraphLegend = ({
                                         >
                                             <div className='dark:text-zinc-300 text-xs w-full break-all flex flex-row flex-wrap justify-start items-center'>
                                                 <div
-                                                    className={`flex flex-row items-center space-x-2 cursor-pointer ${disabledTypes.has(path + value)
+                                                    className={`flex flex-row items-center space-x-2 cursor-pointer ${
+                                                        disabledTypes.has(path + value)
                                                             ? 'opacity-50'
                                                             : ''
-                                                        }`}
+                                                    }`}
                                                     onClick={() =>
                                                         toggleDisabledType(path + value)
                                                     }
@@ -152,7 +157,7 @@ const GraphLegend = ({
                                                         style={{
                                                             backgroundColor:
                                                                 entryGraphColors[
-                                                                path + value
+                                                                    path + value
                                                                 ],
                                                         }}
                                                     ></div>

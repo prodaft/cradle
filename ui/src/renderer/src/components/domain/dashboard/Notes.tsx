@@ -7,7 +7,7 @@ import Datepicker from 'react-tailwindcss-datepicker';
 interface SearchFilters {
     content: string;
     author__username: string;
-    linked_to?: number;  // Entry ID (BigAutoField)
+    linked_to?: number; // Entry ID (BigAutoField)
     linked_to_exact_match?: boolean;
     timestamp_gte?: string;
     timestamp_lte?: string;
@@ -32,7 +32,9 @@ export default function Notes({ obj }: NotesProps) {
         author__username: '',
     });
     const [linked_to_exact_match, setLinkedToExactMatch] = useState(false);
-    const [submittedFilters, setSubmittedFilters] = useState<SearchFilters | null>(null);
+    const [submittedFilters, setSubmittedFilters] = useState<SearchFilters | null>(
+        null,
+    );
     const [dateRange, setDateRange] = useState<DateRange>({
         startDate: null,
         endDate: null,
@@ -81,10 +83,10 @@ export default function Notes({ obj }: NotesProps) {
                 : '',
             timestamp_lte: value.endDate
                 ? (() => {
-                    const endDate = new Date(value.endDate);
-                    endDate.setHours(23, 59, 59, 999);
-                    return endDate.toISOString();
-                })()
+                      const endDate = new Date(value.endDate);
+                      endDate.setHours(23, 59, 59, 999);
+                      return endDate.toISOString();
+                  })()
                 : '',
         }));
         setDateRange(value);
@@ -150,9 +152,7 @@ export default function Notes({ obj }: NotesProps) {
                 {submittedFilters && (
                     <NotesList
                         query={submittedFilters}
-                        noteActions={[
-                            { Component: DeleteNote, props: {} },
-                        ]}
+                        noteActions={[{ Component: DeleteNote, props: {} }]}
                     />
                 )}
             </div>

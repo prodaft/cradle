@@ -16,8 +16,17 @@ interface SearchFilterProps {
  * @returns {SearchFilter}
  * @constructor
  */
-export default function SearchFilter({ text, option, filters, setFilters }: SearchFilterProps) {
-    const updatePrevState = (prevState: string[], name: string, checked: boolean): string[] => {
+export default function SearchFilter({
+    text,
+    option,
+    filters,
+    setFilters,
+}: SearchFilterProps) {
+    const updatePrevState = (
+        prevState: string[],
+        name: string,
+        checked: boolean,
+    ): string[] => {
         if (checked) {
             return [...prevState, name];
         } else {

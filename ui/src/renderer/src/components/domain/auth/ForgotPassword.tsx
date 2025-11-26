@@ -1,11 +1,11 @@
-import { useWindowSize } from '@uidotdev/usehooks';
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { displayError } from '@/utils/api';
 import AlertBox from '@components/base/Alert/AlertBox';
 import FormField from '@components/forms/FormField';
+import { useWindowSize } from '@uidotdev/usehooks';
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
 interface Alert {
     show: boolean;
@@ -19,7 +19,11 @@ interface Alert {
 export default function ForgotPassword() {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
-    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
+    const [alert, setAlert] = useState<Alert>({
+        show: false,
+        message: '',
+        color: 'red',
+    });
     const windowSize = useWindowSize();
     const location = useLocation();
     const { from, state } = location.state || { from: { pathname: '/' } };
@@ -44,7 +48,7 @@ export default function ForgotPassword() {
                 passwordResetRequestRequest: {
                     username: username || undefined,
                     email: email || undefined,
-                }
+                },
             });
             setAlert({
                 show: true,
@@ -85,7 +89,8 @@ export default function ForgotPassword() {
 
                             <div className='p-8'>
                                 <p className='text-sm cradle-text-secondary mb-6 cradle-mono'>
-                                    Enter your username or email to receive password reset instructions.
+                                    Enter your username or email to receive password
+                                    reset instructions.
                                 </p>
 
                                 <form className='space-y-5' onSubmit={handleSubmit}>

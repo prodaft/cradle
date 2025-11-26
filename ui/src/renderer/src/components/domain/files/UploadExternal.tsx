@@ -45,11 +45,14 @@ export default function UploadExternal() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [sortField, setSortField] = useState(searchParams.get('digests_sort_field') || 'created_at');
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>((searchParams.get('digests_sort_direction') as 'asc' | 'desc') || 'desc');
+    const [sortField, setSortField] = useState(
+        searchParams.get('digests_sort_field') || 'created_at',
+    );
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(
+        (searchParams.get('digests_sort_direction') as 'asc' | 'desc') || 'desc',
+    );
     const [pageSize, setPageSize] = useState(
-        Number(searchParams.get('digests_pagesize')) ||
-        10
+        Number(searchParams.get('digests_pagesize')) || 10,
     );
 
     // Alert state
@@ -72,8 +75,12 @@ export default function UploadExternal() {
 
     // Date range state
     const [dateRange, setDateRange] = useState<DateRange>({
-        startDate: searchParams.get('created_at_gte') ? new Date(searchParams.get('created_at_gte')!) : null,
-        endDate: searchParams.get('created_at_lte') ? new Date(searchParams.get('created_at_lte')!) : null,
+        startDate: searchParams.get('created_at_gte')
+            ? new Date(searchParams.get('created_at_gte')!)
+            : null,
+        endDate: searchParams.get('created_at_lte')
+            ? new Date(searchParams.get('created_at_lte')!)
+            : null,
     });
 
     const toggleUploadForm = () => {
@@ -84,11 +91,13 @@ export default function UploadExternal() {
         execute(() => intelioApi.intelioDigestOptionsList())
             .then((response) => {
                 if (response) {
-                    const dataTypes: DataTypeOption[] = response.map((type: DigestSubclass) => ({
-                        value: type.className,
-                        label: type.name,
-                        inferEntities: type.inferEntities,
-                    }));
+                    const dataTypes: DataTypeOption[] = response.map(
+                        (type: DigestSubclass) => ({
+                            value: type.className,
+                            label: type.name,
+                            inferEntities: type.inferEntities,
+                        }),
+                    );
                     setDataTypeOptions(dataTypes);
                 } else {
                     notify({
@@ -97,11 +106,19 @@ export default function UploadExternal() {
                     });
                 }
             })
-            .catch(() => { });
+            .catch(() => {});
 
         // Initial fetch of digests with search params
         fetchDigests();
-    }, [page, submittedFilters, sortField, sortDirection, pageSize, intelioApi, execute]);
+    }, [
+        page,
+        submittedFilters,
+        sortField,
+        sortDirection,
+        pageSize,
+        intelioApi,
+        execute,
+    ]);
 
     // Add an effect to initialize filters and date range from URL parameters
     useEffect(() => {
@@ -180,10 +197,10 @@ export default function UploadExternal() {
                 : '',
             created_at_lte: dateRangeValue?.endDate
                 ? (() => {
-                    const endDate = new Date(dateRangeValue.endDate);
-                    endDate.setHours(23, 59, 59, 999);
-                    return endDate.toISOString();
-                })()
+                      const endDate = new Date(dateRangeValue.endDate);
+                      endDate.setHours(23, 59, 59, 999);
+                      return endDate.toISOString();
+                  })()
                 : '',
         });
     };

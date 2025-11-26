@@ -6,18 +6,18 @@
  * Tab object structure
  */
 export interface TabObject {
-  id: string;
-  path: string;
-  title: string;
-  icon: string;
+    id: string;
+    path: string;
+    title: string;
+    icon: string;
 }
 
 /**
  * Pane state structure
  */
 export interface PaneState {
-  tabs: TabObject[];
-  activeTabIndex: number;
+    tabs: TabObject[];
+    activeTabIndex: number;
 }
 
 /**
@@ -27,14 +27,14 @@ export interface PaneState {
  * @returns True if path should be excluded from tabs
  */
 export const shouldExcludeFromTabs = (path: string): boolean => {
-  const excludedPaths = [
-    '/login',
-    '/register',
-    '/forgot-password',
-    '/reset-password',
-    '/confirm-email',
-  ];
-  return excludedPaths.includes(path);
+    const excludedPaths = [
+        '/login',
+        '/register',
+        '/forgot-password',
+        '/reset-password',
+        '/confirm-email',
+    ];
+    return excludedPaths.includes(path);
 };
 
 /**
@@ -44,42 +44,44 @@ export const shouldExcludeFromTabs = (path: string): boolean => {
  * @returns The title
  */
 export const getTitleForPath = (path: string): string => {
-  if (path === '/' || path === '') return 'Welcome';
+    if (path === '/' || path === '') return 'Welcome';
 
-  const segments = path.split('/').filter(Boolean);
-  if (segments.length === 0) return 'Dashboard';
+    const segments = path.split('/').filter(Boolean);
+    if (segments.length === 0) return 'Dashboard';
 
-  const firstSegment = segments[0];
+    const firstSegment = segments[0];
 
-  const specialCases: Record<string, string> = {
-    documents: 'Documents',
-    files: 'Files',
-    'digest-data': 'Digest Data',
-    notes: 'Notes',
-    editor: 'Fleeting Note',
-    dashboards: 'Dashboard',
-    'knowledge-graph': 'Knowledge Graph',
-    reports: 'Reports',
-    publish: 'Publish',
-    activity: 'Activity',
-    settings: 'Settings',
-    manage: 'Manage',
-    'not-implemented': 'Not Implemented',
-  };
+    const specialCases: Record<string, string> = {
+        documents: 'Documents',
+        files: 'Files',
+        'digest-data': 'Digest Data',
+        notes: 'Notes',
+        editor: 'Fleeting Note',
+        dashboards: 'Dashboard',
+        'knowledge-graph': 'Knowledge Graph',
+        reports: 'Reports',
+        publish: 'Publish',
+        activity: 'Activity',
+        settings: 'Settings',
+        manage: 'Manage',
+        'not-implemented': 'Not Implemented',
+    };
 
-  if (specialCases[firstSegment]) {
-    if (firstSegment === 'notes' && segments.length > 1) {
-      return '...';
+    if (specialCases[firstSegment]) {
+        if (firstSegment === 'notes' && segments.length > 1) {
+            return '...';
+        }
+        if (segments.length > 1 && segments[1] !== 'edit') {
+            const id = segments[1];
+            const shortId = id.length > 8 ? id.substring(0, 8) + '...' : id;
+            return `${specialCases[firstSegment]}: ${shortId}`;
+        }
+        return specialCases[firstSegment];
     }
-    if (segments.length > 1 && segments[1] !== 'edit') {
-      const id = segments[1];
-      const shortId = id.length > 8 ? id.substring(0, 8) + '...' : id;
-      return `${specialCases[firstSegment]}: ${shortId}`;
-    }
-    return specialCases[firstSegment];
-  }
 
-  return firstSegment.charAt(0).toUpperCase() + firstSegment.slice(1).replace(/-/g, ' ');
+    return (
+        firstSegment.charAt(0).toUpperCase() + firstSegment.slice(1).replace(/-/g, ' ')
+    );
 };
 
 /**
@@ -89,30 +91,30 @@ export const getTitleForPath = (path: string): string => {
  * @returns The icon name
  */
 export const getIconForPath = (path: string): string => {
-  if (path === '/' || path === '') return 'Dashboard';
+    if (path === '/' || path === '') return 'Dashboard';
 
-  const segments = path.split('/').filter(Boolean);
-  if (segments.length === 0) return 'Dashboard';
+    const segments = path.split('/').filter(Boolean);
+    if (segments.length === 0) return 'Dashboard';
 
-  const firstSegment = segments[0];
+    const firstSegment = segments[0];
 
-  const iconMap: Record<string, string> = {
-    documents: 'PageFlip',
-    files: 'Folder',
-    'digest-data': 'DatabaseBackup',
-    notes: 'Notes',
-    editor: 'EditPencil',
-    dashboards: 'Dashboard',
-    'knowledge-graph': 'NetworkAlt',
-    reports: 'Page',
-    publish: 'CloudUpload',
-    activity: 'Activity',
-    settings: 'Settings',
-    manage: 'Shield',
-    'not-implemented': 'WarningTriangle',
-  };
+    const iconMap: Record<string, string> = {
+        documents: 'PageFlip',
+        files: 'Folder',
+        'digest-data': 'DatabaseBackup',
+        notes: 'Notes',
+        editor: 'EditPencil',
+        dashboards: 'Dashboard',
+        'knowledge-graph': 'NetworkAlt',
+        reports: 'Page',
+        publish: 'CloudUpload',
+        activity: 'Activity',
+        settings: 'Settings',
+        manage: 'Shield',
+        'not-implemented': 'WarningTriangle',
+    };
 
-  return iconMap[firstSegment] || 'Page';
+    return iconMap[firstSegment] || 'Page';
 };
 
 /**
@@ -121,7 +123,7 @@ export const getIconForPath = (path: string): string => {
  * @returns A unique tab ID
  */
 export const generateTabId = (): string => {
-  return `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 };
 
 /**
@@ -130,7 +132,7 @@ export const generateTabId = (): string => {
  * @returns A unique pane ID
  */
 export const generatePaneId = (): string => {
-  return `pane-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `pane-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 };
 
 /**
@@ -140,14 +142,14 @@ export const generatePaneId = (): string => {
  * @returns True if tab is valid
  */
 export const validateTab = (tab: any): tab is TabObject => {
-  return (
-    tab &&
-    typeof tab === 'object' &&
-    typeof tab.id === 'string' &&
-    typeof tab.path === 'string' &&
-    typeof tab.title === 'string' &&
-    typeof tab.icon === 'string'
-  );
+    return (
+        tab &&
+        typeof tab === 'object' &&
+        typeof tab.id === 'string' &&
+        typeof tab.path === 'string' &&
+        typeof tab.title === 'string' &&
+        typeof tab.icon === 'string'
+    );
 };
 
 /**
@@ -157,14 +159,15 @@ export const validateTab = (tab: any): tab is TabObject => {
  * @returns True if pane state is valid
  */
 export const validatePaneState = (paneState: any): paneState is PaneState => {
-  return (
-    paneState &&
-    typeof paneState === 'object' &&
-    Array.isArray(paneState.tabs) &&
-    typeof paneState.activeTabIndex === 'number' &&
-    paneState.activeTabIndex >= 0 &&
-    (paneState.tabs.length === 0 || paneState.activeTabIndex < paneState.tabs.length)
-  );
+    return (
+        paneState &&
+        typeof paneState === 'object' &&
+        Array.isArray(paneState.tabs) &&
+        typeof paneState.activeTabIndex === 'number' &&
+        paneState.activeTabIndex >= 0 &&
+        (paneState.tabs.length === 0 ||
+            paneState.activeTabIndex < paneState.tabs.length)
+    );
 };
 
 /**
@@ -174,12 +177,12 @@ export const validatePaneState = (paneState: any): paneState is PaneState => {
  * @returns A new tab object
  */
 export const createTab = (path: string): TabObject => {
-  return {
-    id: generateTabId(),
-    path,
-    title: getTitleForPath(path),
-    icon: getIconForPath(path),
-  };
+    return {
+        id: generateTabId(),
+        path,
+        title: getTitleForPath(path),
+        icon: getIconForPath(path),
+    };
 };
 
 /**
@@ -189,8 +192,8 @@ export const createTab = (path: string): TabObject => {
  * @returns A new pane state
  */
 export const createPaneState = (initialPath: string = '/'): PaneState => {
-  return {
-    tabs: [createTab(initialPath)],
-    activeTabIndex: 0,
-  };
+    return {
+        tabs: [createTab(initialPath)],
+        activeTabIndex: 0,
+    };
 };

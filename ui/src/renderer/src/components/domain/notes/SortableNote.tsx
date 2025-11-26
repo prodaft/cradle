@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { CSSProperties } from 'react';
 import type { NoteRetrieve } from '@services/cradle/models';
+import { CSSProperties } from 'react';
 import Note from './Note';
 
 interface NoteAction {

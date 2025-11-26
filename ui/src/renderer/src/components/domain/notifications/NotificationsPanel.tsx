@@ -39,13 +39,16 @@ export default function NotificationsPanel({
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [flaggedNotificationsCount, setFlaggedNotificationsCount] = useState(0);
 
-    const updateFlaggedNotificationsCount = (updater: number | ((prevCount: number) => number)) => {
+    const updateFlaggedNotificationsCount = (
+        updater: number | ((prevCount: number) => number),
+    ) => {
         setFlaggedNotificationsCount(updater);
         setUnreadNotificationsCount(updater);
     };
 
     function fetchNotificationsAndUpdateCounts() {
-        notificationsApi.notificationsList()
+        notificationsApi
+            .notificationsList()
             .then((response) => {
                 setNotifications(response || []);
                 const auxFlaggedNotificationsCount = (response || []).filter(
@@ -56,7 +59,8 @@ export default function NotificationsPanel({
             .catch((error: any) => {
                 notify({
                     type: 'error',
-                    text: error.response?.data?.detail || 'Failed to fetch notifications',
+                    text:
+                        error.response?.data?.detail || 'Failed to fetch notifications',
                 });
             });
     }

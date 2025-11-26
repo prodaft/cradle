@@ -192,31 +192,31 @@ export class CradleEditor {
                     if (!this._lspApi) {
                         throw new Error('LspApi is required for editor initialization');
                     }
-                    CradleEditor.triesPromise = this._lspApi.lspTrieRetrieve().then(
-                        (triesData: { [key: string]: any }) => {
+                    CradleEditor.triesPromise = this._lspApi
+                        .lspTrieRetrieve()
+                        .then((triesData: { [key: string]: any }) => {
                             const tries: { [key: string]: DynamicTrie } = {};
                             for (const [type, trie] of Object.entries(triesData)) {
                                 tries[type] = new DynamicTrie(null, type, -1);
                                 tries[type].mergeTrie('', trie);
                             }
 
-                            for (const entryClass of Object.values(this.entryClasses ?? {})) {
+                            for (const entryClass of Object.values(
+                                this.entryClasses ?? {},
+                            )) {
                                 if (entryClass.format) continue;
                                 if (entryClass.type == 'entity') continue;
 
                                 tries[entryClass.subtype] = new DynamicTrie(
                                     async (x) => {
                                         try {
-                                            let result = await this._lspApi.lspTrieRetrieve({
-                                                type: entryClass.subtype,
-                                                prefix: x,
-                                            });
-                                            if (
-                                                result &&
-                                                result[entryClass.subtype]
-                                            ) {
-                                                let trie =
-                                                    result[entryClass.subtype];
+                                            let result =
+                                                await this._lspApi.lspTrieRetrieve({
+                                                    type: entryClass.subtype,
+                                                    prefix: x,
+                                                });
+                                            if (result && result[entryClass.subtype]) {
+                                                let trie = result[entryClass.subtype];
 
                                                 for (const char of x) {
                                                     if (!trie.c || !trie.c[char]) {
@@ -243,8 +243,7 @@ export class CradleEditor {
                                 );
                             }
                             return tries;
-                        },
-                    );
+                        });
                 }
                 const tries = await CradleEditor.triesPromise;
                 this.tries = tries;
@@ -271,9 +270,9 @@ export class CradleEditor {
                 this.snippets = CradleEditor.cachedSnippets;
             } else {
                 if (!CradleEditor.snippetsPromise && this._notesApi) {
-                    CradleEditor.snippetsPromise = this._notesApi.notesSnippetsList().then(
-                        (snippets) => snippets || [],
-                    );
+                    CradleEditor.snippetsPromise = this._notesApi
+                        .notesSnippetsList()
+                        .then((snippets) => snippets || []);
                 }
                 const snippets = await CradleEditor.snippetsPromise;
                 this.snippets = snippets;
@@ -332,7 +331,7 @@ export class CradleEditor {
                 throw new Error('NotesApi is required to refresh snippets');
             }
             CradleEditor.invalidateSnippetsCache();
-            const snippets = await this._notesApi.notesSnippetsList() || [];
+            const snippets = (await this._notesApi.notesSnippetsList()) || [];
             this.snippets = snippets;
             CradleEditor.cachedSnippets = snippets;
             return snippets;
@@ -468,7 +467,9 @@ export class CradleEditor {
         return suggestions;
     }
 
-    private async getSuggestionsForWord(word: string): Promise<AutocompleteSuggestion[]> {
+    private async getSuggestionsForWord(
+        word: string,
+    ): Promise<AutocompleteSuggestion[]> {
         if (!this.entryClasses) return [];
         const suggestions: AutocompleteSuggestion[] = [];
         const madeSuggestions = new Set<string>();
@@ -939,7 +940,9 @@ export class CradleEditor {
                             .substring(3, frontmatter.length - 4)
                             .trim();
                         try {
-                            const parsedYaml = jsyaml.load(yml) as { entries: { [key: string]: any } };
+                            const parsedYaml = jsyaml.load(yml) as {
+                                entries: { [key: string]: any };
+                            };
 
                             // Handle entries if they exist
                             if (
@@ -1180,7 +1183,8 @@ export class CradleEditor {
                         let hasPrefix = false;
                         let linkStart = pos;
 
-                        if (next === 126) { // 126 is "~"
+                        if (next === 126) {
+                            // 126 is "~"
                             hasPrefix = true;
                             linkStart = pos + 1;
                             next = cx.char(linkStart);
@@ -1320,7 +1324,6 @@ export class CradleEditor {
 
         return CradleLinkExtension as any;
     }
-
 
     /**
      * Creates a cradle markdown language with support for [[type:value|alias]] links.

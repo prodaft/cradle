@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface DropdownOption {
     value: string;
@@ -21,7 +21,7 @@ function CustomDropdown({
     placeholder = 'Actions',
     disabled = false,
     title = '',
-    onSelect
+    onSelect,
 }: CustomDropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -29,7 +29,10 @@ function CustomDropdown({
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target as Node)
+            ) {
                 setIsOpen(false);
             }
         };
@@ -46,9 +49,9 @@ function CustomDropdown({
     };
 
     return (
-        <div className="cradle-dropdown" ref={dropdownRef}>
+        <div className='cradle-dropdown' ref={dropdownRef}>
             <button
-                type="button"
+                type='button'
                 className={`cradle-select text-sm flex items-center justify-between gap-2 min-w-[120px] ${
                     disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                 }`}
@@ -56,53 +59,58 @@ function CustomDropdown({
                 disabled={disabled}
                 title={title}
             >
-                <span className="truncate">{placeholder}</span>
+                <span className='truncate'>{placeholder}</span>
                 <svg
                     className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
                 >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M19 9l-7 7-7-7'
+                    />
                 </svg>
             </button>
 
             {isOpen && !disabled && (
-                <div className="cradle-dropdown-menu">
+                <div className='cradle-dropdown-menu'>
                     {options.map((option) => (
                         <button
                             key={option.value}
-                            type="button"
-                            className="cradle-dropdown-option flex items-center gap-2"
+                            type='button'
+                            className='cradle-dropdown-option flex items-center gap-2'
                             onClick={() => handleOptionClick(option)}
                         >
                             {option.value === 'download' && (
                                 <svg
-                                    className="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
+                                    className='w-4 h-4'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
                                 >
                                     <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
                                         strokeWidth={2}
-                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                        d='M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
                                     />
                                 </svg>
                             )}
                             {option.value === 'delete' && (
                                 <svg
-                                    className="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
+                                    className='w-4 h-4'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
                                 >
                                     <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
                                         strokeWidth={2}
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                        d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
                                     />
                                 </svg>
                             )}
@@ -140,7 +148,7 @@ export default function ActionBar({
     const handleActionSelect = async (actionValue: string) => {
         if (!actionValue || selectedItems.length === 0) return;
 
-        const action = actions.find(a => a.value === actionValue);
+        const action = actions.find((a) => a.value === actionValue);
         if (!action) return;
 
         setLoadingAction(action.value);
@@ -154,7 +162,11 @@ export default function ActionBar({
     };
 
     const isDisabled = selectedItems.length === 0 || loadingAction !== null;
-    const placeholder = loadingAction ? 'Processing...' : selectedItems.length > 0 ? `Actions (${selectedItems.length})` : 'Actions';
+    const placeholder = loadingAction
+        ? 'Processing...'
+        : selectedItems.length > 0
+          ? `Actions (${selectedItems.length})`
+          : 'Actions';
 
     return (
         <div className='flex items-center gap-2'>
@@ -162,7 +174,11 @@ export default function ActionBar({
                 options={actions}
                 placeholder={placeholder}
                 disabled={isDisabled}
-                title={selectedItems.length > 0 ? `Select action for ${selectedItems.length} ${itemLabel}${selectedItems.length !== 1 ? 's' : ''}` : `Select ${itemLabel}s to perform actions`}
+                title={
+                    selectedItems.length > 0
+                        ? `Select action for ${selectedItems.length} ${itemLabel}${selectedItems.length !== 1 ? 's' : ''}`
+                        : `Select ${itemLabel}s to perform actions`
+                }
                 onSelect={handleActionSelect}
             />
             {loadingAction && (

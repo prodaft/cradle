@@ -18,7 +18,9 @@ interface GraphControlProps {
     SearchComponent: ComponentType<SearchComponentProps>;
     entryGraphColors: Record<string, string>;
     disabledTypes: Set<string>;
-    setDisabledTypes: (types: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
+    setDisabledTypes: (
+        types: Set<string> | ((prev: Set<string>) => Set<string>),
+    ) => void;
     addNodes: (nodes: Node[]) => void;
     addEdges: (edges: EdgeRelation[]) => void;
     nodes: Node[];
@@ -47,16 +49,9 @@ export default function GraphControl({
 
     return (
         <>
-            <SearchComponent
-                addEdges={addEdges}
-                addNodes={addNodes}
-            />
+            <SearchComponent addEdges={addEdges} addNodes={addNodes} />
             <div className='border-b-2 border-b-zinc-400 dark:border-b-zinc-800 mt-4 mx-2' />
-            <GraphSettings
-                {...settingsProps}
-                nodes={nodes}
-                edges={edges}
-            />
+            <GraphSettings {...settingsProps} nodes={nodes} edges={edges} />
             <div className='border-b-2  border-b-zinc-400 dark:border-b-zinc-800 mt-4 mx-2' />
             <GraphLegend
                 entryGraphColors={entryGraphColors}

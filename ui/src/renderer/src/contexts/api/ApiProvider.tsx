@@ -54,21 +54,22 @@ interface ApiProviderProps {
  * Automatically configures authentication based on AuthContext
  */
 export function ApiProvider({ children }: ApiProviderProps) {
-    const { getAccessToken, isLoggedIn, tokenVersion, basePath, setBasePath } = useAuth();
+    const { getAccessToken, isLoggedIn, tokenVersion, basePath, setBasePath } =
+        useAuth();
 
     const configuration = useMemo(() => {
         return new Configuration({
             basePath: basePath,
             accessToken: isLoggedIn()
                 ? async () => {
-                    try {
-                        const token = await getAccessToken();
-                        return token || '';
-                    } catch (error) {
-                        console.error('Failed to get access token:', error);
-                        return '';
-                    }
-                }
+                      try {
+                          const token = await getAccessToken();
+                          return token || '';
+                      } catch (error) {
+                          console.error('Failed to get access token:', error);
+                          return '';
+                      }
+                  }
                 : undefined,
             headers: {
                 'Content-Type': 'application/json',

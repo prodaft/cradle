@@ -28,7 +28,8 @@ interface GraphViewerProps {
 function normalize(x: number, inputMin: number, inputMax: number): number {
     x = Math.min(x, inputMax);
     x = Math.max(x, inputMin);
-    const outputMin = 2, outputMax = 10;
+    const outputMin = 2,
+        outputMax = 10;
 
     const shifted = x - inputMin + 1;
     const maxShifted = inputMax - inputMin + 1;
@@ -37,14 +38,26 @@ function normalize(x: number, inputMin: number, inputMax: number): number {
     return outputMin + normalized * (outputMax - outputMin);
 }
 
-export default function GraphViewer({ selectedNodes, setSelectedNodes, config = {}, nodes = [], edges = [], onClearGraph }: GraphViewerProps) {
+export default function GraphViewer({
+    selectedNodes,
+    setSelectedNodes,
+    config = {},
+    nodes = [],
+    edges = [],
+    onClearGraph,
+}: GraphViewerProps) {
     const { isDarkMode } = useTheme();
     const cosmographRef = useRef<any>(null);
     const { navigate, navigateLink } = useCradleNavigate();
     const [disableSimulation, setDisableSimulation] = useState(false);
     const [graphInstanceKey, setGraphInstanceKey] = useState(0);
 
-    const onClick = (node?: Node, index?: number, nodePosition?: [number, number], event?: MouseEvent) => {
+    const onClick = (
+        node?: Node,
+        index?: number,
+        nodePosition?: [number, number],
+        event?: MouseEvent,
+    ) => {
         if (!node) {
             setSelectedNodes(new Set());
             cosmographRef.current?.focusNode(null);
@@ -52,9 +65,7 @@ export default function GraphViewer({ selectedNodes, setSelectedNodes, config = 
         }
 
         let clickedNodes = [node];
-        if (
-            cosmographRef.current != null && selectedNodes.has(node)
-        ) {
+        if (cosmographRef.current != null && selectedNodes.has(node)) {
             clickedNodes =
                 cosmographRef.current.getAdjacentNodes(node.id) || clickedNodes;
         }
@@ -115,7 +126,6 @@ export default function GraphViewer({ selectedNodes, setSelectedNodes, config = 
                             cosmographRef.current.focusNode(node);
                             cosmographRef.current.zoomToNode(node);
                             setSelectedNodes(new Set([node]));
-
                         }}
                     />
                     <button
@@ -153,18 +163,22 @@ export default function GraphViewer({ selectedNodes, setSelectedNodes, config = 
                     nodeColor={(node: Node) => node.color || '#4A90E2'}
                     nodeLabelAccessor={(node: Node) => node.label || node.id}
                     nodeGreyoutOpacity={0.1}
-                    nodeSizeScale={(typeof config.nodeRadiusCoefficient === 'number'
-                        ? config.nodeRadiusCoefficient
-                        : 1)}
+                    nodeSizeScale={
+                        typeof config.nodeRadiusCoefficient === 'number'
+                            ? config.nodeRadiusCoefficient
+                            : 1
+                    }
                     nodeSize={(node: Node) => normalize(node.degree || 1, 1, 60)}
                     showDynamicLabels={true}
                     disableSimulation={false}
                     linkColor='#999999'
-                    focusedNodeRingColor="#f68d2e"
+                    focusedNodeRingColor='#f68d2e'
                     linkWidth={2}
-                    linkWidthScale={(typeof config.linkWidthCoefficient === 'number'
-                        ? config.linkWidthCoefficient
-                        : 1)}
+                    linkWidthScale={
+                        typeof config.linkWidthCoefficient === 'number'
+                            ? config.linkWidthCoefficient
+                            : 1
+                    }
                     simulationGravity={
                         typeof config.simulationGravity === 'number'
                             ? config.simulationGravity

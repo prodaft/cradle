@@ -29,10 +29,12 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
     }
 
     const handleDownload = async (file: FileReferenceWithNote) => {
-        let response = await execute(() => fileTransferApi.fileTransferDownloadRetrieve({
-            bucketName: file.bucketName,
-            minioFileName: file.minioFileName,
-        }));
+        let response = await execute(() =>
+            fileTransferApi.fileTransferDownloadRetrieve({
+                bucketName: file.bucketName,
+                minioFileName: file.minioFileName,
+            }),
+        );
         const { presigned } = response;
         const link = document.createElement('a');
         link.href = presigned;
@@ -54,7 +56,11 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                             { key: 'entities', label: 'Entities', className: 'w-32' },
                             { key: 'mimetype', label: 'MimeType', className: 'w-32' },
                             { key: 'sha256', label: 'SHA256' },
-                            { key: 'uploadedAt', label: 'Uploaded At', className: 'w-32' },
+                            {
+                                key: 'uploadedAt',
+                                label: 'Uploaded At',
+                                className: 'w-32',
+                            },
                             { key: 'actions', label: 'Actions', className: 'w-32' },
                         ]}
                         renderRow={(file: FileReferenceWithNote, index: number) => (
@@ -69,7 +75,8 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                                 key={entity.name}
                                                 className='badge badge-xs px-1 text-white'
                                                 style={{
-                                                    backgroundColor: entity.color || '#ccc',
+                                                    backgroundColor:
+                                                        entity.color || '#ccc',
                                                 }}
                                             >
                                                 {entity.name}
@@ -78,13 +85,17 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                     </div>
                                 </td>
                                 <td className='truncate w-32'>
-                                    {file.mimetype ? truncateText(file.mimetype, 32) : '-'}
+                                    {file.mimetype
+                                        ? truncateText(file.mimetype, 32)
+                                        : '-'}
                                 </td>
                                 <td className=''>
                                     {file.sha256Hash ? (
                                         <span
                                             className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
-                                            onClick={() => copyToClipboard(file.sha256Hash!)}
+                                            onClick={() =>
+                                                copyToClipboard(file.sha256Hash!)
+                                            }
                                             title='Click to copy'
                                         >
                                             {file.sha256Hash.substring(0, 21)}...
@@ -94,17 +105,23 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                     )}
                                 </td>
                                 <td className=''>
-                                    {file.timestamp && formatDate(new Date(file.timestamp))}
+                                    {file.timestamp &&
+                                        formatDate(new Date(file.timestamp))}
                                 </td>
                                 <td className='w-32'>
                                     <div className='flex space-x-1'>
                                         {file.bucketName && file.minioFileName && (
                                             <button
-                                                onClick={async () => await handleDownload(file)}
+                                                onClick={async () =>
+                                                    await handleDownload(file)
+                                                }
                                                 className='btn btn-ghost btn-xs text-green-600 hover:text-green-500'
                                                 title='Download'
                                             >
-                                                <Download className='w-4 h-4' aria-hidden='true' />
+                                                <Download
+                                                    className='w-4 h-4'
+                                                    aria-hidden='true'
+                                                />
                                             </button>
                                         )}
                                     </div>
@@ -112,8 +129,8 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                             </tr>
                         )}
                         loading={false}
-                        emptyMessage="No files found!"
-                        tableClassName="table"
+                        emptyMessage='No files found!'
+                        tableClassName='table'
                     />
                 </div>
             </div>

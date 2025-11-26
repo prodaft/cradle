@@ -1,10 +1,10 @@
+import { formatDate } from '@/utils/dates';
+import Card from '@components/base/Card/Card';
 import { diff_match_patch } from 'diff-match-patch';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-diff';
 import 'prismjs/themes/prism-tomorrow.css';
 import { useEffect, useState } from 'react';
-import { formatDate } from '@/utils/dates';
-import Card from '@components/base/Card/Card';
 
 interface ActivityLog {
     timestamp: string;
@@ -38,8 +38,16 @@ export default function Activity({ log }: ActivityProps) {
 
     // Alternative version with line-by-line display
     const diff_prettyDiffLines = function (diffs: any[][]) {
-        const lines: Array<{ additions: string[]; deletions: string[]; equals: string[] }> = [];
-        let currentLine = { additions: [] as string[], deletions: [] as string[], equals: [] as string[] };
+        const lines: Array<{
+            additions: string[];
+            deletions: string[];
+            equals: string[];
+        }> = [];
+        let currentLine = {
+            additions: [] as string[],
+            deletions: [] as string[],
+            equals: [] as string[],
+        };
 
         const pattern_amp = /&/g;
         const pattern_lt = /</g;
@@ -151,13 +159,13 @@ export default function Activity({ log }: ActivityProps) {
 
     return (
         <Card
-            className="dark:bg-opacity-70 backdrop-blur-lg mt-3"
+            className='dark:bg-opacity-70 backdrop-blur-lg mt-3'
             badge={log.type}
-            badgeClass="badge-outline-primary"
+            badgeClass='badge-outline-primary'
             details={{
                 User: log.user.username,
                 Timestamp: formattedTimestamp,
-                Object: log.objectRepr
+                Object: log.objectRepr,
             }}
         >
             {log.details && (

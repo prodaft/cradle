@@ -39,7 +39,12 @@ interface ActivityListProps {
     username?: string;
 }
 
-export default function ActivityList({ name, objectId, content_type, username }: ActivityListProps) {
+export default function ActivityList({
+    name,
+    objectId,
+    content_type,
+    username,
+}: ActivityListProps) {
     const { logsApi } = useApi();
     const { params } = useTabContext();
     const effectiveUsername = username || params.username || '';
@@ -53,7 +58,8 @@ export default function ActivityList({ name, objectId, content_type, username }:
         object_id: objectId,
     });
 
-    const [submittedFilters, setSubmittedFilters] = useState<SearchFilters>(searchFilters);
+    const [submittedFilters, setSubmittedFilters] =
+        useState<SearchFilters>(searchFilters);
 
     const [events, setEvents] = useState<ActivityLog[]>([]);
     const [loading, setLoading] = useState(false);
@@ -71,24 +77,35 @@ export default function ActivityList({ name, objectId, content_type, username }:
             },
             objectRepr: eventLog.objectRepr || '',
             details: eventLog.details || undefined,
-            srcLog: eventLog.srcLog ? convertEventLogToActivityLog(eventLog.srcLog as any) : undefined,
-            src_log: eventLog.srcLog ? convertEventLogToActivityLog(eventLog.srcLog as any) : undefined,
+            srcLog: eventLog.srcLog
+                ? convertEventLogToActivityLog(eventLog.srcLog as any)
+                : undefined,
+            src_log: eventLog.srcLog
+                ? convertEventLogToActivityLog(eventLog.srcLog as any)
+                : undefined,
         };
     };
 
     const fetchEvents = useCallback(() => {
         setLoading(true);
-        logsApi.logsList({
-            page,
-            username: submittedFilters.username || undefined,
-            startDate: submittedFilters.start_date ? new Date(submittedFilters.start_date) : undefined,
-            endDate: submittedFilters.end_date ? new Date(submittedFilters.end_date) : undefined,
-            type: submittedFilters.type || undefined,
-            contentType: submittedFilters.content_type || undefined,
-            objectId: submittedFilters.object_id || undefined,
-        })
+        logsApi
+            .logsList({
+                page,
+                username: submittedFilters.username || undefined,
+                startDate: submittedFilters.start_date
+                    ? new Date(submittedFilters.start_date)
+                    : undefined,
+                endDate: submittedFilters.end_date
+                    ? new Date(submittedFilters.end_date)
+                    : undefined,
+                type: submittedFilters.type || undefined,
+                contentType: submittedFilters.content_type || undefined,
+                objectId: submittedFilters.object_id || undefined,
+            })
             .then((response) => {
-                const convertedEvents = response.results.map(convertEventLogToActivityLog);
+                const convertedEvents = response.results.map(
+                    convertEventLogToActivityLog,
+                );
                 setEvents(convertedEvents);
                 setTotalPages(response.totalPages);
                 setLoading(false);
@@ -96,7 +113,9 @@ export default function ActivityList({ name, objectId, content_type, username }:
             .catch((error: any) => {
                 notify({
                     type: 'error',
-                    text: error.response?.data?.detail || 'Failed to fetch event logs. Please try again.',
+                    text:
+                        error.response?.data?.detail ||
+                        'Failed to fetch event logs. Please try again.',
                 });
                 setLoading(false);
             });
@@ -116,7 +135,9 @@ export default function ActivityList({ name, objectId, content_type, username }:
         setSubmittedFilters({ ...searchFilters });
     };
 
-    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleSearchChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+    ) => {
         const { name, value } = e.target;
         setSearchFilters((prev) => ({ ...prev, [name]: value }));
     };
@@ -124,7 +145,6 @@ export default function ActivityList({ name, objectId, content_type, username }:
     return (
         <div className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'>
             <div className='w-[95%] h-full flex flex-col p-6 space-y-3'>
-
                 <form
                     onSubmit={handleSearchSubmit}
                     className='flex flex-wrap gap-4 items-end pb-2'
@@ -150,20 +170,33 @@ export default function ActivityList({ name, objectId, content_type, username }:
                     <div className='flex-1 min-w-[260px]'>
                         <Datepicker
                             value={{
-                                startDate: searchFilters.start_date ? new Date(searchFilters.start_date) : null,
-                                endDate: searchFilters.end_date ? new Date(searchFilters.end_date) : null,
+                                startDate: searchFilters.start_date
+                                    ? new Date(searchFilters.start_date)
+                                    : null,
+                                endDate: searchFilters.end_date
+                                    ? new Date(searchFilters.end_date)
+                                    : null,
                             }}
                             onChange={(value) => {
                                 if (value?.startDate && value?.endDate) {
-                                    const startDate = value.startDate instanceof Date
-                                        ? value.startDate
-                                        : new Date(value.startDate as unknown as string);
-                                    const endDate = value.endDate instanceof Date
-                                        ? value.endDate
-                                        : new Date(value.endDate as unknown as string);
+                                    const startDate =
+                                        value.startDate instanceof Date
+                                            ? value.startDate
+                                            : new Date(
+                                                  value.startDate as unknown as string,
+                                              );
+                                    const endDate =
+                                        value.endDate instanceof Date
+                                            ? value.endDate
+                                            : new Date(
+                                                  value.endDate as unknown as string,
+                                              );
                                     setSearchFilters((prev) => ({
                                         ...prev,
-                                        start_date: format(startDate, "yyyy-MM-dd'T'HH:mm"),
+                                        start_date: format(
+                                            startDate,
+                                            "yyyy-MM-dd'T'HH:mm",
+                                        ),
                                         end_date: format(endDate, "yyyy-MM-dd'T'HH:mm"),
                                     }));
                                 }

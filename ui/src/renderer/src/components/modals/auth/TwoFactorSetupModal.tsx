@@ -54,7 +54,9 @@ export default function TwoFactorSetupModal({
                 try {
                     const response = await usersApi.users2faEnableCreate({});
                     setOtpAuthUrl(response.configUrl);
-                    const secret = new URL(response.configUrl).searchParams.get('secret');
+                    const secret = new URL(response.configUrl).searchParams.get(
+                        'secret',
+                    );
                     setSecret(secret || '');
                     setLoading(false);
                 } catch (err) {

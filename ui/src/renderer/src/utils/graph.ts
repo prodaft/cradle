@@ -10,10 +10,10 @@ import { truncateText } from './dashboard';
  * It differs from the Entry/Entity generated models which don't include the 'type' field.
  */
 export interface GraphEntry {
-  id: string;
-  name: string;
-  type: string;
-  subtype?: string;
+    id: string;
+    name: string;
+    type: string;
+    subtype?: string;
 }
 
 /**
@@ -30,52 +30,52 @@ export type GraphLinks = Record<string, string[]>;
  * and graph-specific properties (neighbors, links as Sets).
  */
 export interface GraphNode {
-  id: string;
-  label: string;
-  color: string;
-  name: string;
-  type: string;
-  subtype?: string;
-  /** Set of neighboring nodes (for O(1) lookup) */
-  neighbors: Set<GraphNode>;
-  /** Set of connected links (for O(1) lookup) */
-  links: Set<GraphLink>;
-  /** Number of connections to this node */
-  degree: number;
-  /** Normalized degree for visualization scaling */
-  degree_norm?: number;
-  // D3 force simulation properties
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  fx: number | null;
-  fy: number | null;
+    id: string;
+    label: string;
+    color: string;
+    name: string;
+    type: string;
+    subtype?: string;
+    /** Set of neighboring nodes (for O(1) lookup) */
+    neighbors: Set<GraphNode>;
+    /** Set of connected links (for O(1) lookup) */
+    links: Set<GraphLink>;
+    /** Number of connections to this node */
+    degree: number;
+    /** Normalized degree for visualization scaling */
+    degree_norm?: number;
+    // D3 force simulation properties
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    fx: number | null;
+    fy: number | null;
 }
 
 /**
  * Graph link for D3 force simulation
  */
 export interface GraphLink {
-  source: string;
-  target: string;
+    source: string;
+    target: string;
 }
 
 /**
  * Raw graph data from API
  */
 export interface RawGraphData {
-  entries: GraphEntry[];
-  links: GraphLinks;
-  colors: Record<string, string>;
+    entries: GraphEntry[];
+    links: GraphLinks;
+    colors: Record<string, string>;
 }
 
 /**
  * Preprocessed graph data for D3
  */
 export interface PreprocessedGraphData {
-  nodes: GraphNode[];
-  links: GraphLink[];
+    nodes: GraphNode[];
+    links: GraphLink[];
 }
 
 /**
@@ -88,9 +88,15 @@ export interface PreprocessedGraphData {
  * @param x - X value to interpolate
  * @returns Interpolated y value
  */
-function interpolate(x1: number, x2: number, y1: number, y2: number, x: number): number {
-  if (x1 === x2) return (y1 + y2) / 2;
-  return y1 + ((x - x1) * (y2 - y1)) / (x2 - x1);
+function interpolate(
+    x1: number,
+    x2: number,
+    y1: number,
+    y2: number,
+    x: number,
+): number {
+    if (x1 === x2) return (y1 + y2) / 2;
+    return y1 + ((x - x1) * (y2 - y1)) / (x2 - x1);
 }
 
 /**
@@ -99,14 +105,16 @@ function interpolate(x1: number, x2: number, y1: number, y2: number, x: number):
  * @param entries - Grouped entries by type
  * @returns Flattened array of entries with subtype
  */
-export const flattenGraphEntries = (entries: Record<string, GraphEntry[]>): GraphEntry[] => {
-  const elist: GraphEntry[] = [];
-  for (const et of Object.keys(entries)) {
-    for (const e of entries[et]) {
-      elist.push({ subtype: et, ...e });
+export const flattenGraphEntries = (
+    entries: Record<string, GraphEntry[]>,
+): GraphEntry[] => {
+    const elist: GraphEntry[] = [];
+    for (const et of Object.keys(entries)) {
+        for (const e of entries[et]) {
+            elist.push({ subtype: et, ...e });
+        }
     }
-  }
-  return elist;
+    return elist;
 };
 
 /**
@@ -119,66 +127,66 @@ export const flattenGraphEntries = (entries: Record<string, GraphEntry[]>): Grap
  * @returns The preprocessed data, containing an array of nodes and an array of links
  */
 export const preprocessData = (data: RawGraphData): PreprocessedGraphData => {
-  // Initialize an empty array for the nodes
-  let nodes: GraphNode[] = [];
-  // Get the links from the data
-  const adjacency_map = data.links;
-  const links: GraphLink[] = [];
-  const indices: Record<string, number> = {};
-  let c = 0;
+    // Initialize an empty array for the nodes
+    let nodes: GraphNode[] = [];
+    // Get the links from the data
+    const adjacency_map = data.links;
+    const links: GraphLink[] = [];
+    const indices: Record<string, number> = {};
+    let c = 0;
 
-  // Map over the entries in the data and create a new node for each entry
-  nodes = data.entries.map((entry) => {
-    indices[entry.id] = c++;
-    return {
-      id: entry.id,
-      label: entry.subtype
-        ? truncateText(`${entry.subtype}: ${entry.name}`, 40)
-        : truncateText(`${entry.type}: ${entry.name}`, 40),
-      color: data.colors[entry.subtype || entry.type],
-      name: entry.name,
-      type: entry.type,
-      subtype: entry.subtype,
-      neighbors: new Set<GraphNode>(),
-      links: new Set<GraphLink>(),
-      degree: 0,
-      x: Math.random() * 1000,
-      y: Math.random() * 1000,
-      vx: 0,
-      vy: 0,
-      fx: null,
-      fy: null,
-    };
-  });
-
-  // Initialize an empty object to store the degrees of the nodes
-  const nodesDegrees: Record<string, number> = {};
-
-  let maxDegree = -1;
-  let minDegree = Infinity;
-
-  // Calculate the degree of each node (i.e., the number of links connected to the node)
-  Object.keys(adjacency_map).forEach((src) => {
-    adjacency_map[src].forEach((dst) => {
-      nodesDegrees[src] = (nodesDegrees[src] || 0) + 1;
-      nodesDegrees[dst] = (nodesDegrees[dst] || 0) + 1;
-      nodes[indices[src]].neighbors.add(nodes[indices[dst]]);
-      nodes[indices[dst]].neighbors.add(nodes[indices[src]]);
-      const link: GraphLink = { source: src, target: dst };
-      nodes[indices[src]].links.add(link);
-      nodes[indices[dst]].links.add(link);
-      links.push(link);
-      maxDegree = Math.max(maxDegree, nodesDegrees[src], nodesDegrees[dst]);
-      minDegree = Math.min(minDegree, nodesDegrees[src], nodesDegrees[dst]);
+    // Map over the entries in the data and create a new node for each entry
+    nodes = data.entries.map((entry) => {
+        indices[entry.id] = c++;
+        return {
+            id: entry.id,
+            label: entry.subtype
+                ? truncateText(`${entry.subtype}: ${entry.name}`, 40)
+                : truncateText(`${entry.type}: ${entry.name}`, 40),
+            color: data.colors[entry.subtype || entry.type],
+            name: entry.name,
+            type: entry.type,
+            subtype: entry.subtype,
+            neighbors: new Set<GraphNode>(),
+            links: new Set<GraphLink>(),
+            degree: 0,
+            x: Math.random() * 1000,
+            y: Math.random() * 1000,
+            vx: 0,
+            vy: 0,
+            fx: null,
+            fy: null,
+        };
     });
-  });
 
-  // Assign the calculated degree to each node
-  nodes.forEach((node) => {
-    node.degree = nodesDegrees[node.id] || 0;
-    node.degree_norm = interpolate(minDegree, maxDegree, 1, 2, node.degree);
-  });
+    // Initialize an empty object to store the degrees of the nodes
+    const nodesDegrees: Record<string, number> = {};
 
-  // Return the preprocessed data
-  return { nodes, links };
+    let maxDegree = -1;
+    let minDegree = Infinity;
+
+    // Calculate the degree of each node (i.e., the number of links connected to the node)
+    Object.keys(adjacency_map).forEach((src) => {
+        adjacency_map[src].forEach((dst) => {
+            nodesDegrees[src] = (nodesDegrees[src] || 0) + 1;
+            nodesDegrees[dst] = (nodesDegrees[dst] || 0) + 1;
+            nodes[indices[src]].neighbors.add(nodes[indices[dst]]);
+            nodes[indices[dst]].neighbors.add(nodes[indices[src]]);
+            const link: GraphLink = { source: src, target: dst };
+            nodes[indices[src]].links.add(link);
+            nodes[indices[dst]].links.add(link);
+            links.push(link);
+            maxDegree = Math.max(maxDegree, nodesDegrees[src], nodesDegrees[dst]);
+            minDegree = Math.min(minDegree, nodesDegrees[src], nodesDegrees[dst]);
+        });
+    });
+
+    // Assign the calculated degree to each node
+    nodes.forEach((node) => {
+        node.degree = nodesDegrees[node.id] || 0;
+        node.degree_norm = interpolate(minDegree, maxDegree, 1, 2, node.degree);
+    });
+
+    // Return the preprocessed data
+    return { nodes, links };
 };

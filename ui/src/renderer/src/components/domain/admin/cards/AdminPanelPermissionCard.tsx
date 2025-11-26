@@ -32,17 +32,20 @@ export default function AdminPanelPermissionCard({
     const handleChange = async (newAccess: AccessLevel) => {
         if (currentAccess !== newAccess) {
             execute(
-                () => accessApi.accessUserUpdate({
-                    userId: userId,
-                    entityId: entityId,
-                    accessRequest: { accessType: newAccess },
-                }),
-                { successMessage: 'Access updated successfully' }
-            ).then(() => {
-                setCurrentAccess(newAccess);
-            }).catch(() => {
-                // Error already handled by execute
-            });
+                () =>
+                    accessApi.accessUserUpdate({
+                        userId: userId,
+                        entityId: entityId,
+                        accessRequest: { accessType: newAccess },
+                    }),
+                { successMessage: 'Access updated successfully' },
+            )
+                .then(() => {
+                    setCurrentAccess(newAccess);
+                })
+                .catch(() => {
+                    // Error already handled by execute
+                });
         }
     };
 

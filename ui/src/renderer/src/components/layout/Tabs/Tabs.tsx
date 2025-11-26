@@ -22,21 +22,22 @@ interface TabProps {
 
 const tabClassesMap = {
     [TabClasses.UNDERLINE]: {
-        active: "cradle-text-secondary border-b-2 border-cradle-accent-primary relative",
-        inactive: "cradle-text-muted border-b-2 border-cradle-border-primary hover:cradle-text-tertiary hover:border-cradle-border-secondary",
-        container: "flex flex-wrap -mb-0.5",
-        button: "px-4 py-2 whitespace-nowrap text-center flex-1",
-        lip: "absolute bottom-0 left-0 right-0 h-0.5 border-l-2 border-r-2 border-cradle-accent-primary", // side lip
+        active: 'cradle-text-secondary border-b-2 border-cradle-accent-primary relative',
+        inactive:
+            'cradle-text-muted border-b-2 border-cradle-border-primary hover:cradle-text-tertiary hover:border-cradle-border-secondary',
+        container: 'flex flex-wrap -mb-0.5',
+        button: 'px-4 py-2 whitespace-nowrap text-center flex-1',
+        lip: 'absolute bottom-0 left-0 right-0 h-0.5 border-l-2 border-r-2 border-cradle-accent-primary', // side lip
     },
     [TabClasses.PILL]: {
-        active: "leading-none cradle-bg-secondary cradle-text-secondary rounded-full shadow px-4 py-1",
-        inactive: "leading-none cradle-bg-elevated cradle-text-muted hover:cradle-text-tertiary hover:cradle-bg-secondary rounded-full px-4 py-2",
-        container: "flex flex-wrap gap-2",
-        button: "inline-flex items-center justify-center",
-        lip: ""
+        active: 'leading-none cradle-bg-secondary cradle-text-secondary rounded-full shadow px-4 py-1',
+        inactive:
+            'leading-none cradle-bg-elevated cradle-text-muted hover:cradle-text-tertiary hover:cradle-bg-secondary rounded-full px-4 py-2',
+        container: 'flex flex-wrap gap-2',
+        button: 'inline-flex items-center justify-center',
+        lip: '',
     },
 };
-
 
 const Tabs = ({
     children,
@@ -59,7 +60,7 @@ const Tabs = ({
             if (!React.isValidElement(child)) return false;
             const type = child.type as any;
             return type === Tab || type.displayName === 'Tab';
-        }
+        },
     );
 
     const tabClassStyles = tabClassesMap[tabClass];
@@ -132,9 +133,7 @@ const Tabs = ({
                         </div>
                     )}
                     {actions && (
-                        <div className='flex items-center gap-2'>
-                            {actions}
-                        </div>
+                        <div className='flex items-center gap-2'>{actions}</div>
                     )}
                 </div>
             )}

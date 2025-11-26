@@ -2,8 +2,8 @@
  * Link utilities for handling URLs and redirects
  */
 
-import { FileReference } from "@services/cradle/models";
-import QueryString from "qs";
+import { FileReference } from '@services/cradle/models';
+import QueryString from 'qs';
 
 /**
  * Content types that can be redirected to
@@ -18,18 +18,18 @@ export type ContentType = 'note' | 'cradleuser' | 'entry' | 'entryclass';
  * @returns The URL to redirect to based on the content type and id, or null if invalid
  */
 export function getRedirectUrl(content_type: string, id: string): string | null {
-  switch (content_type) {
-    case 'note':
-      return `/notes/${id}`;
-    case 'cradleuser':
-      return `/manage/user-permissions/user/${id}`;
-    case 'entry':
-      return `/manage/edit-entity/${id}`;
-    case 'entryclass':
-      return `/manage/edit-entry-class/${id}`;
-    default:
-      return null;
-  }
+    switch (content_type) {
+        case 'note':
+            return `/notes/${id}`;
+        case 'cradleuser':
+            return `/manage/user-permissions/user/${id}`;
+        case 'entry':
+            return `/manage/edit-entity/${id}`;
+        case 'entryclass':
+            return `/manage/edit-entry-class/${id}`;
+        default:
+            return null;
+    }
 }
 
 /**
@@ -42,19 +42,19 @@ export function getRedirectUrl(content_type: string, id: string): string | null 
  * @returns The stripped string
  */
 export function strip(str: string, chars: string = ' \t\n\r\f\v'): string {
-  // Escape special regex characters in the chars string
-  const escapeRegExp = (string: string): string => {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  };
+    // Escape special regex characters in the chars string
+    const escapeRegExp = (string: string): string => {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    };
 
-  // Create a RegExp pattern for the characters to strip
-  const pattern = new RegExp(
-    `^[${escapeRegExp(chars)}]+|[${escapeRegExp(chars)}]+$`,
-    'g'
-  );
+    // Create a RegExp pattern for the characters to strip
+    const pattern = new RegExp(
+        `^[${escapeRegExp(chars)}]+|[${escapeRegExp(chars)}]+$`,
+        'g',
+    );
 
-  // Return the string with leading and trailing specified characters removed
-  return str.replace(pattern, '');
+    // Return the string with leading and trailing specified characters removed
+    return str.replace(pattern, '');
 }
 
 /**
@@ -66,12 +66,12 @@ export function strip(str: string, chars: string = ' \t\n\r\f\v'): string {
  * @returns Download link
  */
 export const createDownloadPath = (file: FileReference, apiBaseUrl: string): string => {
-  const { minioFileName, bucketName } = file;
-  const queryParams = QueryString.stringify({
-    bucketName: bucketName,
-    minioFileName: minioFileName,
-  });
-  return `${apiBaseUrl}/file-transfer/download/?${queryParams}`;
+    const { minioFileName, bucketName } = file;
+    const queryParams = QueryString.stringify({
+        bucketName: bucketName,
+        minioFileName: minioFileName,
+    });
+    return `${apiBaseUrl}/file-transfer/download/?${queryParams}`;
 };
 
 /**
@@ -82,10 +82,8 @@ export const createDownloadPath = (file: FileReference, apiBaseUrl: string): str
  * @returns Process file endpoint
  */
 export const createProcessFilePath = (apiBaseUrl: string): string => {
-  return `${apiBaseUrl}/file-transfer/process/`;
+    return `${apiBaseUrl}/file-transfer/process/`;
 };
-
-
 
 /**
  * Prepends links to the top of the markdown content. This will not be visible in the preview.
@@ -96,14 +94,17 @@ export const createProcessFilePath = (apiBaseUrl: string): string => {
  * @param apiBaseUrl - Base URL for creating download paths
  * @returns Markdown content with links prepended
  */
-export const prependLinks = (mdContent: string, fileData: FileReference[], apiBaseUrl: string): string => {
-  const mdLinks = fileData
-    .map((file) => {
-      const apiDownloadPath = createDownloadPath(file, apiBaseUrl);
-      return `[${file.minioFileName}]: ${apiDownloadPath} "${file.fileName}"\n\n`;
-    })
-    .join('');
+export const prependLinks = (
+    mdContent: string,
+    fileData: FileReference[],
+    apiBaseUrl: string,
+): string => {
+    const mdLinks = fileData
+        .map((file) => {
+            const apiDownloadPath = createDownloadPath(file, apiBaseUrl);
+            return `[${file.minioFileName}]: ${apiDownloadPath} "${file.fileName}"\n\n`;
+        })
+        .join('');
 
-  return mdLinks + mdContent;
+    return mdLinks + mdContent;
 };
-

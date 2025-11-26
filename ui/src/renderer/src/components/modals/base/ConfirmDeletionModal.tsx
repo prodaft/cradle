@@ -4,14 +4,14 @@ import { useState } from 'react';
  * ConfirmDeletionModal component props
  */
 export interface ConfirmDeletionModalProps {
-  /** Callback function to execute when deletion is confirmed */
-  onConfirm: () => void;
-  /** Text to display in the modal body */
-  text?: string;
-  /** If provided, user must type this text exactly to enable the delete button */
-  confirmText?: string;
-  /** Function to close the modal */
-  closeModal: () => void;
+    /** Callback function to execute when deletion is confirmed */
+    onConfirm: () => void;
+    /** Text to display in the modal body */
+    text?: string;
+    /** If provided, user must type this text exactly to enable the delete button */
+    confirmText?: string;
+    /** Function to close the modal */
+    closeModal: () => void;
 }
 
 /**

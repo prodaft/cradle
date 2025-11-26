@@ -108,8 +108,9 @@ export function renderCradleLink(
         displayText += ` (${time ? time + ' ' : ''}${date})`;
     }
 
-    return `<a style="color: ${colorClass};" href="${url}" data-custom-href="${url}" ${date ? `data-timestamp="${date}"` : ''
-        } ${time ? `data-time="${time}"` : ''}>${displayText}</a>`;
+    return `<a style="color: ${colorClass};" href="${url}" data-custom-href="${url}" ${
+        date ? `data-timestamp="${date}"` : ''
+    } ${time ? `data-time="${time}"` : ''}>${displayText}</a>`;
 }
 
 // Match ![....][....] or [....][....]
@@ -145,10 +146,7 @@ export function renderFootnoteRef(token: Token): string {
     return content;
 }
 
-let DownloadLinkPromiseCache: Record<
-    string,
-    Promise<FileDownload>
-> = {};
+let DownloadLinkPromiseCache: Record<string, Promise<FileDownload>> = {};
 let MinioCache: Record<string, FileDownload> = {};
 
 export function fetchMinioDownloadLink(
@@ -201,7 +199,11 @@ export async function resolveMinioLinks(
             let presigned: string | undefined = cached?.presigned;
             let expiry: number | undefined = cached?.expiresAt;
             if (!presigned || Date.now() > (expiry || 0)) {
-                const result = await fetchMinioDownloadLink(fileTransferApi, bucketName, minioFileName);
+                const result = await fetchMinioDownloadLink(
+                    fileTransferApi,
+                    bucketName,
+                    minioFileName,
+                );
                 presigned = result.presigned;
                 expiry = result.expiresAt;
                 MinioCache[cacheKey] = result;
@@ -264,9 +266,7 @@ export async function parseWithExtensions(
         metadata = {};
     }
 
-    const content = fileData
-        ? prependLinks(mdContent, fileData, baseURL)
-        : mdContent;
+    const content = fileData ? prependLinks(mdContent, fileData, baseURL) : mdContent;
     const tokens = md.parse(content, {});
     await processTokens(tokens, fileTransferApi, baseURL);
     const html = md.renderer.render(tokens, md.options, metadata);

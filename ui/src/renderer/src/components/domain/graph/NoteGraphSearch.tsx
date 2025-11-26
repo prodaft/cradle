@@ -5,10 +5,7 @@ import { displayError } from '@/utils/api';
 import { ArrowLeft, ArrowRight, PlaySolid } from 'iconoir-react';
 
 import useApi from '@/hooks/api/useApi';
-import {
-    LinkTreeFlattener,
-    truncateText,
-} from '@/utils/dashboard';
+import { LinkTreeFlattener, truncateText } from '@/utils/dashboard';
 import AlertBox from '@components/base/Alert/AlertBox';
 import type { EdgeRelation } from '@services/cradle/models';
 import { Node } from './graphFilterUtils';
@@ -24,7 +21,9 @@ interface NoteGraphSearchProps {
     addNodes: (nodes: Node[]) => void;
 }
 
-export default function NoteGraphSearch(noteId: string): ComponentType<NoteGraphSearchProps> {
+export default function NoteGraphSearch(
+    noteId: string,
+): ComponentType<NoteGraphSearchProps> {
     return function NoteGraphSearchComponent({
         addEdges,
         addNodes,
@@ -34,7 +33,11 @@ export default function NoteGraphSearch(noteId: string): ComponentType<NoteGraph
         const [pageSize, setPageSize] = useState(10);
         const [totalPages, setTotalPages] = useState<number | null>(null);
         const [loading, setLoading] = useState(false);
-        const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
+        const [alert, setAlert] = useState<Alert>({
+            show: false,
+            message: '',
+            color: 'red',
+        });
         const { notesApi } = useApi();
         const { navigate, navigateLink } = useCradleNavigate();
 
@@ -199,5 +202,5 @@ export default function NoteGraphSearch(noteId: string): ComponentType<NoteGraph
                 <AlertBox alert={alert} />
             </div>
         );
-    }
+    };
 }

@@ -81,7 +81,7 @@ export default function GraphSearch({ addNodes, addEdges }: GraphSearchProps) {
 
     const updateQueryValues = (
         section: keyof QueryValues,
-        newValues: any | ((prev: any) => any)
+        newValues: any | ((prev: any) => any),
     ) => {
         setQueryValues((prev) => ({
             ...prev,
@@ -96,10 +96,7 @@ export default function GraphSearch({ addNodes, addEdges }: GraphSearchProps) {
 
     return (
         <div className='w-full mt-2'>
-            <Tabs
-                tabClass={TabClasses.PILL}
-                queryParam='searchTab'
-            >
+            <Tabs tabClass={TabClasses.PILL} queryParam='searchTab'>
                 <Tab title='Fetch Graph' classes='space-y-4'>
                     <PaginatedGraphFetch
                         queryValues={queryValues.paginatedgraphfetch}

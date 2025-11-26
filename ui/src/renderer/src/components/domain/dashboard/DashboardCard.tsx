@@ -27,11 +27,7 @@ export default function DashboardCard({ name, link, type }: DashboardCardProps) 
                 <div className='cradle-text-primary cradle-mono font-medium mb-2'>
                     {name}
                 </div>
-                {type && (
-                    <div className='cradle-label text-xs'>
-                        {type}
-                    </div>
-                )}
+                {type && <div className='cradle-label text-xs'>{type}</div>}
             </div>
         </div>
     );

@@ -15,4 +15,3 @@ export { default as RichEditor } from './RichEditor';
 export { default as SortableNote } from './SortableNote';
 export { default as StatusIndicators } from './StatusIndicators';
 export { default as ViewsDropdown } from './ViewsDropdown';
-

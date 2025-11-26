@@ -26,7 +26,11 @@ interface FileTableProps {
     insertTextCallback: (text: string) => void;
 }
 
-export default function FileTable({ fileData, setFileData, insertTextCallback }: FileTableProps) {
+export default function FileTable({
+    fileData,
+    setFileData,
+    insertTextCallback,
+}: FileTableProps) {
     const { executor } = useAPICall();
     const { basePath } = useAuth();
 
@@ -35,7 +39,7 @@ export default function FileTable({ fileData, setFileData, insertTextCallback }:
         async (text: string) => {
             await navigator.clipboard.writeText(text);
         },
-        { successMessage: 'Copied to clipboard!' }
+        { successMessage: 'Copied to clipboard!' },
     );
 
     // Removes a file from the table only. The file is not deleted from the server.
@@ -58,7 +62,6 @@ export default function FileTable({ fileData, setFileData, insertTextCallback }:
         link.click();
         document.body.removeChild(link);
     };
-
 
     return (
         <>

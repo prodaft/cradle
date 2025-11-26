@@ -1,4 +1,11 @@
-import { createContext, useContext, useMemo, useRef, useCallback, ReactNode } from 'react';
+import {
+    createContext,
+    ReactNode,
+    useCallback,
+    useContext,
+    useMemo,
+    useRef,
+} from 'react';
 
 interface TabHostContextValue {
     ensureContainer: (tabId: string) => HTMLDivElement;
@@ -55,7 +62,7 @@ export function TabHostProvider({ children }: TabHostProviderProps) {
                     'from',
                     el.parentNode?.nodeName,
                     'to',
-                    mountPoint.nodeName
+                    mountPoint.nodeName,
                 );
                 // Inherit pointer-events from mount point
                 const mountPointStyle = window.getComputedStyle(mountPoint);
@@ -68,10 +75,14 @@ export function TabHostProvider({ children }: TabHostProviderProps) {
                 el.style.overflow = 'visible';
                 mountPoint.appendChild(el); // DOM reparent (no React remount)
             } else {
-                console.log('[TabHost] Tab:', tabId, 'already attached to correct mount point');
+                console.log(
+                    '[TabHost] Tab:',
+                    tabId,
+                    'already attached to correct mount point',
+                );
             }
         },
-        [ensureContainer]
+        [ensureContainer],
     );
 
     const destroy = useCallback((tabId: string) => {
@@ -91,7 +102,7 @@ export function TabHostProvider({ children }: TabHostProviderProps) {
 
     const value = useMemo<TabHostContextValue>(
         () => ({ ensureContainer, attach, destroy }),
-        [ensureContainer, attach, destroy]
+        [ensureContainer, attach, destroy],
     );
 
     return <TabHostContext.Provider value={value}>{children}</TabHostContext.Provider>;

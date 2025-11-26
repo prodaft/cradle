@@ -25,7 +25,7 @@ export default function ViewsDropdown({
     setActiveView,
     setRichEditor,
     isAdmin,
-    hasFiles
+    hasFiles,
 }: ViewsDropdownProps) {
     const getViewLabel = () => {
         if (activeView === ViewMode.CONTENT && richEditor) return 'Rich Editor';
@@ -36,10 +36,13 @@ export default function ViewsDropdown({
     };
 
     const getViewIcon = () => {
-        if (activeView === ViewMode.CONTENT && richEditor) return <Page width='16' height='16' />;
-        if (activeView === ViewMode.CONTENT && !richEditor) return <Code width='16' height='16' />;
+        if (activeView === ViewMode.CONTENT && richEditor)
+            return <Page width='16' height='16' />;
+        if (activeView === ViewMode.CONTENT && !richEditor)
+            return <Code width='16' height='16' />;
         if (activeView === ViewMode.GRAPH) return <Graph width='16' height='16' />;
-        if (activeView === ViewMode.HISTORY) return <ClockRotateRight width='16' height='16' />;
+        if (activeView === ViewMode.HISTORY)
+            return <ClockRotateRight width='16' height='16' />;
         return null;
     };
 
@@ -73,7 +76,9 @@ export default function ViewsDropdown({
                             >
                                 <Page width='16' height='16' />
                                 <span className='flex-1'>Rich Editor</span>
-                                {activeView === ViewMode.CONTENT && richEditor && <Check width='16' height='16' />}
+                                {activeView === ViewMode.CONTENT && richEditor && (
+                                    <Check width='16' height='16' />
+                                )}
                             </button>
                             <button
                                 onClick={() => {
@@ -86,7 +91,9 @@ export default function ViewsDropdown({
                             >
                                 <Code width='16' height='16' />
                                 <span className='flex-1'>Markdown Editor</span>
-                                {activeView === ViewMode.CONTENT && !richEditor && <Check width='16' height='16' />}
+                                {activeView === ViewMode.CONTENT && !richEditor && (
+                                    <Check width='16' height='16' />
+                                )}
                             </button>
                             <button
                                 onClick={() => {
@@ -98,7 +105,9 @@ export default function ViewsDropdown({
                             >
                                 <Graph width='16' height='16' />
                                 <span className='flex-1'>Graph</span>
-                                {activeView === ViewMode.GRAPH && <Check width='16' height='16' />}
+                                {activeView === ViewMode.GRAPH && (
+                                    <Check width='16' height='16' />
+                                )}
                             </button>
                             {isAdmin && (
                                 <button
@@ -111,7 +120,9 @@ export default function ViewsDropdown({
                                 >
                                     <ClockRotateRight width='16' height='16' />
                                     <span className='flex-1'>History</span>
-                                    {activeView === ViewMode.HISTORY && <Check width='16' height='16' />}
+                                    {activeView === ViewMode.HISTORY && (
+                                        <Check width='16' height='16' />
+                                    )}
                                 </button>
                             )}
                             {hasFiles && (
@@ -124,7 +135,9 @@ export default function ViewsDropdown({
                                     data-testid='files-view-menu-item'
                                 >
                                     <span className='flex-1'>Files</span>
-                                    {activeView === ViewMode.FILES && <Check width='16' height='16' />}
+                                    {activeView === ViewMode.FILES && (
+                                        <Check width='16' height='16' />
+                                    )}
                                 </button>
                             )}
                         </div>

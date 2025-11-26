@@ -8,7 +8,7 @@ export { default as FormField } from './FormField';
 export type { FormFieldProps } from './FormField';
 
 export { default as Selector } from './Selector';
-export type { SelectorProps, SelectOption } from './Selector';
+export type { SelectOption, SelectorProps } from './Selector';
 
 export { default as SearchFilter } from './SearchFilter';
 export type { SearchFilterProps } from './SearchFilter';

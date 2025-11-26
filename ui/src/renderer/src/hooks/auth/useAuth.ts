@@ -2,9 +2,9 @@
  * Hook for accessing authentication context
  */
 
-import { useContext } from 'react';
-import { AuthContext } from '@/components/domain/auth/AuthProvider';
 import type { AuthContextValue } from '@/components/domain/auth/AuthProvider';
+import { AuthContext } from '@/components/domain/auth/AuthProvider';
+import { useContext } from 'react';
 
 /**
  * Hook to use the AuthContext
@@ -14,13 +14,13 @@ import type { AuthContextValue } from '@/components/domain/auth/AuthProvider';
  * @returns Authentication context value
  */
 export const useAuth = (): AuthContextValue => {
-  const context = useContext(AuthContext);
+    const context = useContext(AuthContext);
 
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+    if (!context) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
 
-  return context;
+    return context;
 };
 
 export default useAuth;

@@ -1,10 +1,7 @@
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { displayError } from '@/utils/api';
-import {
-    LinkTreeFlattener,
-    truncateText,
-} from '@/utils/dashboard';
+import { LinkTreeFlattener, truncateText } from '@/utils/dashboard';
 import AlertBox from '@components/base/Alert/AlertBox';
 import Selector from '@components/forms/Selector';
 import type { EdgeRelation } from '@services/cradle/models';
@@ -65,7 +62,11 @@ export default function PaginatedGraphFetch({
     const [pageSize, setPageSize] = useState(10);
     const [hasNextPage, setHasNextPage] = useState(true);
     const [loading, setLoading] = useState(false);
-    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
+    const [alert, setAlert] = useState<Alert>({
+        show: false,
+        message: '',
+        color: 'red',
+    });
     const { queryApi, knowledgeGraphApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
     const MAX_DEPTH = 3; // Set maximum depth to 3
@@ -340,9 +341,7 @@ export default function PaginatedGraphFetch({
                         </div>
 
                         <div className='flex flex-col'>
-                            <label className='text-xs text-gray-400 mb-1'>
-                                Depth
-                            </label>
+                            <label className='text-xs text-gray-400 mb-1'>Depth</label>
                             <div className='flex items-center'>
                                 <input
                                     type='number'
@@ -357,9 +356,7 @@ export default function PaginatedGraphFetch({
                         </div>
 
                         <div className='flex flex-col h-full ml-4'>
-                            <label className='text-xs text-gray-400 mb-1'>
-                                Pages
-                            </label>
+                            <label className='text-xs text-gray-400 mb-1'>Pages</label>
                             <div className='flex items-center'>
                                 <button
                                     onClick={() =>
@@ -404,7 +401,6 @@ export default function PaginatedGraphFetch({
                             )}
                         </button>
                     </div>
-
                 </div>
             </div>
 

@@ -47,7 +47,9 @@ export default function Notes() {
         updated_date_to: searchParams.get('updated_date_to') || '',
     });
 
-    const [submittedFilters, setSubmittedFilters] = useState<SearchFilters | null>(null);
+    const [submittedFilters, setSubmittedFilters] = useState<SearchFilters | null>(
+        null,
+    );
 
     const updateSearchParams = (filters: SearchFilters) => {
         const newParams = new URLSearchParams(searchParams);
@@ -84,17 +86,21 @@ export default function Notes() {
     };
 
     const handleCreateNewNote = async () => {
-        const defaultContent = profile?.defaultNoteTemplate || '# Untitled\n\nStart writing your note here...';
-        execute(() => fleetingNotesApi.fleetingNotesCreate({
-            fleetingNoteRequest: {
-                content: defaultContent,
-                files: []
-            }
-        }))
+        const defaultContent =
+            profile?.defaultNoteTemplate ||
+            '# Untitled\n\nStart writing your note here...';
+        execute(() =>
+            fleetingNotesApi.fleetingNotesCreate({
+                fleetingNoteRequest: {
+                    content: defaultContent,
+                    files: [],
+                },
+            }),
+        )
             .then((response) => {
                 navigate(`/notes/${response.id}`);
             })
-            .catch(() => { });
+            .catch(() => {});
     };
 
     // Auto-update search when filters change
@@ -102,7 +108,10 @@ export default function Notes() {
         updateSearchParams(searchFilters);
     }, []);
 
-    const handleColumnFilterChange = (column: string, value: string | DateRangeFilter) => {
+    const handleColumnFilterChange = (
+        column: string,
+        value: string | DateRangeFilter,
+    ) => {
         let updatedFilters = { ...searchFilters };
 
         // Handle date range columns differently
@@ -133,7 +142,6 @@ export default function Notes() {
         }, 500);
     };
 
-
     useEffect(() => {
         const initialFilters: SearchFilters = {
             content: searchParams.get('content') || '',
@@ -147,7 +155,6 @@ export default function Notes() {
 
         setSearchFilters(initialFilters);
     }, []);
-
 
     return (
         <div className='w-full h-full flex flex-col space-y-4'>
@@ -174,19 +181,20 @@ export default function Notes() {
                 {submittedFilters && (
                     <NotesList
                         query={submittedFilters}
-                        noteActions={[
-                            { Component: DeleteNote, props: {} },
-                        ]}
+                        noteActions={[{ Component: DeleteNote, props: {} }]}
                         onFilterChange={handleColumnFilterChange}
                         contentSearch={{
                             value: searchFilters.content,
                             onChange: (value: string) => {
-                                const updatedFilters = { ...searchFilters, content: value };
+                                const updatedFilters = {
+                                    ...searchFilters,
+                                    content: value,
+                                };
                                 setSearchFilters(updatedFilters);
                             },
                             onSubmit: () => {
                                 updateSearchParams(searchFilters);
-                            }
+                            },
                         }}
                     />
                 )}

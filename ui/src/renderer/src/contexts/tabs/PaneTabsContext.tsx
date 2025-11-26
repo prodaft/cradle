@@ -1,24 +1,24 @@
 import {
     createContext,
+    ReactNode,
     useCallback,
     useContext,
     useEffect,
+    useMemo,
     useRef,
     useState,
-    useMemo,
-    ReactNode,
 } from 'react';
-import { useLocation, useNavigate, Location } from 'react-router-dom';
-import { useLayout } from '../ui/LayoutContext';
-import { useTabHost } from './TabHostContext';
+import { Location, useLocation, useNavigate } from 'react-router-dom';
 import {
-    shouldExcludeFromTabs,
-    getTitleForPath,
-    getIconForPath,
-    createTab,
     createPaneState,
+    createTab,
+    getIconForPath,
+    getTitleForPath,
+    shouldExcludeFromTabs,
     validatePaneState,
 } from '../../utils/tabs';
+import { useLayout } from '../ui/LayoutContext';
+import { useTabHost } from './TabHostContext';
 
 interface Tab {
     id: string;
@@ -49,15 +49,24 @@ interface PaneTabsContextValue {
     getPaneTabsState: (paneId: string) => PaneState;
     initializePaneIfNeeded: (paneId: string, initialPath?: string) => void;
     activatePane: (paneId: string) => void;
-    moveTabBetweenPanes: (fromPaneId: string, fromIndex: number, toPaneId: string, toIndex?: number) => void;
-    transferTabs: (fromPaneId: string, toPaneId: string, removeSource?: boolean) => void;
+    moveTabBetweenPanes: (
+        fromPaneId: string,
+        fromIndex: number,
+        toPaneId: string,
+        toIndex?: number,
+    ) => void;
+    transferTabs: (
+        fromPaneId: string,
+        toPaneId: string,
+        removeSource?: boolean,
+    ) => void;
     preInitializePanes: (paneIds: string[]) => void;
     handleSplitWithTab: (
         oldPaneId: string,
         originalPaneId: string,
         newPaneId: string,
         sourcePaneId: string,
-        sourceIndex: number
+        sourceIndex: number,
     ) => void;
     safeNavigate: (path: string) => void;
 }
@@ -111,7 +120,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                 setIsNavigatingToTab(false);
             }
         },
-        [navigate]
+        [navigate],
     );
 
     /**
@@ -131,7 +140,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                 };
             });
         },
-        [location.pathname]
+        [location.pathname],
     );
 
     // Initialize active pane on mount (only if it doesn't exist yet)
@@ -190,10 +199,14 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                         activeTabIndex: 0,
                     },
                 };
-            } else if (Number.isInteger(activeIdx) && activeIdx >= 0 && activeIdx < newTabs.length) {
+            } else if (
+                Number.isInteger(activeIdx) &&
+                activeIdx >= 0 &&
+                activeIdx < newTabs.length
+            ) {
                 // Update existing active tab (only if activeIdx is a valid integer)
                 const currentTab = newTabs[activeIdx];
-                
+
                 // Optimization: If the path hasn't changed, do not update the state.
                 // This prevents unnecessary re-renders and prevents overwriting custom titles
                 // that might have been set by the component.
@@ -277,7 +290,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                 safeNavigate(path);
             }
         },
-        [safeNavigate, activePaneId]
+        [safeNavigate, activePaneId],
     );
 
     /**
@@ -352,7 +365,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                 };
             });
         },
-        [safeNavigate, getAllPaneIds, activePaneId, destroyTabContainer]
+        [safeNavigate, getAllPaneIds, activePaneId, destroyTabContainer],
     );
 
     /**
@@ -385,7 +398,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                 };
             });
         },
-        [safeNavigate, activePaneId]
+        [safeNavigate, activePaneId],
     );
 
     /**
@@ -427,7 +440,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                 };
             });
         },
-        [safeNavigate, activePaneId, destroyTabContainer]
+        [safeNavigate, activePaneId, destroyTabContainer],
     );
 
     /**
@@ -474,43 +487,52 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                 };
             });
         },
-        [safeNavigate, activePaneId, destroyTabContainer]
+        [safeNavigate, activePaneId, destroyTabContainer],
     );
 
     /**
      * Reorders tabs by moving a tab from one index to another
      */
-    const reorderTabs = useCallback((paneId: string, fromIndex: number, toIndex: number) => {
-        if (fromIndex === toIndex) return;
+    const reorderTabs = useCallback(
+        (paneId: string, fromIndex: number, toIndex: number) => {
+            if (fromIndex === toIndex) return;
 
-        setPaneTabsState((current) => {
-            const paneState = current[paneId];
-            if (!paneState || !validatePaneState(paneState)) {
-                return current;
-            }
+            setPaneTabsState((current) => {
+                const paneState = current[paneId];
+                if (!paneState || !validatePaneState(paneState)) {
+                    return current;
+                }
 
-            const newTabs = [...paneState.tabs];
-            const [movedTab] = newTabs.splice(fromIndex, 1);
-            newTabs.splice(toIndex, 0, movedTab);
+                const newTabs = [...paneState.tabs];
+                const [movedTab] = newTabs.splice(fromIndex, 1);
+                newTabs.splice(toIndex, 0, movedTab);
 
-            let newActiveIndex = paneState.activeTabIndex;
-            if (fromIndex === paneState.activeTabIndex) {
-                newActiveIndex = toIndex;
-            } else if (fromIndex < paneState.activeTabIndex && toIndex >= paneState.activeTabIndex) {
-                newActiveIndex = paneState.activeTabIndex - 1;
-            } else if (fromIndex > paneState.activeTabIndex && toIndex <= paneState.activeTabIndex) {
-                newActiveIndex = paneState.activeTabIndex + 1;
-            }
+                let newActiveIndex = paneState.activeTabIndex;
+                if (fromIndex === paneState.activeTabIndex) {
+                    newActiveIndex = toIndex;
+                } else if (
+                    fromIndex < paneState.activeTabIndex &&
+                    toIndex >= paneState.activeTabIndex
+                ) {
+                    newActiveIndex = paneState.activeTabIndex - 1;
+                } else if (
+                    fromIndex > paneState.activeTabIndex &&
+                    toIndex <= paneState.activeTabIndex
+                ) {
+                    newActiveIndex = paneState.activeTabIndex + 1;
+                }
 
-            return {
-                ...current,
-                [paneId]: {
-                    tabs: newTabs,
-                    activeTabIndex: newActiveIndex,
-                },
-            };
-        });
-    }, []);
+                return {
+                    ...current,
+                    [paneId]: {
+                        tabs: newTabs,
+                        activeTabIndex: newActiveIndex,
+                    },
+                };
+            });
+        },
+        [],
+    );
 
     /**
      * Creates a new tab in a specific pane
@@ -551,7 +573,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                 safeNavigate('/');
             }
         },
-        [safeNavigate, activePaneId]
+        [safeNavigate, activePaneId],
     );
 
     /**
@@ -561,7 +583,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
         (paneId: string): PaneState => {
             return paneTabsState[paneId] || { tabs: [], activeTabIndex: 0 };
         },
-        [paneTabsState]
+        [paneTabsState],
     );
 
     /**
@@ -627,18 +649,26 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                 const tabToMove = { ...fromPaneState.tabs[fromIndex] };
 
                 // Remove from source pane
-                const newFromTabs = fromPaneState.tabs.filter((_, i) => i !== fromIndex);
+                const newFromTabs = fromPaneState.tabs.filter(
+                    (_, i) => i !== fromIndex,
+                );
                 let newFromActiveIndex = fromPaneState.activeTabIndex;
 
                 // Adjust active index in source pane
                 if (fromIndex === fromPaneState.activeTabIndex) {
-                    newFromActiveIndex = newFromTabs.length > 0 ? (fromIndex > 0 ? fromIndex - 1 : 0) : 0;
+                    newFromActiveIndex =
+                        newFromTabs.length > 0
+                            ? fromIndex > 0
+                                ? fromIndex - 1
+                                : 0
+                            : 0;
                 } else if (fromIndex < fromPaneState.activeTabIndex) {
                     newFromActiveIndex = fromPaneState.activeTabIndex - 1;
                 }
 
                 // Check if we need to close the source pane
-                const shouldCloseSourcePane = newFromTabs.length === 0 && allPaneIds.length > 1;
+                const shouldCloseSourcePane =
+                    newFromTabs.length === 0 && allPaneIds.length > 1;
 
                 if (shouldCloseSourcePane) {
                     requestAnimationFrame(() => {
@@ -675,7 +705,10 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                     ...current,
                     [fromPaneId]: {
                         tabs: newFromTabs,
-                        activeTabIndex: Math.min(newFromActiveIndex, Math.max(0, newFromTabs.length - 1)),
+                        activeTabIndex: Math.min(
+                            newFromActiveIndex,
+                            Math.max(0, newFromTabs.length - 1),
+                        ),
                     },
                     [toPaneId]: {
                         tabs: newToTabs,
@@ -689,7 +722,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                 return newState;
             });
         },
-        [safeNavigate, activePaneId, reorderTabs, getAllPaneIds]
+        [safeNavigate, activePaneId, reorderTabs, getAllPaneIds],
     );
 
     /**
@@ -724,7 +757,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                 return newState;
             });
         },
-        []
+        [],
     );
 
     /**
@@ -751,7 +784,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
             originalPaneId: string,
             newPaneId: string,
             sourcePaneId: string,
-            sourceIndex: number
+            sourceIndex: number,
         ) => {
             const allPaneIds = getAllPaneIds();
 
@@ -763,8 +796,10 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                 }
 
                 // Determine the actual source pane ID after the split
-                const actualSourcePaneId = sourcePaneId === oldPaneId ? originalPaneId : sourcePaneId;
-                const actualSourceState = sourcePaneId === oldPaneId ? oldPaneState : current[sourcePaneId];
+                const actualSourcePaneId =
+                    sourcePaneId === oldPaneId ? originalPaneId : sourcePaneId;
+                const actualSourceState =
+                    sourcePaneId === oldPaneId ? oldPaneState : current[sourcePaneId];
 
                 if (!actualSourceState || !validatePaneState(actualSourceState)) {
                     return current;
@@ -776,7 +811,13 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
 
                 // Get the tab to move (keep original ID - we're moving, not copying)
                 const tabToMove = actualSourceState.tabs[sourceIndex];
-                console.log('[TabSplit] Moving tab:', tabToMove.id, 'from pane:', sourcePaneId, 'to new pane');
+                console.log(
+                    '[TabSplit] Moving tab:',
+                    tabToMove.id,
+                    'from pane:',
+                    sourcePaneId,
+                    'to new pane',
+                );
 
                 // Build new state
                 const newState: PaneTabsState = { ...current };
@@ -791,7 +832,12 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                 if (sourcePaneId === oldPaneId) {
                     // If the dragged tab was from the pane being split, remove it from the original pane's new tabs
                     newTabs = oldPaneState.tabs.filter((_, i) => i !== sourceIndex);
-                    newActiveIndex = newTabs.length > 0 ? (sourceIndex > 0 ? sourceIndex - 1 : 0) : 0;
+                    newActiveIndex =
+                        newTabs.length > 0
+                            ? sourceIndex > 0
+                                ? sourceIndex - 1
+                                : 0
+                            : 0;
                 } else {
                     // Otherwise, the original pane keeps all its tabs
                     newTabs = [...oldPaneState.tabs];
@@ -800,14 +846,19 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
 
                 newState[originalPaneId] = {
                     tabs: newTabs,
-                    activeTabIndex: Math.min(newActiveIndex, Math.max(0, newTabs.length - 1)),
+                    activeTabIndex: Math.min(
+                        newActiveIndex,
+                        Math.max(0, newTabs.length - 1),
+                    ),
                 };
 
                 // If the source pane was the one being split, and it now has no tabs, close it
                 if (sourcePaneId === oldPaneId) {
                     if (newTabs.length === 0 && allPaneIds.length > 1) {
                         delete newState[originalPaneId];
-                        requestAnimationFrame(() => closePaneRef.current(originalPaneId));
+                        requestAnimationFrame(() =>
+                            closePaneRef.current(originalPaneId),
+                        );
                     }
                 } else {
                     // If the source pane was a different pane, update its tabs
@@ -815,7 +866,12 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                     newTabs = sourceState.tabs.filter((_, i) => i !== sourceIndex);
                     newActiveIndex = sourceState.activeTabIndex;
                     if (sourceIndex === sourceState.activeTabIndex) {
-                        newActiveIndex = newTabs.length > 0 ? (sourceIndex > 0 ? sourceIndex - 1 : 0) : 0;
+                        newActiveIndex =
+                            newTabs.length > 0
+                                ? sourceIndex > 0
+                                    ? sourceIndex - 1
+                                    : 0
+                                : 0;
                     } else if (sourceIndex < sourceState.activeTabIndex) {
                         newActiveIndex = sourceState.activeTabIndex - 1;
                     }
@@ -823,11 +879,16 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                     // Check if source pane should be closed
                     if (newTabs.length === 0 && allPaneIds.length > 1) {
                         delete newState[actualSourcePaneId];
-                        requestAnimationFrame(() => closePaneRef.current(actualSourcePaneId));
+                        requestAnimationFrame(() =>
+                            closePaneRef.current(actualSourcePaneId),
+                        );
                     } else {
                         newState[actualSourcePaneId] = {
                             tabs: newTabs,
-                            activeTabIndex: Math.min(newActiveIndex, Math.max(0, newTabs.length - 1)),
+                            activeTabIndex: Math.min(
+                                newActiveIndex,
+                                Math.max(0, newTabs.length - 1),
+                            ),
                         };
                     }
                 }
@@ -842,13 +903,13 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                     '[TabSplit] Final state - Original pane tabs:',
                     newState[originalPaneId]?.tabs.map((t) => t.id),
                     'New pane tabs:',
-                    newState[newPaneId]?.tabs.map((t) => t.id)
+                    newState[newPaneId]?.tabs.map((t) => t.id),
                 );
 
                 return newState;
             });
         },
-        [getAllPaneIds]
+        [getAllPaneIds],
     );
 
     /**
@@ -864,7 +925,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                 }
             }
         },
-        [paneTabsState, safeNavigate]
+        [paneTabsState, safeNavigate],
     );
 
     // Clean up tabs for panes that no longer exist
@@ -931,8 +992,12 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
             preInitializePanes,
             handleSplitWithTab,
             safeNavigate,
-        ]
+        ],
     );
 
-    return <PaneTabsContext.Provider value={contextValue}>{children}</PaneTabsContext.Provider>;
+    return (
+        <PaneTabsContext.Provider value={contextValue}>
+            {children}
+        </PaneTabsContext.Provider>
+    );
 };

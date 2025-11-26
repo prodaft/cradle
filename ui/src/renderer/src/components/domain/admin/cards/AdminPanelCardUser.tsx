@@ -1,15 +1,15 @@
-import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
-import { ReactNode } from 'react';
 import { useModal } from '@/contexts/ui/ModalContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import AccountSettings from '../../user/AccountSettings';
-import ActivityList from '../../activity/ActivityList';
-import AdminPanelUserPermissions from '../AdminPanelUserPermissions';
+import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
+import { ReactNode } from 'react';
 import Card from '../../../base/Card/Card';
 import ConfirmDeletionModal from '../../../modals/base/ConfirmDeletionModal';
+import ActivityList from '../../activity/ActivityList';
+import AccountSettings from '../../user/AccountSettings';
+import AdminPanelUserPermissions from '../AdminPanelUserPermissions';
 
 interface AdminPanelCardUserProps {
     name: string;
@@ -22,7 +22,7 @@ export default function AdminPanelCardUser({
     name,
     id,
     onDelete,
-    setRightPane
+    setRightPane,
 }: AdminPanelCardUserProps) {
     const { executor } = useAPICall();
     const { usersApi } = useApi();
@@ -36,7 +36,7 @@ export default function AdminPanelCardUser({
             await usersApi.usersDestroy({ userId: String(id) });
             onDelete();
         },
-        { successMessage: 'User deleted successfully' }
+        { successMessage: 'User deleted successfully' },
     );
 
     const handleActivityClick = () => {
@@ -55,7 +55,13 @@ export default function AdminPanelCardUser({
     };
 
     const handleUserClick = () => {
-        setRightPane(<AdminPanelUserPermissions username={name} id={String(id)} key={String(id)} />);
+        setRightPane(
+            <AdminPanelUserPermissions
+                username={name}
+                id={String(id)}
+                key={String(id)}
+            />,
+        );
     };
 
     const actions = [
@@ -92,7 +98,7 @@ export default function AdminPanelCardUser({
                 title={name}
                 actions={actions}
                 onClick={handleUserClick}
-                className="bg-cradle3 bg-opacity-20 backdrop-filter backdrop-blur-lg"
+                className='bg-cradle3 bg-opacity-20 backdrop-filter backdrop-blur-lg'
             />
         </>
     );

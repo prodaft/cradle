@@ -1,11 +1,10 @@
 export { default as Graph } from './Graph';
-export { default as GraphExplorer } from './GraphExplorer';
-export { default as GraphQuery } from './GraphQuery';
 export { default as GraphControl } from './GraphControl';
+export { default as GraphExplorer } from './GraphExplorer';
 export { default as GraphLegend } from './GraphLegend';
+export { default as GraphQuery } from './GraphQuery';
 export { default as GraphSearch } from './GraphSearch';
 export { default as GraphSettings } from './GraphSettings';
 export { default as NoteGraphSearch } from './NoteGraphSearch';
 export { default as PaginatedGraphFetch } from './PaginatedGraphFetch';
 export { default as PathFindSearch } from './PathFindSearch';
-

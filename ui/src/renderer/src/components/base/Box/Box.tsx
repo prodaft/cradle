@@ -27,9 +27,7 @@ function Box({
 
     return (
         <div className={combinedClasses} {...props}>
-            <div className='cradle-card-body p-3'>
-                {children}
-            </div>
+            <div className='cradle-card-body p-3'>{children}</div>
         </div>
     );
 }

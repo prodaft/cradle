@@ -15,7 +15,10 @@ export interface Node {
  * @param disabledTypes - Set of disabled node types
  * @returns Filtered nodes
  */
-export function filterNodes<T extends Node>(nodes: T[], disabledTypes: Set<string>): T[] {
+export function filterNodes<T extends Node>(
+    nodes: T[],
+    disabledTypes: Set<string>,
+): T[] {
     if (!disabledTypes || disabledTypes.size === 0) {
         return nodes;
     }
@@ -32,7 +35,10 @@ export function filterNodes<T extends Node>(nodes: T[], disabledTypes: Set<strin
  * @param filteredNodes - Filtered nodes array
  * @returns Filtered edges
  */
-export function filterEdges<T extends Node, E extends EdgeRelation>(edges: E[], filteredNodes: T[]): E[] {
+export function filterEdges<T extends Node, E extends EdgeRelation>(
+    edges: E[],
+    filteredNodes: T[],
+): E[] {
     if (!filteredNodes || filteredNodes.length === 0) {
         return [];
     }
@@ -42,7 +48,9 @@ export function filterEdges<T extends Node, E extends EdgeRelation>(edges: E[], 
 
     // Only keep edges where both source and target nodes are visible
     return edges.filter((edge) => {
-        return visibleNodeIds.has(String(edge.src)) && visibleNodeIds.has(String(edge.dst));
+        return (
+            visibleNodeIds.has(String(edge.src)) && visibleNodeIds.has(String(edge.dst))
+        );
     });
 }
 
@@ -56,7 +64,7 @@ export function filterEdges<T extends Node, E extends EdgeRelation>(edges: E[], 
 export function filterGraph<T extends Node, E extends EdgeRelation>(
     nodes: T[],
     edges: E[],
-    disabledTypes: Set<string>
+    disabledTypes: Set<string>,
 ): { nodes: T[]; edges: E[] } {
     const filteredNodes = filterNodes(nodes, disabledTypes);
     const filteredEdges = filterEdges(edges, filteredNodes);

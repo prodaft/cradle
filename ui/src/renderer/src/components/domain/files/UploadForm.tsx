@@ -1,12 +1,12 @@
+import useApi from '@/hooks/api/useApi';
+import type { Alert } from '@/types';
+import AlertBox from '@components/base/Alert/AlertBox';
+import Selector from '@components/forms/Selector';
 import { Upload } from 'iconoir-react';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { MultiValue } from 'react-select';
 import * as Yup from 'yup';
-import useApi from '@/hooks/api/useApi';
-import type { Alert, StateSetter } from '@/types';
-import AlertBox from '@components/base/Alert/AlertBox';
-import Selector from '@components/forms/Selector';
 
 interface DataTypeOption {
     value: string;
@@ -15,7 +15,7 @@ interface DataTypeOption {
 }
 
 interface AssociatedEntryOption {
-    value: number;  // Entry ID (BigAutoField)
+    value: number; // Entry ID (BigAutoField)
     label: string;
 }
 
@@ -77,7 +77,10 @@ const getFieldErrorClasses = (hasError: boolean, baseClasses: string = ''): stri
 };
 
 // Error message component
-const ErrorMessage: React.FC<{ children: React.ReactNode; id?: string }> = ({ children, id }) => (
+const ErrorMessage: React.FC<{ children: React.ReactNode; id?: string }> = ({
+    children,
+    id,
+}) => (
     <p id={id} className='mt-1 text-xs text-red-600 flex items-center'>
         <svg
             className='w-3 h-3 mr-1 flex-shrink-0'
@@ -129,10 +132,15 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
         [setTouched],
     );
 
-    const fetchRelatedEntries = async (query: string): Promise<AssociatedEntryOption[]> => {
+    const fetchRelatedEntries = async (
+        query: string,
+    ): Promise<AssociatedEntryOption[]> => {
         setEntriesLoading(true);
         try {
-            const response = await queryApi.queryList({ name: [query], type: 'entity' });
+            const response = await queryApi.queryList({
+                name: [query],
+                type: 'entity',
+            });
             if (response && response.results) {
                 return response.results.map((entry) => ({
                     value: entry.id!,
@@ -167,7 +175,9 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
         markFieldTouched('dataType');
     };
 
-    const handleAssociatedEntriesChange = (value: MultiValue<AssociatedEntryOption>) => {
+    const handleAssociatedEntriesChange = (
+        value: MultiValue<AssociatedEntryOption>,
+    ) => {
         updateFormValue('associatedEntry', Array.from(value));
         markFieldTouched('associatedEntry');
     };
@@ -265,7 +275,9 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
 
             setAlert({
                 color: 'red',
-                message: Object.values(formErrors).map((msg) => `- ${msg}`).join('\n'),
+                message: Object.values(formErrors)
+                    .map((msg) => `- ${msg}`)
+                    .join('\n'),
                 show: true,
             });
             return false;
@@ -375,12 +387,13 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
                     </label>
                     <div
                         {...getRootProps()}
-                        className={`border-2 border-dashed rounded-md p-2 text-center cursor-pointer h-10 flex items-center justify-center  ${filesError
-                            ? 'border-red-300 bg-red-50 hover:border-red-400'
-                            : isDragActive
-                                ? 'bg-blue-50 border-blue-300'
-                                : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
-                            }`}
+                        className={`border-2 border-dashed rounded-md p-2 text-center cursor-pointer h-10 flex items-center justify-center  ${
+                            filesError
+                                ? 'border-red-300 bg-red-50 hover:border-red-400'
+                                : isDragActive
+                                  ? 'bg-blue-50 border-blue-300'
+                                  : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+                        }`}
                         aria-invalid={filesError ? 'true' : 'false'}
                         aria-describedby={filesError ? 'files-error' : undefined}
                     >
@@ -446,12 +459,13 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
                     <button
                         type='submit'
                         disabled={isUploading}
-                        className={`w-full btn flex items-center justify-center  ${isUploading
-                            ? 'opacity-50 cursor-not-allowed'
-                            : hasErrors
-                                ? 'hover:bg-red-800 text-white'
-                                : 'text-white'
-                            }`}
+                        className={`w-full btn flex items-center justify-center  ${
+                            isUploading
+                                ? 'opacity-50 cursor-not-allowed'
+                                : hasErrors
+                                  ? 'hover:bg-red-800 text-white'
+                                  : 'text-white'
+                        }`}
                         aria-label={isUploading ? 'Uploading file' : 'Upload file'}
                     >
                         {isUploading ? (

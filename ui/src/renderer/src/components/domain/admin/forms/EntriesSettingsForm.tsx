@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import useApi from '@/hooks/api/useApi';
+import { useState } from 'react';
 import AlertBox from '../../../base/Alert/AlertBox';
 
 interface Alert {
@@ -9,7 +9,11 @@ interface Alert {
 }
 
 export default function EntriesManagement() {
-    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
+    const [alert, setAlert] = useState<Alert>({
+        show: false,
+        message: '',
+        color: 'red',
+    });
     const { managementApi } = useApi();
 
     const handlePropagateAccessVectors = async () => {

@@ -4,14 +4,14 @@ import { useState } from 'react';
  * ActionConfirmationModal component props
  */
 export interface ActionConfirmationModalProps {
-  /** Callback function to execute when the action is confirmed */
-  onConfirm: () => void;
-  /** Text to display in the modal body */
-  text?: string;
-  /** If provided, user must type this text exactly to enable the confirm button */
-  confirmText?: string;
-  /** Function to close the modal */
-  closeModal: () => void;
+    /** Callback function to execute when the action is confirmed */
+    onConfirm: () => void;
+    /** Text to display in the modal body */
+    text?: string;
+    /** If provided, user must type this text exactly to enable the confirm button */
+    confirmText?: string;
+    /** Function to close the modal */
+    closeModal: () => void;
 }
 
 /**

@@ -15,7 +15,7 @@ import { useSearchParams } from 'react-router-dom';
 interface FilesListQuery {
     date?: string;
     keyword?: string;
-    linked_to?: number | string;  // Entry ID (number) or string query parameter
+    linked_to?: number | string; // Entry ID (number) or string query parameter
     linked_to_exact_match?: boolean;
     mimetype?: string;
     references?: string;
@@ -62,9 +62,15 @@ export default function FilesList({
     const [loading, setLoading] = useState(false);
     const [totalPages, setTotalPages] = useState(1);
     const [page, setPage] = useState(Number(searchParams.get('files_page')) || 1);
-    const [sortField, setSortField] = useState(searchParams.get('files_sort_field') || 'timestamp');
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>((searchParams.get('files_sort_direction') as 'asc' | 'desc') || 'desc');
-    const [pageSize, setPageSize] = useState(Number(searchParams.get('files_pagesize')) || 10);
+    const [sortField, setSortField] = useState(
+        searchParams.get('files_sort_field') || 'timestamp',
+    );
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(
+        (searchParams.get('files_sort_direction') as 'asc' | 'desc') || 'desc',
+    );
+    const [pageSize, setPageSize] = useState(
+        Number(searchParams.get('files_pagesize')) || 10,
+    );
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -116,7 +122,9 @@ export default function FilesList({
             };
 
             // Remove undefined values
-            Object.keys(params).forEach(key => params[key] === undefined && delete params[key]);
+            Object.keys(params).forEach(
+                (key) => params[key] === undefined && delete params[key],
+            );
 
             const response = await notesApi.notesFilesRetrieve(params);
             setFiles(response.results);
@@ -182,16 +190,19 @@ export default function FilesList({
 
         try {
             for (const fileId of selectedFiles) {
-                const file = files.find(f => f.id === fileId);
+                const file = files.find((f) => f.id === fileId);
                 if (file && file.bucketName && file.minioFileName) {
-                    const response = await fileTransferApi.fileTransferDownloadRetrieve({
-                        bucketName: file.bucketName,
-                        minioFileName: file.minioFileName,
-                    });
+                    const response = await fileTransferApi.fileTransferDownloadRetrieve(
+                        {
+                            bucketName: file.bucketName,
+                            minioFileName: file.minioFileName,
+                        },
+                    );
                     const { presigned } = response;
                     const link = document.createElement('a');
                     link.href = presigned;
-                    const fileName = file.minioFileName.split('/').pop() || file.minioFileName;
+                    const fileName =
+                        file.minioFileName.split('/').pop() || file.minioFileName;
                     link.download = fileName;
                     document.body.appendChild(link);
                     link.click();
@@ -216,7 +227,10 @@ export default function FilesList({
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target as Node)
+            ) {
                 setIsDropdownOpen(false);
             }
         };
@@ -255,7 +269,11 @@ export default function FilesList({
         onSelect?: () => void;
     }
 
-    const renderRow = (file: FileReferenceWithNote, index: number, selectProps: SelectProps = {}) => {
+    const renderRow = (
+        file: FileReferenceWithNote,
+        index: number,
+        selectProps: SelectProps = {},
+    ) => {
         for (const f of filteredFiles) {
             if (f.id === file.id) return null;
         }
@@ -276,9 +294,7 @@ export default function FilesList({
                         </div>
                     </td>
                 )}
-                <td className='truncate w-32'>
-                    {truncateText(file.fileName, 32)}
-                </td>
+                <td className='truncate w-32'>{truncateText(file.fileName, 32)}</td>
                 <td className=''>
                     <div className='flex flex-wrap gap-1'>
                         {file.entities?.slice(0, 3).map((entity) => (
@@ -295,9 +311,7 @@ export default function FilesList({
                         ))}
                     </div>
                 </td>
-                <td className='truncate w-32'>
-                    {truncateText(file.mimetype, 32)}
-                </td>
+                <td className='truncate w-32'>{truncateText(file.mimetype, 32)}</td>
                 <td className='w-48'>
                     {file.sha256Hash ? (
                         <span
@@ -341,31 +355,51 @@ export default function FilesList({
                         <div className='flex flex-wrap items-center justify-between gap-4'>
                             {/* Left: Actions Dropdown */}
                             <div className='flex items-center gap-4 flex-shrink-0'>
-                                <div className={`${files.length === 0 ? 'opacity-50 pointer-events-none' : ''}`}>
-                                    <div className="cradle-dropdown" ref={dropdownRef}>
+                                <div
+                                    className={`${files.length === 0 ? 'opacity-50 pointer-events-none' : ''}`}
+                                >
+                                    <div className='cradle-dropdown' ref={dropdownRef}>
                                         <button
-                                            type="button"
+                                            type='button'
                                             className={`cradle-select text-sm flex items-center justify-between gap-2 min-w-[120px] ${selectedFiles.length > 0 ? 'opacity-100 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
                                             disabled={selectedFiles.length === 0}
-                                            title={selectedFiles.length > 0 ? `${selectedFiles.length} file(s) selected` : "Select files to perform actions"}
-                                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                            title={
+                                                selectedFiles.length > 0
+                                                    ? `${selectedFiles.length} file(s) selected`
+                                                    : 'Select files to perform actions'
+                                            }
+                                            onClick={() =>
+                                                setIsDropdownOpen(!isDropdownOpen)
+                                            }
                                         >
-                                            <span className="truncate">
-                                                {selectedFiles.length > 0 ? `${selectedFiles.length} selected` : 'Actions'}
+                                            <span className='truncate'>
+                                                {selectedFiles.length > 0
+                                                    ? `${selectedFiles.length} selected`
+                                                    : 'Actions'}
                                             </span>
-                                            <svg className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                                            <svg
+                                                className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                                                fill='none'
+                                                stroke='currentColor'
+                                                viewBox='0 0 24 24'
+                                            >
+                                                <path
+                                                    strokeLinecap='round'
+                                                    strokeLinejoin='round'
+                                                    strokeWidth='2'
+                                                    d='M19 9l-7 7-7-7'
+                                                ></path>
                                             </svg>
                                         </button>
 
                                         {isDropdownOpen && selectedFiles.length > 0 && (
-                                            <div className="cradle-dropdown-menu">
+                                            <div className='cradle-dropdown-menu'>
                                                 <button
-                                                    type="button"
-                                                    className="cradle-dropdown-option flex items-center gap-2"
+                                                    type='button'
+                                                    className='cradle-dropdown-option flex items-center gap-2'
                                                     onClick={handleDownloadSelected}
                                                 >
-                                                    <Download className="w-4 h-4" />
+                                                    <Download className='w-4 h-4' />
                                                     Download
                                                 </button>
                                             </div>
@@ -404,10 +438,16 @@ export default function FilesList({
                         sortDirection={sortDirection}
                         onSort={handleSort}
                         sortFieldMapping={sortFieldMapping}
-                        emptyMessage="No files found!"
-                        tableClassName="table"
+                        emptyMessage='No files found!'
+                        tableClassName='table'
                         enableMultiSelect={true}
-                        setSelected={(ids) => setSelectedFiles(ids.filter((id): id is string => typeof id === 'string'))}
+                        setSelected={(ids) =>
+                            setSelectedFiles(
+                                ids.filter(
+                                    (id): id is string => typeof id === 'string',
+                                ),
+                            )
+                        }
                     />
                 </div>
             </div>

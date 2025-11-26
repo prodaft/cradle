@@ -44,11 +44,14 @@ export default function DigestData() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [sortField, setSortField] = useState(searchParams.get('digests_sort_field') || 'created_at');
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | undefined>((searchParams.get('digests_sort_direction') as 'asc' | 'desc') || 'desc');
+    const [sortField, setSortField] = useState(
+        searchParams.get('digests_sort_field') || 'created_at',
+    );
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | undefined>(
+        (searchParams.get('digests_sort_direction') as 'asc' | 'desc') || 'desc',
+    );
     const [pageSize, setPageSize] = useState(
-        Number(searchParams.get('digests_pagesize')) ||
-        10
+        Number(searchParams.get('digests_pagesize')) || 10,
     );
 
     // Search state
@@ -73,8 +76,16 @@ export default function DigestData() {
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
         user: searchParams.get('author') || '',
         createdAt: {
-            from: searchParams.get('created_at_gte') ? new Date(searchParams.get('created_at_gte')!).toISOString().split('T')[0] : '',
-            to: searchParams.get('created_at_lte') ? new Date(searchParams.get('created_at_lte')!).toISOString().split('T')[0] : ''
+            from: searchParams.get('created_at_gte')
+                ? new Date(searchParams.get('created_at_gte')!)
+                      .toISOString()
+                      .split('T')[0]
+                : '',
+            to: searchParams.get('created_at_lte')
+                ? new Date(searchParams.get('created_at_lte')!)
+                      .toISOString()
+                      .split('T')[0]
+                : '',
         },
     });
 
@@ -99,13 +110,13 @@ export default function DigestData() {
         const initialDateRange: DateRange = {
             startDate: searchParams.get('created_at_gte')
                 ? new Date(searchParams.get('created_at_gte')!)
-                    .toISOString()
-                    .split('T')[0]
+                      .toISOString()
+                      .split('T')[0]
                 : null,
             endDate: searchParams.get('created_at_lte')
                 ? new Date(searchParams.get('created_at_lte')!)
-                    .toISOString()
-                    .split('T')[0]
+                      .toISOString()
+                      .split('T')[0]
                 : null,
         };
 
@@ -168,10 +179,10 @@ export default function DigestData() {
                 : '',
             created_at_lte: dateRangeValue.endDate
                 ? (() => {
-                    const endDate = new Date(dateRangeValue.endDate);
-                    endDate.setHours(23, 59, 59, 999);
-                    return endDate.toISOString();
-                })()
+                      const endDate = new Date(dateRangeValue.endDate);
+                      endDate.setHours(23, 59, 59, 999);
+                      return endDate.toISOString();
+                  })()
                 : '',
         });
     };
@@ -214,7 +225,9 @@ export default function DigestData() {
                 searchQueryParams.author = columnFilters.user;
             }
             if (columnFilters.createdAt.from) {
-                searchQueryParams.createdAtGte = new Date(columnFilters.createdAt.from).toISOString();
+                searchQueryParams.createdAtGte = new Date(
+                    columnFilters.createdAt.from,
+                ).toISOString();
             }
             if (columnFilters.createdAt.to) {
                 const endDate = new Date(columnFilters.createdAt.to);
@@ -266,7 +279,7 @@ export default function DigestData() {
     };
 
     const handleColumnFilterChange = (column: string, value: any) => {
-        setColumnFilters(prev => ({
+        setColumnFilters((prev) => ({
             ...prev,
             [column]: value,
         }));
@@ -305,7 +318,10 @@ export default function DigestData() {
                     setPageSize={handlePageSizeChange}
                     onColumnFilterChange={handleColumnFilterChange}
                     columnFilters={columnFilters}
-                    searchFilters={{ title: searchFilters.title, author: searchFilters.author }}
+                    searchFilters={{
+                        title: searchFilters.title,
+                        author: searchFilters.author,
+                    }}
                     onSearchChange={handleSearchChange}
                     onSearchSubmit={handleSearchSubmit}
                 />

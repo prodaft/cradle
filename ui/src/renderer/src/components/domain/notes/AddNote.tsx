@@ -1,5 +1,5 @@
-import { PlusCircle } from 'iconoir-react';
 import type { NoteRetrieve } from '@services/cradle/models';
+import { PlusCircle } from 'iconoir-react';
 
 interface AddNoteProps {
     note: NoteRetrieve;

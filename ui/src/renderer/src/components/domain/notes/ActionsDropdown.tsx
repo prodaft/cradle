@@ -1,7 +1,7 @@
+import Tooltip from '@components/base/Tooltip/Tooltip';
 import { TreeView } from '@phosphor-icons/react';
 import { Check, CloudUpload, MoreVert, RefreshCircle } from 'iconoir-react';
 import { FloppyDisk, LightBulb, Trash } from 'iconoir-react/regular';
-import Tooltip from '@components/base/Tooltip/Tooltip';
 import { ViewMode } from './constants';
 
 interface ActionsDropdownProps {
@@ -44,7 +44,7 @@ export default function ActionsDropdown({
 }: ActionsDropdownProps) {
     return (
         <div className='relative'>
-            <Tooltip content="Actions">
+            <Tooltip content='Actions'>
                 <button
                     onClick={() => setShowActionsMenu(!showActionsMenu)}
                     className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:cradle-text-primary cradle-border hover:border-[#FF8C00]'
@@ -75,32 +75,36 @@ export default function ActionsDropdown({
                                     {showOutline && <Check width='16' height='16' />}
                                 </button>
                             )}
-                            {lspLoaded && enableEditing && activeView === ViewMode.CONTENT && (
-                                <button
-                                    onClick={() => {
-                                        setShowActionsMenu(false);
-                                        smartLink(false);
-                                    }}
-                                    className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
-                                    data-testid='auto-link-menu-item'
-                                >
-                                    <LightBulb width='16' height='16' />
-                                    <span className='flex-1'>Auto Link</span>
-                                </button>
-                            )}
-                            {enableEditing && lspLoaded && activeView === ViewMode.CONTENT && (
-                                <button
-                                    onClick={() => {
-                                        setShowActionsMenu(false);
-                                        smartLink(true);
-                                    }}
-                                    className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
-                                    data-testid='add-timestamps-menu-item'
-                                >
-                                    <LightBulb width='16' height='16' />
-                                    <span className='flex-1'>Add Timestamps</span>
-                                </button>
-                            )}
+                            {lspLoaded &&
+                                enableEditing &&
+                                activeView === ViewMode.CONTENT && (
+                                    <button
+                                        onClick={() => {
+                                            setShowActionsMenu(false);
+                                            smartLink(false);
+                                        }}
+                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                        data-testid='auto-link-menu-item'
+                                    >
+                                        <LightBulb width='16' height='16' />
+                                        <span className='flex-1'>Auto Link</span>
+                                    </button>
+                                )}
+                            {enableEditing &&
+                                lspLoaded &&
+                                activeView === ViewMode.CONTENT && (
+                                    <button
+                                        onClick={() => {
+                                            setShowActionsMenu(false);
+                                            smartLink(true);
+                                        }}
+                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                        data-testid='add-timestamps-menu-item'
+                                    >
+                                        <LightBulb width='16' height='16' />
+                                        <span className='flex-1'>Add Timestamps</span>
+                                    </button>
+                                )}
                             {isAdmin && !isFleeting && (
                                 <button
                                     onClick={() => {
@@ -135,7 +139,9 @@ export default function ActionsDropdown({
                                 >
                                     <FloppyDisk width='16' height='16' />
                                     <span className='flex-1'>Save As Final</span>
-                                    {saving && <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900' />}
+                                    {saving && (
+                                        <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900' />
+                                    )}
                                 </button>
                             )}
                             <button

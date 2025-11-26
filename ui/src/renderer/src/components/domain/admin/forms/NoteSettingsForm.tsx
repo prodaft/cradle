@@ -54,7 +54,11 @@ export default function NoteSettingsForm() {
         },
     });
 
-    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
+    const [alert, setAlert] = useState<Alert>({
+        show: false,
+        message: '',
+        color: 'red',
+    });
     const { managementApi } = useApi();
 
     useEffect(() => {
@@ -67,8 +71,7 @@ export default function NoteSettingsForm() {
                         minEntities: settings.notes.min_entities || 1,
                         maxCliqueSize: settings.notes.max_clique_size || 1,
                         allowDynamicEntryClassCreation:
-                            settings.notes.allow_dynamic_entry_class_creation ??
-                            false,
+                            settings.notes.allow_dynamic_entry_class_creation ?? false,
                     });
                 }
             } catch (error) {
@@ -137,9 +140,7 @@ export default function NoteSettingsForm() {
                 </h1>
                 <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
                     <form onSubmit={handleSubmit(onSubmit)} className='space-y-6 mb-3'>
-                        <Tabs
-                            tabClass={TabClasses.PILL}
-                        >
+                        <Tabs tabClass={TabClasses.PILL}>
                             <Tab title='Settings'>
                                 <div className='flex flex-col gap-3 pt-2'>
                                     <FormField

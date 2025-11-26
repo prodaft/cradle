@@ -1,14 +1,22 @@
-import { Clock, DatabaseBackup, Notes, PlusCircle, Search, User, StatsReport } from 'iconoir-react/regular';
-import { ReactNode, useEffect, useState } from 'react';
+import Logo from '@components/base/Logo/Logo';
 import { useNotif } from '@contexts/ui/NotificationContext';
 import { useProfile } from '@contexts/user/ProfileContext';
 import useApi from '@hooks/api/useApi';
 import useCradleNavigate from '@hooks/navigation/useCradleNavigate';
-import { parseMarkdownInline } from '@utils/parser/parse';
+import { handleAPIError, parseAPIError } from '@utils/api';
 import { truncateText } from '@utils/dashboard';
 import { formatDate } from '@utils/dates';
-import { parseAPIError, handleAPIError } from '@utils/api';
-import Logo from '@components/base/Logo/Logo';
+import { parseMarkdownInline } from '@utils/parser/parse';
+import {
+    Clock,
+    DatabaseBackup,
+    Notes,
+    PlusCircle,
+    Search,
+    StatsReport,
+    User,
+} from 'iconoir-react/regular';
+import { ReactNode, useEffect, useState } from 'react';
 
 interface ItemWithName {
     name: string;
@@ -31,7 +39,7 @@ interface RecentItemsCardProps {
     items: ItemWithName[];
     icon: ReactNode;
     emptyMessage: string;
-    onItemClick: (item: ItemWithName) => ((e: React.MouseEvent) => void);
+    onItemClick: (item: ItemWithName) => (e: React.MouseEvent) => void;
     color: string;
     totalCount: number;
 }
@@ -41,7 +49,7 @@ interface RecentNotesCardProps {
     notes: NoteWithMetadata[];
     icon: ReactNode;
     emptyMessage: string;
-    onNoteClick: (note: NoteWithMetadata) => ((e: React.MouseEvent) => void);
+    onNoteClick: (note: NoteWithMetadata) => (e: React.MouseEvent) => void;
     color: string;
     totalCount: number;
 }
@@ -64,7 +72,7 @@ function RecentItemsCard({
     emptyMessage,
     onItemClick,
     color,
-    totalCount
+    totalCount,
 }: RecentItemsCardProps) {
     return (
         <div className='cradle-card h-full'>
@@ -112,7 +120,7 @@ function RecentNotesCard({
     emptyMessage,
     onNoteClick,
     color,
-    totalCount
+    totalCount,
 }: RecentNotesCardProps) {
     return (
         <div className='cradle-card h-full'>
@@ -140,18 +148,24 @@ function RecentNotesCard({
                             <div className='space-y-1'>
                                 <div className='cradle-text-primary font-medium truncate'>
                                     {truncateText(
-                                        parseMarkdownInline(note.metadata?.title || 'Untitled'),
-                                        50
+                                        parseMarkdownInline(
+                                            note.metadata?.title || 'Untitled',
+                                        ),
+                                        50,
                                     )}
                                 </div>
                                 <div className='flex items-center gap-3 text-xs cradle-text-tertiary'>
                                     <div className='flex items-center gap-1'>
                                         <User width={12} height={12} />
-                                        <span>{note.author?.username || 'Unknown'}</span>
+                                        <span>
+                                            {note.author?.username || 'Unknown'}
+                                        </span>
                                     </div>
                                     <div className='flex items-center gap-1'>
                                         <Clock width={12} height={12} />
-                                        <span>{formatDate(new Date(note.timestamp))}</span>
+                                        <span>
+                                            {formatDate(new Date(note.timestamp))}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -187,7 +201,7 @@ export default function Welcome() {
             } catch (error: any) {
                 const parsed = await parseAPIError(error);
                 handleAPIError(parsed, notify, {
-                    message: 'Failed to load statistics'
+                    message: 'Failed to load statistics',
                 });
             }
         })();
@@ -195,18 +209,20 @@ export default function Welcome() {
 
     const handleCreateNewNote = async () => {
         try {
-            const defaultContent = profile?.defaultNoteTemplate || '# Untitled\n\nStart writing your note here...';
+            const defaultContent =
+                profile?.defaultNoteTemplate ||
+                '# Untitled\n\nStart writing your note here...';
             const response = await fleetingNotesApi.fleetingNotesCreate({
                 fleetingNoteRequest: {
                     content: defaultContent,
-                    files: []
-                }
+                    files: [],
+                },
             });
             navigate(`/notes/${response.id}`);
         } catch (error: any) {
             const parsed = await parseAPIError(error);
             handleAPIError(parsed, notify, {
-                message: 'Failed to create note'
+                message: 'Failed to create note',
             });
         }
     };
@@ -217,29 +233,29 @@ export default function Welcome() {
             description: 'Create a new note',
             icon: <PlusCircle width={24} height={24} />,
             onClick: handleCreateNewNote,
-            color: 'cradle-status-success'
+            color: 'cradle-status-success',
         },
         {
             title: 'Browse Notes',
             description: 'View all notes',
             icon: <Notes width={24} height={24} />,
             onClick: navigateLink('/notes'),
-            color: 'cradle-status-info'
+            color: 'cradle-status-info',
         },
         {
             title: 'Graph Search',
             description: 'Explore connections',
             icon: <Search width={24} height={24} />,
             onClick: navigateLink('/graph-search'),
-            color: 'cradle-status-warning'
+            color: 'cradle-status-warning',
         },
         {
             title: 'Analytics',
             description: 'View statistics',
             icon: <StatsReport width={24} height={24} />,
             onClick: navigateLink('/dashboard'),
-            color: 'cradle-status-info'
-        }
+            color: 'cradle-status-info',
+        },
     ];
 
     return (
@@ -278,7 +294,9 @@ export default function Welcome() {
                                     className='cradle-card p-6 text-left hover:border-orange-500'
                                 >
                                     <div className='flex items-center gap-3 mb-3'>
-                                        <div className={`${action.color} p-2 rounded-md`}>
+                                        <div
+                                            className={`${action.color} p-2 rounded-md`}
+                                        >
                                             {action.icon}
                                         </div>
                                         <h3 className='font-medium cradle-text-primary'>
@@ -307,7 +325,11 @@ export default function Welcome() {
                                 totalCount={entities.length}
                                 icon={<User width={18} height={18} />}
                                 emptyMessage='No entities yet'
-                                onItemClick={(item) => navigateLink(`/dashboards/${item.subtype}/${item.name}`)}
+                                onItemClick={(item) =>
+                                    navigateLink(
+                                        `/dashboards/${item.subtype}/${item.name}`,
+                                    )
+                                }
                                 color='cradle-status-success'
                             />
 
@@ -318,7 +340,11 @@ export default function Welcome() {
                                 totalCount={artifacts.length}
                                 icon={<DatabaseBackup width={18} height={18} />}
                                 emptyMessage='No artifacts yet'
-                                onItemClick={(item) => navigateLink(`/dashboards/${item.subtype}/${item.name}`)}
+                                onItemClick={(item) =>
+                                    navigateLink(
+                                        `/dashboards/${item.subtype}/${item.name}`,
+                                    )
+                                }
                                 color='cradle-status-warning'
                             />
 
@@ -329,7 +355,9 @@ export default function Welcome() {
                                 totalCount={notes.length}
                                 icon={<Notes width={18} height={18} />}
                                 emptyMessage='No notes yet'
-                                onNoteClick={(note) => navigateLink(`/notes/${note.id}`)}
+                                onNoteClick={(note) =>
+                                    navigateLink(`/notes/${note.id}`)
+                                }
                                 color='cradle-status-info'
                             />
                         </div>

@@ -12,163 +12,165 @@ import { ReactElement } from 'react';
  * Matches OptimizedEntryResponse fields used for navigation
  */
 export interface DashboardEntry {
-  name: string;
-  subtype?: string;  // Optional to match API response
-  type?: string;
+    name: string;
+    subtype?: string; // Optional to match API response
+    type?: string;
 }
 
 /**
  * Subtype hierarchy tree node
  */
 interface TreeNode {
-  [key: string]: TreeNode;
+    [key: string]: TreeNode;
 }
 
 /**
  * Class for building and converting subtype hierarchies
  */
 export class SubtypeHierarchy {
-  private tree: TreeNode;
-  private pathsMap: Record<string, boolean>;
+    private tree: TreeNode;
+    private pathsMap: Record<string, boolean>;
 
-  constructor(paths: string[]) {
-    this.tree = {};
-    this.pathsMap = {};
+    constructor(paths: string[]) {
+        this.tree = {};
+        this.pathsMap = {};
 
-    for (let path of paths) {
-      // Store the original full path
-      this.pathsMap[path] = true;
+        for (let path of paths) {
+            // Store the original full path
+            this.pathsMap[path] = true;
 
-      path.split('/').reduce((acc, cur) => {
-        if (!acc[cur]) {
-          acc[cur] = {};
+            path.split('/').reduce((acc, cur) => {
+                if (!acc[cur]) {
+                    acc[cur] = {};
+                }
+                return acc[cur];
+            }, this.tree);
         }
-        return acc[cur];
-      }, this.tree);
     }
-  }
 
-  /**
-   * Convert the hierarchy tree using custom callbacks
-   *
-   * @param node_callback - Callback for internal nodes
-   * @param leaf_callback - Callback for leaf nodes
-   * @returns Converted tree structure
-   */
-  convert<T>(
-    node_callback: (value: string, children: T[], childPaths: string[]) => T,
-    leaf_callback: (value: string, path: string) => T
-  ): T[] {
-    const traverse = (value: string, children: TreeNode, path: string): T => {
-      if (Object.keys(children).length === 0) {
-        // Leaf node
-        return leaf_callback(value, path);
-      }
+    /**
+     * Convert the hierarchy tree using custom callbacks
+     *
+     * @param node_callback - Callback for internal nodes
+     * @param leaf_callback - Callback for leaf nodes
+     * @returns Converted tree structure
+     */
+    convert<T>(
+        node_callback: (value: string, children: T[], childPaths: string[]) => T,
+        leaf_callback: (value: string, path: string) => T,
+    ): T[] {
+        const traverse = (value: string, children: TreeNode, path: string): T => {
+            if (Object.keys(children).length === 0) {
+                // Leaf node
+                return leaf_callback(value, path);
+            }
 
-      // Internal node
-      const childResults: T[] = [];
+            // Internal node
+            const childResults: T[] = [];
 
-      // Collect all child paths for this node
-      const childPaths = this.collectChildPaths(path + value + '/', children);
+            // Collect all child paths for this node
+            const childPaths = this.collectChildPaths(path + value + '/', children);
 
-      // Sort children by depth before traversing
-      const sortedKeys = Object.keys(children).sort(
-        (a, b) => this.getDepth(children[a]) - this.getDepth(children[b])
-      );
+            // Sort children by depth before traversing
+            const sortedKeys = Object.keys(children).sort(
+                (a, b) => this.getDepth(children[a]) - this.getDepth(children[b]),
+            );
 
-      for (const key of sortedKeys) {
-        childResults.push(traverse(key, children[key], path + value + '/'));
-      }
+            for (const key of sortedKeys) {
+                childResults.push(traverse(key, children[key], path + value + '/'));
+            }
 
-      return node_callback(value, childResults, childPaths);
-    };
+            return node_callback(value, childResults, childPaths);
+        };
 
-    const sortedKeys = Object.keys(this.tree).sort(
-      (a, b) => this.getDepth(this.tree[a]) - this.getDepth(this.tree[b])
-    );
+        const sortedKeys = Object.keys(this.tree).sort(
+            (a, b) => this.getDepth(this.tree[a]) - this.getDepth(this.tree[b]),
+        );
 
-    return sortedKeys.map((key) => traverse(key, this.tree[key], ''));
-  }
-
-  /**
-   * Collect all child paths for a given node
-   */
-  private collectChildPaths(currentPath: string, node: TreeNode): string[] {
-    const paths: string[] = [];
-
-    const collectPaths = (nodePath: string, subNode: TreeNode): void => {
-      // Check if this is a valid path in our original data
-      if (this.pathsMap[nodePath.slice(0, -1)]) {
-        paths.push(nodePath.slice(0, -1)); // Remove trailing slash
-      }
-
-      // Process children
-      for (const key of Object.keys(subNode)) {
-        collectPaths(nodePath + key + '/', subNode[key]);
-      }
-    };
-
-    collectPaths(currentPath, node);
-    return paths;
-  }
-
-  /**
-   * Calculate depth of a subtree
-   */
-  private getDepth(node: TreeNode): number {
-    if (Object.keys(node).length === 0) {
-      return 0; // Leaf node
+        return sortedKeys.map((key) => traverse(key, this.tree[key], ''));
     }
-    return 1 + Math.max(...Object.values(node).map((child) => this.getDepth(child)));
-  }
+
+    /**
+     * Collect all child paths for a given node
+     */
+    private collectChildPaths(currentPath: string, node: TreeNode): string[] {
+        const paths: string[] = [];
+
+        const collectPaths = (nodePath: string, subNode: TreeNode): void => {
+            // Check if this is a valid path in our original data
+            if (this.pathsMap[nodePath.slice(0, -1)]) {
+                paths.push(nodePath.slice(0, -1)); // Remove trailing slash
+            }
+
+            // Process children
+            for (const key of Object.keys(subNode)) {
+                collectPaths(nodePath + key + '/', subNode[key]);
+            }
+        };
+
+        collectPaths(currentPath, node);
+        return paths;
+    }
+
+    /**
+     * Calculate depth of a subtree
+     */
+    private getDepth(node: TreeNode): number {
+        if (Object.keys(node).length === 0) {
+            return 0; // Leaf node
+        }
+        return (
+            1 + Math.max(...Object.values(node).map((child) => this.getDepth(child)))
+        );
+    }
 }
 
 /**
  * Link tree item structure
  */
 interface LinkTreeItem {
-  type: string;
-  subtype: string;
-  name: string;
-  [key: string]: any;
+    type: string;
+    subtype: string;
+    name: string;
+    [key: string]: any;
 }
 
 /**
  * Utility class for flattening 3-level link trees
  */
 export class LinkTreeFlattener {
-  /**
-   * Flattens a 3-level link tree into a list of objects
-   *
-   * @param tree - The 3-level link tree to flatten
-   * @returns A list of flattened objects, each with at least { type, subtype, name }
-   */
-  static flatten(tree: EntryListCompressedTree): LinkTreeItem[] {
-    const result: LinkTreeItem[] = [];
-    for (const type of Object.keys(tree)) {
-      for (const subtype of Object.keys(tree[type])) {
-        const items = tree[type][subtype];
-        for (const item of items) {
-          if (typeof item === 'string') {
-            result.push({
-              type,
-              subtype,
-              name: item,
-            });
-          } else {
-            result.push({
-              type,
-              subtype,
-              name: item.name || '',
-              ...item,
-            });
-          }
+    /**
+     * Flattens a 3-level link tree into a list of objects
+     *
+     * @param tree - The 3-level link tree to flatten
+     * @returns A list of flattened objects, each with at least { type, subtype, name }
+     */
+    static flatten(tree: EntryListCompressedTree): LinkTreeItem[] {
+        const result: LinkTreeItem[] = [];
+        for (const type of Object.keys(tree)) {
+            for (const subtype of Object.keys(tree[type])) {
+                const items = tree[type][subtype];
+                for (const item of items) {
+                    if (typeof item === 'string') {
+                        result.push({
+                            type,
+                            subtype,
+                            name: item,
+                        });
+                    } else {
+                        result.push({
+                            type,
+                            subtype,
+                            name: item.name || '',
+                            ...item,
+                        });
+                    }
+                }
+            }
         }
-      }
-    }
 
-    return result;
-  }
+        return result;
+    }
 }
 
 /**
@@ -178,17 +180,17 @@ export class LinkTreeFlattener {
  * @returns The dashboard link
  */
 export const createDashboardLink = (entry: DashboardEntry | null): string => {
-  if (!entry) {
-    return '/not-found';
-  }
+    if (!entry) {
+        return '/not-found';
+    }
 
-  const { name, subtype } = entry;
+    const { name, subtype } = entry;
 
-  if (!name || !subtype) {
-    return '/not-found';
-  }
+    if (!name || !subtype) {
+        return '/not-found';
+    }
 
-  return `/dashboards/${encodeURIComponent(subtype)}/${encodeURIComponent(name)}/`;
+    return `/dashboards/${encodeURIComponent(subtype)}/${encodeURIComponent(name)}/`;
 };
 
 /**
@@ -199,34 +201,34 @@ export const createDashboardLink = (entry: DashboardEntry | null): string => {
  * @returns Grouped entry cards
  */
 export const groupSubtypes = <T,>(
-  entries: DashboardEntry[],
-  entry_transformer: (entry: DashboardEntry) => T
+    entries: DashboardEntry[],
+    entry_transformer: (entry: DashboardEntry) => T,
 ): T[][] => {
-  const sublistIndices: Record<string, number> = {};
-  const entryCards: T[][] = [];
+    const sublistIndices: Record<string, number> = {};
+    const entryCards: T[][] = [];
 
-  for (const i in entries) {
-    const entry = entries[i];
-    // Skip entries without subtype
-    if (!entry.subtype) continue;
+    for (const i in entries) {
+        const entry = entries[i];
+        // Skip entries without subtype
+        if (!entry.subtype) continue;
 
-    if (sublistIndices[entry.subtype] === undefined) {
-      if (entry.type === 'entity') {
-        for (const j in sublistIndices) {
-          sublistIndices[j]++;
+        if (sublistIndices[entry.subtype] === undefined) {
+            if (entry.type === 'entity') {
+                for (const j in sublistIndices) {
+                    sublistIndices[j]++;
+                }
+                sublistIndices[entry.subtype] = 0;
+                entryCards.unshift([]);
+            } else {
+                sublistIndices[entry.subtype] = entryCards.length;
+                entryCards.push([]);
+            }
         }
-        sublistIndices[entry.subtype] = 0;
-        entryCards.unshift([]);
-      } else {
-        sublistIndices[entry.subtype] = entryCards.length;
-        entryCards.push([]);
-      }
+
+        entryCards[sublistIndices[entry.subtype]].push(entry_transformer(entry));
     }
 
-    entryCards[sublistIndices[entry.subtype]].push(entry_transformer(entry));
-  }
-
-  return entryCards.filter((l) => l.length !== 0);
+    return entryCards.filter((l) => l.length !== 0);
 };
 
 /**
@@ -237,29 +239,32 @@ export const groupSubtypes = <T,>(
  * @returns React element or null
  */
 export const renderDashboardSection = (
-  entries: DashboardEntry[] | null,
-  relatedEntriesTitle: string
+    entries: DashboardEntry[] | null,
+    relatedEntriesTitle: string,
 ): ReactElement | null => {
-  if (!entries) {
-    return null;
-  }
+    if (!entries) {
+        return null;
+    }
 
-  return (
-    <DashboardHorizontalSection title={relatedEntriesTitle}>
-      {groupSubtypes(entries, (e) => (
-        <DashboardCard
-          key={`${e.subtype}:${e.name}`}
-          type={e.subtype}
-          name={e.name}
-          link={createDashboardLink(e)}
-        />
-      )).map((l) => (
-        <DashboardHorizontalSection title={l[0].props.type} key={l[0].props.type}>
-          {l}
+    return (
+        <DashboardHorizontalSection title={relatedEntriesTitle}>
+            {groupSubtypes(entries, (e) => (
+                <DashboardCard
+                    key={`${e.subtype}:${e.name}`}
+                    type={e.subtype}
+                    name={e.name}
+                    link={createDashboardLink(e)}
+                />
+            )).map((l) => (
+                <DashboardHorizontalSection
+                    title={l[0].props.type}
+                    key={l[0].props.type}
+                >
+                    {l}
+                </DashboardHorizontalSection>
+            ))}
         </DashboardHorizontalSection>
-      ))}
-    </DashboardHorizontalSection>
-  );
+    );
 };
 
 /**
@@ -274,56 +279,61 @@ export const renderDashboardSection = (
  * @returns React element or null
  */
 export const renderDashboardSectionWithInaccessibleEntries = (
-  entries: DashboardEntry[] | null,
-  inaccessibleEntries: DashboardEntry[] | null,
-  relatedEntriesTitle: string,
-  inaccessibleEntriesMessage: string,
-  requestAccessMessage: string,
-  handleRequestEntryAccess: (entries: DashboardEntry[]) => void
+    entries: DashboardEntry[] | null,
+    inaccessibleEntries: DashboardEntry[] | null,
+    relatedEntriesTitle: string,
+    inaccessibleEntriesMessage: string,
+    requestAccessMessage: string,
+    handleRequestEntryAccess: (entries: DashboardEntry[]) => void,
 ): ReactElement | null => {
-  if (!entries) {
-    return null;
-  }
+    if (!entries) {
+        return null;
+    }
 
-  const inaccessibleEntriesDiv =
-    inaccessibleEntries && inaccessibleEntries.length > 0
-      ? [
-        <div
-          key="inaccessible-entries"
-          className="w-full h-fit mt-1 flex flex-row justify-between items-center text-zinc-400"
-        >
-          <p>
-            {inaccessibleEntriesMessage}
-            <span
-              className="underline cursor-pointer"
-              onClick={() => handleRequestEntryAccess(inaccessibleEntries)}
-            >
-              {requestAccessMessage}
-            </span>
-          </p>
-        </div>,
-      ]
-      : [];
+    const inaccessibleEntriesDiv =
+        inaccessibleEntries && inaccessibleEntries.length > 0
+            ? [
+                  <div
+                      key='inaccessible-entries'
+                      className='w-full h-fit mt-1 flex flex-row justify-between items-center text-zinc-400'
+                  >
+                      <p>
+                          {inaccessibleEntriesMessage}
+                          <span
+                              className='underline cursor-pointer'
+                              onClick={() =>
+                                  handleRequestEntryAccess(inaccessibleEntries)
+                              }
+                          >
+                              {requestAccessMessage}
+                          </span>
+                      </p>
+                  </div>,
+              ]
+            : [];
 
-  return (
-    <DashboardHorizontalSection title={relatedEntriesTitle}>
-      {[
-        ...groupSubtypes(entries, (e) => (
-          <DashboardCard
-            key={`${e.subtype}:${e.name}`}
-            type={e.subtype}
-            name={e.name}
-            link={createDashboardLink(e)}
-          />
-        )).map((l) => (
-          <DashboardHorizontalSection title={l[0].props.type} key={l[0].props.type}>
-            {l}
-          </DashboardHorizontalSection>
-        )),
-        ...inaccessibleEntriesDiv,
-      ]}
-    </DashboardHorizontalSection>
-  );
+    return (
+        <DashboardHorizontalSection title={relatedEntriesTitle}>
+            {[
+                ...groupSubtypes(entries, (e) => (
+                    <DashboardCard
+                        key={`${e.subtype}:${e.name}`}
+                        type={e.subtype}
+                        name={e.name}
+                        link={createDashboardLink(e)}
+                    />
+                )).map((l) => (
+                    <DashboardHorizontalSection
+                        title={l[0].props.type}
+                        key={l[0].props.type}
+                    >
+                        {l}
+                    </DashboardHorizontalSection>
+                )),
+                ...inaccessibleEntriesDiv,
+            ]}
+        </DashboardHorizontalSection>
+    );
 };
 
 /**
@@ -335,19 +345,19 @@ export const renderDashboardSectionWithInaccessibleEntries = (
  * @returns The truncated text
  */
 export const truncateText = (
-  text: string | null | undefined,
-  maxLength: number,
-  defaultText: string = '-'
+    text: string | null | undefined,
+    maxLength: number,
+    defaultText: string = '-',
 ): string => {
-  if (!text) {
-    return defaultText;
-  }
+    if (!text) {
+        return defaultText;
+    }
 
-  if (text.length <= maxLength) {
-    return text;
-  }
+    if (text.length <= maxLength) {
+        return text;
+    }
 
-  return text.slice(0, maxLength) + '...';
+    return text.slice(0, maxLength) + '...';
 };
 
 /**
@@ -357,13 +367,13 @@ export const truncateText = (
  * @returns Capitalized string
  */
 export function capitalizeString(input: string): string {
-  const words = input.split('_');
+    const words = input.split('_');
 
-  const formattedWords = words.map(
-    (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-  );
+    const formattedWords = words.map(
+        (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+    );
 
-  return formattedWords.join(' ');
+    return formattedWords.join(' ');
 }
 
 /**
@@ -374,46 +384,46 @@ export function capitalizeString(input: string): string {
  * @returns Comparison result
  */
 export function naturalSort(a: string, b: string): number {
-  // Regular expression to split strings into parts
-  const regex = /([^0-9]+)([0-9]+)/;
+    // Regular expression to split strings into parts
+    const regex = /([^0-9]+)([0-9]+)/;
 
-  // Helper to split a string into text/number parts
-  const getParts = (str: string): (string | number)[] => {
-    const parts: (string | number)[] = [];
-    let remainder = str;
-    let match: RegExpExecArray | null;
+    // Helper to split a string into text/number parts
+    const getParts = (str: string): (string | number)[] => {
+        const parts: (string | number)[] = [];
+        let remainder = str;
+        let match: RegExpExecArray | null;
 
-    while ((match = regex.exec(remainder)) !== null) {
-      // Add the text part
-      parts.push(match[1]);
-      // Add the number part (converted to a number for numeric comparison)
-      parts.push(parseInt(match[2], 10));
-      remainder = remainder.substring(match[0].length);
+        while ((match = regex.exec(remainder)) !== null) {
+            // Add the text part
+            parts.push(match[1]);
+            // Add the number part (converted to a number for numeric comparison)
+            parts.push(parseInt(match[2], 10));
+            remainder = remainder.substring(match[0].length);
+        }
+
+        // Add any remaining text
+        if (remainder) parts.push(remainder);
+        return parts;
+    };
+
+    const aParts = getParts(a);
+    const bParts = getParts(b);
+
+    // Compare each part
+    const minLength = Math.min(aParts.length, bParts.length);
+    for (let i = 0; i < minLength; i++) {
+        // If both parts are numbers, compare numerically
+        if (typeof aParts[i] === 'number' && typeof bParts[i] === 'number') {
+            if (aParts[i] !== bParts[i]) {
+                return (aParts[i] as number) - (bParts[i] as number);
+            }
+        }
+        // Otherwise compare as strings
+        else if (aParts[i] !== bParts[i]) {
+            return aParts[i].toString().localeCompare(bParts[i].toString());
+        }
     }
 
-    // Add any remaining text
-    if (remainder) parts.push(remainder);
-    return parts;
-  };
-
-  const aParts = getParts(a);
-  const bParts = getParts(b);
-
-  // Compare each part
-  const minLength = Math.min(aParts.length, bParts.length);
-  for (let i = 0; i < minLength; i++) {
-    // If both parts are numbers, compare numerically
-    if (typeof aParts[i] === 'number' && typeof bParts[i] === 'number') {
-      if (aParts[i] !== bParts[i]) {
-        return (aParts[i] as number) - (bParts[i] as number);
-      }
-    }
-    // Otherwise compare as strings
-    else if (aParts[i] !== bParts[i]) {
-      return aParts[i].toString().localeCompare(bParts[i].toString());
-    }
-  }
-
-  // If all comparable parts are equal, the shorter string comes first
-  return aParts.length - bParts.length;
+    // If all comparable parts are equal, the shorter string comes first
+    return aParts.length - bParts.length;
 }

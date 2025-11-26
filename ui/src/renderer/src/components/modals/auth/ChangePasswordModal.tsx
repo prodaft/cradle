@@ -1,25 +1,25 @@
-import { useState } from 'react';
+import AlertBox from '@/components/base/Alert/AlertBox';
+import FormField from '@/components/forms/FormField';
 import useApi from '@/hooks/api/useApi';
 import { Alert } from '@/types';
 import { displayError } from '@/utils/api';
-import AlertBox from '@/components/base/Alert/AlertBox';
-import FormField from '@/components/forms/FormField';
+import { useState } from 'react';
 
 /**
  * Form data structure for password change
  */
 interface PasswordFormData {
-  oldPassword: string;
-  newPassword: string;
-  confirmNewPassword: string;
+    oldPassword: string;
+    newPassword: string;
+    confirmNewPassword: string;
 }
 
 /**
  * ChangePasswordModal component props
  */
 export interface ChangePasswordModalProps {
-  /** Function to close the modal */
-  closeModal: () => void;
+    /** Function to close the modal */
+    closeModal: () => void;
 }
 
 /**
@@ -31,7 +31,9 @@ export interface ChangePasswordModalProps {
  * <ChangePasswordModal closeModal={closeModal} />
  * ```
  */
-export default function ChangePasswordModal({ closeModal }: ChangePasswordModalProps): JSX.Element {
+export default function ChangePasswordModal({
+    closeModal,
+}: ChangePasswordModalProps): JSX.Element {
     const [formData, setFormData] = useState<PasswordFormData>({
         oldPassword: '',
         newPassword: '',
@@ -86,12 +88,13 @@ export default function ChangePasswordModal({ closeModal }: ChangePasswordModalP
         }
     };
 
-    const handleInputChange = (field: keyof PasswordFormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData((prev) => ({
-            ...prev,
-            [field]: e.target.value,
-        }));
-    };
+    const handleInputChange =
+        (field: keyof PasswordFormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
+            setFormData((prev) => ({
+                ...prev,
+                [field]: e.target.value,
+            }));
+        };
 
     return (
         <div className='p-6 max-w-md mx-auto'>
@@ -114,7 +117,9 @@ export default function ChangePasswordModal({ closeModal }: ChangePasswordModalP
                             Password Requirements
                         </h3>
                         <p className='text-xs cradle-text-tertiary cradle-mono leading-relaxed'>
-                            Choose a strong password that you haven't used elsewhere. For security, you'll need to enter your current password first.
+                            Choose a strong password that you haven't used elsewhere.
+                            For security, you'll need to enter your current password
+                            first.
                         </p>
                     </div>
                 </div>

@@ -3,4 +3,3 @@ export { default as SearchDialog } from './SearchDialog';
 // Import directly from './SearchFilter' if needed within search domain
 export { default as SearchFilterSection } from './SearchFilterSection';
 export { default as SearchResult } from './SearchResult';
-

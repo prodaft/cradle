@@ -1,5 +1,5 @@
-import React, { ReactNode } from 'react';
 import Card from '@components/base/Card/Card';
+import { ReactNode } from 'react';
 
 interface Action {
     icon: ReactNode;
@@ -32,7 +32,7 @@ export default function SearchResult({
     depth,
 }: SearchResultProps) {
     // Convert actions from old format to new Card format
-    const cardActions = actions.map(action => ({
+    const cardActions = actions.map((action) => ({
         icon: action.icon,
         onClick: action.callback,
     }));

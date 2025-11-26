@@ -2,8 +2,8 @@
  * Hook to access route configurations
  */
 
+import { RouteConfig, RouteConfigContext } from '@/contexts/routing/RouteConfigContext';
 import { useContext } from 'react';
-import { RouteConfigContext, RouteConfig } from '@/contexts/routing/RouteConfigContext';
 
 /**
  * Hook to access route configurations
@@ -11,7 +11,6 @@ import { RouteConfigContext, RouteConfig } from '@/contexts/routing/RouteConfigC
  * @returns Array of route configurations
  */
 export const useRouteConfigs = (): RouteConfig[] => {
-  const context = useContext(RouteConfigContext);
-  return context;
+    const context = useContext(RouteConfigContext);
+    return context;
 };
-

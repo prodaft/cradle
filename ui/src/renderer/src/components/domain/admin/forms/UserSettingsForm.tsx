@@ -45,7 +45,11 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
         },
     });
 
-    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
+    const [alert, setAlert] = useState<Alert>({
+        show: false,
+        message: '',
+        color: 'red',
+    });
     const { managementApi } = useApi();
 
     useEffect(() => {
@@ -54,8 +58,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                 const settings = await managementApi.managementSettingsRetrieve();
                 if (settings && settings.users) {
                     reset({
-                        allowRegistration:
-                            settings.users.allow_registration ?? false,
+                        allowRegistration: settings.users.allow_registration ?? false,
                         requireEmailActivation:
                             settings.users.require_email_confirmation ?? false,
                         requireAdminConfirmation:
@@ -124,9 +127,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
             {/* Content Area */}
             <div className='max-w-6xl mx-auto px-6 py-8'>
                 <form onSubmit={handleSubmit(onSubmit)}>
-                    <Tabs
-                        tabClass={TabClasses.PILL}
-                    >
+                    <Tabs tabClass={TabClasses.PILL}>
                         <Tab title='User Management'>
                             <div className='cradle-border cradle-bg-elevated p-6 mt-6'>
                                 <div className='space-y-4'>

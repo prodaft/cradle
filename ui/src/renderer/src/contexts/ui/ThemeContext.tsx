@@ -3,9 +3,16 @@
  * Manages dark/light theme state and syncs with user profile
  */
 
-import { createContext, useContext, useEffect, useMemo, ReactNode, useState } from 'react';
-import { useProfile } from '../user';
 import type { ThemeContextValue } from '@/types/index';
+import {
+    createContext,
+    ReactNode,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react';
+import { useProfile } from '../user';
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
@@ -13,9 +20,8 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
  * Props for ThemeProvider component
  */
 export interface ThemeProviderProps {
-  children: ReactNode;
+    children: ReactNode;
 }
-
 
 /**
  * Internal hook to use theme context
@@ -74,35 +80,34 @@ function useThemeInternal() {
  * Provides theme state and controls to the application
  */
 export function ThemeProvider({ children }: ThemeProviderProps): JSX.Element {
-  const { isDarkMode: isDarkModeHook, toggleTheme, setTheme } = useThemeInternal();
-  const { profile } = useProfile();
+    const { isDarkMode: isDarkModeHook, toggleTheme, setTheme } = useThemeInternal();
+    const { profile } = useProfile();
 
-  useEffect(() => {
-    if (profile?.theme) {
-      setTheme(profile.theme);
-    }
-  }, [profile?.theme, setTheme]);
+    useEffect(() => {
+        if (profile?.theme) {
+            setTheme(profile.theme);
+        }
+    }, [profile?.theme, setTheme]);
 
-  const isDarkMode = useMemo(() => {
-    return profile ? profile.theme === 'dark' : isDarkModeHook;
-  }, [profile, isDarkModeHook]);
+    const isDarkMode = useMemo(() => {
+        return profile ? profile.theme === 'dark' : isDarkModeHook;
+    }, [profile, isDarkModeHook]);
 
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.setAttribute('data-theme', 'light');
-    }
-  }, [isDarkMode]);
+    useEffect(() => {
+        if (isDarkMode) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+    }, [isDarkMode]);
 
-  const value = useMemo(
-    () => ({ isDarkMode, toggleTheme, setTheme }),
-    [isDarkMode, toggleTheme, setTheme]
-  );
+    const value = useMemo(
+        () => ({ isDarkMode, toggleTheme, setTheme }),
+        [isDarkMode, toggleTheme, setTheme],
+    );
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+    return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
-
 
 export function useTheme() {
     const context = useContext(ThemeContext);

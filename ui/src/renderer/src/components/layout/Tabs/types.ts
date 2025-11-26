@@ -1,5 +1,4 @@
 export enum TabClasses {
-  UNDERLINE = 'underline',
-  PILL = 'pill',
+    UNDERLINE = 'underline',
+    PILL = 'pill',
 }
-

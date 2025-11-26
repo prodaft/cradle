@@ -1,6 +1,7 @@
 import { InputHTMLAttributes } from 'react';
 
-interface FormFieldWithErrorProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'name' | 'type'> {
+interface FormFieldWithErrorProps
+    extends Omit<InputHTMLAttributes<HTMLInputElement>, 'name' | 'type'> {
     name: string;
     label?: string;
     type?: string;
@@ -48,10 +49,10 @@ export default function FormFieldWithError({
             {label && (
                 <label
                     htmlFor={name}
-                    className="block text-sm font-medium cradle-text-secondary mb-1"
+                    className='block text-sm font-medium cradle-text-secondary mb-1'
                 >
                     {label}
-                    {required && <span className="text-red-500 ml-1">*</span>}
+                    {required && <span className='text-red-500 ml-1'>*</span>}
                 </label>
             )}
 
@@ -74,12 +75,9 @@ export default function FormFieldWithError({
             />
 
             {hasError && (
-                <div className="mt-1 space-y-1">
+                <div className='mt-1 space-y-1'>
                     {error.map((errorMsg, idx) => (
-                        <p
-                            key={idx}
-                            className="text-sm text-red-500 cradle-text-error"
-                        >
+                        <p key={idx} className='text-sm text-red-500 cradle-text-error'>
                             {errorMsg}
                         </p>
                     ))}

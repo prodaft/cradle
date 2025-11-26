@@ -1,7 +1,7 @@
+import { usePaneTabs } from '@/contexts/tabs/PaneTabsContext';
+import { useLayout } from '@/contexts/ui/LayoutContext';
 import { useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useLayout } from '@/contexts/ui/LayoutContext';
-import { usePaneTabs } from '@/contexts/tabs/PaneTabsContext';
 
 interface NavigateOptions {
     event?: React.MouseEvent;
@@ -13,7 +13,7 @@ interface NavigateOptions {
 /// Enum for forward/backward navigation
 enum NavigationDirection {
     Forward = 1,
-    Backward = -1
+    Backward = -1,
 }
 
 const useCradleNavigate = () => {
@@ -23,9 +23,12 @@ const useCradleNavigate = () => {
     const layoutContext = useLayout();
     const openTab = paneTabsContext?.openTab;
     const activePaneId = layoutContext?.activePaneId;
-    
+
     const smartNavigate = useCallback(
-        (to: string | { pathname: string } | NavigationDirection, options: NavigateOptions = {}) => {
+        (
+            to: string | { pathname: string } | NavigationDirection,
+            options: NavigateOptions = {},
+        ) => {
             if (typeof to === 'number') {
                 if (to === NavigationDirection.Forward) {
                     navigate(1);
@@ -37,7 +40,7 @@ const useCradleNavigate = () => {
             // If event is passed in options
             const event = options.event;
             const targetPath = typeof to === 'string' ? to : to.pathname;
-            
+
             if (event && (event.ctrlKey || event.metaKey || event.button === 1)) {
                 // Ctrl/Cmd + click or middle click: open in new tab in active pane
                 if (openTab && activePaneId) {
@@ -50,26 +53,28 @@ const useCradleNavigate = () => {
             } else {
                 // Normal click or programmatic navigation: use React Router navigation
                 const { event: _, ...navOptions } = options; // Remove event from options before passing to navigate
-                
+
                 // Set 'from' to current location unless already specified
                 const state = {
                     from: location.pathname,
-                    ...navOptions.state
+                    ...navOptions.state,
                 };
-                
+
                 navigate(to, { ...navOptions, state });
             }
         },
         [navigate, location, openTab, activePaneId],
     );
-    
+
     return {
         navigate: smartNavigate,
-        navigateLink: (to: string | { pathname: string }, options: NavigateOptions = {}) => (e: React.MouseEvent) => {
-            e.stopPropagation();
-            e.preventDefault();
-            smartNavigate(to, { event: e, ...options });
-        },
+        navigateLink:
+            (to: string | { pathname: string }, options: NavigateOptions = {}) =>
+            (e: React.MouseEvent) => {
+                e.stopPropagation();
+                e.preventDefault();
+                smartNavigate(to, { event: e, ...options });
+            },
     };
 };
 

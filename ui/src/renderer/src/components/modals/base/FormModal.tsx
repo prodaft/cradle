@@ -4,30 +4,30 @@ import { useState } from 'react';
  * Form field configuration
  */
 export interface FormField {
-  /** Unique name identifier for the field */
-  name: string;
-  /** Label text to display */
-  label: string;
-  /** Input type (text, email, password, textarea, etc.) */
-  type: string;
-  /** Optional placeholder text */
-  placeholder?: string;
-  /** Optional initial value */
-  initialValue?: string;
+    /** Unique name identifier for the field */
+    name: string;
+    /** Label text to display */
+    label: string;
+    /** Input type (text, email, password, textarea, etc.) */
+    type: string;
+    /** Optional placeholder text */
+    placeholder?: string;
+    /** Optional initial value */
+    initialValue?: string;
 }
 
 /**
  * FormModal component props
  */
 export interface FormModalProps {
-  /** Array of form field configurations */
-  fields?: FormField[];
-  /** Callback function to execute when form is submitted, receives form data */
-  onSubmit: (formData: Record<string, string>) => void;
-  /** Function to close the modal */
-  closeModal: () => void;
-  /** Modal title */
-  title?: string;
+    /** Array of form field configurations */
+    fields?: FormField[];
+    /** Callback function to execute when form is submitted, receives form data */
+    onSubmit: (formData: Record<string, string>) => void;
+    /** Function to close the modal */
+    closeModal: () => void;
+    /** Modal title */
+    title?: string;
 }
 
 /**
@@ -61,7 +61,9 @@ export default function FormModal({
     const [formData, setFormData] = useState<Record<string, string>>(initialFormData);
 
     // Handle input changes generically.
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    ) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
     };

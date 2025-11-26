@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { displayError } from '@/utils/api';
 import AlertBox from '@components/base/Alert/AlertBox';
 import FormField from '@components/forms/FormField';
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
 interface Alert {
     show: boolean;
@@ -23,7 +23,11 @@ export default function Register() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [passwordCheck, setPasswordCheck] = useState('');
-    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
+    const [alert, setAlert] = useState<Alert>({
+        show: false,
+        message: '',
+        color: 'red',
+    });
     const { navigate, navigateLink } = useCradleNavigate();
     const location = useLocation();
     const { usersApi } = useApi();
@@ -38,7 +42,7 @@ export default function Register() {
 
         try {
             await usersApi.usersCreate({
-                userCreateRequest: { username, email, password }
+                userCreateRequest: { username, email, password },
             });
             navigate('/login', { state: location.state, replace: true });
         } catch (error) {
@@ -58,7 +62,8 @@ export default function Register() {
                             Join Cradle
                         </h1>
                         <p className='text-lg cradle-text-tertiary cradle-mono leading-relaxed max-w-md'>
-                            Create an account to start building your knowledge repository.
+                            Create an account to start building your knowledge
+                            repository.
                         </p>
                     </div>
                 </div>
@@ -102,7 +107,9 @@ export default function Register() {
                                         label='Confirm Password'
                                         type='password'
                                         value={passwordCheck}
-                                        onChange={(e) => setPasswordCheck(e.target.value)}
+                                        onChange={(e) =>
+                                            setPasswordCheck(e.target.value)
+                                        }
                                     />
                                     <AlertBox alert={alert} />
                                     <button
@@ -117,7 +124,9 @@ export default function Register() {
                                 {/* Footer Link */}
                                 <div className='cradle-separator mt-8'></div>
                                 <div className='text-center text-xs cradle-mono mt-6'>
-                                    <span className='cradle-text-tertiary'>Already have an account? </span>
+                                    <span className='cradle-text-tertiary'>
+                                        Already have an account?{' '}
+                                    </span>
                                     <Link
                                         to='/login'
                                         className='cradle-text-tertiary hover:text-cradle2  uppercase tracking-wider'

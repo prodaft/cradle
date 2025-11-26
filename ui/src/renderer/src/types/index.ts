@@ -7,8 +7,8 @@ import { ComponentType, ReactNode } from 'react';
 // ============================================================================
 
 export interface BaseComponentProps {
-  className?: string;
-  children?: ReactNode;
+    className?: string;
+    children?: ReactNode;
 }
 
 // ============================================================================
@@ -18,9 +18,9 @@ export interface BaseComponentProps {
 export type Theme = 'light' | 'dark';
 
 export interface ThemeContextValue {
-  isDarkMode: boolean;
-  setTheme: (theme: Theme) => void;
-  toggleTheme: () => void;
+    isDarkMode: boolean;
+    setTheme: (theme: Theme) => void;
+    toggleTheme: () => void;
 }
 
 // ============================================================================
@@ -35,29 +35,29 @@ export type { UserRetrieve } from '@services/cradle/models';
  * Uses UserRetrieve as the base and extends with app-specific fields.
  */
 export interface Profile {
-  id: string;
-  username: string;
-  email: string;
-  theme: Theme;
-  firstName?: string;
-  lastName?: string;
-  // Add other profile properties as needed
+    id: string;
+    username: string;
+    email: string;
+    theme: Theme;
+    firstName?: string;
+    lastName?: string;
+    // Add other profile properties as needed
 }
 
 export interface ProfileContextValue {
-  profile: Profile | null;
-  setProfile: (profile: Profile | null) => void;
-  isLoading: boolean;
+    profile: Profile | null;
+    setProfile: (profile: Profile | null) => void;
+    isLoading: boolean;
 }
 
 /**
  * @deprecated Use UserRetrieve from @services/cradle/models instead
  */
 export interface User {
-  id: string;
-  username: string;
-  email: string;
-  theme: Theme;
+    id: string;
+    username: string;
+    email: string;
+    theme: Theme;
 }
 
 // ============================================================================
@@ -65,13 +65,13 @@ export interface User {
 // ============================================================================
 
 export interface ModalData {
-  Component: ComponentType<any> | null;
-  props: Record<string, any>;
+    Component: ComponentType<any> | null;
+    props: Record<string, any>;
 }
 
 export interface ModalContextValue {
-  setModal: (Component: ComponentType<any>, props?: Record<string, any>) => void;
-  closeModal: () => void;
+    setModal: (Component: ComponentType<any>, props?: Record<string, any>) => void;
+    closeModal: () => void;
 }
 
 // ============================================================================
@@ -81,14 +81,14 @@ export interface ModalContextValue {
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
 export interface NotificationOptions {
-  type: NotificationType;
-  title?: string;
-  text: string;
-  duration?: number;
+    type: NotificationType;
+    title?: string;
+    text: string;
+    duration?: number;
 }
 
 export interface NotificationContextValue {
-  notify: (options: NotificationOptions) => void;
+    notify: (options: NotificationOptions) => void;
 }
 
 // ============================================================================
@@ -96,15 +96,15 @@ export interface NotificationContextValue {
 // ============================================================================
 
 export interface RouteConfig {
-  path: string;
-  label: string;
-  icon?: ComponentType;
-  children?: RouteConfig[];
+    path: string;
+    label: string;
+    icon?: ComponentType;
+    children?: RouteConfig[];
 }
 
 export interface RouteConfigContextValue {
-  routes: RouteConfig[];
-  setRoutes: (routes: RouteConfig[]) => void;
+    routes: RouteConfig[];
+    setRoutes: (routes: RouteConfig[]) => void;
 }
 
 // ============================================================================
@@ -112,9 +112,9 @@ export interface RouteConfigContextValue {
 // ============================================================================
 
 export interface LayoutContextValue {
-  sidebarOpen: boolean;
-  setSidebarOpen: (open: boolean) => void;
-  toggleSidebar: () => void;
+    sidebarOpen: boolean;
+    setSidebarOpen: (open: boolean) => void;
+    toggleSidebar: () => void;
 }
 
 // ============================================================================
@@ -122,35 +122,35 @@ export interface LayoutContextValue {
 // ============================================================================
 
 export interface Tab {
-  id: string;
-  label: string;
-  content: ReactNode;
-  closable?: boolean;
+    id: string;
+    label: string;
+    content: ReactNode;
+    closable?: boolean;
 }
 
 export interface TabContextValue {
-  // Tab content context properties
-  params?: Record<string, string>;
-  location?: {
-    pathname: string;
-    search: string;
-    hash: string;
-    state: any;
-    key: string;
-  };
-  navigate?: (to: string, opts?: any) => void;
-  isActive?: boolean;
-  isPaneActive?: boolean;
-  isBackgroundTab?: boolean;
-  capturedParams?: Record<string, string>;
-  capturedPathname?: string;
+    // Tab content context properties
+    params?: Record<string, string>;
+    location?: {
+        pathname: string;
+        search: string;
+        hash: string;
+        state: any;
+        key: string;
+    };
+    navigate?: (to: string, opts?: any) => void;
+    isActive?: boolean;
+    isPaneActive?: boolean;
+    isBackgroundTab?: boolean;
+    capturedParams?: Record<string, string>;
+    capturedPathname?: string;
 
-  // Legacy/Unused? properties
-  tabs?: Tab[];
-  activeTab?: string | null;
-  addTab?: (tab: Tab) => void;
-  removeTab?: (id: string) => void;
-  setActiveTab?: (id: string) => void;
+    // Legacy/Unused? properties
+    tabs?: Tab[];
+    activeTab?: string | null;
+    addTab?: (tab: Tab) => void;
+    removeTab?: (id: string) => void;
+    setActiveTab?: (id: string) => void;
 }
 
 // ============================================================================
@@ -158,22 +158,22 @@ export interface TabContextValue {
 // ============================================================================
 
 export interface ApiResponse<T> {
-  data: T;
-  status: number;
-  statusText: string;
+    data: T;
+    status: number;
+    statusText: string;
 }
 
 export interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
+    count: number;
+    next: string | null;
+    previous: string | null;
+    results: T[];
 }
 
 export interface ApiError {
-  message: string;
-  status?: number;
-  errors?: Record<string, string[]>;
+    message: string;
+    status?: number;
+    errors?: Record<string, string[]>;
 }
 
 // ============================================================================
@@ -183,10 +183,10 @@ export interface ApiError {
 export type SortOrder = 'asc' | 'desc';
 
 export interface SearchFilter {
-  search?: string;
-  tags?: string[];
-  dateFrom?: Date;
-  dateTo?: Date;
+    search?: string;
+    tags?: string[];
+    dateFrom?: Date;
+    dateTo?: Date;
 }
 
 // ============================================================================
@@ -194,12 +194,12 @@ export interface SearchFilter {
 // ============================================================================
 
 export interface FileMetadata {
-  id: string;
-  name: string;
-  size: number;
-  type: string;
-  uploadedAt: string;
-  uploadedBy: string;
+    id: string;
+    name: string;
+    size: number;
+    type: string;
+    uploadedAt: string;
+    uploadedBy: string;
 }
 
 // ============================================================================
@@ -213,10 +213,10 @@ export interface FileMetadata {
  * This is kept for backward compatibility with simpler graph representations
  */
 export interface SimpleGraphNode {
-  id: string;
-  label: string;
-  type: string;
-  properties?: Record<string, any>;
+    id: string;
+    label: string;
+    type: string;
+    properties?: Record<string, any>;
 }
 
 /**
@@ -225,17 +225,17 @@ export interface SimpleGraphNode {
  * Relation IDs are UUIDs (strings).
  */
 export interface GraphEdge {
-  id?: string;  // Relation UUID (optional)
-  source: number;  // Entry ID (BigAutoField)
-  target: number;  // Entry ID (BigAutoField)
-  type?: string;
-  label?: string;
-  properties?: Record<string, any>;
+    id?: string; // Relation UUID (optional)
+    source: number; // Entry ID (BigAutoField)
+    target: number; // Entry ID (BigAutoField)
+    type?: string;
+    label?: string;
+    properties?: Record<string, any>;
 }
 
 export interface GraphData {
-  nodes: SimpleGraphNode[];
-  edges: GraphEdge[];
+    nodes: SimpleGraphNode[];
+    edges: GraphEdge[];
 }
 
 // ============================================================================
@@ -243,16 +243,16 @@ export interface GraphData {
 // ============================================================================
 
 export interface FormValidationError {
-  field: string;
-  message: string;
+    field: string;
+    message: string;
 }
 
 export interface FormState<T> {
-  values: T;
-  errors: Record<keyof T, string>;
-  touched: Record<keyof T, boolean>;
-  isSubmitting: boolean;
-  isValid: boolean;
+    values: T;
+    errors: Record<keyof T, string>;
+    touched: Record<keyof T, boolean>;
+    isSubmitting: boolean;
+    isValid: boolean;
 }
 
 // ============================================================================
@@ -260,7 +260,7 @@ export interface FormState<T> {
 // ============================================================================
 
 export interface LoginCredentials {
-  username: string;
-  password: string;
-  twoFactorToken?: string;
+    username: string;
+    password: string;
+    twoFactorToken?: string;
 }

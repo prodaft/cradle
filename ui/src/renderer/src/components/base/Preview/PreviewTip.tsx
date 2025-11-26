@@ -42,9 +42,7 @@ const PreviewTip = ({
 
     return (
         <RadixTooltip.Root>
-            <RadixTooltip.Trigger asChild>
-                {children}
-            </RadixTooltip.Trigger>
+            <RadixTooltip.Trigger asChild>{children}</RadixTooltip.Trigger>
             <RadixTooltip.Portal>
                 <RadixTooltip.Content
                     side={side}
@@ -71,7 +69,7 @@ interface PreviewTipProviderProps {
 export const PreviewTipProvider = ({
     children,
     delayDuration = 100,
-    skipDelayDuration = 300
+    skipDelayDuration = 300,
 }: PreviewTipProviderProps) => (
     <RadixTooltip.Provider
         delayDuration={delayDuration}

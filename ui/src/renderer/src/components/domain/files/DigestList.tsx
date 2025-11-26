@@ -29,7 +29,9 @@ interface DigestListProps {
     setSelectedDigests?: StateSetter<string[]>;
     pageSize?: number;
     setPageSize?: (size: number) => void;
-    onColumnFilterChange?: ((column: string, value: string | DateRangeFilter) => void) | null;
+    onColumnFilterChange?:
+        | ((column: string, value: string | DateRangeFilter) => void)
+        | null;
     columnFilters?: Record<string, any>;
     searchFilters?: Record<string, string>;
     onSearchChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -48,14 +50,14 @@ function DigestList({
     sortDirection = 'desc',
     onSort,
     selectedDigests = [],
-    setSelectedDigests = () => { },
+    setSelectedDigests = () => {},
     pageSize = 10,
-    setPageSize = () => { },
+    setPageSize = () => {},
     onColumnFilterChange = null,
     columnFilters = {},
     searchFilters = {},
-    onSearchChange = () => { },
-    onSearchSubmit = () => { },
+    onSearchChange = () => {},
+    onSearchSubmit = () => {},
 }: DigestListProps) {
     const { setModal } = useModal();
     const { intelioApi } = useApi();
@@ -82,35 +84,43 @@ function DigestList({
         {
             onError: (error) => {
                 console.error('Delete digest failed:', error);
-                setAlert({ show: true, message: 'Failed to delete digest', color: 'red' });
-            }
-        }
+                setAlert({
+                    show: true,
+                    message: 'Failed to delete digest',
+                    color: 'red',
+                });
+            },
+        },
     );
 
-    const columns: Array<{ key: string; label: string; filterType?: 'text' | 'date' }> = [
-        { key: 'type', label: 'Type' },
-        { key: 'status', label: 'Status' },
-        { key: 'title', label: 'Title' },
-        { key: 'user', label: 'User', filterType: 'text' as const },
-        { key: 'warnings', label: 'Warnings' },
-        { key: 'errors', label: 'Errors' },
-        { key: 'createdAt', label: 'Created At', filterType: 'date' as const },
-        { key: 'actions', label: 'Actions' },
-    ];
+    const columns: Array<{ key: string; label: string; filterType?: 'text' | 'date' }> =
+        [
+            { key: 'type', label: 'Type' },
+            { key: 'status', label: 'Status' },
+            { key: 'title', label: 'Title' },
+            { key: 'user', label: 'User', filterType: 'text' as const },
+            { key: 'warnings', label: 'Warnings' },
+            { key: 'errors', label: 'Errors' },
+            { key: 'createdAt', label: 'Created At', filterType: 'date' as const },
+            { key: 'actions', label: 'Actions' },
+        ];
 
     // Define filterable columns with their handlers
-    const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> = onColumnFilterChange ? {
-        user: (value) => {
-            if (typeof value === 'string') {
-                onColumnFilterChange('user', value);
-            }
-        },
-        createdAt: (value) => {
-            if (typeof value !== 'string') {
-                onColumnFilterChange('createdAt', value);
-            }
-        },
-    } : {};
+    const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
+        onColumnFilterChange
+            ? {
+                  user: (value) => {
+                      if (typeof value === 'string') {
+                          onColumnFilterChange('user', value);
+                      }
+                  },
+                  createdAt: (value) => {
+                      if (typeof value !== 'string') {
+                          onColumnFilterChange('createdAt', value);
+                      }
+                  },
+              }
+            : {};
 
     interface SelectProps {
         enableMultiSelect?: boolean;
@@ -118,7 +128,11 @@ function DigestList({
         onSelect?: () => void;
     }
 
-    const renderRow = (digest: BaseDigest, index: number, selectProps: SelectProps = {}) => {
+    const renderRow = (
+        digest: BaseDigest,
+        index: number,
+        selectProps: SelectProps = {},
+    ) => {
         const { enableMultiSelect, isSelected, onSelect } = selectProps;
 
         return (
@@ -141,19 +155,21 @@ function DigestList({
                 <td className='w-16'>
                     {/* Border color same as badge color */}
                     <span
-                        className={`badge ${digest.status === 'done'
-                            ? 'badge-success'
-                            : digest.status === 'error'
-                                ? 'badge-error'
-                                : 'badge-secondary'
-                            }`}
-                        style={
-                            {
-                                border: 0,
-                            }
-                        }
+                        className={`badge ${
+                            digest.status === 'done'
+                                ? 'badge-success'
+                                : digest.status === 'error'
+                                  ? 'badge-error'
+                                  : 'badge-secondary'
+                        }`}
+                        style={{
+                            border: 0,
+                        }}
                     >
-                        {digest.status ? digest.status.charAt(0).toUpperCase() + digest.status.slice(1) : ''}
+                        {digest.status
+                            ? digest.status.charAt(0).toUpperCase() +
+                              digest.status.slice(1)
+                            : ''}
                     </span>
                 </td>
                 <td className='truncate max-w-xs' title={digest.title}>
@@ -163,33 +179,50 @@ function DigestList({
                     {truncateText(digest.userDetail?.username || '', 16)}
                 </td>
                 <td className='w-8'>
-                    <Tooltip content={digest.warnings?.length > 0 ? digest.warnings.slice(0, 10).join('\n') + (digest.warnings.length > 10 ? '...' : '') : undefined} side='left' color='warning'>
+                    <Tooltip
+                        content={
+                            digest.warnings?.length > 0
+                                ? digest.warnings.slice(0, 10).join('\n') +
+                                  (digest.warnings.length > 10 ? '...' : '')
+                                : undefined
+                        }
+                        side='left'
+                        color='warning'
+                    >
                         <span
                             className={`badge badge-warning`}
-                            style={
-                                {
-                                    border: 0,
-                                }
-                            }
+                            style={{
+                                border: 0,
+                            }}
                         >
                             {digest.warnings?.length || 0}
                         </span>
                     </Tooltip>
                 </td>
                 <td className='w-8'>
-                    <Tooltip content={digest.errors?.length > 0 ? digest.errors.slice(0, 10).join('\n') + (digest.errors.length > 10 ? '\n...' : '') : undefined} side='left' color='error'>
+                    <Tooltip
+                        content={
+                            digest.errors?.length > 0
+                                ? digest.errors.slice(0, 10).join('\n') +
+                                  (digest.errors.length > 10 ? '\n...' : '')
+                                : undefined
+                        }
+                        side='left'
+                        color='error'
+                    >
                         <span
                             className={`badge badge-error`}
-                            style={
-                                {
-                                    border: 0,
-                                }
-                            }>
+                            style={{
+                                border: 0,
+                            }}
+                        >
                             {digest.errors?.length || 0}
                         </span>
                     </Tooltip>
                 </td>
-                <td className='w-36'>{digest.createdAt ? formatDate(digest.createdAt) : 'N/A'}</td>
+                <td className='w-36'>
+                    {digest.createdAt ? formatDate(digest.createdAt) : 'N/A'}
+                </td>
                 <td className='w-8'>
                     <button
                         title='Delete Digest'
@@ -219,14 +252,18 @@ function DigestList({
                     onConfirm: async () => {
                         try {
                             // Send all delete requests in parallel
-                            const deletePromises = selectedIds.map(id =>
-                                intelioApi.intelioDigestDestroy({ id })
+                            const deletePromises = selectedIds.map((id) =>
+                                intelioApi.intelioDigestDestroy({ id }),
                             );
                             const results = await Promise.allSettled(deletePromises);
 
                             // Count successes and failures
-                            const successes = results.filter(r => r.status === 'fulfilled').length;
-                            const failures = results.filter(r => r.status === 'rejected').length;
+                            const successes = results.filter(
+                                (r) => r.status === 'fulfilled',
+                            ).length;
+                            const failures = results.filter(
+                                (r) => r.status === 'rejected',
+                            ).length;
 
                             if (failures === 0) {
                                 setAlert({
@@ -255,7 +292,8 @@ function DigestList({
                             setAlert({
                                 show: true,
                                 color: 'red',
-                                message: 'An unexpected error occurred while deleting digests',
+                                message:
+                                    'An unexpected error occurred while deleting digests',
                             });
                         }
                     },
@@ -285,7 +323,9 @@ function DigestList({
                 {searchFilters.title && (
                     <button
                         onClick={() => {
-                            const event = { target: { name: 'title', value: '' } } as React.ChangeEvent<HTMLInputElement>;
+                            const event = {
+                                target: { name: 'title', value: '' },
+                            } as React.ChangeEvent<HTMLInputElement>;
                             onSearchChange(event);
                             if (onSearchSubmit) {
                                 onSearchSubmit(event);
@@ -294,8 +334,18 @@ function DigestList({
                         className='absolute right-2 top-1/2 -translate-y-1/2 p-1 cradle-btn cradle-btn-secondary rounded'
                         title='Clear search'
                     >
-                        <svg className='w-4 h-4 cradle-text-tertiary' fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                        <svg
+                            className='w-4 h-4 cradle-text-tertiary'
+                            fill='none'
+                            stroke='currentColor'
+                            viewBox='0 0 24 24'
+                        >
+                            <path
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                                strokeWidth='2'
+                                d='M6 18L18 6M6 6l12 12'
+                            ></path>
                         </svg>
                     </button>
                 )}
@@ -305,9 +355,28 @@ function DigestList({
                 className='cradle-btn cradle-btn-secondary px-3 py-2 hover:cradle-bg-secondary rounded flex items-center justify-center'
                 title='Search'
             >
-                <svg width="1.5em" height="1.5em" viewBox="0 0 24 24" strokeWidth="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor" className='w-4 h-4'>
-                    <path d="M17 17L21 21" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"></path>
-                    <path d="M3 11C3 15.4183 6.58172 19 11 19C13.213 19 15.2161 18.1015 16.6644 16.6493C18.1077 15.2022 19 13.2053 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"></path>
+                <svg
+                    width='1.5em'
+                    height='1.5em'
+                    viewBox='0 0 24 24'
+                    strokeWidth='1.5'
+                    fill='none'
+                    xmlns='http://www.w3.org/2000/svg'
+                    color='currentColor'
+                    className='w-4 h-4'
+                >
+                    <path
+                        d='M17 17L21 21'
+                        stroke='currentColor'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                    ></path>
+                    <path
+                        d='M3 11C3 15.4183 6.58172 19 11 19C13.213 19 15.2161 18.1015 16.6644 16.6493C18.1077 15.2022 19 13.2053 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11Z'
+                        stroke='currentColor'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                    ></path>
                 </svg>
             </button>
         </div>
@@ -354,10 +423,14 @@ function DigestList({
                 sortDirection={sortDirection}
                 onSort={onSort}
                 sortFieldMapping={sortFieldMapping}
-                emptyMessage="No digests found!"
-                tableClassName="table table-zebra"
+                emptyMessage='No digests found!'
+                tableClassName='table table-zebra'
                 enableMultiSelect={true}
-                setSelected={(ids) => setSelectedDigests(ids.filter((id): id is string => typeof id === 'string'))}
+                setSelected={(ids) =>
+                    setSelectedDigests(
+                        ids.filter((id): id is string => typeof id === 'string'),
+                    )
+                }
                 filterableColumns={filterableColumns}
                 filterValues={columnFilters}
             />

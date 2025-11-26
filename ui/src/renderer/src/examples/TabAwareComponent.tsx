@@ -1,5 +1,9 @@
-import { useState, useEffect } from 'react';
-import { useTabContext, useIsBackgroundTab, useIsActivePane } from '../hooks/tabs/useTabContext';
+import { useEffect, useState } from 'react';
+import {
+    useIsActivePane,
+    useIsBackgroundTab,
+    useTabContext,
+} from '../hooks/tabs/useTabContext';
 
 /**
  * Example component showing how to use tab-aware routing
@@ -10,12 +14,12 @@ const TabAwareComponent = () => {
     const isBackground = useIsBackgroundTab();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const isActivePane = useIsActivePane();
-    
+
     const [localState, setLocalState] = useState('');
 
     // Example: Handle URL parameters
     const noteId = params.id; // This will be captured for background tabs
-    
+
     // Example: Handle location changes
     useEffect(() => {
         if (isActive && isPaneActive) {
@@ -34,13 +38,13 @@ const TabAwareComponent = () => {
             navigate(newPath);
             return;
         }
-        
+
         if (!isActive || !isPaneActive) {
             // Only active tabs in active panes can navigate
             console.warn('Only the active tab in the active pane can navigate');
             return;
         }
-        
+
         // Safe to navigate
         navigate(newPath);
     };
@@ -51,10 +55,10 @@ const TabAwareComponent = () => {
     };
 
     return (
-        <div className="p-4">
+        <div className='p-4'>
             <h2>Tab-Aware Component Example</h2>
-            
-            <div className="mb-4">
+
+            <div className='mb-4'>
                 <h3>Tab Status:</h3>
                 <ul>
                     <li>Is Active Tab: {isActive ? 'Yes' : 'No'}</li>
@@ -63,7 +67,7 @@ const TabAwareComponent = () => {
                 </ul>
             </div>
 
-            <div className="mb-4">
+            <div className='mb-4'>
                 <h3>URL Information:</h3>
                 <ul>
                     <li>Current Path: {location.pathname}</li>
@@ -71,37 +75,37 @@ const TabAwareComponent = () => {
                 </ul>
             </div>
 
-            <div className="mb-4">
+            <div className='mb-4'>
                 <h3>Local State (works in all tabs):</h3>
                 <input
-                    type="text"
+                    type='text'
                     value={localState}
                     onChange={(e) => handleLocalStateChange(e.target.value)}
-                    placeholder="This works in all tabs"
-                    className="border p-2"
+                    placeholder='This works in all tabs'
+                    className='border p-2'
                 />
             </div>
 
-            <div className="mb-4">
+            <div className='mb-4'>
                 <h3>Navigation (only works in active tab):</h3>
                 <button
                     onClick={() => handleNavigation('/notes')}
-                    className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
+                    className='bg-blue-500 text-white px-4 py-2 rounded mr-2'
                 >
                     Go to Notes
                 </button>
                 <button
                     onClick={() => handleNavigation('/files')}
-                    className="bg-green-500 text-white px-4 py-2 rounded"
+                    className='bg-green-500 text-white px-4 py-2 rounded'
                 >
                     Go to Files
                 </button>
             </div>
 
             {isBackground && (
-                <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
-                    <strong>Background Tab:</strong> This tab is running but hidden. 
-                    It uses captured URL data and cannot navigate.
+                <div className='bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded'>
+                    <strong>Background Tab:</strong> This tab is running but hidden. It
+                    uses captured URL data and cannot navigate.
                 </div>
             )}
         </div>
@@ -109,4 +113,3 @@ const TabAwareComponent = () => {
 };
 
 export default TabAwareComponent;
-

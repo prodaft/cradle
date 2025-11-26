@@ -59,12 +59,12 @@ function EnrichmentRequestsList({
     sortDirection = 'desc',
     onSort,
     pageSize = 10,
-    setPageSize = () => { },
+    setPageSize = () => {},
     onColumnFilterChange = null,
     columnFilters = { user: '' },
     searchFilters = {},
-    onSearchChange = () => { },
-    onSearchSubmit = () => { },
+    onSearchChange = () => {},
+    onSearchSubmit = () => {},
 }: EnrichmentRequestsListProps) {
     const navigate = useNavigate();
 
@@ -76,29 +76,40 @@ function EnrichmentRequestsList({
         user: 'user__username',
     };
 
-    const columns: Array<{ key: string; label: string; filterType?: 'text' | 'date' }> = [
-        { key: 'title', label: 'Title' },
-        { key: 'status', label: 'Status' },
-        { key: 'user', label: 'User', filterType: 'text' as const },
-        { key: 'createdAt', label: 'Created At' },
-        { key: 'actions', label: 'Actions' },
-    ];
+    const columns: Array<{ key: string; label: string; filterType?: 'text' | 'date' }> =
+        [
+            { key: 'title', label: 'Title' },
+            { key: 'status', label: 'Status' },
+            { key: 'user', label: 'User', filterType: 'text' as const },
+            { key: 'createdAt', label: 'Created At' },
+            { key: 'actions', label: 'Actions' },
+        ];
 
-    const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> = onColumnFilterChange ? {
-        user: (value: string | DateRangeFilter) => {
-            if (typeof value === 'string') {
-                onColumnFilterChange('user', value);
-            }
-        },
-    } : {};
+    const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
+        onColumnFilterChange
+            ? {
+                  user: (value: string | DateRangeFilter) => {
+                      if (typeof value === 'string') {
+                          onColumnFilterChange('user', value);
+                      }
+                  },
+              }
+            : {};
 
-    const renderRow = (request: EnrichmentRequest, index: number, selectProps: SelectProps = {}) => {
+    const renderRow = (
+        request: EnrichmentRequest,
+        index: number,
+        selectProps: SelectProps = {},
+    ) => {
         const { enableMultiSelect, isSelected, onSelect } = selectProps;
 
         return (
             <tr key={request.id}>
                 {enableMultiSelect && (
-                    <td className='w-12' onClick={(e: MouseEvent) => e.stopPropagation()}>
+                    <td
+                        className='w-12'
+                        onClick={(e: MouseEvent) => e.stopPropagation()}
+                    >
                         <input
                             type='checkbox'
                             className='cradle-checkbox'
@@ -112,21 +123,24 @@ function EnrichmentRequestsList({
                 </td>
                 <td className='w-32'>
                     <span
-                        className={`badge ${request.status === 'done'
-                            ? 'badge-success'
-                            : request.status === 'error'
-                                ? 'badge-error'
-                                : request.status === 'waiting'
+                        className={`badge ${
+                            request.status === 'done'
+                                ? 'badge-success'
+                                : request.status === 'error'
+                                  ? 'badge-error'
+                                  : request.status === 'waiting'
                                     ? 'badge-warning'
                                     : 'badge-info'
-                            }`}
+                        }`}
                     >
                         {request.status}
                     </span>
                 </td>
                 <td className='w-32'>{request.userDetail?.username || 'N/A'}</td>
                 <td className='w-40'>
-                    {request.createdAt ? formatDate(new Date(request.createdAt)) : 'N/A'}
+                    {request.createdAt
+                        ? formatDate(new Date(request.createdAt))
+                        : 'N/A'}
                 </td>
                 <td className='w-20'>
                     <div className='flex gap-2'>

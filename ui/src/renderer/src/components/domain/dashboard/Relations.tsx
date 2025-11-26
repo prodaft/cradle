@@ -1,5 +1,3 @@
-import { Check, Search } from 'iconoir-react';
-import { ChangeEvent, KeyboardEvent, useEffect, useRef, useState, MouseEvent } from 'react';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
@@ -10,6 +8,15 @@ import { createDashboardLink } from '@/utils/dashboard';
 import AlertBox from '@components/base/Alert/AlertBox';
 import LazyPagination from '@components/base/Pagination/LazyPagination';
 import SearchFilterSection from '@components/domain/search/SearchFilterSection';
+import { Check, Search } from 'iconoir-react';
+import {
+    ChangeEvent,
+    KeyboardEvent,
+    MouseEvent,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 
 interface Alert {
     show: boolean;
@@ -45,7 +52,11 @@ export default function Relations({ obj }: RelationsProps) {
     const [entrySubtypeFilters, setEntrySubtypeFilters] = useState<string[]>([]);
     const [results, setResults] = useState<Result[] | null>(null);
     const { notify } = useNotif();
-    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
+    const [alert, setAlert] = useState<Alert>({
+        show: false,
+        message: '',
+        color: 'red',
+    });
     const [entrySubtypes, setEntrySubtypes] = useState<string[]>([]);
     const [page, setPage] = useState(1);
     const [hasNextPage, setHasNextPage] = useState(false);
@@ -125,8 +136,8 @@ export default function Relations({ obj }: RelationsProps) {
                     const filteredResults =
                         entrySubtypeFilters.length > 0
                             ? resultsWithDepth.filter((r) =>
-                                entrySubtypeFilters.includes(r.subtype),
-                            )
+                                  entrySubtypeFilters.includes(r.subtype),
+                              )
                             : resultsWithDepth;
                     setResults(filteredResults);
                 })
@@ -180,15 +191,18 @@ export default function Relations({ obj }: RelationsProps) {
     const handleRequestAccess = (entities: string[]) => () => {
         setIsRequestingAccess(true);
         execute(
-            () => Promise.all(entities.map((entity) =>
-                accessApi.accessRequestCreate({
-                    entityId: entity,
-                    requestAccessRequest: {
-                        entityId: entity
-                    }
-                })
-            )),
-            { successMessage: 'Access request submitted successfully' }
+            () =>
+                Promise.all(
+                    entities.map((entity) =>
+                        accessApi.accessRequestCreate({
+                            entityId: entity,
+                            requestAccessRequest: {
+                                entityId: entity,
+                            },
+                        }),
+                    ),
+                ),
+            { successMessage: 'Access request submitted successfully' },
         )
             .then(() => {
                 setInaccessibleEntities([]); // Clear inaccessible entities after request
@@ -344,9 +358,7 @@ export default function Relations({ obj }: RelationsProps) {
                                                             {result.subtype}
                                                         </span>
                                                     </td>
-                                                    <td className=''>
-                                                        {result.name}
-                                                    </td>
+                                                    <td className=''>{result.name}</td>
                                                     <td className=''>
                                                         <span className='badge badge-xs'>
                                                             {result.depth}

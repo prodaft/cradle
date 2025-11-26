@@ -1,10 +1,10 @@
-import { Trash } from 'iconoir-react/regular';
-import { useNotif } from '@/contexts/ui/NotificationContext';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { useModal } from '@/contexts/ui/ModalContext';
+import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
+import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
+import { Trash } from 'iconoir-react/regular';
 
 interface Note {
     id: string;
@@ -48,7 +48,7 @@ export default function DeleteNote({ note, setHidden, classNames }: DeleteNotePr
             }
             setHidden(true);
         },
-        { successMessage: 'Note deleted successfully' }
+        { successMessage: 'Note deleted successfully' },
     );
 
     return (

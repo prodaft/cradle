@@ -8,38 +8,38 @@ import { MultiValue } from 'react-select';
  * Enricher type option for selector
  */
 interface EnricherOption {
-  value: string;
-  label: string;
+    value: string;
+    label: string;
 }
 
 /**
  * Form data structure for enrichment request
  */
 interface EnrichmentFormData {
-  title: string;
-  enricherNames: string[];
-  entities: number[];
-  request: string;
+    title: string;
+    enricherNames: string[];
+    entities: number[];
+    request: string;
 }
 
 /**
  * Parsed request artifact structure
  */
 interface RequestArtifact {
-  entry_class: string;
-  name: string;
+    entry_class: string;
+    name: string;
 }
 
 /**
  * EnrichmentRequestModal component props
  */
 export interface EnrichmentRequestModalProps {
-  /** Function to close the modal */
-  closeModal: () => void;
-  /** Optional callback to execute on successful request creation */
-  onSuccess?: () => void;
-  /** Optional callback to execute on error */
-  onError?: (error: unknown) => void;
+    /** Function to close the modal */
+    closeModal: () => void;
+    /** Optional callback to execute on successful request creation */
+    onSuccess?: () => void;
+    /** Optional callback to execute on error */
+    onError?: (error: unknown) => void;
 }
 
 /**
@@ -79,11 +79,13 @@ export default function EnrichmentRequestModal({
     // Load available enricher types on mount
     useEffect(() => {
         const fetchEnricherTypes = async () => {
-            const enricherTypes = (await execute(() => intelioApi.enrichmentSubclassesList(), {
-                errorMessage: 'Failed to fetch enricher types',
-            })).filter(enricher => enricher.enabled);
+            const enricherTypes = (
+                await execute(() => intelioApi.enrichmentSubclassesList(), {
+                    errorMessage: 'Failed to fetch enricher types',
+                })
+            ).filter((enricher) => enricher.enabled);
 
-            const options = enricherTypes.map(enricher => ({
+            const options = enricherTypes.map((enricher) => ({
                 value: enricher.className,
                 label: enricher.name,
             }));
@@ -93,26 +95,28 @@ export default function EnrichmentRequestModal({
         fetchEnricherTypes();
     }, [intelioApi, onError]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    ) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
             [name]: value,
         }));
     };
 
     const handleEnricherChange = (selectedOptions: MultiValue<EnricherOption>) => {
-        const enricherNames = Array.from(selectedOptions).map(opt => opt.value);
-        setFormData(prev => ({
+        const enricherNames = Array.from(selectedOptions).map((opt) => opt.value);
+        setFormData((prev) => ({
             ...prev,
             enricherNames,
         }));
     };
 
     const handleEntityChange = (selectedOptions) => {
-        const entities = selectedOptions ? selectedOptions.map(opt => opt.value) : [];
+        const entities = selectedOptions ? selectedOptions.map((opt) => opt.value) : [];
         setSelectedEntities(entities);
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
             entities,
         }));
@@ -120,7 +124,7 @@ export default function EnrichmentRequestModal({
 
     const parseRequestText = (text: string): RequestArtifact[] => {
         // Parse lines in the format: <type>:<artifact>
-        const lines = text.split('\n').filter(line => line.trim() !== '');
+        const lines = text.split('\n').filter((line) => line.trim() !== '');
         const parsed: RequestArtifact[] = [];
 
         for (const line of lines) {
@@ -141,11 +145,17 @@ export default function EnrichmentRequestModal({
     };
 
     const fetchEntities = async (searchTerm) => {
-        const entities = (await execute(() => entriesApi.entitiesList(), {
-            errorMessage: 'Failed to fetch entities',
-        })).filter(entity => searchTerm ? entity.name.toLowerCase().includes(searchTerm.toLowerCase()) : true);
+        const entities = (
+            await execute(() => entriesApi.entitiesList(), {
+                errorMessage: 'Failed to fetch entities',
+            })
+        ).filter((entity) =>
+            searchTerm
+                ? entity.name.toLowerCase().includes(searchTerm.toLowerCase())
+                : true,
+        );
 
-        const options = entities.map(entity => ({
+        const options = entities.map((entity) => ({
             value: entity.id,
             label: entity.name,
         }));
@@ -175,7 +185,9 @@ export default function EnrichmentRequestModal({
             // Parse the request text
             const parsedRequest = parseRequestText(formData.request);
             if (parsedRequest.length === 0) {
-                throw new Error('Request must contain at least one valid entry in format <type>:<artifact>');
+                throw new Error(
+                    'Request must contain at least one valid entry in format <type>:<artifact>',
+                );
             }
 
             console.log({
@@ -185,14 +197,16 @@ export default function EnrichmentRequestModal({
                 request: parsedRequest,
             });
 
-            let result = await execute(() => intelioApi.enrichmentRequestCreate({
-                enrichmentRequestRequest: {
-                    title: formData.title,
-                    enricherNames: formData.enricherNames,
-                    request: parsedRequest,
-                    entities: formData.entities,
-                },
-            }));
+            let result = await execute(() =>
+                intelioApi.enrichmentRequestCreate({
+                    enrichmentRequestRequest: {
+                        title: formData.title,
+                        enricherNames: formData.enricherNames,
+                        request: parsedRequest,
+                        entities: formData.entities,
+                    },
+                }),
+            );
             console.log(result);
             if (onSuccess) {
                 onSuccess();
@@ -269,7 +283,6 @@ export default function EnrichmentRequestModal({
                         onChange={handleEntityChange}
                     />
                 </div>
-
 
                 {/* Request Artifacts */}
                 <div className='mb-4 w-full'>

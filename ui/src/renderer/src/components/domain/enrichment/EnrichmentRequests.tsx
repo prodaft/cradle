@@ -30,16 +30,20 @@ export default function EnrichmentRequests() {
     const { setModal } = useModal();
 
     // Enrichment requests list state
-    const [enrichmentRequests, setEnrichmentRequests] = useState<EnrichmentRequestList[]>([]);
+    const [enrichmentRequests, setEnrichmentRequests] = useState<
+        EnrichmentRequestList[]
+    >([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [sortField, setSortField] = useState(searchParams.get('sort_field') || 'created_at');
+    const [sortField, setSortField] = useState(
+        searchParams.get('sort_field') || 'created_at',
+    );
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(
-        (searchParams.get('sort_direction') as 'asc' | 'desc') || 'desc'
+        (searchParams.get('sort_direction') as 'asc' | 'desc') || 'desc',
     );
     const [pageSize, setPageSize] = useState(
-        Number(searchParams.get('pagesize')) || 25
+        Number(searchParams.get('pagesize')) || 25,
     );
 
     // Search state
@@ -77,7 +81,10 @@ export default function EnrichmentRequests() {
             const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
             searchQueryParams.orderBy = orderBy;
 
-            console.log('Calling enrichmentRequestList with params:', searchQueryParams);
+            console.log(
+                'Calling enrichmentRequestList with params:',
+                searchQueryParams,
+            );
             const response = await intelioApi.enrichmentRequestList(searchQueryParams);
             console.log('API response:', response);
 
@@ -94,7 +101,16 @@ export default function EnrichmentRequests() {
         } finally {
             setLoading(false);
         }
-    }, [page, pageSize, submittedFilters, columnFilters, sortField, sortDirection, intelioApi, notify]);
+    }, [
+        page,
+        pageSize,
+        submittedFilters,
+        columnFilters,
+        sortField,
+        sortDirection,
+        intelioApi,
+        notify,
+    ]);
 
     useEffect(() => {
         fetchEnrichmentRequests();
@@ -109,32 +125,32 @@ export default function EnrichmentRequests() {
 
         setSearchFilters(initialFilters);
 
-        if (
-            searchParams.has('title') ||
-            searchParams.has('user__username')
-        ) {
+        if (searchParams.has('title') || searchParams.has('user__username')) {
             setSubmittedFilters(initialFilters);
         }
     }, []);
 
-    const updateSearchParams = useCallback((filters: SearchFilters) => {
-        const newParams = new URLSearchParams(searchParams);
+    const updateSearchParams = useCallback(
+        (filters: SearchFilters) => {
+            const newParams = new URLSearchParams(searchParams);
 
-        if (filters.title) {
-            newParams.set('title', filters.title);
-        } else {
-            newParams.delete('title');
-        }
+            if (filters.title) {
+                newParams.set('title', filters.title);
+            } else {
+                newParams.delete('title');
+            }
 
-        if (filters.user) {
-            newParams.set('user__username', filters.user);
-        } else {
-            newParams.delete('user__username');
-        }
+            if (filters.user) {
+                newParams.set('user__username', filters.user);
+            } else {
+                newParams.delete('user__username');
+            }
 
-        setSearchParams(newParams, { replace: true });
-        setSubmittedFilters(filters);
-    }, [searchParams, setSearchParams]);
+            setSearchParams(newParams, { replace: true });
+            setSubmittedFilters(filters);
+        },
+        [searchParams, setSearchParams],
+    );
 
     useEffect(() => {
         const timeoutId = setTimeout(() => {
@@ -181,9 +197,12 @@ export default function EnrichmentRequests() {
         setSearchParams(newParams, { replace: true });
     };
 
-    const handleColumnFilterChange = (column: keyof ColumnFilters, value: string | DateRangeFilter) => {
+    const handleColumnFilterChange = (
+        column: keyof ColumnFilters,
+        value: string | DateRangeFilter,
+    ) => {
         if (typeof value !== 'string') return;
-        setColumnFilters(prev => ({
+        setColumnFilters((prev) => ({
             ...prev,
             [column]: value,
         }));

@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import type { NoteRetrieve } from '@services/cradle/models';
 import useApi from '@/hooks/api/useApi';
 import useAuth from '@/hooks/auth/useAuth';
 import { parseContent } from '@/utils/editor/textEditor';
+import type { NoteRetrieve } from '@services/cradle/models';
+import { useEffect, useState } from 'react';
 import Preview from '../../base/Preview/Preview';
 
 interface NotePreviewContentProps {
@@ -34,7 +34,7 @@ export const NotePreviewContent = ({ note }: NotePreviewContentProps) => {
     }, [note.content, note.files, entriesApi, fileTransferApi, basePath]);
 
     return (
-        <div className="w-[450px] max-h-[450px] overflow-hidden">
+        <div className='w-[450px] max-h-[450px] overflow-hidden'>
             {loading ? (
                 <div className='flex items-center justify-center h-32'>
                     <div className='spinner-dot-pulse'>

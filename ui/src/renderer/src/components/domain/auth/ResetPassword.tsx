@@ -1,11 +1,11 @@
-import { useWindowSize } from '@uidotdev/usehooks';
-import { useState } from 'react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import useApi from '@/hooks/api/useApi';
+import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { displayError } from '@/utils/api';
 import AlertBox from '@components/base/Alert/AlertBox';
 import FormField from '@components/forms/FormField';
+import { useWindowSize } from '@uidotdev/usehooks';
+import { useState } from 'react';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 
 interface Alert {
     show: boolean;
@@ -19,7 +19,11 @@ interface Alert {
 export default function ResetPassword() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [password, setPassword] = useState('');
-    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
+    const [alert, setAlert] = useState<Alert>({
+        show: false,
+        message: '',
+        color: 'red',
+    });
     const windowSize = useWindowSize();
     const location = useLocation();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -51,7 +55,7 @@ export default function ResetPassword() {
 
         try {
             await usersApi.usersResetPasswordUpdate({
-                passwordResetConfirmRequest: { token: token || '', password }
+                passwordResetConfirmRequest: { token: token || '', password },
             });
             navigate('/login', { replace: true });
         } catch (error) {
@@ -68,9 +72,7 @@ export default function ResetPassword() {
                             Change Password
                         </h3>
                     </div>
-                    <div
-                        className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'
-                    >
+                    <div className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'>
                         <form className='space-y-6' onSubmit={handleSubmit}>
                             <FormField
                                 name='password'

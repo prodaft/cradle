@@ -1,9 +1,6 @@
 import useApi from '@/hooks/api/useApi';
 import { EdgeRelation } from '@/services/cradle';
-import {
-    LinkTreeFlattener,
-    truncateText,
-} from '@/utils/dashboard';
+import { LinkTreeFlattener, truncateText } from '@/utils/dashboard';
 import AlertBox from '@components/base/Alert/AlertBox';
 import Selector from '@components/forms/Selector';
 import { parseISO } from 'date-fns';
@@ -84,11 +81,17 @@ export default function PathFindSearch({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { queryApi, knowledgeGraphApi } = useApi();
 
-    const [startEntry, setStartEntry] = useState<SelectorOption | null>(queryValues.src || null);
+    const [startEntry, setStartEntry] = useState<SelectorOption | null>(
+        queryValues.src || null,
+    );
     const [destinationSelectors, setDestinationSelectors] = useState<SelectorOption[]>(
         queryValues.dst || [],
     );
-    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
+    const [alert, setAlert] = useState<Alert>({
+        show: false,
+        message: '',
+        color: 'red',
+    });
 
     useEffect(() => {
         setFormValues({
@@ -142,10 +145,13 @@ export default function PathFindSearch({
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        const allTouched = Object.keys(formValues).reduce((acc, key) => {
-            acc[key] = true;
-            return acc;
-        }, {} as Record<string, boolean>);
+        const allTouched = Object.keys(formValues).reduce(
+            (acc, key) => {
+                acc[key] = true;
+                return acc;
+            },
+            {} as Record<string, boolean>,
+        );
         setTouched(allTouched);
 
         const isValid = await validateForm();
@@ -263,14 +269,8 @@ export default function PathFindSearch({
                             }}
                             onChange={(value: any) => {
                                 if (value.startDate && value.endDate) {
-                                    setFieldValue(
-                                        'startDate',
-                                        value.startDate,
-                                    );
-                                    setFieldValue(
-                                        'endDate',
-                                        value.endDate,
-                                    );
+                                    setFieldValue('startDate', value.startDate);
+                                    setFieldValue('endDate', value.endDate);
                                 }
                             }}
                             inputClassName='input py-1 px-2 text-sm flex-grow !max-w-full w-full'

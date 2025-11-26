@@ -12,25 +12,25 @@ import { useEffect, useRef } from 'react';
  * @param delay - The interval in milliseconds
  */
 export const useInterval = (callback: () => void, delay: number | null): void => {
-  const savedCallback = useRef<() => void>();
+    const savedCallback = useRef<() => void>();
 
-  useEffect(() => {
-    savedCallback.current = callback;
-  }, [callback]);
+    useEffect(() => {
+        savedCallback.current = callback;
+    }, [callback]);
 
-  useEffect(() => {
-    const tick = (): void => {
-      if (savedCallback.current) {
-        savedCallback.current();
-      }
-    };
+    useEffect(() => {
+        const tick = (): void => {
+            if (savedCallback.current) {
+                savedCallback.current();
+            }
+        };
 
-    if (delay !== null) {
-      tick();
-      const id = setInterval(tick, delay);
-      return () => clearInterval(id);
-    }
-  }, [delay]);
+        if (delay !== null) {
+            tick();
+            const id = setInterval(tick, delay);
+            return () => clearInterval(id);
+        }
+    }, [delay]);
 };
 
 export default useInterval;

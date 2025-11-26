@@ -1,5 +1,5 @@
 import { NavArrowDown, NavArrowUp } from 'iconoir-react';
-import React, { useEffect, useState, ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
 interface DashboardHorizontalSectionProps {
@@ -53,13 +53,11 @@ export default function DashboardHorizontalSection({
                     />
                 )}
             </div>
-            <div
-                className={`overflow-y-auto ${
-                    expanded ? 'max-h-screen' : 'max-h-0'
-                }`}
-            >
+            <div className={`overflow-y-auto ${expanded ? 'max-h-screen' : 'max-h-0'}`}>
                 <div className='flex flex-wrap gap-2'>
-                    {Array.isArray(children) && children.length > 0 && children.some((item) => item !== null) ? (
+                    {Array.isArray(children) &&
+                    children.length > 0 &&
+                    children.some((item) => item !== null) ? (
                         children
                     ) : (
                         <div className='text-zinc-500'>No items to display</div>

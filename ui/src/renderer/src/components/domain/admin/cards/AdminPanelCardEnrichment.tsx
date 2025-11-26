@@ -13,7 +13,7 @@ interface AdminPanelCardEnrichmentProps {
 export default function AdminPanelCardEnrichment({
     name,
     id,
-    setRightPane
+    setRightPane,
 }: AdminPanelCardEnrichmentProps) {
     const { navigate, navigateLink } = useCradleNavigate();
 
@@ -36,7 +36,7 @@ export default function AdminPanelCardEnrichment({
                 title={name}
                 actions={actions}
                 onClick={handleEditClick}
-                className="bg-cradle3 bg-opacity-20 backdrop-filter backdrop-blur-lg"
+                className='bg-cradle3 bg-opacity-20 backdrop-filter backdrop-blur-lg'
             />
         </>
     );

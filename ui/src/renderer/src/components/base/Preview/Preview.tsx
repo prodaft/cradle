@@ -6,11 +6,11 @@ import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 // import '@/utils/parser.js'; // TODO: Fix parser import
 
+import { useNotif } from '@contexts/ui/NotificationContext';
+import useCradleNavigate from '@hooks/navigation/useCradleNavigate';
+import { handleLinkClick, NavigateHandler } from '@utils/editor/textEditor';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import useCradleNavigate from '@hooks/navigation/useCradleNavigate';
-import { useNotif } from '@contexts/ui/NotificationContext';
-import { handleLinkClick, NavigateHandler } from '@utils/editor/textEditor';
 
 interface PreviewProps {
     htmlContent: string;
@@ -32,9 +32,12 @@ export default function Preview({
     const [searchParams, setSearchParams] = useSearchParams();
 
     // Create a NavigateHandler adapter for handleLinkClick
-    const navigateHandler: NavigateHandler = useCallback((path: string) => {
-        navigate(path);
-    }, [navigate]);
+    const navigateHandler: NavigateHandler = useCallback(
+        (path: string) => {
+            navigate(path);
+        },
+        [navigate],
+    );
 
     const previewRef = useCallback(
         (node: HTMLDivElement | null) => {
@@ -61,7 +64,9 @@ export default function Preview({
     const handleLineClick = (event: React.MouseEvent<HTMLDivElement>) => {
         if (handleLinkClick(navigateHandler)(event.nativeEvent)) return;
 
-        const targetElement = (event.target as HTMLElement).closest('[data-source-line]');
+        const targetElement = (event.target as HTMLElement).closest(
+            '[data-source-line]',
+        );
         if (targetElement && setCurrentLine) {
             const lineAttr = targetElement.getAttribute('data-source-line');
             const line = parseInt(lineAttr || '0', 10);
@@ -120,7 +125,10 @@ export default function Preview({
                 if (headingElement) {
                     // Small delay to ensure content is fully rendered
                     setTimeout(() => {
-                        headingElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        headingElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center',
+                        });
                     }, 100);
                 }
             } catch (error) {

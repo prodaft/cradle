@@ -31,7 +31,9 @@ interface ListViewProps<T extends { id?: string | number }> {
     onSort?: ((field: string, direction: SortDirection) => void) | null;
     sortFieldMapping?: Record<string, string>;
     emptyMessage?: string;
-    renderRow?: ((item: T, index: number, options: RenderRowOptions<T>) => ReactNode) | null;
+    renderRow?:
+        | ((item: T, index: number, options: RenderRowOptions<T>) => ReactNode)
+        | null;
     tableClassName?: string;
     enableMultiSelect?: boolean;
     setSelected?: (ids: NonNullable<T['id']>[]) => void;
@@ -58,7 +60,7 @@ export default function ListView<T extends { id?: string | number }>({
     renderRow = null,
     tableClassName = 'table table-hover',
     enableMultiSelect = false,
-    setSelected = () => { },
+    setSelected = () => {},
     filterableColumns = {},
     filterValues = {},
 }: ListViewProps<T>) {
@@ -97,11 +99,12 @@ export default function ListView<T extends { id?: string | number }>({
             onSort(newSortField, sortDirection === 'desc' ? 'asc' : 'desc');
         } else {
             // New field, default to descending for timestamp fields, ascending for others
-            const newDirection = newSortField.includes('timestamp') ||
+            const newDirection =
+                newSortField.includes('timestamp') ||
                 newSortField.includes('created_at') ||
                 newSortField.includes('edit_timestamp')
-                ? 'desc'
-                : 'asc';
+                    ? 'desc'
+                    : 'asc';
             onSort(newSortField, newDirection);
         }
     };
@@ -123,7 +126,11 @@ export default function ListView<T extends { id?: string | number }>({
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (activeFilterColumn && filterInputRefs.current[activeFilterColumn]) {
-                if (!filterInputRefs.current[activeFilterColumn]?.contains(event.target as Node)) {
+                if (
+                    !filterInputRefs.current[activeFilterColumn]?.contains(
+                        event.target as Node,
+                    )
+                ) {
                     setActiveFilterColumn(null);
                 }
             }
@@ -156,7 +163,12 @@ export default function ListView<T extends { id?: string | number }>({
         filterType?: 'text' | 'date';
     }
 
-    const SortableTableHeader = ({ column, children, className = '', filterType = 'text' }: SortableTableHeaderProps) => {
+    const SortableTableHeader = ({
+        column,
+        children,
+        className = '',
+        filterType = 'text',
+    }: SortableTableHeaderProps) => {
         const isSortable = !!sortFieldMapping[column] && !!onSort;
         const isFilterable = !!filterableColumns[column];
         const isFilterActive = activeFilterColumn === column;
@@ -181,8 +193,11 @@ export default function ListView<T extends { id?: string | number }>({
             handleFilterChange(column, newValue);
         };
 
-        const hasDateRangeFilter = filterType === 'date' && filterValues[column] &&
-            ((filterValues[column] as DateRangeFilter).from || (filterValues[column] as DateRangeFilter).to);
+        const hasDateRangeFilter =
+            filterType === 'date' &&
+            filterValues[column] &&
+            ((filterValues[column] as DateRangeFilter).from ||
+                (filterValues[column] as DateRangeFilter).to);
 
         return (
             <th
@@ -190,13 +205,21 @@ export default function ListView<T extends { id?: string | number }>({
                 onClick={handleHeaderClick}
             >
                 {isFilterActive ? (
-                    <div ref={(el) => (filterInputRefs.current[column] = el)} className='p-1'>
+                    <div
+                        ref={(el) => (filterInputRefs.current[column] = el)}
+                        className='p-1'
+                    >
                         {filterType === 'date' ? (
                             <div className='flex flex-col gap-1'>
                                 <input
                                     type='date'
-                                    value={(filterValues[column] as DateRangeFilter)?.from || ''}
-                                    onChange={(e) => handleDateRangeChange('from', e.target.value)}
+                                    value={
+                                        (filterValues[column] as DateRangeFilter)
+                                            ?.from || ''
+                                    }
+                                    onChange={(e) =>
+                                        handleDateRangeChange('from', e.target.value)
+                                    }
                                     onKeyDown={(e) => handleFilterKeyDown(e, column)}
                                     className='cradle-search text-xs py-1 px-2 w-full'
                                     placeholder='From'
@@ -204,8 +227,13 @@ export default function ListView<T extends { id?: string | number }>({
                                 />
                                 <input
                                     type='date'
-                                    value={(filterValues[column] as DateRangeFilter)?.to || ''}
-                                    onChange={(e) => handleDateRangeChange('to', e.target.value)}
+                                    value={
+                                        (filterValues[column] as DateRangeFilter)?.to ||
+                                        ''
+                                    }
+                                    onChange={(e) =>
+                                        handleDateRangeChange('to', e.target.value)
+                                    }
                                     onKeyDown={(e) => handleFilterKeyDown(e, column)}
                                     className='cradle-search text-xs py-1 px-2 w-full'
                                     placeholder='To'
@@ -215,7 +243,9 @@ export default function ListView<T extends { id?: string | number }>({
                             <input
                                 type='text'
                                 value={(filterValues[column] as string) || ''}
-                                onChange={(e) => handleFilterChange(column, e.target.value)}
+                                onChange={(e) =>
+                                    handleFilterChange(column, e.target.value)
+                                }
                                 onKeyDown={(e) => handleFilterKeyDown(e, column)}
                                 className='cradle-search text-xs py-1 px-2 w-full'
                                 placeholder={`Filter ${children}...`}
@@ -230,9 +260,13 @@ export default function ListView<T extends { id?: string | number }>({
                             title={isFilterable ? `Click to filter by ${children}` : ''}
                         >
                             {children}
-                            {(!!filterValues[column] &&
-                                (typeof filterValues[column] === 'string' ? !!filterValues[column] : hasDateRangeFilter)) && (
-                                    <span className='ml-1 text-xs text-orange-600 dark:text-orange-400'>●</span>
+                            {!!filterValues[column] &&
+                                (typeof filterValues[column] === 'string'
+                                    ? !!filterValues[column]
+                                    : hasDateRangeFilter) && (
+                                    <span className='ml-1 text-xs text-orange-600 dark:text-orange-400'>
+                                        ●
+                                    </span>
                                 )}
                         </span>
                         {isSortable && (
@@ -300,7 +334,10 @@ export default function ListView<T extends { id?: string | number }>({
                 <tbody>
                     {data.length === 0 ? (
                         <tr>
-                            <td colSpan={columns.length + (enableMultiSelect ? 1 : 0)} className='text-center py-8'>
+                            <td
+                                colSpan={columns.length + (enableMultiSelect ? 1 : 0)}
+                                className='text-center py-8'
+                            >
                                 <span className='text-sm text-zinc-500 cradle-text-tertiary'>
                                     {emptyMessage}
                                 </span>
@@ -308,11 +345,13 @@ export default function ListView<T extends { id?: string | number }>({
                         </tr>
                     ) : (
                         data.map((item, index) =>
-                            renderRow ? renderRow(item, index, {
-                                enableMultiSelect,
-                                isSelected: selectedIds.includes(item.id!),
-                                onSelect: () => handleSelectRow(item.id!),
-                            }) : null
+                            renderRow
+                                ? renderRow(item, index, {
+                                      enableMultiSelect,
+                                      isSelected: selectedIds.includes(item.id!),
+                                      onSelect: () => handleSelectRow(item.id!),
+                                  })
+                                : null,
                         )
                     )}
                 </tbody>

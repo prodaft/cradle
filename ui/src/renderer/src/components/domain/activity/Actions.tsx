@@ -24,7 +24,10 @@ function ActionsTable({
     ...props
 }: ActionsTableProps & React.HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={`${disabled ? 'opacity-50 pointer-events-none' : ''} ${className}`} {...props}>
+        <div
+            className={`${disabled ? 'opacity-50 pointer-events-none' : ''} ${className}`}
+            {...props}
+        >
             <ActionBar
                 actions={actions}
                 selectedItems={selectedItems}

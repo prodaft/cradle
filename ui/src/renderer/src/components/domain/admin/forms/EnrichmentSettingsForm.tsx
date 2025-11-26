@@ -45,34 +45,38 @@ interface FormData {
 }
 
 // Dynamic schema generation based on form_fields
-const createEnrichmentSchema = (form_fields: FormFields): Yup.ObjectSchema<FormData> => {
+const createEnrichmentSchema = (
+    form_fields: FormFields,
+): Yup.ObjectSchema<FormData> => {
     const schemaFields = {
         for_eclasses: Yup.array(),
         enabled: Yup.boolean(),
         id: Yup.string(),
         settings: Yup.object().shape(
-            Object.entries(form_fields || {}).reduce((acc, [key, field]) => {
-                let validator: Yup.AnySchema = Yup.string();
+            Object.entries(form_fields || {}).reduce(
+                (acc, [key, field]) => {
+                    let validator: Yup.AnySchema = Yup.string();
 
-                if (field.type === 'number') {
-                    validator = Yup.number();
-                } else if (field.type === 'choice') {
-                    validator = Yup.string();
-                }
+                    if (field.type === 'number') {
+                        validator = Yup.number();
+                    } else if (field.type === 'choice') {
+                        validator = Yup.string();
+                    }
 
-                if (field.required) {
-                    validator = validator.required(`${key} is required`);
-                }
+                    if (field.required) {
+                        validator = validator.required(`${key} is required`);
+                    }
 
-                acc[key] = validator;
-                return acc;
-            }, {} as Record<string, Yup.AnySchema>),
+                    acc[key] = validator;
+                    return acc;
+                },
+                {} as Record<string, Yup.AnySchema>,
+            ),
         ),
     };
 
     return Yup.object().shape(schemaFields);
 };
-
 
 /**
  * EnrichmentSettingsForm component
@@ -80,11 +84,17 @@ const createEnrichmentSchema = (form_fields: FormFields): Yup.ObjectSchema<FormD
  * @param {Object} props
  * @param {string} props.enrichment_class - The enrichment class to fetch settings for
  */
-export default function EnrichmentSettingsForm({ enrichment_class }: EnrichmentSettingsFormProps) {
+export default function EnrichmentSettingsForm({
+    enrichment_class,
+}: EnrichmentSettingsFormProps) {
     const { navigate, navigateLink } = useCradleNavigate();
     const { intelioApi, entriesApi } = useApi();
     const [displayName, setDisplayName] = useState('');
-    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
+    const [alert, setAlert] = useState<Alert>({
+        show: false,
+        message: '',
+        color: 'red',
+    });
     const [formFields, setFormFields] = useState<FormFields>({});
     const [loading, setLoading] = useState(true);
 
@@ -279,9 +289,7 @@ export default function EnrichmentSettingsForm({ enrichment_class }: EnrichmentS
                 </h1>
                 <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
                     <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
-                        <Tabs
-                            tabClass={TabClasses.PILL}
-                        >
+                        <Tabs tabClass={TabClasses.PILL}>
                             <Tab title='General' classes='space-y-4'>
                                 <div className='mt-4' />
 

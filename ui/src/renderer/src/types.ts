@@ -8,9 +8,14 @@ import type React from 'react';
 
 // Re-export generated models for domain types
 export type {
-  Entity, Entry, FileReference,
-  FileReferenceWithNote, NoteCreateRequest,
-  NoteEditRequest, NoteRetrieve, UserRetrieve
+    Entity,
+    Entry,
+    FileReference,
+    FileReferenceWithNote,
+    NoteCreateRequest,
+    NoteEditRequest,
+    NoteRetrieve,
+    UserRetrieve,
 } from '@services/cradle/models';
 
 // ============================================================================
@@ -28,30 +33,30 @@ export type StateSetter<T> = React.Dispatch<React.SetStateAction<T>>;
  * An object representing an alert. Used in AlertDismissible and AlertBox components.
  */
 export interface Alert {
-  /** A boolean value indicating whether the alert should be displayed. */
-  show: boolean;
-  /** The message to be displayed in the alert. */
-  message: string;
-  /** The color of the alert. Can be 'success', 'error', 'warning', or 'info'. */
-  color: 'success' | 'error' | 'warning' | 'info' | string;
+    /** A boolean value indicating whether the alert should be displayed. */
+    show: boolean;
+    /** The message to be displayed in the alert. */
+    message: string;
+    /** The color of the alert. Can be 'success', 'error', 'warning', or 'info'. */
+    color: 'success' | 'error' | 'warning' | 'info' | string;
 }
 
 /**
  * An object representing a notification. Used with the useNotif hook.
  */
 export interface Notification {
-  /** The type of notification. */
-  type: 'success' | 'error' | 'info';
-  /** Optional custom background color. */
-  background?: string;
-  /** Optional icon component. */
-  icon?: React.ReactNode;
-  /** Optional notification title. */
-  title?: string;
-  /** The notification message text. */
-  text: string;
-  /** Duration in milliseconds for which the notification should be displayed. Default is 3500ms. */
-  duration?: number;
+    /** The type of notification. */
+    type: 'success' | 'error' | 'info';
+    /** Optional custom background color. */
+    background?: string;
+    /** Optional icon component. */
+    icon?: React.ReactNode;
+    /** Optional notification title. */
+    title?: string;
+    /** The notification message text. */
+    text: string;
+    /** Duration in milliseconds for which the notification should be displayed. Default is 3500ms. */
+    duration?: number;
 }
 
 // ============================================================================

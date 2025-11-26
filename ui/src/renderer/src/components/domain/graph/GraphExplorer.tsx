@@ -33,7 +33,9 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
     const [nodes, setNodes] = useState<Node[]>([]);
     const [edges, setEdges] = useState<EdgeRelation[]>([]);
     const [disabledTypes, setDisabledTypes] = useState<Set<string>>(new Set());
-    const [entryGraphColors, setEntryGraphColors] = useState<Record<string, string>>({});
+    const [entryGraphColors, setEntryGraphColors] = useState<Record<string, string>>(
+        {},
+    );
     const [config, setConfig] = useState<GraphConfig>({
         nodeRadiusCoefficient: 1,
         linkWidthCoefficient: 1,
@@ -86,10 +88,7 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
 
         const edgesToAdd = edgesToProcess.filter((edge) => {
             if (!edge.id || !edge.src || !edge.dst) {
-                console.warn(
-                    'Edge missing required properties (id, src, dst):',
-                    edge,
-                );
+                console.warn('Edge missing required properties (id, src, dst):', edge);
                 return false;
             }
 

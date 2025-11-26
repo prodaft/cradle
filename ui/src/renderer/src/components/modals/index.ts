@@ -10,4 +10,3 @@ export { default as MarkdownEditorModal } from './notes/MarkdownEditorModal';
 export { default as ReportGenerationModal } from './reports/ReportGenerationModal';
 
 export { default as EnrichmentRequestModal } from './enrichment/EnrichmentRequestModal';
-

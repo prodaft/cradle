@@ -1,14 +1,14 @@
-import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
-import { ReactNode } from 'react';
 import { useModal } from '@/contexts/ui/ModalContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import ActivityList from '../../activity/ActivityList';
-import EntryTypeForm from '../forms/EntryTypeForm';
+import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
+import { ReactNode } from 'react';
 import Card from '../../../base/Card/Card';
 import ConfirmDeletionModal from '../../../modals/base/ConfirmDeletionModal';
+import ActivityList from '../../activity/ActivityList';
+import EntryTypeForm from '../forms/EntryTypeForm';
 
 interface AdminPanelCardEntryTypeProps {
     name: string;
@@ -36,7 +36,7 @@ export default function AdminPanelCardEntryType({
             await entriesApi.entryClassesDestroy({ classSubtype: id });
             onDelete();
         },
-        { successMessage: 'Entry type deleted successfully' }
+        { successMessage: 'Entry type deleted successfully' },
     );
 
     const handleActivityClick = () => {

@@ -26,13 +26,19 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [twoFactorToken, setTwoFactorToken] = useState('');
     const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
-    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
+    const [alert, setAlert] = useState<Alert>({
+        show: false,
+        message: '',
+        color: 'red',
+    });
     const windowSize = useWindowSize();
     const location = useLocation();
 
     const { isDarkMode, toggleTheme } = useTheme();
 
-    const { from } = (location.state == "/#login" ? null : location.state) || { from: { pathname: '/' } };
+    const { from } = (location.state == '/#login' ? null : location.state) || {
+        from: { pathname: '/' },
+    };
 
     const auth = useAuth();
     const { basePath, setBasePath } = auth;
@@ -99,7 +105,6 @@ export default function Login() {
                     {/* Grid Pattern Background */}
                     <div className='absolute inset-0 cradle-grid-bg opacity-30'></div>
 
-
                     <div className='relative z-10 flex flex-col justify-center items-start px-16 py-12'>
                         {windowSize.height && windowSize.height > 700 && (
                             <div className='mb-12'>
@@ -127,7 +132,11 @@ export default function Login() {
                             {/* Top Control Bar */}
                             <div className='cradle-card-header cradle-border-b'>
                                 <span className='cradle-mono text-xs tracking-widest ml-8'>
-                                    {showSettings ? 'CONFIGURATION' : requiresTwoFactor ? 'AUTHENTICATION' : 'SYSTEM ACCESS'}
+                                    {showSettings
+                                        ? 'CONFIGURATION'
+                                        : requiresTwoFactor
+                                          ? 'AUTHENTICATION'
+                                          : 'SYSTEM ACCESS'}
                                 </span>
                                 <div className='flex items-center gap-2'>
                                     {showSettings ? (
@@ -151,13 +160,19 @@ export default function Login() {
                                                 data-testid='theme-button'
                                                 title='Toggle Theme'
                                             >
-                                                {isDarkMode ? <SunLight width={18} height={18} /> : <HalfMoon width={18} height={18} />}
+                                                {isDarkMode ? (
+                                                    <SunLight width={18} height={18} />
+                                                ) : (
+                                                    <HalfMoon width={18} height={18} />
+                                                )}
                                             </button>
                                         </>
                                     ) : (
                                         !requiresTwoFactor && (
                                             <button
-                                                onClick={() => setShowSettings(!showSettings)}
+                                                onClick={() =>
+                                                    setShowSettings(!showSettings)
+                                                }
                                                 className='p-1.5 hover:text-cradle2 cradle-text-tertiary hover:border-[var(--cradle-accent-primary)]'
                                                 data-testid='settings-button'
                                                 title='Settings'
@@ -174,7 +189,9 @@ export default function Login() {
                                 {/* Form Section */}
                                 <form
                                     className='space-y-5'
-                                    onSubmit={showSettings ? handleSaveSettings : handleSubmit}
+                                    onSubmit={
+                                        showSettings ? handleSaveSettings : handleSubmit
+                                    }
                                 >
                                     {showSettings ? (
                                         <>
@@ -184,7 +201,9 @@ export default function Login() {
                                                 label='Backend URL'
                                                 type='text'
                                                 value={backendUrl}
-                                                onChange={(e) => setBackendUrl(e.target.value)}
+                                                onChange={(e) =>
+                                                    setBackendUrl(e.target.value)
+                                                }
                                                 autoFocus={true}
                                                 required={true}
                                             />
@@ -201,60 +220,136 @@ export default function Login() {
                                             {requiresTwoFactor ? (
                                                 <div className='space-y-5'>
                                                     <div className='cradle-separator-labeled my-6'>
-                                                        <span>Two-Factor Authentication</span>
+                                                        <span>
+                                                            Two-Factor Authentication
+                                                        </span>
                                                     </div>
                                                     <div>
                                                         <label className='cradle-label cradle-text-tertiary block mb-2'>
                                                             Authentication Code
                                                         </label>
                                                         <div className='flex gap-2 justify-center'>
-                                                            {[0, 1, 2, 3, 4, 5].map((index) => (
-                                                                <input
-                                                                    key={index}
-                                                                    id={`twoFactorToken-${index}`}
-                                                                    name={`twoFactorToken-${index}`}
-                                                                    type='text'
-                                                                    autoComplete='twoFactorToken'
-                                                                    className='cradle-search w-12 h-12 text-center text-lg font-mono disabled:opacity-50 disabled:cursor-not-allowed'
-                                                                    placeholder=''
-                                                                    pattern='[0-9]*'
-                                                                    maxLength={1}
-                                                                    value={twoFactorToken[index] || ''}
-                                                                    onChange={(e) => {
-                                                                        const value = e.target.value.replace(/\D/g, '');
-                                                                        if (value.length <= 1) {
-                                                                            const newCode = twoFactorToken.split('');
-                                                                            newCode[index] = value;
-                                                                            setTwoFactorToken(newCode.join(''));
+                                                            {[0, 1, 2, 3, 4, 5].map(
+                                                                (index) => (
+                                                                    <input
+                                                                        key={index}
+                                                                        id={`twoFactorToken-${index}`}
+                                                                        name={`twoFactorToken-${index}`}
+                                                                        type='text'
+                                                                        autoComplete='twoFactorToken'
+                                                                        className='cradle-search w-12 h-12 text-center text-lg font-mono disabled:opacity-50 disabled:cursor-not-allowed'
+                                                                        placeholder=''
+                                                                        pattern='[0-9]*'
+                                                                        maxLength={1}
+                                                                        value={
+                                                                            twoFactorToken[
+                                                                                index
+                                                                            ] || ''
+                                                                        }
+                                                                        onChange={(
+                                                                            e,
+                                                                        ) => {
+                                                                            const value =
+                                                                                e.target.value.replace(
+                                                                                    /\D/g,
+                                                                                    '',
+                                                                                );
+                                                                            if (
+                                                                                value.length <=
+                                                                                1
+                                                                            ) {
+                                                                                const newCode =
+                                                                                    twoFactorToken.split(
+                                                                                        '',
+                                                                                    );
+                                                                                newCode[
+                                                                                    index
+                                                                                ] =
+                                                                                    value;
+                                                                                setTwoFactorToken(
+                                                                                    newCode.join(
+                                                                                        '',
+                                                                                    ),
+                                                                                );
 
-                                                                            // Auto-focus next input
-                                                                            if (value && index < 5) {
-                                                                                document.getElementById(`twoFactorToken-${index + 1}`)?.focus();
+                                                                                // Auto-focus next input
+                                                                                if (
+                                                                                    value &&
+                                                                                    index <
+                                                                                        5
+                                                                                ) {
+                                                                                    document
+                                                                                        .getElementById(
+                                                                                            `twoFactorToken-${index + 1}`,
+                                                                                        )
+                                                                                        ?.focus();
+                                                                                }
                                                                             }
+                                                                        }}
+                                                                        onKeyDown={(
+                                                                            e,
+                                                                        ) => {
+                                                                            // Handle backspace to go to previous input
+                                                                            if (
+                                                                                e.key ===
+                                                                                    'Backspace' &&
+                                                                                !twoFactorToken[
+                                                                                    index
+                                                                                ] &&
+                                                                                index >
+                                                                                    0
+                                                                            ) {
+                                                                                document
+                                                                                    .getElementById(
+                                                                                        `twoFactorToken-${index - 1}`,
+                                                                                    )
+                                                                                    ?.focus();
+                                                                            }
+                                                                        }}
+                                                                        onPaste={(
+                                                                            e,
+                                                                        ) => {
+                                                                            e.preventDefault();
+                                                                            const pastedData =
+                                                                                e.clipboardData
+                                                                                    .getData(
+                                                                                        'text',
+                                                                                    )
+                                                                                    .replace(
+                                                                                        /\D/g,
+                                                                                        '',
+                                                                                    )
+                                                                                    .slice(
+                                                                                        0,
+                                                                                        6,
+                                                                                    );
+                                                                            setTwoFactorToken(
+                                                                                pastedData,
+                                                                            );
+                                                                            // Focus the last filled input or the first empty one
+                                                                            const focusIndex =
+                                                                                Math.min(
+                                                                                    pastedData.length,
+                                                                                    5,
+                                                                                );
+                                                                            document
+                                                                                .getElementById(
+                                                                                    `twoFactorToken-${focusIndex}`,
+                                                                                )
+                                                                                ?.focus();
+                                                                        }}
+                                                                        autoFocus={
+                                                                            index === 0
                                                                         }
-                                                                    }}
-                                                                    onKeyDown={(e) => {
-                                                                        // Handle backspace to go to previous input
-                                                                        if (e.key === 'Backspace' && !twoFactorToken[index] && index > 0) {
-                                                                            document.getElementById(`twoFactorToken-${index - 1}`)?.focus();
-                                                                        }
-                                                                    }}
-                                                                    onPaste={(e) => {
-                                                                        e.preventDefault();
-                                                                        const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-                                                                        setTwoFactorToken(pastedData);
-                                                                        // Focus the last filled input or the first empty one
-                                                                        const focusIndex = Math.min(pastedData.length, 5);
-                                                                        document.getElementById(`twoFactorToken-${focusIndex}`)?.focus();
-                                                                    }}
-                                                                    autoFocus={index === 0}
-                                                                    required
-                                                                />
-                                                            ))}
+                                                                        required
+                                                                    />
+                                                                ),
+                                                            )}
                                                         </div>
                                                     </div>
                                                     <p className='text-xs cradle-text-muted cradle-mono'>
-                                                        Enter the 6-digit code from your authenticator app
+                                                        Enter the 6-digit code from your
+                                                        authenticator app
                                                     </p>
                                                     <AlertBox alert={alert} />
                                                     <button
@@ -288,7 +383,9 @@ export default function Login() {
                                                         key='username'
                                                         type='text'
                                                         value={username}
-                                                        onChange={(e) => setUsername(e.target.value)}
+                                                        onChange={(e) =>
+                                                            setUsername(e.target.value)
+                                                        }
                                                         autoFocus={true}
                                                     />
                                                     <FormField
@@ -297,7 +394,9 @@ export default function Login() {
                                                         key='password'
                                                         type='password'
                                                         value={password}
-                                                        onChange={(e) => setPassword(e.target.value)}
+                                                        onChange={(e) =>
+                                                            setPassword(e.target.value)
+                                                        }
                                                     />
                                                     <AlertBox alert={alert} />
                                                     <button
@@ -314,30 +413,36 @@ export default function Login() {
                                 </form>
 
                                 {/* Footer Links */}
-                                {!requiresTwoFactor && !showSettings && auth.basePath && (
-                                    <>
-                                        <div className='cradle-separator mt-8'></div>
-                                        <div className='flex justify-between items-center text-xs cradle-mono mt-6'>
-                                            <Link
-                                                to='/forgot-password'
-                                                className='cradle-text-tertiary hover:text-cradle2  uppercase tracking-wider'
-                                                replace={true}
-                                                onClick={() => setRequiresTwoFactor(false)}
-                                            >
-                                                Reset Password
-                                            </Link>
-                                            <Link
-                                                to='/register'
-                                                className='cradle-text-tertiary hover:text-cradle2  uppercase tracking-wider'
-                                                replace={true}
-                                                state={{ from: from }}
-                                                onClick={() => setRequiresTwoFactor(false)}
-                                            >
-                                                Register
-                                            </Link>
-                                        </div>
-                                    </>
-                                )}
+                                {!requiresTwoFactor &&
+                                    !showSettings &&
+                                    auth.basePath && (
+                                        <>
+                                            <div className='cradle-separator mt-8'></div>
+                                            <div className='flex justify-between items-center text-xs cradle-mono mt-6'>
+                                                <Link
+                                                    to='/forgot-password'
+                                                    className='cradle-text-tertiary hover:text-cradle2  uppercase tracking-wider'
+                                                    replace={true}
+                                                    onClick={() =>
+                                                        setRequiresTwoFactor(false)
+                                                    }
+                                                >
+                                                    Reset Password
+                                                </Link>
+                                                <Link
+                                                    to='/register'
+                                                    className='cradle-text-tertiary hover:text-cradle2  uppercase tracking-wider'
+                                                    replace={true}
+                                                    state={{ from: from }}
+                                                    onClick={() =>
+                                                        setRequiresTwoFactor(false)
+                                                    }
+                                                >
+                                                    Register
+                                                </Link>
+                                            </div>
+                                        </>
+                                    )}
                             </div>
                         </div>
 

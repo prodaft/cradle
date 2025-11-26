@@ -1,6 +1,6 @@
+import { HeaderNode } from '@/utils/editor/outline';
 import { NavArrowDown, NavArrowRight } from 'iconoir-react';
 import React, { useState } from 'react';
-import { HeaderNode } from '@/utils/editor/outline';
 
 interface TreeNodeProps {
     nodeData: HeaderNode;
@@ -55,7 +55,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                     </button>
                 ) : (
                     // Render an empty span as a placeholder to reserve space
-                    <span className='w-4 flex items-center justify-center mr-2 text-cradle2'>#</span>
+                    <span className='w-4 flex items-center justify-center mr-2 text-cradle2'>
+                        #
+                    </span>
                 )}
                 <span className='font-medium dark:text-white'>{nodeData.nodeName}</span>
             </div>
